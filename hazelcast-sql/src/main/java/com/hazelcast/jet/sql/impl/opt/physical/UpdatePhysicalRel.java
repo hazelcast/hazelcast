@@ -32,13 +32,14 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
 
 public class UpdatePhysicalRel extends AbstractRelNode implements PhysicalRel {
 
     private final RelOptTable table;
     private final CatalogReader catalogReader;
-    private final RelNode input;
+    private RelNode input;
     private final List<String> updateColumnList;
     private final List<RexNode> sourceExpressionList;
     private final boolean flattened;
@@ -82,6 +83,19 @@ public class UpdatePhysicalRel extends AbstractRelNode implements PhysicalRel {
 
     public RelNode getInput() {
         return input;
+    }
+
+    @Override
+    public List<RelNode> getInputs() {
+        return input != null ? Collections.singletonList(input) : Collections.emptyList();
+    }
+
+    @Override
+    public void replaceInput(int ordinalInParent, RelNode rel) {
+        assert input != null;
+        assert ordinalInParent == 0;
+        this.input = rel;
+        recomputeDigest();
     }
 
     public List<String> getUpdateColumnList() {

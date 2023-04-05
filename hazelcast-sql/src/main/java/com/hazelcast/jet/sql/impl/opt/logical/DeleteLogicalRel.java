@@ -34,6 +34,7 @@ import org.apache.calcite.sql.SqlKind;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
 import java.util.List;
 
 public class DeleteLogicalRel extends AbstractRelNode implements LogicalRel {
@@ -75,6 +76,11 @@ public class DeleteLogicalRel extends AbstractRelNode implements LogicalRel {
     @Nullable
     public RelNode getInput() {
         return input;
+    }
+
+    @Override
+    public List<RelNode> getInputs() {
+        return input != null ? Collections.singletonList(input) : Collections.emptyList();
     }
 
     public boolean isFlattened() {
