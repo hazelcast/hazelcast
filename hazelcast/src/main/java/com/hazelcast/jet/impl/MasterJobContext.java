@@ -80,7 +80,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.function.Functions.entryKey;
@@ -234,7 +233,7 @@ public class MasterJobContext {
      * If there was a membership change and the partition table is not completely
      * fixed yet, reschedules the job restart.
      */
-    void tryStartJob(Supplier<Long> executionIdSupplier) {
+    void tryStartJob() {
         JobCoordinationService coordinator = mc.coordinationService();
         MembersView membersView = Util.getMembersView(mc.nodeEngine());
 
@@ -244,7 +243,7 @@ public class MasterJobContext {
                   executionStartTime = System.currentTimeMillis();
                   JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
                   jobExecRec.markExecuted();
-                  DAG dag = resolveDag(executionIdSupplier);
+                  DAG dag = resolveDag();
                   if (dag == null) {
                       return;
                   }
@@ -321,7 +320,7 @@ public class MasterJobContext {
     }
 
     @Nullable
-    private DAG resolveDag(Supplier<Long> executionIdSupplier) {
+    private DAG resolveDag() {
         mc.lock();
         try {
             if (isCancelled()) {
@@ -390,7 +389,7 @@ public class MasterJobContext {
             vertices = new HashSet<>();
             verticesCompleted = false;
             dag.iterator().forEachRemaining(vertices::add);
-            mc.setExecutionId(executionIdSupplier.get());
+            mc.setExecutionId(mc.jobRepository().newExecutionId());
             mc.snapshotContext().onExecutionStarted();
             executionCompletionFuture = new CompletableFuture<>();
             return dag;
@@ -914,7 +913,7 @@ public class MasterJobContext {
         return completedFuture(null);
     }
 
-    void resumeJob(Supplier<Long> executionIdSupplier) {
+    void resumeJob() {
         mc.lock();
         try {
             if (mc.jobStatus() != SUSPENDED) {
@@ -926,7 +925,7 @@ public class MasterJobContext {
             mc.unlock();
         }
         logger.fine("Resuming job " + mc.jobName());
-        tryStartJob(executionIdSupplier);
+        tryStartJob();
     }
 
     private boolean hasParticipant(UUID uuid) {

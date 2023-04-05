@@ -722,7 +722,7 @@ public class JobCoordinationService {
 
     public CompletableFuture<Void> resumeJob(long jobId) {
         return runWithJob(jobId,
-                masterContext -> masterContext.jobContext().resumeJob(jobRepository::newExecutionId),
+                masterContext -> masterContext.jobContext().resumeJob(),
                 jobResult -> {
                     throw new IllegalStateException("Job already completed");
                 },
@@ -1297,7 +1297,7 @@ public class JobCoordinationService {
     }
 
     private void tryStartJob(MasterContext masterContext) {
-        masterContext.jobContext().tryStartJob(jobRepository::newExecutionId);
+        masterContext.jobContext().tryStartJob();
 
         if (masterContext.hasTimeout()) {
             long remainingTime = masterContext.remainingTime(Clock.currentTimeMillis());
