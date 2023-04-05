@@ -133,7 +133,6 @@ public final class MongoUtilities {
      * Converts given bson timestamp to unix epoch.
      */
     @Nullable
-    @SuppressWarnings("checkstyle:MagicNumber")
     public static LocalDateTime bsonTimestampToLocalDateTime(@Nullable BsonTimestamp time) {
         if (time == null) {
             return null;
