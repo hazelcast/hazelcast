@@ -51,8 +51,7 @@ final class MappingHelper {
                 + "EXTERNAL NAME \"" + tableName + "\" "
                 + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
                 + " DATA LINK " + dataLinkRef
-                + "TYPE " + mappingType + " "
-                + "OPTIONS ("
+                + " OPTIONS ("
                 + "    'idColumn' = '" + idColumn + "' "
                 + ")"
         ).close();
