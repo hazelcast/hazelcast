@@ -34,6 +34,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -41,7 +42,6 @@ public class ReadMongoParams<I> implements Serializable {
     final boolean stream;
     SupplierEx<? extends MongoClient> clientSupplier;
     DataLinkRef dataLinkRef;
-    List<Bson> aggregates = new ArrayList<>();
     String databaseName;
     String collectionName;
     FunctionEx<Document, I> mapItemFn;
@@ -49,6 +49,8 @@ public class ReadMongoParams<I> implements Serializable {
     Long startAtTimestamp;
     EventTimePolicy<? super I> eventTimePolicy;
     BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn;
+    boolean throwOnNonExisting = true;
+    private List<Document> aggregates = new ArrayList<>();
 
     public ReadMongoParams(boolean stream) {
         this.stream = stream;
@@ -94,12 +96,16 @@ public class ReadMongoParams<I> implements Serializable {
     }
 
     @Nonnull
-    public List<Bson> getAggregates() {
+    public List<Document> getAggregates() {
         return aggregates;
     }
 
     public ReadMongoParams<I> setAggregates(@Nonnull List<Bson> aggregates) {
-        this.aggregates = aggregates;
+        List<Document> aggregateDocs = new ArrayList<>();
+        for (Bson aggregate : aggregates) {
+            aggregateDocs.add(bsonToDocument(aggregate));
+        }
+        this.aggregates = aggregateDocs;
         return this;
     }
 
@@ -162,7 +168,16 @@ public class ReadMongoParams<I> implements Serializable {
     }
 
     public ReadMongoParams<I> addAggregate(@Nonnull Bson doc) {
-        this.aggregates.add(doc);
+        this.aggregates.add(bsonToDocument(doc));
+        return this;
+    }
+
+    public boolean isThrowOnNonExisting() {
+        return throwOnNonExisting;
+    }
+
+    public ReadMongoParams<I> setThrowOnNonExisting(boolean throwOnNonExisting) {
+        this.throwOnNonExisting = throwOnNonExisting;
         return this;
     }
 }

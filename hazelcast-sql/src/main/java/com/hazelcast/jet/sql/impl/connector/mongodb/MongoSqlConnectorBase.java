@@ -31,7 +31,6 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rex.RexNode;
-import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -44,8 +43,7 @@ import java.util.Map;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
-import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -190,8 +188,8 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             Object result = filterNode.unwrap(RexNode.class).accept(visitor);
             assert result instanceof Bson;
 
-            BsonDocument expression = ((Bson) result).toBsonDocument(BsonDocument.class, defaultCodecRegistry());
-            return new TranslationResult<>(bsonDocumentToDocument(expression), true);
+            Document expression = bsonToDocument((Bson) result);
+            return new TranslationResult<>(expression, true);
         } catch (Throwable t) {
             return new TranslationResult<>(null, false);
         }
