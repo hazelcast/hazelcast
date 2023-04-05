@@ -21,7 +21,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.dialect.CalciteSqlDialect;
+import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,7 +42,7 @@ public class PostgresUpsertQueryBuilderTest {
     @Mock
     JdbcTable jdbcTable;
 
-    SqlDialect sqlDialect = CalciteSqlDialect.DEFAULT;
+    SqlDialect sqlDialect = PostgresqlSqlDialect.DEFAULT;
 
     @Before
     public void setUp() {

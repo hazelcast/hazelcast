@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.h2;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
 import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.dialect.CalciteSqlDialect;
+import org.apache.calcite.sql.dialect.H2SqlDialect;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -34,7 +34,7 @@ public class H2UpsertQueryBuilderTest {
     @Mock
     JdbcTable jdbcTable;
 
-    SqlDialect sqlDialect = CalciteSqlDialect.DEFAULT;
+    SqlDialect sqlDialect = H2SqlDialect.DEFAULT;
 
     @Before
     public void setUp() {
