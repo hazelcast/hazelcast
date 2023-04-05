@@ -54,7 +54,7 @@ class UpdateQueryBuilder {
         String whereClause = pkFields.stream().map(e -> '\"' + e + "\" = ?")
                                      .collect(joining(" AND "));
 
-        query = "UPDATE " + table.getExternalName() +
+        query = "UPDATE " + table.getExternalName()[0] +
                 " SET " + setSqlFragment +
                 " WHERE " + whereClause;
     }

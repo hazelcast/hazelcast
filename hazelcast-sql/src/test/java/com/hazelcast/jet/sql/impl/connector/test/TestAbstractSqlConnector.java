@@ -114,7 +114,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
+            @Nonnull String[] externalName
     ) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
@@ -138,7 +138,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields
     ) {

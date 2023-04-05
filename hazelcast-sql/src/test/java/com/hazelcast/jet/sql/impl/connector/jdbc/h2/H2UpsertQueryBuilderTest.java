@@ -18,38 +18,33 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.h2;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
 import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.dialect.H2SqlDialect;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 public class H2UpsertQueryBuilderTest {
     @Mock
     JdbcTable jdbcTable;
 
-    @Mock
-    SqlDialect sqlDialect;
+    SqlDialect sqlDialect = H2SqlDialect.DEFAULT;
 
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        when(jdbcTable.getExternalName()).thenReturn("table1");
+        when(jdbcTable.getExternalName()).thenReturn(new String[]{"table1"});
+        when(jdbcTable.getExternalNameList()).thenReturn(Collections.singletonList("table1"));
         when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
         when(jdbcTable.sqlDialect()).thenReturn(sqlDialect);
-
-        when(sqlDialect.quoteIdentifier(anyString())).thenAnswer((InvocationOnMock invocation) -> {
-            Object argument = invocation.getArguments()[0];
-            return "\"" + argument + "\"";
-        });
     }
 
     @Test
@@ -64,10 +59,6 @@ public class H2UpsertQueryBuilderTest {
 
     @Test
     public void testGetKeyClause() {
-        when(jdbcTable.getExternalName()).thenReturn("table1");
-        when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
-        when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
-
         H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getKeyClause(stringBuilder);

@@ -37,7 +37,7 @@ public class PostgresUpsertQueryBuilder {
     public PostgresUpsertQueryBuilder(JdbcTable jdbcTable) {
         SqlDialect sqlDialect = jdbcTable.sqlDialect();
         // Quote identifiers
-        quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
+        quotedTableName = sqlDialect.quoteIdentifier(new StringBuilder(), jdbcTable.getExternalNameList()).toString();
         quotedColumnNames = jdbcTable.dbFieldNames()
                 .stream()
                 .map(sqlDialect::quoteIdentifier)

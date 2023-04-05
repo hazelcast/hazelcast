@@ -26,6 +26,7 @@ import org.apache.calcite.sql.SqlDialect;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Collections.unmodifiableList;
@@ -35,7 +36,8 @@ public class JdbcTable extends JetTable {
     private final List<String> dbFieldNames;
     private final List<String> primaryKeyFieldNames;
     private final SqlDialect sqlDialect;
-    private final String externalName;
+    private final String[] externalName;
+    private final List<String> externalNameList;
     private final String dataLinkName;
     private final int batchLimit;
     private final SerializationService serializationService;
@@ -47,7 +49,7 @@ public class JdbcTable extends JetTable {
             @Nonnull String schemaName,
             @Nonnull String name,
             @Nonnull TableStatistics statistics,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
             @Nonnull String dataLinkName,
             int batchLimit,
             @Nonnull SerializationService serializationService) {
@@ -69,6 +71,7 @@ public class JdbcTable extends JetTable {
         this.primaryKeyFieldNames = unmodifiableList(primaryKeyFieldNames);
         this.sqlDialect = dialect;
         this.externalName = externalName;
+        this.externalNameList = Arrays.asList(externalName);
         this.dataLinkName = dataLinkName;
         this.batchLimit = batchLimit;
         this.serializationService = serializationService;
@@ -82,8 +85,12 @@ public class JdbcTable extends JetTable {
         return sqlDialect;
     }
 
-    public String getExternalName() {
+    public String[] getExternalName() {
         return externalName;
+    }
+
+    public List<String> getExternalNameList() {
+        return externalNameList;
     }
 
     public String getDataLinkName() {
