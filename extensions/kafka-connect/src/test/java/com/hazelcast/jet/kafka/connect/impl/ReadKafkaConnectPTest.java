@@ -62,7 +62,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
-        readKafkaConnectP = new ReadKafkaConnectP(connectorWrapper, noEventTime());
+        readKafkaConnectP = new ReadKafkaConnectP<>(connectorWrapper, noEventTime(), rec -> (Integer) rec.value());
         outbox = new TestOutbox(new int[]{10}, 10);
         context = new TestProcessorContext();
         hazelcastInstance = createHazelcastInstance(smallInstanceConfig());
@@ -76,7 +76,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         boolean complete = readKafkaConnectP.complete();
 
         assertFalse(complete);
-        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(dummyRecord(0), dummyRecord(1), dummyRecord(2));
+        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2);
     }
 
     @Test
@@ -105,7 +105,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
         readKafkaConnectP.complete();
 
-        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(dummyRecord(0), dummyRecord(1), dummyRecord(2));
+        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2);
 
     }
 

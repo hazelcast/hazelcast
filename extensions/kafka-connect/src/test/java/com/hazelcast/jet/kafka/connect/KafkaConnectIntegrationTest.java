@@ -33,10 +33,12 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Values;
+import org.apache.kafka.connect.header.Header;
+import org.apache.kafka.connect.source.SourceRecord;
 import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,13 +49,16 @@ import javax.annotation.Nonnull;
 import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
+import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
@@ -63,6 +68,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.util.stream.Collectors.toList;
+import static org.apache.kafka.connect.data.Values.convertToString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -81,20 +87,64 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIntegrationTest.class);
 
     @Test
-    public void testReading() throws Exception {
+    public void test_reading() throws Exception {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
         randomProperties.setProperty("max.interval", "1");
-        randomProperties.setProperty("kafka.topic", "users");
-        randomProperties.setProperty("quickstart", "users");
+        randomProperties.setProperty("kafka.topic", "orders");
+        randomProperties.setProperty("quickstart", "orders");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(connect(randomProperties))
+        StreamStage<Order> streamStage = pipeline.readFrom(connect(randomProperties, Order::new))
                 .withoutTimestamps()
-                .setLocalParallelism(1)
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+                .setLocalParallelism(1);
         streamStage.writeTo(Sinks.logger());
+        streamStage
+                .writeTo(AssertionSinks.assertCollectedEventually(60,
+                        list -> assertEquals(ITEM_COUNT, list.size())));
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
+
+        try {
+            job.join();
+            fail("Job should have completed with an AssertionCompletedException, but completed normally");
+        } catch (CompletionException e) {
+            String errorMsg = e.getCause().getMessage();
+            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+            assertTrueEventually(() -> {
+                List<Long> pollTotalList = getSourceRecordPollTotalList();
+                assertThat(pollTotalList).isNotEmpty();
+                Long sourceRecordPollTotal = pollTotalList.get(0);
+                assertThat(sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
+            });
+        }
+    }
+
+    @Test
+    public void test_reading_and_writing_to_map() throws Exception {
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "datagen-connector");
+        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
+        randomProperties.setProperty("max.interval", "1");
+        randomProperties.setProperty("kafka.topic", "orders");
+        randomProperties.setProperty("quickstart", "orders");
+
+        Pipeline pipeline = Pipeline.create();
+        StreamStage<Map.Entry<String, Order>> streamStage = pipeline.readFrom(connect(randomProperties,
+                        rec -> entry(convertToString(rec.keySchema(), rec.key()), new Order(rec))))
+                .withoutTimestamps()
+                .setLocalParallelism(1);
+        streamStage
+                .writeTo(Sinks.logger());
+        streamStage
+                .writeTo(Sinks.map(randomMapName()));
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> assertEquals(ITEM_COUNT, list.size())));
@@ -141,7 +191,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void testScaling() throws Exception {
+    public void test_scaling() throws Exception {
         int localParallelism = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
@@ -151,16 +201,14 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("quickstart", "orders");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<Map.Entry<String, String>> streamStage = pipeline.readFrom(connect(randomProperties))
+        StreamStage<Order> streamStage = pipeline.readFrom(connect(randomProperties, Order::new))
                 .withoutTimestamps()
-                .setLocalParallelism(localParallelism)
-                .map(record -> entry(record.headers().lastWithName("task.id").value().toString(),
-                        Values.convertToString(record.valueSchema(), record.value()))
-                );
+                .setLocalParallelism(localParallelism);
+
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(120,
                         list -> {
-                            Map<String, List<String>> recordsByTaskId = entriesToMap(list);
+                            Map<String, List<Order>> recordsByTaskId = entriesToMap(list);
                             LOGGER.info("recordsByTaskId = " + countEntriesByTaskId(recordsByTaskId));
                             assertThat(recordsByTaskId).allSatisfy((taskId, records) ->
                                     assertThat(records.size()).isGreaterThan(ITEM_COUNT)
@@ -197,15 +245,15 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @NotNull
-    private static List<Map.Entry<String, Integer>> countEntriesByTaskId(Map<String, List<String>> recordsByTaskId) {
+    private static List<Map.Entry<String, Integer>> countEntriesByTaskId(Map<String, List<Order>> recordsByTaskId) {
         return recordsByTaskId.entrySet().stream().map(e -> entry(e.getKey(), e.getValue().size())).collect(toList());
     }
 
     @Nonnull
-    private static Map<String, List<String>> entriesToMap(List<Map.Entry<String, String>> list) {
+    private static Map<String, List<Order>> entriesToMap(List<Order> list) {
         return list.stream()
-                .collect(Collectors.groupingBy(Map.Entry::getKey,
-                        Collectors.mapping(Map.Entry::getValue, toList())));
+                .collect(Collectors.groupingBy(o -> o.headers.get("task.id"),
+                        Collectors.mapping(Function.identity(), toList())));
     }
 
     private static List<Long> getSourceRecordPollTotalList() throws Exception {
@@ -219,23 +267,21 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         return getMBeanValues(objectName, "sourceRecordPollTotalAvgTime");
     }
 
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/24018
+    //    @Ignore // https://github.com/hazelcast/hazelcast/issues/24018
     @Test
-    public void testSnapshotting() throws Exception {
+    public void test_snapshotting() throws Exception {
         int localParallelism = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
         randomProperties.setProperty("max.interval", "1");
-        randomProperties.setProperty("kafka.topic", "users");
-        randomProperties.setProperty("quickstart", "users");
+        randomProperties.setProperty("kafka.topic", "orders");
+        randomProperties.setProperty("quickstart", "orders");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(connect(randomProperties))
+        StreamStage<Order> streamStage = pipeline.readFrom(connect(randomProperties, Order::new))
                 .withoutTimestamps()
-                .setLocalParallelism(localParallelism)
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()) + ", task.id: "
-                        + record.headers().lastWithName("task.id").value());
+                .setLocalParallelism(localParallelism);
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -275,4 +321,33 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         }
     }
 
+    static class Order implements Serializable {
+        final Integer orderId;
+        final long orderTime;
+        final String itemId;
+        final double orderUnits;
+        final Map<String, String> headers = new HashMap<>();
+
+        Order(SourceRecord rec) {
+            Struct struct = Values.convertToStruct(rec.valueSchema(), rec.value());
+            orderId = struct.getInt32("orderid");
+            orderTime = struct.getInt64("ordertime");
+            itemId = struct.getString("itemid");
+            orderUnits = struct.getFloat64("orderunits");
+            for (Header header : rec.headers()) {
+                headers.put(header.key(), header.value().toString());
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "Order{" +
+                    "orderId=" + orderId +
+                    ", orderTime=" + orderTime +
+                    ", itemtId='" + itemId + '\'' +
+                    ", orderUnits=" + orderUnits +
+                    ", headers=" + headers +
+                    '}';
+        }
+    }
 }

@@ -30,7 +30,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.apache.kafka.connect.data.Values;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -109,9 +108,9 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
-                .withoutTimestamps()
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
+                .withoutTimestamps();
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -154,10 +153,10 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
                 .withoutTimestamps()
-                .setLocalParallelism(localParallelism)
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+                .setLocalParallelism(localParallelism);
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -197,9 +196,9 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         createTable(connectionUrl, "dynamic_test_items1");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
-                .withoutTimestamps()
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
+                .withoutTimestamps();
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,

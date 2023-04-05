@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.Sources;
@@ -50,9 +51,9 @@ public final class KafkaConnectSources {
      * respectively.
      * <p>
      * After that you can use the Kafka Connect connector with the
-     * configuration parameters as you'd using it with Kafka. Hazelcast
+     * configuration parameters as you'd use it with Kafka. Hazelcast
      * Jet will drive the Kafka Connect connector from the pipeline and
-     * the records will be available to your pipeline as {@link SourceRecord}s.
+     * the records will be available to your pipeline.
      * <p>
      * In case of a failure; this source keeps track of the source
      * partition offsets, it will restore the partition offsets and
@@ -62,12 +63,16 @@ public final class KafkaConnectSources {
      * Property <code>tasks.max</code> is not allowed. Use {@link StreamStage#setLocalParallelism(int)} in the pipeline
      * instead.
      *
-     * @param properties Kafka connect properties
+     * @param properties   Kafka connect properties
+     * @param projectionFn function to create output objects from the Kafka {@link SourceRecord}s.
+     *                     If the projection returns a {@code null} for an item,
+     *                     that item will be filtered out.
      * @return a source to use in {@link com.hazelcast.jet.pipeline.Pipeline#readFrom(StreamSource)}
      */
     @Nonnull
     @Beta
-    public static StreamSource<SourceRecord> connect(@Nonnull Properties properties) {
+    public static <T> StreamSource<T> connect(@Nonnull Properties properties,
+                                              @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
         Preconditions.checkRequiredProperty(properties, "name");
         String name = "kafkaConnectSource(" + properties.getProperty("name") + ")";
 
@@ -80,7 +85,8 @@ public final class KafkaConnectSources {
         }
 
         return Sources.streamFromProcessorWithWatermarks(name, true,
-                eventTimePolicy -> ProcessorMetaSupplier.randomMember(processSupplier(properties, eventTimePolicy)));
+                eventTimePolicy -> ProcessorMetaSupplier.randomMember(processSupplier(properties, eventTimePolicy,
+                        projectionFn)));
     }
 
 }

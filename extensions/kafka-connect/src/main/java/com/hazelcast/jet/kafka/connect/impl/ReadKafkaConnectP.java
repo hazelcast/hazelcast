@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
@@ -50,10 +51,11 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 
-public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetricsProvider {
+public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMetricsProvider {
 
     private final ConnectorWrapper connectorWrapper;
     private final EventTimeMapper<SourceRecord> eventTimeMapper;
+    private final FunctionEx<SourceRecord, T> projectionFn;
     private TaskRunner taskRunner;
     private boolean snapshotInProgress;
     private Traverser<Entry<BroadcastKey<String>, TaskRunner.State>> snapshotTraverser;
@@ -62,9 +64,11 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
     private Traverser<?> traverser;
     private final LocalKafkaConnectStatsImpl localKafkaConnectStats = new LocalKafkaConnectStatsImpl();
 
-    public ReadKafkaConnectP(ConnectorWrapper connectorWrapper, EventTimePolicy<? super SourceRecord> eventTimePolicy) {
+    public ReadKafkaConnectP(ConnectorWrapper connectorWrapper, EventTimePolicy<? super SourceRecord> eventTimePolicy,
+                             @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
         this.connectorWrapper = connectorWrapper;
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+        this.projectionFn = projectionFn;
         eventTimeMapper.addPartitions(1);
     }
 
@@ -95,8 +99,12 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
             localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
             this.traverser = traverser(sourceRecords)
                     .map(rec -> {
+                        T projectedRecord = projectionFn.apply((SourceRecord) rec);
                         taskRunner.commitRecord((SourceRecord) rec);
-                        return rec;
+                        if (projectedRecord == null) {
+                            return Traversers.empty();
+                        }
+                        return projectedRecord;
                     })
                     .onFirstNull(() -> traverser = null);
         }
@@ -179,8 +187,9 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
         provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
     }
 
-    public static ProcessorSupplier processSupplier(@Nonnull Properties properties,
-                                                    EventTimePolicy<? super SourceRecord> eventTimePolicy) {
+    public static <T> ProcessorSupplier processSupplier(@Nonnull Properties properties,
+                                                        EventTimePolicy<? super T> eventTimePolicy,
+                                                        @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
         return new ProcessorSupplier() {
             private transient ConnectorWrapper connectorWrapper;
 
@@ -201,7 +210,7 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
             @Override
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadKafkaConnectP(connectorWrapper, eventTimePolicy))
+                        .mapToObj(i -> new ReadKafkaConnectP(connectorWrapper, eventTimePolicy, projectionFn))
                         .collect(Collectors.toList());
             }
 
