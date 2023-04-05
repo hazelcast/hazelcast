@@ -44,7 +44,6 @@ public class ReadMongoParams<I> implements Serializable {
     final boolean stream;
     SupplierEx<? extends MongoClient> clientSupplier;
     DataLinkRef dataLinkRef;
-    private List<Document> aggregates = new ArrayList<>();
     String databaseName;
     String collectionName;
     FunctionEx<Document, I> mapItemFn;
@@ -53,6 +52,7 @@ public class ReadMongoParams<I> implements Serializable {
     EventTimePolicy<? super I> eventTimePolicy;
     BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn;
     boolean throwOnNonExisting = true;
+    private List<Document> aggregates = new ArrayList<>();
 
     public ReadMongoParams(boolean stream) {
         this.stream = stream;
@@ -105,7 +105,8 @@ public class ReadMongoParams<I> implements Serializable {
     public ReadMongoParams<I> setAggregates(@Nonnull List<Bson> aggregates) {
         List<Document> aggregateDocs = new ArrayList<>();
         for (Bson aggregate : aggregates) {
-            aggregateDocs.add(bsonDocumentToDocument(aggregate.toBsonDocument(BsonDocument.class, defaultCodecRegistry())));
+            aggregateDocs.add(bsonDocumentToDocument(
+                    aggregate.toBsonDocument(BsonDocument.class, defaultCodecRegistry())));
         }
         this.aggregates = aggregateDocs;
         return this;
