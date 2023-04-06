@@ -37,7 +37,6 @@ import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +45,7 @@ import java.util.Map;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -103,7 +103,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            Map<String, DocumentField> fields = resolver.readFields(new String[]{collectionName}, null, readOpts, false);
+            Map<String, DocumentField> fields = resolver.readFields(new String[]{databaseName, collectionName}, null, readOpts, false);
             assertThat(fields).containsOnlyKeys("firstName", "lastName", "birthYear", "title", "unionType", "intOrString");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);
@@ -134,7 +134,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            Map<String, DocumentField> fields = resolver.readFields(new String[]{collectionName}, null, readOpts, false);
+            Map<String, DocumentField> fields = resolver.readFields(new String[]{databaseName, collectionName}, null, readOpts, false);
             assertThat(fields).containsOnlyKeys("_id", "firstName", "lastName", "birthYear", "citizenship",
                     "citizenshipButList");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
@@ -160,8 +160,7 @@ public class FieldResolverTest {
 
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
-            readOpts.put("database", databaseName);
-            List<MappingField> fields = resolver.resolveFields(new String[]{collectionName}, null, readOpts, Collections.emptyList(), false);
+            List<MappingField> fields = resolver.resolveFields(new String[]{databaseName, collectionName}, null, readOpts, emptyList(), false);
             assertThat(fields).contains(
                     fieldWithSameExternal("_id", OBJECT, BsonType.OBJECT_ID).setPrimaryKey(true),
                     fieldWithSameExternal("firstName", VARCHAR, BsonType.STRING),
@@ -187,8 +186,7 @@ public class FieldResolverTest {
 
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
-            readOpts.put("database", databaseName);
-            List<MappingField> fields = resolver.resolveFields(new String[]{collectionName}, null, readOpts, Collections.emptyList(), true);
+            List<MappingField> fields = resolver.resolveFields(new String[]{databaseName, collectionName}, null, readOpts, emptyList(), true);
             assertThat(fields).contains(
                     fieldWithSameExternal("resumeToken", VARCHAR, BsonType.STRING),
                     fieldWithSameExternal("operationType", VARCHAR, BsonType.STRING),
@@ -220,8 +218,7 @@ public class FieldResolverTest {
 
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
-            readOpts.put("database", databaseName);
-            List<MappingField> fields = resolver.resolveFields(new String[]{collectionName}, null, readOpts, Arrays.asList(
+            List<MappingField> fields = resolver.resolveFields(new String[]{databaseName, collectionName}, null, readOpts, Arrays.asList(
                     new MappingField("id", OBJECT).setExternalName("_id"),
                     new MappingField("birthYear", QueryDataType.BIGINT)
             ), false);
@@ -249,14 +246,29 @@ public class FieldResolverTest {
 
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
-            readOpts.put("database", databaseName);
             try {
-                resolver.resolveFields(new String[]{collectionName}, null, readOpts, singletonList(
+                resolver.resolveFields(new String[]{databaseName, collectionName}, null, readOpts, singletonList(
                         new MappingField("id", QueryDataType.MAP).setExternalName("_id")
                 ), false);
             } catch (IllegalStateException e) {
                 assertThat(e.getMessage()).isEqualTo("Type MAP of field id does not match db type OBJECT");
             }
+        }
+    }
+
+    @Test
+    public void testFailsOnNoDatabase() {
+        String collectionName = "people_3";
+        FieldResolver resolver = new FieldResolver(null);
+
+        Map<String, String> readOpts = new HashMap<>();
+        readOpts.put("connectionString", mongoContainer.getConnectionString());
+        try {
+            resolver.resolveFields(new String[]{collectionName}, null, readOpts, singletonList(
+                    new MappingField("id", QueryDataType.MAP).setExternalName("_id")
+            ), false);
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage()).isEqualTo("Database must be provided in the mapping or data link.");
         }
     }
 

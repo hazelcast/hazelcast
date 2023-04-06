@@ -164,12 +164,12 @@ class FieldResolver {
                                           String dataLinkName,
                                           Map<String, String> options,
                                           boolean stream) {
-        String collectionName = externalNames[0]; // TODO HZ-2260
+        String collectionName = externalNames.length == 2 ? externalNames[1] : externalNames[0];
         Map<String, DocumentField> fields = new HashMap<>();
         Tuple2<MongoClient, MongoDataLink> connect = connect(dataLinkName, options);
         try (MongoClient client = connect.f0()) {
             requireNonNull(client);
-            String databaseName = Options.getDatabaseName(nodeEngine, dataLinkName, options);
+            String databaseName = Options.getDatabaseName(nodeEngine, externalNames, dataLinkName);
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()
