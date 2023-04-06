@@ -46,15 +46,15 @@ public class GetDdlTest extends SqlTestSupport {
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', 'a')", ImmutableList.of(
                 new Row("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (" + LE +
-                        "  \"__key\" INTEGER EXTERNAL NAME \"__key\"," + LE  +
-                        "  \"this\" INTEGER EXTERNAL NAME \"this\"" + LE  +
-                        ")" + LE  +
-                        "TYPE \"IMap\"" + LE  +
-                        "OPTIONS (" + LE  +
-                        "  'keyFormat'='java'," + LE  +
-                        "  'keyJavaClass'='int'," + LE  +
-                        "  'valueFormat'='java'," + LE  +
-                        "  'valueJavaClass'='int'" + LE  +
+                        "  \"__key\" INTEGER EXTERNAL NAME \"__key\"," + LE +
+                        "  \"this\" INTEGER EXTERNAL NAME \"this\"" + LE +
+                        ")" + LE +
+                        "TYPE \"IMap\"" + LE +
+                        "OPTIONS (" + LE +
+                        "  'keyFormat'='java'," + LE +
+                        "  'keyJavaClass'='int'," + LE +
+                        "  'valueFormat'='java'," + LE +
+                        "  'valueJavaClass'='int'" + LE +
                         ")"))
         );
     }
@@ -65,23 +65,23 @@ public class GetDdlTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM a");
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', 'v')", ImmutableList.of(
-                new Row("CREATE OR REPLACE VIEW \"hazelcast\".\"public\".\"v\" AS" + LE  +
-                        "SELECT \"a\".\"__key\", \"a\".\"this\"" + LE  +
+                new Row("CREATE OR REPLACE VIEW \"hazelcast\".\"public\".\"v\" AS" + LE +
+                        "SELECT \"a\".\"__key\", \"a\".\"this\"" + LE +
                         "FROM \"hazelcast\".\"public\".\"a\" AS \"a\""))
         );
     }
 
     @Test
     public void when_queryTypeFromRelationNamespace_then_success() {
-        String createTypeQuery = "CREATE OR REPLACE TYPE \"hazelcast\".\"public\".\"t\" (" + LE  +
-                "  \"a\" INTEGER," + LE  +
-                "  \"b\" INTEGER" + LE  +
-                ")" + LE  +
-                "OPTIONS (" + LE  +
-                "  'format'='portable'," + LE  +
-                "  'portableFactoryId'='1'," + LE  +
-                "  'portableClassId'='3'," + LE  +
-                "  'portableClassVersion'='0'" + LE  +
+        String createTypeQuery = "CREATE OR REPLACE TYPE \"hazelcast\".\"public\".\"t\" (" + LE +
+                "  \"a\" INTEGER," + LE +
+                "  \"b\" INTEGER" + LE +
+                ")" + LE +
+                "OPTIONS (" + LE +
+                "  'format'='portable'," + LE +
+                "  'portableFactoryId'='1'," + LE +
+                "  'portableClassId'='3'," + LE +
+                "  'portableClassVersion'='0'" + LE +
                 ")";
 
         instance().getSql().execute(createTypeQuery);
@@ -91,7 +91,7 @@ public class GetDdlTest extends SqlTestSupport {
     @Test
     public void when_queryDataLinkFromDatalinkNamespace_then_success() {
         String createDataLinkQuery = "CREATE OR REPLACE DATA LINK \"hazelcast\".\"public\".\"dl\"" + LE
-                + "TYPE \"DUMMY\""+ LE + "SHARED";
+                + "TYPE \"DUMMY\"" + LE + "SHARED";
 
         instance().getSql().execute(createDataLinkQuery);
         assertRowsAnyOrder("SELECT GET_DDL('datalink', 'dl')", ImmutableList.of(new Row(createDataLinkQuery)));
@@ -162,16 +162,16 @@ public class GetDdlTest extends SqlTestSupport {
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', this) FROM a",
                 ImmutableList.of(new Row(
-                        "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (" + LE  +
-                                "  \"__key\" INTEGER EXTERNAL NAME \"__key\"," + LE  +
-                                "  \"this\" VARCHAR EXTERNAL NAME \"this\"" + LE  +
-                                ")" + LE  +
-                                "TYPE \"IMap\"" + LE  +
-                                "OPTIONS (" + LE  +
-                                "  'keyFormat'='java'," + LE  +
-                                "  'keyJavaClass'='int'," + LE  +
-                                "  'valueFormat'='java'," + LE  +
-                                "  'valueJavaClass'='java.lang.String'" + LE  +
+                        "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (" + LE +
+                                "  \"__key\" INTEGER EXTERNAL NAME \"__key\"," + LE +
+                                "  \"this\" VARCHAR EXTERNAL NAME \"this\"" + LE +
+                                ")" + LE +
+                                "TYPE \"IMap\"" + LE +
+                                "OPTIONS (" + LE +
+                                "  'keyFormat'='java'," + LE +
+                                "  'keyJavaClass'='int'," + LE +
+                                "  'valueFormat'='java'," + LE +
+                                "  'valueJavaClass'='java.lang.String'" + LE +
                                 ")")));
     }
 }
