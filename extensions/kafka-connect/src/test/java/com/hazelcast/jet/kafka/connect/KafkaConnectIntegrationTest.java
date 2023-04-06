@@ -88,7 +88,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIntegrationTest.class);
 
     @Test
-    public void test_reading() throws Exception {
+    public void test_reading_without_timestamps() throws Exception {
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
@@ -127,6 +127,48 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
             });
         }
     }
+
+    @Test
+    public void test_reading_with_timestamps() throws Exception {
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "datagen-connector");
+        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
+        randomProperties.setProperty("max.interval", "1");
+        randomProperties.setProperty("kafka.topic", "orders");
+        randomProperties.setProperty("quickstart", "orders");
+
+        Pipeline pipeline = Pipeline.create();
+        StreamStage<SourceRecord> streamStage = pipeline.readFrom(connect(randomProperties))
+                .withNativeTimestamps(0)
+                .setLocalParallelism(1);
+        streamStage.writeTo(Sinks.logger());
+        streamStage
+                .writeTo(AssertionSinks.assertCollectedEventually(60,
+                        list -> assertEquals(ITEM_COUNT, list.size())));
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
+
+        try {
+            job.join();
+            fail("Job should have completed with an AssertionCompletedException, but completed normally");
+        } catch (CompletionException e) {
+            String errorMsg = e.getCause().getMessage();
+            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+            assertTrueEventually(() -> {
+                List<Long> pollTotalList = getSourceRecordPollTotalList();
+                assertThat(pollTotalList).isNotEmpty();
+                Long sourceRecordPollTotal = pollTotalList.get(0);
+                assertThat(sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
+            });
+        }
+    }
+
 
     @Test
     public void test_reading_and_writing_to_map() throws Exception {

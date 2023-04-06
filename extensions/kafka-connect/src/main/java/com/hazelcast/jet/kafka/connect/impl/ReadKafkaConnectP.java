@@ -55,7 +55,7 @@ import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMetricsProvider {
 
     private final ConnectorWrapper connectorWrapper;
-    private final EventTimeMapper<SourceRecord> eventTimeMapper;
+    private final EventTimeMapper<T> eventTimeMapper;
     private final FunctionEx<SourceRecord, T> projectionFn;
     private TaskRunner taskRunner;
     private boolean snapshotInProgress;
@@ -66,7 +66,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     private final LocalKafkaConnectStatsImpl localKafkaConnectStats = new LocalKafkaConnectStatsImpl();
 
     public ReadKafkaConnectP(@Nonnull ConnectorWrapper connectorWrapper,
-                             @Nonnull EventTimePolicy<? super SourceRecord> eventTimePolicy,
+                             @Nonnull EventTimePolicy<? super T> eventTimePolicy,
                              @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
         checkNotNull(connectorWrapper, "connectorWrapper is required");
         checkNotNull(eventTimePolicy, "eventTimePolicy is required");
@@ -102,31 +102,21 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
             long durationInNanos = Timer.nanosElapsed(start);
             localKafkaConnectStats.addSourceRecordPollDuration(Duration.ofNanos(durationInNanos));
             localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
-            this.traverser = traverser(sourceRecords)
-                    .map(rec -> {
-                        T projectedRecord = projectionFn.apply((SourceRecord) rec);
-                        taskRunner.commitRecord((SourceRecord) rec);
-                        if (projectedRecord == null) {
-                            return Traversers.empty();
-                        }
-                        return projectedRecord;
-                    })
-                    .onFirstNull(() -> traverser = null);
+            this.traverser = sourceRecords.isEmpty() ? eventTimeMapper.flatMapIdle() :
+                    traverseIterable(sourceRecords)
+                            .flatMap(rec -> {
+                                long eventTime = rec.timestamp() == null ? 0 : rec.timestamp();
+                                T projectedRecord = projectionFn.apply(rec);
+                                taskRunner.commitRecord(rec);
+                                if (projectedRecord == null) {
+                                    return Traversers.empty();
+                                }
+                                return eventTimeMapper.flatMapEvent(projectedRecord, 0, eventTime);
+                            })
+                            .onFirstNull(() -> traverser = null);
         }
         emitFromTraverser(traverser);
         return false;
-    }
-
-    @Nonnull
-    public Traverser<?> traverser(List<SourceRecord> sourceRecords) {
-        if (sourceRecords.isEmpty()) {
-            return eventTimeMapper.flatMapIdle();
-        }
-        return traverseIterable(sourceRecords)
-                .flatMap(rec -> {
-                    long eventTime = rec.timestamp() == null ? 0 : rec.timestamp();
-                    return eventTimeMapper.flatMapEvent(rec, 0, eventTime);
-                });
     }
 
     @Override
