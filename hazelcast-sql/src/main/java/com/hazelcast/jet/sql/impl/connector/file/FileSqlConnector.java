@@ -71,7 +71,7 @@ public class FileSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
+            @Nonnull String[] externalName
     ) {
         return resolveAndValidateFields(options, userFields);
     }
@@ -90,7 +90,7 @@ public class FileSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields
     ) {

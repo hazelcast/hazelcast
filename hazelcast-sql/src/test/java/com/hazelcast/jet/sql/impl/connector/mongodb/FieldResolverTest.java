@@ -103,7 +103,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            Map<String, DocumentField> fields = resolver.readFields(collectionName, readOpts, false);
+            Map<String, DocumentField> fields = resolver.readFields(new String[]{collectionName}, readOpts, false);
             assertThat(fields).containsOnlyKeys("firstName", "lastName", "birthYear", "title", "unionType", "intOrString");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
             assertThat(fields.get("birthYear").columnType).isEqualTo(BsonType.INT32);
@@ -134,7 +134,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            Map<String, DocumentField> fields = resolver.readFields(collectionName, readOpts, false);
+            Map<String, DocumentField> fields = resolver.readFields(new String[]{collectionName}, readOpts, false);
             assertThat(fields).containsOnlyKeys("_id", "firstName", "lastName", "birthYear", "citizenship",
                     "citizenshipButList");
             assertThat(fields.get("lastName").columnType).isEqualTo(BsonType.STRING);
@@ -161,7 +161,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            List<MappingField> fields = resolver.resolveFields(collectionName, readOpts, Collections.emptyList(), false);
+            List<MappingField> fields = resolver.resolveFields(new String[]{collectionName}, readOpts, Collections.emptyList(), false);
             assertThat(fields).contains(
                     fieldWithSameExternal("_id", OBJECT, BsonType.OBJECT_ID).setPrimaryKey(true),
                     fieldWithSameExternal("firstName", VARCHAR, BsonType.STRING),
@@ -188,7 +188,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            List<MappingField> fields = resolver.resolveFields(collectionName, readOpts, Collections.emptyList(), true);
+            List<MappingField> fields = resolver.resolveFields(new String[]{collectionName}, readOpts, Collections.emptyList(), true);
             assertThat(fields).contains(
                     fieldWithSameExternal("resumeToken", VARCHAR, BsonType.STRING),
                     fieldWithSameExternal("operationType", VARCHAR, BsonType.STRING),
@@ -221,7 +221,7 @@ public class FieldResolverTest {
             Map<String, String> readOpts = new HashMap<>();
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
-            List<MappingField> fields = resolver.resolveFields(collectionName, readOpts, Arrays.asList(
+            List<MappingField> fields = resolver.resolveFields(new String[]{collectionName}, readOpts, Arrays.asList(
                     new MappingField("id", OBJECT).setExternalName("_id"),
                     new MappingField("birthYear", QueryDataType.BIGINT)
             ), false);
@@ -251,7 +251,7 @@ public class FieldResolverTest {
             readOpts.put("connectionString", mongoContainer.getConnectionString());
             readOpts.put("database", databaseName);
             try {
-                resolver.resolveFields(collectionName, readOpts, singletonList(
+                resolver.resolveFields(new String[]{collectionName}, readOpts, singletonList(
                         new MappingField("id", QueryDataType.MAP).setExternalName("_id")
                 ), false);
             } catch (IllegalStateException e) {

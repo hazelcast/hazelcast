@@ -16,21 +16,33 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import java.util.List;
+import org.apache.calcite.sql.SqlDialect;
 
-import static java.util.stream.Collectors.joining;
+import java.util.Iterator;
+import java.util.List;
 
 class DeleteQueryBuilder {
 
     private final String query;
 
-    DeleteQueryBuilder(String tableName, List<String> pkFields) {
+    DeleteQueryBuilder(JdbcTable table, List<String> pkFields) {
+        SqlDialect dialect = table.sqlDialect();
 
-        String whereClause = pkFields.stream().map(e -> '\"' + e + "\" = ?")
-                                     .collect(joining(" AND "));
+        StringBuilder sb = new StringBuilder()
+                .append("DELETE FROM ");
+        dialect.quoteIdentifier(sb, table.getExternalNameList());
+        sb.append(" WHERE ");
+        Iterator<String> it = pkFields.iterator();
+        while (it.hasNext()) {
+            String pkField = it.next();
+            dialect.quoteIdentifier(sb, pkField);
+            sb.append("=?");
+            if (it.hasNext()) {
+                sb.append(" AND ");
+            }
+        }
 
-        query = "DELETE FROM " + tableName +
-                " WHERE " + whereClause;
+        query = sb.toString();
     }
 
     String query() {

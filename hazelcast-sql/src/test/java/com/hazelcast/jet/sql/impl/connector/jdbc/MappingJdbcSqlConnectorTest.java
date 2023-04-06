@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -44,6 +45,8 @@ import static org.assertj.core.util.Lists.newArrayList;
 
 public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
+    private static final String LE = System.lineSeparator();
+
     private String tableName;
 
     @BeforeClass
@@ -69,6 +72,66 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void createMappingWithExternalSchemaAndTableName() throws Exception {
+        executeJdbc("CREATE SCHEMA schema1");
+        createTable("schema1." + tableName);
+
+        String mappingName = "mapping_" + randomName();
+        createMapping("\"schema1\".\"" + tableName + '\"', mappingName);
+
+        assertRowsAnyOrder("SHOW MAPPINGS",
+                newArrayList(new Row(mappingName))
+        );
+
+        String expectedMappingQuery = "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\"" +
+                ".\"" + mappingName + "\" EXTERNAL NAME \"schema1\"" +
+                ".\"" + tableName + "\" (" + LE +
+                "  \"id\" INTEGER," + LE +
+                "  \"name\" VARCHAR" + LE +
+                ")" + LE +
+                "TYPE \"JDBC\"" + LE +
+                "OPTIONS (" + LE +
+                "  'data-link-name'='test-database-ref'" + LE +
+                ")";
+        assertRowsAnyOrder("SELECT GET_DDL('relation', '" + mappingName + "')",
+                ImmutableList.of(new Row(expectedMappingQuery)));
+    }
+
+    @Test
+    public void createMappingWithExternalTableNameTooManyComponents() throws Exception {
+        createTable(tableName);
+
+        assertThatThrownBy(() ->
+                execute("CREATE MAPPING " + tableName
+                        + " EXTERNAL NAME \"aaaa\".\"bbbb\".\"cccc\".\"dddd\" "
+                        + " ("
+                        + " id INT, "
+                        + " name VARCHAR "
+                        + ") "
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                )
+        ).isInstanceOf(HazelcastSqlException.class)
+         .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
+    }
+
+    @Test
+    public void createMappingWithExternalTableNameTooManyComponentsNoQuotes() throws Exception {
+        createTable(tableName);
+
+        assertThatThrownBy(() ->
+                execute("CREATE MAPPING " + tableName
+                        + " EXTERNAL NAME aaaa.bbbb.cccc.dddd "
+                        + " ("
+                        + " id INT, "
+                        + " name VARCHAR "
+                        + ") "
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                )
+        ).isInstanceOf(HazelcastSqlException.class)
+         .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
+    }
+
+    @Test
     public void createMappingWithoutDataLinkRef() {
         tableName = randomTableName();
 
@@ -82,7 +145,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Missing option: 'data-link-name' must be set");
+         .hasMessageContaining("Missing option: 'data-link-name' must be set");
     }
 
     @Test
@@ -158,7 +221,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Could not resolve field with name fullName");
+         .hasMessageContaining("Could not resolve field with name fullName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -186,7 +249,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Could not resolve field with external name myName");
+         .hasMessageContaining("Could not resolve field with external name myName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -209,7 +272,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
+         .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()

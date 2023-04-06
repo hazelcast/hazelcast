@@ -426,6 +426,15 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         KeyedWindowResultFunction<? super Object, ? super JetSqlRow, ?> resultMapping =
                 rel.outputValueMapping();
 
+        Map<Integer, MutableByte> watermarkedFieldsKeys = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
+        MutableByte mutableWatermarkKey = watermarkedFieldsKeys.isEmpty()
+                ? watermarkKeysAssigner.getInputWatermarkKey(rel)
+                : watermarkedFieldsKeys.get(rel.timestampFieldIndex());
+
+        byte watermarkKey = mutableWatermarkKey != null
+                ? mutableWatermarkKey.getValue()
+                : watermarkedFieldsKeys.get(rel.watermarkedFields().findFirst(rel.getGroupSet())).getValue();
+
         if (rel.numStages() == 1) {
             Vertex vertex = dag.newUniqueVertex(
                     "Sliding-Window-AggregateByKey",
@@ -436,7 +445,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             windowPolicy,
                             0,
                             aggregateOperation,
-                            resultMapping));
+                            resultMapping,
+                            watermarkKey));
             connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
             return vertex;
         } else {
@@ -449,14 +459,16 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             singletonList(timestampFn),
                             TimestampKind.EVENT,
                             windowPolicy,
-                            aggregateOperation));
+                            aggregateOperation,
+                            watermarkKey));
 
             Vertex vertex2 = dag.newUniqueVertex(
                     "Sliding-Window-CombineByKey",
                     Processors.combineToSlidingWindowP(
                             windowPolicy,
                             aggregateOperation,
-                            resultMapping));
+                            resultMapping,
+                            watermarkKey));
 
             connectInput(rel.getInput(), vertex1, edge -> edge.partitioned(groupKeyFn));
             dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));
