@@ -19,10 +19,13 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
@@ -36,6 +39,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * TestSupport for tests of JdbcSqlConnector
  */
+@Category(IgnoreInJenkinsOnWindows.class)
 public abstract class JdbcSqlTestSupport extends SqlTestSupport {
 
     protected static final String TEST_DATABASE_REF = "test-database-ref";
@@ -51,6 +56,11 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
 
     protected static String dbConnectionUrl;
     protected static SqlService sqlService;
+
+    @BeforeClass
+    public static void checkDockerEnabled() {
+        assumeDockerEnabled();
+    }
 
     public static void initialize(TestDatabaseProvider provider) {
         initialize(provider, smallInstanceConfig());
