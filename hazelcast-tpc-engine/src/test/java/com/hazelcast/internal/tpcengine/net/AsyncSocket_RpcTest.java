@@ -291,18 +291,18 @@ public abstract class AsyncSocket_RpcTest {
         private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
         @Override
-        public void onRead(ByteBuffer rcvBuffer) {
+        public void onRead(ByteBuffer src) {
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (rcvBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
-                    payloadSize = rcvBuffer.getInt();
-                    callId = rcvBuffer.getLong();
+                    payloadSize = src.getInt();
+                    callId = src.getLong();
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
-                put(payloadBuffer, rcvBuffer);
+                put(payloadBuffer, src);
                 if (payloadBuffer.remaining() > 0) {
                     // not all bytes have been received.
                     break;
@@ -364,19 +364,19 @@ public abstract class AsyncSocket_RpcTest {
         private int payloadSize = -1;
 
         @Override
-        public void onRead(ByteBuffer rcvBuffer) {
+        public void onRead(ByteBuffer src) {
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (rcvBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
 
-                    payloadSize = rcvBuffer.getInt();
-                    callId = rcvBuffer.getLong();
+                    payloadSize = src.getInt();
+                    callId = src.getLong();
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
-                put(payloadBuffer, rcvBuffer);
+                put(payloadBuffer, src);
 
                 if (payloadBuffer.remaining() > 0) {
                     // not all bytes have been received.

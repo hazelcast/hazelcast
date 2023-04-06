@@ -263,21 +263,21 @@ public abstract class AsyncSocket_LargePayloadTest {
         private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
         @Override
-        public void onRead(ByteBuffer rcvBuffer) {
+        public void onRead(ByteBuffer src) {
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (rcvBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
-                    payloadSize = rcvBuffer.getInt();
-                    round = rcvBuffer.getLong();
+                    payloadSize = src.getInt();
+                    round = src.getLong();
                     if (round < 0) {
                         throw new RuntimeException("round can't be smaller than 0, found:" + round);
                     }
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
-                put(payloadBuffer, rcvBuffer);
+                put(payloadBuffer, src);
                 if (payloadBuffer.remaining() > 0) {
                     // not all bytes have been received.
                     break;
@@ -311,22 +311,22 @@ public abstract class AsyncSocket_LargePayloadTest {
         }
 
         @Override
-        public void onRead(ByteBuffer rcvBuffer) {
+        public void onRead(ByteBuffer src) {
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (rcvBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
 
-                    payloadSize = rcvBuffer.getInt();
-                    round = rcvBuffer.getLong();
+                    payloadSize = src.getInt();
+                    round = src.getLong();
                     if (round < 0) {
                         throw new RuntimeException("round can't be smaller than 0, found:" + round);
                     }
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
-                put(payloadBuffer, rcvBuffer);
+                put(payloadBuffer, src);
 
                 if (payloadBuffer.remaining() > 0) {
                     // not all bytes have been received.

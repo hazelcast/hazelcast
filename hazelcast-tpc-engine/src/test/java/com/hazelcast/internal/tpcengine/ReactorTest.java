@@ -219,7 +219,7 @@ public abstract class ReactorTest {
         AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
                 .setReader(new AsyncSocketReader() {
                     @Override
-                    public void onRead(ByteBuffer rcvBuffer) {
+                    public void onRead(ByteBuffer src) {
                     }
                 })
                 .build();

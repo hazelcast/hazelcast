@@ -26,7 +26,7 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
  */
 public class DevNullAsyncSocketReader extends AsyncSocketReader {
     @Override
-    public void onRead(ByteBuffer rcvBuffer) {
-        upcast(rcvBuffer).position(rcvBuffer.limit());
+    public void onRead(ByteBuffer src) {
+        upcast(src).position(src.limit());
     }
 }

@@ -46,14 +46,14 @@ public class ClientAsyncSocketReader extends AsyncSocketReader {
     }
 
     @Override
-    public void onRead(ByteBuffer rcvBuffer) {
+    public void onRead(ByteBuffer src) {
         // Currently we just consume the protocol bytes; we don't do anything with it.
         if (!protocolBytesReceived) {
-            consumeProtocolBytes(rcvBuffer);
+            consumeProtocolBytes(src);
         }
 
         for (; ; ) {
-            if (!clientMessageReader.readFrom(rcvBuffer, true)) {
+            if (!clientMessageReader.readFrom(src, true)) {
                 return;
             }
 

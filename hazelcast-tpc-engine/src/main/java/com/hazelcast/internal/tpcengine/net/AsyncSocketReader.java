@@ -50,7 +50,7 @@ public abstract class AsyncSocketReader {
     /**
      * Process the received data on the socket.
      *
-     * @param rcvBuffer the ByteBuffer containing the received data.
+     * @param src the ByteBuffer containing the received data.
      */
-    public abstract void onRead(ByteBuffer rcvBuffer);
+    public abstract void onRead(ByteBuffer src);
 }
