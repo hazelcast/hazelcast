@@ -16,78 +16,56 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.AbstractQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
-import org.apache.calcite.sql.SqlDialect;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Iterator;
 
 /**
  * Builder for upsert statement
  */
-public class PostgresUpsertQueryBuilder {
-
-    private final String query;
-
-    private final String quotedTableName;
-    private final List<String> quotedColumnNames;
-
-    private final List<String> quotedPrimaryKeys;
+public class PostgresUpsertQueryBuilder extends AbstractQueryBuilder {
 
     public PostgresUpsertQueryBuilder(JdbcTable jdbcTable) {
-        SqlDialect sqlDialect = jdbcTable.sqlDialect();
-        // Quote identifiers
-        quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
-        quotedColumnNames = jdbcTable.dbFieldNames()
-                .stream()
-                .map(sqlDialect::quoteIdentifier)
-                .collect(Collectors.toList());
+        super(jdbcTable);
 
-        quotedPrimaryKeys = jdbcTable.getPrimaryKeyList()
-                .stream()
-                .map(sqlDialect::quoteIdentifier)
-                .collect(Collectors.toList());
+        StringBuilder sb = new StringBuilder();
 
+        appendInsertClause(sb);
+        sb.append(' ');
+        appendValuesClause(sb);
+        sb.append(' ');
+        appendOnConflictClause(sb);
 
-        StringBuilder stringBuilder = new StringBuilder();
-
-        getInsertClause(stringBuilder);
-        getValuesClause(stringBuilder);
-        getOnConflictClause(stringBuilder);
-
-        query = stringBuilder.toString();
+        query = sb.toString();
     }
 
-    void getInsertClause(StringBuilder stringBuilder) {
-        stringBuilder.append("INSERT INTO ")
-                .append(quotedTableName)
-                .append(" (")
-                .append(String.join(",", quotedColumnNames))
-                .append(") ");
+    void appendInsertClause(StringBuilder sb) {
+        sb.append("INSERT INTO ");
+        dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
+        sb.append(' ');
+        appendFieldNames(sb, jdbcTable.dbFieldNames());
     }
 
-    void getValuesClause(StringBuilder stringBuilder) {
-        String values = quotedColumnNames.stream()
-                .map(dbFieldName -> "?")
-                .collect(Collectors.joining(","));
-
-        stringBuilder.append("VALUES (").append(values).append(") ");
+    void appendValuesClause(StringBuilder sb) {
+        sb.append("VALUES ");
+        appendValues(sb, jdbcTable.dbFieldNames().size());
     }
 
-    void getOnConflictClause(StringBuilder stringBuilder) {
-        String primaryKeys = String.join(",", quotedPrimaryKeys);
+    void appendOnConflictClause(StringBuilder sb) {
+        sb.append("ON CONFLICT ");
+        appendFieldNames(sb, jdbcTable.getPrimaryKeyList());
+        sb.append(" DO UPDATE SET ");
 
-        String values = quotedColumnNames.stream()
-                .map(dbFieldName -> dbFieldName + " = EXCLUDED." + dbFieldName)
-                .collect(Collectors.joining(","));
-
-        stringBuilder.append("ON CONFLICT (").append(primaryKeys).append(") DO UPDATE SET ").append(values);
-    }
-
-    /**
-     * Returns the built upsert statement
-     */
-    public String query() {
-        return query;
+        Iterator<String> it = jdbcTable.dbFieldNames().iterator();
+        while (it.hasNext()) {
+            String dbFieldName = it.next();
+            dialect.quoteIdentifier(sb, dbFieldName);
+            sb.append(" = EXCLUDED.");
+            dialect.quoteIdentifier(sb, dbFieldName);
+            if (it.hasNext()) {
+                sb.append(',');
+            }
+        }
     }
 }

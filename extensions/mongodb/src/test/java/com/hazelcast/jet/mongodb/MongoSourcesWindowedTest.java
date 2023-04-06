@@ -50,10 +50,10 @@ public class MongoSourcesWindowedTest extends AbstractMongoTest {
 
     @Test
     public void testWindows() {
-        StreamSource<? extends Document> streamSource = MongoSources.stream("src", mongoContainer.getConnectionString(),
-                defaultDatabase(), testName.getMethodName(),
-                null, null)
-                                                                    .setPartitionIdleTimeout(1000);
+        StreamSource<? extends Document> streamSource = MongoSources
+                .stream(mongoContainer.getConnectionString(), defaultDatabase(), testName.getMethodName(),
+                        null, null)
+                .setPartitionIdleTimeout(1000);
 
         IList<WindowResult<Long>> result = instance().getList("result");
 

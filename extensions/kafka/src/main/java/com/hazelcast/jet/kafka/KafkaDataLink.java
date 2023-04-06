@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  * method is called.
  * <p>
  * Sinks obtain {@link KafkaProducer} instances using {@link #getProducer(String)}.
- * The producer instance may be either shared or not shared depending on the
+ * The producer instance may be either shared or single-use depending on the
  * {@link DataLinkConfig#isShared()} setting. Shared producer instance is limited
  * to use with either no processing guarantees or at-least-once processing guarantees.
  * Use with exactly-once is not possible.
@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
  * @since 5.3
  */
 @Beta
-public class KafkaDataLink extends DataLinkBase implements DataLink {
+public class KafkaDataLink extends DataLinkBase {
 
     private volatile NonClosingKafkaProducer<?, ?> producer;
 

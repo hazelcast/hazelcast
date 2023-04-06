@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -143,8 +143,8 @@ public class ConfigCompatibilityChecker {
                 new NativeMemoryConfigChecker());
         checkCompatibleConfigs("data link", c1, c2, c1.getDataLinkConfigs(), c2.getDataLinkConfigs(),
                 new DataLinkConfigChecker());
-        checkCompatibleConfigs("alto", c1, c2, singletonMap("", c1.getAltoConfig()),
-                singletonMap("", c2.getAltoConfig()), new AltoConfigChecker());
+        checkCompatibleConfigs("tpc", c1, c2, singletonMap("", c1.getTpcConfig()),
+                singletonMap("", c2.getTpcConfig()), new TpcConfigChecker());
 
         return true;
     }
@@ -702,7 +702,7 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
             return nullSafeEqual(c1.getName(), c2.getName())
-                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getType(), c2.getType())
                     && c1.isShared() == c2.isShared()
                     && nullSafeEqual(c1.getProperties(), c2.getProperties());
         }
@@ -713,9 +713,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class AltoConfigChecker extends ConfigChecker<AltoConfig> {
+    private static class TpcConfigChecker extends ConfigChecker<TpcConfig> {
         @Override
-        boolean check(AltoConfig c1, AltoConfig c2) {
+        boolean check(TpcConfig c1, TpcConfig c2) {
             return nullSafeEqual(c1, c2);
         }
     }
@@ -1210,7 +1210,7 @@ public class ConfigCompatibilityChecker {
                     && MEMCACHE_PROTOCOL_CONFIG_CHECKER.check(
                     c1.getMemcacheProtocolConfig(),
                     c2.getMemcacheProtocolConfig())
-                    && nullSafeEqual(c1.getAltoSocketConfig(), c2.getAltoSocketConfig());
+                    && nullSafeEqual(c1.getTpcSocketConfig(), c2.getTpcSocketConfig());
         }
     }
 
@@ -1371,7 +1371,7 @@ public class ConfigCompatibilityChecker {
                     && (c1.getSocketKeepIntervalSeconds() == c2.getSocketKeepIntervalSeconds())
                     && (c1.getSocketKeepIdleSeconds() == c2.getSocketKeepIdleSeconds())
                     && (c1.getSocketKeepCount() == c2.getSocketKeepCount())
-                    && nullSafeEqual(c1.getAltoSocketConfig(), c2.getAltoSocketConfig());
+                    && nullSafeEqual(c1.getTpcSocketConfig(), c2.getTpcSocketConfig());
 
             if (c1 instanceof ServerSocketEndpointConfig) {
                 ServerSocketEndpointConfig s1 = (ServerSocketEndpointConfig) c1;

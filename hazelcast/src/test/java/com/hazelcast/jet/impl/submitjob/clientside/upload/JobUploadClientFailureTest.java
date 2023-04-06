@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JetConfig;
@@ -64,12 +65,13 @@ import static org.mockito.Mockito.doAnswer;
 public class JobUploadClientFailureTest extends JetTestSupport {
 
     private static final String SIMPLE_JAR = "simplejob-1.0.0.jar";
+    private static final String PARALLEL_JAR = "paralleljob-1.0.0.jar";
     private static final String NO_MANIFEST_SIMPLE_JAR = "nomanifestsimplejob-1.0.0.jar";
 
     @After
     public void resetSingleton() {
         // Reset the singleton after the test
-        HazelcastBootstrap.resetSupplier();
+        HazelcastBootstrap.resetRemembered();
     }
 
     @Test
@@ -180,6 +182,21 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
     }
 
+
+    @Test
+    public void test_jarUpload_with_parallel_jobs() {
+        createCluster();
+
+        JetClientInstanceImpl jetService = getClientJetService();
+
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
+                .setJarPath(getParalleJarPath())
+                .setJobName("parallel_job");
+
+        jetService.submitJobFromJar(submitJobParameters);
+
+        assertJobIsNotRunning(jetService);
+    }
 
     @Test
     public void test_jar_isDeleted() throws IOException {
@@ -354,6 +371,10 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         return getPath(SIMPLE_JAR);
     }
 
+    public static Path getParalleJarPath() {
+        return getPath(PARALLEL_JAR);
+    }
+
     static Path copyJar(String newJarPath) throws IOException {
         // Copy as new jar
         Path jarPath = getJarPath();
@@ -411,5 +432,10 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
     public static boolean containsName(List<Job> list, String name) {
         return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
+    }
+
+    private static void assertJobIsNotRunning(JetService jetService) {
+        // Assert job size
+        assertEqualsEventually(() -> jetService.getJobs().size(), 0);
     }
 }

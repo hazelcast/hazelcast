@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.datalink.impl.DataLinkServiceImpl;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,10 +39,10 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DataLinksResolverTest {
 
-    private DataLinksResolver catalog;
+    private DataLinksResolver dataLinksResolver;
 
     @Mock
-    private NodeEngine nodeEngine;
+    DataLinkServiceImpl dataLinkService;
 
     @Mock
     private DataLinkStorage relationsStorage;
@@ -50,7 +50,7 @@ public class DataLinksResolverTest {
     @Before
     public void before() {
         MockitoAnnotations.openMocks(this);
-        catalog = new DataLinksResolver(relationsStorage);
+        dataLinksResolver = new DataLinksResolver(dataLinkService, relationsStorage);
     }
 
     // region dataLink storage tests
@@ -58,64 +58,64 @@ public class DataLinksResolverTest {
     @Test
     public void when_createDataLink_then_succeeds() {
         // given
-        DataLink dataLink = dataLink();
-        given(relationsStorage.putIfAbsent(dataLink.getName(), dataLink)).willReturn(true);
+        DataLinkCatalogEntry dataLinkCatalogEntry = dataLink();
+        given(relationsStorage.putIfAbsent(dataLinkCatalogEntry.name(), dataLinkCatalogEntry)).willReturn(true);
 
         // when
-        catalog.createDataLink(dataLink, false, false);
+        dataLinksResolver.createDataLink(dataLinkCatalogEntry, false, false);
 
         // then
-        verify(relationsStorage).putIfAbsent(eq(dataLink.getName()), isA(DataLink.class));
+        verify(relationsStorage).putIfAbsent(eq(dataLinkCatalogEntry.name()), isA(DataLinkCatalogEntry.class));
     }
 
     @Test
     public void when_createsDataLinkIfNotExists_then_succeeds() {
         // given
-        DataLink dataLink = dataLink();
-        given(relationsStorage.putIfAbsent(dataLink.getName(), dataLink)).willReturn(true);
+        DataLinkCatalogEntry dataLinkCatalogEntry = dataLink();
+        given(relationsStorage.putIfAbsent(dataLinkCatalogEntry.name(), dataLinkCatalogEntry)).willReturn(true);
 
         // when
-        catalog.createDataLink(dataLink, false, true);
+        dataLinksResolver.createDataLink(dataLinkCatalogEntry, false, true);
 
         // then
-        verify(relationsStorage).putIfAbsent(eq(dataLink.getName()), isA(DataLink.class));
+        verify(relationsStorage).putIfAbsent(eq(dataLinkCatalogEntry.name()), isA(DataLinkCatalogEntry.class));
     }
 
     @Test
     public void when_createsDuplicateDataLinkIfReplace_then_succeeds() {
         // given
-        DataLink dataLink = dataLink();
+        DataLinkCatalogEntry dataLinkCatalogEntry = dataLink();
 
         // when
-        catalog.createDataLink(dataLink, true, false);
+        dataLinksResolver.createDataLink(dataLinkCatalogEntry, true, false);
 
         // then
-        verify(relationsStorage).put(eq(dataLink.getName()), isA(DataLink.class));
+        verify(relationsStorage).put(eq(dataLinkCatalogEntry.name()), isA(DataLinkCatalogEntry.class));
     }
 
     @Test
     public void when_createsDuplicateDataLinkIfReplaceAndIfNotExists_then_succeeds() {
         // given
-        DataLink dataLink = dataLink();
+        DataLinkCatalogEntry dataLinkCatalogEntry = dataLink();
 
         // when
-        catalog.createDataLink(dataLink, true, true);
+        dataLinksResolver.createDataLink(dataLinkCatalogEntry, false, true);
 
         // then
-        verify(relationsStorage).putIfAbsent(eq(dataLink.getName()), isA(DataLink.class));
+        verify(relationsStorage).putIfAbsent(eq(dataLinkCatalogEntry.name()), isA(DataLinkCatalogEntry.class));
     }
 
     @Test
     public void when_createsDuplicateDataLink_then_throws() {
         // given
-        DataLink dataLink = dataLink();
-        given(relationsStorage.putIfAbsent(eq(dataLink.getName()), isA(DataLink.class))).willReturn(false);
+        DataLinkCatalogEntry dataLinkCatalogEntry = dataLink();
+        given(relationsStorage.putIfAbsent(eq(dataLinkCatalogEntry.name()), isA(DataLinkCatalogEntry.class))).willReturn(false);
 
         // when
         // then
-        assertThatThrownBy(() -> catalog.createDataLink(dataLink, false, false))
+        assertThatThrownBy(() -> dataLinksResolver.createDataLink(dataLinkCatalogEntry, false, false))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Data link already exists: " + dataLink.getName());
+                .hasMessageContaining("Data link already exists: " + dataLinkCatalogEntry.name());
     }
 
     @Test
@@ -123,11 +123,11 @@ public class DataLinksResolverTest {
         // given
         String name = "name";
 
-        given(relationsStorage.removeDataLink(name)).willReturn(null);
+        given(relationsStorage.removeDataLink(name)).willReturn(false);
 
         // when
         // then
-        assertThatThrownBy(() -> catalog.removeDataLink(name, false))
+        assertThatThrownBy(() -> dataLinksResolver.removeDataLink(name, false))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Data link does not exist: " + name);
     }
@@ -137,17 +137,16 @@ public class DataLinksResolverTest {
         // given
         String name = "name";
 
-        given(relationsStorage.removeDataLink(name)).willReturn(null);
+        given(relationsStorage.removeDataLink(name)).willReturn(false);
 
         // when
         // then
-        catalog.removeDataLink(name, true);
+        dataLinksResolver.removeDataLink(name, true);
     }
 
     // endregion
 
-    private static DataLink dataLink() {
-        return new DataLink();
+    private static DataLinkCatalogEntry dataLink() {
+        return new DataLinkCatalogEntry();
     }
 }
-

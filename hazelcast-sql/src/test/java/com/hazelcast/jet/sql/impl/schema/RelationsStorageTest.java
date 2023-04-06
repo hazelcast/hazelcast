@@ -69,13 +69,13 @@ public class RelationsStorageTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_putIfAbsent_then_doesNotOverride() {
+    public void when_putIfAbsent_then_doesNotOverwrite() {
         String name = randomName();
 
         assertThat(storage.putIfAbsent(name, mapping(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, mapping(name, "type-2"))).isFalse();
-        assertTrue(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-1")));
-        assertTrue(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-2")));
+        assertTrue(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).connectorType().equals("type-1")));
+        assertTrue(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).connectorType().equals("type-2")));
     }
 
     @Test
@@ -104,7 +104,7 @@ public class RelationsStorageTest extends SimpleTestInClusterSupport {
     }
 
     private static Mapping mapping(String name, String type) {
-        return new Mapping(name, name, type, emptyList(), emptyMap());
+        return new Mapping(name, name, null, type, null, emptyList(), emptyMap());
     }
 
     private static View view(String name, String query) {

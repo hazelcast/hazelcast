@@ -37,7 +37,7 @@ public class DataLinkConfigReadOnly extends DataLinkConfig {
     }
 
     @Override
-    public DataLinkConfig setClassName(@Nonnull String className) {
+    public DataLinkConfig setType(@Nonnull String type) {
         throw readOnly();
     }
 

@@ -30,6 +30,7 @@ import com.hazelcast.wan.WanEventCounters;
 import com.hazelcast.wan.impl.InternalWanEvent;
 
 import java.util.Collection;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -58,7 +59,7 @@ class WanMapSupportingService implements WanSupportingService {
     }
 
     @Override
-    public void onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType) {
+    public CompletionStage<Void> onSyncBatch(Collection<InternalWanEvent> batch, WanAcknowledgeType acknowledgeType) {
         // code should never reach here
         throw new UnsupportedOperationException("WAN Synchronization requires Hazelcast Enterprise Edition");
     }

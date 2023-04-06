@@ -58,6 +58,7 @@ public class WriteMongoParams<I> implements Serializable {
     @Nonnull
     WriteMode writeMode = WriteMode.REPLACE;
     FunctionEx<I, WriteModel<I>> writeModelFn;
+    boolean throwOnNonExisting = true;
 
     public WriteMongoParams() {
     }
@@ -241,6 +242,15 @@ public class WriteMongoParams<I> implements Serializable {
     @Nonnull
     public WriteMongoParams<I> setWriteModelFn(FunctionEx<I, WriteModel<I>> writeModelFn) {
         this.writeModelFn = writeModelFn;
+        return this;
+    }
+
+    public boolean isThrowOnNonExisting() {
+        return throwOnNonExisting;
+    }
+
+    public WriteMongoParams<I> setThrowOnNonExisting(boolean throwOnNonExisting) {
+        this.throwOnNonExisting = throwOnNonExisting;
         return this;
     }
 

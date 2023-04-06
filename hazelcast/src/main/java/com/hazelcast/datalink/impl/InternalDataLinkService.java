@@ -28,7 +28,7 @@ import java.util.Map;
  * {@link DataLink}s defined in the configuration are created at startup.
  * {@link DataLink}s added to the configuration dynamically are created via
  * {@link #createConfigDataLink(DataLinkConfig)}.
- * {@link DataLink}s created via SQL are added via {@link #createSqlDataLink(String, String, Map, boolean)},
+ * {@link DataLink}s created via SQL are added via {@link #replaceSqlDataLink(String, String, Map)},
  * these can be removed via {@link #removeDataLink(String)}.
  * <p>
  * When a new config is added via {@link #createConfigDataLink(DataLinkConfig)}
@@ -48,30 +48,38 @@ public interface InternalDataLinkService extends DataLinkService {
     void createConfigDataLink(DataLinkConfig config);
 
     /**
-     * Creates a new DataLink with the given parameters.
+     * Creates a new or replaces an existing DataLink with the given parameters.
      *
-     * @param name    name of the DataLink
-     * @param type    type of the DataLink
+     * @param name      name of the DataLink
+     * @param type      type of the DataLink
+     * @param shared    is DataLink shared
      * @param options options configuring the DataLink
-     * @param replace if true, an existing data link with the same name is removed first.
-     *                If false, if a DataLink with the same name exists, and error is thrown.
      */
-    void createSqlDataLink(String name, String type, Map<String, String> options, boolean replace);
+    void replaceSqlDataLink(String name, String type, boolean shared, Map<String, String> options);
 
     /**
-     * Returns if a DataLink with given name exists or not
+     * Returns if a {@link DataLink} with given name exists in the config
      *
      * @param name name of the DataLink
-     * @return true if a DataLink exists, false otherwise
+     * @return true if a {@link DataLink} exists in the config, false otherwise
      */
-    boolean existsDataLink(String name);
+    boolean existsConfigDataLink(String name);
+
+    /**
+     * Returns if a {@link DataLink} with given name exists, created by SQL.
+     *
+     * @param name name of the DataLink
+     * @return true if a {@link DataLink} exists, created by SQL; false otherwise
+     */
+    boolean existsSqlDataLink(String name);
+
 
     /**
      * Removes a DataLink.
      *
      * @param name name of the DataLink
      * @throws IllegalArgumentException if the DataLink was created through config,
-     *                                  not via {@link #createSqlDataLink(String, String, Map, boolean)}
+     *                                  not via {@link #replaceSqlDataLink(String, String, boolean, Map)}
      */
     void removeDataLink(String name);
 
@@ -81,6 +89,13 @@ public interface InternalDataLinkService extends DataLinkService {
      * @return type of the data link
      */
     String typeForDataLink(String name);
+
+    /**
+     * Return class implementing DataLink of given type.
+     * @param type type of the DataLink
+     * @return DataLink implementation class
+     */
+    Class<? extends DataLink> classForDataLinkType(String type);
 
     /**
      * Close this DataLinkService, should be called only on member shutdown.

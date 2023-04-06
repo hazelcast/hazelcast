@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.datalink.impl.InternalDataLinkService;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
@@ -139,6 +141,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
@@ -211,6 +214,7 @@ import static java.util.stream.Collectors.toList;
 public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
+    private final SqlConnectorCache connectorCache;
 
     private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;
@@ -222,18 +226,19 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     public CalciteSqlOptimizer(NodeEngine nodeEngine, QueryResultRegistry resultRegistry) {
         this.nodeEngine = nodeEngine;
+        this.connectorCache = new SqlConnectorCache(nodeEngine);
 
         this.iMapResolver = new MetadataResolver(nodeEngine);
         this.relationsStorage = new RelationsStorage(nodeEngine);
         this.dataLinkStorage = new DataLinkStorage(nodeEngine);
 
-        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage);
-        DataLinksResolver dataLinksResolver = dataLinkCatalog(this.dataLinkStorage);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, this.connectorCache);
+        DataLinksResolver dataLinksResolver = dataLinkCatalog(nodeEngine.getDataLinkService(), this.dataLinkStorage);
         this.tableResolvers = Arrays.asList(tableResolverImpl, dataLinksResolver);
         this.planExecutor = new PlanExecutor(
+                nodeEngine,
                 tableResolverImpl,
                 dataLinksResolver,
-                nodeEngine.getHazelcastInstance(),
                 resultRegistry
         );
 
@@ -242,13 +247,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private static TableResolverImpl mappingCatalog(
             NodeEngine nodeEngine,
-            RelationsStorage relationsStorage) {
-        SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
+            RelationsStorage relationsStorage,
+            SqlConnectorCache connectorCache) {
         return new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
     }
 
-    private static DataLinksResolver dataLinkCatalog(DataLinkStorage storage) {
-        return new DataLinksResolver(storage);
+    private static DataLinksResolver dataLinkCatalog(InternalDataLinkService dataLinkService, DataLinkStorage storage) {
+        return new DataLinksResolver(dataLinkService, storage);
     }
 
     @Nullable
@@ -354,23 +359,32 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
-    private SqlPlan toCreateMappingPlan(PlanKey planKey, SqlCreateMapping sqlCreateMapping) {
-        List<MappingField> mappingFields = sqlCreateMapping.columns()
+    private SqlPlan toCreateMappingPlan(PlanKey planKey, SqlCreateMapping node) {
+        List<MappingField> mappingFields = node.columns()
                 .map(field -> new MappingField(field.name(), field.type(), field.externalName()))
                 .collect(toList());
-        Mapping mapping = new Mapping(
-                sqlCreateMapping.nameWithoutSchema(),
-                sqlCreateMapping.externalName(),
-                sqlCreateMapping.type(),
+
+        Mapping mapping;
+        if (nodeEngine.getVersion().asVersion().isLessThan(V5_3)
+                && (node.dataLinkNameWithoutSchema() != null || node.objectType() != null)) {
+            throw new HazelcastException("Cannot create a mapping with a data link or an object type " +
+                    "until the cluster is upgraded to 5.3");
+        }
+        mapping = new Mapping(
+                node.nameWithoutSchema(),
+                node.externalName(),
+                node.dataLinkNameWithoutSchema(),
+                node.connectorType(),
+                node.objectType(),
                 mappingFields,
-                sqlCreateMapping.options()
+                node.options()
         );
 
         return new CreateMappingPlan(
                 planKey,
                 mapping,
-                sqlCreateMapping.getReplace(),
-                sqlCreateMapping.ifNotExists(),
+                node.getReplace(),
+                node.ifNotExists(),
                 planExecutor
         );
     }
@@ -380,8 +394,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 planKey,
                 sqlCreateDataLink.getReplace(),
                 sqlCreateDataLink.ifNotExists,
-                sqlCreateDataLink.name(),
+                sqlCreateDataLink.nameWithoutSchema(),
                 sqlCreateDataLink.type(),
+                sqlCreateDataLink.shared(),
                 sqlCreateDataLink.options(),
                 planExecutor
         );
@@ -498,7 +513,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan toShowStatementPlan(PlanKey planKey, SqlShowStatement sqlNode) {
-        return new ShowStatementPlan(planKey, sqlNode.getTarget(), planExecutor);
+        return new ShowStatementPlan(planKey, sqlNode.getTarget(), sqlNode.getDataLinkNameWithoutSchema(), planExecutor);
     }
 
     private SqlPlan toExplainStatementPlan(

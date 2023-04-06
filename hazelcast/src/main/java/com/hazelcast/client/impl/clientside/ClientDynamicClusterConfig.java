@@ -86,7 +86,7 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
@@ -157,7 +157,8 @@ public class ClientDynamicClusterConfig extends Config {
                 mapConfig.getWanReplicationRef(), mapConfig.getIndexConfigs(), mapConfig.getAttributeConfigs(),
                 queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
                 mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(), mapConfig.getMetadataPolicy().getId(),
-                mapConfig.isPerEntryStatsEnabled(), mapConfig.getDataPersistenceConfig(), mapConfig.getTieredStoreConfig());
+                mapConfig.isPerEntryStatsEnabled(), mapConfig.getDataPersistenceConfig(), mapConfig.getTieredStoreConfig(),
+                mapConfig.getPartitioningAttributeConfigs());
         invoke(request);
         return this;
     }
@@ -1131,7 +1132,7 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
         ClientMessage request = DynamicConfigAddDataLinkConfigCodec.encodeRequest(
-                dataLinkConfig.getName(), dataLinkConfig.getClassName(),
+                dataLinkConfig.getName(), dataLinkConfig.getType(),
                 dataLinkConfig.isShared(), toMap(dataLinkConfig.getProperties()));
         invoke(request);
         return this;
@@ -1149,13 +1150,13 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Nonnull
     @Override
-    public AltoConfig getAltoConfig() {
+    public TpcConfig getTpcConfig() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Nonnull
     @Override
-    public Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
+    public Config setTpcConfig(@Nonnull TpcConfig tpcConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

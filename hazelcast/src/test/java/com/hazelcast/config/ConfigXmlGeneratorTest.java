@@ -343,14 +343,14 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNetworkConfigAltoSocketConfig() {
+    public void testNetworkConfigTpcSocketConfig() {
         Config expectedConfig = new Config();
-        expectedConfig.getNetworkConfig().getAltoSocketConfig()
+        expectedConfig.getNetworkConfig().getTpcSocketConfig()
                 .setPortRange("14000-16000")
                 .setReceiveBufferSizeKB(256)
                 .setSendBufferSizeKB(256);
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
-        assertEquals(expectedConfig.getAltoConfig(), actualConfig.getAltoConfig());
+        assertEquals(expectedConfig.getTpcConfig(), actualConfig.getTpcConfig());
     }
 
     @Test
@@ -1349,7 +1349,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expected.setSocketKeepIntervalSeconds(3);
         expected.setSocketKeepIdleSeconds(83);
 
-        expected.getAltoSocketConfig()
+        expected.getTpcSocketConfig()
                 .setPortRange("14000-16000")
                 .setReceiveBufferSizeKB(256)
                 .setSendBufferSizeKB(256);
@@ -1489,7 +1489,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         properties.put("jdbcUrl", "jdbc:h2:mem:" + DataLinkServiceImplTest.class.getSimpleName());
         DataLinkConfig dataLinkConfig = new DataLinkConfig()
                 .setName("test-data-link")
-                .setClassName("com.hazelcast.dtalink.JdbcDataLink")
+                .setType("jdbc")
                 .setProperties(properties);
 
         expectedConfig.addDataLinkConfig(dataLinkConfig);
@@ -1500,13 +1500,13 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAltoConfig() {
+    public void testTpcConfig() {
         Config expectedConfig = new Config();
-        expectedConfig.getAltoConfig()
+        expectedConfig.getTpcConfig()
                 .setEventloopCount(12)
                 .setEnabled(true);
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
-        assertEquals(expectedConfig.getAltoConfig(), actualConfig.getAltoConfig());
+        assertEquals(expectedConfig.getTpcConfig(), actualConfig.getTpcConfig());
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {

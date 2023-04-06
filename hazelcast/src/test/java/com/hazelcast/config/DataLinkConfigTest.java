@@ -51,7 +51,7 @@ public class DataLinkConfigTest extends HazelcastTestSupport {
     public void should_serialize_with_empty_properties() {
         DataLinkConfig originalConfig = new DataLinkConfig()
                 .setName("some-name")
-                .setClassName("some-class-name")
+                .setType("some-type")
                 .setShared(false);
 
         Data data = serializationService.toData(originalConfig);
@@ -68,7 +68,7 @@ public class DataLinkConfigTest extends HazelcastTestSupport {
         properties.setProperty("prop2", "val2");
         DataLinkConfig originalConfig = new DataLinkConfig()
                 .setName("some-name")
-                .setClassName("some-class-name")
+                .setType("some-type")
                 .setProperties(properties);
 
         Data data = serializationService.toData(originalConfig);
@@ -81,7 +81,7 @@ public class DataLinkConfigTest extends HazelcastTestSupport {
 
         DataLinkConfig config = new DataLinkConfig()
                 .setName("some-name")
-                .setClassName("some-class-name")
+                .setType("some-type")
                 .setProperty("prop1", "val1")
                 .setProperty("prop2", "val2");
 

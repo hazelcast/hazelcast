@@ -17,51 +17,58 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
-import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_DATA_LINK;
+import static com.hazelcast.sql.impl.QueryUtils.wrapDataLinkKey;
 
 public class DataLinkStorage extends AbstractSchemaStorage {
-    private static final String KEY_PREFIX = "\"" + CATALOG + "\".\"" + SCHEMA_NAME_DATA_LINK + "\".";
 
     public DataLinkStorage(NodeEngine nodeEngine) {
         super(nodeEngine);
     }
 
-    void put(String name, DataLink dataLink) {
-        storage().put(wrap(name), dataLink);
+    public DataLinkCatalogEntry get(@Nonnull String name) {
+        return (DataLinkCatalogEntry) storage().get(wrapDataLinkKey(name));
     }
 
-    boolean putIfAbsent(String name, DataLink dataLink) {
-        return storage().putIfAbsent(wrap(name), dataLink) == null;
+    void put(@Nonnull String name, @Nonnull DataLinkCatalogEntry dataLinkCatalogEntry) {
+        storage().put(wrapDataLinkKey(name), dataLinkCatalogEntry);
     }
 
-    DataLink removeDataLink(String name) {
-        return (DataLink) storage().remove(wrap(name));
+    /**
+     * @return true, if the datalink was added
+     */
+    boolean putIfAbsent(@Nonnull String name, @Nonnull DataLinkCatalogEntry dataLinkCatalogEntry) {
+        return storage().putIfAbsent(wrapDataLinkKey(name), dataLinkCatalogEntry) == null;
     }
 
+    /**
+     * @return true, if the datalink was removed
+     */
+    boolean removeDataLink(@Nonnull String name) {
+        return storage().remove(wrapDataLinkKey(name)) != null;
+    }
+
+    @Nonnull
     Collection<String> dataLinkNames() {
         return storage().values()
                 .stream()
-                .filter(m -> m instanceof DataLink)
-                .map(m -> ((DataLink) m).getName())
+                .filter(m -> m instanceof DataLinkCatalogEntry)
+                .map(m -> ((DataLinkCatalogEntry) m).name())
                 .collect(Collectors.toList());
     }
 
-    List<DataLink> dataLinks() {
+    @Nonnull
+    List<DataLinkCatalogEntry> dataLinks() {
         return storage().values()
                 .stream()
-                .filter(obj -> obj instanceof DataLink)
-                .map(obj -> (DataLink) obj)
+                .filter(obj -> obj instanceof DataLinkCatalogEntry)
+                .map(obj -> (DataLinkCatalogEntry) obj)
                 .collect(Collectors.toList());
-    }
-
-    private static String wrap(String dataLinkKey) {
-        return KEY_PREFIX + dataLinkKey + "\"";
     }
 }

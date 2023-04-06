@@ -31,6 +31,7 @@ import javax.annotation.Nonnull;
  */
 public class TransformP<T, R> extends AbstractProcessor {
     private final FlatMapper<T, R> flatMapper;
+    private boolean isCooperative = true;
 
     /**
      * Constructs a processor with the given mapping function.
@@ -48,5 +49,14 @@ public class TransformP<T, R> extends AbstractProcessor {
     @Override
     public boolean closeIsCooperative() {
         return true;
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return isCooperative;
+    }
+
+    public void setCooperative(boolean cooperative) {
+        isCooperative = cooperative;
     }
 }

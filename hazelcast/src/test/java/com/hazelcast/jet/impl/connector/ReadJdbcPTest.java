@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.datalink.impl.JdbcDataLink;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
@@ -151,7 +152,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
                 .hasMessageContaining("Data link '" + DUMMY_DATA_LINK
-                        + "' must be an instance of class com.hazelcast.datalink.JdbcDataLink");
+                        + "' must be an instance of class " + JdbcDataLink.class.getName());
     }
 
     @Test

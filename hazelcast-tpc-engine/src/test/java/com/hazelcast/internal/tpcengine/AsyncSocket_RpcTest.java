@@ -26,8 +26,6 @@ import org.junit.Test;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,6 +34,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertJoinable;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
@@ -53,23 +53,28 @@ public abstract class AsyncSocket_RpcTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
     public int iterations = 200;
-    public final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
+    public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+    private final AtomicLong iteration = new AtomicLong();
+    private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", iteration);
 
+    private final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
     private Reactor clientReactor;
     private Reactor serverReactor;
 
-    public abstract Reactor newReactor();
+    public abstract ReactorBuilder newReactorBuilder();
 
     @Before
     public void before() {
-        clientReactor = newReactor();
-        serverReactor = newReactor();
+        clientReactor = newReactorBuilder().build().start();
+        serverReactor = newReactorBuilder().build().start();
+        printThread.start();
     }
 
     @After
     public void after() throws InterruptedException {
         terminate(clientReactor);
         terminate(serverReactor);
+        printThread.shutdown();
     }
 
     @Test
@@ -228,24 +233,20 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     public void test(int payloadSize, int concurrency) throws InterruptedException {
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
+        AsyncServerSocket serverSocket = newServer();
 
-        AsyncServerSocket serverSocket = newServer(serverAddress);
-
-        AsyncSocket clientSocket = newClient(serverAddress);
+        AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress());
 
         AtomicLong callIdGenerator = new AtomicLong();
-        List<LoadGeneratorThread> threads = new ArrayList<>();
+        LoadGeneratorThread[] threads = new LoadGeneratorThread[concurrency];
         int requestPerThread = iterations / concurrency;
         for (int k = 0; k < concurrency; k++) {
             LoadGeneratorThread thread = new LoadGeneratorThread(requestPerThread, payloadSize, callIdGenerator, clientSocket);
-            threads.add(thread);
+            threads[k] = thread;
             thread.start();
         }
 
-        for (LoadGeneratorThread thread : threads) {
-            thread.join();
-        }
+        assertJoinable(testTimeoutMs, threads);
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress) {
@@ -261,21 +262,21 @@ public abstract class AsyncSocket_RpcTest {
         return clientSocket;
     }
 
-    private AsyncServerSocket newServer(SocketAddress serverAddress) {
+    private AsyncServerSocket newServer() {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setAcceptConsumer(acceptRequest -> {
-                    AsyncSocket socket = serverReactor.newAsyncSocketBuilder(acceptRequest)
+                    serverReactor.newAsyncSocketBuilder(acceptRequest)
                             .set(TCP_NODELAY, true)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                             .setReadHandler(new ServerReadHandler())
-                            .build();
-                    socket.start();
+                            .build()
+                            .start();
                 })
                 .build();
 
-        serverSocket.bind(serverAddress);
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
         return serverSocket;
     }
@@ -379,6 +380,8 @@ public abstract class AsyncSocket_RpcTest {
                     break;
                 }
                 upcast(payloadBuffer).flip();
+
+                iteration.incrementAndGet();
                 CompletableFuture future = futures.remove(callId);
                 if (future == null) {
                     throw new RuntimeException();

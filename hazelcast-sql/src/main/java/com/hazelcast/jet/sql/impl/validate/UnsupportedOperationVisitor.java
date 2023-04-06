@@ -251,9 +251,13 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_VIEWS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_JOBS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_TYPES);
+        SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_DATALINKS);
+        SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_RESOURCES);
 
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_SERIES);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_STREAM);
+
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GET_DDL);
 
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CSV_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_FLAT_FILE);

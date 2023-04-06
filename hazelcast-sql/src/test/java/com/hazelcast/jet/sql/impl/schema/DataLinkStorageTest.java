@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -48,7 +48,7 @@ public class DataLinkStorageTest extends SimpleTestInClusterSupport {
     public void when_put_then_isPresentInValues() {
         String name = randomName();
 
-        storage.put(name, dataLink(name, "type"));
+        storage.put(name, dataLink(name, "type", false));
 
         assertThat(storage.dataLinkNames().stream().filter(m -> m.equals(name))).isNotEmpty();
     }
@@ -56,8 +56,8 @@ public class DataLinkStorageTest extends SimpleTestInClusterSupport {
     @Test
     public void when_put_then_overridesPrevious() {
         String name = randomName();
-        DataLink originalDL = dataLink(name, "type1");
-        DataLink updatedDL = dataLink(name, "type2");
+        DataLinkCatalogEntry originalDL = dataLink(name, "type1", false);
+        DataLinkCatalogEntry updatedDL = dataLink(name, "type2", true);
 
         storage.put(name, originalDL);
         storage.put(name, updatedDL);
@@ -70,25 +70,25 @@ public class DataLinkStorageTest extends SimpleTestInClusterSupport {
     public void when_putIfAbsent_then_doesNotOverride() {
         String name = randomName();
 
-        assertThat(storage.putIfAbsent(name, dataLink(name, "type-1"))).isTrue();
-        assertThat(storage.putIfAbsent(name, dataLink(name, "type-2"))).isFalse();
+        assertThat(storage.putIfAbsent(name, dataLink(name, "type-1", true))).isTrue();
+        assertThat(storage.putIfAbsent(name, dataLink(name, "type-2", false))).isFalse();
         assertTrue(storage.allObjects().stream()
-                .anyMatch(dl -> dl instanceof DataLink && ((DataLink) dl).getType().equals("type-1")));
+                .anyMatch(dl -> dl instanceof DataLinkCatalogEntry && ((DataLinkCatalogEntry) dl).type().equals("type-1")));
         assertTrue(storage.allObjects().stream()
-                .noneMatch(dl -> dl instanceof DataLink && ((DataLink) dl).getType().equals("type-2")));
+                .noneMatch(dl -> dl instanceof DataLinkCatalogEntry && ((DataLinkCatalogEntry) dl).type().equals("type-2")));
     }
 
     @Test
     public void when_removeMapping_then_isNotPresentInValues() {
         String name = randomName();
 
-        storage.put(name, dataLink(name, "type"));
+        storage.put(name, dataLink(name, "type", false));
 
-        assertThat(storage.removeDataLink(name)).isNotNull();
+        assertThat(storage.removeDataLink(name)).isTrue();
         assertTrue(storage.dataLinkNames().stream().noneMatch(dl -> dl.equals(name)));
     }
 
-    private static DataLink dataLink(String name, String type) {
-        return new DataLink(name, type, emptyMap());
+    private static DataLinkCatalogEntry dataLink(String name, String type, boolean shared) {
+        return new DataLinkCatalogEntry(name, type, shared, emptyMap());
     }
 }

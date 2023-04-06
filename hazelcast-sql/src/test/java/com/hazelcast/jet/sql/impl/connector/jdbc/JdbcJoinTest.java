@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.SQLException;
@@ -218,19 +217,19 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
     public void joinWithOtherJdbcNonDefaultSchema() throws SQLException {
-        String schemaName = randomTableName();
+        String schemaName = randomName();
         executeJdbc("CREATE SCHEMA " + schemaName);
         String fullyQualifiedTable = schemaName + "." + tableName;
         createTable(fullyQualifiedTable);
         insertItems(fullyQualifiedTable, ITEM_COUNT);
-        createMapping(fullyQualifiedTable);
+        String mappingName = randomTableName();
+        createMapping(fullyQualifiedTable, mappingName);
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
                         "FROM " + tableName + " t1 " +
-                        "JOIN \"" + fullyQualifiedTable + "\" t2 " +
+                        "JOIN \"" + mappingName + "\" t2 " +
                         "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),

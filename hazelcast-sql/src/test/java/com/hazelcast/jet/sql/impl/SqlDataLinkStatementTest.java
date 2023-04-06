@@ -22,36 +22,100 @@ import com.hazelcast.datalink.DataLink;
 import com.hazelcast.datalink.impl.DataLinkTestUtil.DummyDataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlDataLinkStatementTest extends SqlTestSupport {
-    private InternalDataLinkService dataLinkService;
+    private InternalDataLinkService[] dataLinkServices;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        initialize(1, null);
+        initialize(2, null);
     }
 
     @Before
     public void setUp() throws Exception {
-        dataLinkService = getNodeEngineImpl(instance()).getDataLinkService();
+        dataLinkServices = new InternalDataLinkService[instances().length];
+        for (int i = 0; i < instances().length; i++) {
+            dataLinkServices[i] = getNodeEngineImpl(instances()[i]).getDataLinkService();
+        }
     }
 
     @Test
     public void when_createDataLink_then_success() {
         String dlName = randomName();
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE DUMMY "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
-        assertThat(dataLink).isNotNull();
-        assertThat(dataLink.getConfig().getClassName()).isEqualTo(DummyDataLink.class.getName());
-        assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
+
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+            assertThat(dataLink.getConfig().getType()).isEqualTo("DUMMY");
+            assertThat(dataLink.getConfig().isShared()).isFalse();
+            assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
+        }
+    }
+
+    @Test
+    public void when_createSharedDataLink_then_success() {
+        String dlName = randomName();
+        instance().getSql().execute("CREATE DATA LINK " + dlName
+                + " TYPE \"DUMMY\" "
+                + " SHARED "
+                + " OPTIONS ('b' = 'c')");
+
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+            assertThat(dataLink.getConfig().getType()).isEqualTo("DUMMY");
+            assertThat(dataLink.getConfig().isShared()).isTrue();
+            assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
+        }
+    }
+
+    @Test
+    public void when_createDefaultSharingDataLink_then_success() {
+        String dlName = randomName();
+        instance().getSql().execute("CREATE DATA LINK " + dlName
+                + " TYPE \"DUMMY\" "
+                + " OPTIONS ('b' = 'c')");
+
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+            assertThat(dataLink.getConfig().getType()).isEqualTo("DUMMY");
+            assertThat(dataLink.getConfig().isShared()).isTrue();
+            assertThat(dataLink.getConfig().getProperties()).containsEntry("b", "c");
+        }
+    }
+
+    @Test
+    public void when_createDataLink_fullyQualified_then_success() {
+        String dlName = randomName();
+        instance().getSql().execute("CREATE DATA LINK hazelcast.public." + dlName
+                + " TYPE \"DUMMY\" "
+                + " OPTIONS ('b' = 'c')");
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+            assertThat(dataLink.getConfig().getType()).isEqualTo("DUMMY");
+            assertThat(dataLink.getConfig().getProperties().get("b")).isEqualTo("c");
+        }
     }
 
     @Test
@@ -59,7 +123,8 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName = randomName();
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK hazelcast.yyy." + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " TYPE \"DUMMY\" "
+                        + " NOT SHARED "
                         + " OPTIONS ('b' = 'c')"))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("The data link must be created in the \"public\" schema");
@@ -69,33 +134,41 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     public void when_createDataLinkIfAlreadyExists_then_throws() {
         String dlName = randomName();
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
-        assertThat(dataLink).isNotNull();
+
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+        }
 
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " TYPE \"DUMMY\" "
+                        + " NOT SHARED "
                         + " OPTIONS ('b' = 'c')"))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Data link '" + dlName + "' already exists");
+                .hasMessageContaining("Data link already exists: " + dlName);
     }
 
     @Test
     public void when_createDataLinkIfAlreadyExistsCreatedByConfig_then_throws() {
         String dlName = randomName();
         DataLinkConfig dataLinkConfig = new DataLinkConfig(dlName)
-                .setClassName(DummyDataLink.class.getName())
+                .setType("dummy")
                 .setProperty("b", "c");
-        dataLinkService.createConfigDataLink(dataLinkConfig);
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            dataLinkService.createConfigDataLink(dataLinkConfig);
+        }
 
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                        + " TYPE \"DUMMY\" "
+                        + " NOT SHARED "
                         + " OPTIONS ('b' = 'c')"))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Data link '" + dlName + "' already exists");
+                .hasMessageContaining("Cannot replace a data link created from configuration");
     }
 
     @Test
@@ -104,7 +177,7 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE DATA LINK " + dlName))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting one of:\n    \"TYPE\" ...");
+                .hasMessageContaining("Was expecting one of:" + System.lineSeparator() + "    \"TYPE\" ...");
     }
 
     @Test
@@ -112,20 +185,25 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName = randomName();
         createMapping(dlName, int.class, int.class);
         instance().getSql().execute("CREATE DATA LINK " + dlName
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
-        DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
-        assertThat(dataLink).isNotNull();
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+        }
     }
 
     @Test
-    public void when_createDataLinkWithoutOptions_then_throws() {
+    public void when_createDataLinkWithoutOptions_then_success() {
         String dlName = randomName();
-        assertThatThrownBy(() ->
-                instance().getSql().execute("CREATE DATA LINK " + dlName
-                        + " TYPE \"" + DummyDataLink.class.getName() + "\" "))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Was expecting:\n    \"OPTIONS\" ...");
+
+        instance().getSql().execute("CREATE DATA LINK " + dlName  + " TYPE DUMMY SHARED");
+
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DataLink dataLink = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertThat(dataLink).isNotNull();
+        }
     }
 
     @Test
@@ -134,24 +212,28 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName2 = randomName();
 
         instance().getSql().execute("CREATE DATA LINK " + dlName1
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
         instance().getSql().execute("CREATE DATA LINK " + dlName2
-                + " TYPE \"" + DummyDataLink.class.getName() + "\" "
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
 
         instance().getSql().execute("DROP DATA LINK " + dlName1);
         instance().getSql().execute("DROP DATA LINK IF EXISTS " + dlName2);
 
-        assertThatThrownBy(() ->
-                dataLinkService.getAndRetainDataLink(dlName1, DummyDataLink.class))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Data link '" + dlName1 + "' not found");
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            assertThatThrownBy(() ->
+                    dataLinkService.getAndRetainDataLink(dlName1, DummyDataLink.class))
+                    .isInstanceOf(HazelcastException.class)
+                    .hasMessageContaining("Data link '" + dlName1 + "' not found");
 
-        assertThatThrownBy(() ->
-                dataLinkService.getAndRetainDataLink(dlName2, DummyDataLink.class))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Data link '" + dlName2 + "' not found");
+            assertThatThrownBy(() ->
+                    dataLinkService.getAndRetainDataLink(dlName2, DummyDataLink.class))
+                    .isInstanceOf(HazelcastException.class)
+                    .hasMessageContaining("Data link '" + dlName2 + "' not found");
+        }
     }
 
     @Test
@@ -159,9 +241,11 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
         String dlName = randomName();
 
         DataLinkConfig dataLinkConfig = new DataLinkConfig(dlName)
-                .setClassName(DummyDataLink.class.getName())
+                .setType("dummy")
                 .setProperty("b", "c");
-        dataLinkService.createConfigDataLink(dataLinkConfig);
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            dataLinkService.createConfigDataLink(dataLinkConfig);
+        }
 
         assertThatThrownBy(() ->
                 instance().getSql().execute("DROP DATA LINK " + dlName))
@@ -170,12 +254,9 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_dropNonExistentDataLink_withIfExists_then_throws() {
-        String dlName = randomName();
-        assertThatThrownBy(() ->
-                instance().getSql().execute("DROP DATA LINK IF EXISTS " + dlName))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Data link '" + dlName + "' not found");
+    public void when_dropNonExistentDataLink_withIfExists_then_success() {
+        // this should throw no error
+        instance().getSql().execute("DROP DATA LINK IF EXISTS " + randomName());
     }
 
     @Test
@@ -185,5 +266,25 @@ public class SqlDataLinkStatementTest extends SqlTestSupport {
                 instance().getSql().execute("DROP DATA LINK " + dlName))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Data link does not exist");
+    }
+
+    @Test
+    public void when_createIfNotExists_then_notOverwritten() {
+        String dlName = randomName();
+        instance().getSql().execute("CREATE DATA LINK " + dlName
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
+                + " OPTIONS ('b' = 'c')");
+
+        instance().getSql().execute("CREATE DATA LINK IF NOT EXISTS " + dlName
+                + " TYPE \"DUMMY\" "
+                + " NOT SHARED "
+                + " OPTIONS ('d' = 'e')");
+
+        for (InternalDataLinkService dataLinkService : dataLinkServices) {
+            DummyDataLink link = dataLinkService.getAndRetainDataLink(dlName, DummyDataLink.class);
+            assertNotNull(link.options().get("b"));
+            assertNull(link.options().get("d"));
+        }
     }
 }

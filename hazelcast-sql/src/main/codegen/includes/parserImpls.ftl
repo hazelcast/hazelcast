@@ -24,7 +24,9 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     SqlIdentifier name;
     SqlIdentifier externalName = null;
     SqlNodeList columns = SqlNodeList.EMPTY;
-    SqlIdentifier type;
+    SqlIdentifier dataLink = null;
+    SqlIdentifier connectorType = null;
+    SqlIdentifier objectType = null;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
     boolean ifNotExists = false;
 }
@@ -35,11 +37,23 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     ]
     name = CompoundIdentifier()
     [
-        <EXTERNAL> <NAME> { externalName = SimpleIdentifier(); }
+        <EXTERNAL> <NAME> { externalName = CompoundIdentifier(); }
     ]
     columns = MappingColumns()
-    <TYPE>
-    type = SimpleIdentifier()
+
+    (
+        <DATA> <LINK>
+        dataLink = CompoundIdentifier()
+        |
+        [ <CONNECTOR> ] <TYPE>
+        connectorType = SimpleIdentifier()
+    )
+
+    [
+        <OBJECT> <TYPE>
+        objectType = SimpleIdentifier()
+    ]
+
     [
         <OPTIONS>
         sqlOptions = SqlOptions()
@@ -49,7 +63,9 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
             name,
             externalName,
             columns,
-            type,
+            dataLink,
+            connectorType,
+            objectType,
             sqlOptions,
             replace,
             ifNotExists,
@@ -65,9 +81,10 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
     boolean ifNotExists = false;
+    boolean shared = true;
     SqlIdentifier name;
     SqlIdentifier type;
-    SqlNodeList sqlOptions;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
 }
 {
     <DATA> <LINK>
@@ -79,8 +96,19 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
     <TYPE>
     type = SimpleIdentifier()
 
-    <OPTIONS>
-    sqlOptions = SqlOptions()
+    [
+        (
+            <NOT> <SHARED>  { shared = false; }
+            |
+            <SHARED>  { shared = true; }
+        )
+    ]
+
+    [
+        <OPTIONS>
+        sqlOptions = SqlOptions()
+    ]
+
     {
         return new SqlCreateDataLink(
             startPos.plus(getPos()),
@@ -88,6 +116,7 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
             ifNotExists,
             name,
             type,
+            shared,
             sqlOptions
         );
     }
@@ -108,6 +137,7 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
     ]
     name = CompoundIdentifier()
     columns = TypeColumns()
+
     <OPTIONS>
     sqlOptions = SqlOptions()
     {
@@ -747,6 +777,7 @@ SqlOption SqlOption() :
 SqlShowStatement SqlShowStatement() :
 {
     ShowStatementTarget target;
+    SqlIdentifier dataLinkName = null;
 }
 {
     <SHOW>
@@ -758,9 +789,13 @@ SqlShowStatement SqlShowStatement() :
         <JOBS> { target = ShowStatementTarget.JOBS; }
     |
         <TYPES> { target = ShowStatementTarget.TYPES; }
+    |
+        <DATA> <LINKS> { target = ShowStatementTarget.DATALINKS; }
+    |
+        <RESOURCES> <FOR> { dataLinkName = CompoundIdentifier(); target = ShowStatementTarget.RESOURCES; }
     )
     {
-        return new SqlShowStatement(getPos(), target);
+        return new SqlShowStatement(getPos(), target, dataLinkName);
     }
 }
 

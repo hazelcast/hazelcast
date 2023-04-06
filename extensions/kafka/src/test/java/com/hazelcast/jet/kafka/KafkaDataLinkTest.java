@@ -32,8 +32,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 import java.util.Properties;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Fail.fail;
@@ -41,7 +44,7 @@ import static org.assertj.core.api.Fail.fail;
 
 public class KafkaDataLinkTest {
 
-    private static KafkaTestSupport kafkaTestSupport = KafkaTestSupport.create();
+    private static final KafkaTestSupport kafkaTestSupport = KafkaTestSupport.create();
     private KafkaDataLink kafkaDataLink;
 
     @BeforeClass
@@ -50,12 +53,12 @@ public class KafkaDataLinkTest {
     }
 
     @AfterClass
-    public static void afterClass() throws Exception {
+    public static void afterClass() {
         kafkaTestSupport.shutdownKafkaCluster();
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (kafkaDataLink != null) {
             kafkaDataLink.destroy();
         }
@@ -83,7 +86,7 @@ public class KafkaDataLinkTest {
 
     @Test
     public void non_shared_data_link_should_return_new_producer() {
-        kafkaDataLink = createNonSharedKafkaDataLink(kafkaTestSupport);
+        kafkaDataLink = createNonSharedKafkaDataLink();
 
         try (Producer<Object, Object> p1 = kafkaDataLink.getProducer(null);
              Producer<Object, Object> p2 = kafkaDataLink.getProducer(null)) {
@@ -95,7 +98,10 @@ public class KafkaDataLinkTest {
     public void list_resources_should_return_empty_list_for_no_topics() {
         kafkaDataLink = createKafkaDataLink(kafkaTestSupport);
 
-        assertThat(kafkaDataLink.listResources()).isEmpty();
+        Collection<DataLinkResource> resources = kafkaDataLink.listResources();
+        List<DataLinkResource> withoutConfluent =
+                resources.stream().filter(r -> !r.name().contains("__confluent")).collect(toList());
+        assertThat(withoutConfluent).isEmpty();
     }
 
     @Test
@@ -106,7 +112,11 @@ public class KafkaDataLinkTest {
         kafkaDataLink = createKafkaDataLink(localTestSupport);
         try {
             localTestSupport.createTopic("my-topic", 2);
-            assertThat(kafkaDataLink.listResources())
+
+            Collection<DataLinkResource> resources = kafkaDataLink.listResources();
+            List<DataLinkResource> withoutConfluent =
+                    resources.stream().filter(r -> !r.name().contains("__confluent")).collect(toList());
+            assertThat(withoutConfluent)
                     .containsExactly(new DataLinkResource("topic", "my-topic"));
         } finally {
             kafkaDataLink.destroy();
@@ -163,16 +173,16 @@ public class KafkaDataLinkTest {
 
     private KafkaDataLink createKafkaDataLink(KafkaTestSupport kafkaTestSupport) {
         DataLinkConfig config = new DataLinkConfig("kafka-data-link")
-                .setClassName(KafkaDataLink.class.getName())
+                .setType("Kafka")
                 .setShared(true)
                 .setProperties(properties(kafkaTestSupport));
 
         return new KafkaDataLink(config);
     }
 
-    private KafkaDataLink createNonSharedKafkaDataLink(KafkaTestSupport kafkaTestSupport) {
+    private KafkaDataLink createNonSharedKafkaDataLink() {
         DataLinkConfig config = new DataLinkConfig("kafka-data-link")
-                .setClassName(KafkaDataLink.class.getName())
+                .setType("Kafka")
                 .setShared(false)
                 .setProperties(properties(kafkaTestSupport));
 

@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static java.util.Objects.requireNonNull;
 
 public class SqlAlterJob extends SqlAlter {
@@ -99,27 +100,11 @@ public class SqlAlterJob extends SqlAlter {
     protected void unparseAlterOperation(SqlWriter writer, int leftPrec, int rightPrec) {
         name.unparse(writer, leftPrec, rightPrec);
 
-        if (options != null && !options.isEmpty()) {
-            writer.newlineAndIndent();
-            writer.keyword("OPTIONS");
-            SqlWriter.Frame withFrame = writer.startList("(", ")");
-            for (SqlNode property : options) {
-                printIndent(writer);
-                property.unparse(writer, leftPrec, rightPrec);
-            }
-            writer.newlineAndIndent();
-            writer.endList(withFrame);
-        }
+        unparseOptions(writer, options);
 
         if (operation != null) {
             writer.keyword(operation.name());
         }
-    }
-
-    private void printIndent(SqlWriter writer) {
-        writer.sep(",", false);
-        writer.newlineAndIndent();
-        writer.print(" ");
     }
 
     @Override

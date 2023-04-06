@@ -37,7 +37,7 @@ import java.util.Map.Entry;
 import java.util.function.Predicate;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeByName;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.getBsonType;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATA_LINK_REF_OPTION;
@@ -64,7 +64,7 @@ class FieldResolver {
      *                                  in the collection
      */
     List<MappingField> resolveFields(
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             boolean stream
@@ -78,7 +78,8 @@ class FieldResolver {
                 MappingField mappingField = new MappingField(
                         documentField.columnName,
                         resolveType(documentField.columnType),
-                        documentField.columnName
+                        documentField.columnName,
+                        documentField.columnType.name()
                 );
                 mappingField.setPrimaryKey(pkColumnName.test(mappingField));
                 resolvedFields.add(mappingField);
@@ -88,17 +89,32 @@ class FieldResolver {
                 String prefixIfStream = stream ? "fullDocument." : "";
                 String nameInMongo = f.externalName() == null ? prefixIfStream + f.name() : f.externalName();
 
-                DocumentField documentField = dbFields.get(nameInMongo);
+                DocumentField documentField = getField(dbFields, f, stream);
                 if (documentField == null) {
                     throw new IllegalArgumentException("Could not resolve field with name " + nameInMongo);
                 }
-                MappingField mappingField = new MappingField(f.name(), f.type(), nameInMongo);
+                MappingField mappingField = new MappingField(f.name(), f.type(), documentField.columnName,
+                        documentField.columnType.name());
                 mappingField.setPrimaryKey(pkColumnName.test(mappingField));
                 validateType(f, documentField);
                 resolvedFields.add(mappingField);
             }
         }
         return resolvedFields;
+    }
+
+    private DocumentField getField(Map<String, DocumentField> dbFields, MappingField f, boolean stream) {
+        String externalName = f.externalName() == null ? f.name() : f.externalName();
+        if (stream) {
+            String withPrefix = "fullDocument." + externalName;
+            if (dbFields.containsKey(withPrefix)) {
+                return dbFields.get(withPrefix);
+            } else {
+                return dbFields.get(externalName);
+            }
+        } else {
+            return dbFields.get(externalName);
+        }
     }
 
     boolean isId(String nameInMongo, boolean stream) {
@@ -116,9 +132,8 @@ class FieldResolver {
             case DOUBLE: return QueryDataType.DOUBLE;
             case BOOLEAN: return QueryDataType.BOOLEAN;
             case TIMESTAMP:
-                return QueryDataType.TIMESTAMP;
             case DATE_TIME:
-                return QueryDataType.DATE;
+                return QueryDataType.TIMESTAMP;
             case STRING:
             case JAVASCRIPT:
             case JAVASCRIPT_WITH_SCOPE:
@@ -143,7 +158,8 @@ class FieldResolver {
         }
     }
 
-    Map<String, DocumentField> readFields(String collectionName, Map<String, String> options, boolean stream) {
+    Map<String, DocumentField> readFields(String[] externalName, Map<String, String> options, boolean stream) {
+        String collectionName = externalName[0];
         Map<String, DocumentField> fields = new HashMap<>();
         Tuple2<MongoClient, MongoDataLink> connect = connect(options);
         try (MongoClient client = connect.f0()) {
@@ -162,8 +178,7 @@ class FieldResolver {
             if (properties != null) {
                 for (Entry<String, Object> property : properties.entrySet()) {
                     Document props = (Document) property.getValue();
-                    String bsonTypeName = (String) props.get("bsonType");
-                    BsonType bsonType = resolveTypeByName(bsonTypeName);
+                    BsonType bsonType = getBsonType(props);
 
                     String key = property.getKey();
                     if (stream) {
@@ -195,6 +210,9 @@ class FieldResolver {
             if (stream) {
                 fields.put("operationType", new DocumentField(BsonType.STRING, "operationType"));
                 fields.put("resumeToken", new DocumentField(BsonType.STRING, "resumeToken"));
+                fields.put("wallTime", new DocumentField(BsonType.DATE_TIME, "wallTime"));
+                fields.put("ts", new DocumentField(BsonType.DATE_TIME, "ts"));
+                fields.put("clusterTime", new DocumentField(BsonType.TIMESTAMP, "clusterTime"));
             }
         } finally {
             if (connect.f1() != null) {

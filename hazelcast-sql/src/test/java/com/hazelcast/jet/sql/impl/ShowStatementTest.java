@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.TestProcessors;
@@ -49,11 +51,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ShowStatementTest extends SqlTestSupport {
 
+    private static final String DATA_LINK_NAME = "test-data-link";
+
     private final SqlService sqlService = instance().getSql();
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        final Config config = smallInstanceConfig();
+        config.getDataLinkConfigs().put(DATA_LINK_NAME, new DataLinkConfig()
+                .setName(DATA_LINK_NAME)
+                .setType("dummy"));
+        initialize(2, config);
     }
 
     @Test
@@ -103,7 +111,7 @@ public class ShowStatementTest extends SqlTestSupport {
     @Test
     public void test_showViews() {
         List<String> viewNames = IntStream.range(0, 5).mapToObj(i -> "v" + i).collect(toList());
-        for (String viewName: viewNames) {
+        for (String viewName : viewNames) {
             sqlService.execute("create view " + viewName + " AS SELECT 1");
         }
 
@@ -158,6 +166,28 @@ public class ShowStatementTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SHOW JOBS", "param"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("SHOW JOBS does not support dynamic parameters");
+    }
+
+    @Test
+    public void test_showResources() {
+        assertRowsOrdered("SHOW RESOURCES FOR \"" + DATA_LINK_NAME + "\"", rows(2,
+                "testName1", "testType1",
+                "testName2", "testType2"
+        ));
+    }
+
+    @Test
+    public void test_showResources_nonExistent() {
+        assertThatThrownBy(() -> sqlService.execute("SHOW RESOURCES FOR non_existent_datalink"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Data link 'non_existent_datalink' not found");
+    }
+
+    @Test
+    public void test_showResources_nonExistent_wrongSchema() {
+        assertThatThrownBy(() -> sqlService.execute("SHOW RESOURCES FOR foo_schema.\"" + DATA_LINK_NAME + "\""))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Data links exist only in the 'public' schema");
     }
 
     private void createJobInJava(String jobName) {

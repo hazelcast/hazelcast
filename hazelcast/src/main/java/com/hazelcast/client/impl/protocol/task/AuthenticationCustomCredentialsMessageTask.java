@@ -39,18 +39,12 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
-    protected String getClientType() {
-        return parameters.clientType;
-    }
-
-    @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
     protected ClientAuthenticationCustomCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        ClientAuthenticationCustomCodec.RequestParameters parameters = ClientAuthenticationCustomCodec
-                .decodeRequest(clientMessage);
-        UUID uuid = parameters.uuid;
-        assert uuid != null;
-        clientUuid = uuid;
+        ClientAuthenticationCustomCodec.RequestParameters parameters
+                = ClientAuthenticationCustomCodec.decodeRequest(clientMessage);
+        assert parameters.uuid != null;
+        clientUuid = parameters.uuid;
         clusterName = parameters.clusterName;
         credentials = new SimpleTokenCredentials(parameters.credentials);
         clientSerializationVersion = parameters.serializationVersion;
@@ -61,41 +55,16 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
-    protected ClientMessage encodeResponse(Object response) {
-        return (ClientMessage) response;
-    }
-
-    @Override
     @SuppressWarnings("checkstyle:ParameterNumber")
-    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
-                                       int partitionCount, UUID clusterId, boolean clientFailoverSupported,
-                                       boolean isAuthenticated, List<Integer> altoPorts) {
-        String serverHazelcastVersion = "";
-        if (isAuthenticated) {
-            serverHazelcastVersion = getMemberBuildInfo().getVersion();
-        }
-        return ClientAuthenticationCustomCodec.encodeResponse(status, thisAddress, uuid, version,
-                        serverHazelcastVersion, partitionCount, clusterId, clientFailoverSupported, altoPorts);
+    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte serializationVersion,
+                                       String serverVersion, int partitionCount, UUID clusterId,
+                                       boolean clientFailoverSupported, List<Integer> tpcPorts) {
+        return ClientAuthenticationCustomCodec.encodeResponse(status, thisAddress, uuid, serializationVersion,
+                serverVersion, partitionCount, clusterId, clientFailoverSupported);
     }
 
     @Override
-    public String getServiceName() {
-        return null;
+    protected String getClientType() {
+        return parameters.clientType;
     }
-
-    @Override
-    public String getDistributedObjectName() {
-        return null;
-    }
-
-    @Override
-    public String getMethodName() {
-        return null;
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return null;
-    }
-
 }

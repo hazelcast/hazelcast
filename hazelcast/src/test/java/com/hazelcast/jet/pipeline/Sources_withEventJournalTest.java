@@ -78,7 +78,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
 
         DataLinkConfig dataLinkConfig = new DataLinkConfig(HZ_CLIENT_EXTERNAL_REF);
-        dataLinkConfig.setClassName(HazelcastDataLink.class.getName());
+        dataLinkConfig.setType("HZ");
 
         // Read XML and set as DataLinkConfig
         String xmlString = readClusterConfig("hazelcast-client-test-external.xml", clusterName);
@@ -439,6 +439,41 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
             assertTrueEventually(() -> assertEquals(expected, new ArrayList<>(sinkList)), 10);
             job.cancel();
         }
+    }
+
+    @Test
+    public void remoteMapJournal_withExternalConfigMoreJobsWithSharedDatalink() throws Exception {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        IMap<String, Integer> map = remoteHz.getMap(mapName);
+        String sinkName2 = randomName();
+        IList<Object> sinkList2 = hz().getList(sinkName2);
+
+        range(0, itemCount).forEach(i -> map.put(String.valueOf(i), i));
+
+        // When
+        Job jobToCancel = startJobForExternalConfigMoreJobsWithSharedDatalink(mapName, sinkName);
+        Job job = startJobForExternalConfigMoreJobsWithSharedDatalink(mapName, sinkName2);
+
+        // Then
+        assertSizeEventually(itemCount, sinkList);
+        assertSizeEventually(itemCount, sinkList2);
+
+        jobToCancel.cancel();
+
+        range(itemCount, 2 * itemCount).forEach(i -> map.put(String.valueOf(i), i));
+        assertSizeEventually(2 * itemCount, sinkList2);
+        job.cancel();
+    }
+
+    private Job startJobForExternalConfigMoreJobsWithSharedDatalink(String sourceMapName,
+            String sinkName) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(Sources.remoteMapJournal(sourceMapName, dataLinkRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST))
+                .withoutTimestamps()
+                .map(entryValue())
+                .writeTo(Sinks.list(sinkName));
+        return hz().getJet().newJob(pipeline);
     }
 
     @Test

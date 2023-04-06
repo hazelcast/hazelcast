@@ -37,7 +37,6 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
-import com.hazelcast.jet.kafka.KafkaDataLink;
 import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.kafka.TopicsConfig;
 import com.hazelcast.jet.kafka.TopicsConfig.TopicConfig;
@@ -816,7 +815,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     public void when_dataLinkRef_then_readMessages() throws Exception {
         instance().getConfig().addDataLinkConfig(
                 new DataLinkConfig("kafka-config")
-                        .setClassName(KafkaDataLink.class.getName())
+                        .setType("Kafka")
                         .setShared(false) // shared would eagerly create a producer, which needs serializer properties
                         .setProperties(properties())
         );

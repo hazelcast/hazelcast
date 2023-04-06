@@ -79,7 +79,7 @@
                 <xs:element name="dynamic-configuration" type="dynamic-configuration" minOccurs="0"/>
                 <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="data-link" type="data-link" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="alto" type="alto" minOccurs="0"/>
+                <xs:element name="tpc" type="tpc" minOccurs="0"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -1371,7 +1371,7 @@
             <xs:element name="failure-detector" type="failure-detector" minOccurs="0"/>
             <xs:element name="rest-api" type="rest-api" minOccurs="0"/>
             <xs:element name="memcache-protocol" type="memcache-protocol" minOccurs="0"/>
-            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
+            <xs:element name="tpc-socket" type="tpc-socket" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="tcp-ip">
@@ -4901,7 +4901,7 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
-            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
+            <xs:element name="tpc-socket" type="tpc-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -4971,7 +4971,7 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
-            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
+            <xs:element name="tpc-socket" type="tpc-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -5070,7 +5070,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
+            <xs:element name="tpc-socket" type="tpc-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -6060,18 +6060,22 @@
 
     <xs:complexType name="data-link">
         <xs:all>
-            <xs:element name="class-name" type="xs:string">
+            <xs:element name="type" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>
-                        The name of the class implementing DataLink.
+                        The type of the DataLink.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="shared" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
-                        If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or
-                        instances of MapStore.
+                        True if an instance of the data link will be shared.
+                        Depending on the implementation of the DataLink the shared instance may be
+                        single a thread-safe instance, or not thread-safe, but a pooled instance.
+                        False when on each usage a new instance of the underlying resource
+                        should be created.
+                        The default is true.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -6086,11 +6090,11 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="alto">
+    <xs:complexType name="tpc">
         <xs:annotation>
             <xs:documentation>
-                Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture. It's still
-                being developed and everything is subject to change. Alto is disabled by default.
+                Hazelcast TPC is the next generation of Hazelcast built with thread per core architecture. It's still
+                being developed and everything is subject to change. TPC is disabled by default.
             </xs:documentation>
         </xs:annotation>
         <xs:all>
@@ -6105,37 +6109,37 @@
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    Enables Hazelcast Alto. Disabled by default.
+                    Enables Hazelcast TPC. Disabled by default.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="alto-socket">
+    <xs:complexType name="tpc-socket">
         <xs:annotation>
             <xs:documentation>
-                Socket configuration for Alto. In Alto, each eventloop has its own socket.
+                Socket configuration for TPC. In TPC, each eventloop has its own sockets.
             </xs:documentation>
         </xs:annotation>
         <xs:all>
             <xs:element name="port-range" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Configures the port range available for Alto sockets.
+                        Configures the port range available for TPC sockets.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="receive-buffer-size-kb" type="xs:integer" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Configures SO_RCVBUF socket option for Alto sockets.
+                        Configures SO_RCVBUF socket option for TPC sockets.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="send-buffer-size-kb" type="xs:integer" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Configures SO_SNDBUF socket option for Alto sockets.
+                        Configures SO_SNDBUF socket option for TPC sockets.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

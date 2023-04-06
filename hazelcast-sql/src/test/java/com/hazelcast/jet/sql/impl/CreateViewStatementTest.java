@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -39,7 +40,6 @@ public class CreateViewStatementTest extends SqlTestSupport {
     private static final String LE = System.lineSeparator();
     private IMap<Integer, Integer> map;
     private IMap<String, Object> viewStorage;
-
 
     @BeforeClass
     public static void beforeClass() {
@@ -60,6 +60,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
+        IMap<String, Object> viewStorage = instance().getMap(SQL_CATALOG_MAP_NAME);
         assertThat(viewStorage.containsKey("v")).isTrue();
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
         assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"" + LE
@@ -74,6 +75,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "CREATE OR REPLACE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
+        IMap<String, Object> viewStorage = instance().getMap(SQL_CATALOG_MAP_NAME);
         assertThat(viewStorage.containsKey("v")).isTrue();
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
         assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"" + LE
@@ -88,6 +90,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
+        IMap<String, Object> viewStorage = instance().getMap(SQL_CATALOG_MAP_NAME);
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
         assertThat(((View) viewStorage.get("v")).query()).isEqualTo("SELECT \"map\".\"__key\", \"map\".\"this\"" + LE
                 + "FROM \"hazelcast\".\"public\".\"map\" AS \"map\"");
@@ -107,6 +110,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
+        IMap<String, Object> viewStorage = instance().getMap(SQL_CATALOG_MAP_NAME);
         assertThat(viewStorage.containsKey("v")).isTrue();
         assertThat(viewStorage.get("v")).isInstanceOf(View.class);
 
@@ -141,6 +145,7 @@ public class CreateViewStatementTest extends SqlTestSupport {
         String sql = "CREATE VIEW v AS SELECT * FROM map";
         instance().getSql().execute(sql);
 
+        IMap<String, Object> viewStorage = instance().getMap(SQL_CATALOG_MAP_NAME);
         assertThat(viewStorage.containsKey("v")).isTrue();
 
         sql = "DROP VIEW v";

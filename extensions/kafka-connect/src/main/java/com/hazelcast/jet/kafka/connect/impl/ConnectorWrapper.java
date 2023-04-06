@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
@@ -40,6 +41,7 @@ public class ConnectorWrapper {
     private final int tasksMax;
     private final List<TaskRunner> taskRunners = new CopyOnWriteArrayList<>();
     private final AtomicInteger taskIdGenerator = new AtomicInteger();
+    private final ReentrantLock reconfigurationLock = new ReentrantLock();
 
     private final String name;
 
@@ -101,12 +103,21 @@ public class ConnectorWrapper {
     }
 
     private void requestTaskReconfiguration() {
-        LOGGER.fine("Updating tasks configuration");
-        List<Map<String, String>> taskConfigs = connector.taskConfigs(Math.min(tasksMax, taskRunners.size()));
+        if (taskRunners.isEmpty()) {
+            return;
+        }
+        try {
+            reconfigurationLock.lock();
+            LOGGER.fine("Updating tasks configuration");
+            int taskRunnersSize = taskRunners.size();
+            List<Map<String, String>> taskConfigs = connector.taskConfigs(Math.min(tasksMax, taskRunnersSize));
 
-        for (int i = 0; i < taskRunners.size(); i++) {
-            Map<String, String> taskConfig = i < taskConfigs.size() ? taskConfigs.get(i) : null;
-            taskRunners.get(i).updateTaskConfig(taskConfig);
+            for (int i = 0; i < taskRunnersSize; i++) {
+                Map<String, String> taskConfig = i < taskConfigs.size() ? taskConfigs.get(i) : null;
+                taskRunners.get(i).updateTaskConfig(taskConfig);
+            }
+        } finally {
+            reconfigurationLock.unlock();
         }
     }
 

@@ -18,12 +18,16 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
 import org.bson.BsonTimestamp;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 import java.util.function.Predicate;
+
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 final class Options {
 
@@ -32,19 +36,29 @@ final class Options {
     static final String DATABASE_NAME_OPTION = "database";
     static final String START_AT_OPTION = "startAt";
     static final String PK_COLUMN = "idColumn";
+    private static final String POSSIBLE_VALUES = "This property should " +
+            " have value of: a) 'now' b) time in epoch milliseconds or c) " +
+            " ISO-formatted instant in UTC timezone, like '2023-03-24T15:31:00Z'.";
 
     private Options() {
     }
 
     static BsonTimestamp startAt(Map<String, String> options) {
         String startAtValue = options.get(START_AT_OPTION);
+        if (isNullOrEmpty(startAtValue)) {
+            throw QueryException.error("startAt property is required for MongoDB stream. " + POSSIBLE_VALUES);
+        }
         if ("now".equalsIgnoreCase(startAtValue)) {
             return MongoUtilities.bsonTimestampFromTimeMillis(System.currentTimeMillis());
         } else {
             try {
                 return MongoUtilities.bsonTimestampFromTimeMillis(Long.parseLong(startAtValue));
             } catch (NumberFormatException e) {
-                return MongoUtilities.bsonTimestampFromTimeMillis(Instant.parse(startAtValue).toEpochMilli());
+                try {
+                    return MongoUtilities.bsonTimestampFromTimeMillis(Instant.parse(startAtValue).toEpochMilli());
+                } catch (DateTimeParseException ex) {
+                    throw QueryException.error("Invalid startAt value: '" + startAtValue + "'. " + POSSIBLE_VALUES);
+                }
             }
         }
     }

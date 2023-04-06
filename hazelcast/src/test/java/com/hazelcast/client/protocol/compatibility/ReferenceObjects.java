@@ -48,6 +48,7 @@ import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastJsonValue;
@@ -927,4 +928,7 @@ public class ReferenceObjects {
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
     public static HazelcastJsonValue aHazelcastJsonValue = new HazelcastJsonValue("{'value': ''}");
+    public static List<PartitioningAttributeConfig> aListOfPartitioningAttributeConfigs = Collections.singletonList(
+            new PartitioningAttributeConfig(aString)
+    );
 }

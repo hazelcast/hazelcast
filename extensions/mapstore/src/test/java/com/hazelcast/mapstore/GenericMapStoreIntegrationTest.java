@@ -22,7 +22,6 @@ import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.map.EntryProcessor;
@@ -39,7 +38,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,6 +47,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -59,6 +59,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
+        assumeDockerEnabled();
         initializeBeforeClass(new H2DatabaseProvider());
     }
 
@@ -71,7 +72,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
                 .addDataLinkConfig(
                         new DataLinkConfig(TEST_DATABASE_REF)
-                                .setClassName(JdbcDataLink.class.getName())
+                                .setType("jdbc")
                                 .setProperty("jdbcUrl", dbConnectionUrl)
                 );
 
@@ -158,7 +159,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         client.getConfig().addDataLinkConfig(
                 new DataLinkConfig("dynamically-added-datalink")
-                        .setClassName(JdbcDataLink.class.getName())
+                        .setType("jdbc")
                         .setProperty("jdbcUrl", dbConnectionUrl)
         );
 
@@ -302,7 +303,13 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
         map.loadAll(false);
 
-        execute("DROP MAPPING \"__map-store." + tableName + "\"");
+        String mappingName = "__map-store." + tableName;
+        execute("DROP MAPPING \"" + mappingName + "\"");
+
+        // DROP MAPPING is executed asynchronously. Ensure that it has finished
+        Row row = new Row(mappingName);
+        List<Row> rows = Collections.singletonList(row);
+        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 30);
 
         String message = "did you forget to CREATE MAPPING?";
         Person person = new Person(42, "name-42");
@@ -324,10 +331,8 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         map.destroy();
 
         Row row = new Row("__map-store." + tableName);
-        List<Row> rows = Arrays.asList(row);
-        assertTrueEventually(() -> {
-            assertDoesNotContainRow(client, "SHOW MAPPINGS", rows);
-        }, 5);
+        List<Row> rows = Collections.singletonList(row);
+        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 5);
     }
 
     @Test
@@ -348,7 +353,10 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         // shutdown the member - this will call destroy on the MapStore on this member,
         // which should not drop the mapping in this case
         hz3.shutdown();
-        assertClusterSizeEventually(2, instance());
+        // Ensure that members have detected hz3 has shut down
+        assertClusterSizeEventually(2, instances());
+        // Ensure that the client has detected hz3 has shut down
+        assertClusterSizeEventually(2, client);
 
         // The new item should still be loadable via the mapping
         executeJdbc("INSERT INTO " + tableName + " VALUES(1000, 'name-1000')");
