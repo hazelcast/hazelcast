@@ -169,7 +169,7 @@ class FieldResolver {
         Tuple2<MongoClient, MongoDataConnection> connect = connect(dataConnectionName, options);
         try (MongoClient client = connect.f0()) {
             requireNonNull(client);
-            String databaseName = Options.getDatabaseName(nodeEngine, dataConnectionName, options);
+            String databaseName = Options.getDatabaseName(nodeEngine, externalNames, dataConnectionName);
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()
