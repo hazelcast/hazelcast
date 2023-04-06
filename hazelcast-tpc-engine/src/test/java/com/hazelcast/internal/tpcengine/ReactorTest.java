@@ -18,7 +18,7 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
-import com.hazelcast.internal.tpcengine.net.ReadHandler;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import org.junit.After;
 import org.junit.Test;
 

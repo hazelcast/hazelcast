@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpcengine.nio;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilderTest;
-import com.hazelcast.internal.tpcengine.net.DevNullReadHandler;
+import com.hazelcast.internal.tpcengine.net.DevNullAsyncSocketReader;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
