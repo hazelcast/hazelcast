@@ -61,7 +61,12 @@ public class StreamAggregatePhysicalRel extends Aggregate implements PhysicalRel
     }
 
     @Override
-    public Aggregate copy(RelTraitSet traitSet, RelNode input, ImmutableBitSet groupSet, @Nullable List<ImmutableBitSet> groupSets, List<AggregateCall> aggCalls) {
+    public Aggregate copy(
+            RelTraitSet traitSet,
+            RelNode input,
+            ImmutableBitSet groupSet,
+            @Nullable List<ImmutableBitSet> groupSets,
+            List<AggregateCall> aggCalls) {
         return new StreamAggregatePhysicalRel(getCluster(), traitSet, getHints(), input, groupSet, groupSets, aggCalls);
     }
 
