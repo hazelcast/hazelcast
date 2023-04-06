@@ -97,6 +97,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     @Override
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public final void beforeRun() throws Exception {
         super.beforeRun();
 
