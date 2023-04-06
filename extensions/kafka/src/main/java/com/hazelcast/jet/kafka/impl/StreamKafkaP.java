@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
@@ -52,6 +53,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -75,6 +77,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     private final TopicsConfig topicsConfig;
     private List<String> topics;
     private int totalParallelism;
+    private ProcessingGuarantee processingGuarantee;
 
     private Consumer<K, V> consumer;
     private long nextMetadataCheck = Long.MIN_VALUE;
@@ -126,7 +129,22 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         }
         processorIndex = context.globalProcessorIndex();
         totalParallelism = context.totalParallelism();
+        processingGuarantee = context.processingGuarantee();
         consumer = kafkaConsumerFn.apply(context);
+        if (processingGuarantee == NONE) {
+            warnWhenInitialOffsetsProvided();
+        }
+    }
+
+    private void warnWhenInitialOffsetsProvided() {
+        topicsConfig.getTopicConfigs().forEach((topicName, config) -> {
+            Map<Integer, Long> partitionsInitialOffsets = config.getPartitionsInitialOffsets();
+            if (!partitionsInitialOffsets.isEmpty()) {
+                getLogger().warning("Provided partitions initial offsets: " + partitionsInitialOffsets
+                        + " for topic: " + topicName
+                        + " will be ignored, because job's processing guarantee is: " + processingGuarantee);
+            }
+        });
     }
 
     private void assignPartitions() {
@@ -185,7 +203,9 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
                 // beginning.
                 getLogger().info("Seeking to the beginning of newly-discovered partitions: " + newAssignments);
                 consumer.seekToBeginning(newAssignments);
-            } else {
+            } else if (processingGuarantee != NONE) {
+                // For processing guarantee equal to NONE partitions initial offsets
+                // configuration is ignored entirely.
                 seekToInitialOffsets(newAssignments);
             }
         }
