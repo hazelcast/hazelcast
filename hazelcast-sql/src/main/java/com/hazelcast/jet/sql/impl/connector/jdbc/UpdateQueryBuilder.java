@@ -53,8 +53,8 @@ class UpdateQueryBuilder {
                         throw new UnsupportedOperationException(requireNonNull(pair.right).toString());
                     }
                     parameterPositions.add(pos);
-                    String externalFieldName = table.getField(fieldNames.get(i)).externalName();
-                    return dialect.quoteIdentifier(table.getField(pair.left).externalName()) + "=?";
+                    String externalFieldName = table.getField(pair.left).externalName();
+                    return dialect.quoteIdentifier(externalFieldName) + "=?";
                 })
                 .collect(joining(", "));
 

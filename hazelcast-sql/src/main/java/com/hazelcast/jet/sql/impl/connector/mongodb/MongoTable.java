@@ -141,19 +141,6 @@ class MongoTable extends JetTable {
         return list.get(0);
     }
 
-    /**
-     * Returns an array of data types with order the same as the order of fields in the projection.
-     */
-    @Nonnull
-    QueryDataType[] resolveColumnTypes(@Nonnull List<String> requestedProjection) {
-        QueryDataType[] types = new QueryDataType[requestedProjection.size()];
-        int i = 0;
-        for (String column : requestedProjection) {
-            types[i++] = getFieldByExternalName(column).getType();
-        }
-        return types;
-    }
-
     public boolean isForceMongoParallelismOne() {
         return forceMongoParallelismOne;
     }

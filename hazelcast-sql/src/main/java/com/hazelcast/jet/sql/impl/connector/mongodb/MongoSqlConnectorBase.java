@@ -25,7 +25,6 @@ import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -151,9 +150,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         ProcessorMetaSupplier supplier;
         if (isStream()) {
             BsonTimestamp startAt = Options.startAt(table.getOptions());
-            supplier = wrap(new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider));
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider));
         } else {
-            supplier = wrap(new SelectProcessorSupplier(table, filter, projections));
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections));
         }
 
         DAG dag = context.getDag();

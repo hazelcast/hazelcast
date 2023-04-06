@@ -67,7 +67,6 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
 
     private final boolean forceMongoParallelismOne;
 
-    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, BsonTimestamp startAt, boolean stream,
     SelectProcessorSupplier(MongoTable table, Document predicate,
                             List<ProjectionData> projection,
                             BsonTimestamp startAt, boolean stream,
@@ -83,9 +82,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.startAt = startAt == null ? null : startAt.getValue();
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
-        this.types = table.resolveColumnTypes(projection);
         this.forceMongoParallelismOne = table.isForceMongoParallelismOne();
-    }
 
         externalNames = table.externalNames();
     }
