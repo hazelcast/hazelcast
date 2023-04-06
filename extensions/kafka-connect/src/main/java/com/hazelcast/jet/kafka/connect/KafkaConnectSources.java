@@ -17,7 +17,6 @@
 package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -29,6 +28,7 @@ import javax.annotation.Nonnull;
 import java.net.URL;
 import java.util.Properties;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 import static com.hazelcast.jet.kafka.connect.impl.ReadKafkaConnectP.processSupplier;
 
@@ -74,7 +74,9 @@ public final class KafkaConnectSources {
     @Beta
     public static <T> StreamSource<T> connect(@Nonnull Properties properties,
                                               @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
-        Preconditions.checkRequiredProperty(properties, "name");
+        checkRequiredProperty(properties, "name");
+        checkNotNull(projectionFn, "projectionFn is required");
+
         String name = "kafkaConnectSource(" + properties.getProperty("name") + ")";
 
         //fail fast, required by lazy-initialized KafkaConnectSource

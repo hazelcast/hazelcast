@@ -47,6 +47,7 @@ import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask.dummyRecord;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.ITEMS_SIZE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -54,7 +55,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
-    private ReadKafkaConnectP readKafkaConnectP;
+    private ReadKafkaConnectP<Integer> readKafkaConnectP;
     private TestOutbox outbox;
     private TestProcessorContext context;
     private HazelcastInstance hazelcastInstance;
@@ -77,6 +78,27 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
         assertFalse(complete);
         assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2);
+    }
+
+    @Test
+    public void should_require_connectorWrapper() {
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(null, noEventTime(), rec -> (Integer) rec.value()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("connectorWrapper is required");
+    }
+
+    @Test
+    public void should_require_eventTimePolicy() {
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), null, rec -> (Integer) rec.value()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("eventTimePolicy is required");
+    }
+
+    @Test
+    public void should_require_projectionFn() {
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), noEventTime(), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("projectionFn is required");
     }
 
     @Test

@@ -46,6 +46,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
@@ -64,8 +65,12 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     private Traverser<?> traverser;
     private final LocalKafkaConnectStatsImpl localKafkaConnectStats = new LocalKafkaConnectStatsImpl();
 
-    public ReadKafkaConnectP(ConnectorWrapper connectorWrapper, EventTimePolicy<? super SourceRecord> eventTimePolicy,
+    public ReadKafkaConnectP(@Nonnull ConnectorWrapper connectorWrapper,
+                             @Nonnull EventTimePolicy<? super SourceRecord> eventTimePolicy,
                              @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
+        checkNotNull(connectorWrapper, "connectorWrapper is required");
+        checkNotNull(eventTimePolicy, "eventTimePolicy is required");
+        checkNotNull(projectionFn, "projectionFn is required");
         this.connectorWrapper = connectorWrapper;
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         this.projectionFn = projectionFn;
@@ -188,7 +193,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     }
 
     public static <T> ProcessorSupplier processSupplier(@Nonnull Properties properties,
-                                                        EventTimePolicy<? super T> eventTimePolicy,
+                                                        @Nonnull EventTimePolicy<? super T> eventTimePolicy,
                                                         @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
         return new ProcessorSupplier() {
             private transient ConnectorWrapper connectorWrapper;

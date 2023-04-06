@@ -44,6 +44,17 @@ public class KafkaConnectSourcesTest {
     }
 
     @Test
+    public void should_fail_when_no_projectionFn() {
+        Properties properties = new Properties();
+        properties.setProperty("name", "some-name");
+        properties.setProperty("connector.class", "some-name");
+        assertThatThrownBy(() -> connect(properties, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("projectionFn is required");
+    }
+
+
+    @Test
     public void should_fail_when_tasks_max_property_set() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
