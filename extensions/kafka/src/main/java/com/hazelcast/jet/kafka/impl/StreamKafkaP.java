@@ -43,7 +43,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,9 +122,6 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) {
         topics = new ArrayList<>(topicsConfig.getTopicNames());
-        // Make sure all members have the same order of topics. It is important for distributing
-        // the topic-partitions - members don't coordinate, but take a subset based on the index.
-        Collections.sort(topics);
         for (String topic : topics) {
             offsets.put(topic, new long[0]);
         }

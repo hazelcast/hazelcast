@@ -23,6 +23,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,7 @@ public class TopicsConfig implements Serializable {
     private static final ILogger LOGGER = Logger.getLogger(TopicsConfig.class);
     private static final long serialVersionUID = 1L;
 
-    private final Map<String, TopicConfig> topicConfigs = new HashMap<>();
+    private final Map<String, TopicConfig> topicConfigs = new LinkedHashMap<>();
 
     /**
      * Returns the map of {@linkplain TopicConfig topic configurations},
@@ -51,7 +52,9 @@ public class TopicsConfig implements Serializable {
 
     /**
      * Returns the set of topic names from {@linkplain TopicConfig topic
-     * configurations}.
+     * configurations}. Returned set of topic names is guaranteed to
+     * preserve the order of insertion of topic configurations that were
+     * added via {@link #addTopicConfig(TopicConfig)} or {@link #addTopic(String)}
      */
     public Set<String> getTopicNames() {
         return topicConfigs.keySet();
