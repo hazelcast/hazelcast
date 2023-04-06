@@ -103,7 +103,7 @@ public final class MongoSourceBuilder {
      * each item to json.
      *
      * @param name               a descriptive name for the source (diagnostic purposes)
-     * @param dataConnectionRef a link to some mongo data connection
+     * @param dataConnectionRef a reference to some mongo data connection
      */
     @Nonnull
     public static MongoSourceBuilder.Batch<Document> batch(
@@ -121,7 +121,7 @@ public final class MongoSourceBuilder {
      * documents in a collection and emits the items as a string by transforming
      * each item to json.
      *
-     * @param dataConnectionRef a link to some mongo data connection
+     * @param dataConnectionRef a reference to some mongo data connection
      */
     @Nonnull
     public static MongoSourceBuilder.Batch<Document> batch(@Nonnull DataConnectionRef dataConnectionRef) {

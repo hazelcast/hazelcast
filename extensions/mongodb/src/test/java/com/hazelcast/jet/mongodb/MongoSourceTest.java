@@ -107,8 +107,8 @@ public class MongoSourceTest extends AbstractMongoTest {
         insertDocuments();
 
         Pipeline pipeline = Pipeline.create();
-        DataConnectionRef link = DataConnectionRef.dataConnectionRef("mongoDB");
-        pipeline.readFrom(batch(link, defaultDatabase(), testName.getMethodName(), null, null))
+        DataConnectionRef dataConnectionRef = DataConnectionRef.dataConnectionRef("mongoDB");
+        pipeline.readFrom(batch(dataConnectionRef, defaultDatabase(), testName.getMethodName(), null, null))
                 .setLocalParallelism(2)
                 .writeTo(Sinks.list(list));
 
