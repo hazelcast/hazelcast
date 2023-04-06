@@ -46,7 +46,7 @@ public class TaskRunnerTest {
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
     private static final int CONFIGURED_ITEMS_SIZE = 3;
     private final DummySourceConnector connector = new DummySourceConnector();
-    private final TaskRunner taskRunner = new TaskRunner("some-task-name", DummyTask::new);
+    private final TaskRunner taskRunner = new TaskRunner("some-task-name", new State(), DummyTask::new);
 
 
     @Before
@@ -128,28 +128,28 @@ public class TaskRunnerTest {
         for (SourceRecord sourceRecord : taskRunner.poll()) {
             taskRunner.commitRecord(sourceRecord);
         }
-        TaskRunner.State snapshot = taskRunner.createSnapshot();
+        State snapshot = taskRunner.createSnapshot();
 
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord lastRecord = dummyRecord(2);
         partitionsToOffset.put(lastRecord.sourcePartition(), lastRecord.sourceOffset());
-        assertThat(snapshot).isEqualTo(new TaskRunner.State(partitionsToOffset));
+        assertThat(snapshot).isEqualTo(new State(partitionsToOffset));
     }
 
     @Test
     public void should_restore_snapshot() {
-        TaskRunner.State initialSnapshot = taskRunner.createSnapshot();
-        assertThat(initialSnapshot).isEqualTo(new TaskRunner.State(new HashMap<>()));
+        State initialSnapshot = taskRunner.createSnapshot();
+        assertThat(initialSnapshot).isEqualTo(new State(new HashMap<>()));
 
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord sourceRecord = dummyRecord(42);
         partitionsToOffset.put(sourceRecord.sourcePartition(), sourceRecord.sourceOffset());
-        TaskRunner.State stateToRestore = new TaskRunner.State(partitionsToOffset);
+        State stateToRestore = new State(partitionsToOffset);
 
         taskRunner.restoreSnapshot(stateToRestore);
 
-        TaskRunner.State snapshot = taskRunner.createSnapshot();
-        assertThat(snapshot).isEqualTo(new TaskRunner.State(partitionsToOffset));
+        State snapshot = taskRunner.createSnapshot();
+        assertThat(snapshot).isEqualTo(new State(partitionsToOffset));
     }
 
     private void assertPolledRecordsSize(int expected) {

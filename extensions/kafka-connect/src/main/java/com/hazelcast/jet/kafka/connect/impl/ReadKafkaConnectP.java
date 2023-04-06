@@ -49,7 +49,7 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
     private final EventTimeMapper<SourceRecord> eventTimeMapper;
     private TaskRunner taskRunner;
     private boolean snapshotInProgress;
-    private Traverser<Entry<BroadcastKey<String>, TaskRunner.State>> snapshotTraverser;
+    private Traverser<Entry<BroadcastKey<String>, State>> snapshotTraverser;
     private boolean snapshotsEnabled;
     private int processorIndex;
     private Traverser<?> traverser;
@@ -129,10 +129,11 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
         return broadcastKey("snapshot-" + processorIndex);
     }
 
+    @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         boolean forThisProcessor = snapshotKey().equals(key);
         if (forThisProcessor) {
-            taskRunner.restoreSnapshot((TaskRunner.State) value);
+            taskRunner.restoreSnapshot((State) value);
         }
     }
 
