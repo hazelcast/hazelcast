@@ -33,8 +33,13 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 
-public class StreamAggregatePhysicalRel extends Aggregate implements PhysicalRel {
-    public StreamAggregatePhysicalRel(
+/**
+ * Streaming aggregation physical rel, which should fail.
+ * Streaming aggregation is supported only as windowed with IMPOSE_ORDER :
+ * {@link SlidingWindowAggregatePhysicalRel}
+ */
+public class StreamAggregateMisusePhysicalRel extends Aggregate implements PhysicalRel {
+    public StreamAggregateMisusePhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             List<RelHint> hints,
@@ -67,7 +72,7 @@ public class StreamAggregatePhysicalRel extends Aggregate implements PhysicalRel
             ImmutableBitSet groupSet,
             @Nullable List<ImmutableBitSet> groupSets,
             List<AggregateCall> aggCalls) {
-        return new StreamAggregatePhysicalRel(getCluster(), traitSet, getHints(), input, groupSet, groupSets, aggCalls);
+        return new StreamAggregateMisusePhysicalRel(getCluster(), traitSet, getHints(), input, groupSet, groupSets, aggCalls);
     }
 
     public String message() {

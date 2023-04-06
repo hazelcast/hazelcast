@@ -77,12 +77,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
     }
 
     @Override
-    public boolean matches(RelOptRuleCall call) {
-        boolean b = super.matches(call);
-        return b;
-    }
-
-    @Override
     public void onMatch(RelOptRuleCall call) {
         JoinLogicalRel join = call.rel(0);
         RelNode leftInput = call.rel(1);

@@ -27,7 +27,7 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 /**
  * This is a way to handle cases when the aggregation isn't implemented by
- * replacing it with {@link StreamAggregatePhysicalRel}, which has huge cost.
+ * replacing it with {@link StreamAggregateMisusePhysicalRel}, which has huge cost.
  * If no other rule replaces the aggregation with some executable relation,
  * the error will be thrown to the user.
  * <p>
@@ -35,6 +35,8 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
  * handles watermarked, windowed streaming aggregation.
  */
 public final class StreamAggregateConverterRule extends ConverterRule {
+
+    public static final RelOptRule INSTANCE = new StreamAggregateConverterRule();
 
     private StreamAggregateConverterRule() {
         super(
@@ -46,13 +48,10 @@ public final class StreamAggregateConverterRule extends ConverterRule {
         );
     }
 
-    @SuppressWarnings("checkstyle:DeclarationOrder")
-    public static final RelOptRule INSTANCE = new StreamAggregateConverterRule();
-
     @Override
     public RelNode convert(RelNode rel) {
         AggregateLogicalRel agg = (AggregateLogicalRel) rel;
-        return new StreamAggregatePhysicalRel(
+        return new StreamAggregateMisusePhysicalRel(
                 agg.getCluster(),
                 OptUtils.toPhysicalConvention(agg.getTraitSet()),
                 agg.getHints(),
