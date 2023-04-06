@@ -42,7 +42,7 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     columns = MappingColumns()
 
     (
-        <DATA> <LINK>
+        <DATA> <CONNECTION>
         dataConnection = CompoundIdentifier()
         |
         [ <CONNECTOR> ] <TYPE>
@@ -87,7 +87,7 @@ SqlCreate SqlCreateDataConnection(Span span, boolean replace) :
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
 }
 {
-    <DATA> <LINK>
+    <DATA> <CONNECTION>
     [
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
@@ -397,7 +397,7 @@ SqlDrop SqlDropDataConnection(Span span, boolean replace) :
     boolean ifExists = false;
 }
 {
-    <DATA> <LINK>
+    <DATA> <CONNECTION>
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
@@ -790,7 +790,7 @@ SqlShowStatement SqlShowStatement() :
     |
         <TYPES> { target = ShowStatementTarget.TYPES; }
     |
-        <DATA> <LINKS> { target = ShowStatementTarget.DATACONNECTIONS; }
+        <DATA> <CONNECTIONS> { target = ShowStatementTarget.DATACONNECTIONS; }
     |
         <RESOURCES> <FOR> { dataConnectionName = CompoundIdentifier(); target = ShowStatementTarget.RESOURCES; }
     )

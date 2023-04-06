@@ -55,12 +55,11 @@ data: {
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
       "CONNECTOR"
+      "CONNECTIONS"
       "IF"
       "INDEX"
       "JOB"
       "JOBS"
-      "LINK"
-      "LINKS"
       "MAPPING"
       "MAPPINGS"
       "RESUME"
@@ -403,8 +402,6 @@ data: {
       "EXTERNAL"
       "JOB"
       "JOBS"
-      "LINK"
-      "LINKS"
       "MAPPING"
       "MAPPINGS"
       "RESUME"
