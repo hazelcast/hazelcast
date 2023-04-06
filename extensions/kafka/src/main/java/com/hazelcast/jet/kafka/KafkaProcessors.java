@@ -107,7 +107,7 @@ public final class KafkaProcessors {
                 PREFERRED_LOCAL_PARALLELISM,
                 StreamKafkaP.processorSupplier(
                         StreamKafkaP.kafkaConsumerFn(dataLinkRef),
-                        topicsConfig
+                        topicsConfig,
                         projectionFn,
                         eventTimePolicy
                 )
