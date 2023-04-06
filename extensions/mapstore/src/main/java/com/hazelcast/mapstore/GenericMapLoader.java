@@ -16,7 +16,6 @@
 
 package com.hazelcast.mapstore;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -96,7 +95,6 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     static final String DATA_LINK_REF_PROPERTY = "data-link-ref";
     static final String TABLE_NAME_PROPERTY = "table-name";
-    static final String MAPPING_TYPE_PROPERTY = "mapping-type";
 
     static final String ID_COLUMN_PROPERTY = "id-column";
 
@@ -175,11 +173,10 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
                 logger.fine("Discovered following mapping columns: " + mappingColumns);
             }
 
-            mappingHelper.createMappingWithColumns(
+            mappingHelper.createMapping(
                     mappingName,
                     genericMapStoreProperties.tableName,
                     mappingColumns,
-                    deriveMappingType(),
                     genericMapStoreProperties.dataLinkRef,
                     genericMapStoreProperties.idColumn
             );
@@ -202,22 +199,13 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         }
     }
 
-    private String deriveMappingType() {
-        if (genericMapStoreProperties.mappingType != null) {
-            return genericMapStoreProperties.mappingType;
-        } else {
-            return nodeEngine().getDataLinkService().typeForDataLink(genericMapStoreProperties.dataLinkRef);
-        }
-    }
-
-
     private String resolveMappingColumns() {
         // Create a temporary mapping
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
         mappingHelper.createMapping(
                 tempMapping,
                 genericMapStoreProperties.tableName,
-                deriveMappingType(),
+                null,
                 genericMapStoreProperties.dataLinkRef,
                 genericMapStoreProperties.idColumn
         );
@@ -354,7 +342,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         }
     }
 
-    @VisibleForTesting
+    // Visible for testing
     boolean initHasFinished() {
         return initFinished.getCount() == 0;
     }

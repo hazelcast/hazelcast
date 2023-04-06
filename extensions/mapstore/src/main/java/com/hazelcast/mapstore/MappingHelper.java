@@ -31,26 +31,13 @@ final class MappingHelper {
         this.sqlService = sqlService;
     }
 
-    public void createMapping(String mappingName, String tableName, String mappingType, String dataLinkRef,
-                              String idColumn) {
-        sqlService.execute(
-                "CREATE MAPPING \"" + mappingName + "\""
-                + " EXTERNAL NAME \"" + tableName + "\" "
-                + " DATA LINK " + dataLinkRef
-                + " TYPE " + mappingType
-                + " OPTIONS ("
-                + "    'idColumn' = '" + idColumn + "' "
-                + ")"
-        ).close();
-    }
-
-    public void createMappingWithColumns(String mappingName, String tableName, String mappingColumns,
-                                         String mappingType, String dataLinkRef, String idColumn) {
+    public void createMapping(String mappingName, String tableName, String mappingColumns,
+                              String dataLinkRef, String idColumn) {
         sqlService.execute(
                 "CREATE MAPPING \"" + mappingName + "\" "
                 + "EXTERNAL NAME \"" + tableName + "\" "
                 + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
-                + " DATA LINK " + dataLinkRef
+                + " DATA LINK \"" + dataLinkRef + "\" "
                 + " OPTIONS ("
                 + "    'idColumn' = '" + idColumn + "' "
                 + ")"
