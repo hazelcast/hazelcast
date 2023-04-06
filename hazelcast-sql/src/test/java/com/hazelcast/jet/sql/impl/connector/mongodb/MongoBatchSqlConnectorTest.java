@@ -180,7 +180,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         }
 
         execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
-                + "DATA LINK testMongo "
+                + "DATA CONNECTION testMongo "
                 + "OPTIONS ("
                 + "    'forceMongoReadParallelismOne' = 'true' "
                 + ")");
@@ -220,7 +220,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         }
 
         execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
-                + "DATA LINK testMongo ");
+                + "DATA CONNECTION testMongo ");
 
         assertRowsAnyOrder("select firstName, lastName, jedi from " + collectionName + " where lastName = ?",
                 singletonList("Skywalker"),
@@ -278,8 +278,6 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void readsWithJoinsToIMap() {
-        final String connectionString = mongoContainer.getConnectionString();
-
         MongoCollection<Document> peopleName = database.getCollection("peopleName2");
         peopleName.insertOne(new Document("personId", 1).append("name", "Luke Skywalker"));
         peopleName.insertOne(new Document("personId", 2).append("name", "Han Solo"));
@@ -289,7 +287,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         peopleBirthPlanet.put(2, "Corellia");
 
         execute("CREATE MAPPING peopleName external name \"peopleName2\" (personId INT, name VARCHAR) "
-                + "DATA LINK testMongo");
+                + "DATA CONNECTION testMongo");
         execute("CREATE MAPPING peopleBirthPlanet (__key INT, this VARCHAR) "
                 + "TYPE IMap "
                 + "OPTIONS ("
@@ -442,7 +440,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + " lastName VARCHAR, "
                 + " jedi BOOLEAN "
                 + ") "
-                + "DATA LINK testMongo "
+                + "DATA CONNECTION testMongo "
                 + "OPTIONS ('idColumn' = 'myPK')");
         execute("update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
                 "where firstName = ?", "Han", "Solo", false, "temp");
