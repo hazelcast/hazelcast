@@ -581,7 +581,7 @@ To create a mapping using an existing data connection, use this command:
 CREATE [OR REPLACE] [EXTERNAL] MAPPING [IF NOT EXISTS] <mapping name>
 [EXTERNAL NAME <resource name>]
 (  /* columns */ )
-DATA CONNECTION <data connection name> [OBJECT TYPE <object type>]
+[DATA CONNECTION <data connection name>] [OBJECT TYPE <object type>]
 [ OPTIONS … ]
 ```
 
