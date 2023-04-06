@@ -54,7 +54,7 @@ public class NioAsyncSocketBuilderTest extends AsyncSocketBuilderTest {
     public void test_setWriteQueueCapacity_whenAlreadyBuild() {
         NioReactor reactor = (NioReactor) newReactor();
         NioAsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        builder.setReadHandler(new DevNullReadHandler());
+        builder.setReader(new DevNullAsyncSocketReader());
         AsyncSocket socket = builder.build();
 
         assertThrows(IllegalStateException.class, () -> builder.setWriteQueueCapacity(1024));
@@ -73,7 +73,7 @@ public class NioAsyncSocketBuilderTest extends AsyncSocketBuilderTest {
     public void test_setReceiveBufferIsDirect_whenAlreadyBuild() {
         NioReactor reactor = (NioReactor) newReactor();
         NioAsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        builder.setReadHandler(new DevNullReadHandler());
+        builder.setReader(new DevNullAsyncSocketReader());
         AsyncSocket socket = builder.build();
 
         assertThrows(IllegalStateException.class, builder::build);

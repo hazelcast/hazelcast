@@ -61,7 +61,7 @@ public abstract class AsyncSocketTest {
         Reactor reactor = newReactor();
         AsyncSocket socket = reactor
                 .newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
 
         assertNotNull(socket.metrics());
@@ -73,7 +73,7 @@ public abstract class AsyncSocketTest {
         Reactor reactor = newReactor();
         AsyncSocket socket = reactor
                 .newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
         socket.start();
 
@@ -86,7 +86,7 @@ public abstract class AsyncSocketTest {
         Reactor reactor = newReactor();
         AsyncSocket socket = reactor
                 .newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
         socket.start();
 
@@ -101,7 +101,7 @@ public abstract class AsyncSocketTest {
         AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                 .setAcceptConsumer(acceptRequest -> {
                     AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
-                            .setReadHandler(new DevNullReadHandler())
+                            .setReader(new DevNullAsyncSocketReader())
                             .build();
                     remoteSocketFuture.complete(socket);
                     socket.start();
@@ -112,7 +112,7 @@ public abstract class AsyncSocketTest {
         serverSocket.start();
 
         AsyncSocket localSocket = reactor.newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
         localSocket.start();
 
@@ -141,7 +141,7 @@ public abstract class AsyncSocketTest {
     public void test_connect_whenNoServerRunning() {
         Reactor reactor = newReactor();
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
         clientSocket.start();
 
@@ -154,7 +154,7 @@ public abstract class AsyncSocketTest {
     public void test_close_whenNotStarted() {
         Reactor reactor = newReactor();
         AsyncSocket socket = reactor.newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
 
         socket.close();
@@ -166,7 +166,7 @@ public abstract class AsyncSocketTest {
     public void test_close_whenNotActivated_andAlreadyClosed() {
         Reactor reactor = newReactor();
         AsyncSocket socket = reactor.newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
 
         socket.close();
@@ -180,7 +180,7 @@ public abstract class AsyncSocketTest {
     public void test_start_whenAlreadyStarted() {
         Reactor reactor = newReactor();
         AsyncSocket socket = reactor.newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
 
         socket.start();
@@ -193,7 +193,7 @@ public abstract class AsyncSocketTest {
         AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                 .setAcceptConsumer(acceptRequest -> {
                     AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
-                            .setReadHandler(new DevNullReadHandler())
+                            .setReader(new DevNullAsyncSocketReader())
                             .build();
                     socket.start();
                 }).build();
@@ -202,7 +202,7 @@ public abstract class AsyncSocketTest {
         serverSocket.start();
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
         clientSocket.start();
 

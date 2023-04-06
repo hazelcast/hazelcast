@@ -44,7 +44,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     boolean writeThrough;
     boolean receiveBufferIsDirect = true;
     int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
-    ReadHandler readHandler;
+    AsyncSocketReader reader;
     NioAsyncSocketOptions options;
     private boolean build;
 
@@ -104,14 +104,14 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     /**
      * Sets the read handler. Should be called before this AsyncSocket is started.
      *
-     * @param readHandler the ReadHandler
+     * @param reader the ReadHandler
      * @return this
      * @throws NullPointerException if readHandler is null.
      */
-    public final NioAsyncSocketBuilder setReadHandler(ReadHandler readHandler) {
+    public final NioAsyncSocketBuilder setReader(AsyncSocketReader reader) {
         verifyNotBuild();
 
-        this.readHandler = checkNotNull(readHandler);
+        this.reader = checkNotNull(reader);
         return this;
     }
 
@@ -122,8 +122,8 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
 
         build = true;
 
-        if (readHandler == null) {
-            throw new IllegalStateException("readHandler is not configured.");
+        if (reader == null) {
+            throw new IllegalStateException("reader is not configured.");
         }
 
         if (Thread.currentThread() == reactor.eventloopThread()) {

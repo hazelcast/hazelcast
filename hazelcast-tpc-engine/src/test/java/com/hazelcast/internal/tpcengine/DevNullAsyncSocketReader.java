@@ -22,11 +22,11 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
 
 
 /**
- * A {@link ReadHandler} that disposes any bytes on the receive buffer.
+ * A {@link AsyncSocketReader} that disposes any bytes on the receive buffer.
  */
-public class DevNullReadHandler extends ReadHandler {
+public class DevNullAsyncSocketReader extends AsyncSocketReader {
     @Override
-    public void onRead(ByteBuffer receiveBuffer) {
-        upcast(receiveBuffer).position(receiveBuffer.limit());
+    public void onRead(ByteBuffer rcvBuffer) {
+        upcast(rcvBuffer).position(rcvBuffer.limit());
     }
 }

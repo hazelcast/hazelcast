@@ -66,14 +66,14 @@ public interface AsyncSocketBuilder {
     <T> boolean setIfSupported(Option<T> option, T value);
 
     /**
-     * Sets the ReadHandler.
+     * Sets the AsyncSocketReader.
      *
-     * @param readHandler the ReadHandler.
+     * @param reader the AsyncSocketReader.
      * @return this
-     * @throws NullPointerException  if readHandler is null.
+     * @throws NullPointerException  if reader is null.
      * @throws IllegalStateException when build already has been called.
      */
-    AsyncSocketBuilder setReadHandler(ReadHandler readHandler);
+    AsyncSocketBuilder setReader(AsyncSocketReader reader);
 
     /**
      * Builds the {@link AsyncSocket}.

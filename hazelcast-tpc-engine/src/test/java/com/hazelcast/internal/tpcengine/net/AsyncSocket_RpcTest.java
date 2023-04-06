@@ -257,7 +257,7 @@ public abstract class AsyncSocket_RpcTest {
                 .set(TCP_NODELAY, true)
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setReadHandler(new ClientReadHandler())
+                .setReader(new ClientAsyncSocketReader())
                 .build();
 
         clientSocket.start();
@@ -273,7 +273,7 @@ public abstract class AsyncSocket_RpcTest {
                             .set(TCP_NODELAY, true)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                            .setReadHandler(new ServerReadHandler())
+                            .setReader(new ServerAsyncSocketReader())
                             .build()
                             .start();
                 })
@@ -284,25 +284,25 @@ public abstract class AsyncSocket_RpcTest {
         return serverSocket;
     }
 
-    private static class ServerReadHandler extends ReadHandler {
+    private static class ServerAsyncSocketReader extends AsyncSocketReader {
         private ByteBuffer payloadBuffer;
         private long callId;
         private int payloadSize = -1;
         private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
         @Override
-        public void onRead(ByteBuffer receiveBuffer) {
+        public void onRead(ByteBuffer rcvBuffer) {
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (rcvBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
-                    payloadSize = receiveBuffer.getInt();
-                    callId = receiveBuffer.getLong();
+                    payloadSize = rcvBuffer.getInt();
+                    callId = rcvBuffer.getLong();
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
-                put(payloadBuffer, receiveBuffer);
+                put(payloadBuffer, rcvBuffer);
                 if (payloadBuffer.remaining() > 0) {
                     // not all bytes have been received.
                     break;
@@ -358,25 +358,25 @@ public abstract class AsyncSocket_RpcTest {
         }
     }
 
-    private class ClientReadHandler extends ReadHandler {
+    private class ClientAsyncSocketReader extends AsyncSocketReader {
         private ByteBuffer payloadBuffer;
         private long callId;
         private int payloadSize = -1;
 
         @Override
-        public void onRead(ByteBuffer receiveBuffer) {
+        public void onRead(ByteBuffer rcvBuffer) {
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (rcvBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
 
-                    payloadSize = receiveBuffer.getInt();
-                    callId = receiveBuffer.getLong();
+                    payloadSize = rcvBuffer.getInt();
+                    callId = rcvBuffer.getLong();
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
-                put(payloadBuffer, receiveBuffer);
+                put(payloadBuffer, rcvBuffer);
 
                 if (payloadBuffer.remaining() > 0) {
                     // not all bytes have been received.

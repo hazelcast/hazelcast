@@ -25,11 +25,11 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
- * The {@link ReadHandler} is called when data is received on a socket and
- * needs to be processed by the application. This is where e.g. ClientMessages
- * of Packets could be created.
+ * The {@link AsyncSocketReader} is called when data is received on an
+ * {@link AsyncSocket} and needs to be processed by the application. This
+ * is where e.g. ClientMessages of Packets could be created.
  */
-public abstract class ReadHandler {
+public abstract class AsyncSocketReader {
 
     protected AsyncSocket socket;
     protected Reactor reactor;
@@ -50,7 +50,7 @@ public abstract class ReadHandler {
     /**
      * Process the received data on the socket.
      *
-     * @param receiveBuffer the ByteBuffer containing the received data.
+     * @param rcvBuffer the ByteBuffer containing the received data.
      */
-    public abstract void onRead(ByteBuffer receiveBuffer);
+    public abstract void onRead(ByteBuffer rcvBuffer);
 }

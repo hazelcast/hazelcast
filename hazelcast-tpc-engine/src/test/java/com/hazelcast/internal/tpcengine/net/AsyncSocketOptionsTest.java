@@ -60,7 +60,7 @@ public abstract class AsyncSocketOptionsTest {
         reactor.start();
 
         return reactor.newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
     }
 
