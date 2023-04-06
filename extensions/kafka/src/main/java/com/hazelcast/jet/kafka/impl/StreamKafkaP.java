@@ -202,12 +202,14 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
                 // beginning. It can happen that a partition is added, and some messages
                 // are added to it before we start consuming from it. If we started at the
                 // current position, we will miss those, so we explicitly seek to the
-                // beginning.
+                // beginning. Note that this behavior is still in-force, even when partitions
+                // initial offsets was provided. This means for partitions discovered later
+                // during the runtime initial offsets configuration will not be respected.
                 getLogger().info("Seeking to the beginning of newly-discovered partitions: " + newAssignments);
                 consumer.seekToBeginning(newAssignments);
             } else if (processingGuarantee != NONE) {
                 // For processing guarantee equal to NONE partitions initial offsets
-                // configuration is ignored entirely.
+                // configuration is always ignored.
                 seekToInitialOffsets(newAssignments);
             }
         }
