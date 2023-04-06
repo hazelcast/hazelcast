@@ -217,7 +217,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         }
     }
 
-    private static <T> List<T> getMBeanValues(ObjectName objectName, String attribute) throws Exception {
+    private static <T> List<T> getMBeanValues(ObjectName objectName, String attribute) {
         return (List<T>) getMBeans(objectName).stream().map(i -> getAttribute(i, attribute)).collect(toList());
     }
 
@@ -230,7 +230,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         }
     }
 
-    private static List<ObjectInstance> getMBeans(ObjectName objectName) throws Exception {
+    private static List<ObjectInstance> getMBeans(ObjectName objectName) {
         MBeanServer platformMBeanServer = ManagementFactory.getPlatformMBeanServer();
         return new ArrayList<>(platformMBeanServer.queryMBeans(objectName, null));
     }
