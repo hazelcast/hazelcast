@@ -329,13 +329,28 @@ public class MetricsCompressor {
         lastDescriptor = null;
     }
 
-    private byte[] getRenderedBlob() {
+
+    /**
+     * Frees resources associated with this compressor. Needed to avoid keeping
+     * memory allocated by {@link Deflater} for a long time, until finalization.
+     */
+    public void close() {
         try {
-            writeDictionary();
             dictionaryDos.close();
             dictionaryCompressor.end();
             metricDos.close();
             metricsCompressor.end();
+        } catch (IOException e) {
+            // should never be thrown
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private byte[] getRenderedBlob() {
+        try {
+            writeDictionary();
+            close();
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
