@@ -786,7 +786,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         @Nonnull
         public RawJobMetrics getMetrics() {
-            return RawJobMetrics.of(compressor.getBlobAndReset());
+            return RawJobMetrics.of(compressor.getBlobAndClose());
         }
 
         @Override

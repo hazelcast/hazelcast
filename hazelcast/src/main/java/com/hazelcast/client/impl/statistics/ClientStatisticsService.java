@@ -416,7 +416,7 @@ public class ClientStatisticsService {
         }
 
         private byte[] getBlob() {
-            return compressor.getBlobAndReset();
+            return compressor.getBlobAndClose();
         }
 
         @Override

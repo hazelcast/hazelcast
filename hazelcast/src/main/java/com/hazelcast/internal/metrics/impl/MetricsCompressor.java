@@ -260,6 +260,9 @@ public class MetricsCompressor {
         return dictionary.getDictionaryId(word);
     }
 
+    /**
+     * Gets data and prepares for next compression cycle.
+     */
     public byte[] getBlobAndReset() {
         byte[] blob = getRenderedBlob();
 
@@ -267,6 +270,13 @@ public class MetricsCompressor {
         int estimatedBytesMetrics = metricBaos.size() * SIZE_FACTOR_NUMERATOR / SIZE_FACTOR_DENOMINATOR;
         reset(estimatedBytesDictionary, estimatedBytesMetrics);
         return blob;
+    }
+
+    /**
+     * Gets data without preparing for next compression cycle.
+     */
+    public byte[] getBlobAndClose() {
+        return getRenderedBlob();
     }
 
     private void writeDictionary() throws IOException {
@@ -329,7 +339,6 @@ public class MetricsCompressor {
         lastDescriptor = null;
     }
 
-
     /**
      * Frees resources associated with this compressor. Needed to avoid keeping
      * memory allocated by {@link Deflater} for a long time, until finalization.
@@ -337,9 +346,15 @@ public class MetricsCompressor {
     public void close() {
         try {
             dictionaryDos.close();
-            dictionaryCompressor.end();
+            if (dictionaryCompressor != null) {
+                dictionaryCompressor.end();
+                dictionaryCompressor = null;
+            }
             metricDos.close();
-            metricsCompressor.end();
+            if (metricsCompressor != null) {
+                metricsCompressor.end();
+                metricsCompressor = null;
+            }
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
