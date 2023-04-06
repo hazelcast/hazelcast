@@ -720,6 +720,11 @@
                     <groupId>org.apache.yetus</groupId>
                     <artifactId>audience-annotations</artifactId>
                 </exclusion>
+                <!-- Exclusions for Zookeeper. -->
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>

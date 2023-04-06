@@ -29,15 +29,21 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.data.Values;
 import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.management.MBeanServer;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
@@ -62,6 +68,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class KafkaConnectIntegrationTest extends JetTestSupport {
     @ClassRule
@@ -70,6 +77,8 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
 
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download/tests/"
             + "confluentinc-kafka-connect-datagen-0.6.0.zip";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectIntegrationTest.class);
 
     @Test
     public void testReading() throws Exception {
@@ -113,12 +122,11 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         }
     }
 
-
     private static <T> List<T> getMBeanValues(ObjectName objectName, String attribute) throws Exception {
         return (List<T>) getMBeans(objectName).stream().map(i -> getAttribute(i, attribute)).collect(toList());
     }
 
-    @NotNull
+    @Nonnull
     private static <T> T getAttribute(ObjectInstance objectInstance, String attribute) {
         try {
             return (T) ManagementFactory.getPlatformMBeanServer().getAttribute(objectInstance.getObjectName(), attribute);
@@ -149,11 +157,11 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
                 .map(record -> entry(record.headers().lastWithName("task.id").value().toString(),
                         Values.convertToString(record.valueSchema(), record.value()))
                 );
-        streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(120,
                         list -> {
                             Map<String, List<String>> recordsByTaskId = entriesToMap(list);
+                            LOGGER.info("recordsByTaskId = " + countEntriesByTaskId(recordsByTaskId));
                             assertThat(recordsByTaskId).allSatisfy((taskId, records) ->
                                     assertThat(records.size()).isGreaterThan(ITEM_COUNT)
                             );
@@ -189,6 +197,11 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @NotNull
+    private static List<Map.Entry<String, Integer>> countEntriesByTaskId(Map<String, List<String>> recordsByTaskId) {
+        return recordsByTaskId.entrySet().stream().map(e -> entry(e.getKey(), e.getValue().size())).collect(toList());
+    }
+
+    @Nonnull
     private static Map<String, List<String>> entriesToMap(List<Map.Entry<String, String>> list) {
         return list.stream()
                 .collect(Collectors.groupingBy(Map.Entry::getKey,
@@ -206,7 +219,7 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         return getMBeanValues(objectName, "sourceRecordPollTotalAvgTime");
     }
 
-
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/24018
     @Test
     public void testSnapshotting() throws Exception {
         int localParallelism = 3;

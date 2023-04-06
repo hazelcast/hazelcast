@@ -1094,7 +1094,7 @@
     </sql>
 
     <data-link name="mysql-database">
-        <class-name>com.hazelcast.datalink.JdbcDataLink</class-name>
+        <type>jdbc</type>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>

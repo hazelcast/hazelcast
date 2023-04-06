@@ -112,7 +112,7 @@ public class TaskletExecutionService {
         );
 
         Arrays.setAll(cooperativeWorkers, i -> new CooperativeWorker());
-        Arrays.setAll(cooperativeThreadPool, i -> new Thread(cooperativeWorkers[i],
+        Arrays.setAll(cooperativeThreadPool, i -> new CooperativeWorkerThread(cooperativeWorkers[i],
                 String.format("hz.%s.jet.cooperative.thread-%d", hzInstanceName, i)));
         Arrays.stream(cooperativeThreadPool).forEach(Thread::start);
 
@@ -502,6 +502,12 @@ public class TaskletExecutionService {
 
         boolean executionCompletedExceptionally() {
             return executionException.get() != null;
+        }
+    }
+
+    private static final class CooperativeWorkerThread extends Thread implements CooperativeThread {
+        CooperativeWorkerThread(Runnable target, String name) {
+            super(target, name);
         }
     }
 }

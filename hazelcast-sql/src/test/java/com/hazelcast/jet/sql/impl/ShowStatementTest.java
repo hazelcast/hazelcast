@@ -18,8 +18,6 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.DataLinkBase;
-import com.hazelcast.datalink.DataLinkResource;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.TestProcessors;
@@ -40,9 +38,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -65,7 +60,7 @@ public class ShowStatementTest extends SqlTestSupport {
         final Config config = smallInstanceConfig();
         config.getDataLinkConfigs().put(DATA_LINK_NAME, new DataLinkConfig()
                 .setName(DATA_LINK_NAME)
-                .setClassName(DataLinkWithResources.class.getName()));
+                .setType("dummy"));
         initialize(2, config);
     }
 
@@ -199,23 +194,5 @@ public class ShowStatementTest extends SqlTestSupport {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
         instance().getJet().newJob(dag, new JobConfig().setName(jobName));
-    }
-
-    public static class DataLinkWithResources extends DataLinkBase {
-        public DataLinkWithResources(DataLinkConfig config) {
-            super(config);
-        }
-
-        @Nonnull
-        @Override
-        public Collection<DataLinkResource> listResources() {
-            return Arrays.asList(
-                    new DataLinkResource("testType1", "testName1"),
-                    new DataLinkResource("testType2", "testName2")
-            );
-        }
-
-        @Override
-        public void destroy() { }
     }
 }

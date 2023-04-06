@@ -3971,7 +3971,7 @@
       used by map stores and jdbc sinks and sources
       -->
     <data-link name="mysql-database">
-        <class-name>com.hazelcast.datalink.JdbcDataLink</class-name>
+        <type>jdbc</type>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
@@ -3979,7 +3979,7 @@
     </data-link>
 
     <data-link name="other-database">
-        <class-name>com.hazelcast.datalink.OtherDataLink</class-name>
+        <type>other</type>
     </data-link>
 
     <!--

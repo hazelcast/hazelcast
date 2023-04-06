@@ -32,7 +32,7 @@ import java.util.List;
 
 public class MemberExecuteJar {
 
-    private static final ILogger LOGGER = Logger.getLogger(MemberExecuteJar.class.getName());
+    private static final ILogger LOGGER = Logger.getLogger(MemberExecuteJar.class);
 
     /**
      * This method is used by a member to execute a jar in a multithreaded environment
@@ -44,34 +44,35 @@ public class MemberExecuteJar {
                            @Nullable String mainClassName,
                            @Nonnull List<String> args
     ) throws IOException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
-        try {
-            String jarPath = executeJobParameters.getJarPath();
-            mainClassName = ExecuteJarHelper.findMainClassNameForJar(jarPath, mainClassName);
 
-            URL jarUrl = new File(jarPath).toURI().toURL();
-            try (URLClassLoader classLoader = URLClassLoader.newInstance(
-                    new URL[]{jarUrl},
-                    MemberExecuteJar.class.getClassLoader())) {
+        String jarPath = executeJobParameters.getJarPath();
+        mainClassName = ExecuteJarHelper.findMainClassNameForJar(jarPath, mainClassName);
 
-                Method mainMethod = ExecuteJarHelper.findMainMethodForJar(classLoader, mainClassName);
+        URL jarUrl = new File(jarPath).toURI().toURL();
+        try (URLClassLoader classLoader = URLClassLoader.newInstance(
+                new URL[]{jarUrl},
+                MemberExecuteJar.class.getClassLoader())) {
 
-                LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
+            Method mainMethod = ExecuteJarHelper.findMainMethodForJar(classLoader, mainClassName);
 
-                invokeMain(instanceProxy, executeJobParameters, mainMethod, args);
-            }
-        } finally {
-            instanceProxy.removeThreadLocalParameters();
+            LOGGER.info("Found mainClassName :" + mainClassName + " and main method");
+
+            invokeMain(instanceProxy, executeJobParameters, mainMethod, args);
         }
     }
 
     void invokeMain(BootstrappedInstanceProxy instanceProxy, ExecuteJobParameters executeJobParameters,
                     Method mainMethod, List<String> args)
             throws IllegalAccessException, InvocationTargetException {
-        instanceProxy.setThreadLocalParameters(executeJobParameters);
+        try {
+            instanceProxy.setExecuteJobParameters(executeJobParameters);
 
-        String[] jobArgs = args.toArray(new String[0]);
+            String[] jobArgs = args.toArray(new String[0]);
 
-        // upcast args to Object, so it's passed as a single array-typed argument
-        mainMethod.invoke(null, (Object) jobArgs);
+            // upcast args to Object, so it's passed as a single array-typed argument
+            mainMethod.invoke(null, (Object) jobArgs);
+        } finally {
+            instanceProxy.removeExecuteJobParameters();
+        }
     }
 }

@@ -523,14 +523,15 @@ provide XA data links with a new connector type, JDBC-XA.
 ```sql
 CREATE [OR REPLACE] DATA LINK [IF NOT EXISTS] <name>
 TYPE <connector name>
-[NOT] SHARED
+[[NOT] SHARED]
 OPTIONS ( … );
 
 DROP DATA LINK [IF EXISTS] <name>;
 ```
 
 Alter is not supported. Replacing or dropping a data link created in config will
-throw an error.
+throw an error. If `SHARED` or `NOT SHARED` isn't specified, the link will be
+shared by default.
 
 ## Test data link
 

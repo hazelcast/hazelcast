@@ -46,6 +46,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.mongodb.MongoSources.batch;
+import static com.hazelcast.jet.mongodb.MongoSources.stream;
 import static com.hazelcast.jet.mongodb.impl.Mappers.streamToClass;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -89,7 +90,7 @@ public class MongoSourceTest extends AbstractMongoTest {
         insertDocuments();
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(batch(SOURCE_NAME, connectionString, defaultDatabase(), testName.getMethodName(), null, null))
+        pipeline.readFrom(batch(connectionString, defaultDatabase(), testName.getMethodName(), null, null))
                 .setLocalParallelism(2)
                 .writeTo(Sinks.list(list));
 
@@ -107,7 +108,7 @@ public class MongoSourceTest extends AbstractMongoTest {
 
         Pipeline pipeline = Pipeline.create();
         DataLinkRef link = DataLinkRef.dataLinkRef("mongoDB");
-        pipeline.readFrom(batch(SOURCE_NAME, link, defaultDatabase(), testName.getMethodName(), null, null))
+        pipeline.readFrom(batch(link, defaultDatabase(), testName.getMethodName(), null, null))
                 .setLocalParallelism(2)
                 .writeTo(Sinks.list(list));
 
@@ -126,10 +127,11 @@ public class MongoSourceTest extends AbstractMongoTest {
         insertDocuments();
 
         Pipeline pipeline = Pipeline.create();
-        Batch<?> sourceBuilder = batch(SOURCE_NAME, () -> mongoClient(connectionString))
+        Batch<?> sourceBuilder = batch(() -> mongoClient(connectionString))
                                                .database(defaultDatabase())
                                                .collection(testName.getMethodName())
-                                               .sort(ascending("key"));
+                                               .sort(ascending("key"))
+                                               .throwOnNonExisting(false);
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
                 .setLocalParallelism(2)
@@ -152,7 +154,7 @@ public class MongoSourceTest extends AbstractMongoTest {
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
-        Batch<?> sourceBuilder = batch(SOURCE_NAME, () -> mongoClient(connectionString))
+        Batch<?> sourceBuilder = batch(() -> mongoClient(connectionString))
                 .database(defaultDatabase());
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
@@ -177,28 +179,28 @@ public class MongoSourceTest extends AbstractMongoTest {
 
     private Batch<?> batchFilters(Batch<?> sourceBuilder) {
         if (filter) {
-            sourceBuilder = sourceBuilder.filter(gte("key", FILTERED_BOUND));
+            sourceBuilder.filter(gte("key", FILTERED_BOUND));
         }
         if (projection) {
-            sourceBuilder = sourceBuilder.project(include("val", "testName"));
+            sourceBuilder.project(include("val", "testName"));
         }
         if (sort) {
-            sourceBuilder = sourceBuilder.sort(ascending("val"));
+            sourceBuilder.sort(ascending("val"));
         }
         if (map) {
-            sourceBuilder = sourceBuilder.mapFn(Mappers.toClass(KV.class));
+            sourceBuilder.mapFn(Mappers.toClass(KV.class));
         }
         return sourceBuilder;
     }
 
     @Test
     public void testStreamSimple() {
-        String methodName = testName.getMethodName();
-        IList<Object> list = instance().getList(methodName);
+        String collectionName = testName.getMethodName();
+        IList<Object> list = instance().getList(collectionName);
         String connectionString = mongoContainer.getConnectionString();
 
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(MongoSources.stream(SOURCE_NAME, connectionString, defaultDatabase(), methodName, null, null))
+        pipeline.readFrom(stream(connectionString, defaultDatabase(), collectionName, null, null))
                 .withNativeTimestamps(0)
                 .setLocalParallelism(1)
                 .writeTo(Sinks.list(list));
@@ -217,11 +219,13 @@ public class MongoSourceTest extends AbstractMongoTest {
 
     @Test
     public void testStreamOneCollection() {
-        IList<Object> list = instance().getList(testName.getMethodName());
+        String collectionName = testName.getMethodName();
+
+        IList<Object> list = instance().getList(collectionName);
         String connectionString = mongoContainer.getConnectionString();
-        Stream<?> sourceBuilder = MongoSources.stream(SOURCE_NAME, () -> mongoClient(connectionString))
+        Stream<?> sourceBuilder = stream("customName", () -> mongoClient(connectionString))
                                               .database(defaultDatabase())
-                                              .collection(testName.getMethodName(), Document.class);
+                                              .collection(collectionName, Document.class);
         sourceBuilder = streamFilters(sourceBuilder);
 
         Pipeline pipeline = Pipeline.create();
@@ -247,12 +251,13 @@ public class MongoSourceTest extends AbstractMongoTest {
 
     @Test
     public void testStream_whenWatchDatabase() {
-        IList<Object> list = instance().getList(testName.getMethodName());
+        String collectionName = testName.getMethodName();
+        IList<Object> list = instance().getList(collectionName);
 
         String connectionString = mongoContainer.getConnectionString();
 
         Stream<?> builder = MongoSourceBuilder
-                .stream(SOURCE_NAME, () -> MongoClients.create(connectionString))
+                .stream(() -> MongoClients.create(connectionString))
                 .database(defaultDatabase());
         builder = streamFilters(builder);
 
@@ -287,11 +292,12 @@ public class MongoSourceTest extends AbstractMongoTest {
 
     @Test
     public void testStream_whenWatchAll() {
-        IList<Object> list = instance().getList(testName.getMethodName());
+        String collectionName = testName.getMethodName();
+        IList<Object> list = instance().getList(collectionName);
 
         String connectionString = mongoContainer.getConnectionString();
 
-        Stream<?> builder = MongoSourceBuilder.stream(SOURCE_NAME, () -> MongoClients.create(connectionString));
+        Stream<?> builder = MongoSourceBuilder.stream(() -> MongoClients.create(connectionString));
         builder = streamFilters(builder);
 
         Pipeline pipeline = Pipeline.create();

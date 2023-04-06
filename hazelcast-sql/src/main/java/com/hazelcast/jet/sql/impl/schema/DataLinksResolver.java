@@ -105,7 +105,12 @@ public class DataLinksResolver implements TableResolver {
         // Collect config-originated data links
         List<DataLinkCatalogEntry> dataLinks = dataLinkService.getConfigCreatedDataLinks()
                 .stream()
-                .map(dl -> new DataLinkCatalogEntry(dl, DataLinkSource.CONFIG))
+                .map(dl -> new DataLinkCatalogEntry(
+                        dl.getName(),
+                        dataLinkService.typeForDataLink(dl.getName()),
+                        dl.getConfig().isShared(),
+                        dl.options(),
+                        DataLinkSource.CONFIG))
                 .collect(Collectors.toList());
 
         // And supplement them with data links from sql catalog.

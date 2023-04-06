@@ -25,7 +25,9 @@ import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.mongodb.MongoClientException;
 import com.mongodb.MongoCommandException;
+import com.mongodb.MongoSocketException;
 import com.mongodb.client.MongoClient;
 import org.bson.BsonArray;
 import org.bson.BsonString;
@@ -57,6 +59,7 @@ class MongoConnection implements Closeable {
 
     private MongoClient mongoClient;
     private MongoDataLink dataLink;
+    private Exception lastException;
 
     MongoConnection(SupplierEx<? extends MongoClient> clientSupplier, DataLinkRef dataLinkRef,
                     Consumer<MongoClient> afterConnection) {
@@ -75,32 +78,48 @@ class MongoConnection implements Closeable {
      * @return true if there is a connection to Mongo after exiting this method
      */
     boolean reconnectIfNecessary() {
-        if (mongoClient == null) {
-            if (connectionRetryTracker.shouldTryAgain()) {
-                try {
-                    mongoClient = clientSupplier.get();
-                    afterConnection.accept(mongoClient);
-                    connectionRetryTracker.reset();
-                    return true;
-                } catch (MongoCommandException e) {
-                    BsonArray codes = codes(e);
-                    if (codes.contains(new BsonString("NonResumableChangeStreamError"))) {
-                        throw new JetException("NonResumableChangeStreamError thrown by Mongo", e);
-                    }
-                    logger.warning("Could not connect to MongoDB", e);
-                    connectionRetryTracker.attemptFailed();
-                    return false;
-                } catch (Exception e) {
-                    logger.warning("Could not connect to MongoDB", e);
-                    connectionRetryTracker.attemptFailed();
-                    return false;
-                }
-            } else {
-                throw new JetException("cannot connect to MongoDB");
-            }
-        } else {
+        if (mongoClient != null) {
             return true;
         }
+        if (connectionRetryTracker.needsToWait()) {
+            return false;
+        }
+        if (connectionRetryTracker.shouldTryAgain()) {
+            try {
+                mongoClient = clientSupplier.get();
+                afterConnection.accept(mongoClient);
+                connectionRetryTracker.reset();
+
+                lastException = null;
+                return true;
+            } catch (MongoCommandException e) {
+                BsonArray codes = codes(e);
+                if (codes.contains(new BsonString("NonResumableChangeStreamError"))) {
+                    throw new JetException("NonResumableChangeStreamError thrown by Mongo", e);
+                }
+                logger.warning("Could not connect to MongoDB." + willRetryMessage(), e);
+                connectionRetryTracker.attemptFailed();
+                lastException = e;
+                return false;
+            } catch (MongoClientException | MongoSocketException e) {
+                lastException = e;
+
+                logger.warning("Could not connect to MongoDB due to client/socket error."
+                        + willRetryMessage(), e);
+                connectionRetryTracker.attemptFailed();
+                return false;
+            } catch (Exception e) {
+                throw new JetException("Cannot connect to MongoDB, seems to be non-transient error", e);
+            }
+        } else {
+            throw new JetException("cannot connect to MongoDB", lastException);
+        }
+    }
+
+    private String willRetryMessage() {
+        return connectionRetryTracker.shouldTryAgain()
+                ? " Operation will be retried in " + connectionRetryTracker.getNextWaitTimeMs() + "ms."
+                : "";
     }
 
     private BsonArray codes(MongoCommandException e) {

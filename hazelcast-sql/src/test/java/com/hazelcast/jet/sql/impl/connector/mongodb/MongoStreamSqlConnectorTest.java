@@ -56,6 +56,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
     public void readsFromMongo_withoutId_twoSteps() {
        readsFromMongo(false, true);
     }
+
     @Test
     public void readsFromMongo_withoutId_oneStep() {
        readsFromMongo(false, false);

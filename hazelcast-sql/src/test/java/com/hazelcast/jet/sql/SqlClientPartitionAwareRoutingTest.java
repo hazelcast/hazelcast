@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.PlanExecutor;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -96,8 +95,7 @@ public class SqlClientPartitionAwareRoutingTest extends SqlTestSupport {
     }
 
     private static PlanExecutor getPlanExecutor(HazelcastInstance instance) {
-        CalciteSqlOptimizer optimizer = (CalciteSqlOptimizer) getNodeEngineImpl(instance).getSqlService().getOptimizer();
-        return optimizer.getPlanExecutor();
+        return sqlServiceImpl(instance).getOptimizer().getPlanExecutor();
     }
 
     private int getPartitionOwnerIndex(Object key) {

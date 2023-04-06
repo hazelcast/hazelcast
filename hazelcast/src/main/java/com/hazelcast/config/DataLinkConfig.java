@@ -49,7 +49,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String name;
-    private String className;
+    private String type;
     private boolean shared = true;
     private Properties properties = new Properties();
 
@@ -58,7 +58,7 @@ public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
 
     public DataLinkConfig(DataLinkConfig config) {
         name = config.name;
-        className = config.className;
+        type = config.type;
         shared = config.shared;
         properties.putAll(config.getProperties());
     }
@@ -89,17 +89,17 @@ public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
 
 
     /**
-     * Returns the name of the {@link DataLink} implementation class
+     * Returns the type of the {@link DataLink}
      */
-    public String getClassName() {
-        return className;
+    public String getType() {
+        return type;
     }
 
     /**
-     * Sets the name for the {@link DataLink} implementation class
+     * Sets the type of the {@link DataLink}
      */
-    public DataLinkConfig setClassName(@Nonnull String className) {
-        this.className = checkHasText(className, "Data link class name must contain text");
+    public DataLinkConfig setType(@Nonnull String type) {
+        this.type = checkHasText(type, "Data link type must contain text");
         return this;
     }
 
@@ -180,20 +180,20 @@ public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
         }
         DataLinkConfig that = (DataLinkConfig) o;
         return shared == that.shared && Objects.equals(name, that.name)
-                && Objects.equals(className, that.className)
+                && Objects.equals(type, that.type)
                 && Objects.equals(properties, that.properties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, className, shared, properties);
+        return Objects.hash(name, type, shared, properties);
     }
 
     @Override
     public String toString() {
         return "DataLinkConfig{"
                 + "name='" + name + '\''
-                + ", className='" + className + '\''
+                + ", type='" + type + '\''
                 + ", shared=" + shared
                 + ", properties=" + properties
                 + '}';
@@ -202,7 +202,7 @@ public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
-        out.writeString(className);
+        out.writeString(type);
         out.writeBoolean(shared);
         out.writeInt(properties.size());
         for (String key : properties.stringPropertyNames()) {
@@ -214,7 +214,7 @@ public class DataLinkConfig implements IdentifiedDataSerializable, NamedConfig {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
-        className = in.readString();
+        type = in.readString();
         shared = in.readBoolean();
         int propertiesSize = in.readInt();
         for (int i = 0; i < propertiesSize; i++) {

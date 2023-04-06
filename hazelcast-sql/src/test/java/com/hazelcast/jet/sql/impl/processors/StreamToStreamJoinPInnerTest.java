@@ -19,13 +19,13 @@ package com.hazelcast.jet.sql.impl.processors;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.core.test.TestSupport.TestMode;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -58,7 +58,6 @@ import static com.hazelcast.jet.core.test.TestSupport.TEST_CONTEXT;
 import static com.hazelcast.jet.core.test.TestSupport.in;
 import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
-import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -71,7 +70,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
-public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
+public class StreamToStreamJoinPInnerTest extends SqlTestSupport {
 
     /**
      * An output checker that will consider the actual and expected object lists
@@ -151,6 +150,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
+                .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(wm(0L, (byte) 1)),
@@ -242,6 +242,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         TestSupport.verifyProcessor(supplier)
                 .hazelcastInstance(instance())
                 .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
+                .hazelcastInstance(instance())
                 .expectExactOutput(
                         in(0, jetRow(12L, 10L)),
                         in(1, jetRow(12L, 10L)),
@@ -311,6 +312,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, true, 1, 2));
 
         TestSupport.verifyProcessor(processorSupplier)
+                .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .cooperativeTimeout(0) // todo remove
                 .expectExactOutput(
@@ -360,6 +362,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1, true));
 
         TestSupport.verifyProcessor(processorSupplier)
+                .hazelcastInstance(instance())
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(0, jetRow(0L)),
@@ -450,7 +453,7 @@ public class StreamToStreamJoinPInnerTest extends SimpleTestInClusterSupport {
     }
 
     private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount, boolean assumeEquiJoin,
-            int... wmKeyToColumnIndex) {
+                                                  int... wmKeyToColumnIndex) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap, wmKeyToColumnIndex);
         int[] equiJoinIndices = new int[assumeEquiJoin ? 1 : 0];
         JetJoinInfo joinInfo = new JetJoinInfo(INNER, equiJoinIndices, equiJoinIndices, condition, condition);

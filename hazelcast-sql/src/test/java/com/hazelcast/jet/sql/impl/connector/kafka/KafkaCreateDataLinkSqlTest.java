@@ -56,13 +56,13 @@ public class KafkaCreateDataLinkSqlTest extends SqlTestSupport {
     @Test
     public void test() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA LINK " + dlName + " TYPE Kafka " + options());
+        instance().getSql().execute("CREATE DATA LINK " + dlName + " TYPE Kafka SHARED " + options());
 
         DataLink dataLink = getNodeEngineImpl(
                 instance()).getDataLinkService().getAndRetainDataLink(dlName, KafkaDataLink.class);
 
         assertThat(dataLink).isNotNull();
-        assertThat(dataLink.getConfig().getClassName()).isEqualTo(KafkaDataLink.class.getName());
+        assertThat(dataLink.getConfig().getType()).isEqualTo("Kafka");
     }
 
     protected static String options() {

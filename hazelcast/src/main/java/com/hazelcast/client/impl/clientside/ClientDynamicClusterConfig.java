@@ -1132,7 +1132,7 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
         ClientMessage request = DynamicConfigAddDataLinkConfigCodec.encodeRequest(
-                dataLinkConfig.getName(), dataLinkConfig.getClassName(),
+                dataLinkConfig.getName(), dataLinkConfig.getType(),
                 dataLinkConfig.isShared(), toMap(dataLinkConfig.getProperties()));
         invoke(request);
         return this;

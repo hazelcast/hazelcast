@@ -27,13 +27,13 @@ public class MongoCreateDataLinkSqlTest extends MongoSqlTest {
     @Test
     public void test() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA LINK " + dlName + " TYPE MongoDB " + options());
+        instance().getSql().execute("CREATE DATA LINK " + dlName + " TYPE MongoDB SHARED " + options());
 
 
         DataLink dataLink = getNodeEngineImpl(
                 instance()).getDataLinkService().getAndRetainDataLink(dlName, MongoDataLink.class);
 
         assertThat(dataLink).isNotNull();
-        assertThat(dataLink.getConfig().getClassName()).isEqualTo(MongoDataLink.class.getName());
+        assertThat(dataLink.getConfig().getType()).isEqualTo("MongoDB");
     }
 }

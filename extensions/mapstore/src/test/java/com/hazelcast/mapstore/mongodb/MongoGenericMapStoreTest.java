@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.mongodb.compact.ObjectIdCompactSerializer;
-import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.map.IMap;
 import com.hazelcast.mapstore.GenericMapStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -86,7 +85,7 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
                 .addDataLinkConfig(
                         new DataLinkConfig(TEST_DATABASE_REF)
-                                .setClassName(MongoDataLink.class.getName())
+                                .setType("MongoDB")
                                 .setShared(false)
                                 .setProperty("connectionString", connectionString)
                                 .setProperty("database", database.getName())

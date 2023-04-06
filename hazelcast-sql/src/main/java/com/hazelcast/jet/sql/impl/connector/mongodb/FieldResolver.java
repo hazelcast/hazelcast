@@ -64,7 +64,7 @@ class FieldResolver {
      *                                  in the collection
      */
     List<MappingField> resolveFields(
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             boolean stream
@@ -158,7 +158,8 @@ class FieldResolver {
         }
     }
 
-    Map<String, DocumentField> readFields(String collectionName, Map<String, String> options, boolean stream) {
+    Map<String, DocumentField> readFields(String[] externalName, Map<String, String> options, boolean stream) {
+        String collectionName = externalName[0];
         Map<String, DocumentField> fields = new HashMap<>();
         Tuple2<MongoClient, MongoDataLink> connect = connect(options);
         try (MongoClient client = connect.f0()) {
