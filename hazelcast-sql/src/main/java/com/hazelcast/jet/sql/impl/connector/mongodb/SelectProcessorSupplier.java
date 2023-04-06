@@ -65,6 +65,9 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private final String dataLinkName;
     private transient ExpressionEvalContext evalContext;
 
+    private final boolean forceMongoParallelismOne;
+
+    SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, BsonTimestamp startAt, boolean stream,
     SelectProcessorSupplier(MongoTable table, Document predicate,
                             List<ProjectionData> projection,
                             BsonTimestamp startAt, boolean stream,
@@ -80,6 +83,9 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.startAt = startAt == null ? null : startAt.getValue();
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
+        this.types = table.resolveColumnTypes(projection);
+        this.forceMongoParallelismOne = table.isForceMongoParallelismOne();
+    }
 
         externalNames = table.externalNames();
     }
@@ -139,6 +145,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                             .setMapStreamFn(this::convertStreamDocToRow)
                             .setStartAtTimestamp(startAt == null ? null : new BsonTimestamp(startAt))
                             .setEventTimePolicy(eventTimePolicy)
+                            .setNonDistributed(forceMongoParallelismOne)
             );
 
             processors.add(processor);

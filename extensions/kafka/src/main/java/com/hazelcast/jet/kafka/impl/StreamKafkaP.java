@@ -25,7 +25,9 @@ import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.kafka.KafkaDataLink;
 import com.hazelcast.jet.kafka.KafkaProcessors;
+import com.hazelcast.jet.pipeline.DataLinkRef;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -345,4 +347,18 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     public static <K, V> FunctionEx<Processor.Context, Consumer<K, V>> kafkaConsumerFn(Properties properties) {
         return (c) -> new KafkaConsumer<>(properties);
     }
+
+    public static <K, V> FunctionEx<Processor.Context, Consumer<K, V>> kafkaConsumerFn(DataLinkRef dataLinkRef) {
+        return (context) -> {
+            KafkaDataLink kafkaDataLink = context
+                    .dataLinkService()
+                    .getAndRetainDataLink(dataLinkRef.getName(), KafkaDataLink.class);
+            try {
+                return kafkaDataLink.newConsumer();
+            } finally {
+                kafkaDataLink.release();
+            }
+        };
+    }
+
 }

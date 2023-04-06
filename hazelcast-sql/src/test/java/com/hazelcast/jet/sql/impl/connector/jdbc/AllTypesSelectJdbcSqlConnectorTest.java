@@ -36,7 +36,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static java.util.Arrays.asList;
 import static org.assertj.core.util.Lists.newArrayList;
 
@@ -96,10 +95,7 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + " ("
                 + "table_column " + mappingType
                 + ") "
-                + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                + ")"
+                + "DATA LINK " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder("SELECT * FROM " + mappingName, new Row(expected));

@@ -230,7 +230,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
             List<Integer> windowEndIndexes,
             RelNode input
     ) {
-        // TODO: [viliam, sasha] besides watermark order, we can also use normal collation
+        // TODO [sasha]: besides watermark order, we can also use normal collation
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(input);
         WatermarkedFields watermarkedFields = query.extractWatermarkedFields(input);
         if (watermarkedFields == null) {

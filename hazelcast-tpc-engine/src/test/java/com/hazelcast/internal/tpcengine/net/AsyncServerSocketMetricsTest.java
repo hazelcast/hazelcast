@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.net;
 
-import java.nio.ByteBuffer;
+import org.junit.Test;
 
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
+import static junit.framework.TestCase.assertEquals;
 
+public class AsyncServerSocketMetricsTest {
 
-/**
- * A {@link ReadHandler} that disposes any bytes on the receive buffer.
- */
-public class DevNullReadHandler extends ReadHandler {
-    @Override
-    public void onRead(ByteBuffer receiveBuffer) {
-        upcast(receiveBuffer).position(receiveBuffer.limit());
+    @Test
+    public void test_writeEvents() {
+        AsyncServerSocketMetrics metrics = new AsyncServerSocketMetrics();
+
+        metrics.incAccepted();
+        assertEquals(1, metrics.accepted());
+
+        metrics.incAccepted();
+        assertEquals(2, metrics.accepted());
     }
 }

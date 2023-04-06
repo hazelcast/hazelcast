@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.FORCE_PARALLELISM_ONE;
+import static java.lang.Boolean.parseBoolean;
 import static java.util.stream.Collectors.toList;
 
 class MongoTable extends JetTable {
@@ -47,12 +49,14 @@ class MongoTable extends JetTable {
     private final String[] externalNames;
     private final QueryDataType[] fieldTypes;
     private final BsonType[] fieldExternalTypes;
+    private final boolean forceMongoParallelismOne;
 
     MongoTable(
             @Nonnull String schemaName,
             @Nonnull String name,
             @Nonnull String databaseName,
             @Nullable String collectionName,
+            @Nullable String dataLinkName,
             @Nonnull Map<String, String> options,
             @Nonnull SqlConnector sqlConnector,
             @Nonnull List<TableField> fields,
@@ -63,7 +67,7 @@ class MongoTable extends JetTable {
         this.collectionName = collectionName;
         this.options = options;
         this.connectionString = options.get(Options.CONNECTION_STRING_OPTION);
-        this.dataLinkName = options.get(Options.DATA_LINK_REF_OPTION);
+        this.dataLinkName = dataLinkName;
         this.streaming = streaming;
 
         this.externalNames = getFields().stream()
@@ -75,6 +79,8 @@ class MongoTable extends JetTable {
         this.fieldExternalTypes = getFields().stream()
                                              .map(field -> ((MongoTableField) field).externalType)
                                              .toArray(BsonType[]::new);
+
+       this.forceMongoParallelismOne = parseBoolean(options.getOrDefault(FORCE_PARALLELISM_ONE, "false"));
     }
 
     public MongoTableField getField(String name) {
@@ -135,6 +141,23 @@ class MongoTable extends JetTable {
         return list.get(0);
     }
 
+    /**
+     * Returns an array of data types with order the same as the order of fields in the projection.
+     */
+    @Nonnull
+    QueryDataType[] resolveColumnTypes(@Nonnull List<String> requestedProjection) {
+        QueryDataType[] types = new QueryDataType[requestedProjection.size()];
+        int i = 0;
+        for (String column : requestedProjection) {
+            types[i++] = getFieldByExternalName(column).getType();
+        }
+        return types;
+    }
+
+    public boolean isForceMongoParallelismOne() {
+        return forceMongoParallelismOne;
+    }
+
     @Override
     public String toString() {
         return "MongoTable{" +
@@ -143,6 +166,7 @@ class MongoTable extends JetTable {
                 ", connectionString='" + connectionString + '\'' +
                 ", options=" + options +
                 ", streaming=" + streaming +
+                ", forceMongoParallelismOne=" + forceMongoParallelismOne +
                 '}';
     }
 

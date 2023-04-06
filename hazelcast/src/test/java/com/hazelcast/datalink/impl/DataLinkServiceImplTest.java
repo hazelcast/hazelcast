@@ -410,7 +410,7 @@ public class DataLinkServiceImplTest extends HazelcastTestSupport {
     public void type_for_data_link_should_throw_when_data_link_does_not_exist() {
         assertThatThrownBy(() -> dataLinkService.typeForDataLink("non-existing-data-link"))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessage("DataLink with name 'non-existing-data-link' does not exist");
+                .hasMessage("Data link 'non-existing-data-link' not found");
     }
 
     private InternalDataLinkService getDataLinkService() {

@@ -24,6 +24,7 @@ import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -52,6 +53,7 @@ class UpdateQueryBuilder {
                         throw new UnsupportedOperationException(requireNonNull(pair.right).toString());
                     }
                     parameterPositions.add(pos);
+                    String externalFieldName = table.getField(fieldNames.get(i)).externalName();
                     return dialect.quoteIdentifier(table.getField(pair.left).externalName()) + "=?";
                 })
                 .collect(joining(", "));
@@ -63,7 +65,7 @@ class UpdateQueryBuilder {
                 })
                 .collect(joining(" AND "));
 
-        query = "UPDATE " + dialect.quoteIdentifier(table.getExternalName()) +
+        query = "UPDATE " + dialect.quoteIdentifier(new StringBuilder(), Arrays.asList(table.getExternalName())) +
                 " SET " + setSqlFragment +
                 " WHERE " + whereClause;
     }

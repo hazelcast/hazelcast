@@ -23,6 +23,10 @@ import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
+import java.util.Arrays;
+
+import static java.util.stream.Collectors.joining;
+
 @Category({NightlyTest.class, ParallelJVMTest.class})
 public class MySQLGenericMapStoreTest extends GenericMapStoreTest {
 
@@ -31,4 +35,10 @@ public class MySQLGenericMapStoreTest extends GenericMapStoreTest {
         initialize(new MySQLDatabaseProvider());
     }
 
+    @Override
+    protected String quote(String... parts) {
+        return Arrays.stream(parts)
+                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
+                     .collect(joining("."));
+    }
 }

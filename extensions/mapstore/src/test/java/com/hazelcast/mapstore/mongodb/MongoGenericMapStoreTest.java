@@ -49,6 +49,7 @@ import org.testcontainers.containers.MongoDBContainer;
 
 import java.util.ArrayList;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -100,8 +101,8 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
 
     @AfterClass
     public static void afterClass() {
-        mongoClient.close();
-        mongoContainer.stop();
+        closeResource(mongoClient);
+        closeResource(mongoContainer);
     }
 
     @Before

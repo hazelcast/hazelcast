@@ -24,6 +24,8 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.version.MemberVersion;
+import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -33,6 +35,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static java.util.Arrays.asList;
 
 /**
  * Common SQL engine utility methods used by both "core" and "sql" modules.
@@ -148,5 +152,16 @@ public final class QueryUtils {
         res.add(Collections.emptyList());
 
         return res;
+    }
+
+    /**
+     * Quote the given compound identifier using Calcite dialect (= Hazelcast dialect).
+     * You can use this when giving information to the user, e.g. in exception message.
+     * When building a query you should use {@link SqlDialect#quoteIdentifier(StringBuilder, List)} directly.
+     */
+    public static String quoteCompoundIdentifier(String[] compoundIdentifier) {
+        return CalciteSqlDialect.DEFAULT
+                .quoteIdentifier(new StringBuilder(), asList(compoundIdentifier))
+                .toString();
     }
 }

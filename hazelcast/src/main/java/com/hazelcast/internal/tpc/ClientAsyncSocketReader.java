@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.tpcengine.ReadHandler;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -31,29 +31,29 @@ import java.util.UUID;
 
 
 /**
- * A {@link ReadHandler} that reads incoming traffic from clients. The main
+ * A {@link AsyncSocketReader} that reads incoming traffic from clients. The main
  * payloads being the {@link ClientMessage}.
  */
-public class ClientReadHandler extends ReadHandler {
+public class ClientAsyncSocketReader extends AsyncSocketReader {
 
     private final ClientEngine clientEngine;
     private final ClientMessageReader clientMessageReader = new ClientMessageReader(0);
     private boolean protocolBytesReceived;
     private Connection connection;
 
-    public ClientReadHandler(ClientEngine clientEngine) {
+    public ClientAsyncSocketReader(ClientEngine clientEngine) {
         this.clientEngine = clientEngine;
     }
 
     @Override
-    public void onRead(ByteBuffer buffer) {
+    public void onRead(ByteBuffer src) {
         // Currently we just consume the protocol bytes; we don't do anything with it.
         if (!protocolBytesReceived) {
-            consumeProtocolBytes(buffer);
+            consumeProtocolBytes(src);
         }
 
         for (; ; ) {
-            if (!clientMessageReader.readFrom(buffer, true)) {
+            if (!clientMessageReader.readFrom(src, true)) {
                 return;
             }
 
