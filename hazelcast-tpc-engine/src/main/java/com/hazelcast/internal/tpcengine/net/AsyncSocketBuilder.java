@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.net;
+
+import com.hazelcast.internal.tpcengine.Option;
+import com.hazelcast.internal.tpcengine.Reactor;
 
 /**
  * A {@link AsyncSocket} builder. Can only be used once.

@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.FORCE_PARALLELISM_ONE;
+import static java.lang.Boolean.parseBoolean;
 import static java.util.stream.Collectors.toList;
 
 class MongoTable extends JetTable {
@@ -49,6 +51,7 @@ class MongoTable extends JetTable {
     private final String[] externalNames;
     private final QueryDataType[] fieldTypes;
     private final BsonType[] fieldExternalTypes;
+    private final boolean forceMongoParallelismOne;
 
     MongoTable(
             @Nonnull String schemaName,
@@ -78,6 +81,8 @@ class MongoTable extends JetTable {
         this.fieldExternalTypes = getFields().stream()
                                              .map(field -> ((MongoTableField) field).externalType)
                                              .toArray(BsonType[]::new);
+
+       this.forceMongoParallelismOne = parseBoolean(options.getOrDefault(FORCE_PARALLELISM_ONE, "false"));
     }
 
     public MongoTableField getField(String name) {
@@ -173,6 +178,10 @@ class MongoTable extends JetTable {
         return types;
     }
 
+    public boolean isForceMongoParallelismOne() {
+        return forceMongoParallelismOne;
+    }
+
     @Override
     public String toString() {
         return "MongoTable{" +
@@ -181,6 +190,7 @@ class MongoTable extends JetTable {
                 ", connectionString='" + connectionString + '\'' +
                 ", options=" + options +
                 ", streaming=" + streaming +
+                ", forceMongoParallelismOne=" + forceMongoParallelismOne +
                 '}';
     }
 

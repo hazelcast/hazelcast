@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AsyncSocket;
-import com.hazelcast.internal.tpcengine.AsyncSocketBuilderTest;
-import com.hazelcast.internal.tpcengine.DevNullReadHandler;
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilderTest;
+import com.hazelcast.internal.tpcengine.net.DevNullReadHandler;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

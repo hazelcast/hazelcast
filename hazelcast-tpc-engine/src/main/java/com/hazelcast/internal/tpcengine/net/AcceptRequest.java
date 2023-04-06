@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.nio;
+package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketTest;
+import java.util.function.Consumer;
 
-public class NioAsyncSocketTest extends AsyncSocketTest {
-    @Override
-    public ReactorBuilder newReactorBuilder() {
-        return new NioReactorBuilder();
-    }
+/**
+ * Contains an accept request when a socket connects to the {@link AsyncServerSocket}. Is
+ * processed by setting the {@link AsyncServerSocketBuilder#setAcceptConsumer(Consumer)}.
+ * <p/>
+ * Currently it is just a dumb placeholder so that we can pass the appropriate resource
+ * (e.g. the accepted SocketChannel) to the constructor of the AsyncSocket in a typesafe
+ * manner.
+ */
+public interface AcceptRequest extends AutoCloseable {
+
 }

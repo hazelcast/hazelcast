@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
-
-import java.nio.ByteBuffer;
-
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
-
-
 /**
- * A {@link ReadHandler} that disposes any bytes on the receive buffer.
+ * <p>Contains the Networking functionality of the TPC engine<br>
  */
-public class DevNullReadHandler extends ReadHandler {
-    @Override
-    public void onRead(ByteBuffer receiveBuffer) {
-        upcast(receiveBuffer).position(receiveBuffer.limit());
-    }
-}
+package com.hazelcast.internal.tpcengine.net;
