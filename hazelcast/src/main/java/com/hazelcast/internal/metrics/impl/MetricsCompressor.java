@@ -344,7 +344,6 @@ public class MetricsCompressor {
             // should never be thrown
             throw new RuntimeException(e);
         }
-
     }
 
     private byte[] getRenderedBlob() {
