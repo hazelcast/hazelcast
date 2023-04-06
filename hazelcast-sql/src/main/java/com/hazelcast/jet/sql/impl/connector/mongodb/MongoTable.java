@@ -42,7 +42,7 @@ class MongoTable extends JetTable {
     final String databaseName;
     final String collectionName;
     final String connectionString;
-    final String dataLinkName;
+    final String dataConnectionName;
     final Map<String, String> options;
     /**
      * Streaming query always needs _id to be present, even if user don't request it
@@ -58,7 +58,7 @@ class MongoTable extends JetTable {
             @Nonnull String name,
             @Nonnull String databaseName,
             @Nullable String collectionName,
-            @Nullable String dataLinkName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
             @Nonnull SqlConnector sqlConnector,
             @Nonnull List<TableField> fields,
@@ -69,7 +69,7 @@ class MongoTable extends JetTable {
         this.collectionName = collectionName;
         this.options = options;
         this.connectionString = options.get(Options.CONNECTION_STRING_OPTION);
-        this.dataLinkName = dataLinkName;
+        this.dataConnectionName = dataConnectionName;
         this.streaming = streaming;
 
         this.externalNames = getFields().stream()

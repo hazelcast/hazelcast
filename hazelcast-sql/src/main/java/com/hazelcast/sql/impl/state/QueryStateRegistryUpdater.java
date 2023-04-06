@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.sql.impl.DataLinkConsistencyChecker;
+import com.hazelcast.sql.impl.DataConnectionConsistencyChecker;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
@@ -36,7 +36,7 @@ public class QueryStateRegistryUpdater {
     private final NodeServiceProvider nodeServiceProvider;
     private final QueryClientStateRegistry clientStateRegistry;
     private final PlanCacheChecker planCacheChecker;
-    private final DataLinkConsistencyChecker dataLinkConsistencyChecker;
+    private final DataConnectionConsistencyChecker dataConnectionConsistencyChecker;
 
     private final ILogger logger;
 
@@ -55,7 +55,7 @@ public class QueryStateRegistryUpdater {
             NodeServiceProvider nodeServiceProvider,
             QueryClientStateRegistry clientStateRegistry,
             PlanCacheChecker planCacheChecker,
-            DataLinkConsistencyChecker dataLinkConsistencyChecker,
+            DataConnectionConsistencyChecker dataConnectionConsistencyChecker,
             long stateCheckFrequency
     ) {
         if (stateCheckFrequency <= 0) {
@@ -65,7 +65,7 @@ public class QueryStateRegistryUpdater {
         this.nodeServiceProvider = nodeServiceProvider;
         this.clientStateRegistry = clientStateRegistry;
         this.planCacheChecker = planCacheChecker;
-        this.dataLinkConsistencyChecker = dataLinkConsistencyChecker;
+        this.dataConnectionConsistencyChecker = dataConnectionConsistencyChecker;
         this.stateCheckFrequency = stateCheckFrequency;
         this.logger = nodeServiceProvider.getLogger(getClass());
 
@@ -128,7 +128,7 @@ public class QueryStateRegistryUpdater {
 
                     checkClientState();
                     checkPlans();
-                    checkDataLinksConsistency();
+                    checkDataConnectionsConsistency();
                 } catch (InterruptedException e) {
                     if (currentStateCheckFrequency != stateCheckFrequency) {
                         // Interrupted due to frequency change.
@@ -154,10 +154,10 @@ public class QueryStateRegistryUpdater {
             }
         }
 
-        private void checkDataLinksConsistency() {
-            if (dataLinkConsistencyChecker.isInitialized()) {
+        private void checkDataConnectionsConsistency() {
+            if (dataConnectionConsistencyChecker.isInitialized()) {
                 try {
-                    dataLinkConsistencyChecker.check();
+                    dataConnectionConsistencyChecker.check();
                 } catch (Throwable t) {
                     logger.warning(t);
                 }
@@ -165,8 +165,8 @@ public class QueryStateRegistryUpdater {
                 if (nodeServiceProvider.getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME) == null) {
                     return;
                 }
-                if (!dataLinkConsistencyChecker.isInitialized()) {
-                    dataLinkConsistencyChecker.init();
+                if (!dataConnectionConsistencyChecker.isInitialized()) {
+                    dataConnectionConsistencyChecker.init();
                 }
             }
         }

@@ -19,7 +19,7 @@ package com.hazelcast.mapstore;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.JdbcDataLink;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
@@ -62,11 +62,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * Usage:
  * <p>
- * First define data link, e.g. for JDBC use {@link JdbcDataLink}:
+ * First define data connection, e.g. for JDBC use {@link JdbcDataConnection}:
  * <pre>{@code Config config = new Config();
- * config.addDataLinkConfig(
- *   new DataLinkConfig("mysql-ref")
- *     .setClassName(JdbcDataLink.class.getName())
+ * config.addDataConnectionConfig(
+ *   new DataConnectionConfig("mysql-ref")
+ *     .setType("Jdbc")
  *     .setProperty("jdbcUrl", dbConnectionUrl)
  * );}</pre>
  * <p>
@@ -74,7 +74,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <pre>{@code MapConfig mapConfig = new MapConfig(mapName);
  * MapStoreConfig mapStoreConfig = new MapStoreConfig();
  * mapStoreConfig.setClassName(GenericMapLoader.class.getName());
- * mapStoreConfig.setProperty(JdbcSqlConnector.OPTION_DATA_LINK_REF, "mysql-ref");
+ * mapStoreConfig.setProperty(GenericMapLoader.DATA_CONNECTION_REF_PROPERTY, "mysql-ref");
  * mapConfig.setMapStoreConfig(mapStoreConfig);
  * instance().getConfig().addMapConfig(mapConfig);}</pre>
  * <p>
@@ -93,7 +93,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     static final String MAPPING_PREFIX = "__map-store.";
 
-    static final String DATA_LINK_REF_PROPERTY = "data-link-ref";
+    static final String DATA_CONNECTION_REF_PROPERTY = "data-connection-ref";
     static final String TABLE_NAME_PROPERTY = "table-name";
 
     static final String ID_COLUMN_PROPERTY = "id-column";
@@ -177,7 +177,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
                     mappingName,
                     genericMapStoreProperties.tableName,
                     mappingColumns,
-                    genericMapStoreProperties.dataLinkRef,
+                    genericMapStoreProperties.dataConnectionRef,
                     genericMapStoreProperties.idColumn
             );
 
@@ -206,7 +206,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
                 tempMapping,
                 genericMapStoreProperties.tableName,
                 null,
-                genericMapStoreProperties.dataLinkRef,
+                genericMapStoreProperties.dataConnectionRef,
                 genericMapStoreProperties.idColumn
         );
 

@@ -31,7 +31,7 @@ import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.security.impl.function.SecuredFunctions;
@@ -405,16 +405,16 @@ public final class SinkProcessors {
     @Beta
     public static <T> ProcessorMetaSupplier writeJdbcP(
             @Nonnull String updateQuery,
-            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
             boolean exactlyOnce,
             int batchLimit
     ) {
         checkNotNull(updateQuery, "updateQuery");
-        checkNotNull(dataLinkRef, "dataLinkRef");
+        checkNotNull(dataConnectionRef, "dataConnectionRef");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(null, updateQuery, dataLinkRef.getName(), bindFn, exactlyOnce, batchLimit);
+        return WriteJdbcP.metaSupplier(null, updateQuery, dataConnectionRef.getName(), bindFn, exactlyOnce, batchLimit);
     }
 
     /**

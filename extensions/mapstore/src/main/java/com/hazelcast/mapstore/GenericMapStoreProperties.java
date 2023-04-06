@@ -24,7 +24,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapLoader.DATA_LINK_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.TABLE_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
@@ -34,7 +34,7 @@ import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
  */
 class GenericMapStoreProperties {
 
-    final String dataLinkRef;
+    final String dataConnectionRef;
     final String tableName;
     final String idColumn;
     final List<String> columns;
@@ -44,7 +44,7 @@ class GenericMapStoreProperties {
     final String compactTypeName;
 
     GenericMapStoreProperties(Properties properties, String mapName) {
-        dataLinkRef = properties.getProperty(DATA_LINK_REF_PROPERTY);
+        dataConnectionRef = properties.getProperty(DATA_CONNECTION_REF_PROPERTY);
         tableName = properties.getProperty(TABLE_NAME_PROPERTY, mapName);
         idColumn = properties.getProperty(ID_COLUMN_PROPERTY, "id");
 

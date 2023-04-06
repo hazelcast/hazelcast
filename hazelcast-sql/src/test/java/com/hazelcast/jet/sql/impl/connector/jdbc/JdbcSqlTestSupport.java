@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
@@ -60,8 +60,8 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", dbConnectionUrl);
-        config.addDataLinkConfig(
-                new DataLinkConfig(TEST_DATABASE_REF)
+        config.addDataConnectionConfig(
+                new DataConnectionConfig(TEST_DATABASE_REF)
                         .setType("jdbc")
                         .setProperties(properties)
         );
@@ -145,7 +145,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
@@ -157,13 +157,13 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
-    protected static void createJdbcMappingUsingDataLink(String name, String dataLink) {
+    protected static void createJdbcMappingUsingDataConnection(String name, String dataConnection) {
         try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + name +
-                " DATA LINK " + quoteName(dataLink) + "\n"
+                " DATA CONNECTION " + quoteName(dataConnection) + "\n"
         )) {
             assertThat(result.updateCount()).isEqualTo(0);
         }

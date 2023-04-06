@@ -57,10 +57,10 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureDummyDataLink;
-import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureJdbcDataLink;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureDummyDataConnection;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureJdbcDataConnection;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -73,8 +73,8 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
-    private static final String JDBC_DATA_LINK = "jdbc-data-link";
-    private static final String DUMMY_DATA_LINK = "dummy-data-link";
+    private static final String JDBC_DATA_CONNECTION = "jdbc-data-connection";
+    private static final String DUMMY_DATA_CONNECTION = "dummy-data-connection";
 
     @SuppressWarnings({"rawtypes", "resource"})
     public static PostgreSQLContainer container = new PostgreSQLContainer<>("postgres:12.1")
@@ -92,8 +92,8 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         container.start();
 
         Config config = smallInstanceConfig();
-        configureJdbcDataLink(JDBC_DATA_LINK, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
-        configureDummyDataLink(DUMMY_DATA_LINK, config);
+        configureJdbcDataConnection(JDBC_DATA_CONNECTION, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
+        configureDummyDataConnection(DUMMY_DATA_CONNECTION, config);
         initialize(2, config);
     }
 
@@ -201,13 +201,13 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_data_link_config() throws SQLException {
+    public void test_data_connection_config() throws SQLException {
         assertEquals(0, rowCount());
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
                 .map(item -> entry(item, item.toString()))
                 .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                        dataLinkRef(JDBC_DATA_LINK),
+                        dataConnectionRef(JDBC_DATA_CONNECTION),
                         (stmt, item) -> {
                             stmt.setInt(1, item.getKey());
                             stmt.setString(2, item.getValue());

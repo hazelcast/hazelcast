@@ -65,7 +65,7 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName) {
+            @Nullable String dataConnectionName) {
         throw new UnsupportedOperationException("Resolving fields not supported for " + typeName());
     }
 
@@ -76,7 +76,7 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String name,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException("Creating table not supported for " + typeName());

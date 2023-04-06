@@ -52,7 +52,7 @@ public class JdbcSinkBuilder<T> {
     private SupplierEx<? extends CommonDataSource> dataSourceSupplier;
     private boolean exactlyOnce = DEFAULT_EXACTLY_ONCE;
     private int batchLimit = DEFAULT_BATCH_LIMIT;
-    private DataLinkRef dataLinkRef;
+    private DataConnectionRef dataConnectionRef;
 
     JdbcSinkBuilder() {
     }
@@ -121,7 +121,7 @@ public class JdbcSinkBuilder<T> {
     public JdbcSinkBuilder<T> jdbcUrl(String connectionUrl) {
         this.jdbcUrl = connectionUrl;
         this.dataSourceSupplier = null;
-        this.dataLinkRef = null;
+        this.dataConnectionRef = null;
         return this;
     }
 
@@ -144,7 +144,7 @@ public class JdbcSinkBuilder<T> {
     public JdbcSinkBuilder<T> dataSourceSupplier(SupplierEx<? extends CommonDataSource> dataSourceSupplier) {
         this.dataSourceSupplier = dataSourceSupplier;
         this.jdbcUrl = null;
-        this.dataLinkRef = null;
+        this.dataConnectionRef = null;
         return this;
     }
 
@@ -185,23 +185,23 @@ public class JdbcSinkBuilder<T> {
     }
 
     /**
-     * Sets the reference to the configured data link of {@link DataLinkRef} from which
+     * Sets the reference to the configured data connection of {@link DataConnectionRef} from which
      * the instance of the {@link javax.sql.DataSource} will be retrieved.
      * <p>
      * Example:
      * <p>
-     * (Prerequisite) Data link configuration:
+     * (Prerequisite) Data connection configuration:
      * <pre>{@code
      *      Config config = smallInstanceConfig();
      *      Properties properties = new Properties();
      *      properties.put("jdbcUrl", jdbcUrl);
      *      properties.put("username", username);
      *      properties.put("password", password);
-     *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
-     *              .setName("my-jdbc-data-link")
-     *              .setClassName(JdbcDataLink.class.getName())
+     *      DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+     *              .setName("my-jdbc-data-connection")
+     *              .setClassName(JdbcDataConnection.class.getName())
      *              .setProperties(properties);
-     *      config.getDataLinkConfigs().put(name, dataLinkConfig);
+     *      config.getDataConnectionConfigs().put(name, dataConnectionConfig);
      * }</pre>
      * </p>
      * <p>Pipeline configuration
@@ -211,7 +211,7 @@ public class JdbcSinkBuilder<T> {
      *                 .map(item -> entry(item, item.toString()))
      *                 .writeTo(Sinks.<Entry<Integer, String>>jdbcBuilder()
      *                         .updateQuery("INSERT INTO " + tableName + " VALUES(?, ?)")
-     *                         .dataLinkRef(dataLinkRef("my-jdbc-data-link"))
+     *                         .dataConnectionRef(dataConnectionRef("my-jdbc-data-connection"))
      *                         .bindFn((stmt, item1) -> {
      *                             stmt.setInt(1, item1.getKey());
      *                             stmt.setString(2, item1.getValue());
@@ -220,16 +220,16 @@ public class JdbcSinkBuilder<T> {
      * }</pre>
      * </p>
      *
-     * @param dataLinkRef the reference to the configured data link
+     * @param dataConnectionRef the reference to the configured data connection
      * @return this instance for fluent API
      * @since 5.2
      */
     @Nonnull
     @Beta
-    public JdbcSinkBuilder<T> dataLinkRef(DataLinkRef dataLinkRef) {
+    public JdbcSinkBuilder<T> dataConnectionRef(DataConnectionRef dataConnectionRef) {
         this.dataSourceSupplier = null;
         this.jdbcUrl = null;
-        this.dataLinkRef = dataLinkRef;
+        this.dataConnectionRef = dataConnectionRef;
         return this;
     }
 
@@ -238,8 +238,8 @@ public class JdbcSinkBuilder<T> {
      */
     @Nonnull
     public Sink<T> build() {
-        if (dataSourceSupplier == null && jdbcUrl == null && dataLinkRef == null) {
-            throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() nor dataLinkRef() set");
+        if (dataSourceSupplier == null && jdbcUrl == null && dataConnectionRef == null) {
+            throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() nor dataConnectionRef() set");
         }
         if (jdbcUrl != null) {
             String connectionUrl = jdbcUrl;
@@ -252,7 +252,7 @@ public class JdbcSinkBuilder<T> {
         }
 
         return Sinks.fromProcessor("jdbcSink",
-                SinkProcessors.writeJdbcP(updateQuery, dataLinkRef, bindFn,
+                SinkProcessors.writeJdbcP(updateQuery, dataConnectionRef, bindFn,
                         exactlyOnce, batchLimit));
 
     }

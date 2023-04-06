@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.datalink.impl.InternalDataLinkService;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
@@ -88,7 +88,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "  \"id\" INTEGER," + LE +
                 "  \"name\" VARCHAR" + LE +
                 ")" + LE +
-                "DATA LINK \"testDatabaseRef\"";
+                "DATA CONNECTION \"testDatabaseRef\"";
         assertRowsAnyOrder("SELECT GET_DDL('relation', '" + mappingName + "')",
                 ImmutableList.of(new Row(expectedMappingQuery)));
     }
@@ -104,7 +104,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
          .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
@@ -121,14 +121,14 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
          .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
     }
 
     @Test
-    public void createMappingWithoutDataLink() {
+    public void createMappingWithoutDataConnection() {
         tableName = randomTableName();
 
         assertThatThrownBy(() ->
@@ -141,7 +141,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("You must provide data link when using the Jdbc connector");
+         .hasMessageContaining("You must provide data connection when using the Jdbc connector");
     }
 
     @Test
@@ -152,7 +152,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         ))
                 .isInstanceOf(HazelcastSqlException.class);
 
@@ -181,7 +181,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + " id INT, "
                 + " fullName VARCHAR EXTERNAL NAME name "
                 + ") "
-                + "DATA LINK " + TEST_DATABASE_REF
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder("SHOW MAPPINGS",
@@ -205,7 +205,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
          .hasMessageContaining("Could not resolve field with name fullName");
@@ -230,7 +230,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME myName "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
          .hasMessageContaining("Could not resolve field with external name myName");
@@ -250,7 +250,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id BOOLEAN, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
          .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
@@ -266,7 +266,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         insertItems(tableName, 2);
 
         execute("CREATE MAPPING " + tableName
-                + " DATA LINK " + TEST_DATABASE_REF
+                + " DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         // If you change LinkedHashMap -> HashMap at JdbcSqlConnector:159, it will fail.
@@ -277,18 +277,18 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void when_mappingIsDeclaredWithDataLink_then_itIsAvailable() {
+    public void when_mappingIsDeclaredWithDataConnection_then_itIsAvailable() {
         // given
         String dlName = randomName();
         String name = randomName();
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
-        createDataLink(instance(), dlName, "JDBC", false, options);
-        InternalDataLinkService dlService = getNodeEngineImpl(instance()).getDataLinkService();
-        assertThat(dlService.existsSqlDataLink(dlName)).isTrue();
+        createDataConnection(instance(), dlName, "JDBC", false, options);
+        InternalDataConnectionService dlService = getNodeEngineImpl(instance()).getDataConnectionService();
+        assertThat(dlService.existsSqlDataConnection(dlName)).isTrue();
 
-        createJdbcMappingUsingDataLink(name, dlName);
+        createJdbcMappingUsingDataConnection(name, dlName);
         SqlResult mappings = sqlService.execute("SHOW MAPPINGS");
         Iterator<SqlRow> resultIt = mappings.iterator();
         assertThat(resultIt.hasNext()).isTrue();
@@ -303,7 +303,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         createTable(tableName);
 
         execute("CREATE MAPPING " + tableName
-                + " DATA LINK " + TEST_DATABASE_REF
+                + " DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         try (SqlResult result = sqlService.execute("SELECT * FROM " + tableName)) {

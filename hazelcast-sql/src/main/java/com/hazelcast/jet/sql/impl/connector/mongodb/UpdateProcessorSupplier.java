@@ -56,7 +56,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final String collectionName;
     private final List<String> fieldNames;
     private final List<? extends Serializable> updates;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private final QueryDataType pkType;
     private final BsonType pkExternalType;
     private ExpressionEvalContext evalContext;
@@ -65,7 +65,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
 
     UpdateProcessorSupplier(MongoTable table, List<String> fieldNames, List<? extends Serializable> updates) {
         this.connectionString = table.connectionString;
-        this.dataLinkName = table.dataLinkName;
+        this.dataConnectionName = table.dataConnectionName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
 
@@ -96,7 +96,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
             Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<Document>()
                             .setClientSupplier(clientSupplier)
-                            .setDataLinkRef(dataLinkName)
+                            .setDataConnectionRef(dataConnectionName)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Document.class)

@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.spi.annotation.Beta;
@@ -103,14 +103,14 @@ public final class MongoSourceBuilder {
      * each item to json.
      *
      * @param name               a descriptive name for the source (diagnostic purposes)
-     * @param dataLinkRef a link to some mongo data link
+     * @param dataConnectionRef a link to some mongo data connection
      */
     @Nonnull
     public static MongoSourceBuilder.Batch<Document> batch(
             @Nonnull String name,
-            @Nonnull DataLinkRef dataLinkRef
+            @Nonnull DataConnectionRef dataConnectionRef
             ) {
-        return new Batch<>(name, dataLinkRef);
+        return new Batch<>(name, dataConnectionRef);
     }
 
     /**
@@ -121,11 +121,11 @@ public final class MongoSourceBuilder {
      * documents in a collection and emits the items as a string by transforming
      * each item to json.
      *
-     * @param dataLinkRef a link to some mongo data link
+     * @param dataConnectionRef a link to some mongo data connection
      */
     @Nonnull
-    public static MongoSourceBuilder.Batch<Document> batch(@Nonnull DataLinkRef dataLinkRef) {
-        return new Batch<>("MongoBatchSource(" + dataLinkRef.getName() + ")", dataLinkRef);
+    public static MongoSourceBuilder.Batch<Document> batch(@Nonnull DataConnectionRef dataConnectionRef) {
+        return new Batch<>("MongoBatchSource(" + dataConnectionRef.getName() + ")", dataConnectionRef);
     }
 
     /**
@@ -172,14 +172,14 @@ public final class MongoSourceBuilder {
      * tolerance using {@link ChangeStreamDocument#getResumeToken()}.
      *
      * @param name               a descriptive name for the source (diagnostic purposes)
-     * @param dataLinkRef a link to some mongo data link
+     * @param dataConnectionRef a reference to some mongo data connection
      */
     @Nonnull
     public static MongoSourceBuilder.Stream<Document> stream(
             @Nonnull String name,
-            @Nonnull DataLinkRef dataLinkRef
+            @Nonnull DataConnectionRef dataConnectionRef
     ) {
-        return new Stream<>(name, dataLinkRef);
+        return new Stream<>(name, dataConnectionRef);
     }
 
     /**
@@ -189,13 +189,13 @@ public final class MongoSourceBuilder {
      * The source provides native timestamps using {@link ChangeStreamDocument#getWallTime()} and fault
      * tolerance using {@link ChangeStreamDocument#getResumeToken()}.
      *
-     * @param dataLinkRef a link to some mongo data link
+     * @param dataConnectionRef a reference to some mongo data connection
      */
     @Nonnull
     public static MongoSourceBuilder.Stream<Document> stream(
-            @Nonnull DataLinkRef dataLinkRef
+            @Nonnull DataConnectionRef dataConnectionRef
     ) {
-        return stream("MongoStreamSource(" + dataLinkRef.getName() + ")", dataLinkRef);
+        return stream("MongoStreamSource(" + dataConnectionRef.getName() + ")", dataConnectionRef);
     }
 
     private abstract static class Base<T> {
@@ -240,13 +240,13 @@ public final class MongoSourceBuilder {
         @SuppressWarnings("unchecked")
         private Batch(
                 @Nonnull String name,
-                @Nonnull DataLinkRef dataLinkRef
+                @Nonnull DataConnectionRef dataConnectionRef
         ) {
-            checkSerializable(dataLinkRef, "clientSupplier");
+            checkSerializable(dataConnectionRef, "clientSupplier");
             this.name = name;
             this.params = new ReadMongoParams<>(false);
             params
-                    .setDataLinkRef(dataLinkRef)
+                    .setDataConnectionRef(dataConnectionRef)
                     .setMapItemFn((FunctionEx<Document, T>) toClass(Document.class));
         }
 
@@ -437,12 +437,12 @@ public final class MongoSourceBuilder {
         @SuppressWarnings("unchecked")
         private Stream(
                 @Nonnull String name,
-                @Nonnull DataLinkRef dataLinkRef
+                @Nonnull DataConnectionRef dataConnectionRef
         ) {
-            checkSerializable(dataLinkRef, "dataLinkRef");
+            checkSerializable(dataConnectionRef, "dataConnectionRef");
             this.name = name;
             this.params = new ReadMongoParams<>(true);
-            this.params.setDataLinkRef(dataLinkRef);
+            this.params.setDataConnectionRef(dataConnectionRef);
             this.params.setMapStreamFn(
                     (BiFunctionEx<ChangeStreamDocument<Document>, Long, T>) streamToClass(Document.class));
         }

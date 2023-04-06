@@ -49,12 +49,12 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
     @Test
-    public void dataLinkDownShouldTimeout() {
+    public void dataConnectionDownShouldTimeout() {
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + tableName,
@@ -79,7 +79,7 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
 
     @Test
     @Ignore("https://github.com/hazelcast/hazelcast/issues/22651")
-    public void dataLinkDownShouldNotAffectUnrelatedQueries() {
+    public void dataConnectionDownShouldNotAffectUnrelatedQueries() {
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + tableName,
