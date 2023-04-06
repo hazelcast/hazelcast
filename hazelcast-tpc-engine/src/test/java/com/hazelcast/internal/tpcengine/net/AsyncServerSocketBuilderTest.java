@@ -108,7 +108,7 @@ public abstract class AsyncServerSocketBuilderTest {
         AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
         builder.setAcceptConsumer(acceptRequest -> {
             AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
-                    .setReadHandler(new DevNullReadHandler())
+                    .setReader(new DevNullAsyncSocketReader())
                     .build();
 
             socket.start();

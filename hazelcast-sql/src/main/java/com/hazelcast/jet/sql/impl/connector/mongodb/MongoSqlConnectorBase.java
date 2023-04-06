@@ -73,15 +73,15 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataLinkName) {
         if (externalName.length > 2) {
             throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                     + ", external name for Mongo is allowed to have only one component (collection)"
                     + " or two components (database and collection)");
         }
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        return fieldResolver.resolveFields(externalName, options, userFields, isStream());
+        return fieldResolver.resolveFields(externalName, dataLinkName, options, userFields, isStream());
     }
 
     @Nonnull
@@ -94,11 +94,11 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     @Nonnull
     @Override
     public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
-                             @Nonnull String[] externalName, @Nonnull Map<String, String> options,
-                             @Nonnull List<MappingField> resolvedFields) {
-        String collectionName = externalName[0];
+                             @Nonnull String[] externalName, @Nullable String dataLinkName,
+                             @Nonnull Map<String, String> options, @Nonnull List<MappingField> resolvedFields) {
+        String collectionName = externalName[0]; // TODO HZ-2260
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        String databaseName = Options.getDatabaseName(nodeEngine, options);
+        String databaseName = Options.getDatabaseName(nodeEngine, dataLinkName, options);
         ConstantTableStatistics stats = new ConstantTableStatistics(0);
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
@@ -131,7 +131,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                         "DOCUMENT", !hasPK));
             }
         }
-        return new MongoTable(schemaName, mappingName, databaseName, collectionName, options, this,
+        return new MongoTable(schemaName, mappingName, databaseName, collectionName, dataLinkName, options, this,
                 fields, stats, isStreaming);
     }
 

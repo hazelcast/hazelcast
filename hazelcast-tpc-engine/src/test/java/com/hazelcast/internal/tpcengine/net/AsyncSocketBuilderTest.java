@@ -95,25 +95,25 @@ public abstract class AsyncSocketBuilderTest {
     public void test_setReadHandler_whenReadHandlerNull() {
         Reactor reactor = newReactor();
         AsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setReadHandler(null));
+        assertThrows(NullPointerException.class, () -> builder.setReader(null));
     }
 
     @Test
     public void test_setReadHandler_whenAlreadyBuild() {
         Reactor reactor = newReactor();
         AsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        builder.setReadHandler(new DevNullReadHandler());
+        builder.setReader(new DevNullAsyncSocketReader());
         builder.build();
 
-        DevNullReadHandler readHandler = new DevNullReadHandler();
-        assertThrows(IllegalStateException.class, () -> builder.setReadHandler(readHandler));
+        DevNullAsyncSocketReader readHandler = new DevNullAsyncSocketReader();
+        assertThrows(IllegalStateException.class, () -> builder.setReader(readHandler));
     }
 
     @Test
     public void test_build_whenAlreadyBuild() {
         Reactor reactor = newReactor();
         AsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        builder.setReadHandler(new DevNullReadHandler());
+        builder.setReader(new DevNullAsyncSocketReader());
         builder.build();
 
         assertThrows(IllegalStateException.class, () -> builder.build());

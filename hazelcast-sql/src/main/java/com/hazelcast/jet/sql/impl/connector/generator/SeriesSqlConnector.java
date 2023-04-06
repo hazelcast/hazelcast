@@ -64,8 +64,8 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataLinkName) {
         throw new UnsupportedOperationException("Resolving fields not supported for " + typeName());
     }
 
@@ -76,9 +76,9 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String name,
             @Nonnull String[] externalName,
+            @Nullable String dataLinkName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException("Creating table not supported for " + typeName());
     }
 

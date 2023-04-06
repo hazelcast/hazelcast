@@ -35,8 +35,8 @@ public class SourceOffsetStorageReaderTest {
     @Test
     public void should_return_null_offset_for_non_existing_partition() {
         Map<String, String> partition = mapOf("part1", "something");
-        Map<Map<String, ?>, Map<String, ?>> emptyPartitionToOffset = new HashMap<>();
-        SourceOffsetStorageReader sut = new SourceOffsetStorageReader(emptyPartitionToOffset);
+        State state = new State();
+        SourceOffsetStorageReader sut = new SourceOffsetStorageReader(state);
         Map<String, Object> offset = sut.offset(partition);
         assertThat(offset).isNull();
     }
@@ -44,8 +44,9 @@ public class SourceOffsetStorageReaderTest {
     @Test
     public void should_return_offset_for_existing_partition() {
         Map<String, String> partition = mapOf("part1", "something");
-        Map<Map<String, ?>, Map<String, ?>> emptyPartitionToOffset = mapOf(partition, mapOf("part1", 123));
-        SourceOffsetStorageReader sut = new SourceOffsetStorageReader(emptyPartitionToOffset);
+        Map<Map<String, ?>, Map<String, ?>> partitionToOffset = mapOf(partition, mapOf("part1", 123));
+        State state = new State(partitionToOffset);
+        SourceOffsetStorageReader sut = new SourceOffsetStorageReader(state);
         Map<String, Object> offset = sut.offset(partition);
         assertThat(offset).isEqualTo(mapOf("part1", 123));
     }

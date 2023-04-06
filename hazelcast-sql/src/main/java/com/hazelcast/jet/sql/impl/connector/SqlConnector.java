@@ -206,10 +206,12 @@ public interface SqlConnector {
      * the user can see it by listing the catalog. Jet will later pass it to
      * {@link #createTable}.
      *
-     * @param nodeEngine an instance of {@link NodeEngine}
-     * @param options    user-provided options
-     * @param userFields user-provided list of fields, possibly empty
+     * @param nodeEngine   an instance of {@link NodeEngine}
+     * @param options      user-provided options
+     * @param userFields   user-provided list of fields, possibly empty
      * @param externalName external name of the table
+     * @param dataLinkName name of the data link to use, may be null if the connector supports specifying
+     *                     connection details in options
      * @return final field list, must not be empty
      */
     @Nonnull
@@ -217,8 +219,8 @@ public interface SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName
-    );
+            @Nonnull String[] externalName,
+            @Nullable String dataLinkName);
 
     /**
      * Creates a {@link Table} object with the given fields. Should return
@@ -228,6 +230,8 @@ public interface SqlConnector {
      * Jet calls this method for each statement execution and for each mapping.
      *
      * @param nodeEngine     an instance of {@link NodeEngine}
+     * @param dataLinkName   name of the data link to use, may be null if the connector supports specifying
+     *                       connection details in options
      * @param options        connector specific options
      * @param resolvedFields list of fields as returned from {@link
      *                       #resolveAndValidateFields}
@@ -238,9 +242,9 @@ public interface SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String mappingName,
             @Nonnull String[] externalName,
+            @Nullable String dataLinkName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    );
+            @Nonnull List<MappingField> resolvedFields);
 
     /**
      * Returns a supplier for a source vertex reading the input according to
@@ -329,7 +333,8 @@ public interface SqlConnector {
     default boolean isNestedLoopReaderSupported() {
         try {
             // nestedLoopReader() is supported, if the class overrides the default method in this class
-            Method m = getClass().getMethod("nestedLoopReader", DagBuildContext.class, HazelcastRexNode.class, List.class,
+            Method m = getClass().getMethod("nestedLoopReader", DagBuildContext.class, HazelcastRexNode.class,
+                    List.class,
                     JetJoinInfo.class);
             return m.getDeclaringClass() != SqlConnector.class;
         } catch (NoSuchMethodException e) {
@@ -401,9 +406,9 @@ public interface SqlConnector {
 
         /**
          * Returns the context table. It is:<ul>
-         *     <li>for scans, it's the scanned table
-         *     <li>for DML, it's the target table
-         *     <li>for nested loop reader, it's the table read in the inner loop (the right join input)
+         * <li>for scans, it's the scanned table
+         * <li>for DML, it's the target table
+         * <li>for nested loop reader, it's the table read in the inner loop (the right join input)
          * </ul>
          *
          * @throws IllegalStateException if the table doesn't apply in the current context
@@ -414,9 +419,9 @@ public interface SqlConnector {
         /**
          * Converts a boolean {@link HazelcastRexNode}. When evaluating a {@link RexInputRef},
          * this context is assumed:<ul>
-         *     <li>If a table is set (see {@link #getTable()}), then it's assumed that it's that table's fields
-         *     <li>If it's a single-input rel, then it's then input
-         *     <li>Otherwise the conversion of an input ref will fail.
+         * <li>If a table is set (see {@link #getTable()}), then it's assumed that it's that table's fields
+         * <li>If it's a single-input rel, then it's then input
+         * <li>Otherwise the conversion of an input ref will fail.
          * </ul>
          */
         @Nullable

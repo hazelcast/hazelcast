@@ -230,7 +230,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                 .set(TCP_NODELAY, true)
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setReadHandler(new ClientReadHandler(completionLatch))
+                .setReader(new ClientAsyncSocketReader(completionLatch))
                 .build();
 
         clientSocket.start();
@@ -246,7 +246,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                             .set(TCP_NODELAY, true)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                            .setReadHandler(new ServerReadHandler())
+                            .setReader(new ServerAsyncSocketReader())
                             .build()
                             .start();
                 })
@@ -256,28 +256,28 @@ public abstract class AsyncSocket_LargePayloadTest {
         return serverSocket;
     }
 
-    private static class ServerReadHandler extends ReadHandler {
+    private static class ServerAsyncSocketReader extends AsyncSocketReader {
         private ByteBuffer payloadBuffer;
         private long round;
         private int payloadSize = -1;
         private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
         @Override
-        public void onRead(ByteBuffer receiveBuffer) {
+        public void onRead(ByteBuffer src) {
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
-                    payloadSize = receiveBuffer.getInt();
-                    round = receiveBuffer.getLong();
+                    payloadSize = src.getInt();
+                    round = src.getLong();
                     if (round < 0) {
                         throw new RuntimeException("round can't be smaller than 0, found:" + round);
                     }
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
-                put(payloadBuffer, receiveBuffer);
+                put(payloadBuffer, src);
                 if (payloadBuffer.remaining() > 0) {
                     // not all bytes have been received.
                     break;
@@ -297,36 +297,36 @@ public abstract class AsyncSocket_LargePayloadTest {
         }
     }
 
-    private class ClientReadHandler extends ReadHandler {
+    private class ClientAsyncSocketReader extends AsyncSocketReader {
         private final CountDownLatch latch;
         private ByteBuffer payloadBuffer;
         private long round;
         private int payloadSize;
         private final IOBufferAllocator responseAllocator;
 
-        ClientReadHandler(CountDownLatch latch) {
+        ClientAsyncSocketReader(CountDownLatch latch) {
             this.latch = latch;
             payloadSize = -1;
             responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
         }
 
         @Override
-        public void onRead(ByteBuffer receiveBuffer) {
+        public void onRead(ByteBuffer src) {
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
 
-                    payloadSize = receiveBuffer.getInt();
-                    round = receiveBuffer.getLong();
+                    payloadSize = src.getInt();
+                    round = src.getLong();
                     if (round < 0) {
                         throw new RuntimeException("round can't be smaller than 0, found:" + round);
                     }
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
-                put(payloadBuffer, receiveBuffer);
+                put(payloadBuffer, src);
 
                 if (payloadBuffer.remaining() > 0) {
                     // not all bytes have been received.
