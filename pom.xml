@@ -111,7 +111,7 @@
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.8.2</kafka.version>
         <kotlin.version>1.8.20</kotlin.version>
-        <reload4j.version>1.2.24</reload4j.version>
+        <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
         <netty.version>4.1.91.Final</netty.version>
