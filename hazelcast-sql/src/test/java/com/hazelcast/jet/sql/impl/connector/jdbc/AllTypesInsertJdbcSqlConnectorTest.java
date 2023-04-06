@@ -100,7 +100,7 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + "id INT, "
                 + "table_column " + mappingType
                 + ") "
-                + "DATA LINK " + TEST_DATABASE_REF
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");

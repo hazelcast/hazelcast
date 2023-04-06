@@ -1019,7 +1019,7 @@ hazelcast:
   sql:
     statement-timeout-millis: 0
 
-  data-link:
+  data-connection:
     mysql-database:
       type: jdbc
       properties:

@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.hazelcast.datalink.DataLinkService;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -52,7 +52,7 @@ import static java.util.Collections.singletonList;
 final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
     private Properties properties;
-    private String dataLinkName;
+    private String dataConnectionName;
     private String topic;
     private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
     private KvRowProjector.Supplier projectorSupplier;
@@ -60,7 +60,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     private transient ExpressionEvalContext evalContext;
     private transient EventTimePolicy<JetSqlRow> eventTimePolicy;
     private transient Extractors extractors;
-    private transient DataLinkService dataLinkService;
+    private transient DataConnectionService dataConnectionService;
 
     @SuppressWarnings("unused")
     private RowProjectorProcessorSupplier() {
@@ -68,7 +68,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
 
     RowProjectorProcessorSupplier(
             Properties properties,
-            String dataLinkName,
+            String dataConnectionName,
             String topic,
             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             QueryPath[] paths,
@@ -79,7 +79,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
             List<Expression<?>> projection
     ) {
         this.properties = properties;
-        this.dataLinkName = dataLinkName;
+        this.dataConnectionName = dataConnectionName;
         this.topic = topic;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.projectorSupplier = KvRowProjector.supplier(
@@ -99,7 +99,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
                 ? EventTimePolicy.noEventTime()
                 : eventTimePolicyProvider.apply(evalContext);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
-        dataLinkService = context.dataLinkService();
+        dataConnectionService = context.dataConnectionService();
     }
 
     @Nonnull
@@ -109,8 +109,8 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         for (int i = 0; i < count; i++) {
             KvRowProjector projector = projectorSupplier.get(evalContext, extractors);
             Processor processor = new StreamKafkaP<>(
-                    dataLinkName == null ? StreamKafkaP.kafkaConsumerFn(properties)
-                            : StreamKafkaP.kafkaConsumerFn(new DataLinkRef(dataLinkName)),
+                    dataConnectionName == null ? StreamKafkaP.kafkaConsumerFn(properties)
+                            : StreamKafkaP.kafkaConsumerFn(new DataConnectionRef(dataConnectionName)),
                     singletonList(topic),
                     record -> projector.project(record.key(), record.value()),
                     eventTimePolicy
@@ -123,7 +123,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(properties);
-        out.writeString(dataLinkName);
+        out.writeString(dataConnectionName);
         out.writeString(topic);
         out.writeObject(eventTimePolicyProvider);
         out.writeObject(projectorSupplier);
@@ -132,7 +132,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         properties = in.readObject();
-        dataLinkName = in.readString();
+        dataConnectionName = in.readString();
         topic = in.readString();
         eventTimePolicyProvider = in.readObject();
         projectorSupplier = in.readObject();

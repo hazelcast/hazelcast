@@ -15,7 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
+import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -34,7 +34,7 @@ final class Options {
     /**
      * A valid MongoDB connectionString.
      * Must be non-empty (if set).
-     * <p>Not mandatory if data link is provided in mapping definition.</p>
+     * <p>Not mandatory if data connection is provided in mapping definition.</p>
      */
     static final String CONNECTION_STRING_OPTION = "connectionString";
 
@@ -98,13 +98,14 @@ final class Options {
         }
     }
 
-    static String getDatabaseName(NodeEngine nodeEngine, String[] externalName, String dataLinkName) {
+    static String getDatabaseName(NodeEngine nodeEngine, String[] externalName, String dataConnectionName) {
         if (externalName.length == 2) {
             return externalName[0];
         }
-        if (dataLinkName != null) {
-            MongoDataLink link =
-                    nodeEngine.getDataLinkService().getAndRetainDataLink(dataLinkName, MongoDataLink.class);
+        if (dataConnectionName != null) {
+            MongoDataConnection link =
+                    nodeEngine.getDataConnectionService().getAndRetainDataConnection(
+                            dataConnectionName, MongoDataConnection.class);
             try {
                 String name = link.getDatabaseName();
                 if (name != null) {

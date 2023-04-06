@@ -22,9 +22,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.HazelcastDataLink;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
@@ -50,7 +50,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.function.Functions.entryValue;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.mapPutEvents;
-import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.nio.file.Files.readAllBytes;
 import static java.util.Collections.singletonList;
@@ -77,23 +77,23 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         config.getMapConfig(JOURNALED_MAP_PREFIX + '*').getEventJournalConfig().setEnabled(true);
         config.getCacheConfig(JOURNALED_CACHE_PREFIX + '*').getEventJournalConfig().setEnabled(true);
 
-        DataLinkConfig dataLinkConfig = new DataLinkConfig(HZ_CLIENT_EXTERNAL_REF);
-        dataLinkConfig.setType("HZ");
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig(HZ_CLIENT_EXTERNAL_REF);
+        dataConnectionConfig.setType("HZ");
 
-        // Read XML and set as DataLinkConfig
+        // Read XML and set as DataConnectionConfig
         String xmlString = readClusterConfig("hazelcast-client-test-external.xml", clusterName);
-        dataLinkConfig.setProperty(HazelcastDataLink.CLIENT_XML, xmlString);
+        dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
 
-        // Read YAML and set as DataLinkConfig
+        // Read YAML and set as DataConnectionConfig
         String yamlString = readClusterConfig("hazelcast-client-test-external.yaml", clusterName);
-        dataLinkConfig.setProperty(HazelcastDataLink.CLIENT_YML, yamlString);
+        dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_YML, yamlString);
 
         remoteHz = createRemoteCluster(config, 2).get(0);
         clientConfig = getClientConfigForRemoteCluster(remoteHz);
 
         for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
             Config hazelcastInstanceConfig = hazelcastInstance.getConfig();
-            hazelcastInstanceConfig.addDataLinkConfig(dataLinkConfig);
+            hazelcastInstanceConfig.addDataConnectionConfig(dataConnectionConfig);
         }
     }
 
@@ -149,7 +149,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         testMapJournal(map, source);
     }
 
-    // Test remoteMapJournal() using default parameters with DataLinkRef
+    // Test remoteMapJournal() using default parameters with DataConnectionRef
     @Test
     public void remoteMapJournal_withExternalConfig() {
         // Given
@@ -158,20 +158,20 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When
         StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
-                mapName, dataLinkRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST);
+                mapName, dataConnectionRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST);
 
         // Then
         testMapJournal(map, source);
     }
 
-    // Test remoteMapJournal() using default parameters with DataLinkRef
+    // Test remoteMapJournal() using default parameters with DataConnectionRef
     @Test
     public void remoteMapJournal_withExternalConfigYaml() {
         for (HazelcastInstance hazelcastInstance : allHazelcastInstances()) {
             Config config = hazelcastInstance.getConfig();
-            DataLinkConfig dataLinkConfig = config.getDataLinkConfig(HZ_CLIENT_EXTERNAL_REF);
+            DataConnectionConfig dataConnectionConfig = config.getDataConnectionConfig(HZ_CLIENT_EXTERNAL_REF);
             // Make XML empty, so that we use yaml in the test
-            dataLinkConfig.setProperty(HazelcastDataLink.CLIENT_XML, "");
+            dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, "");
         }
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
@@ -179,7 +179,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When
         StreamSource<Entry<String, Integer>> source = Sources.remoteMapJournal(
-                mapName, dataLinkRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST);
+                mapName, dataConnectionRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST);
 
         // Then
         testMapJournal(map, source);
@@ -367,7 +367,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         testMapJournal_withPredicateAndProjection(map, source);
     }
 
-    // Test remoteMapJournal() using all  parameters with DataLinkRef
+    // Test remoteMapJournal() using all  parameters with DataConnectionRef
     @Test
     public void remoteMapJournal_withExternalConfigPredicateAndProjectionFn() {
         // Given
@@ -377,7 +377,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // When
         StreamSource<Integer> source = Sources.remoteMapJournal(
-                mapName, dataLinkRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST, EventJournalMapEvent::getNewValue, p);
+                mapName, dataConnectionRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST, EventJournalMapEvent::getNewValue, p);
 
         // Then
         testMapJournal_withPredicateAndProjection(map, source);
@@ -442,7 +442,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     }
 
     @Test
-    public void remoteMapJournal_withExternalConfigMoreJobsWithSharedDatalink() throws Exception {
+    public void remoteMapJournal_withExternalConfigMoreJobsWithSharedDataConnection() throws Exception {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomName();
         IMap<String, Integer> map = remoteHz.getMap(mapName);
@@ -452,8 +452,8 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         range(0, itemCount).forEach(i -> map.put(String.valueOf(i), i));
 
         // When
-        Job jobToCancel = startJobForExternalConfigMoreJobsWithSharedDatalink(mapName, sinkName);
-        Job job = startJobForExternalConfigMoreJobsWithSharedDatalink(mapName, sinkName2);
+        Job jobToCancel = startJobForExternalConfigMoreJobsWithSharedDataConnection(mapName, sinkName);
+        Job job = startJobForExternalConfigMoreJobsWithSharedDataConnection(mapName, sinkName2);
 
         // Then
         assertSizeEventually(itemCount, sinkList);
@@ -466,10 +466,10 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         job.cancel();
     }
 
-    private Job startJobForExternalConfigMoreJobsWithSharedDatalink(String sourceMapName,
-            String sinkName) {
+    private Job startJobForExternalConfigMoreJobsWithSharedDataConnection(String sourceMapName,
+                                                                          String sinkName) {
         Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(Sources.remoteMapJournal(sourceMapName, dataLinkRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST))
+        pipeline.readFrom(Sources.remoteMapJournal(sourceMapName, dataConnectionRef(HZ_CLIENT_EXTERNAL_REF), START_FROM_OLDEST))
                 .withoutTimestamps()
                 .map(entryValue())
                 .writeTo(Sinks.list(sinkName));

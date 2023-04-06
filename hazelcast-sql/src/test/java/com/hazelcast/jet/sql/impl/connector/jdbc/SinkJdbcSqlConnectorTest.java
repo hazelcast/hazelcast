@@ -64,7 +64,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name"
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("SINK INTO " + tableName + " VALUES (0, 'name-0')");
@@ -93,7 +93,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name"
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("SINK INTO " + tableName + " (fullName, id) VALUES ('name-0', 0), ('name-1', 1)");
@@ -124,7 +124,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void sinkIntoTableReverseColumnOrder() throws Exception {
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)");
-        execute("CREATE MAPPING " + tableName + " DATA LINK " + TEST_DATABASE_REF);
+        execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
 
         execute("SINK INTO " + tableName + " (name, id) VALUES ('name-0', 0)");
 

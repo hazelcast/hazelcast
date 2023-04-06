@@ -24,7 +24,7 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     SqlIdentifier name;
     SqlIdentifier externalName = null;
     SqlNodeList columns = SqlNodeList.EMPTY;
-    SqlIdentifier dataLink = null;
+    SqlIdentifier dataConnection = null;
     SqlIdentifier connectorType = null;
     SqlIdentifier objectType = null;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
@@ -42,8 +42,8 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     columns = MappingColumns()
 
     (
-        <DATA> <LINK>
-        dataLink = CompoundIdentifier()
+        <DATA> <CONNECTION>
+        dataConnection = CompoundIdentifier()
         |
         [ <CONNECTOR> ] <TYPE>
         connectorType = SimpleIdentifier()
@@ -63,7 +63,7 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
             name,
             externalName,
             columns,
-            dataLink,
+            dataConnection,
             connectorType,
             objectType,
             sqlOptions,
@@ -75,9 +75,9 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
 }
 
 /**
- * Parses CREATE DATA LINK statement.
+ * Parses CREATE DATA CONNECTION statement.
  */
-SqlCreate SqlCreateDataLink(Span span, boolean replace) :
+SqlCreate SqlCreateDataConnection(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
     boolean ifNotExists = false;
@@ -87,7 +87,7 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
 }
 {
-    <DATA> <LINK>
+    <DATA> <CONNECTION>
     [
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
@@ -110,7 +110,7 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
     ]
 
     {
-        return new SqlCreateDataLink(
+        return new SqlCreateDataConnection(
             startPos.plus(getPos()),
             replace,
             ifNotExists,
@@ -387,9 +387,9 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
 }
 
 /**
- * Parses DROP DATA LINK statement.
+ * Parses DROP DATA CONNECTION statement.
  */
-SqlDrop SqlDropDataLink(Span span, boolean replace) :
+SqlDrop SqlDropDataConnection(Span span, boolean replace) :
 {
     SqlParserPos pos = span.pos();
 
@@ -397,13 +397,13 @@ SqlDrop SqlDropDataLink(Span span, boolean replace) :
     boolean ifExists = false;
 }
 {
-    <DATA> <LINK>
+    <DATA> <CONNECTION>
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
     name = CompoundIdentifier()
     {
-        return new SqlDropDataLink(name, ifExists, pos.plus(getPos()));
+        return new SqlDropDataConnection(name, ifExists, pos.plus(getPos()));
     }
 }
 
@@ -777,7 +777,7 @@ SqlOption SqlOption() :
 SqlShowStatement SqlShowStatement() :
 {
     ShowStatementTarget target;
-    SqlIdentifier dataLinkName = null;
+    SqlIdentifier dataConnectionName = null;
 }
 {
     <SHOW>
@@ -790,12 +790,12 @@ SqlShowStatement SqlShowStatement() :
     |
         <TYPES> { target = ShowStatementTarget.TYPES; }
     |
-        <DATA> <LINKS> { target = ShowStatementTarget.DATALINKS; }
+        <DATA> <CONNECTIONS> { target = ShowStatementTarget.DATACONNECTIONS; }
     |
-        <RESOURCES> <FOR> { dataLinkName = CompoundIdentifier(); target = ShowStatementTarget.RESOURCES; }
+        <RESOURCES> <FOR> { dataConnectionName = CompoundIdentifier(); target = ShowStatementTarget.RESOURCES; }
     )
     {
-        return new SqlShowStatement(getPos(), target, dataLinkName);
+        return new SqlShowStatement(getPos(), target, dataConnectionName);
     }
 }
 

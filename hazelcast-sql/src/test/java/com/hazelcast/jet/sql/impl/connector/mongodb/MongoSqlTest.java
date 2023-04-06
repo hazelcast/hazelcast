@@ -16,7 +16,7 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -62,13 +62,13 @@ public abstract class MongoSqlTest extends SqlTestSupport {
 
         Config conf = new Config();
         conf.getJetConfig().setEnabled(true);
-        DataLinkConfig testMongo = new DataLinkConfig();
+        DataConnectionConfig testMongo = new DataConnectionConfig();
         testMongo.setShared(true)
                  .setType("MongoDB")
                  .setName("testMongo")
                  .setProperty("connectionString", connectionString)
                  .setProperty("database", databaseName);
-        conf.addDataLinkConfig(testMongo);
+        conf.addDataConnectionConfig(testMongo);
         initialize(2, conf);
 
         sqlService = instance().getSql();

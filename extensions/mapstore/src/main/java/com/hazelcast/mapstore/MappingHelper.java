@@ -32,12 +32,12 @@ final class MappingHelper {
     }
 
     public void createMapping(String mappingName, String tableName, String mappingColumns,
-                              String dataLinkRef, String idColumn) {
+                              String dataConnectionRef, String idColumn) {
         sqlService.execute(
                 "CREATE MAPPING \"" + mappingName + "\" "
                 + "EXTERNAL NAME \"" + tableName + "\" "
                 + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
-                + " DATA LINK \"" + dataLinkRef + "\" "
+                + " DATA CONNECTION \"" + dataConnectionRef + "\" "
                 + " OPTIONS ("
                 + "    'idColumn' = '" + idColumn + "' "
                 + ")"

@@ -68,7 +68,7 @@ public class TestFailingSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName) {
+            @Nullable String dataConnectionName) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
@@ -81,7 +81,7 @@ public class TestFailingSqlConnector implements SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String mappingName,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields) {
         return new TestFailingTable(

@@ -122,8 +122,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
                     params.getAggregates());
         }
-        this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> reader.connect(client,
-                snapshotsEnabled));
+        this.connection = new MongoConnection(
+                params.clientSupplier, params.dataConnectionRef, client -> reader.connect(client, snapshotsEnabled)
+        );
         this.nonDistributed = params.isNonDistributed();
         this.throwOnNonExisting = params.isThrowOnNonExisting();
     }

@@ -58,7 +58,7 @@ public class SqlCreateMapping extends SqlCreate {
     private final SqlIdentifier name;
     private final SqlIdentifier externalName;
     private final SqlNodeList columns;
-    private final SqlIdentifier dataLink;
+    private final SqlIdentifier dataConnection;
     private final SqlIdentifier connectorType;
     private final SqlIdentifier objectType;
     private final SqlNodeList options;
@@ -67,7 +67,7 @@ public class SqlCreateMapping extends SqlCreate {
             SqlIdentifier name,
             SqlIdentifier externalName,
             SqlNodeList columns,
-            SqlIdentifier dataLink,
+            SqlIdentifier dataConnection,
             SqlIdentifier connectorType,
             SqlIdentifier objectType,
             SqlNodeList options,
@@ -80,12 +80,12 @@ public class SqlCreateMapping extends SqlCreate {
         this.name = requireNonNull(name, "Name should not be null");
         this.externalName = externalName;
         this.columns = requireNonNull(columns, "Columns should not be null");
-        this.dataLink = dataLink;
+        this.dataConnection = dataConnection;
         this.connectorType = connectorType;
         this.objectType = objectType;
         this.options = requireNonNull(options, "Options should not be null");
 
-        assert dataLink == null || connectorType == null; // the syntax doesn't allow this
+        assert dataConnection == null || connectorType == null; // the syntax doesn't allow this
     }
 
     public String nameWithoutSchema() {
@@ -100,11 +100,11 @@ public class SqlCreateMapping extends SqlCreate {
         return columns.getList().stream().map(node -> (SqlMappingColumn) node);
     }
 
-    public String dataLinkNameWithoutSchema() {
-        if (dataLink == null) {
+    public String dataConnectionNameWithoutSchema() {
+        if (dataConnection == null) {
             return null;
         }
-        return dataLink.names.get(dataLink.names.size() - 1);
+        return dataConnection.names.get(dataConnection.names.size() - 1);
     }
 
     public String connectorType() {
@@ -138,7 +138,7 @@ public class SqlCreateMapping extends SqlCreate {
     @Nonnull
     @Override
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name, columns, dataLink, connectorType, objectType, options);
+        return ImmutableNullableList.of(name, columns, dataConnection, connectorType, objectType, options);
     }
 
     @Override
@@ -171,10 +171,10 @@ public class SqlCreateMapping extends SqlCreate {
             writer.endList(frame);
         }
 
-        if (dataLink != null) {
+        if (dataConnection != null) {
             writer.newlineAndIndent();
-            writer.keyword("DATA LINK");
-            dataLink.unparse(writer, leftPrec, rightPrec);
+            writer.keyword("DATA CONNECTION");
+            dataConnection.unparse(writer, leftPrec, rightPrec);
         } else {
             assert connectorType != null;
             writer.newlineAndIndent();
@@ -202,7 +202,7 @@ public class SqlCreateMapping extends SqlCreate {
                         new SqlDataType(f.type(), SqlParserPos.ZERO),
                         identifier(f.externalName()),
                         SqlParserPos.ZERO)),
-                identifier(mapping.dataLink()),
+                identifier(mapping.dataConnection()),
                 identifier(mapping.connectorType()),
                 identifier(mapping.objectType()),
                 reconstructOptions(mapping.options()),
@@ -223,8 +223,8 @@ public class SqlCreateMapping extends SqlCreate {
             throw validator.newValidationError(name, RESOURCE.mappingIncorrectSchema());
         }
 
-        if (dataLink != null && !isCatalogObjectNameValid(dataLink)) {
-            throw validator.newValidationError(name, RESOURCE.dataLinkIncorrectSchemaUse());
+        if (dataConnection != null && !isCatalogObjectNameValid(dataConnection)) {
+            throw validator.newValidationError(name, RESOURCE.dataConnectionIncorrectSchemaUse());
         }
 
         Set<String> columnNames = new HashSet<>();

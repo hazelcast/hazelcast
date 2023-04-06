@@ -48,7 +48,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
@@ -63,7 +63,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertThatThrownBy(() ->
@@ -85,7 +85,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -115,7 +115,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -145,7 +145,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
@@ -37,7 +37,7 @@ import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.kafka.KafkaSources;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -548,9 +548,9 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_dataLinkRef_then_readMessages() throws Exception {
-        instance().getConfig().addDataLinkConfig(
-                new DataLinkConfig("kafka-config")
+    public void when_dataConnectionRef_then_readMessages() throws Exception {
+        instance().getConfig().addDataConnectionConfig(
+                new DataConnectionConfig("kafka-config")
                         .setType("Kafka")
                         .setShared(false) // shared would eagerly create a producer, which needs serializer properties
                         .setProperties(properties())
@@ -560,7 +560,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "latest");
-        p.readFrom(KafkaSources.<Integer, String>kafka(new DataLinkRef("kafka-config"), topic1Name))
+        p.readFrom(KafkaSources.<Integer, String>kafka(new DataConnectionRef("kafka-config"), topic1Name))
          .withoutTimestamps()
          .writeTo(Sinks.list(sinkList));
 
