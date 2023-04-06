@@ -16,16 +16,19 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.cluster.Cluster;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 
@@ -41,11 +44,21 @@ import static org.junit.Assert.assertEquals;
 public abstract class AbstractClockTest extends HazelcastTestSupport {
 
     private static final int JUMP_AFTER_SECONDS = 15;
+    private final ILogger logger = Logger.getLogger(getClass());
+    private final int randomMulticastPort = new Random().nextInt(5_000) + 50_000;
 
     protected Object isolatedNode;
 
     protected HazelcastInstance startNode() {
         Config config = getConfig();
+
+        try {
+            randomizeMulticastPort(config);
+        } catch (Exception e) {
+            // we should never reach here
+            throw new RuntimeException(e);
+        }
+
         return Hazelcast.newHazelcastInstance(config);
     }
 
@@ -64,6 +77,8 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
             Method setClassLoader = configClazz.getDeclaredMethod("setClassLoader", ClassLoader.class);
             setClassLoader.invoke(config, cl);
 
+            randomizeMulticastPort(config);
+
             Class<?> hazelcastClazz = cl.loadClass("com.hazelcast.core.Hazelcast");
             Method newHazelcastInstance = hazelcastClazz.getDeclaredMethod("newHazelcastInstance", configClazz);
             isolatedNode = newHazelcastInstance.invoke(hazelcastClazz, config);
@@ -72,6 +87,25 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
         } finally {
             thread.setContextClassLoader(tccl);
         }
+    }
+
+    private void randomizeMulticastPort(Object config) throws Exception {
+        // By default auto detection uses multicast.
+        // See Node.shouldUseMulticastJoiner().
+
+        Method getNetworkConfig = config.getClass().getDeclaredMethod("getNetworkConfig");
+        Object networkConfig = getNetworkConfig.invoke(config);
+        Method getJoin = networkConfig.getClass().getDeclaredMethod("getJoin");
+        Object joinConfig = getJoin.invoke(networkConfig);
+        Method getMulticastConfig = joinConfig.getClass().getDeclaredMethod("getMulticastConfig");
+        Object multicastConfig = getMulticastConfig.invoke(joinConfig);
+
+        Method setEnabled = multicastConfig.getClass().getDeclaredMethod("setEnabled", boolean.class);
+        Method setMulticastPort = multicastConfig.getClass().getDeclaredMethod("setMulticastPort", int.class);
+        setEnabled.invoke(multicastConfig, true);
+        setMulticastPort.invoke(multicastConfig, randomMulticastPort);
+
+        logger.info("Random multicast port is: " + randomMulticastPort);
     }
 
     protected void shutdownIsolatedNode() {
