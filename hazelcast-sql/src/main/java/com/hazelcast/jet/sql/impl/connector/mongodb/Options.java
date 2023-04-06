@@ -115,7 +115,7 @@ final class Options {
                 link.release();
             }
         }
-        throw new IllegalArgumentException("Database must be provided in the mapping or data link.");
+        throw new IllegalArgumentException("Database must be provided in the mapping or data connection.");
     }
 
     static Predicate<MappingField> getPkColumnChecker(Map<String, String> options, boolean isStreaming) {
