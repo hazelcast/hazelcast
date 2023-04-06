@@ -122,7 +122,6 @@ User should be able to run following SQL query:
 ```sql
 CREATE MAPPING people
 DATA CONNECTION "mongodb-ref"
-TYPE MONGODB
 ```
 
 In such cases, automatic schema inference will be used. User may also want
@@ -134,10 +133,7 @@ CREATE MAPPING people (
     lastName VARCHAR(100),
     age INT
 )
-TYPE MONGODB 
-OPTIONS (
-  'dataConnectionRef'='mongodb-ref' 
-)
+DATA CONNECTION "mongodb-ref"
 ```
 
 #### GenericMapStore support
