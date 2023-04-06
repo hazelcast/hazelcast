@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.net;
 
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import org.junit.After;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_REUSEADDR;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_REUSEPORT;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEADDR;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEPORT;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;

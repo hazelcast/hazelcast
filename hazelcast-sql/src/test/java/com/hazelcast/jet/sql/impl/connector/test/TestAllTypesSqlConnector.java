@@ -124,8 +124,8 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataLinkName) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
@@ -138,9 +138,9 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String mappingName,
             @Nonnull String[] externalName,
+            @Nullable String dataLinkName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull List<MappingField> resolvedFields) {
         return new TestAllTypesTable(this, schemaName, mappingName);
     }
 

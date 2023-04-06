@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.net;
 
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.util.CloseUtil;
 import org.junit.After;
 import org.junit.Test;
@@ -162,7 +164,7 @@ public abstract class AsyncServerSocketTest {
         AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                 .setAcceptConsumer(acceptRequest -> {
                     AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
-                            .setReadHandler(new DevNullReadHandler())
+                            .setReader(new DevNullAsyncSocketReader())
                             .build();
                     socket.start();
                 })
@@ -174,7 +176,7 @@ public abstract class AsyncServerSocketTest {
         int clients = 5;
         for (int k = 0; k < clients; k++) {
             AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
-                    .setReadHandler(new DevNullReadHandler())
+                    .setReader(new DevNullAsyncSocketReader())
                     .build();
             clientSocket.start();
 
@@ -199,7 +201,7 @@ public abstract class AsyncServerSocketTest {
         serverSocket.start();
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
         clientSocket.start();
 
@@ -222,7 +224,7 @@ public abstract class AsyncServerSocketTest {
         }
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
-                .setReadHandler(new DevNullReadHandler())
+                .setReader(new DevNullAsyncSocketReader())
                 .build();
         clientSocket.start();
 
@@ -239,7 +241,7 @@ public abstract class AsyncServerSocketTest {
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .setAcceptConsumer(acceptRequest -> {
                         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder(acceptRequest)
-                                .setReadHandler(new DevNullReadHandler())
+                                .setReader(new DevNullAsyncSocketReader())
                                 .build();
                         clientSocket.start();
                     })
@@ -258,7 +260,7 @@ public abstract class AsyncServerSocketTest {
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .setAcceptConsumer(acceptRequest -> {
                         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder(acceptRequest)
-                                .setReadHandler(new DevNullReadHandler())
+                                .setReader(new DevNullAsyncSocketReader())
                                 .build();
                         clientSocket.start();
                     })

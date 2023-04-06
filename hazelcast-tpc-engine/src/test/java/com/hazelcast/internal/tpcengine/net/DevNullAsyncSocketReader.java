@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.net;
 
-import java.util.function.Consumer;
+import java.nio.ByteBuffer;
+
+import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
+
 
 /**
- * Contains an accept request when a socket connects to the {@link AsyncServerSocket}. Is
- * processed by setting the {@link AsyncServerSocketBuilder#setAcceptConsumer(Consumer)}.
- * <p/>
- * Currently it is just a dumb placeholder so that we can pass the appropriate resource
- * (e.g. the accepted SocketChannel) to the constructor of the AsyncSocket in a typesafe
- * manner.
+ * A {@link AsyncSocketReader} that disposes any bytes on the receive buffer.
  */
-public interface AcceptRequest extends AutoCloseable {
-
+public class DevNullAsyncSocketReader extends AsyncSocketReader {
+    @Override
+    public void onRead(ByteBuffer src) {
+        upcast(src).position(src.limit());
+    }
 }

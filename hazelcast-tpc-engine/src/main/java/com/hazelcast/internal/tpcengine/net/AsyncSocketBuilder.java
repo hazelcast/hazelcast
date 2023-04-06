@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.net;
 
-import java.util.function.Consumer;
+import com.hazelcast.internal.tpcengine.Option;
+import com.hazelcast.internal.tpcengine.Reactor;
 
 /**
- * A builder for {@link AsyncServerSocket} instances. Can only be used once.
+ * A {@link AsyncSocket} builder. Can only be used once.
  * <p/>
  * This builder assumes TCP/IPv4. For different types of sockets
- * new configuration options on this builder need to be added.
+ * new configuration options on this builder need to be added or
+ * a the {@link Reactor#newAsyncSocketBuilder()} needs to be modified.
  * <p/>
  * Cast to specific builder for specialized options when available.
  */
-public interface AsyncServerSocketBuilder {
+public interface AsyncSocketBuilder {
 
     /**
      * Sets the option on the underlying socket.
@@ -35,12 +37,13 @@ public interface AsyncServerSocketBuilder {
      * @param value  the value
      * @param <T>    the type of the option/value
      * @return this
-     * @throws NullPointerException          when option or value is <code>null</code>.
+     * @throws NullPointerException          when option or value is null.
      * @throws IllegalStateException         when build already has been called
      * @throws UnsupportedOperationException if the option isn't supported.
-     * @throws java.io.UncheckedIOException  when something failed while configuring the underlying socket.
+     * @throws java.io.UncheckedIOException  when something failed while configuring
+     *                                       the underlying socket.
      */
-    default <T> AsyncServerSocketBuilder set(Option<T> option, T value) {
+    default <T> AsyncSocketBuilder set(Option<T> option, T value) {
         if (setIfSupported(option, value)) {
             return this;
         } else {
@@ -49,35 +52,35 @@ public interface AsyncServerSocketBuilder {
     }
 
     /**
-     * Sets the option on the underlying socket if that option is supported.
+     * Sets the option on the underlying if that option is supported.
      *
      * @param option the option
      * @param value  the value
      * @param <T>    the type of the option/value
      * @return true if the option was supported, false otherwise.
-     * @throws NullPointerException         when option or value is <code>null</code>.
-     * @throws IllegalStateException        when build already has been called
-     * @throws java.io.UncheckedIOException when something failed while configuring the underlying socket.
+     * @throws NullPointerException          when option or value is null.
+     * @throws IllegalStateException         when build already has been called
+     * @throws java.io.UncheckedIOException  when something failed while configuring
+     *                                       the underlying socket.
      */
     <T> boolean setIfSupported(Option<T> option, T value);
 
     /**
-     * Sets the consumer for accept requests.
+     * Sets the AsyncSocketReader.
      *
-     * @param consumer the consumer
+     * @param reader the AsyncSocketReader.
      * @return this
-     * @throws NullPointerException  if consumer is <code>null</code>.
+     * @throws NullPointerException  if reader is null.
      * @throws IllegalStateException when build already has been called.
      */
-    AsyncServerSocketBuilder setAcceptConsumer(Consumer<AcceptRequest> consumer);
+    AsyncSocketBuilder setReader(AsyncSocketReader reader);
 
     /**
-     * Builds the AsyncServerSocket.
+     * Builds the {@link AsyncSocket}.
      *
-     * @return the build AsyncServerSocket.
-     * @throws IllegalStateException        when the build already has been called or when the builder
-     *                                      has not been properly configured.
-     * @throws java.io.UncheckedIOException when the socket could not be build.
+     * @return the opened AsyncSocket.
+     * @throws IllegalStateException when the builder isn't properly configured or when
+     *                               build already has been called.
      */
-    AsyncServerSocket build();
+    AsyncSocket build();
 }

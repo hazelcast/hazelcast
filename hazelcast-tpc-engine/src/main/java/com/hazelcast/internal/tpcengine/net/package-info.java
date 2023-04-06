@@ -14,22 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
-
-import org.junit.Test;
-
-import static junit.framework.TestCase.assertEquals;
-
-public class AsyncServerSocketMetricsTest {
-
-    @Test
-    public void test_writeEvents() {
-        AsyncServerSocketMetrics metrics = new AsyncServerSocketMetrics();
-
-        metrics.incAccepted();
-        assertEquals(1, metrics.accepted());
-
-        metrics.incAccepted();
-        assertEquals(2, metrics.accepted());
-    }
-}
+/**
+ * <p>Contains the Networking functionality of the TPC engine<br>
+ */
+package com.hazelcast.internal.tpcengine.net;

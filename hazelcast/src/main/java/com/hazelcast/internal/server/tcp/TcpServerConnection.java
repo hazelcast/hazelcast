@@ -27,7 +27,7 @@ import com.hazelcast.internal.nio.ConnectionLifecycleListener;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.internal.tpcengine.AsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.logging.ILogger;
 
 import javax.security.auth.login.LoginContext;

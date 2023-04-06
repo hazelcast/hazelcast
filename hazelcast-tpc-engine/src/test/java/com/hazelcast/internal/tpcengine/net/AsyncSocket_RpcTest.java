@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.net;
 
+import com.hazelcast.internal.tpcengine.PrintAtomicLongThread;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
@@ -31,12 +34,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertJoinable;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
@@ -254,7 +257,7 @@ public abstract class AsyncSocket_RpcTest {
                 .set(TCP_NODELAY, true)
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setReadHandler(new ClientReadHandler())
+                .setReader(new ClientAsyncSocketReader())
                 .build();
 
         clientSocket.start();
@@ -270,7 +273,7 @@ public abstract class AsyncSocket_RpcTest {
                             .set(TCP_NODELAY, true)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                            .setReadHandler(new ServerReadHandler())
+                            .setReader(new ServerAsyncSocketReader())
                             .build()
                             .start();
                 })
@@ -281,25 +284,25 @@ public abstract class AsyncSocket_RpcTest {
         return serverSocket;
     }
 
-    private static class ServerReadHandler extends ReadHandler {
+    private static class ServerAsyncSocketReader extends AsyncSocketReader {
         private ByteBuffer payloadBuffer;
         private long callId;
         private int payloadSize = -1;
         private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
         @Override
-        public void onRead(ByteBuffer receiveBuffer) {
+        public void onRead(ByteBuffer src) {
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
-                    payloadSize = receiveBuffer.getInt();
-                    callId = receiveBuffer.getLong();
+                    payloadSize = src.getInt();
+                    callId = src.getLong();
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
-                put(payloadBuffer, receiveBuffer);
+                put(payloadBuffer, src);
                 if (payloadBuffer.remaining() > 0) {
                     // not all bytes have been received.
                     break;
@@ -355,25 +358,25 @@ public abstract class AsyncSocket_RpcTest {
         }
     }
 
-    private class ClientReadHandler extends ReadHandler {
+    private class ClientAsyncSocketReader extends AsyncSocketReader {
         private ByteBuffer payloadBuffer;
         private long callId;
         private int payloadSize = -1;
 
         @Override
-        public void onRead(ByteBuffer receiveBuffer) {
+        public void onRead(ByteBuffer src) {
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
                         break;
                     }
 
-                    payloadSize = receiveBuffer.getInt();
-                    callId = receiveBuffer.getLong();
+                    payloadSize = src.getInt();
+                    callId = src.getLong();
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
-                put(payloadBuffer, receiveBuffer);
+                put(payloadBuffer, src);
 
                 if (payloadBuffer.remaining() > 0) {
                     // not all bytes have been received.

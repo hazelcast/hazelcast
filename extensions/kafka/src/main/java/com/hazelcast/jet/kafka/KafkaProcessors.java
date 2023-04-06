@@ -106,17 +106,8 @@ public final class KafkaProcessors {
         return ProcessorMetaSupplier.of(
                 PREFERRED_LOCAL_PARALLELISM,
                 StreamKafkaP.processorSupplier(
-                        (context) -> {
-                            KafkaDataLink kafkaDataLink = context
-                                    .dataLinkService()
-                                    .getAndRetainDataLink(dataLinkRef.getName(), KafkaDataLink.class);
-                            try {
-                                return kafkaDataLink.newConsumer();
-                            } finally {
-                                kafkaDataLink.release();
-                            }
-                        },
-                        topicsConfig,
+                        StreamKafkaP.kafkaConsumerFn(dataLinkRef),
+                        topicsConfig
                         projectionFn,
                         eventTimePolicy
                 )

@@ -42,7 +42,7 @@ public class ConnectorWrapper {
     private final List<TaskRunner> taskRunners = new CopyOnWriteArrayList<>();
     private final AtomicInteger taskIdGenerator = new AtomicInteger();
     private final ReentrantLock reconfigurationLock = new ReentrantLock();
-
+    private final State state = new State();
     private final String name;
 
     public ConnectorWrapper(Properties properties) {
@@ -77,7 +77,7 @@ public class ConnectorWrapper {
 
     public TaskRunner createTaskRunner() {
         String taskName = name + "-task-" + taskIdGenerator.getAndIncrement();
-        TaskRunner taskRunner = new TaskRunner(taskName, this::createSourceTask);
+        TaskRunner taskRunner = new TaskRunner(taskName, state, this::createSourceTask);
         taskRunners.add(taskRunner);
         requestTaskReconfiguration();
         return taskRunner;
