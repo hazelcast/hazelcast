@@ -268,7 +268,7 @@ public class FieldResolverTest {
                     new MappingField("id", QueryDataType.MAP).setExternalName("_id")
             ), false);
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).isEqualTo("Database must be provided in the mapping or data link.");
+            assertThat(e.getMessage()).isEqualTo("Database must be provided in the mapping or data connection.");
         }
     }
 

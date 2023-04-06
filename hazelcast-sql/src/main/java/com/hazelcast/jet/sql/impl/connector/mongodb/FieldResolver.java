@@ -16,7 +16,6 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -27,6 +26,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import org.bson.BsonType;
 import org.bson.Document;
+import org.immutables.value.Value;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,7 +37,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.getBsonType;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
@@ -160,16 +159,23 @@ class FieldResolver {
         }
     }
 
+    @Value.Immutable
+    interface ClientWithDataConnection {
+        MongoClient client();
+        @Nullable MongoDataConnection dataConnection();
+    }
+
     Map<String, DocumentField> readFields(String[] externalNames,
                                           String dataConnectionName,
                                           Map<String, String> options,
                                           boolean stream) {
         String collectionName = externalNames.length == 2 ? externalNames[1] : externalNames[0];
+        String databaseName = Options.getDatabaseName(nodeEngine, externalNames, dataConnectionName);
+        ClientWithDataConnection connect = connect(dataConnectionName, options);
+
         Map<String, DocumentField> fields = new HashMap<>();
-        Tuple2<MongoClient, MongoDataConnection> connect = connect(dataConnectionName, options);
-        try (MongoClient client = connect.f0()) {
+        try (MongoClient client = connect.client()) {
             requireNonNull(client);
-            String databaseName = Options.getDatabaseName(nodeEngine, externalNames, dataConnectionName);
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()
@@ -220,8 +226,9 @@ class FieldResolver {
                 fields.put("clusterTime", new DocumentField(BsonType.TIMESTAMP, "clusterTime"));
             }
         } finally {
-            if (connect.f1() != null) {
-                connect.f1().release();
+            MongoDataConnection connection = connect.dataConnection();
+            if (connection != null) {
+                connection.release();
             }
         }
         return fields;
@@ -239,17 +246,17 @@ class FieldResolver {
         return returned;
     }
 
-    private Tuple2<MongoClient, MongoDataConnection> connect(String dataConnectionName, Map<String, String> options) {
+    private ClientWithDataConnection connect(String dataConnectionName, Map<String, String> options) {
         if (dataConnectionName != null) {
             MongoDataConnection link = nodeEngine.getDataConnectionService().getAndRetainDataConnection(
                     dataConnectionName,
                     MongoDataConnection.class);
-            return tuple2(link.getClient(), link);
+            return ImmutableClientWithDataConnection.builder().client(link.getClient()).dataConnection(link).build();
         } else {
             String connectionString = requireNonNull(options.get(CONNECTION_STRING_OPTION),
                     "Cannot connect to MongoDB, connectionString was not provided");
 
-            return tuple2(MongoClients.create(connectionString), null);
+            return ImmutableClientWithDataConnection.builder().client(MongoClients.create(connectionString)).build();
         }
     }
 
