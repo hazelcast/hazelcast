@@ -89,7 +89,8 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
     @Test
     public void should_require_eventTimePolicy() {
-        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), null, rec -> (Integer) rec.value()))
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), null,
+                rec -> (Integer) rec.value()))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("eventTimePolicy is required");
     }
