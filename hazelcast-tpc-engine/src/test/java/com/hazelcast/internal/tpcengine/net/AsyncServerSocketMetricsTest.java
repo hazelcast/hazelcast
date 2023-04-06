@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.net;
 
-import java.util.function.Consumer;
+import org.junit.Test;
 
-/**
- * Contains an accept request when a socket connects to the {@link AsyncServerSocket}. Is
- * processed by setting the {@link AsyncServerSocketBuilder#setAcceptConsumer(Consumer)}.
- * <p/>
- * Currently it is just a dumb placeholder so that we can pass the appropriate resource
- * (e.g. the accepted SocketChannel) to the constructor of the AsyncSocket in a typesafe
- * manner.
- */
-public interface AcceptRequest extends AutoCloseable {
+import static junit.framework.TestCase.assertEquals;
 
+public class AsyncServerSocketMetricsTest {
+
+    @Test
+    public void test_writeEvents() {
+        AsyncServerSocketMetrics metrics = new AsyncServerSocketMetrics();
+
+        metrics.incAccepted();
+        assertEquals(1, metrics.accepted());
+
+        metrics.incAccepted();
+        assertEquals(2, metrics.accepted());
+    }
 }

@@ -234,6 +234,19 @@ public final class MongoSinkBuilder<T> {
     }
 
     /**
+     * If {@code true}, the lack of database or collection will cause an error.
+     * If {@code false}, database and collection will be automatically created.
+     * Default value is {@code true}.
+     *
+     * @param throwOnNonExisting if exception should be thrown when database or collection does not exist.
+     */
+    @Nonnull
+    public MongoSinkBuilder<T> throwOnNonExisting(boolean throwOnNonExisting) {
+        params.setThrowOnNonExisting(throwOnNonExisting);
+        return this;
+    }
+
+    /**
      * Creates and returns the MongoDB {@link Sink} with the components you
      * supplied to this builder.
      */

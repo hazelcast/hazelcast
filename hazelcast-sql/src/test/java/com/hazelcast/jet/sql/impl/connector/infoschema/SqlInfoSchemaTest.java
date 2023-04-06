@@ -144,7 +144,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                                 "hazelcast",
                                 "public",
                                 mappingName,
-                                mappingExternalName,
+                                '"' + mappingExternalName + '"',
                                 IMapSqlConnector.TYPE_NAME,
                                 "{"
                                         + "\"keyFormat\":\"int\""

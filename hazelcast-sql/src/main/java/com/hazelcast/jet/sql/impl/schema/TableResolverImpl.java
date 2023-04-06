@@ -18,8 +18,6 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.impl.JdbcDataLink;
 import com.hazelcast.datalink.impl.InternalDataLinkService;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
@@ -154,7 +152,8 @@ public class TableResolverImpl implements TableResolver {
                 nodeEngine,
                 options,
                 mapping.fields(),
-                mapping.externalName()
+                mapping.externalName(),
+                mapping.dataLink()
         );
 
         return new Mapping(
@@ -168,20 +167,11 @@ public class TableResolverImpl implements TableResolver {
     }
 
     private SqlConnector extractConnector(@Nonnull String dataLink) {
-        SqlConnector connector;
         InternalDataLinkService dataLinkService = nodeEngine.getDataLinkService();
-        DataLink dl = dataLinkService.getAndRetainDataLink(dataLink, DataLink.class);
-        try {
-            // TODO: support more
-            if (dl instanceof JdbcDataLink) {
-                connector = connectorCache.forType("JDBC");
-            } else {
-                throw QueryException.error("Unknown data link class: " + dl.getClass().getName());
-            }
-        } finally {
-            dl.release();
-        }
-        return connector;
+        // TODO atm data link and connector types match, but that's
+        // not going to be universally true in the future
+        String type = dataLinkService.typeForDataLink(dataLink);
+        return connectorCache.forType(type);
     }
 
     public void removeMapping(String name, boolean ifExists) {
@@ -314,7 +304,7 @@ public class TableResolverImpl implements TableResolver {
                     SCHEMA_NAME_PUBLIC,
                     mapping.name(),
                     mapping.externalName(),
-                    mapping.options(),
+                    mapping.dataLink(), mapping.options(),
                     mapping.fields()
             );
         } catch (Throwable e) {

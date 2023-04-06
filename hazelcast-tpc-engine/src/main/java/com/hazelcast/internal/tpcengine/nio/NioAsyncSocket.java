@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AsyncSocket;
-import com.hazelcast.internal.tpcengine.AsyncSocketMetrics;
-import com.hazelcast.internal.tpcengine.AsyncSocketOptions;
-import com.hazelcast.internal.tpcengine.ReadHandler;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
+import com.hazelcast.internal.tpcengine.net.ReadHandler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;

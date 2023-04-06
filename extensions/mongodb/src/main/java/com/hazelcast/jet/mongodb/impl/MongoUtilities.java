@@ -15,8 +15,12 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
+import com.hazelcast.jet.JetException;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
+import com.mongodb.connection.ClusterDescription;
 import org.bson.BsonArray;
 import org.bson.BsonDateTime;
 import org.bson.BsonString;
@@ -129,7 +133,6 @@ public final class MongoUtilities {
      * Converts given bson timestamp to unix epoch.
      */
     @Nullable
-    @SuppressWarnings("checkstyle:MagicNumber")
     public static LocalDateTime bsonTimestampToLocalDateTime(@Nullable BsonTimestamp time) {
         if (time == null) {
             return null;
@@ -139,5 +142,24 @@ public final class MongoUtilities {
                             .atZone(UTC)
                             .withZoneSameInstant(systemDefault())
                             .toLocalDateTime();
+    }
+
+    static void checkCollectionExists(MongoDatabase database, String collectionName) {
+        for (String name : database.listCollectionNames()) {
+            if (name.equals(collectionName)) {
+                return;
+            }
+        }
+        throw new JetException("Collection " + collectionName + " in database " + database.getName() + " does not exist");
+    }
+
+    static void checkDatabaseExists(MongoClient client, String databaseName) {
+        for (String name : client.listDatabaseNames()) {
+            if (name.equalsIgnoreCase(databaseName)) {
+                return;
+            }
+        }
+        ClusterDescription clusterDescription = client.getClusterDescription();
+        throw new JetException("Database " + databaseName + " does not exist in cluster " + clusterDescription);
     }
 }

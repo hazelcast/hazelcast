@@ -19,12 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
-
-import java.sql.SQLException;
-
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 
 public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
@@ -71,10 +66,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " person_id INT EXTERNAL NAME id, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA LINK " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE person_id = 0");
@@ -92,6 +84,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         assertJdbcRowsAnyOrder(tableName, new Row(1, "name-1"));
     }
+
     @Test
     public void deleteFromTableWhereOnNonPKColumnWithExternalNme() throws Exception {
         createTable(tableName);
@@ -101,10 +94,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA LINK " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE fullName = 'name-0'");
@@ -137,10 +127,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id2 INT, "
                         + " name VARCHAR"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA LINK " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE id = 0 AND id2 = 1");
@@ -161,10 +148,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " name VARCHAR, "
                         + " id INT "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA LINK " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE id = 0");
@@ -180,31 +164,11 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         insertItems(tableName, 1);
 
         execute(
-                "CREATE MAPPING " + tableName
-                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + " OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                "CREATE MAPPING " + tableName + " DATA LINK " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE \"person-id\" = 0");
         assertJdbcRowsAnyOrder(tableName);
-    }
-
-    @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/23476")
-    public void deleteFromTableNonDefaultSchema() throws SQLException {
-        String schemaName = randomName();
-        executeJdbc("CREATE SCHEMA " + schemaName);
-        String fullyQualifiedTable = schemaName + "." + tableName;
-
-        createTable(fullyQualifiedTable);
-        insertItems(fullyQualifiedTable, 2);
-        createMapping(fullyQualifiedTable);
-
-        execute("DELETE FROM \"" + fullyQualifiedTable + "\"");
-
-        assertJdbcRowsAnyOrder(fullyQualifiedTable);
     }
 
 }

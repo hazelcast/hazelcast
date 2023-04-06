@@ -39,7 +39,6 @@ import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,6 +53,7 @@ import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,10 +65,13 @@ import java.util.stream.Collectors;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.kafka.connect.data.Values.convertToString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -169,7 +172,6 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         }
     }
 
-
     @Test
     public void test_reading_and_writing_to_map() throws Exception {
         Properties randomProperties = new Properties();
@@ -247,13 +249,12 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         StreamStage<Order> streamStage = pipeline.readFrom(connect(randomProperties, Order::new))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism);
-
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(120,
                         list -> {
-                            Map<String, List<Order>> recordsByTaskId = entriesToMap(list);
-                            LOGGER.info("recordsByTaskId = " + countEntriesByTaskId(recordsByTaskId));
-                            assertThat(recordsByTaskId).allSatisfy((taskId, records) ->
+                            Map<String, List<Order>> ordersByTaskId = groupByTaskId(list);
+                            LOGGER.info("ordersByTaskId = " + countOrdersByTaskId(ordersByTaskId));
+                            assertThat(ordersByTaskId).allSatisfy((taskId, records) ->
                                     assertThat(records.size()).isGreaterThan(ITEM_COUNT)
                             );
                         }));
@@ -283,19 +284,22 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
                 assertThat(times).hasSize(localParallelism);
                 assertThat(times).allSatisfy(a -> assertThat(a).isNotNegative());
             });
-
         }
     }
 
     @NotNull
-    private static List<Map.Entry<String, Integer>> countEntriesByTaskId(Map<String, List<Order>> recordsByTaskId) {
-        return recordsByTaskId.entrySet().stream().map(e -> entry(e.getKey(), e.getValue().size())).collect(toList());
+    private static List<Map.Entry<String, Integer>> countOrdersByTaskId(Map<String, List<Order>> ordersByTaskId) {
+        return ordersByTaskId.entrySet().stream().map(e -> entry(e.getKey(), e.getValue().size())).collect(toList());
+    }
+
+    private static String getTaskId(Order order) {
+        return order.headers.get("task.id");
     }
 
     @Nonnull
-    private static Map<String, List<Order>> entriesToMap(List<Order> list) {
+    private static Map<String, List<Order>> groupByTaskId(List<Order> list) {
         return list.stream()
-                .collect(Collectors.groupingBy(o -> o.headers.get("task.id"),
+                .collect(Collectors.groupingBy(KafkaConnectIntegrationTest::getTaskId,
                         Collectors.mapping(Function.identity(), toList())));
     }
 
@@ -304,64 +308,107 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         return getMBeanValues(objectName, "sourceRecordPollTotal");
     }
 
-
     private static List<Long> getSourceRecordPollTotalTimes() throws Exception {
         ObjectName objectName = new ObjectName("com.hazelcast:type=Metrics,prefix=kafka.connect,*");
         return getMBeanValues(objectName, "sourceRecordPollTotalAvgTime");
     }
 
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/24018
     @Test
     public void test_snapshotting() throws Exception {
+        Config config = smallInstanceConfig();
+        enableEventJournal(config);
+        config.getJetConfig().setResourceUploadEnabled(true);
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+
         int localParallelism = 3;
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
         randomProperties.setProperty("max.interval", "1");
-        randomProperties.setProperty("kafka.topic", "orders");
+        randomProperties.setProperty("kafka.topic", "not-used");
         randomProperties.setProperty("quickstart", "orders");
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<Order> streamStage = pipeline.readFrom(connect(randomProperties, Order::new))
                 .withoutTimestamps()
                 .setLocalParallelism(localParallelism);
-        streamStage.writeTo(Sinks.logger());
-        streamStage
-                .writeTo(AssertionSinks.assertCollectedEventually(60,
-                        list -> assertEquals(localParallelism * ITEM_COUNT, list.size())));
+        streamStage.writeTo(Sinks.list("testResults"));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        enableSnapshotting(jobConfig);
+
+        Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
+
+        List<Order> testResults = hazelcastInstance.getList("testResults");
+
+        Map<String, Integer> minOrderIdByTaskIdBeforeSuspend = new HashMap<>();
+        assertTrueEventually(() -> {
+            Map<String, List<Order>> ordersByTaskId = groupByTaskId(testResults);
+            assertThat(ordersByTaskId.keySet()).hasSize(localParallelism);
+            assertThat(ordersByTaskId).allSatisfy((taskId, records) ->
+                    assertThat(records.size()).isGreaterThan(ITEM_COUNT)
+            );
+            minOrderIdByTaskIdBeforeSuspend.putAll(getMinOrderIdByTaskId(ordersByTaskId));
+            LOGGER.debug("Min order ids before snapshot = {}", minOrderIdByTaskIdBeforeSuspend);
+            LOGGER.debug("Max order ids before snapshot = {}", getMaxOrderIdByTaskId(ordersByTaskId));
+        });
+
+        waitForNextSnapshot(hazelcastInstance, job);
+        assertJobStatusEventually(job, RUNNING);
+        job.suspend();
+        assertJobStatusEventually(job, SUSPENDED);
+
+        testResults.clear();
+        job.resume();
+
+        Map<String, Integer> minOrderIdByTaskIdAfterSuspend = new HashMap<>();
+        assertTrueEventually(() -> {
+            Map<String, List<Order>> ordersByTaskId = groupByTaskId(testResults);
+
+            assertThat(ordersByTaskId.keySet()).hasSize(localParallelism);
+            assertThat(ordersByTaskId).allSatisfy((taskId, records) ->
+                    assertThat(records.size()).isGreaterThan(ITEM_COUNT)
+            );
+            minOrderIdByTaskIdAfterSuspend.putAll(getMinOrderIdByTaskId(ordersByTaskId));
+            LOGGER.debug("Min order ids after snapshot = {}", minOrderIdByTaskIdAfterSuspend);
+            LOGGER.debug("Max order ids after snapshot = {}", getMaxOrderIdByTaskId(ordersByTaskId));
+            job.cancel();
+        });
+        assertJobStatusEventually(job, FAILED);
+        for (Map.Entry<String, Integer> minOrderId : minOrderIdByTaskIdAfterSuspend.entrySet()) {
+            String taskId = minOrderId.getKey();
+            assertThat(minOrderId.getValue()).isGreaterThan(minOrderIdByTaskIdBeforeSuspend.get(taskId));
+        }
+    }
+
+    private void waitForNextSnapshot(HazelcastInstance hazelcastInstance, Job job) {
+        JobRepository jobRepository = new JobRepository(hazelcastInstance);
+        waitForNextSnapshot(jobRepository, job.getId(), 30, false);
+    }
+
+    private static void enableSnapshotting(JobConfig jobConfig) {
         jobConfig.setProcessingGuarantee(AT_LEAST_ONCE);
         jobConfig.setSnapshotIntervalMillis(10);
+    }
 
-        Config config = smallInstanceConfig();
+    private static void enableEventJournal(Config config) {
         config.addMapConfig(new MapConfig("*")
                 .setEventJournalConfig(new EventJournalConfig().setEnabled(true))
                 .setBackupCount(3)
         );
-        config.getJetConfig().setResourceUploadEnabled(true);
-        HazelcastInstance[] hazelcastInstances = createHazelcastInstances(config, 3);
-        JobRepository jobRepository = new JobRepository(hazelcastInstances[0]);
-        Job job = hazelcastInstances[0].getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
+    }
 
-        waitForFirstSnapshot(jobRepository, job.getId(), 30, false);
+    private static Map<String, Integer> getMinOrderIdByTaskId(Map<String, List<Order>> ordersByTaskId) {
+        return ordersByTaskId.entrySet().stream()
+                .map(e -> entry(e.getKey(), e.getValue().stream().min(Comparator.comparingInt(o -> o.orderId)).get()))
+                .collect(toMap(Map.Entry::getKey, e -> e.getValue().orderId));
+    }
 
-        hazelcastInstances[1].shutdown();
-
-        assertTrueEventually(() -> assertEquals(2, hazelcastInstances[0].getCluster().getMembers().size()));
-
-        assertJobStatusEventually(job, RUNNING);
-
-        try {
-            job.join();
-            fail("Job should have completed with an AssertionCompletedException, but completed normally");
-        } catch (CompletionException e) {
-            String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
-        }
+    private static Map<String, Integer> getMaxOrderIdByTaskId(Map<String, List<Order>> ordersByTaskId) {
+        return ordersByTaskId.entrySet().stream()
+                .map(e -> entry(e.getKey(), e.getValue().stream().max(Comparator.comparingInt(o -> o.orderId)).get()))
+                .collect(toMap(Map.Entry::getKey, e -> e.getValue().orderId));
     }
 
     static class Order implements Serializable {

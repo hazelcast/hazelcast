@@ -53,7 +53,6 @@ import static java.util.Objects.requireNonNull;
  * ProcessorSupplier that creates {@linkplain com.hazelcast.jet.mongodb.impl.ReadMongoP} processors on each instance.
  */
 public class SelectProcessorSupplier implements ProcessorSupplier {
-
     private transient SupplierEx<? extends MongoClient> clientSupplier;
     private final String databaseName;
     private final String collectionName;
@@ -66,6 +65,8 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private final String dataLinkName;
     private transient ExpressionEvalContext evalContext;
     private final QueryDataType[] types;
+
+    private final boolean forceMongoParallelismOne;
 
     SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, BsonTimestamp startAt, boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
@@ -81,6 +82,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.types = table.resolveColumnTypes(projection);
+        this.forceMongoParallelismOne = table.isForceMongoParallelismOne();
     }
 
 
@@ -135,6 +137,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                             .setMapStreamFn(this::convertStreamDocToRow)
                             .setStartAtTimestamp(startAt == null ? null : new BsonTimestamp(startAt))
                             .setEventTimePolicy(eventTimePolicy)
+                            .setNonDistributed(forceMongoParallelismOne)
             );
 
             processors.add(processor);

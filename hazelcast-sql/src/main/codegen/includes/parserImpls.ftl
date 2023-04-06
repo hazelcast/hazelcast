@@ -37,7 +37,7 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     ]
     name = CompoundIdentifier()
     [
-        <EXTERNAL> <NAME> { externalName = SimpleIdentifier(); }
+        <EXTERNAL> <NAME> { externalName = CompoundIdentifier(); }
     ]
     columns = MappingColumns()
 

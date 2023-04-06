@@ -33,6 +33,7 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
@@ -53,9 +54,6 @@ import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
     static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
-
-    static final String SOURCE_NAME = "source";
-    static final String SINK_NAME = "sink";
 
     static MongoClient mongo;
     static BsonTimestamp startAtOperationTime;
@@ -94,21 +92,28 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
         initialize(2, config);
     }
 
+    @Before
+    public void createDefaultCollection() {
+        mongo.getDatabase(defaultDatabase()).createCollection(testName.getMethodName());
+    }
+
     @After
     public void clear() {
-        try (MongoClient mongoClient = MongoClients.create(mongoContainer.getConnectionString())) {
-            for (String databaseName : mongoClient.listDatabaseNames()) {
-                if (databaseName.startsWith("test")) {
-                    MongoDatabase database = mongoClient.getDatabase(databaseName);
-                    database.drop();
+        if (mongoContainer != null) {
+            try (MongoClient mongoClient = MongoClients.create(mongoContainer.getConnectionString())) {
+                for (String databaseName : mongoClient.listDatabaseNames()) {
+                    if (databaseName.startsWith("test")) {
+                        MongoDatabase database = mongoClient.getDatabase(databaseName);
+                        database.drop();
+                    }
                 }
+                List<String> allowedDatabasesLeft = asList("admin", "local", "config", "tech");
+                assertTrueEventually(() -> {
+                    ArrayList<String> databasesLeft = mongoClient.listDatabaseNames().into(new ArrayList<>());
+                    assertEquals(allowedDatabasesLeft.size(), databasesLeft.size());
+                    assertContainsAll(databasesLeft, allowedDatabasesLeft);
+                });
             }
-            List<String> allowedDatabasesLeft = asList("admin", "local", "config", "tech");
-            assertTrueEventually(() -> {
-                ArrayList<String> databasesLeft = mongoClient.listDatabaseNames().into(new ArrayList<>());
-                assertEquals(allowedDatabasesLeft.size(), databasesLeft.size());
-                assertContainsAll(databasesLeft, allowedDatabasesLeft);
-            });
         }
     }
 

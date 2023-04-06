@@ -186,9 +186,10 @@ public enum PutOpSteps implements IMapOpStep {
                 state.setOldValue(recordStore.getInMemoryFormat() == InMemoryFormat.OBJECT
                         ? record.getValue() : mapServiceContext.toData(record.getValue()));
                 recordStore.updateRecord0(record, state.getNow(), state.getStaticParams().isCountAsAccess());
-                recordStore.updateMemory(record, state.getKey(), state.getOldValue(), state.getNewValue(),
+                Object oldValue = recordStore.updateMemory(record, state.getKey(), state.getOldValue(), state.getNewValue(),
                         state.isChangeExpiryOnUpdate(), state.getTtl(), state.getMaxIdle(), UNSET,
                         state.getNow(), state.getStaticParams().isBackup());
+                state.setOldValue(oldValue);
             }
 
             state.setRecord(record);

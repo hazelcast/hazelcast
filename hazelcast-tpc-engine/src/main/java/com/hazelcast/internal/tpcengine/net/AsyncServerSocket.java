@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.net;
+
+import com.hazelcast.internal.tpcengine.Reactor;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

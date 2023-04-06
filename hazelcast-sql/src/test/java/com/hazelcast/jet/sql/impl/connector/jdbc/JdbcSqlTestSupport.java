@@ -35,8 +35,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public abstract class JdbcSqlTestSupport extends SqlTestSupport {
 
-    protected static final String TEST_DATABASE_REF = "test-database-ref";
+    protected static final String TEST_DATABASE_REF = "testDatabaseRef";
 
     protected static TestDatabaseProvider databaseProvider;
 
@@ -81,6 +81,12 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     @Nonnull
     protected static String randomTableName() {
         return "table_" + randomName();
+    }
+
+    protected String quote(String... parts) {
+        return Arrays.stream(parts)
+                     .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
+                     .collect(joining("."));
     }
 
     /**
@@ -139,34 +145,25 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA LINK " + TEST_DATABASE_REF
         );
     }
 
     protected static void createMapping(String tableName, String mappingName) {
         execute(
                 "CREATE MAPPING \"" + mappingName + "\""
-                        + " EXTERNAL NAME \"" + tableName + "\""
+                        + " EXTERNAL NAME " + tableName + " "
                         + " ("
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA LINK " + TEST_DATABASE_REF
         );
     }
 
     protected static void createJdbcMappingUsingDataLink(String name, String dataLink) {
         try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + name +
                 " DATA LINK " + quoteName(dataLink) + "\n"
-                + "OPTIONS ( "
-                + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                + ")"
         )) {
             assertThat(result.updateCount()).isEqualTo(0);
         }

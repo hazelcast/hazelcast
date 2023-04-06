@@ -59,7 +59,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     private final FunctionEx<SourceRecord, T> projectionFn;
     private TaskRunner taskRunner;
     private boolean snapshotInProgress;
-    private Traverser<Entry<BroadcastKey<String>, TaskRunner.State>> snapshotTraverser;
+    private Traverser<Entry<BroadcastKey<String>, State>> snapshotTraverser;
     private boolean snapshotsEnabled;
     private int processorIndex;
     private Traverser<?> traverser;
@@ -139,10 +139,11 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         return broadcastKey("snapshot-" + processorIndex);
     }
 
+    @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         boolean forThisProcessor = snapshotKey().equals(key);
         if (forThisProcessor) {
-            taskRunner.restoreSnapshot((TaskRunner.State) value);
+            taskRunner.restoreSnapshot((State) value);
         }
     }
 

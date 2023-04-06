@@ -173,16 +173,16 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         readKafkaConnectP.saveToSnapshot();
         lastSnapshot = outbox.snapshotQueue().peek();
         assertThat(lastSnapshot).isNotNull();
-        assertThat((TaskRunner.State) lastSnapshot.getValue()).isEqualTo(stateWithOffset(42));
+        assertThat((State) lastSnapshot.getValue()).isEqualTo(stateWithOffset(42));
 
     }
 
     @Nonnull
-    private static TaskRunner.State stateWithOffset(int value) {
+    private static State stateWithOffset(int value) {
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord lastRecord = dummyRecord(value);
         partitionsToOffset.put(lastRecord.sourcePartition(), lastRecord.sourceOffset());
-        TaskRunner.State state = new TaskRunner.State(partitionsToOffset);
+        State state = new State(partitionsToOffset);
         return state;
     }
 
