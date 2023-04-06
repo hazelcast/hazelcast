@@ -77,8 +77,28 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         boolean complete = readKafkaConnectP.complete();
 
         assertFalse(complete);
-        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2);
+        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2, 3, 4);
     }
+
+    @Test
+    public void should_filter_items() throws Exception {
+        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        readKafkaConnectP = new ReadKafkaConnectP<>(connectorWrapper, noEventTime(), rec -> {
+            Integer value = (Integer) rec.value();
+            if (value % 2 == 0) {
+                return null;
+            } else {
+                return value;
+            }
+        });
+
+        readKafkaConnectP.init(outbox, context);
+        boolean complete = readKafkaConnectP.complete();
+
+        assertFalse(complete);
+        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(1, 3);
+    }
+
 
     @Test
     public void should_require_connectorWrapper() {
@@ -128,7 +148,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
         readKafkaConnectP.complete();
 
-        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2);
+        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2, 3, 4);
 
     }
 
@@ -197,7 +217,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         properties.setProperty("name", "some-name");
         properties.setProperty("tasks.max", "2");
         properties.setProperty("connector.class", DummySourceConnector.class.getName());
-        properties.setProperty(ITEMS_SIZE, "3");
+        properties.setProperty(ITEMS_SIZE, "5");
         return properties;
     }
 }
