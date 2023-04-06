@@ -25,11 +25,11 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.tpcengine.AsyncServerSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReadHandler;
 import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.tpcengine.TpcEngineBuilder;
+import com.hazelcast.internal.tpcengine.net.ReadHandler;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -51,10 +51,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_KEEPALIVE;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_KEEPALIVE;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**

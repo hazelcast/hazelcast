@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AsyncSocket_LargePayloadTest;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket_LargePayloadTest;
 
 public class NioAsyncSocket_LargePayloadTest extends AsyncSocket_LargePayloadTest {
 
