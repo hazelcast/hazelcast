@@ -148,7 +148,7 @@ Config config = new Config();
 config.addDataConnectionConfig(
         new DataConnectionConfig("mongodb-ref")
             .setType("MongoDB")
-            .setProperty("url", dbConnectionUrl)
+            .setProperty("connectionString", dbConnectionUrl)
   );
 
 MapConfig mapConfig = new MapConfig(mapName);
