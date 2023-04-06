@@ -6817,10 +6817,10 @@ public class MemberCompatibilityTest_2_6 {
     }
 
     @Test
-    public void test_DynamicConfigAddDataLinkConfigCodec_decodeRequest() {
+    public void test_DynamicConfigAddDataConnectionConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 757;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        DynamicConfigAddDataLinkConfigCodec.RequestParameters parameters = DynamicConfigAddDataLinkConfigCodec.decodeRequest(fromFile);
+        DynamicConfigAddDataConnectionConfigCodec.RequestParameters parameters = DynamicConfigAddDataConnectionConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(aString, parameters.type));
         assertTrue(isEqual(aBoolean, parameters.shared));
@@ -6828,9 +6828,9 @@ public class MemberCompatibilityTest_2_6 {
     }
 
     @Test
-    public void test_DynamicConfigAddDataLinkConfigCodec_encodeResponse() {
+    public void test_DynamicConfigAddDataConnectionConfigCodec_encodeResponse() {
         int fileClientMessageIndex = 758;
-        ClientMessage encoded = DynamicConfigAddDataLinkConfigCodec.encodeResponse();
+        ClientMessage encoded = DynamicConfigAddDataConnectionConfigCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

@@ -17,7 +17,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
+import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -56,23 +56,23 @@ class FieldResolver {
     /**
      * Resolves fields based on the options passed to the connector and schema provided by user (if any).
      *
-     * @param externalName external name of the mapping, namely collection name
-     * @param dataLinkName name of data link used to create this mapping
-     * @param options      options provided for the connector
-     * @param userFields   user-provided field list
+     * @param externalName       external name of the mapping, namely collection name
+     * @param dataConnectionName name of data connection used to create this mapping
+     * @param options            options provided for the connector
+     * @param userFields         user-provided field list
      * @return resolved fields - all fields from collection or user provided fields with resolved types
      * @throws IllegalArgumentException if given column type won't be resolved or field from user mapping won't exist
      *                                  in the collection
      */
     List<MappingField> resolveFields(
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             boolean stream
     ) {
         Predicate<MappingField> pkColumnName = Options.getPkColumnChecker(options, stream);
-        Map<String, DocumentField> dbFields = readFields(externalName, dataLinkName, options, stream);
+        Map<String, DocumentField> dbFields = readFields(externalName, dataConnectionName, options, stream);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -161,15 +161,15 @@ class FieldResolver {
     }
 
     Map<String, DocumentField> readFields(String[] externalNames,
-                                          String dataLinkName,
+                                          String dataConnectionName,
                                           Map<String, String> options,
                                           boolean stream) {
         String collectionName = externalNames[0]; // TODO HZ-2260
         Map<String, DocumentField> fields = new HashMap<>();
-        Tuple2<MongoClient, MongoDataLink> connect = connect(dataLinkName, options);
+        Tuple2<MongoClient, MongoDataConnection> connect = connect(dataConnectionName, options);
         try (MongoClient client = connect.f0()) {
             requireNonNull(client);
-            String databaseName = Options.getDatabaseName(nodeEngine, dataLinkName, options);
+            String databaseName = Options.getDatabaseName(nodeEngine, dataConnectionName, options);
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()
@@ -239,11 +239,11 @@ class FieldResolver {
         return returned;
     }
 
-    private Tuple2<MongoClient, MongoDataLink> connect(String dataLinkName, Map<String, String> options) {
-        if (dataLinkName != null) {
-            MongoDataLink link = nodeEngine.getDataLinkService().getAndRetainDataLink(
-                    dataLinkName,
-                    MongoDataLink.class);
+    private Tuple2<MongoClient, MongoDataConnection> connect(String dataConnectionName, Map<String, String> options) {
+        if (dataConnectionName != null) {
+            MongoDataConnection link = nodeEngine.getDataConnectionService().getAndRetainDataConnection(
+                    dataConnectionName,
+                    MongoDataConnection.class);
             return tuple2(link.getClient(), link);
         } else {
             String connectionString = requireNonNull(options.get(CONNECTION_STRING_OPTION),

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.datalink.impl.JdbcDataLink;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
@@ -38,9 +38,9 @@ import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureDummyDataLink;
-import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureJdbcDataLink;
-import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureDummyDataConnection;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureJdbcDataConnection;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertAnyOrder;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
 import static java.util.stream.Collectors.toList;
@@ -50,8 +50,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class ReadJdbcPTest extends SimpleTestInClusterSupport {
 
     private static final int ITEM_COUNT = 100;
-    private static final String JDBC_DATA_LINK = "jdbc-data-link";
-    private static final String DUMMY_DATA_LINK = "dummy-data-link";
+    private static final String JDBC_DATA_CONNECTION = "jdbc-data-connection";
+    private static final String DUMMY_DATA_CONNECTION = "dummy-data-connection";
 
     private static String dbConnectionUrl;
     private static List<Entry<Integer, String>> tableContents;
@@ -61,8 +61,8 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
         dbConnectionUrl = "jdbc:h2:mem:" + ReadJdbcPTest.class.getSimpleName() + ";DB_CLOSE_DELAY=-1";
 
         Config config = smallInstanceConfig();
-        configureJdbcDataLink(JDBC_DATA_LINK, dbConnectionUrl, config);
-        configureDummyDataLink(DUMMY_DATA_LINK, config);
+        configureJdbcDataConnection(JDBC_DATA_CONNECTION, dbConnectionUrl, config);
+        configureDummyDataConnection(DUMMY_DATA_CONNECTION, config);
         initialize(2, config);
         // create and fill a table
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
@@ -101,10 +101,10 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void should_work_with_dataLink() {
+    public void should_work_with_dataConnection() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jdbc(
-                        dataLinkRef(JDBC_DATA_LINK),
+                        dataConnectionRef(JDBC_DATA_CONNECTION),
                         (con, parallelism, index) -> {
                             PreparedStatement statement = con.prepareStatement("select * from items where mod(id,?)=?");
                             statement.setInt(1, parallelism);
@@ -118,11 +118,11 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void should_fail_with_non_existing_dataLink() {
+    public void should_fail_with_non_existing_dataConnection() {
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jdbc(
-                        dataLinkRef("non-existing-data-link"),
+                        dataConnectionRef("non-existing-data-connection"),
                         (con, parallelism, index) -> {
                             PreparedStatement statement = con.prepareStatement("select * from items where mod(id,?)=?");
                             statement.setInt(1, parallelism);
@@ -133,14 +133,14 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .writeTo(assertAnyOrder(tableContents));
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
-                .hasMessageContaining("Data link 'non-existing-data-link' not found");
+                .hasMessageContaining("Data connection 'non-existing-data-connection' not found");
     }
 
     @Test
-    public void should_fail_with_non_jdbc_dataLink() {
+    public void should_fail_with_non_jdbc_dataConnection() {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jdbc(
-                        dataLinkRef(DUMMY_DATA_LINK),
+                        dataConnectionRef(DUMMY_DATA_CONNECTION),
                         (con, parallelism, index) -> {
                             PreparedStatement statement = con.prepareStatement("select * from items where mod(id,?)=?");
                             statement.setInt(1, parallelism);
@@ -151,8 +151,8 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .writeTo(assertAnyOrder(tableContents));
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
-                .hasMessageContaining("Data link '" + DUMMY_DATA_LINK
-                        + "' must be an instance of class " + JdbcDataLink.class.getName());
+                .hasMessageContaining("Data connection '" + DUMMY_DATA_CONNECTION
+                        + "' must be an instance of class " + JdbcDataConnection.class.getName());
     }
 
     @Test

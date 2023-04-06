@@ -25,7 +25,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
@@ -128,12 +128,12 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     }
 
     public static <T> ProcessorMetaSupplier supplier(
-            DataLinkRef dataLinkRef,
+            DataConnectionRef dataConnectionRef,
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn) {
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
-                SecuredFunctions.readJdbcProcessorFn(dataLinkRef.getName(), resultSetFn, mapOutputFn));
+                SecuredFunctions.readJdbcProcessorFn(dataConnectionRef.getName(), resultSetFn, mapOutputFn));
     }
 
     @Override

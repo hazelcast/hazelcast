@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.MAPPING_PREFIX;
 import static com.hazelcast.mapstore.GenericMapStore.TABLE_NAME_PROPERTY;
@@ -153,7 +153,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -208,7 +208,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -277,7 +277,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         insertItems(mapName, 2);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -307,7 +307,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         insertItems(mapName, 2);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -339,7 +339,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         insertItems(tableName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(TABLE_NAME_PROPERTY, tableName);
         mapStore = createMapStore(properties, hz);
 
@@ -358,7 +358,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         }
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty("columns", "id,name");
         mapStore = createMapStore(properties, hz);
@@ -382,7 +382,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     private <K> GenericMapStore<K> createMapStore(HazelcastInstance instance) {
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         return createMapStore(properties, instance);
     }
 
