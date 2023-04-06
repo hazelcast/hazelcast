@@ -32,16 +32,9 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 final class Options {
 
     /**
-     * Option which is used to get data link's name. Must be non-empty (if set) and contain
-     * a name of previously configured {@link MongoDataLink}.
-     *
-     * <p>Not mandatory if {@link #CONNECTION_STRING_OPTION} is set.</p>
-     */
-    static final String DATA_LINK_REF_OPTION = "data-link-name";
-    /**
      * A valid MongoDB connectionString.
      * Must be non-empty (if set).
-     * <p>Not mandatory if {@link #DATA_LINK_REF_OPTION} is set.</p>
+     * <p>Not mandatory if data link is provided in mapping definition.</p>
      */
     static final String CONNECTION_STRING_OPTION = "connectionString";
 
@@ -110,14 +103,14 @@ final class Options {
         }
     }
 
-    static String getDatabaseName(NodeEngine nodeEngine, Map<String, String> options) {
+    static String getDatabaseName(NodeEngine nodeEngine, String dataLinkName, Map<String, String> options) {
         String name = options.get(Options.DATABASE_NAME_OPTION);
         if (name != null) {
             return name;
         }
-        if (options.containsKey(DATA_LINK_REF_OPTION)) {
+        if (dataLinkName != null) {
             MongoDataLink link =
-                    nodeEngine.getDataLinkService().getAndRetainDataLink(options.get(DATA_LINK_REF_OPTION), MongoDataLink.class);
+                    nodeEngine.getDataLinkService().getAndRetainDataLink(dataLinkName, MongoDataLink.class);
             try {
                 name = link.getDatabaseName();
                 if (name != null) {

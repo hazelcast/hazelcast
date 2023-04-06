@@ -155,7 +155,7 @@ public class DataLinkServiceImpl implements InternalDataLinkService {
     public String typeForDataLink(String name) {
         DataLinkEntry dataLink = dataLinks.get(name);
         if (dataLink == null) {
-            throw new HazelcastException("DataLink with name '" + name + "' does not exist");
+            throw new HazelcastException("Data link '" + name + "' not found");
         }
         String type = dataLinkClassToType.get(dataLink.instance.getClass());
         if (type == null) {

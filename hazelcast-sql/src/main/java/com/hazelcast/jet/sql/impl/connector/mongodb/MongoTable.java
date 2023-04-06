@@ -58,6 +58,7 @@ class MongoTable extends JetTable {
             @Nonnull String name,
             @Nonnull String databaseName,
             @Nullable String collectionName,
+            @Nullable String dataLinkName,
             @Nonnull Map<String, String> options,
             @Nonnull SqlConnector sqlConnector,
             @Nonnull List<TableField> fields,
@@ -68,7 +69,7 @@ class MongoTable extends JetTable {
         this.collectionName = collectionName;
         this.options = options;
         this.connectionString = options.get(Options.CONNECTION_STRING_OPTION);
-        this.dataLinkName = options.get(Options.DATA_LINK_REF_OPTION);
+        this.dataLinkName = dataLinkName;
         this.streaming = streaming;
 
         this.externalNames = getFields().stream()

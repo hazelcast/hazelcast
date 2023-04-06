@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -89,10 +88,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "  \"id\" INTEGER," + LE +
                 "  \"name\" VARCHAR" + LE +
                 ")" + LE +
-                "TYPE \"JDBC\"" + LE +
-                "OPTIONS (" + LE +
-                "  'data-link-name'='test-database-ref'" + LE +
-                ")";
+                "DATA LINK \"testDatabaseRef\"";
         assertRowsAnyOrder("SELECT GET_DDL('relation', '" + mappingName + "')",
                 ImmutableList.of(new Row(expectedMappingQuery)));
     }
@@ -108,7 +104,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + "DATA LINK " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
          .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
@@ -125,14 +121,14 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + "DATA LINK " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
          .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
     }
 
     @Test
-    public void createMappingWithoutDataLinkRef() {
+    public void createMappingWithoutDataLink() {
         tableName = randomTableName();
 
         assertThatThrownBy(() ->
@@ -142,10 +138,10 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("Missing option: 'data-link-name' must be set");
+         .hasMessageContaining("You must provide data link when using the Jdbc connector");
     }
 
     @Test
@@ -156,10 +152,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA LINK " + TEST_DATABASE_REF
         ))
                 .isInstanceOf(HazelcastSqlException.class);
 
@@ -188,10 +181,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + " id INT, "
                 + " fullName VARCHAR EXTERNAL NAME name "
                 + ") "
-                + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                + ")"
+                + "DATA LINK " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder("SHOW MAPPINGS",
@@ -215,10 +205,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA LINK " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
          .hasMessageContaining("Could not resolve field with name fullName");
@@ -243,10 +230,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME myName "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA LINK " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
          .hasMessageContaining("Could not resolve field with external name myName");
@@ -266,10 +250,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id BOOLEAN, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA LINK " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
          .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
@@ -285,10 +266,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         insertItems(tableName, 2);
 
         execute("CREATE MAPPING " + tableName
-                + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                + " OPTIONS ( "
-                + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                + ")"
+                + " DATA LINK " + TEST_DATABASE_REF
         );
 
         // If you change LinkedHashMap -> HashMap at JdbcSqlConnector:159, it will fail.
@@ -325,10 +303,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         createTable(tableName);
 
         execute("CREATE MAPPING " + tableName
-                + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                + ")"
+                + " DATA LINK " + TEST_DATABASE_REF
         );
 
         try (SqlResult result = sqlService.execute("SELECT * FROM " + tableName)) {

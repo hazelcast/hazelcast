@@ -68,8 +68,8 @@ final class InfoSchemaConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataLinkName) {
         throw new UnsupportedOperationException();
     }
 
@@ -79,9 +79,9 @@ final class InfoSchemaConnector implements SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String mappingName,
             @Nonnull String[] externalName,
+            @Nullable String dataLinkName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException();
     }
 

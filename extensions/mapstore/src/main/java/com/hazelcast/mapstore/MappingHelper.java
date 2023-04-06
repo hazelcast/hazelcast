@@ -23,8 +23,6 @@ import com.hazelcast.sql.SqlService;
 
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
-
 final class MappingHelper {
 
     private final SqlService sqlService;
@@ -33,28 +31,14 @@ final class MappingHelper {
         this.sqlService = sqlService;
     }
 
-    public void createMapping(String mappingName, String tableName, String mappingType, String dataLinkRef,
-                              String idColumn) {
-        sqlService.execute(
-                "CREATE MAPPING \"" + mappingName + "\""
-                + " EXTERNAL NAME \"" + tableName + "\" "
-                + " TYPE " + mappingType
-                + " OPTIONS ("
-                + "    '" + OPTION_DATA_LINK_NAME + "' = '" + dataLinkRef + "', "
-                + "    'idColumn' = '" + idColumn + "' "
-                + ")"
-        ).close();
-    }
-
-    public void createMappingWithColumns(String mappingName, String tableName, String mappingColumns,
-                                         String mappingType, String dataLinkRef, String idColumn) {
+    public void createMapping(String mappingName, String tableName, String mappingColumns,
+                              String dataLinkRef, String idColumn) {
         sqlService.execute(
                 "CREATE MAPPING \"" + mappingName + "\" "
                 + "EXTERNAL NAME \"" + tableName + "\" "
                 + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
-                + "TYPE " + mappingType + " "
-                + "OPTIONS ("
-                + "    '" + OPTION_DATA_LINK_NAME + "' = '" + dataLinkRef + "', "
+                + " DATA LINK \"" + dataLinkRef + "\" "
+                + " OPTIONS ("
                 + "    'idColumn' = '" + idColumn + "' "
                 + ")"
         ).close();
