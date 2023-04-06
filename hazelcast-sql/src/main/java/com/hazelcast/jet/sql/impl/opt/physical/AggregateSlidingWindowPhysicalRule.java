@@ -188,6 +188,13 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
                     windowRel.windowPolicyProvider());
             if (transformedRel != null) {
                 call.transformTo(transformedRel);
+            } else {
+                call.transformTo(
+                        new ShouldNotExecuteRel(logicalAggregate.getCluster(),
+                                OptUtils.toPhysicalConvention(logicalAggregate.getTraitSet()),
+                                logicalAggregate.getRowType(),
+                                "Streaming aggregation is supported only for window aggregation, with imposed order, " +
+                                        "grouping by a window bound (see TUMBLE/HOP and IMPOSE_ORDER functions)"));
             }
         }
     }
