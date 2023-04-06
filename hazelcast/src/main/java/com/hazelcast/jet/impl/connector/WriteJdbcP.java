@@ -361,6 +361,8 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
 
     static class WriteJdbcSupplier<T> implements ProcessorSupplier {
 
+        private static final long serialVersionUID = 1L;
+
         private final String dataConnectionName;
         private final String updateQuery;
         private final BiConsumerEx<? super PreparedStatement, ? super T> bindFn;
