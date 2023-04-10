@@ -356,6 +356,13 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
                 .thenApplyAsync(result -> reg, CALLER_RUNS);
     }
 
+    private CompletableFuture<EventRegistration> invokeOnSubscriber(Registration reg, Supplier<Operation> operationSupplier) {
+        return nodeEngine.getOperationService().createInvocationBuilder(
+                        reg.getServiceName(), operationSupplier.get(), reg.getSubscriber())
+                .setTryCount(MAX_RETRIES).invoke()
+                .thenApplyAsync(result -> reg, CALLER_RUNS);
+    }
+
     public boolean handleRegistration(Registration reg) {
         if (nodeEngine.getThisAddress().equals(reg.getSubscriber())) {
             return false;
@@ -438,7 +445,9 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     public EventRegistration handleAllRegistrations(Registration registration, int orderKey) {
         ClusterService clusterService = nodeEngine.getClusterService();
         Supplier<Operation> op = new RegistrationOperationSupplier(registration, orderKey, clusterService);
-        return getValue(invokeOnAllMembers(registration, op));
+        return getValue(registration.isLocalOnly()
+                ? invokeOnSubscriber(registration, op)
+                : invokeOnAllMembers(registration, op));
     }
 
     public StripedExecutor getEventExecutor() {

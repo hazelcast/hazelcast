@@ -363,12 +363,13 @@ public abstract class AbstractJobProxy<C, M> implements Job {
      * <li> A {@link Registration} object is created with a unique registration id. The
      *      {@code listener} is cached locally by the registration id.
      * <li> The {@link Registration} object is delivered to the job coordinator via an
-     *      {@link AddJobStatusListenerOperation}. If the job is not completed/failed,
-     *      the coordinator invokes a {@link RegistrationOperation} on all members. The
-     *      registration operation is guaranteed to be executed earlier than a possible
-     *      terminal event since the operation is executed as an event callback with the
-     *      same {@code orderKey} as job events.
-     * <li> When the local member receives the {@link RegistrationOperation}, the
+     *      {@link AddJobStatusListenerOperation}. If the job is not completed/failed, the
+     *      coordinator invokes a {@link RegistrationOperation} on the subscriber member
+     *      —or all members if the registration is global. The registration operation is
+     *      guaranteed to be executed earlier than a possible terminal event since the
+     *      operation is executed as an event callback with the same {@code orderKey} as
+     *      job events.
+     * <li> When the subscriber member receives the {@link RegistrationOperation}, the
      *      {@link Registration}'s {@code listener} is restored from the cache and the
      *      registration is completed. </ol>
      */

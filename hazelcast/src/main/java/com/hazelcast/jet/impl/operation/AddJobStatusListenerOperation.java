@@ -19,13 +19,14 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class AddJobStatusListenerOperation extends AsyncJobOperation {
+public class AddJobStatusListenerOperation extends AsyncJobOperation implements Versioned {
     private boolean isLightJob;
     private Registration registration;
 

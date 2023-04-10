@@ -260,8 +260,8 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         requireNonNull(listener, "Listener cannot be null");
         try {
             ClientJobStatusEventHandler handler = new ClientJobStatusEventHandler(listener);
-            handler.registrationId = ((ClientListenerServiceImpl) container().getListenerService())
-                    .registerListener(createJobStatusListenerCodec(getId()), handler, coordinatorId());
+            handler.registrationId = container().getListenerService()
+                    .registerListener(createJobStatusListenerCodec(getId()), handler);
             return handler.registrationId;
         } catch (Throwable t) {
             throw rethrow(t.getCause());
@@ -277,7 +277,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         return new ListenerMessageCodec() {
             @Override
             public ClientMessage encodeAddRequest(boolean localOnly) {
-                return JetAddJobStatusListenerCodec.encodeRequest(jobId, isLightJob(), localOnly);
+                return JetAddJobStatusListenerCodec.encodeRequest(jobId, lightJobCoordinator, localOnly);
             }
 
             @Override
