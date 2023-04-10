@@ -39,7 +39,7 @@ public enum ContainsKeyOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.getOldValue() == null
-                    ? ContainsKeyOpSteps.LOAD : UtilSteps.WITH_POSSIBLE_EXTRA_STEP;
+                    ? ContainsKeyOpSteps.LOAD : UtilSteps.FINAL_STEP;
         }
     },
 
@@ -57,7 +57,7 @@ public enum ContainsKeyOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.getOldValue() == null
-                    ? UtilSteps.WITH_POSSIBLE_EXTRA_STEP : ContainsKeyOpSteps.ON_LOAD;
+                    ? UtilSteps.FINAL_STEP : ContainsKeyOpSteps.ON_LOAD;
         }
     },
 
@@ -77,7 +77,7 @@ public enum ContainsKeyOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.WITH_POSSIBLE_EXTRA_STEP;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

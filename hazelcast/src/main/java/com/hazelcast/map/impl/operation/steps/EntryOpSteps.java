@@ -134,7 +134,7 @@ public enum EntryOpSteps implements IMapOpStep {
                 return DO_POST_OPERATE_OPS;
             }
 
-            return UtilSteps.WITH_POSSIBLE_EXTRA_STEP;
+            return UtilSteps.FINAL_STEP;
         }
     },
 
@@ -331,7 +331,7 @@ public enum EntryOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.WITH_POSSIBLE_EXTRA_STEP;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

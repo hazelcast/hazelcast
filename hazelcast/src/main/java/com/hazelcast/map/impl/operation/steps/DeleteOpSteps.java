@@ -70,7 +70,7 @@ public enum DeleteOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.isRecordExistsInMemory()
-                    ? DeleteOpSteps.ON_DELETE : UtilSteps.WITH_POSSIBLE_EXTRA_STEP;
+                    ? DeleteOpSteps.ON_DELETE : UtilSteps.FINAL_STEP;
         }
     },
 
@@ -85,7 +85,7 @@ public enum DeleteOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.WITH_POSSIBLE_EXTRA_STEP;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

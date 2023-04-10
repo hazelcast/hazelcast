@@ -25,6 +25,19 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 public enum UtilSteps implements IMapOpStep {
 
+    FINAL_STEP() {
+        @Override
+        public void runStep(State state) {
+            // empty intentionally
+        }
+
+        @Override
+        public Step nextStep(State state) {
+            Step step = state.getRecordStore().getStorage().newCompactorStep();
+            return step == null ? UtilSteps.SEND_RESPONSE : step;
+        }
+    },
+
     SEND_RESPONSE() {
         @Override
         public void runStep(State state) {
@@ -41,18 +54,6 @@ public enum UtilSteps implements IMapOpStep {
         }
     },
 
-    WITH_POSSIBLE_EXTRA_STEP() {
-        @Override
-        public void runStep(State state) {
-            // empty intentionally
-        }
-
-        @Override
-        public Step nextStep(State state) {
-            Step step = state.getRecordStore().getStorage().newCompactorStep();
-            return step == null ? UtilSteps.SEND_RESPONSE : step;
-        }
-    },
 
     HANDLE_ERROR() {
         @Override
