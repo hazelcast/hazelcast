@@ -48,8 +48,8 @@ public class InsertProcessorSupplier
     public InsertProcessorSupplier() {
     }
 
-    public InsertProcessorSupplier(String dataLinkName, String query, int batchLimit) {
-        super(dataLinkName);
+    public InsertProcessorSupplier(String dataConnectionName, String query, int batchLimit) {
+        super(dataConnectionName);
         this.query = query;
         this.batchLimit = batchLimit;
     }
@@ -83,19 +83,19 @@ public class InsertProcessorSupplier
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(dataLinkName, ACTION_WRITE));
+        return singletonList(ConnectorPermission.jdbc(dataConnectionName, ACTION_WRITE));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(dataLinkName);
+        out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeInt(batchLimit);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        dataLinkName = in.readString();
+        dataConnectionName = in.readString();
         query = in.readString();
         batchLimit = in.readInt();
     }

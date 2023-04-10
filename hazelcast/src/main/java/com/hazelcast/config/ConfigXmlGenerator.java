@@ -198,7 +198,7 @@ public class ConfigXmlGenerator {
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
         integrityCheckerXmlGenerator(gen, config);
-        dataLinkConfiguration(gen, config);
+        dataConnectionConfiguration(gen, config);
         tpcConfiguration(gen, config);
 
         xml.append("</hazelcast>");
@@ -1216,16 +1216,16 @@ public class ConfigXmlGenerator {
         );
     }
 
-    private static void dataLinkConfiguration(final XmlGenerator gen, final Config config) {
-        for (DataLinkConfig dataLinkConfig : config.getDataLinkConfigs().values()) {
+    private static void dataConnectionConfiguration(final XmlGenerator gen, final Config config) {
+        for (DataConnectionConfig dataConnectionConfig : config.getDataConnectionConfigs().values()) {
             gen.open(
-                            "data-link",
+                            "data-connection",
                             "name",
-                            dataLinkConfig.getName()
+                            dataConnectionConfig.getName()
                     )
-                    .node("type", dataLinkConfig.getType())
-                    .node("shared", dataLinkConfig.isShared())
-                    .appendProperties(dataLinkConfig.getProperties())
+                    .node("type", dataConnectionConfig.getType())
+                    .node("shared", dataConnectionConfig.isShared())
+                    .appendProperties(dataConnectionConfig.getProperties())
                     .close();
         }
     }

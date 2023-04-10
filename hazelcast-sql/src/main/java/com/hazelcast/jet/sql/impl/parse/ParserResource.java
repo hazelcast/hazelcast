@@ -34,11 +34,11 @@ public interface ParserResource {
     @BaseMessage("The mapping must be created in the \"public\" schema")
     ExInst<SqlValidatorException> mappingIncorrectSchema();
 
-    @BaseMessage("The data link must be created in the \"public\" schema")
-    ExInst<SqlValidatorException> dataLinkIncorrectSchemaCreate();
+    @BaseMessage("The data connection must be created in the \"public\" schema")
+    ExInst<SqlValidatorException> dataConnectionIncorrectSchemaCreate();
 
-    @BaseMessage("Data links can exists only in the \"public\" schema")
-    ExInst<SqlValidatorException> dataLinkIncorrectSchemaUse();
+    @BaseMessage("Data connections can exists only in the \"public\" schema")
+    ExInst<SqlValidatorException> dataConnectionIncorrectSchemaUse();
 
     @BaseMessage("The view must be created in the \"public\" schema")
     ExInst<SqlValidatorException> viewIncorrectSchema();
@@ -58,8 +58,8 @@ public interface ParserResource {
     @BaseMessage("Mapping does not exist: {0}")
     ExInst<SqlValidatorException> droppedMappingDoesNotExist(String mappingName);
 
-    @BaseMessage("Data Link does not exist: {0}")
-    ExInst<SqlValidatorException> droppedDataLinkDoesNotExist(String dataStoreName);
+    @BaseMessage("Data connection does not exist: {0}")
+    ExInst<SqlValidatorException> droppedDataConnectionDoesNotExist(String dataConnectionName);
 
     @BaseMessage("Index does not exist: {0}")
     ExInst<SqlValidatorException> droppedIndexDoesNotExist(String indexName);

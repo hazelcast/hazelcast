@@ -44,13 +44,13 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
     private final String databaseName;
     private final String collectionName;
     private transient SupplierEx<MongoClient> clientSupplier;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private final String idField;
 
     DeleteProcessorSupplier(MongoTable table) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
-        this.dataLinkName = table.dataLinkName;
+        this.dataConnectionName = table.dataConnectionName;
         this.collectionName = table.collectionName;
         this.idField = table.primaryKeyExternalName();
     }
@@ -71,7 +71,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
             Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<>()
                             .setClientSupplier(clientSupplier)
-                            .setDataLinkRef(dataLinkName)
+                            .setDataConnectionRef(dataConnectionName)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Object.class)

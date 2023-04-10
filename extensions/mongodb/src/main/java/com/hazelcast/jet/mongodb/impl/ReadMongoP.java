@@ -95,9 +95,22 @@ public class ReadMongoP<I> extends AbstractProcessor {
     private boolean snapshotInProgress;
     private final MongoChunkedReader reader;
     private final MongoConnection connection;
+    /**
+     * Means that user requested the query to be executed in non-distributed way.
+     * This property set to true should mean that
+     * {@link com.hazelcast.jet.core.ProcessorMetaSupplier#forceTotalParallelismOne} was used.
+     */
+    private final boolean nonDistributed;
 
     private Traverser<?> traverser;
     private Traverser<Entry<BroadcastKey<Integer>, Object>> snapshotTraverser;
+
+    /**
+     * Parallelization of reading is possible only when
+     * user didn't mark the processor as nonDistributed
+     * and when totalParallelism is higher than 1.
+     */
+    private boolean canParallelize;
 
     public ReadMongoP(ReadMongoParams<I> params) {
         if (params.isStream()) {
@@ -109,8 +122,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
             this.reader = new BatchMongoReader(params.databaseName, params.collectionName, params.mapItemFn,
                     params.getAggregates());
         }
-        this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> reader.connect(client,
-                snapshotsEnabled));
+        this.connection = new MongoConnection(
+                params.clientSupplier, params.dataConnectionRef, client -> reader.connect(client, snapshotsEnabled)
+        );
+        this.nonDistributed = params.isNonDistributed();
         this.throwOnNonExisting = params.isThrowOnNonExisting();
     }
 
@@ -118,6 +133,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
     protected void init(@Nonnull Context context) {
         logger = context.logger();
         totalParallelism = context.totalParallelism();
+        canParallelize = !nonDistributed && totalParallelism > 1;
         processorIndex = context.globalProcessorIndex();
         this.snapshotsEnabled = context.snapshottingEnabled();
 
@@ -309,7 +325,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             if (supportsSnapshots && lastKey != null) {
                 aggregateList.add(match(gt("_id", lastKey)).toBsonDocument());
             }
-            if (totalParallelism > 1) {
+            if (canParallelize) {
                 aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex, false));
             }
             if (collection != null) {
@@ -412,7 +428,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         public void onConnect(MongoClient mongoClient, boolean snapshotsEnabled) {
             List<Bson> aggregateList = new ArrayList<>(aggregates);
-            if (totalParallelism > 1) {
+            if (canParallelize) {
                 aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex, true));
             }
             ChangeStreamIterable<Document> changeStream;

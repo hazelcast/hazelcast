@@ -21,7 +21,7 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.InternalDataLinkService;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -89,9 +89,9 @@ public interface NodeEngine {
     InternalSqlService getSqlService();
 
     /**
-     * Return a service for accessing data links
+     * Return a service for accessing data connections
      */
-    InternalDataLinkService getDataLinkService();
+    InternalDataConnectionService getDataConnectionService();
 
     /**
      * Gets the TransactionManagerService.

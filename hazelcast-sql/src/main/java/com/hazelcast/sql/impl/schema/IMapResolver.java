@@ -20,7 +20,8 @@ import javax.annotation.Nullable;
 
 /**
  * Interface that creates {@link Mapping} objects based on IMap name by
- * sampling the map data.
+ * sampling the map data. If the IMap does not exist or is empty, the mapping
+ * cannot be generated because types cannot be inferred.
  */
 @FunctionalInterface
 public interface IMapResolver {

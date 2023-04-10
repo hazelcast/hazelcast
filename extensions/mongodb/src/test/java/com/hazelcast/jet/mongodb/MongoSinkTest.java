@@ -54,7 +54,7 @@ import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.jet.mongodb.WriteMode.INSERT_ONLY;
 import static com.hazelcast.jet.mongodb.MongoSinks.builder;
 import static com.hazelcast.jet.mongodb.MongoSinks.mongodb;
-import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.pipeline.Sources.mapJournal;
 import static com.hazelcast.jet.pipeline.test.TestSources.items;
@@ -116,7 +116,7 @@ public class MongoSinkTest extends AbstractMongoTest {
     }
 
     @Test
-    public void test_withBatchSource_andDataLinkRef() {
+    public void test_withBatchSource_andDataConnectionRef() {
         MongoCollection<Document> collection = collection(defaultDatabase(), testName.getMethodName());
         List<Document> docsToUpdate = new ArrayList<>();
         docsToUpdate.add(new Document("key", 1).append("val", 11).append("type", "existing"));
@@ -133,7 +133,7 @@ public class MongoSinkTest extends AbstractMongoTest {
 
         toAddSource.merge(alreadyExistingSource).setLocalParallelism(4)
                    .rebalance(doc -> doc.get("key")).setLocalParallelism(4)
-                   .writeTo(mongodb(dataLinkRef("mongoDB"), defaultDatabase(), testName.getMethodName()))
+                   .writeTo(mongodb(dataConnectionRef("mongoDB"), defaultDatabase(), testName.getMethodName()))
                    .setLocalParallelism(2);
 
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(500);

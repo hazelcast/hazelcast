@@ -48,7 +48,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -1652,13 +1652,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDataLinkConfig() {
-        DataLinkConfig dataLinkConfig = config.getDataLinkConfig("my-data-link");
-        assertNotNull(dataLinkConfig);
-        assertEquals("my-data-link", dataLinkConfig.getName());
-        assertEquals("dummy", dataLinkConfig.getType());
-        assertFalse(dataLinkConfig.isShared());
-        assertEquals("jdbc:mysql://dummy:3306", dataLinkConfig.getProperty("jdbcUrl"));
+    public void testDataConnectionConfig() {
+        DataConnectionConfig dataConnectionConfig = config.getDataConnectionConfig("my-data-connection");
+        assertNotNull(dataConnectionConfig);
+        assertEquals("my-data-connection", dataConnectionConfig.getName());
+        assertEquals("dummy", dataConnectionConfig.getType());
+        assertFalse(dataConnectionConfig.isShared());
+        assertEquals("jdbc:mysql://dummy:3306", dataConnectionConfig.getProperty("jdbcUrl"));
     }
 
     @Test

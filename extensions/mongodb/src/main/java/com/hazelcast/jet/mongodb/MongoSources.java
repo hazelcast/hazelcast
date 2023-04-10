@@ -20,7 +20,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.mongodb.MongoSourceBuilder.Batch;
 import com.hazelcast.jet.mongodb.MongoSourceBuilder.Stream;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
@@ -76,7 +76,7 @@ public final class MongoSources {
      * Example usage:
      * <pre>{@code
      * BatchSource<Document> batchSource =
-     *         MongoSources.batch(dataLinkRef("mongo"))
+     *         MongoSources.batch(dataConnectionRef("mongo"))
      *                 .into("myDatabase", "myCollection")
      *                 .filter(new Document("age", new Document("$gt", 10)),
      *                 .projection(new Document("age", 1))
@@ -85,17 +85,17 @@ public final class MongoSources {
      * BatchStage<Document> srcStage = p.readFrom(batchSource);
      * }</pre>
      *
-     * Connector will use provided data link reference to obtain an instance of {@link MongoClient}. Depending
+     * Connector will use provided data connection reference to obtain an instance of {@link MongoClient}. Depending
      * on the configuration this client may be shared between processors or not.
      *
      * @since 5.3
-     * @param dataLinkRef a reference to mongo data link
+     * @param dataConnectionRef a reference to mongo data connection
      * @return Batch Mongo source builder
      */
     @Beta
     @Nonnull
-    public static MongoSourceBuilder.Batch<Document> batch(@Nonnull DataLinkRef dataLinkRef) {
-        return MongoSourceBuilder.batch(dataLinkRef);
+    public static MongoSourceBuilder.Batch<Document> batch(@Nonnull DataConnectionRef dataConnectionRef) {
+        return MongoSourceBuilder.batch(dataConnectionRef);
     }
 
     /**
@@ -168,7 +168,7 @@ public final class MongoSources {
      * <pre>{@code
      * BatchSource<Document> batchSource =
      *         MongoSources.batch(
-     *                 dataLinkRef("mongoDb"),
+     *                 dataConnectionRef("mongoDb"),
      *                 "myDatabase",
      *                 "myCollection",
      *                 new Document("age", new Document("$gt", 10)),
@@ -177,22 +177,21 @@ public final class MongoSources {
      * Pipeline p = Pipeline.create();
      * BatchStage<Document> srcStage = p.readFrom(batchSource);
      * }</pre>
-     *
-     * Connector will use provided data link reference to obtain an instance of {@link MongoClient}. Depending
+     * <p>
+     * Connector will use provided data connection reference to obtain an instance of {@link MongoClient}. Depending
      * on the configuration this client may be shared between processors or not.
      *
+     * @param dataConnectionRef a reference to some mongo data connection
+     * @param database          the name of the database
+     * @param collection        the name of the collection
+     * @param filter            filter object as a {@link Document}
+     * @param projection        projection object as a {@link Document}
      * @since 5.3
-     *
-     * @param dataLinkRef      a reference to some mongo data link
-     * @param database         the name of the database
-     * @param collection       the name of the collection
-     * @param filter           filter object as a {@link Document}
-     * @param projection       projection object as a {@link Document}
      */
     @Beta
     @Nonnull
     public static BatchSource<Document> batch(
-            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull String database,
             @Nonnull String collection,
             @Nullable Bson filter,
@@ -200,7 +199,7 @@ public final class MongoSources {
     ) {
         String name = name(database, collection);
         Batch<Document> builder = MongoSourceBuilder
-                .batch(name, dataLinkRef)
+                .batch(name, dataConnectionRef)
                 .database(database)
                 .collection(collection);
         if (projection != null) {

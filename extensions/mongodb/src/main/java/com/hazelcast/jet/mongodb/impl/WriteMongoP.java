@@ -162,7 +162,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
      * Creates a new processor that will always insert to the same database and collection.
      */
     public WriteMongoP(WriteMongoParams<I> params) {
-        this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> {
+        this.connection = new MongoConnection(params.clientSupplier, params.dataConnectionRef, client -> {
         });
         this.documentIdentityFn = params.documentIdentityFn;
         this.documentIdentityFieldName = params.documentIdentityFieldName;

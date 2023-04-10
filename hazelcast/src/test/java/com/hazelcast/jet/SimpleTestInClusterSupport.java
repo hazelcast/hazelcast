@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.management.ThreadDumpGenerator.dumpAllThreads;
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -147,6 +148,9 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
                         .get(1, TimeUnit.MINUTES);
             }
         } catch (Exception e) {
+            // Shutdown failed, get thread dump for debugging
+            System.err.println(dumpAllThreads());
+
             // Log the exception, so it is visible in log file for the test class,
             // otherwise it is only visible in surefire test report
             SUPPORT_LOGGER.warning("Terminating instance factory failed", e);

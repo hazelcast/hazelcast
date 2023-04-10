@@ -31,7 +31,6 @@ import java.util.List;
 
 import static com.hazelcast.function.ConsumerEx.noop;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -59,12 +58,14 @@ public class SqlMappingTest extends SqlTestSupport {
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.OBJECT_NOT_FOUND)
                 .hasFieldOrPropertyWithValue("suggestion", null)
-                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE " +
+                        "MAPPING?");
         assertThatThrownBy(() -> client().getSql().execute("SELECT * FROM hazelcast.public.map").forEach(noop()))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.OBJECT_NOT_FOUND)
                 .hasFieldOrPropertyWithValue("suggestion", null)
-                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE " +
+                        "MAPPING?");
     }
 
     @Test
@@ -155,26 +156,14 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_dataLinkDoesNotExist_then_fail() {
+    public void when_dataConnectionDoesNotExist_then_fail() {
         String dlName = randomName();
         String mappingName = randomName();
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
-                        " DATA LINK " + dlName + "\nOPTIONS ()"))
+                        " DATA CONNECTION " + dlName + "\nOPTIONS ()"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Data link '" + dlName + "' not found");
-    }
-
-    @Test
-    public void when_dataLinkUnknown_then_fail() {
-        String dlName = randomName();
-        String mappingName = randomName();
-        createDataLink(instance(), dlName, "DUMMY", false, emptyMap());
-        assertThatThrownBy(() ->
-                instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
-                        " DATA LINK " + dlName + "\nOPTIONS ()"))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Unknown data link class: ");
+                .hasMessageContaining("Data connection '" + dlName + "' not found");
     }
 
     @Test
