@@ -141,7 +141,6 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import javax.annotation.Nonnull;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
@@ -151,16 +150,11 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -915,30 +909,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     public void sendStateToCluster() throws ExecutionException, InterruptedException {
-        CompletionService<Void> completionService = new ExecutorCompletionService<>(getTaskScheduler());
-        List<Callable<Void>> tasks = new ArrayList<>(4);
-        tasks.add(() -> {
-            userCodeDeploymentService.deploy(this);
-            return null;
-        });
-        tasks.add(() -> {
-            schemaService.sendAllSchemas();
-            return null;
-        });
-        tasks.add(() -> {
-            queryCacheContext.recreateAllCaches();
-            return null;
-        });
-        tasks.add(() -> {
-            proxyManager.createDistributedObjectsOnCluster();
-            return null;
-        });
-        for (Callable<Void> task : tasks) {
-            completionService.submit(task);
-        }
-        for (int i = 0; i < tasks.size(); i++) {
-            completionService.poll().get();
-        }
+        userCodeDeploymentService.deploy(this);
+        schemaService.sendAllSchemas();
+        queryCacheContext.recreateAllCaches();
+        proxyManager.createDistributedObjectsOnCluster();
     }
 
     // visible for testing

@@ -42,9 +42,6 @@ import com.hazelcast.internal.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
 
 /**
  * Client side implementation of {@link QueryCacheContext}.
@@ -150,12 +147,10 @@ public class ClientQueryCacheContext implements QueryCacheContext {
         throw new UnsupportedOperationException();
     }
 
-    public void recreateAllCaches() throws ExecutionException, InterruptedException {
-        CompletionService<Void> completionService = new ExecutorCompletionService<>(client.getTaskScheduler());
+    public void recreateAllCaches() {
         //Since query cache is lost we are firing event lost event for each cache and for each partition
         QueryCacheFactory queryCacheFactory = subscriberContext.getQueryCacheFactory();
         Map<String, SubscriberRegistry> registryMap = subscriberContext.getMapSubscriberRegistry().getAll();
-        int numberOfTasks = 0;
         for (SubscriberRegistry subscriberRegistry : registryMap.values()) {
             Map<String, Accumulator> accumulatorMap = subscriberRegistry.getAll();
             for (Accumulator accumulator : accumulatorMap.values()) {
@@ -163,16 +158,9 @@ public class ClientQueryCacheContext implements QueryCacheContext {
                 String cacheId = info.getCacheId();
                 InternalQueryCache queryCache = queryCacheFactory.getOrNull(cacheId);
                 if (queryCache != null) {
-                    numberOfTasks++;
-                    completionService.submit(() -> {
-                        queryCache.recreate();
-                        return null;
-                    });
+                    queryCache.recreate();
                 }
             }
-        }
-        for (int i = 0; i < numberOfTasks; i++) {
-            completionService.poll().get();
         }
     }
 }
