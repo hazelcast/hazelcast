@@ -159,6 +159,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -914,7 +916,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void sendStateToCluster() throws ExecutionException, InterruptedException {
         CompletionService<Void> completionService = new ExecutorCompletionService<>(getTaskScheduler());
-        List<Callable<Void>> tasks = new ArrayList<>();
+        List<Callable<Void>> tasks = new ArrayList<>(4);
         tasks.add(() -> {
             userCodeDeploymentService.deploy(this);
             return null;
