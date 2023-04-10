@@ -29,7 +29,8 @@ import static com.hazelcast.dataconnection.HazelcastDataConnection.CLIENT_YML_PA
 public class HazelcastDataConnectionConfigValidator {
 
     public void validate(DataConnectionConfig dataConnectionConfig) {
-        int numberOfSetItems = getNumberOfSetItems(dataConnectionConfig, CLIENT_XML_PATH, CLIENT_YML_PATH, CLIENT_XML, CLIENT_YML);
+        int numberOfSetItems = getNumberOfSetItems(dataConnectionConfig, CLIENT_XML_PATH, CLIENT_YML_PATH, CLIENT_XML,
+                CLIENT_YML);
         if (numberOfSetItems != 1) {
             throw new HazelcastException("HazelcastDataConnection with name '" + dataConnectionConfig.getName()
                                          + "' could not be created, "
