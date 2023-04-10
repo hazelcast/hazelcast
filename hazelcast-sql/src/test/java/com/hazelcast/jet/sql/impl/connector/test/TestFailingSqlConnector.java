@@ -20,6 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -32,7 +33,6 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -67,8 +67,8 @@ public class TestFailingSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
@@ -80,10 +80,10 @@ public class TestFailingSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull List<MappingField> resolvedFields) {
         return new TestFailingTable(
                 this,
                 schemaName,
@@ -95,8 +95,8 @@ public class TestFailingSqlConnector implements SqlConnector {
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {

@@ -777,6 +777,14 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(originalConfig.getResubmissionMode(), generatedConfig.getResubmissionMode());
     }
 
+    @Test
+    public void testTpcConfig() {
+        ClientTpcConfig originalConfig = new ClientTpcConfig().setEnabled(true);
+        clientConfig.setTpcConfig(originalConfig);
+        ClientTpcConfig generatedConfig = newConfigViaGenerator().getTpcConfig();
+        assertEquals(originalConfig, generatedConfig);
+    }
+
     private ClientConfig newConfigViaGenerator() {
         String xml = ClientConfigXmlGenerator.generate(clientConfig, DEBUG ? 5 : -1);
         debug(xml);

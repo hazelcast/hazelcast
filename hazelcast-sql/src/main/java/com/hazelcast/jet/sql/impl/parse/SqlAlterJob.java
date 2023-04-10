@@ -17,10 +17,12 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import org.apache.calcite.sql.SqlAlter;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
@@ -30,8 +32,14 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
 
+import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static java.util.Objects.requireNonNull;
 
 public class SqlAlterJob extends SqlAlter {
@@ -40,21 +48,40 @@ public class SqlAlterJob extends SqlAlter {
             new SqlSpecialOperator("ALTER JOB", SqlKind.OTHER_DDL);
 
     private final SqlIdentifier name;
+    private final SqlNodeList options;
     private final AlterJobOperation operation;
 
-    public SqlAlterJob(SqlIdentifier name, AlterJobOperation operation, SqlParserPos pos) {
+    private final DeltaJobConfig deltaConfig;
+
+    public SqlAlterJob(SqlIdentifier name, SqlNodeList options, @Nullable AlterJobOperation operation, SqlParserPos pos) {
         super(pos, "JOB");
 
         this.name = requireNonNull(name, "Name must not be null");
-        this.operation = requireNonNull(operation, "Operation must not be null");
+        this.options = options;
+        this.operation = operation;
 
         Preconditions.checkTrue(name.names.size() == 1, name.toString());
+        Preconditions.checkTrueUnsupportedOperation(
+                options == null || operation == null || operation == AlterJobOperation.RESUME,
+                "Options can only be specified for RESUME operation");
+
+        deltaConfig = options == null || options.isEmpty() ? null : new DeltaJobConfig();
     }
 
     public String name() {
         return name.toString();
     }
 
+    @Nullable
+    public DeltaJobConfig getDeltaConfig() {
+        return deltaConfig;
+    }
+
+    /**
+     * Operation is null if the command is only a change of OPTIONS. If it's null,
+     * {@link #getDeltaConfig()} is not-null.
+     */
+    @Nullable
     public AlterJobOperation getOperation() {
         return operation;
     }
@@ -66,17 +93,70 @@ public class SqlAlterJob extends SqlAlter {
 
     @Override @Nonnull
     public List<SqlNode> getOperandList() {
-        return ImmutableNullableList.of(name);
+        return ImmutableNullableList.of(name, options);
     }
 
     @Override
     protected void unparseAlterOperation(SqlWriter writer, int leftPrec, int rightPrec) {
         name.unparse(writer, leftPrec, rightPrec);
-        writer.keyword(operation.name());
+
+        unparseOptions(writer, options);
+
+        if (operation != null) {
+            writer.keyword(operation.name());
+        }
     }
 
     @Override
     public void validate(SqlValidator validator, SqlValidatorScope scope) {
+        if (options == null) {
+            return;
+        }
+        Set<String> optionNames = new HashSet<>();
+        for (SqlNode option0 : options) {
+            SqlOption option = (SqlOption) option0;
+            String key = option.keyString();
+            String value = option.valueString();
+
+            if (!optionNames.add(key)) {
+                throw validator.newValidationError(option, RESOURCE.duplicateOption(key));
+            }
+
+            Supplier<Long> valueAsLong = () -> {
+                try {
+                    return Long.parseLong(value);
+                } catch (NumberFormatException e) {
+                    throw validator.newValidationError(option.value(),
+                            RESOURCE.jobOptionIncorrectNumber(key, value));
+                }
+            };
+
+            switch (key) {
+                case "snapshotIntervalMillis":
+                    deltaConfig.setSnapshotIntervalMillis(valueAsLong.get());
+                    break;
+                case "autoScaling":
+                    deltaConfig.setAutoScaling(Boolean.parseBoolean(value));
+                    break;
+                case "splitBrainProtectionEnabled":
+                    deltaConfig.setSplitBrainProtection(Boolean.parseBoolean(value));
+                    break;
+                case "metricsEnabled":
+                    deltaConfig.setMetricsEnabled(Boolean.parseBoolean(value));
+                    break;
+                case "storeMetricsAfterJobCompletion":
+                    deltaConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
+                    break;
+                case "maxProcessorAccumulatedRecords":
+                    deltaConfig.setMaxProcessorAccumulatedRecords(valueAsLong.get());
+                    break;
+                case "suspendOnFailure":
+                    deltaConfig.setSuspendOnFailure(Boolean.parseBoolean(value));
+                    break;
+                default:
+                    throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
+            }
+        }
     }
 
     public enum AlterJobOperation {

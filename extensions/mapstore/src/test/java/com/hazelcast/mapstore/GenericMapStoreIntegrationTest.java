@@ -18,44 +18,61 @@ package com.hazelcast.mapstore;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.test.ExceptionRecorder;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.example.Person;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Level;
 
-import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, IgnoreInJenkinsOnWindows.class})
 public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
+
+    private static Config memberConfig;
+    @Rule
+    public TestName testName = new TestName();
 
     private String tableName;
 
     @BeforeClass
     public static void beforeClass() {
+        assumeDockerEnabled();
         initializeBeforeClass(new H2DatabaseProvider());
     }
 
@@ -63,32 +80,31 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         databaseProvider = testDatabaseProvider;
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
-        Config config = smallInstanceConfig();
-        // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
-        config.setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null));
-
-        config.addDataLinkConfig(
-                new DataLinkConfig(TEST_DATABASE_REF)
-                        .setClassName(JdbcDataLinkFactory.class.getName())
-                        .setProperty("jdbcUrl", dbConnectionUrl)
-        );
+        memberConfig = smallInstanceConfig()
+                // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
+                .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
+                .addDataConnectionConfig(
+                        new DataConnectionConfig(TEST_DATABASE_REF)
+                                .setType("jdbc")
+                                .setProperty("jdbcUrl", dbConnectionUrl)
+                );
 
         ClientConfig clientConfig = new ClientConfig();
 
-        initializeWithClient(2, config, clientConfig);
+        initializeWithClient(2, memberConfig, clientConfig);
         sqlService = instance().getSql();
     }
 
     @Before
     public void setUp() throws Exception {
-        tableName = randomTableName();
+        tableName = testName.getMethodName().toLowerCase(Locale.ROOT);
         createTable(tableName);
         insertItems(tableName, 1);
 
         MapConfig mapConfig = new MapConfig(tableName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
-        mapStoreConfig.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        mapStoreConfig.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         mapStoreConfig.setProperty(TYPE_NAME_PROPERTY, "org.example.Person");
         mapConfig.setMapStoreConfig(mapStoreConfig);
         instance().getConfig().addMapConfig(mapConfig);
@@ -146,7 +162,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void testDynamicDataLinkConfig() throws Exception {
+    public void testDynamicDataConnectionConfig() throws Exception {
         String randomTableName = randomTableName();
 
         createTable(randomTableName);
@@ -154,15 +170,15 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         HazelcastInstance client = client();
 
-        client.getConfig().addDataLinkConfig(
-                new DataLinkConfig("dynamically-added-datalink")
-                        .setClassName(JdbcDataLinkFactory.class.getName())
+        client.getConfig().addDataConnectionConfig(
+                new DataConnectionConfig("dynamically-added-data-connection")
+                        .setType("jdbc")
                         .setProperty("jdbcUrl", dbConnectionUrl)
         );
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setClassName(GenericMapStore.class.getName())
-                .setProperty(DATA_LINK_REF_PROPERTY, "dynamically-added-datalink")
+                .setProperty(DATA_CONNECTION_REF_PROPERTY, "dynamically-added-data-connection")
                 .setProperty("table-name", randomTableName);
         MapConfig mapConfig = new MapConfig(randomTableName).setMapStoreConfig(mapStoreConfig);
         client.getConfig().addMapConfig(mapConfig);
@@ -300,7 +316,13 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
         map.loadAll(false);
 
-        execute("DROP MAPPING \"__map-store." + tableName + "\"");
+        String mappingName = "__map-store." + tableName;
+        execute("DROP MAPPING \"" + mappingName + "\"");
+
+        // DROP MAPPING is executed asynchronously. Ensure that it has finished
+        Row row = new Row(mappingName);
+        List<Row> rows = Collections.singletonList(row);
+        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 30);
 
         String message = "did you forget to CREATE MAPPING?";
         Person person = new Person(42, "name-42");
@@ -322,9 +344,41 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         map.destroy();
 
         Row row = new Row("__map-store." + tableName);
-        List<Row> rows = Arrays.asList(row);
-        assertTrueEventually(() -> {
-            assertDoesNotContainRow(client, "SHOW MAPPINGS", rows);
-        }, 5);
+        List<Row> rows = Collections.singletonList(row);
+        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 5);
+    }
+
+    @Test
+    public void testInstanceShutdown() throws Exception {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+
+        // create another member
+        HazelcastInstance hz3 = factory().newHazelcastInstance(memberConfig);
+        assertClusterSizeEventually(3, hz3);
+
+        ExceptionRecorder recorder = new ExceptionRecorder(hz3, Level.WARNING);
+        // fill the map with some values so each member gets some items
+        for (int i = 1; i < 1000; i++) {
+            map.put(i, new Person(i, "name-" + i));
+        }
+
+        // shutdown the member - this will call destroy on the MapStore on this member,
+        // which should not drop the mapping in this case
+        hz3.shutdown();
+        // Ensure that members have detected hz3 has shut down
+        assertClusterSizeEventually(2, instances());
+        // Ensure that the client has detected hz3 has shut down
+        assertClusterSizeEventually(2, client);
+
+        // The new item should still be loadable via the mapping
+        executeJdbc("INSERT INTO " + tableName + " VALUES(1000, 'name-1000')");
+        Person p = map.get(1000);
+        assertThat(p.getId()).isEqualTo(1000);
+        assertThat(p.getName()).isEqualTo("name-1000");
+
+        for (Throwable throwable : recorder.exceptionsLogged()) {
+            assertThat(throwable).hasMessageNotContaining("is not active!");
+        }
     }
 }

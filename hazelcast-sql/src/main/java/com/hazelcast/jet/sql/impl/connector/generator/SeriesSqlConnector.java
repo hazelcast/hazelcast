@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -32,7 +33,6 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -64,8 +64,8 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName) {
         throw new UnsupportedOperationException("Resolving fields not supported for " + typeName());
     }
 
@@ -75,10 +75,10 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String name,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException("Creating table not supported for " + typeName());
     }
 
@@ -92,8 +92,8 @@ class SeriesSqlConnector implements SqlConnector {
     @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {

@@ -5910,7 +5910,7 @@ public class ClientCompatibilityTest_2_5 {
     @Test
     public void test_DynamicConfigAddMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 747;
-        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, anEvictionConfigHolder, aBoolean, aString, aString, anInt, aString, aListOfListenerConfigHolders, aListOfListenerConfigHolders, aBoolean, aString, aMapStoreConfigHolder, aNearCacheConfigHolder, aWanReplicationRef, aListOfIndexConfigs, aListOfAttributeConfigs, aListOfQueryCacheConfigHolders, aString, aData, aHotRestartConfig, anEventJournalConfig, aMerkleTreeConfig, anInt, aBoolean, aDataPersistenceConfig, aTieredStoreConfig);
+        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, anEvictionConfigHolder, aBoolean, aString, aString, anInt, aString, aListOfListenerConfigHolders, aListOfListenerConfigHolders, aBoolean, aString, aMapStoreConfigHolder, aNearCacheConfigHolder, aWanReplicationRef, aListOfIndexConfigs, aListOfAttributeConfigs, aListOfQueryCacheConfigHolders, aString, aData, aHotRestartConfig, anEventJournalConfig, aMerkleTreeConfig, anInt, aBoolean, aDataPersistenceConfig, aTieredStoreConfig, aListOfPartitioningAttributeConfigs);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6716,6 +6716,7 @@ public class ClientCompatibilityTest_2_5 {
         assertTrue(isEqual(anSqlError, parameters.error));
         assertTrue(parameters.isIsInfiniteRowsExists);
         assertTrue(isEqual(aBoolean, parameters.isInfiniteRows));
+        assertFalse(parameters.isPartitionArgumentIndexExists);
     }
 
     @Test

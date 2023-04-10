@@ -22,6 +22,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
@@ -656,7 +657,75 @@ public final class Sources {
         String clientXml = asXmlString(clientConfig);
         return streamFromProcessorWithWatermarks("remoteMapJournalSource(" + mapName + ')',
                 false, w -> StreamEventJournalP.streamRemoteMapSupplier(
-                        mapName, clientXml, predicateFn, projectionFn, initialPos, w));
+                        mapName, null, clientXml, predicateFn, projectionFn, initialPos, w));
+    }
+
+    /**
+     * The same as the {@link #remoteMapJournal(String, ClientConfig, JournalInitialPosition, FunctionEx, PredicateEx)}
+     * method. The only difference is instead of a ClientConfig parameter that
+     * is used to connect to remote cluster, this method receives a
+     * DataConnectionConfig.
+     * <p>
+     * The DataConnectionConfig caches the connection to remote cluster, so that it
+     * can be re-used
+     * <p>
+     * (Prerequisite) External dataConnection configuration:
+     * Use {@link HazelcastDataConnection#CLIENT_XML} for XML or
+     * use {@link HazelcastDataConnection#CLIENT_YML} for YAML string.
+     * <pre>{@code
+     * Config config = ...;
+     * String xmlString = ...;
+     * DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+     *     .setName("my-hzclient-data-connection")
+     *     .setType("Hz")
+     *     .setProperty(HzClientDataConnectionFactory.CLIENT_XML, xmlString);
+     * config.addDataConnectionConfig(dataConnectionConfig);
+     *  }</pre>
+     * <p>
+     * Pipeline configuration
+     * <pre>{@code
+     * PredicateEx<EventJournalMapEvent<String, Integer>> predicate = ...;
+     * p.readFrom(Sources.remoteMapJournal(
+     *     mapName,
+     *     DataConnectionRef.dataConnectionRef("my-hzclient-data-connection"),
+     *     JournalInitialPosition.START_FROM_OLDEST,
+     *     EventJournalMapEvent::getNewValue,
+     *     predicate
+     *  ));
+     *  }</pre>
+     *
+     * @param mapName the name of the map
+     * @param dataConnectionRef the reference to DataConnectionConfig
+     * @param initialPos describes which event to start receiving from
+     * @param projectionFn the projection to map the events. If the projection returns a {@code
+     *                      null} for an item, that item will be filtered out. You may use {@link
+     *                      Util#mapEventToEntry()} to extract just the key and
+     *                      the new value. It must be stateless and {@linkplain
+     *                      Processor#isCooperative() cooperative}.
+     * @param predicateFn the predicate to filter the events. If you want to specify just the
+     *                      projection, use {@link Util#mapPutEvents} to pass
+     *                      only {@link EntryEventType#ADDED ADDED} and
+     *                      {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
+     *                      {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T> is the return type of the stream
+     * @param <K> is the key type of EventJournalMapEvent
+     * @param <V> is the vale type of EventJournalMapEvent
+     * @return a stream that can be used as a source
+     * @since 5.3
+     */
+    @Nonnull
+    @Beta
+    public static <T, K, V> StreamSource<T> remoteMapJournal(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull JournalInitialPosition initialPos,
+            @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projectionFn,
+            @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicateFn
+    ) {
+        return streamFromProcessorWithWatermarks("remoteMapJournalSource(" + mapName + ')',
+                false,
+                w -> StreamEventJournalP.streamRemoteMapSupplier(
+                        mapName, dataConnectionRef.getName(), null, predicateFn, projectionFn, initialPos, w));
     }
 
     /**
@@ -672,6 +741,23 @@ public final class Sources {
             @Nonnull JournalInitialPosition initialPos
     ) {
         return remoteMapJournal(mapName, clientConfig, initialPos, mapEventToEntry(), mapPutEvents());
+    }
+
+    /**
+     * Convenience for {@link #remoteMapJournal(String, DataConnectionRef, JournalInitialPosition, FunctionEx, PredicateEx)}
+     * which will pass only {@link EntryEventType#ADDED ADDED}
+     * and {@link EntryEventType#UPDATED UPDATED} events and will
+     * project the event's key and new value into a {@code Map.Entry}.
+     * @since 5.3
+     */
+    @Nonnull
+    @Beta
+    public static <K, V> StreamSource<Entry<K, V>> remoteMapJournal(
+            @Nonnull String mapName,
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull JournalInitialPosition initialPos
+    ) {
+        return remoteMapJournal(mapName, dataConnectionRef, initialPos, mapEventToEntry(), mapPutEvents());
     }
 
     /**
@@ -1330,31 +1416,31 @@ public final class Sources {
 
     /**
      * Returns a source which connects to the specified database using the given
-     * {@code dataLinkRef}, queries the database and creates a result set
+     * {@code dataConnectionRef}, queries the database and creates a result set
      * using the given {@code resultSetFn}. It creates output objects from the
      * {@link ResultSet} using given {@code mapOutputFn} and emits them to
      * downstream.
      * <p>
      * Example:
      * <p>
-     * (Prerequisite) Data link configuration:
+     * (Prerequisite) Data connection configuration:
      * <pre>{@code
      *      Config config = smallInstanceConfig();
      *      Properties properties = new Properties();
      *      properties.put("jdbcUrl", jdbcUrl);
      *      properties.put("username", username);
      *      properties.put("password", password);
-     *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
-     *              .setName("my-jdbc-data-link")
-     *              .setClassName(JdbcDataLinkFactory.class.getName())
+     *      DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+     *              .setName("my-jdbc-data-connection")
+     *              .setType("Jdbc")
      *              .setProperties(properties);
-     *      config.getDataLinkConfigs().put(name, dataLinkConfig);
+     *      config.getDataConnectionConfigs().put(name, dataConnectionConfig);
      * }</pre>
      * </p>
      * <p>Pipeline configuration
      * <pre>{@code
      *     p.readFrom(Sources.jdbc(
-     *         DataLinkRef.dataLinkRef("my-jdbc-data-link"),
+     *         DataConnectionRef.dataConnectionRef("my-jdbc-data-connection"),
      *         (con, parallelism, index) -> {
      *              PreparedStatement stmt = con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?)");
      *              stmt.setInt(1, parallelism);
@@ -1369,16 +1455,16 @@ public final class Sources {
      * See also {@link Sources#jdbc(SupplierEx, ToResultSetFunction, FunctionEx)}.
      *</p>
      *
-     * @since 5.2
+     * @since 5.3
      */
     @Beta
     public static <T> BatchSource<T> jdbc(
-            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
     ) {
         return batchFromProcessor("jdbcSource",
-                SourceProcessors.readJdbcP(dataLinkRef, resultSetFn, createOutputFn));
+                SourceProcessors.readJdbcP(dataConnectionRef, resultSetFn, createOutputFn));
     }
 
     /**

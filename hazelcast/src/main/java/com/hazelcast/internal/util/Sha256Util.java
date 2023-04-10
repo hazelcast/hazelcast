@@ -34,6 +34,10 @@ public final class Sha256Util {
     private Sha256Util() {
     }
 
+    public static String calculateSha256Hex(@Nonnull byte[] data) throws NoSuchAlgorithmException {
+        return calculateSha256Hex(data, data.length);
+    }
+
     /**
      * Calculate the SHA256 of given data
      *

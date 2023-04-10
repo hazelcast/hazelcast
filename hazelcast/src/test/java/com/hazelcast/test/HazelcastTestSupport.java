@@ -64,8 +64,8 @@ import org.junit.ClassRule;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
+import org.junit.function.ThrowingRunnable;
 
-import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -89,6 +89,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -1025,6 +1026,16 @@ public abstract class HazelcastTestSupport {
                 collection.size()), timeoutSeconds);
     }
 
+    public static void assertSizeEventually(int expectedSize, Supplier<Collection> collectionSupplier) {
+        assertSizeEventually(expectedSize, collectionSupplier, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertSizeEventually(int expectedSize, Supplier<Collection> collectionSupplier, long timeoutSeconds) {
+        assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:"
+                        + collectionSupplier.get(), expectedSize, collectionSupplier.get().size()),
+                timeoutSeconds);
+    }
+
     public static void assertSizeEventually(int expectedSize, Map<?, ?> map) {
         assertSizeEventually(expectedSize, map, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
@@ -1466,7 +1477,7 @@ public abstract class HazelcastTestSupport {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends Throwable> T assertThrows(Class<T> expectedType, Runnable r) {
+    public static <T extends Throwable> T assertThrows(Class<T> expectedType, ThrowingRunnable r) {
         try {
             r.run();
         } catch (Throwable actualException) {
@@ -1551,17 +1562,6 @@ public abstract class HazelcastTestSupport {
     // ###################################
     // ########## inner classes ##########
     // ###################################
-
-    public static final class DummyUncheckedHazelcastTestException extends RuntimeException {
-    }
-
-    public static class DummySerializableCallable implements Callable, Serializable {
-
-        @Override
-        public Object call() throws Exception {
-            return null;
-        }
-    }
 
     private interface Latch {
 

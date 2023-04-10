@@ -6630,6 +6630,7 @@ public class MemberCompatibilityTest_2_2 {
         assertTrue(isEqual(aBoolean, parameters.perEntryStatsEnabled));
         assertFalse(parameters.isDataPersistenceConfigExists);
         assertFalse(parameters.isTieredStoreConfigExists);
+        assertFalse(parameters.isPartitioningAttributeConfigsExists);
     }
 
     @Test
@@ -7473,7 +7474,7 @@ public class MemberCompatibilityTest_2_2 {
     @Test
     public void test_SqlExecuteCodec_encodeResponse() {
         int fileClientMessageIndex = 840;
-        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aListOfSqlColumnMetadata, aSqlPage, aLong, anSqlError, aBoolean);
+        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aListOfSqlColumnMetadata, aSqlPage, aLong, anSqlError, aBoolean, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

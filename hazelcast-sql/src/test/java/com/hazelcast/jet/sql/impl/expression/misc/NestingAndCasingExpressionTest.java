@@ -78,8 +78,8 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     "JSON_ARRAYAGG_NULL_ON_NULL",
                     "JSON_OBJECTAGG_ABSENT_ON_NULL",
                     "JSON_OBJECTAGG_NULL_ON_NULL",
-                    "TO_ROW",
-                    "DOT"
+                    "DOT",
+                    "GET_DDL"
             )
     );
 

@@ -35,7 +35,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -48,6 +48,7 @@ import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -127,6 +128,7 @@ public final class DynamicConfigXmlGenerator {
             mapPartitionStrategyConfigXmlGenerator(gen, m);
             mapQueryCachesConfigXmlGenerator(gen, m);
             tieredStoreConfigXmlGenerator(gen, m.getTieredStoreConfig());
+            mapPartitionAttributesConfigXmlGenerator(gen, m);
             gen.close();
         }
     }
@@ -402,12 +404,12 @@ public final class DynamicConfigXmlGenerator {
         }
     }
 
-    public static void dataLinkXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
-        for (DataLinkConfig dataLinkConfig : config.getDataLinkConfigs().values()) {
-            gen.open("data-link", "name", dataLinkConfig.getName())
-                    .node("class-name", dataLinkConfig.getClassName())
-                    .node("shared", dataLinkConfig.isShared())
-                    .appendProperties(dataLinkConfig.getProperties())
+    public static void dataConnectionXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
+        for (DataConnectionConfig dataConnectionConfig : config.getDataConnectionConfigs().values()) {
+            gen.open("data-connection", "name", dataConnectionConfig.getName())
+                    .node("type", dataConnectionConfig.getType())
+                    .node("shared", dataConnectionConfig.isShared())
+                    .appendProperties(dataConnectionConfig.getProperties())
                     .close();
         }
     }
@@ -532,6 +534,19 @@ public final class DynamicConfigXmlGenerator {
         gen.open("disk-tier", "enabled", diskTierConfig.isEnabled(),
                         "device-name", diskTierConfig.getDeviceName())
                 .close();
+    }
+
+    private static void mapPartitionAttributesConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, MapConfig mapConfig) {
+        final List<PartitioningAttributeConfig> attributeConfigs = mapConfig.getPartitioningAttributeConfigs();
+        if (attributeConfigs == null || attributeConfigs.isEmpty()) {
+            return;
+        }
+
+        gen.open("partition-attributes");
+        for (final PartitioningAttributeConfig attributeConfig : attributeConfigs) {
+            gen.node("attribute", attributeConfig.getAttributeName());
+        }
+        gen.close();
     }
 
     private static void checkAndFillCacheWriterFactoryConfigXml(ConfigXmlGenerator.XmlGenerator gen, String cacheWriter) {

@@ -17,8 +17,10 @@
 package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateDataConnection;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlDropDataConnection;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlOption;
@@ -243,20 +245,25 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
+        SUPPORTED_OPERATORS.add(SqlCreateDataConnection.CREATE_DATA_CONNECTION);
+        SUPPORTED_OPERATORS.add(SqlDropDataConnection.DROP_DATA_CONNECTION);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_MAPPINGS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_VIEWS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_JOBS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_TYPES);
+        SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_DATA_CONNECTIONS);
+        SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_RESOURCES);
 
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_SERIES);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_STREAM);
+
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GET_DDL);
 
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CSV_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_FLAT_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.AVRO_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.PARQUET_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DOT);
-        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_ROW);
 
         // SYMBOLS
         SUPPORTED_SYMBOLS = new HashSet<>();
@@ -498,12 +505,15 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         throw unsupported(call, operator.getName());
     }
 
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private void processOtherDdl(SqlCall call) {
         if (!(call instanceof SqlCreateJob)
                 && !(call instanceof SqlDropJob)
                 && !(call instanceof SqlAlterJob)
                 && !(call instanceof SqlCreateSnapshot)
                 && !(call instanceof SqlDropSnapshot)
+                && !(call instanceof SqlCreateDataConnection)
+                && !(call instanceof SqlDropDataConnection)
         ) {
             throw unsupported(call, "OTHER DDL class (" + call.getClass().getSimpleName() + ")");
         }

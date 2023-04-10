@@ -29,7 +29,7 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.IndexConfig;
@@ -48,6 +48,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PersistentMemoryConfig;
@@ -318,12 +319,12 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     }
 
     @Override
-    protected void handleDataLinks(Node parentNode) {
+    protected void handleDataConnections(Node parentNode) {
         for (Node deviceNode : childElements(parentNode)) {
             String name = deviceNode.getNodeName();
-            DataLinkConfig dataLinkConfig = ConfigUtils.
-                    getByNameOrNew(config.getDataLinkConfigs(), name, DataLinkConfig.class);
-            handleDataLink(deviceNode, dataLinkConfig);
+            DataConnectionConfig dataConnectionConfig = ConfigUtils.
+                    getByNameOrNew(config.getDataConnectionConfigs(), name, DataConnectionConfig.class);
+            handleDataConnection(deviceNode, dataConnectionConfig);
         }
     }
 
@@ -966,5 +967,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         } else {
             persistentMemoryConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig(directory));
         }
+    }
+
+    @Override
+    protected void handlePartitioningAttributeConfig(Node node, PartitioningAttributeConfig config) {
+        config.setAttributeName(getAttribute(node, "name"));
     }
 }

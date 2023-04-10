@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.expression.math;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
@@ -63,7 +63,7 @@ public class RoundTruncateFunctionTest extends SqlTestSupport {
         ConstantExpression<?> const2 = ConstantExpression.create(2, INT);
 
         Expression<?> original = RoundTruncateFunction.create(const1, const2, DECIMAL, true);
-        RoundTruncateFunction<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_ROUND_TRUNCATE);
+        RoundTruncateFunction<?> restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_ROUND_TRUNCATE);
 
         checkEquals(original, restored, true);
     }

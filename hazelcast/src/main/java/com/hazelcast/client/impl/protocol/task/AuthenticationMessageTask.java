@@ -25,6 +25,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -39,10 +40,8 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     @Override
     protected ClientAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(clientMessage);
-        final UUID uuid = parameters.uuid;
-        if (uuid != null) {
-            clientUuid = uuid;
-        }
+        assert parameters.uuid != null;
+        clientUuid = parameters.uuid;
         clusterName = parameters.clusterName;
         credentials = new UsernamePasswordCredentials(parameters.username, parameters.password);
         clientSerializationVersion = parameters.serializationVersion;
@@ -53,45 +52,16 @@ public class AuthenticationMessageTask extends AuthenticationBaseMessageTask<Cli
     }
 
     @Override
-    protected ClientMessage encodeResponse(Object response) {
-        return (ClientMessage) response;
-    }
-
-    @Override
-    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
-                                       int partitionCount, UUID clusterId, boolean clientFailoverSupported,
-                                       boolean isAuthenticated) {
-        String serverHazelcastVersion = "";
-        if (isAuthenticated) {
-            serverHazelcastVersion = getMemberBuildInfo().getVersion();
-        }
-        return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, version, serverHazelcastVersion,
-                partitionCount, clusterId, clientFailoverSupported);
-    }
-
-    @Override
-    public String getServiceName() {
-        return null;
-    }
-
-    @Override
-    public String getDistributedObjectName() {
-        return null;
-    }
-
-    @Override
-    public String getMethodName() {
-        return null;
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return null;
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte serializationVersion,
+                                       String serverVersion, int partitionCount, UUID clusterId,
+                                       boolean clientFailoverSupported, List<Integer> tpcPorts) {
+        return ClientAuthenticationCodec.encodeResponse(status, thisAddress, uuid, serializationVersion,
+                serverVersion, partitionCount, clusterId, clientFailoverSupported);
     }
 
     @Override
     protected String getClientType() {
         return parameters.clientType;
     }
-
 }

@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -32,7 +33,6 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
-import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,8 +68,8 @@ final class InfoSchemaConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName) {
         throw new UnsupportedOperationException();
     }
 
@@ -78,18 +78,18 @@ final class InfoSchemaConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException();
     }
 
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
@@ -127,6 +127,11 @@ final class InfoSchemaConnector implements SqlConnector {
             List<JetSqlRow> processedRows = ExpressionUtil.evaluate(predicate, projection,
                     rows.stream().map(row -> new JetSqlRow(evalContext.getSerializationService(), row)), evalContext);
             traverser = Traversers.traverseIterable(processedRows);
+        }
+
+        @Override
+        public boolean isCooperative() {
+            return (predicate == null || predicate.isCooperative()) && projection.stream().allMatch(Expression::isCooperative);
         }
 
         @Override

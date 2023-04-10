@@ -34,7 +34,7 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
-import com.hazelcast.datalink.impl.DataLinkServiceImplTest;
+import com.hazelcast.dataconnection.impl.DataConnectionServiceImplTest;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
@@ -340,6 +340,17 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         @Override
         public void onConnect(Socket connectedSocket) throws IOException {
         }
+    }
+
+    @Test
+    public void testNetworkConfigTpcSocketConfig() {
+        Config expectedConfig = new Config();
+        expectedConfig.getNetworkConfig().getTpcSocketConfig()
+                .setPortRange("14000-16000")
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        assertEquals(expectedConfig.getTpcConfig(), actualConfig.getTpcConfig());
     }
 
     @Test
@@ -1334,6 +1345,14 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expected.setSocketKeepAlive(true);
         expected.setSocketTcpNoDelay(true);
         expected.setSocketBufferDirect(true);
+        expected.setSocketKeepCount(2);
+        expected.setSocketKeepIntervalSeconds(3);
+        expected.setSocketKeepIdleSeconds(83);
+
+        expected.getTpcSocketConfig()
+                .setPortRange("14000-16000")
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
 
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().addWanEndpointConfig(expected);
@@ -1463,21 +1482,31 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDataLinkConfig() {
+    public void testDataConnectionConfig() {
         Config expectedConfig = new Config();
 
         Properties properties = new Properties();
-        properties.put("jdbcUrl", "jdbc:h2:mem:" + DataLinkServiceImplTest.class.getSimpleName());
-        DataLinkConfig dataLinkConfig = new DataLinkConfig()
-                .setName("test-data-link")
-                .setClassName("com.hazelcast.dtalink.JdbcDataLinkFactory")
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + DataConnectionServiceImplTest.class.getSimpleName());
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+                .setName("test-data-connection")
+                .setType("jdbc")
                 .setProperties(properties);
 
-        expectedConfig.addDataLinkConfig(dataLinkConfig);
+        expectedConfig.addDataConnectionConfig(dataConnectionConfig);
 
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
 
-        assertEquals(expectedConfig.getDataLinkConfigs(), actualConfig.getDataLinkConfigs());
+        assertEquals(expectedConfig.getDataConnectionConfigs(), actualConfig.getDataConnectionConfigs());
+    }
+
+    @Test
+    public void testTpcConfig() {
+        Config expectedConfig = new Config();
+        expectedConfig.getTpcConfig()
+                .setEventloopCount(12)
+                .setEnabled(true);
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        assertEquals(expectedConfig.getTpcConfig(), actualConfig.getTpcConfig());
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {

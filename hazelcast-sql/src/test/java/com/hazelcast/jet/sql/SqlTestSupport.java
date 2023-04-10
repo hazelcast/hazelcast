@@ -26,6 +26,8 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -33,15 +35,17 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlInternalService;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.Accessors;
@@ -50,6 +54,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 
+import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -93,6 +98,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
@@ -208,6 +214,43 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * @param expectedRows Expected rows
      */
     public static void assertRowsEventuallyInAnyOrder(String sql, List<Object> arguments, Collection<Row> expectedRows) {
+        assertRowsEventuallyInAnyOrder(sql, arguments, expectedRows, 50);
+    }
+
+    /**
+     * Assert the contents of a given table via Hazelcast SQL engine
+     */
+    public static void assertRowsAnyOrder(String sql, Row... rows) {
+        assertRowsAnyOrder(sql, Arrays.asList(rows));
+    }
+
+    /**
+     * Assert the contents of a given table via Hazelcast SQL engine
+     */
+    public static void assertRowsAnyOrder(String sql, List<Object> arguments, Row... rows) {
+        assertRowsAnyOrder(sql, arguments, Arrays.asList(rows));
+    }
+
+    /**
+     * Execute a query and wait for the results to contain all the {@code
+     * expectedRows}. Suitable for streaming queries that don't terminate, but
+     * return a deterministic set of rows. Rows can arrive in any order.
+     * <p>
+     * After all expected rows are received, the method further waits a little
+     * more if any extra rows are received, and fails, if they are.
+     *
+     * @param sql          The query
+     * @param arguments    The query arguments
+     * @param expectedRows Expected rows
+     * @param timeoutForNextMs The number of ms to wait for more rows after all the
+     *                         expected rows were received
+     */
+    public static void assertRowsEventuallyInAnyOrder(
+            String sql,
+            List<Object> arguments,
+            Collection<Row> expectedRows,
+            long timeoutForNextMs
+    ) {
         SqlService sqlService = instance().getSql();
         CompletableFuture<Void> future = new CompletableFuture<>();
         Deque<Row> rows = new ArrayDeque<>();
@@ -220,8 +263,8 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
                 for (
                         int i = 0;
-                        i < expectedRows.size() && iterator.hasNext()
-                                || iterator.hasNext(50, TimeUnit.MILLISECONDS) == YES;
+                        i < expectedRows.size() && (iterator.hasNext()
+                                || iterator.hasNext(timeoutForNextMs, TimeUnit.MILLISECONDS) == YES);
                         i++
                 ) {
                     rows.add(new Row(iterator.next()));
@@ -342,10 +385,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         SqlStatement statement = new SqlStatement(sql);
 
         SqlService sqlService = instance.getSql();
-        List<Row> actualRows = new ArrayList<>();
-        try (SqlResult result = sqlService.execute(statement)) {
-            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
-        }
+        List<Row> actualRows = allRows(statement, sqlService);
         assertThat(actualRows).doesNotContainAnyElementsOf(expectedRows);
     }
 
@@ -380,11 +420,26 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         arguments.forEach(statement::addParameter);
 
         SqlService sqlService = instance.getSql();
+        List<Row> actualRows = allRows(statement, sqlService);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+    }
+
+    @Nonnull
+    protected static List<Row> allRows(SqlStatement statement, SqlService sqlService) {
         List<Row> actualRows = new ArrayList<>();
         try (SqlResult result = sqlService.execute(statement)) {
             result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
         }
-        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+        return actualRows;
+    }
+
+    @Nonnull
+    protected static List<Row> allRows(String statement, SqlService sqlService) {
+        List<Row> actualRows = new ArrayList<>();
+        try (SqlResult result = sqlService.execute(statement)) {
+            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
+        }
+        return actualRows;
     }
 
     /**
@@ -417,7 +472,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         IdentifiedDataSerializable original0 = (IdentifiedDataSerializable) original;
 
-        assertEquals(SqlDataSerializerHook.F_ID, original0.getFactoryId());
+        assertEquals(JetSqlSerializerHook.F_ID, original0.getFactoryId());
         assertEquals(expectedClassId, original0.getClassId());
 
         return serialize(original);
@@ -589,6 +644,37 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         sqlService.execute(sb.toString());
     }
 
+    public static void createDataConnection(
+            HazelcastInstance instance,
+            String name,
+            String type,
+            boolean shared,
+            Map<String, String> options
+    ) {
+        StringBuilder queryBuilder = new StringBuilder()
+                .append("CREATE OR REPLACE DATA CONNECTION ")
+                .append(quoteName(name))
+                .append(" TYPE ")
+                .append(quoteName(type))
+                .append(shared ? " SHARED " : " NOT SHARED ")
+                .append(" OPTIONS (\n");
+        for (Map.Entry<String, String> entry : options.entrySet()) {
+            queryBuilder.append("'").append(entry.getKey()).append("'")
+                    .append(" = ")
+                    .append("'").append(entry.getValue()).append("',");
+        }
+        queryBuilder.setLength(queryBuilder.length() - 1);
+        queryBuilder.append(")");
+
+        try (SqlResult result = instance.getSql().execute(queryBuilder.toString())) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
+    }
+
+    public static String quoteName(String name) {
+        return "\"" + name.replace("\"", "\"\"") + "\"";
+    }
+
     public static String randomName() {
         // Prefix the UUID with some letters and remove dashes so that it doesn't start with
         // a number and is a valid SQL identifier without quoting.
@@ -596,6 +682,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
+     *
      * Compares two lists. The lists are expected to contain elements of type
      * {@link JetSqlRow} or {@link Watermark}.
      * Useful for {@link TestSupport#outputChecker(BiPredicate)}.
@@ -632,12 +719,16 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 : "/non/existing/path";
     }
 
+    public static SqlServiceImpl sqlServiceImpl(HazelcastInstance instance) {
+        return (SqlServiceImpl) instance.getSql();
+    }
+
     public static SqlInternalService sqlInternalService(HazelcastInstance instance) {
-        return nodeEngine(instance).getSqlService().getInternalService();
+        return sqlServiceImpl(instance).getInternalService();
     }
 
     public static PlanCache planCache(HazelcastInstance instance) {
-        return nodeEngine(instance).getSqlService().getPlanCache();
+        return sqlServiceImpl(instance).getPlanCache();
     }
 
     public static MapContainer mapContainer(IMap<?, ?> map) {
@@ -684,7 +775,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             args = new Object[0];
         }
 
-        return new ExpressionEvalContext(Arrays.asList(args), new DefaultSerializationServiceBuilder().build());
+        return new ExpressionEvalContextImpl(
+                Arrays.asList(args),
+                TEST_SS,
+                instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngine.class));
     }
 
     public static JetSqlRow jetRow(Object... values) {

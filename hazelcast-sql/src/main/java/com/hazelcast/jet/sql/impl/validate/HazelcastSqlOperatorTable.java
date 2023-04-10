@@ -65,10 +65,10 @@ import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastInOperat
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastNotPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCollectionTableOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastGetDdlFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastMapValueConstructor;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastRowOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastSqlCase;
-import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastToRowFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastValuesOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatWSOperator;
@@ -311,7 +311,12 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlSpecialOperator ROW = new HazelcastRowOperator();
     public static final SqlSpecialOperator COLLECTION_TABLE = new HazelcastCollectionTableOperator("TABLE");
     public static final SqlSpecialOperator MAP_VALUE_CONSTRUCTOR = new HazelcastMapValueConstructor();
-    public static final SqlFunction TO_ROW = HazelcastToRowFunction.INSTANCE;
+
+    //#region System
+
+    public static final SqlFunction GET_DDL = HazelcastGetDdlFunction.INSTANCE;
+
+    //#endregion
 
     // We use an operator that doesn't implement the HazelcastOperandTypeCheckerAware interface.
     // The reason is that HazelcastOperandTypeCheckerAware.prepareBinding() gets the operand type for

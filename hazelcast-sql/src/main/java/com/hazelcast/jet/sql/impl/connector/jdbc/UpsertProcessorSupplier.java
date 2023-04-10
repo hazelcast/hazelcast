@@ -49,8 +49,8 @@ public class UpsertProcessorSupplier
     public UpsertProcessorSupplier() {
     }
 
-    public UpsertProcessorSupplier(String externalDataStoreRef, String query, int batchLimit) {
-        super(externalDataStoreRef);
+    public UpsertProcessorSupplier(String dataConnectionName, String query, int batchLimit) {
+        super(dataConnectionName);
         this.query = query;
         this.batchLimit = batchLimit;
     }
@@ -82,19 +82,19 @@ public class UpsertProcessorSupplier
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(dataLinkRef, ACTION_WRITE));
+        return singletonList(ConnectorPermission.jdbc(dataConnectionName, ACTION_WRITE));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(dataLinkRef);
+        out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeInt(batchLimit);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        dataLinkRef = in.readString();
+        dataConnectionName = in.readString();
         query = in.readString();
         batchLimit = in.readInt();
     }

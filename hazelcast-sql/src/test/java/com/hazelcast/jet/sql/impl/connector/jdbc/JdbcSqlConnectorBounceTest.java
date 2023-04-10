@@ -17,17 +17,18 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.bounce.BounceTestConfiguration;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,7 +39,6 @@ import java.util.Properties;
 
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsAnyOrder;
 import static com.hazelcast.jet.sql.SqlTestSupport.randomName;
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_REF;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -60,6 +60,8 @@ public class JdbcSqlConnectorBounceTest {
                 .driverCount(4)
                 .driverType(BounceTestConfiguration.DriverType.CLIENT)
                 .build();
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-jdbc-sql-connector-bounce.xml");
 
     @Rule
     public RuleChain chain = RuleChain.outerRule(dbRule).around(bounceMemberRule);
@@ -67,9 +69,9 @@ public class JdbcSqlConnectorBounceTest {
     private Config getConfig(String jdbcUrl) {
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", jdbcUrl);
-        return smallInstanceConfig().addDataLinkConfig(
-                new DataLinkConfig(TEST_DATABASE_REF)
-                        .setClassName(JdbcDataLinkFactory.class.getName())
+        return smallInstanceConfig().addDataConnectionConfig(
+                new DataConnectionConfig(TEST_DATABASE_REF)
+                        .setType("jdbc")
                         .setProperties(properties)
         );
     }
@@ -85,10 +87,8 @@ public class JdbcSqlConnectorBounceTest {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_REF + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
         );
     }
 

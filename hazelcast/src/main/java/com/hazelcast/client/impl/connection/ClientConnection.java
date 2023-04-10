@@ -18,8 +18,10 @@ package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.EventHandler;
+import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.nio.Connection;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
 
@@ -52,4 +54,11 @@ public interface ClientConnection extends Connection {
     // used in tests
     Map<Long, EventHandler> getEventHandlers();
 
+    /**
+     * Returns the TPC channels associated with this connection,
+     * or {@code null}, if the client is not TPC-aware or the
+     * TPC is disabled on the server-side.
+     */
+    @Nullable
+    Channel[] getTpcChannels();
 }

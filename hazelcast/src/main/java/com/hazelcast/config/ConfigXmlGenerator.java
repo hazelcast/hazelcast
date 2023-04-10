@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -196,7 +198,8 @@ public class ConfigXmlGenerator {
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
         integrityCheckerXmlGenerator(gen, config);
-        dataLinkConfiguration(gen, config);
+        dataConnectionConfiguration(gen, config);
+        tpcConfiguration(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -593,6 +596,7 @@ public class ConfigXmlGenerator {
         failureDetectorConfigXmlGenerator(gen, netCfg.getIcmpFailureDetectorConfig());
         restApiXmlGenerator(gen, netCfg);
         memcacheProtocolXmlGenerator(gen, netCfg);
+        tpcSocketConfigXmlGenerator(gen, netCfg.getTpcSocketConfig());
         gen.close();
     }
 
@@ -661,6 +665,9 @@ public class ConfigXmlGenerator {
         gen.node("send-buffer-size-kb", endpointConfig.getSocketSendBufferSizeKb());
         gen.node("receive-buffer-size-kb", endpointConfig.getSocketRcvBufferSizeKb());
         gen.node("linger-seconds", endpointConfig.getSocketLingerSeconds());
+        gen.node("keep-idle-seconds", endpointConfig.getSocketKeepIdleSeconds());
+        gen.node("keep-interval-seconds", endpointConfig.getSocketKeepIntervalSeconds());
+        gen.node("keep-count", endpointConfig.getSocketKeepCount());
         gen.close();
 
         if (endpointConfig instanceof ServerSocketEndpointConfig) {
@@ -671,6 +678,8 @@ public class ConfigXmlGenerator {
                     .node("public-address", serverSocketEndpointConfig.getPublicAddress())
                     .node("reuse-address", serverSocketEndpointConfig.isReuseAddress());
         }
+
+        tpcSocketConfigXmlGenerator(gen, endpointConfig.getTpcSocketConfig());
         gen.close();
     }
 
@@ -1162,6 +1171,14 @@ public class ConfigXmlGenerator {
         gen.node("memcache-protocol", null, "enabled", c.isEnabled());
     }
 
+    private static void tpcSocketConfigXmlGenerator(XmlGenerator gen, TpcSocketConfig tpcSocketConfig) {
+        gen.open("tpc-socket")
+                .node("port-range", tpcSocketConfig.getPortRange())
+                .node("receive-buffer-size-kb", tpcSocketConfig.getReceiveBufferSizeKB())
+                .node("send-buffer-size-kb", tpcSocketConfig.getSendBufferSizeKB())
+                .close();
+    }
+
     private static void appendSerializationFactory(XmlGenerator gen, String elementName, Map<Integer, ?> factoryMap) {
         if (MapUtil.isNullOrEmpty(factoryMap)) {
             return;
@@ -1199,18 +1216,25 @@ public class ConfigXmlGenerator {
         );
     }
 
-    private static void dataLinkConfiguration(final XmlGenerator gen, final Config config) {
-        for (DataLinkConfig dataLinkConfig : config.getDataLinkConfigs().values()) {
+    private static void dataConnectionConfiguration(final XmlGenerator gen, final Config config) {
+        for (DataConnectionConfig dataConnectionConfig : config.getDataConnectionConfigs().values()) {
             gen.open(
-                            "data-link",
+                            "data-connection",
                             "name",
-                            dataLinkConfig.getName()
+                            dataConnectionConfig.getName()
                     )
-                    .node("class-name", dataLinkConfig.getClassName())
-                    .node("shared", dataLinkConfig.isShared())
-                    .appendProperties(dataLinkConfig.getProperties())
+                    .node("type", dataConnectionConfig.getType())
+                    .node("shared", dataConnectionConfig.isShared())
+                    .appendProperties(dataConnectionConfig.getProperties())
                     .close();
         }
+    }
+
+    private static void tpcConfiguration(final XmlGenerator gen, final Config config) {
+        TpcConfig tpcConfig = config.getTpcConfig();
+        gen.open("tpc", "enabled", tpcConfig.isEnabled())
+                .node("eventloop-count", tpcConfig.getEventloopCount())
+                .close();
     }
 
     /**

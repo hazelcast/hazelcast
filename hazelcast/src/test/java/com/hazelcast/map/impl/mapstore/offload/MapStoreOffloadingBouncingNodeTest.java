@@ -30,12 +30,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -306,7 +306,7 @@ public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
             }
         };
 
-        @NotNull
+        @Nonnull
         private static String toKey(int i) {
             return "item-" + i;
         }

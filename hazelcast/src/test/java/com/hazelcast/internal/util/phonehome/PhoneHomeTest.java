@@ -36,7 +36,6 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -547,21 +546,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSqlQueriesSubmitted() {
-        Map<String, String> parameters = phoneHome.phoneHome(true);
-        assertEquals("0", parameters.get(PhoneHomeMetrics.SQL_QUERIES_SUBMITTED.getRequestParameterName()));
-
-        SqlServiceImpl sqlService = node.getNodeEngine().getSqlService();
-        try {
-            sqlService.execute("SELECT * FROM map");
-        } catch (Exception e) {
-            ignore(e);
-        }
-        parameters = phoneHome.phoneHome(true);
-        assertEquals("1", parameters.get(PhoneHomeMetrics.SQL_QUERIES_SUBMITTED.getRequestParameterName()));
-    }
-
-    @Test
     public void testJetJobsSubmitted() {
         Map<String, String> parameters = phoneHome.phoneHome(true);
         assertEquals("0", parameters.get(PhoneHomeMetrics.JET_JOBS_SUBMITTED.getRequestParameterName()));
@@ -610,6 +594,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         parameters = phoneHome.phoneHome(true);
         long twoMapsMemoryCost = parseLong(parameters.get(PhoneHomeMetrics.DATA_MEMORY_COST.getRequestParameterName()));
         assertThat(twoMapsMemoryCost).isGreaterThan(oneMapMemoryCost);
+    }
+
+    @Test
+    public void testViridianPhoneHomeNullByDefault() {
+        Map<String, String> parameters;
+        parameters = phoneHome.phoneHome(true);
+        assertThat(parameters.get(PhoneHomeMetrics.VIRIDIAN.getRequestParameterName())).isNull();
     }
 
     private void testCounts(Function<String, ? extends DistributedObject> distributedObjectCreateFn,

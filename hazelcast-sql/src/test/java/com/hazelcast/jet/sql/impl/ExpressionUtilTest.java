@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -34,9 +35,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import static com.hazelcast.jet.core.JetTestSupport.TEST_SS;
 import static com.hazelcast.jet.impl.util.Util.toList;
-import static com.hazelcast.jet.sql.SqlTestSupport.createExpressionEvalContext;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -46,7 +45,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ExpressionUtilTest {
+public class ExpressionUtilTest extends SqlTestSupport {
 
     @SuppressWarnings("unchecked")
     @Test

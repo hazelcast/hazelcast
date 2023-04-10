@@ -403,17 +403,16 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_PASSIVE() throws Exception {
+    public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_PASSIVE() {
         pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState.PASSIVE);
     }
 
     @Test
-    public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_FROZEN() throws Exception {
+    public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_FROZEN() {
         pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState.FROZEN);
     }
 
-    private void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState state)
-            throws Exception {
+    private void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState state) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
@@ -425,7 +424,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         changeClusterStateEventually(hz2, state);
         hz1.shutdown();
 
-        assertTrueEventually(() -> Assert.assertThrows(MemberLeftException.class, future::get));
+        Assert.assertThrows(MemberLeftException.class, future::get);
     }
 
     @Test

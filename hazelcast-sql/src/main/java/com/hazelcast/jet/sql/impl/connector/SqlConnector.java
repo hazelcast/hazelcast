@@ -30,7 +30,6 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -207,10 +206,12 @@ public interface SqlConnector {
      * the user can see it by listing the catalog. Jet will later pass it to
      * {@link #createTable}.
      *
-     * @param nodeEngine an instance of {@link NodeEngine}
-     * @param options    user-provided options
-     * @param userFields user-provided list of fields, possibly empty
-     * @param externalName external name of the table
+     * @param nodeEngine         an instance of {@link NodeEngine}
+     * @param options            user-provided options
+     * @param userFields         user-provided list of fields, possibly empty
+     * @param externalName       external name of the table
+     * @param dataConnectionName name of the data connection to use, may be null if the connector supports specifying
+     *                           connection details in options
      * @return final field list, must not be empty
      */
     @Nonnull
@@ -218,8 +219,8 @@ public interface SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    );
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName);
 
     /**
      * Creates a {@link Table} object with the given fields. Should return
@@ -228,20 +229,22 @@ public interface SqlConnector {
      * <p>
      * Jet calls this method for each statement execution and for each mapping.
      *
-     * @param nodeEngine     an instance of {@link NodeEngine}
-     * @param options        connector specific options
-     * @param resolvedFields list of fields as returned from {@link
-     *                       #resolveAndValidateFields}
+     * @param nodeEngine         an instance of {@link NodeEngine}
+     * @param dataConnectionName name of the data connection to use, may be null if the connector supports specifying
+     *                           connection details in options
+     * @param options            connector specific options
+     * @param resolvedFields     list of fields as returned from {@link
+     *                           #resolveAndValidateFields}
      */
     @Nonnull
     Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    );
+            @Nonnull List<MappingField> resolvedFields);
 
     /**
      * Returns a supplier for a source vertex reading the input according to
@@ -269,8 +272,8 @@ public interface SqlConnector {
     @Nonnull
     default Vertex fullScanReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
@@ -320,8 +323,8 @@ public interface SqlConnector {
     @Nonnull
     default VertexWithInputConfig nestedLoopReader(
             @Nonnull DagBuildContext context,
-            @Nullable RexNode predicate,
-            @Nonnull List<RexNode> projection,
+            @Nullable HazelcastRexNode predicate,
+            @Nonnull List<HazelcastRexNode> projection,
             @Nonnull JetJoinInfo joinInfo
     ) {
         throw new UnsupportedOperationException("Nested-loop join not supported for " + typeName());
@@ -330,7 +333,8 @@ public interface SqlConnector {
     default boolean isNestedLoopReaderSupported() {
         try {
             // nestedLoopReader() is supported, if the class overrides the default method in this class
-            Method m = getClass().getMethod("nestedLoopReader", DagBuildContext.class, RexNode.class, List.class,
+            Method m = getClass().getMethod("nestedLoopReader", DagBuildContext.class, HazelcastRexNode.class,
+                    List.class,
                     JetJoinInfo.class);
             return m.getDeclaringClass() != SqlConnector.class;
         } catch (NoSuchMethodException e) {
@@ -363,7 +367,7 @@ public interface SqlConnector {
     default Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<RexNode> expressions
+            @Nonnull List<HazelcastRexNode> expressions
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
     }
@@ -402,33 +406,33 @@ public interface SqlConnector {
 
         /**
          * Returns the context table. It is:<ul>
-         *     <li>for scans, it's the scanned table
-         *     <li>for DML, it's the target table
-         *     <li>for nested loop reader, it's the table read in the inner loop (the right join input)
+         * <li>for scans, it's the scanned table
+         * <li>for DML, it's the target table
+         * <li>for nested loop reader, it's the table read in the inner loop (the right join input)
          * </ul>
          *
          * @throws IllegalStateException if the table doesn't apply in the current context
          */
         @Nonnull
-        Table getTable();
+        <T extends Table> T getTable();
 
         /**
-         * Converts a boolean RexNode. When evaluating a {@link RexInputRef},
+         * Converts a boolean {@link HazelcastRexNode}. When evaluating a {@link RexInputRef},
          * this context is assumed:<ul>
-         *     <li>If a table is set (see {@link #getTable()}), then it's assumed that it's that table's fields
-         *     <li>If it's a single-input rel, then it's then input
-         *     <li>Otherwise the conversion of an input ref will fail.
+         * <li>If a table is set (see {@link #getTable()}), then it's assumed that it's that table's fields
+         * <li>If it's a single-input rel, then it's then input
+         * <li>Otherwise the conversion of an input ref will fail.
          * </ul>
          */
         @Nullable
-        Expression<Boolean> convertFilter(@Nullable RexNode node);
+        Expression<Boolean> convertFilter(@Nullable HazelcastRexNode node);
 
         /**
-         * Converts a list of RexNodes. See also {@link #convertFilter(RexNode)}
+         * Converts a list of {@link HazelcastRexNode}. See also {@link #convertFilter(HazelcastRexNode)}
          * for information about {@link RexInputRef} conversion.
          */
         @Nonnull
-        List<Expression<?>> convertProjection(@Nonnull List<RexNode> nodes);
+        List<Expression<?>> convertProjection(@Nonnull List<HazelcastRexNode> nodes);
     }
 
     /**

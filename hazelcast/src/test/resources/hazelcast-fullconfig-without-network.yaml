@@ -414,6 +414,10 @@ hazelcast:
         disk-tier:
           enabled: true
           device-name: default-tiered-store-device
+      partition-strategy: "com.example.Strategy"
+      partition-attributes:
+        - name: "attributeName1"
+        - name: "attributeName2"
 
   multimap:
     default:
@@ -1015,9 +1019,13 @@ hazelcast:
   sql:
     statement-timeout-millis: 0
 
-  data-link:
+  data-connection:
     mysql-database:
-      class-name: com.hazelcast.datalink.JdbcDataLinkFactory
+      type: jdbc
       properties:
         jdbcUrl: jdbc:mysql://dummy:3306
       shared: false
+
+  tpc:
+    enabled: true
+    eventloop-count: 12

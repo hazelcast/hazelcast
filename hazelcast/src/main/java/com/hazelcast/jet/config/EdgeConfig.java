@@ -203,4 +203,13 @@ public class EdgeConfig implements IdentifiedDataSerializable {
         result = 31 * result + packetSizeLimit;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "EdgeConfig{"
+               + "queueSize=" + queueSize
+               + ", receiveWindowMultiplier=" + receiveWindowMultiplier
+               + ", packetSizeLimit=" + packetSizeLimit
+               + '}';
+    }
 }

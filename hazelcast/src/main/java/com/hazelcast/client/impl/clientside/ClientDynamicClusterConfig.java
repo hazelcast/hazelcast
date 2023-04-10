@@ -19,9 +19,9 @@ package com.hazelcast.client.impl.clientside;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDataConnectionConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDataLinkConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
@@ -50,11 +50,11 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -86,6 +86,7 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
@@ -156,7 +157,8 @@ public class ClientDynamicClusterConfig extends Config {
                 mapConfig.getWanReplicationRef(), mapConfig.getIndexConfigs(), mapConfig.getAttributeConfigs(),
                 queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
                 mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(), mapConfig.getMetadataPolicy().getId(),
-                mapConfig.isPerEntryStatsEnabled(), mapConfig.getDataPersistenceConfig(), mapConfig.getTieredStoreConfig());
+                mapConfig.isPerEntryStatsEnabled(), mapConfig.getDataPersistenceConfig(), mapConfig.getTieredStoreConfig(),
+                mapConfig.getPartitioningAttributeConfigs());
         invoke(request);
         return this;
     }
@@ -1118,31 +1120,43 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Map<String, DataLinkConfig> getDataLinkConfigs() {
+    public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Config setDataLinkConfigs(Map<String, DataLinkConfig> dataLinkConfigs) {
+    public Config setDataConnectionConfigs(Map<String, DataConnectionConfig> dataConnectionConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
-        ClientMessage request = DynamicConfigAddDataLinkConfigCodec.encodeRequest(
-                dataLinkConfig.getName(), dataLinkConfig.getClassName(),
-                dataLinkConfig.isShared(), toMap(dataLinkConfig.getProperties()));
+    public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
+        ClientMessage request = DynamicConfigAddDataConnectionConfigCodec.encodeRequest(
+                dataConnectionConfig.getName(), dataConnectionConfig.getType(),
+                dataConnectionConfig.isShared(), toMap(dataConnectionConfig.getProperties()));
         invoke(request);
         return this;
     }
 
     @Override
-    public DataLinkConfig getDataLinkConfig(String name) {
+    public DataConnectionConfig getDataConnectionConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
     @Override
-    public DataLinkConfig findDataLinkConfig(String name) {
+    public DataConnectionConfig findDataConnectionConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public TpcConfig getTpcConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public Config setTpcConfig(@Nonnull TpcConfig tpcConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

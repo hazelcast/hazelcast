@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -4067,6 +4069,9 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        send-buffer-size-kb: 34\n"
                 + "        receive-buffer-size-kb: 67\n"
                 + "        linger-seconds: 11\n"
+                + "        keep-count: 12\n"
+                + "        keep-interval-seconds: 13\n"
+                + "        keep-idle-seconds: 14\n"
                 + "      symmetric-encryption:\n"
                 + "        enabled: true\n"
                 + "        algorithm: Algorithm\n"
@@ -4537,35 +4542,53 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testDataLinkConfigs() {
+    public void testDataConnectionConfigs() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  data-link:\n"
+                + "  data-connection:\n"
                 + "    mysql-database:\n"
-                + "      class-name: com.hazelcast.datalink.JdbcDataLink\n"
+                + "      type: jdbc\n"
                 + "      properties:\n"
                 + "        jdbcUrl: jdbc:mysql://dummy:3306\n"
                 + "        some.property: dummy-value\n"
                 + "      shared: true\n"
                 + "    other-database:\n"
-                + "      class-name: com.hazelcast.datalink.OtherDataLink\n";
+                + "      type: other\n";
 
         Config config = new InMemoryYamlConfig(yaml);
 
-        Map<String, DataLinkConfig> dataLinkConfigs = config.getDataLinkConfigs();
+        Map<String, DataConnectionConfig> dataConnectionConfigs = config.getDataConnectionConfigs();
 
-        assertThat(dataLinkConfigs).hasSize(2);
-        assertThat(dataLinkConfigs).containsKey("mysql-database");
-        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
-        assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
-        assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
-        assertThat(mysqlDataLinkConfig.isShared()).isTrue();
-        assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(dataConnectionConfigs).hasSize(2);
+        assertThat(dataConnectionConfigs).containsKey("mysql-database");
+        DataConnectionConfig mysqlDataConnectionConfig = dataConnectionConfigs.get("mysql-database");
+        assertThat(mysqlDataConnectionConfig.getType()).isEqualTo("jdbc");
+        assertThat(mysqlDataConnectionConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataConnectionConfig.isShared()).isTrue();
+        assertThat(mysqlDataConnectionConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataConnectionConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(dataLinkConfigs).containsKey("other-database");
-        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
-        assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
+        assertThat(dataConnectionConfigs).containsKey("other-database");
+        DataConnectionConfig otherDataConnectionConfig = dataConnectionConfigs.get("other-database");
+        assertThat(otherDataConnectionConfig.getType()).isEqualTo("other");
+    }
+
+    @Override
+    @Test
+    public void testPartitioningAttributeConfigs() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    test:\n"
+                + "      partition-attributes:\n"
+                + "        - name: attr1\n"
+                + "        - name: attr2\n";
+
+        final MapConfig mapConfig = buildConfig(yaml).getMapConfig("test");
+        assertThat(mapConfig.getPartitioningAttributeConfigs()).containsExactly(
+                new PartitioningAttributeConfig("attr1"),
+                new PartitioningAttributeConfig("attr2")
+        );
     }
 
     @Override
@@ -4582,5 +4605,93 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(Integer.MAX_VALUE, mapConfig.getTimeToLiveSeconds());
         assertEquals(Integer.MAX_VALUE, mapConfig.getMaxIdleSeconds());
+    }
+
+    @Override
+    @Test
+    public void testTpcConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  tpc:\n"
+                + "    enabled: true\n"
+                + "    eventloop-count: 12\n";
+
+        TpcConfig tpcConfig = buildConfig(yaml).getTpcConfig();
+
+        assertThat(tpcConfig.isEnabled()).isTrue();
+        assertThat(tpcConfig.getEventloopCount()).isEqualTo(12);
+    }
+
+    @Override
+    @Test
+    public void testTpcSocketConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  network:\n"
+                + "    tpc-socket:\n"
+                + "      port-range: 14000-16000\n"
+                + "      receive-buffer-size-kb: 256\n"
+                + "      send-buffer-size-kb: 256\n";
+
+        TpcSocketConfig tpcSocketConfig = buildConfig(yaml).getNetworkConfig().getTpcSocketConfig();
+
+        assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+        assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+        assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+    }
+
+    @Override
+    @Test
+    public void testTpcSocketConfigAdvanced() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network:\n"
+                + "    enabled: true\n"
+                + "    member-server-socket-endpoint-config: \n"
+                + "      tpc-socket: \n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    client-server-socket-endpoint-config:\n"
+                + "      tpc-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    memcache-server-socket-endpoint-config:\n"
+                + "      tpc-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    rest-server-socket-endpoint-config:\n"
+                + "      tpc-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    wan-endpoint-config: \n"
+                + "      tokyo:\n"
+                + "        tpc-socket:\n"
+                + "          port-range: 14000-16000\n"
+                + "          receive-buffer-size-kb: 256\n"
+                + "          send-buffer-size-kb: 256\n"
+                + "    wan-server-socket-endpoint-config: \n"
+                + "      london:\n"
+                + "        tpc-socket:\n"
+                + "          port-range: 14000-16000\n"
+                + "          receive-buffer-size-kb: 256\n"
+                + "          send-buffer-size-kb: 256\n";
+
+        Map<EndpointQualifier, EndpointConfig> endpointConfigs = buildConfig(yaml)
+                .getAdvancedNetworkConfig()
+                .getEndpointConfigs();
+
+        assertThat(endpointConfigs).hasSize(6);
+
+        endpointConfigs.forEach((endpointQualifier, endpointConfig) -> {
+            TpcSocketConfig tpcSocketConfig = endpointConfig.getTpcSocketConfig();
+
+            assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+            assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+            assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+        });
     }
 }

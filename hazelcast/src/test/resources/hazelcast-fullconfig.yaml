@@ -174,3 +174,7 @@ hazelcast:
           enabled: true
     memcache-protocol:
       enabled: true
+    tpc-socket:
+      port-range: 14000-16000
+      receive-buffer-size-kb: 256
+      send-buffer-size-kb: 256

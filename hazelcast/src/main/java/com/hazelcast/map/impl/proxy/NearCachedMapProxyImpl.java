@@ -18,12 +18,14 @@ package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.InterceptorRegistry;
 import com.hazelcast.map.impl.MapEntries;
@@ -148,7 +150,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                 } else {
                     invalidateNearCache(ncKey);
                 }
-            });
+            }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
         return future;
     }
@@ -520,7 +522,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         try {
             return super.executeOnKeyInternal(nearCacheKey, entryProcessor);
         } finally {
-            invalidateNearCache(nearCacheKey);
+            if (!(entryProcessor instanceof ReadOnly)) {
+                invalidateNearCache(nearCacheKey);
+            }
         }
     }
 
@@ -535,8 +539,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             return super.submitToKeysInternal(keys, dataKeys, entryProcessor);
         } finally {
             Set<?> ncKeys = serializeKeys ? dataKeys : keys;
-            for (Object key : ncKeys) {
-                invalidateNearCache(key);
+            if (!(entryProcessor instanceof ReadOnly)) {
+                for (Object key : ncKeys) {
+                    invalidateNearCache(key);
+                }
             }
         }
     }
@@ -546,9 +552,11 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         try {
             super.executeOnEntriesInternal(entryProcessor, predicate, resultingKeyValuePairs);
         } finally {
-            for (int i = 0; i < resultingKeyValuePairs.size(); i += 2) {
-                Data key = resultingKeyValuePairs.get(i);
-                invalidateNearCache(serializeKeys ? key : toObject(key));
+            if (!(entryProcessor instanceof ReadOnly)) {
+                for (int i = 0; i < resultingKeyValuePairs.size(); i += 2) {
+                    Data key = resultingKeyValuePairs.get(i);
+                    invalidateNearCache(serializeKeys ? key : toObject(key));
+                }
             }
         }
     }

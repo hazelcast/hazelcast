@@ -20,8 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.Permission;
 
@@ -35,7 +35,7 @@ public class SqlCloseMessageTask extends SqlAbstractMessageTask<QueryId> {
 
     @Override
     protected Object call() {
-        SqlInternalService service = nodeEngine.getSqlService().getInternalService();
+        InternalSqlService service = nodeEngine.getSqlService();
 
         service.getClientStateRegistry().close(endpoint.getUuid(), parameters);
 
@@ -54,7 +54,7 @@ public class SqlCloseMessageTask extends SqlAbstractMessageTask<QueryId> {
 
     @Override
     public String getServiceName() {
-        return SqlInternalService.SERVICE_NAME;
+        return InternalSqlService.SERVICE_NAME;
     }
 
     @Override

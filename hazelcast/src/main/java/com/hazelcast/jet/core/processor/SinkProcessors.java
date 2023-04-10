@@ -17,9 +17,6 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.DataLinkFactory;
-import com.hazelcast.datalink.JdbcDataLinkFactory;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
@@ -34,14 +31,12 @@ import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
-import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -49,7 +44,6 @@ import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.Session;
 import javax.sql.CommonDataSource;
-import javax.sql.DataSource;
 import java.io.BufferedWriter;
 import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
@@ -411,31 +405,16 @@ public final class SinkProcessors {
     @Beta
     public static <T> ProcessorMetaSupplier writeJdbcP(
             @Nonnull String updateQuery,
-            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
             boolean exactlyOnce,
             int batchLimit
     ) {
         checkNotNull(updateQuery, "updateQuery");
-        checkNotNull(dataLinkRef, "dataLinkRef");
+        checkNotNull(dataConnectionRef, "dataConnectionRef");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(null, updateQuery, dataSourceSupplier(dataLinkRef.getName()),
-                bindFn, exactlyOnce, batchLimit);
-    }
-
-    private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String dataLinkName) {
-        return context -> getDataLinkFactory(context, dataLinkName).getDataLink();
-    }
-
-    private static JdbcDataLinkFactory getDataLinkFactory(ProcessorMetaSupplier.Context context, String name) {
-        NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-        DataLinkFactory<?> dataLinkFactory = nodeEngine.getDataLinkService().getDataLinkFactory(name);
-        if (!(dataLinkFactory instanceof JdbcDataLinkFactory)) {
-            String className = JdbcDataLinkFactory.class.getName();
-            throw new HazelcastException("Data link factory '" + name + "' must be an instance of " + className);
-        }
-        return (JdbcDataLinkFactory) dataLinkFactory;
+        return WriteJdbcP.metaSupplier(null, updateQuery, dataConnectionRef.getName(), bindFn, exactlyOnce, batchLimit);
     }
 
     /**

@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 import com.google.common.collect.RangeSet;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.expression.Sarg;
-import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
+import com.hazelcast.jet.sql.impl.expression.UdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastUdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.SqlColumnType;
@@ -68,6 +69,7 @@ import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.expression.predicate.SearchPredicate;
+import com.hazelcast.sql.impl.expression.service.GetDdlFunction;
 import com.hazelcast.sql.impl.expression.string.AsciiFunction;
 import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
@@ -458,6 +460,12 @@ public final class RexToExpression {
                     Expression<?> locale = operands.length > 2 ? operands[2] : null;
 
                     return ToCharFunction.create(input, format, locale);
+                } else if (function == HazelcastSqlOperatorTable.GET_DDL) {
+                    Expression<?> namespace = operands[0];
+                    Expression<?> objectName = operands[1];
+                    Expression<?> schema = operands.length > 2 ? operands[2] : null;
+
+                    return GetDdlFunction.create(namespace, objectName, schema);
                 } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
                     return ConcatWSFunction.create(operands);
                 } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {
@@ -473,7 +481,7 @@ public final class RexToExpression {
                     return JsonParseFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.JSON_VALUE) {
                     final SqlJsonValueEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[4]).getSymbol();
-                    final SqlJsonValueEmptyOrErrorBehavior onError =  ((SymbolExpression) operands[5]).getSymbol();
+                    final SqlJsonValueEmptyOrErrorBehavior onError = ((SymbolExpression) operands[5]).getSymbol();
 
                     return JsonValueFunction.create(
                             operands[0],
@@ -496,8 +504,8 @@ public final class RexToExpression {
                     final Expression<?>[] fields = Arrays.copyOfRange(operands, 1, operands.length);
 
                     return JsonArrayFunction.create(fields, nullClause);
-                } else if (function == HazelcastSqlOperatorTable.TO_ROW) {
-                    return ToRowFunction.create(operands[0]);
+                } else if (function == HazelcastUdtObjectToJsonFunction.INSTANCE) {
+                    return UdtObjectToJsonFunction.create(operands[0]);
                 }
 
                 break;

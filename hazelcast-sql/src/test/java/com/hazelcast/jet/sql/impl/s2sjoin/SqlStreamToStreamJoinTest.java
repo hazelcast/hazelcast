@@ -47,6 +47,38 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_missingBound() {
+        TestStreamSqlConnector.create(
+                sqlService, "s", asList("a", "b"), asList(INTEGER, INTEGER));
+        sqlService.execute("CREATE VIEW v AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE s, DESCRIPTOR(a), 0))");
+
+        // missing both bounds
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM v v1 JOIN v v2 ON 1=2"))
+                .hasMessageContaining("A stream-to-stream join must have a join condition constraining the maximum difference " +
+                        "between time values of the joined tables in both directions")
+                .hasMessageContaining("Time columns on the left side: [a], time columns on the right side: [a]");
+
+        // missing one bound
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM v v1 JOIN v v2 ON v1.a >= v2.a"))
+                .hasMessageContaining("A stream-to-stream join must have a join condition constraining the maximum difference " +
+                        "between time values of the joined tables in both directions");
+        // missing the other bound
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM v v1 JOIN v v2 ON v2.a >= v1.a"))
+                .hasMessageContaining("A stream-to-stream join must have a join condition constraining the maximum difference " +
+                        "between time values of the joined tables in both directions");
+
+        // bounds in both directions, but not involving a column from left
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM v v1 JOIN v v2 ON v1.a BETWEEN v1.b AND v2.a"))
+                .hasMessageContaining("A stream-to-stream join must have a join condition constraining the maximum difference " +
+                        "between time values of the joined tables in both directions");
+
+        // bounds in both directions, but not involving a column from right
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM v v1 JOIN v v2 ON v2.a BETWEEN v2.b AND v1.a"))
+                .hasMessageContaining("A stream-to-stream join must have a join condition constraining the maximum difference " +
+                        "between time values of the joined tables in both directions");
+    }
+
+    @Test
     public void test_joinIsContinuous() {
         String stream = "stream1";
         TestStreamSqlConnector.create(

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.impl.SubmitJobParameters;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,8 +24,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SubmitJobParametersTest {
 
     @Test
-    public void testSetJobParameters() {
-        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+    public void testForUpload() {
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient();
         assertThat(submitJobParameters.getJobParameters()).isNotNull();
+    }
+
+    @Test
+    public void testForExecution() {
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnMember();
+        assertThat(submitJobParameters.getJobParameters()).isNotNull();
+        assertThat(submitJobParameters.isJarOnMember()).isTrue();
     }
 }

@@ -18,26 +18,35 @@ package com.hazelcast.jet.mongodb.impl;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.mongodb.WriteMode;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.model.WriteModel;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
+import java.util.Optional;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class WriteMongoParams<I> implements Serializable {
 
     SupplierEx<? extends MongoClient> clientSupplier;
+    DataConnectionRef dataConnectionRef;
     String databaseName;
     String collectionName;
     Class<I> documentType;
+    @Nonnull
+    FunctionEx<?, I> intermediateMappingFn = FunctionEx.identity();
     String documentIdentityFieldName;
     FunctionEx<I, Object> documentIdentityFn;
     @Nonnull
@@ -46,6 +55,10 @@ public class WriteMongoParams<I> implements Serializable {
     SupplierEx<TransactionOptions> transactionOptionsSup;
     FunctionEx<I, String> databaseNameSelectFn;
     FunctionEx<I, String> collectionNameSelectFn;
+    @Nonnull
+    WriteMode writeMode = WriteMode.REPLACE;
+    FunctionEx<I, WriteModel<I>> writeModelFn;
+    boolean throwOnNonExisting = true;
 
     public WriteMongoParams() {
     }
@@ -56,9 +69,36 @@ public class WriteMongoParams<I> implements Serializable {
     }
 
     @Nonnull
-    public WriteMongoParams<I> setClientSupplier(@Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
+    public WriteMongoParams<I> setClientSupplier(@Nullable SupplierEx<? extends MongoClient> clientSupplier) {
         this.clientSupplier = clientSupplier;
         return this;
+    }
+
+    @Nullable
+    public DataConnectionRef getDataConnectionRef() {
+        return dataConnectionRef;
+    }
+
+    @Nonnull
+    public WriteMongoParams<I> setDataConnectionRef(@Nullable DataConnectionRef dataConnectionRef) {
+        this.dataConnectionRef = dataConnectionRef;
+        return this;
+    }
+
+    @Nonnull
+    public WriteMongoParams<I> setDataConnectionRef(@Nullable String dataConnectionName) {
+        if (dataConnectionName != null) {
+            setDataConnectionRef(dataConnectionRef(dataConnectionName));
+        }
+        return this;
+    }
+
+    public void checkConnectivityOptionsValid() {
+        boolean hasDataConnection = dataConnectionRef != null;
+        boolean hasClientSupplier = clientSupplier != null;
+        checkState(hasDataConnection || hasClientSupplier, "Client supplier or data connection ref should be provided");
+        checkState(hasDataConnection != hasClientSupplier, "Only one of two should be provided: " +
+                "Client supplier or data connection ref");
     }
 
     @Nonnull
@@ -90,6 +130,18 @@ public class WriteMongoParams<I> implements Serializable {
     @Nonnull
     public WriteMongoParams<I> setDocumentType(@Nonnull Class<I> documentType) {
         this.documentType = documentType;
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nonnull
+    public <T> FunctionEx<T, I> getIntermediateMappingFn() {
+        return (FunctionEx<T, I>) intermediateMappingFn;
+    }
+
+    @Nonnull
+    public <IN> WriteMongoParams<I> setIntermediateMappingFn(FunctionEx<IN, I> intermediateMappingFn) {
+        this.intermediateMappingFn = intermediateMappingFn;
         return this;
     }
 
@@ -141,7 +193,7 @@ public class WriteMongoParams<I> implements Serializable {
     }
 
     @Nonnull
-    public WriteMongoParams<I> setTransactionOptions(SupplierEx<TransactionOptions> transactionOptionsSup) {
+    public WriteMongoParams<I> setTransactionOptionsSup(SupplierEx<TransactionOptions> transactionOptionsSup) {
         this.transactionOptionsSup = transactionOptionsSup;
         return this;
     }
@@ -168,8 +220,42 @@ public class WriteMongoParams<I> implements Serializable {
         return this;
     }
 
+    @Nonnull
+    public WriteMode getWriteMode() {
+        return writeMode;
+    }
+
+    public WriteMongoParams<I> setWriteMode(@Nonnull WriteMode writeMode) {
+        checkNotNull(writeMode, "writeMode cannot be null");
+        this.writeMode = writeMode;
+        return this;
+    }
+
+    public FunctionEx<I, WriteModel<I>> getWriteModelFn() {
+        return writeModelFn;
+    }
+
+    public Optional<FunctionEx<I, WriteModel<I>>> getOptionalWriteModelFn() {
+        return Optional.ofNullable(writeModelFn);
+    }
+
+    @Nonnull
+    public WriteMongoParams<I> setWriteModelFn(FunctionEx<I, WriteModel<I>> writeModelFn) {
+        this.writeModelFn = writeModelFn;
+        return this;
+    }
+
+    public boolean isThrowOnNonExisting() {
+        return throwOnNonExisting;
+    }
+
+    public WriteMongoParams<I> setThrowOnNonExisting(boolean throwOnNonExisting) {
+        this.throwOnNonExisting = throwOnNonExisting;
+        return this;
+    }
+
     public void checkValid() {
-        checkNotNull(clientSupplier, "clientSupplier must be set");
+        checkConnectivityOptionsValid();
         checkNotNull(documentIdentityFn, "documentIdentityFn must be set");
         checkNotNull(commitRetryStrategy, "commitRetryStrategy must be set");
         checkNotNull(transactionOptionsSup, "transactionOptions must be set");
