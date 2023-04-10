@@ -21,9 +21,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.hazelcastdatalink.HazelcastDataLinkClientConfigBuilder;
-import com.hazelcast.datalink.impl.hazelcastdatalink.HazelcastDataLinkConfigLoader;
-import com.hazelcast.datalink.impl.hazelcastdatalink.HazelcastDataLinkConfigValidator;
+import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionClientConfigBuilder;
+import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionConfigLoader;
+import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionConfigValidator;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.annotation.Beta;
 
@@ -88,17 +88,17 @@ public class HazelcastDataConnection extends DataConnectionBase {
     private ClientConfig buildClientConfig() {
         validateConfiguration();
 
-        HazelcastDataLinkConfigLoader configLoader = new HazelcastDataLinkConfigLoader();
-        DataLinkConfig dataLinkConfig = configLoader.load(getConfig());
+        HazelcastDataConnectionConfigLoader configLoader = new HazelcastDataConnectionConfigLoader();
+        DataConnectionConfig dataConnectionConfig = configLoader.load(getConfig());
 
-        HazelcastDataLinkClientConfigBuilder configBuilder = new HazelcastDataLinkClientConfigBuilder();
-        return configBuilder.buildClientConfig(dataLinkConfig);
+        HazelcastDataConnectionClientConfigBuilder configBuilder = new HazelcastDataConnectionClientConfigBuilder();
+        return configBuilder.buildClientConfig(dataConnectionConfig);
     }
 
     private void validateConfiguration() {
-        HazelcastDataLinkConfigValidator validator = new HazelcastDataLinkConfigValidator();
-        DataLinkConfig dataLinkConfig = getConfig();
-        validator.validate(dataLinkConfig);
+        HazelcastDataConnectionConfigValidator validator = new HazelcastDataConnectionConfigValidator();
+        DataConnectionConfig dataConnectionConfig = getConfig();
+        validator.validate(dataConnectionConfig);
     }
 
     @Nonnull

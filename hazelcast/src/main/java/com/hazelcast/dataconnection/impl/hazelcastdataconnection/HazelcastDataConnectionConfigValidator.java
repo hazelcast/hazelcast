@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datalink.impl.hazelcastdatalink;
+package com.hazelcast.dataconnection.impl.hazelcastdataconnection;
 
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.util.StringUtil;
 
-import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_XML;
-import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_XML_PATH;
-import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_YML;
-import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_YML_PATH;
+import static com.hazelcast.dataconnection.HazelcastDataConnection.CLIENT_XML;
+import static com.hazelcast.dataconnection.HazelcastDataConnection.CLIENT_XML_PATH;
+import static com.hazelcast.dataconnection.HazelcastDataConnection.CLIENT_YML;
+import static com.hazelcast.dataconnection.HazelcastDataConnection.CLIENT_YML_PATH;
 
-public class HazelcastDataLinkConfigValidator {
 
-    public void validate(DataLinkConfig dataLinkConfig) {
-        int numberOfSetItems = getNumberOfSetItems(dataLinkConfig, CLIENT_XML_PATH, CLIENT_YML_PATH, CLIENT_XML, CLIENT_YML);
+public class HazelcastDataConnectionConfigValidator {
+
+    public void validate(DataConnectionConfig dataConnectionConfig) {
+        int numberOfSetItems = getNumberOfSetItems(dataConnectionConfig, CLIENT_XML_PATH, CLIENT_YML_PATH, CLIENT_XML, CLIENT_YML);
         if (numberOfSetItems != 1) {
-            throw new HazelcastException("HazelcastDataLink with name '" + dataLinkConfig.getName()
+            throw new HazelcastException("HazelcastDataConnection with name '" + dataConnectionConfig.getName()
                                          + "' could not be created, "
                                          + "provide either a file path with one of "
                                          + "\"client_xml_path\" or \"client_yml_path\" properties "
@@ -39,10 +40,10 @@ public class HazelcastDataLinkConfigValidator {
         }
     }
 
-    private int getNumberOfSetItems(DataLinkConfig dataLinkConfig, String... properties) {
+    private int getNumberOfSetItems(DataConnectionConfig dataConnectionConfig, String... properties) {
         int count = 0;
         for (String property : properties) {
-            if (isSetAfterTrim(dataLinkConfig.getProperty(property))) {
+            if (isSetAfterTrim(dataConnectionConfig.getProperty(property))) {
                 count++;
             }
         }

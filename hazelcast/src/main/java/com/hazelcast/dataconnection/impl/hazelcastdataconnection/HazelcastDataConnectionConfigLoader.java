@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datalink.impl.hazelcastdatalink;
+package com.hazelcast.dataconnection.impl.hazelcastdataconnection;
 
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -28,37 +29,33 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_XML;
-import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_XML_PATH;
-import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_YML_PATH;
-import static com.hazelcast.datalink.HazelcastDataLink.CLIENT_YML;
 
 /**
- * Loads the DataLinkConfig if file path is provided
+ * Loads the DataConnectionConfig if file path is provided
  */
-public class HazelcastDataLinkConfigLoader {
+public class HazelcastDataConnectionConfigLoader {
 
-    private static final ILogger LOGGER = Logger.getLogger(HazelcastDataLinkConfigLoader.class);
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastDataConnectionConfigLoader.class);
 
-    public DataLinkConfig load(DataLinkConfig dataLinkConfig) {
+    public DataConnectionConfig load(DataConnectionConfig dataConnectionConfig) {
         // Make a copy to preserve the original configuration
-        DataLinkConfig loadedDataLinkConfig = new DataLinkConfig(dataLinkConfig);
+        DataConnectionConfig loadedConfig = new DataConnectionConfig(dataConnectionConfig);
 
         // Try XML file first
-        if (loadConfig(loadedDataLinkConfig, CLIENT_XML_PATH, CLIENT_XML)) {
-            return loadedDataLinkConfig;
+        if (loadConfig(loadedConfig, HazelcastDataConnection.CLIENT_XML_PATH, HazelcastDataConnection.CLIENT_XML)) {
+            return loadedConfig;
         }
         // Try YML file
-        loadConfig(loadedDataLinkConfig, CLIENT_YML_PATH, CLIENT_YML);
-        return loadedDataLinkConfig;
+        loadConfig(loadedConfig, HazelcastDataConnection.CLIENT_YML_PATH, HazelcastDataConnection.CLIENT_YML);
+        return loadedConfig;
     }
 
-    private boolean loadConfig(DataLinkConfig dataLinkConfig, String property, String propertyKey) {
+    private boolean loadConfig(DataConnectionConfig dataConnectionConfig, String property, String propertyKey) {
         boolean result = false;
-        String filePath = dataLinkConfig.getProperty(property);
+        String filePath = dataConnectionConfig.getProperty(property);
         if (!StringUtil.isNullOrEmpty(filePath)) {
             String fileContent = readFileContent(filePath);
-            dataLinkConfig.setProperty(propertyKey, fileContent);
+            dataConnectionConfig.setProperty(propertyKey, fileContent);
             LOGGER.info("Successfully read file: " + filePath);
             result = true;
         }

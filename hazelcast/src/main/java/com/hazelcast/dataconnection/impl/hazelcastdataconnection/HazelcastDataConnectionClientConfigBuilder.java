@@ -14,35 +14,37 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datalink.impl.hazelcastdatalink;
+package com.hazelcast.dataconnection.impl.hazelcastdataconnection;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.HazelcastDataLink;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 
-public class HazelcastDataLinkClientConfigBuilder {
+import static com.hazelcast.dataconnection.HazelcastDataConnection.CLIENT_XML;
+import static com.hazelcast.dataconnection.HazelcastDataConnection.CLIENT_YML;
+
+public class HazelcastDataConnectionClientConfigBuilder {
 
     /**
-     * Converts the string in the DataLinkConfig to ClientConfig object
+     * Converts the string in the DataConnectionConfig to ClientConfig object
      */
-    public ClientConfig buildClientConfig(DataLinkConfig dataLinkConfig) {
+    public ClientConfig buildClientConfig(DataConnectionConfig dataConnectionConfig) {
 
-        String clientXml = dataLinkConfig.getProperty(HazelcastDataLink.CLIENT_XML);
+        String clientXml = dataConnectionConfig.getProperty(CLIENT_XML);
         if (!StringUtil.isNullOrEmpty(clientXml)) {
             // Read ClientConfig from XML
             return ImdgUtil.asClientConfig(clientXml);
         }
 
-        String clientYaml = dataLinkConfig.getProperty(HazelcastDataLink.CLIENT_YML);
+        String clientYaml = dataConnectionConfig.getProperty(CLIENT_YML);
         if (!StringUtil.isNullOrEmpty(clientYaml)) {
             // Read ClientConfig from Yaml
             return ImdgUtil.asClientConfigFromYaml(clientYaml);
         }
-        throw new HazelcastException("Invalid state. Both XML and YML strings are empty. HazelcastDataLink with name '"
-                                     + dataLinkConfig.getName()
+        throw new HazelcastException("Invalid state. Both XML and YML strings are empty. HazelcastDataConnection with name '"
+                                     + dataConnectionConfig.getName()
                                      + "' could not be created");
     }
 }
