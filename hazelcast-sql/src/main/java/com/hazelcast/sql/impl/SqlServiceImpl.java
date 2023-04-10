@@ -100,7 +100,7 @@ public class SqlServiceImpl implements InternalSqlService {
                 planCache,
                 optimizer.tableResolvers()
         );
-        DataLinkConsistencyChecker dataLinkConsistencyChecker = new DataLinkConsistencyChecker(
+        DataConnectionConsistencyChecker dataConnectionConsistencyChecker = new DataConnectionConsistencyChecker(
                 nodeEngine.getHazelcastInstance(),
                 nodeEngine
         );
@@ -110,7 +110,7 @@ public class SqlServiceImpl implements InternalSqlService {
                 nodeServiceProvider,
                 STATE_CHECK_FREQUENCY,
                 planCacheChecker,
-                dataLinkConsistencyChecker
+                dataConnectionConsistencyChecker
         );
         internalService.start();
     }

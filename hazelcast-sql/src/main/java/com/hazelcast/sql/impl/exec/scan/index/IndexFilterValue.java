@@ -84,10 +84,10 @@ public class IndexFilterValue implements IdentifiedDataSerializable {
     /**
      * Evaluate the value of the component at the given index.
      *
-     * @param index index
+     * @param index       index
      * @param evalContext evaluation context
      * @return evaluated value or {@code null} if the evaluation should be stopped, because the parent index condition will
-     *     never return any entry
+     * never return any entry
      */
     private Comparable getComponentValue(int index, ExpressionEvalContext evalContext) {
         Object value = components.get(index).evalTop(NoColumnAccessRow.INSTANCE, evalContext);
@@ -111,6 +111,15 @@ public class IndexFilterValue implements IdentifiedDataSerializable {
 
     public List<Boolean> getAllowNulls() {
         return allowNulls;
+    }
+
+    public boolean isCooperative() {
+        for (Expression<?> e : components) {
+            if (!e.isCooperative()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

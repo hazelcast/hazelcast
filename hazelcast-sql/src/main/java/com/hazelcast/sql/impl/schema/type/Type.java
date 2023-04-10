@@ -16,20 +16,25 @@
 
 package com.hazelcast.sql.impl.schema.type;
 
+import com.google.common.collect.ImmutableMap;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.schema.SqlCatalogObject;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A class stored in the SQL catalog to represent a type created using the
@@ -37,7 +42,7 @@ import java.util.List;
  * <p>
  * It can represent a java class, or a portable/compact type, see {@link #kind}.
  */
-public class Type implements IdentifiedDataSerializable, Serializable {
+public class Type implements Serializable, SqlCatalogObject {
     private String name;
     private TypeKind kind = TypeKind.JAVA;
     private String javaClassName;
@@ -47,7 +52,8 @@ public class Type implements IdentifiedDataSerializable, Serializable {
     private Integer portableVersion;
     private List<TypeField> fields;
 
-    public Type() { }
+    public Type() {
+    }
 
     public String getName() {
         return name;
@@ -113,6 +119,36 @@ public class Type implements IdentifiedDataSerializable, Serializable {
         this.compactTypeName = compactTypeName;
     }
 
+    public Map<String, String> options() {
+        if (javaClassName != null) {
+            return ImmutableMap.of(
+                    "format", "java",
+                    "javaClass", javaClassName);
+        }
+
+        if (compactTypeName != null) {
+            return ImmutableMap.of(
+                    "format", "compact",
+                    "compactTypeName", compactTypeName);
+        }
+
+        if (portableFactoryId != null) {
+            return ImmutableMap.of(
+                    "format", "portable",
+                    "portableFactoryId", String.valueOf(portableFactoryId),
+                    "portableClassId", String.valueOf(portableClassId),
+                    "portableClassVersion", String.valueOf(portableVersion != null ? portableVersion : 0));
+        }
+
+        throw new AssertionError("unexpected state");
+    }
+
+    @Override
+    @Nonnull
+    public String unparse() {
+        return SqlCreateType.unparse(this);
+    }
+
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeString(name);
@@ -167,11 +203,6 @@ public class Type implements IdentifiedDataSerializable, Serializable {
     }
 
     @Override
-    public int getFactoryId() {
-        return SqlDataSerializerHook.F_ID;
-    }
-
-    @Override
     public int getClassId() {
         return SqlDataSerializerHook.TYPE;
     }
@@ -180,7 +211,8 @@ public class Type implements IdentifiedDataSerializable, Serializable {
         private String name;
         private QueryDataType queryDataType;
 
-        public TypeField() { }
+        public TypeField() {
+        }
 
         public TypeField(final String name, final QueryDataType queryDataType) {
             this.name = name;

@@ -43,7 +43,6 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.Network;
@@ -84,9 +83,6 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
     public ToxiproxyContainer toxi = new ToxiproxyContainer("ghcr.io/shopify/toxiproxy:2.5.0")
             .withNetwork(network);
 
-    @Rule
-    public TestName testName = new TestName();
-
     private final Random random = new Random();
 
     @BeforeClass
@@ -118,7 +114,10 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
         final String databaseName = "shutdownTest";
         final String collectionName = "testStream_whenServerDown";
         final String connectionString = mongoContainer.getConnectionString();
-        IMap<Integer, Integer> sourceMap = hz.getMap(testName.getMethodName());
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            mongoClient.getDatabase(databaseName).createCollection(collectionName);
+        }
+        IMap<Integer, Integer> sourceMap = hz.getMap(randomName());
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(Sources.mapJournal(sourceMap, START_FROM_OLDEST))
@@ -127,7 +126,7 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
                         .append("key", doc.getKey())
                         .append("other", "" + doc.getValue())
                 ).setLocalParallelism(2)
-                .writeTo(MongoSinks.builder("mongoSink", Document.class, () -> mongoClient(connectionString))
+                .writeTo(MongoSinks.builder(Document.class, () -> mongoClient(connectionString))
                                    .into(databaseName, collectionName)
                                    .preferredLocalParallelism(2)
                                    .build());
@@ -182,11 +181,14 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
         final ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxi.getHost(), toxi.getControlPort());
         final Proxy proxy = toxiproxyClient.createProxy("mongo", "0.0.0.0:8670", "mongo:27017");
 
+        final String connectionViaToxi = "mongodb://" + toxi.getHost() + ":" + toxi.getMappedPort(8670);
         final String databaseName = "networkCutoff";
         final String collectionName = "testNetworkCutoff";
-        final String connectionViaToxi = "mongodb://" + toxi.getHost() + ":" + toxi.getMappedPort(8670);
+        try (MongoClient mongoClient = MongoClients.create(connectionViaToxi)) {
+            mongoClient.getDatabase(databaseName).createCollection(collectionName);
+        }
 
-        IMap<Integer, Integer> sourceMap = hz.getMap(testName.getMethodName());
+        IMap<Integer, Integer> sourceMap = hz.getMap(randomName());
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(Sources.mapJournal(sourceMap, START_FROM_OLDEST))
@@ -195,7 +197,7 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
                         .append("key", doc.getKey())
                         .append("value", doc.getValue())
                 ).setLocalParallelism(2)
-                .writeTo(MongoSinks.builder("mongoSink", Document.class, () -> mongoClient(connectionViaToxi))
+                .writeTo(MongoSinks.builder(Document.class, () -> mongoClient(connectionViaToxi))
                                    .into(databaseName, collectionName)
                                    .preferredLocalParallelism(2)
                                    .build());
@@ -234,11 +236,12 @@ public class MongoSinkResilienceTest extends SimpleTestInClusterSupport {
         continueCounting.compareAndSet(true, false);
 
         final String directConnectionString = mongoContainer.getConnectionString();
-        MongoClient directClient = MongoClients.create(directConnectionString);
-        MongoCollection<Document> collection = directClient.getDatabase(databaseName).getCollection(collectionName);
-        assertTrueEventually(() ->
-                assertEquals(counter.get(), collection.countDocuments())
-        );
+        try (MongoClient directClient = MongoClients.create(directConnectionString)) {
+            MongoCollection<Document> collection = directClient.getDatabase(databaseName).getCollection(collectionName);
+            assertTrueEventually(() ->
+                    assertEquals(counter.get(), collection.countDocuments())
+            );
+        }
     }
 
     @Nonnull

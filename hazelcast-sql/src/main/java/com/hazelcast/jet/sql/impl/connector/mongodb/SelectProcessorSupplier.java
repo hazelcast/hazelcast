@@ -53,7 +53,6 @@ import static java.util.Objects.requireNonNull;
  * ProcessorSupplier that creates {@linkplain com.hazelcast.jet.mongodb.impl.ReadMongoP} processors on each instance.
  */
 public class SelectProcessorSupplier implements ProcessorSupplier {
-
     private transient SupplierEx<? extends MongoClient> clientSupplier;
     private final String databaseName;
     private final String collectionName;
@@ -63,9 +62,11 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private final List<String> projection;
     private final Long startAt;
     private final String connectionString;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private transient ExpressionEvalContext evalContext;
     private final QueryDataType[] types;
+
+    private final boolean forceMongoParallelismOne;
 
     SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, BsonTimestamp startAt, boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
@@ -74,13 +75,14 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.predicate = predicate;
         this.projection = projection;
         this.connectionString = table.connectionString;
-        this.dataLinkName = table.dataLinkName;
+        this.dataConnectionName = table.dataConnectionName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
         this.startAt = startAt == null ? null : startAt.getValue();
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.types = table.resolveColumnTypes(projection);
+        this.forceMongoParallelismOne = table.isForceMongoParallelismOne();
     }
 
 
@@ -127,7 +129,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             Processor processor = new ReadMongoP<>(
                     new ReadMongoParams<JetSqlRow>(stream)
                             .setClientSupplier(clientSupplierEx)
-                            .setDataLinkRef(dataLinkName)
+                            .setDataConnectionRef(dataConnectionName)
                             .setAggregates(aggregates)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
@@ -135,6 +137,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                             .setMapStreamFn(this::convertStreamDocToRow)
                             .setStartAtTimestamp(startAt == null ? null : new BsonTimestamp(startAt))
                             .setEventTimePolicy(eventTimePolicy)
+                            .setNonDistributed(forceMongoParallelismOne)
             );
 
             processors.add(processor);

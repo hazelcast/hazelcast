@@ -51,6 +51,7 @@ import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.portable;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -382,5 +383,45 @@ public class GenericRecordTest {
         Schema schema = schemaWriter.build();
         GenericRecordBuilder builder = new DeserializedSchemaBoundGenericRecordBuilder(schema);
         builder.setArrayOfGenericRecord("f", new GenericRecord[]{aPortable, aCompact});
+    }
+
+    @Test
+    public void testGetArrayFieldAsNullableArrayField_whenFieldIsNull() {
+        GenericRecord record = compact("foo")
+                .setArrayOfBoolean("b", null)
+                .setArrayOfInt8("b8", null)
+                .setArrayOfInt16("s", null)
+                .setArrayOfInt32("i", null)
+                .setArrayOfInt64("l", null)
+                .setArrayOfFloat32("f", null)
+                .setArrayOfFloat64("d", null)
+                .build();
+        assertNull(record.getArrayOfNullableBoolean("b"));
+        assertNull(record.getArrayOfNullableInt8("b8"));
+        assertNull(record.getArrayOfNullableInt16("s"));
+        assertNull(record.getArrayOfNullableInt32("i"));
+        assertNull(record.getArrayOfNullableInt64("l"));
+        assertNull(record.getArrayOfNullableFloat32("f"));
+        assertNull(record.getArrayOfNullableFloat64("d"));
+    }
+
+    @Test
+    public void testGetArrayOfNullableFieldAsPrimitiveArrayField_whenFieldIsNull() {
+        GenericRecord record = compact("foo")
+                .setArrayOfNullableBoolean("b", null)
+                .setArrayOfNullableInt8("b8", null)
+                .setArrayOfNullableInt16("s", null)
+                .setArrayOfNullableInt32("i", null)
+                .setArrayOfNullableInt64("l", null)
+                .setArrayOfNullableFloat32("f", null)
+                .setArrayOfNullableFloat64("d", null)
+                .build();
+        assertNull(record.getArrayOfBoolean("b"));
+        assertNull(record.getArrayOfInt8("b8"));
+        assertNull(record.getArrayOfInt16("s"));
+        assertNull(record.getArrayOfInt32("i"));
+        assertNull(record.getArrayOfInt64("l"));
+        assertNull(record.getArrayOfFloat32("f"));
+        assertNull(record.getArrayOfFloat64("d"));
     }
 }

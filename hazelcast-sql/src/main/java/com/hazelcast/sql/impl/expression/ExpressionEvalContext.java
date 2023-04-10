@@ -21,8 +21,9 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
+import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.spi.impl.NodeEngine;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,35 +31,27 @@ import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Defines expression evaluation context contract for SQL {@link Expression
- * expressions}.
+ * Defines expression evaluation context contract for SQL {@link Expression expressions}.
  *
  * @see Expression#eval
  */
-public class ExpressionEvalContext {
+public interface ExpressionEvalContext {
 
-    private final List<Object> arguments;
-    private final InternalSerializationService serializationService;
-
-    public ExpressionEvalContext(
-            @Nonnull List<Object> arguments,
-            @Nonnull InternalSerializationService serializationService
-    ) {
-        this.arguments = requireNonNull(arguments);
-        this.serializationService = requireNonNull(serializationService);
-    }
-
-    public static ExpressionEvalContext from(ProcessorSupplier.Context ctx) {
+    static ExpressionEvalContext from(ProcessorSupplier.Context ctx) {
         List<Object> arguments = ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME);
         if (ctx instanceof TestProcessorSupplierContext) {
             if (arguments == null) {
                 arguments = new ArrayList<>();
             }
-            return new ExpressionEvalContext(arguments, new DefaultSerializationServiceBuilder().build());
+            return new ExpressionEvalContextImpl(
+                    arguments,
+                    new DefaultSerializationServiceBuilder().build(),
+                    Util.getNodeEngine(ctx.hazelcastInstance()));
         } else {
-            return new ExpressionEvalContext(
+            return new ExpressionEvalContextImpl(
                     requireNonNull(arguments),
-                    ((Contexts.ProcSupplierCtx) ctx).serializationService());
+                    ((Contexts.ProcSupplierCtx) ctx).serializationService(),
+                    ((Contexts.ProcSupplierCtx) ctx).nodeEngine());
         }
     }
 
@@ -66,21 +59,20 @@ public class ExpressionEvalContext {
      * @param index argument index
      * @return the query argument
      */
-    public Object getArgument(int index) {
-        return arguments.get(index);
-    }
+    Object getArgument(int index);
 
     /**
      * Return all the arguments.
      */
-    public List<Object> getArguments() {
-        return arguments;
-    }
+    List<Object> getArguments();
 
     /**
      * @return serialization service
      */
-    public InternalSerializationService getSerializationService() {
-        return serializationService;
-    }
+    InternalSerializationService getSerializationService();
+
+    /**
+     * @return node engine
+     */
+    NodeEngine getNodeEngine();
 }

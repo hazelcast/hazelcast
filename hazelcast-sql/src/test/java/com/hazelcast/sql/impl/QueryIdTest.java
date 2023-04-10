@@ -108,6 +108,6 @@ public class QueryIdTest extends CoreSqlTestSupport {
 
     private static QueryId create(UUID memberId, UUID localId) {
         return new QueryId(memberId.getMostSignificantBits(), memberId.getLeastSignificantBits(),
-            localId.getMostSignificantBits(), localId.getLeastSignificantBits());
+                localId.getMostSignificantBits(), localId.getLeastSignificantBits());
     }
 }

@@ -40,7 +40,7 @@ public class MappingsTableTest {
         // given
         Mapping mapping = new Mapping(
                 "table-name",
-                "table-external-name",
+                new String[]{"external-schema", "table-external-name"},
                 null,
                 "table-type",
                 null,
@@ -58,7 +58,7 @@ public class MappingsTableTest {
                 "catalog"
                 , "table-schema"
                 , "table-name"
-                , "table-external-name"
+                , "\"external-schema\".\"table-external-name\""
                 , "table-type"
                 , "{\"key\":\"value\"}"
         });

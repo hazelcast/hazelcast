@@ -133,6 +133,7 @@ public final class FloatConverter extends Converter {
         return converted;
     }
 
+    @SuppressWarnings("checkstyle:TrailingComment")
     @Override
     public BigDecimal asDecimal(Object val) {
         float val0 = cast(val);
@@ -145,7 +146,7 @@ public final class FloatConverter extends Converter {
             throw nanValueError(QueryDataTypeFamily.DECIMAL);
         }
 
-        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT);
+        return new BigDecimal(val0, DECIMAL_MATH_CONTEXT); //NOSONAR
     }
 
     @Override

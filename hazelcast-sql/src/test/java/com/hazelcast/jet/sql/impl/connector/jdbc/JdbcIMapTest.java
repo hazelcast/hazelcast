@@ -23,7 +23,6 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class JdbcIMapTest extends JdbcSqlTestSupport {
@@ -34,7 +33,7 @@ public class JdbcIMapTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void InsertIntoIMapSelectFromJdbc() throws Exception {
+    public void insertIntoIMapSelectFromJdbc() throws Exception {
         String tableName = randomTableName();
         createTable(tableName);
         insertItems(tableName, 5);
@@ -44,10 +43,7 @@ public class JdbcIMapTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute(

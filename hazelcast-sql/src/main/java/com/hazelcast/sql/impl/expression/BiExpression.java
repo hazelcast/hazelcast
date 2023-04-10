@@ -76,4 +76,9 @@ public abstract class BiExpression<T> implements Expression<T> {
         return getClass().getSimpleName() + "{operand1=" + operand1 + ", operand2=" + operand2 + '}';
     }
 
+    @Override
+    public boolean isCooperative() {
+        return operand1 == null || operand1.isCooperative()
+                && operand2 == null || operand2.isCooperative();
+    }
 }

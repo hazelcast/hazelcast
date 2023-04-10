@@ -44,4 +44,9 @@ public interface IndexFilter {
      * @return the value to be queried
      */
     Comparable getComparable(ExpressionEvalContext evalContext);
+
+    /**
+     * Indicates if all expressions used in IndexFilter are cooperative.
+     **/
+    boolean isCooperative();
 }

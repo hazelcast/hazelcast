@@ -142,6 +142,13 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     @Override
+    public boolean isCooperative() {
+        // Note: it's highly unlikely for
+        // index scan to be non-cooperative.
+        return metadata.isCooperative();
+    }
+
+    @Override
     public boolean closeIsCooperative() {
         return true;
     }

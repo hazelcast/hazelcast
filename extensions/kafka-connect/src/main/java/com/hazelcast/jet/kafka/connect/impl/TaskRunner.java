@@ -23,12 +23,10 @@ import org.apache.kafka.connect.source.SourceTask;
 import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -37,7 +35,7 @@ class TaskRunner {
     private static final ILogger LOGGER = Logger.getLogger(TaskRunner.class);
     private final String name;
     private final ReentrantLock taskLifecycleLock = new ReentrantLock();
-    private final State state = new State();
+    private final State state;
     private final SourceTaskFactory sourceTaskFactory;
     private volatile boolean running;
     private volatile boolean reconfigurationNeeded;
@@ -45,8 +43,9 @@ class TaskRunner {
     private Map<String, String> taskConfig;
 
 
-    TaskRunner(String name, SourceTaskFactory sourceTaskFactory) {
+    TaskRunner(String name, State state, SourceTaskFactory sourceTaskFactory) {
         this.name = name;
+        this.state = state;
         this.sourceTaskFactory = sourceTaskFactory;
     }
 
@@ -157,7 +156,7 @@ class TaskRunner {
 
         @Override
         public OffsetStorageReader offsetStorageReader() {
-            return new SourceOffsetStorageReader(state.partitionsToOffset);
+            return new SourceOffsetStorageReader(state);
         }
     }
 
@@ -199,60 +198,4 @@ class TaskRunner {
         SourceTask create();
     }
 
-    static class State implements Serializable {
-
-        /**
-         * Key represents the partition which the record originated from. Value
-         * represents the offset within that partition. Kafka Connect represents
-         * the partition and offset as arbitrary values so that is why it is
-         * stored as map.
-         * See {@link SourceRecord} for more information regarding the format.
-         */
-        private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
-
-        State() {
-            this.partitionsToOffset = new ConcurrentHashMap<>();
-        }
-
-        /**
-         * just for testing
-         */
-        State(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
-            this.partitionsToOffset = new ConcurrentHashMap<>(partitionsToOffset);
-        }
-
-        void commitRecord(SourceRecord rec) {
-            partitionsToOffset.put(rec.sourcePartition(), rec.sourceOffset());
-        }
-
-        void load(State state) {
-            partitionsToOffset.clear();
-            partitionsToOffset.putAll(state.partitionsToOffset);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            State state = (State) o;
-            return partitionsToOffset.equals(state.partitionsToOffset);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(partitionsToOffset);
-        }
-
-        @Override
-        public String toString() {
-            return "State{" +
-                    "partitionsToOffset=" + partitionsToOffset +
-                    '}';
-        }
-    }
 }

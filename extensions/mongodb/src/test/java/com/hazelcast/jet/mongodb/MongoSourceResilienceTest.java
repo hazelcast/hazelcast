@@ -115,6 +115,9 @@ public class MongoSourceResilienceTest extends SimpleTestInClusterSupport {
         final String databaseName = "shutdownTest";
         final String collectionName = "testStream_whenServerDown";
         final String connectionString = mongoContainer.getConnectionString();
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            mongoClient.getDatabase(databaseName).createCollection(collectionName);
+        }
         Pipeline pipeline = buildIngestPipeline(connectionString, "whenServerDown", databaseName, collectionName);
 
         Job job = invokeJob(hz, pipeline);
@@ -176,6 +179,9 @@ public class MongoSourceResilienceTest extends SimpleTestInClusterSupport {
 
         final String databaseName = "networkCutoff";
         final String collectionName = "testNetworkCutoff";
+        try (MongoClient mongoClient = MongoClients.create(directConnectionString)) {
+            mongoClient.getDatabase(databaseName).createCollection(collectionName);
+        }
         final String connectionViaToxi = "mongodb://" + toxi.getHost() + ":" + toxi.getMappedPort(8670);
         Pipeline pipeline = buildIngestPipeline(connectionViaToxi, "networkTest", databaseName, collectionName);
 
@@ -237,7 +243,7 @@ public class MongoSourceResilienceTest extends SimpleTestInClusterSupport {
                         .database(databaseName)
                         .collection(collectionName)
                         .mapFn((d, t) -> d.getFullDocument())
-                        .startAtOperationTime(new BsonTimestamp(System.currentTimeMillis()))
+                        .startAtOperationTime(new BsonTimestamp(System.currentTimeMillis() / 1000))
                         .build())
                 .withNativeTimestamps(0)
                 .setLocalParallelism(4)

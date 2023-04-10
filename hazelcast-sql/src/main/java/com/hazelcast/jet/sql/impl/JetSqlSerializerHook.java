@@ -31,7 +31,7 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAbstractPhysicalRule;
 import com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink;
-import com.hazelcast.jet.sql.impl.validate.UpdateDataLinkOperation;
+import com.hazelcast.jet.sql.impl.validate.UpdateDataConnectionOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.LazyTarget;
@@ -77,6 +77,7 @@ import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.expression.predicate.SearchPredicate;
+import com.hazelcast.sql.impl.expression.service.GetDdlFunction;
 import com.hazelcast.sql.impl.expression.string.AsciiFunction;
 import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
@@ -95,7 +96,7 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
+import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -198,9 +199,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_FIELD_ACCESS = 77;
     public static final int EXPRESSION_ROW = 78;
 
-    public static final int DATA_LINK = 79;
+    public static final int DATA_CONNECTION = 79;
 
-    public static final int UPDATE_DATA_LINK_OPERATION = 80;
+    public static final int UPDATE_DATA_CONNECTION_OPERATION = 80;
 
     public static final int QUERY_DATA_TYPE = 81;
 
@@ -218,8 +219,9 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int QUERY_DATA_TYPE_FIELD = 89;
 
+    public static final int EXPRESSION_GET_DDL = 90;
 
-    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
+    public static final int LEN = EXPRESSION_GET_DDL + 1;
 
     @Override
     public int getFactoryId() {
@@ -260,7 +262,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[AGGREGATE_EXPORT_FUNCTION] = arg -> AggregateAbstractPhysicalRule.AggregateExportFunction.INSTANCE;
         constructors[AGGREGATE_JSON_OBJECT_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateObjectAggSupplier();
         constructors[UDT_OBJECT_TO_JSON] = arg -> new UdtObjectToJsonFunction();
-        constructors[UPDATE_DATA_LINK_OPERATION] = arg -> new UpdateDataLinkOperation();
+        constructors[UPDATE_DATA_CONNECTION_OPERATION] = arg -> new UpdateDataConnectionOperation();
 
         constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
         constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
@@ -321,7 +323,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
         constructors[EXPRESSION_ROW] = arg -> new RowExpression();
 
-        constructors[DATA_LINK] = arg -> new DataLinkCatalogEntry();
+        constructors[DATA_CONNECTION] = arg -> new DataConnectionCatalogEntry();
 
         constructors[QUERY_DATA_TYPE] = arg -> new QueryDataType();
 
@@ -338,6 +340,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
+        constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }

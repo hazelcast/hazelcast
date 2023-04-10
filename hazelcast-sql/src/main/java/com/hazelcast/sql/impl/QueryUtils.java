@@ -24,6 +24,8 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.version.MemberVersion;
+import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -33,6 +35,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import static java.util.Arrays.asList;
 
 /**
  * Common SQL engine utility methods used by both "core" and "sql" modules.
@@ -45,8 +49,8 @@ public final class QueryUtils {
 
     public static final String WORKER_TYPE_STATE_CHECKER = "query-state-checker";
 
-    // This is an arbitrarily-chosen prefix so that datalink names don't clash with other object names
-    private static final String DATA_LINK_KEY_PREFIX = "57ae1d3a-d379-44cb-bb60-86b1d2dcd744-";
+    // This is an arbitrarily-chosen prefix so that data connection names don't clash with other object names
+    private static final String DATA_CONNECTION_KEY_PREFIX = "57ae1d3a-d379-44cb-bb60-86b1d2dcd744-";
 
     private QueryUtils() {
         // No-op.
@@ -56,8 +60,8 @@ public final class QueryUtils {
         return instanceName + "-" + workerType;
     }
 
-    public static String wrapDataLinkKey(String dataLinkKey) {
-        return DATA_LINK_KEY_PREFIX + dataLinkKey;
+    public static String wrapDataConnectionKey(String dataConnectionKey) {
+        return DATA_CONNECTION_KEY_PREFIX + dataConnectionKey;
     }
 
     /**
@@ -148,5 +152,16 @@ public final class QueryUtils {
         res.add(Collections.emptyList());
 
         return res;
+    }
+
+    /**
+     * Quote the given compound identifier using Calcite dialect (= Hazelcast dialect).
+     * You can use this when giving information to the user, e.g. in exception message.
+     * When building a query you should use {@link SqlDialect#quoteIdentifier(StringBuilder, List)} directly.
+     */
+    public static String quoteCompoundIdentifier(String[] compoundIdentifier) {
+        return CalciteSqlDialect.DEFAULT
+                .quoteIdentifier(new StringBuilder(), asList(compoundIdentifier))
+                .toString();
     }
 }
