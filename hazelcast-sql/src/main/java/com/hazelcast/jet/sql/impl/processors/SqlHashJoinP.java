@@ -108,6 +108,11 @@ public class SqlHashJoinP extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public boolean isCooperative() {
+        return joinInfo.isCooperative();
+    }
+
     public static HashJoinProcessorSupplier supplier(JetJoinInfo joinInfo, int rightInputColumnCount) {
         return new HashJoinProcessorSupplier(joinInfo, rightInputColumnCount);
     }

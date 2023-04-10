@@ -79,7 +79,6 @@ public class JobUploadStore {
         JobUploadStatus jobUploadStatus = jobMap.computeIfAbsent(parameterObject.getSessionId(),
                 key -> new JobUploadStatus(parameterObject));
         jobUploadStatus.createNewTemporaryFile();
-
     }
 
     /**
@@ -102,7 +101,8 @@ public class JobUploadStore {
 
         JobUploadStatus jobUploadStatus = jobMap.get(sessionId);
         if (jobUploadStatus == null) {
-            throw new JetException("Unknown session id : " + sessionId);
+            String exceptionMessage = getSessionNotFoundExceptionMessage(sessionId);
+            throw new JetException(exceptionMessage + sessionId);
         }
 
         JobMetaDataParameterObject partsComplete = jobUploadStatus.processJobMultipart(parameterObject);
@@ -116,5 +116,16 @@ public class JobUploadStore {
             jobMap.remove(partsComplete.getSessionId());
         }
         return partsComplete;
+    }
+
+    private static String getSessionNotFoundExceptionMessage(UUID sessionId) {
+        return String.format(
+                "The session %s does not exist. " +
+                "Session has timed out due to upload inactivity? \n " +
+                "If the network is slow, uploading with smaller parts may help.\n" +
+                "In order to use a smaller upload part\n"  +
+                "1. Set \"hazelcast.client.jobupload.partsize\" environment value or \n" +
+                "2. Set ClientProperty.JOB_UPLOAD_PART_SIZE property of ClientConfig",
+                sessionId);
     }
 }

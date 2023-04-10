@@ -18,12 +18,12 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 
@@ -90,7 +90,7 @@ public class KvMetadataResolvers {
             NodeEngine nodeEngine
     ) {
         final InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        final RelationsStorage relationsStorage = ((CalciteSqlOptimizer) nodeEngine.getSqlService().getOptimizer())
+        final RelationsStorage relationsStorage = ((SqlServiceImpl) nodeEngine.getSqlService()).getOptimizer()
                 .relationsStorage();
         // normalize and validate the names and external names
         for (MappingField field : userFields) {

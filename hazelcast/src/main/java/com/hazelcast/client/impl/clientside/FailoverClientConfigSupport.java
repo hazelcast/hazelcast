@@ -193,8 +193,8 @@ public final class FailoverClientConfigSupport {
         if (notEqual(mainConfig.getSqlConfig(), alternativeConfig.getSqlConfig())) {
             throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "sqlConfig");
         }
-        if (notEqual(mainConfig.getAltoConfig(), alternativeConfig.getAltoConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "altoConfig");
+        if (notEqual(mainConfig.getTpcConfig(), alternativeConfig.getTpcConfig())) {
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "tpcConfig");
         }
     }
 

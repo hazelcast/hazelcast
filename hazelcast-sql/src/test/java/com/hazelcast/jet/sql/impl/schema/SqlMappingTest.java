@@ -58,12 +58,14 @@ public class SqlMappingTest extends SqlTestSupport {
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.OBJECT_NOT_FOUND)
                 .hasFieldOrPropertyWithValue("suggestion", null)
-                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE " +
+                        "MAPPING?");
         assertThatThrownBy(() -> client().getSql().execute("SELECT * FROM hazelcast.public.map").forEach(noop()))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.OBJECT_NOT_FOUND)
                 .hasFieldOrPropertyWithValue("suggestion", null)
-                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE " +
+                        "MAPPING?");
     }
 
     @Test
@@ -151,6 +153,17 @@ public class SqlMappingTest extends SqlTestSupport {
     public void when_badType_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING m TYPE TooBad"))
                 .hasMessageContaining("Unknown connector type: TooBad");
+    }
+
+    @Test
+    public void when_dataConnectionDoesNotExist_then_fail() {
+        String dlName = randomName();
+        String mappingName = randomName();
+        assertThatThrownBy(() ->
+                instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
+                        " DATA CONNECTION " + dlName + "\nOPTIONS ()"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Data connection '" + dlName + "' not found");
     }
 
     @Test

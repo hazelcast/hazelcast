@@ -122,7 +122,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
     private final AddressChecker addressChecker;
     private final IOBufferAllocator responseBufAllocator = new ConcurrentIOBufferAllocator(4096, true);
-    private final boolean altoEnabled;
+    private final boolean tpcEnabled;
 
     // not final for the testing purposes
     private ClientEndpointStatisticsManager endpointStatisticsManager;
@@ -145,7 +145,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         this.addressChecker = new AddressCheckerImpl(trustedInterfaces, logger);
         this.endpointStatisticsManager = PhoneHome.isPhoneHomeEnabled(node)
                 ? new ClientEndpointStatisticsManagerImpl() : new NoOpClientEndpointStatisticsManager();
-        this.altoEnabled = nodeEngine.getAltoServerBootstrap().isEnabled();
+        this.tpcEnabled = nodeEngine.getTpcServerBootstrap().isEnabled();
     }
 
     private ClientExceptionFactory initClientExceptionFactory() {
@@ -228,7 +228,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
 
-        if (altoEnabled && messageTask instanceof AbstractMessageTask) {
+        if (tpcEnabled && messageTask instanceof AbstractMessageTask) {
             AbstractMessageTask abstractMessageTask = (AbstractMessageTask) messageTask;
             abstractMessageTask.setAsyncSocket(clientMessage.getAsyncSocket());
             abstractMessageTask.setResponseBufAllocator(responseBufAllocator);

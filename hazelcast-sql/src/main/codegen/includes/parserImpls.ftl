@@ -24,7 +24,9 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     SqlIdentifier name;
     SqlIdentifier externalName = null;
     SqlNodeList columns = SqlNodeList.EMPTY;
-    SqlIdentifier type;
+    SqlIdentifier dataConnection = null;
+    SqlIdentifier connectorType = null;
+    SqlIdentifier objectType = null;
     SqlNodeList sqlOptions = SqlNodeList.EMPTY;
     boolean ifNotExists = false;
 }
@@ -35,11 +37,23 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
     ]
     name = CompoundIdentifier()
     [
-        <EXTERNAL> <NAME> { externalName = SimpleIdentifier(); }
+        <EXTERNAL> <NAME> { externalName = CompoundIdentifier(); }
     ]
     columns = MappingColumns()
-    <TYPE>
-    type = SimpleIdentifier()
+
+    (
+        <DATA> <CONNECTION>
+        dataConnection = CompoundIdentifier()
+        |
+        [ <CONNECTOR> ] <TYPE>
+        connectorType = SimpleIdentifier()
+    )
+
+    [
+        <OBJECT> <TYPE>
+        objectType = SimpleIdentifier()
+    ]
+
     [
         <OPTIONS>
         sqlOptions = SqlOptions()
@@ -49,7 +63,9 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
             name,
             externalName,
             columns,
-            type,
+            dataConnection,
+            connectorType,
+            objectType,
             sqlOptions,
             replace,
             ifNotExists,
@@ -59,18 +75,19 @@ SqlCreate SqlCreateMapping(Span span, boolean replace) :
 }
 
 /**
- * Parses CREATE DATA LINK statement.
+ * Parses CREATE DATA CONNECTION statement.
  */
-SqlCreate SqlCreateDataLink(Span span, boolean replace) :
+SqlCreate SqlCreateDataConnection(Span span, boolean replace) :
 {
     SqlParserPos startPos = span.pos();
     boolean ifNotExists = false;
+    boolean shared = true;
     SqlIdentifier name;
     SqlIdentifier type;
-    SqlNodeList sqlOptions;
+    SqlNodeList sqlOptions = SqlNodeList.EMPTY;
 }
 {
-    <DATA> <LINK>
+    <DATA> <CONNECTION>
     [
         <IF> <NOT> <EXISTS> { ifNotExists = true; }
     ]
@@ -79,15 +96,27 @@ SqlCreate SqlCreateDataLink(Span span, boolean replace) :
     <TYPE>
     type = SimpleIdentifier()
 
-    <OPTIONS>
-    sqlOptions = SqlOptions()
+    [
+        (
+            <NOT> <SHARED>  { shared = false; }
+            |
+            <SHARED>  { shared = true; }
+        )
+    ]
+
+    [
+        <OPTIONS>
+        sqlOptions = SqlOptions()
+    ]
+
     {
-        return new SqlCreateDataLink(
+        return new SqlCreateDataConnection(
             startPos.plus(getPos()),
             replace,
             ifNotExists,
             name,
             type,
+            shared,
             sqlOptions
         );
     }
@@ -108,6 +137,7 @@ SqlCreate SqlCreateType(Span span, boolean replace) :
     ]
     name = CompoundIdentifier()
     columns = TypeColumns()
+
     <OPTIONS>
     sqlOptions = SqlOptions()
     {
@@ -357,9 +387,9 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
 }
 
 /**
- * Parses DROP DATA LINK statement.
+ * Parses DROP DATA CONNECTION statement.
  */
-SqlDrop SqlDropDataLink(Span span, boolean replace) :
+SqlDrop SqlDropDataConnection(Span span, boolean replace) :
 {
     SqlParserPos pos = span.pos();
 
@@ -367,13 +397,13 @@ SqlDrop SqlDropDataLink(Span span, boolean replace) :
     boolean ifExists = false;
 }
 {
-    <DATA> <LINK>
+    <DATA> <CONNECTION>
     [
         <IF> <EXISTS> { ifExists = true; }
     ]
     name = CompoundIdentifier()
     {
-        return new SqlDropDataLink(name, ifExists, pos.plus(getPos()));
+        return new SqlDropDataConnection(name, ifExists, pos.plus(getPos()));
     }
 }
 
@@ -747,6 +777,7 @@ SqlOption SqlOption() :
 SqlShowStatement SqlShowStatement() :
 {
     ShowStatementTarget target;
+    SqlIdentifier dataConnectionName = null;
 }
 {
     <SHOW>
@@ -758,9 +789,13 @@ SqlShowStatement SqlShowStatement() :
         <JOBS> { target = ShowStatementTarget.JOBS; }
     |
         <TYPES> { target = ShowStatementTarget.TYPES; }
+    |
+        <DATA> <CONNECTIONS> { target = ShowStatementTarget.DATACONNECTIONS; }
+    |
+        <RESOURCES> <FOR> { dataConnectionName = CompoundIdentifier(); target = ShowStatementTarget.RESOURCES; }
     )
     {
-        return new SqlShowStatement(getPos(), target);
+        return new SqlShowStatement(getPos(), target, dataConnectionName);
     }
 }
 

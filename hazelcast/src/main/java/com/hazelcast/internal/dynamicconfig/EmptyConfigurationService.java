@@ -21,7 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.MapConfig;
@@ -209,12 +209,12 @@ class EmptyConfigurationService implements ConfigurationService {
     }
 
     @Override
-    public DataLinkConfig findDataLinkConfig(String baseName) {
+    public DataConnectionConfig findDataConnectionConfig(String baseName) {
         return null;
     }
 
     @Override
-    public Map<String, DataLinkConfig> getDataLinkConfigs() {
+    public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
         return emptyMap();
     }
 

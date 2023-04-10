@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AcceptRequest;
+import com.hazelcast.internal.tpcengine.net.AcceptRequest;
 
 import java.nio.channels.SocketChannel;
 
@@ -28,5 +28,10 @@ class NioAcceptRequest implements AcceptRequest {
 
     NioAcceptRequest(SocketChannel socketChannel) {
         this.socketChannel = checkNotNull(socketChannel, "socketChannel");
+    }
+
+    @Override
+    public void close() throws Exception {
+        socketChannel.close();
     }
 }

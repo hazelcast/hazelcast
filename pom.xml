@@ -73,10 +73,10 @@
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>3.0.0-M9</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>3.0.0</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.2.1</maven.checkstyle.plugin.version>
         <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>${maven.surefire.plugin.version}</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>3.0.0</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.2.1</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
@@ -93,8 +93,8 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.423</aws.sdk.version>
-        <classgraph.version>4.8.156</classgraph.version>
+        <aws.sdk.version>1.12.443</aws.sdk.version>
+        <classgraph.version>4.8.157</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
         <guava.version>31.1-jre</guava.version>
@@ -110,14 +110,14 @@
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.8.2</kafka.version>
-        <kotlin.version>1.8.10</kotlin.version>
-        <log4j.version>1.2.17.redhat-00008</log4j.version>
+        <kotlin.version>1.8.20</kotlin.version>
+        <reload4j.version>1.2.24</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
-        <netty.version>4.1.89.Final</netty.version>
+        <netty.version>4.1.91.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
-        <parquet.version>1.12.3</parquet.version>
+        <parquet.version>1.13.0</parquet.version>
         <picocli.version>4.7.1</picocli.version>
         <postgresql.version>42.5.4</postgresql.version>
         <prometheus.version>0.18.0</prometheus.version>
@@ -133,7 +133,7 @@
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>1.33</snakeyaml.version>
+        <snakeyaml.version>2.0</snakeyaml.version>
         <snakeyaml.engine.version>2.6</snakeyaml.engine.version>
         <mongodb.version>4.9.0</mongodb.version>
 
@@ -142,7 +142,7 @@
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.24.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.14.1</bytebuddy.version>
+        <bytebuddy.version>1.14.4</bytebuddy.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
@@ -156,13 +156,13 @@
         <mockito.version>4.11.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.17.6</testcontainers.version>
+        <testcontainers.version>1.18.0</testcontainers.version>
         <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.0.1</archunit.version>
         <errorprone.version>2.18.0</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <kubernetes-server-mock.version>6.4.1</kubernetes-server-mock.version>
+        <kubernetes-server-mock.version>6.5.0</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -200,14 +200,11 @@
     </scm>
     <developers>
         <developer>
-            <id>oztalip</id>
-            <name>talip ozturk</name>
-            <email>talip@hazelcast.com</email>
-        </developer>
-        <developer>
-            <id>fuad</id>
-            <name>fuad malikov</name>
-            <email>fuad@hazelcast.com</email>
+            <id>hazelcast-team</id>
+            <name>Hazelcast team</name>
+            <email>info@hazelcast.com</email>
+            <organization>Hazelcast, Inc.</organization>
+            <organizationUrl>https://hazelcast.com</organizationUrl>
         </developer>
     </developers>
 
@@ -1167,7 +1164,8 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.10</version>
+                        <!-- do not update to 1.6.10, it blocks release process -->
+                        <version>1.6.8</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>release-repository</serverId>
@@ -1619,7 +1617,7 @@
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-bom</artifactId>
-                <version>1.43.0</version>
+                <version>1.43.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -1774,7 +1772,7 @@
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.12.2</version>
+                <version>2.12.5</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
@@ -1784,7 +1782,7 @@
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-common-protos</artifactId>
-                <version>2.14.2</version>
+                <version>2.14.3</version>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
@@ -1870,7 +1868,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.32.0</version>
+                <version>3.33.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1888,9 +1886,9 @@
                 <version>${jackson.mapper.asl.version}</version>
             </dependency>
             <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${log4j.version}</version>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${reload4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.lz4</groupId>
@@ -1900,7 +1898,7 @@
             <dependency>
                 <groupId>net.minidev</groupId>
                 <artifactId>json-smart</artifactId>
-                <version>2.4.9</version>
+                <version>2.4.10</version>
             </dependency>
             <dependency>
               <groupId>org.wildfly.openssl</groupId>
@@ -1920,7 +1918,7 @@
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-iam-v1</artifactId>
-                <version>1.9.2</version>
+                <version>1.9.3</version>
             </dependency>
             <!-- Force higher version, compatible with M1 -->
             <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->

@@ -19,10 +19,10 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.AbstractSqlResult;
+import com.hazelcast.sql.impl.CoreQueryUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -126,7 +126,7 @@ class SqlResultImpl extends AbstractSqlResult {
             try {
                 return delegate.hasNext();
             } catch (Exception e) {
-                throw QueryUtils.toPublicException(e, queryId.getMemberId());
+                throw CoreQueryUtils.toPublicException(e, queryId.getMemberId());
             }
         }
 
@@ -135,7 +135,7 @@ class SqlResultImpl extends AbstractSqlResult {
             try {
                 return delegate.hasNext(timeout, timeUnit);
             } catch (Exception e) {
-                throw QueryUtils.toPublicException(e, queryId.getMemberId());
+                throw CoreQueryUtils.toPublicException(e, queryId.getMemberId());
             }
         }
 
@@ -146,7 +146,7 @@ class SqlResultImpl extends AbstractSqlResult {
             } catch (NoSuchElementException e) {
                 throw e;
             } catch (Exception e) {
-                throw QueryUtils.toPublicException(e, queryId.getMemberId());
+                throw CoreQueryUtils.toPublicException(e, queryId.getMemberId());
             }
         }
     }

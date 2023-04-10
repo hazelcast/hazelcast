@@ -201,20 +201,22 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
     }
 
-    static class CreateDataLinkPlan extends SqlPlanImpl {
+    static class CreateDataConnectionPlan extends SqlPlanImpl {
         private final boolean replace;
         private final boolean ifNotExists;
         private final String name;
         private final String type;
+        private final boolean shared;
         private final Map<String, String> options;
         private final PlanExecutor planExecutor;
 
-        CreateDataLinkPlan(
+        CreateDataConnectionPlan(
                 PlanKey planKey,
                 boolean replace,
                 boolean ifNotExists,
                 String name,
                 String type,
+                boolean shared,
                 Map<String, String> options,
                 PlanExecutor planExecutor
         ) {
@@ -224,6 +226,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.replace = replace;
             this.name = name;
             this.type = type;
+            this.shared = shared;
             this.options = options;
             this.planExecutor = planExecutor;
         }
@@ -242,6 +245,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         public String type() {
             return type;
+        }
+
+        public boolean shared() {
+            return shared;
         }
 
         public Map<String, String> options() {
@@ -269,18 +276,18 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoArguments("CREATE DATA LINK", arguments);
-            SqlPlanImpl.ensureNoTimeout("CREATE DATA LINK", timeout);
+            SqlPlanImpl.ensureNoArguments("CREATE DATA CONNECTION", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE DATA CONNECTION", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropDataLinkPlan extends SqlPlanImpl {
+    static class DropDataConnectionPlan extends SqlPlanImpl {
         private final String name;
         private final boolean ifExists;
         private final PlanExecutor planExecutor;
 
-        DropDataLinkPlan(
+        DropDataConnectionPlan(
                 PlanKey planKey,
                 String name,
                 boolean ifExists,
@@ -318,7 +325,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoTimeout("DROP DATA LINK", timeout);
+            SqlPlanImpl.ensureNoTimeout("DROP DATA CONNECTION", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -886,21 +893,28 @@ abstract class SqlPlanImpl extends SqlPlan {
 
     static class ShowStatementPlan extends SqlPlanImpl {
         private final ShowStatementTarget showTarget;
+        private final String dataConnectionName;
         private final PlanExecutor planExecutor;
 
         ShowStatementPlan(
                 PlanKey planKey,
                 ShowStatementTarget showTarget,
+                String dataConnectionName,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
 
             this.showTarget = showTarget;
+            this.dataConnectionName = dataConnectionName;
             this.planExecutor = planExecutor;
         }
 
         ShowStatementTarget getShowTarget() {
             return showTarget;
+        }
+
+        String getDataConnectionName() {
+            return dataConnectionName;
         }
 
         @Override

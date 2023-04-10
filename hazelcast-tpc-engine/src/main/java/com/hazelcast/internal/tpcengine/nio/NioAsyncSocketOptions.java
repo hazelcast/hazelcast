@@ -17,16 +17,14 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 
-import com.hazelcast.internal.tpcengine.AsyncSocketOptions;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.Option;
-import com.hazelcast.internal.tpcengine.logging.TpcLogger;
-import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFieldValue;
@@ -34,124 +32,98 @@ import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFie
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "java:S3776"})
 public class NioAsyncSocketOptions implements AsyncSocketOptions {
 
-    private static final java.net.SocketOption<Integer> JDK_NET_TCP_KEEPCOUNT
+    private static final java.net.SocketOption<Integer> EXT_SOCK_OPTS_TCP_KEEPCOUNT
             = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPCOUNT");
-    private static final java.net.SocketOption<Integer> JDK_NET_TCP_KEEPIDLE
+    private static final java.net.SocketOption<Integer> EXT_SOCK_OPTS_TCP_KEEPIDLE
             = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPIDLE");
-    private static final java.net.SocketOption<Integer> JDK_NET_TCP_KEEPINTERVAL
+    private static final java.net.SocketOption<Integer> EXT_SO_OPTS_TCP_KEEPINTERVAL
             = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPINTERVAL");
 
-    private static final AtomicBoolean TCP_KEEPCOUNT_PRINTED = new AtomicBoolean();
-    private static final AtomicBoolean TCP_KEEPIDLE_PRINTED = new AtomicBoolean();
-    private static final AtomicBoolean TCP_KEEPINTERVAL_PRINTED = new AtomicBoolean();
+    private final SocketChannel socketChannel;
 
-    private final SocketChannel channel;
-    private final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    NioAsyncSocketOptions(SocketChannel socketChannel) {
+        this.socketChannel = socketChannel;
+    }
 
-    NioAsyncSocketOptions(SocketChannel channel) {
-        this.channel = channel;
+    // SO_TIMEOUT unfortunately doesn't have a SocketOption version.
+    private static SocketOption toSocketOption(Option option) {
+        if (TCP_NODELAY.equals(option)) {
+            return StandardSocketOptions.TCP_NODELAY;
+        } else if (SO_RCVBUF.equals(option)) {
+            return StandardSocketOptions.SO_RCVBUF;
+        } else if (SO_SNDBUF.equals(option)) {
+            return StandardSocketOptions.SO_SNDBUF;
+        } else if (SO_KEEPALIVE.equals(option)) {
+            return StandardSocketOptions.SO_KEEPALIVE;
+        } else if (SO_REUSEADDR.equals(option)) {
+            return StandardSocketOptions.SO_REUSEADDR;
+        } else if (TCP_KEEPCOUNT.equals(option)) {
+            return EXT_SOCK_OPTS_TCP_KEEPCOUNT;
+        } else if (TCP_KEEPINTERVAL.equals(option)) {
+            return EXT_SO_OPTS_TCP_KEEPINTERVAL;
+        } else if (TCP_KEEPIDLE.equals(option)) {
+            return EXT_SOCK_OPTS_TCP_KEEPIDLE;
+        } else {
+            return null;
+        }
     }
 
     @Override
-    public <T> T get(Option<T> option) {
+    public boolean isSupported(Option option) {
+        checkNotNull(option, "option");
+
+        if (option.equals(SO_TIMEOUT)) {
+            return true;
+        } else {
+            SocketOption socketOption = toSocketOption(option);
+            return isSupported(socketOption);
+        }
+    }
+
+    private boolean isSupported(SocketOption socketOption) {
+        return socketOption != null && socketChannel.supportedOptions().contains(socketOption);
+    }
+
+    @Override
+    public <T> T getIfSupported(Option<T> option) {
         checkNotNull(option, "option");
 
         try {
-            if (TCP_NODELAY.equals(option)) {
-                return (T) channel.getOption(StandardSocketOptions.TCP_NODELAY);
-            } else if (SO_RCVBUF.equals(option)) {
-                return (T) channel.getOption(StandardSocketOptions.SO_RCVBUF);
-            } else if (SO_SNDBUF.equals(option)) {
-                return (T) channel.getOption(StandardSocketOptions.SO_SNDBUF);
-            } else if (SO_KEEPALIVE.equals(option)) {
-                return (T) channel.getOption(StandardSocketOptions.SO_KEEPALIVE);
-            } else if (SO_REUSEADDR.equals(option)) {
-                return (T) channel.getOption(StandardSocketOptions.SO_REUSEADDR);
-            } else if (SO_TIMEOUT.equals(option)) {
-                return (T) (Integer) channel.socket().getSoTimeout();
-            } else if (TCP_KEEPCOUNT.equals(option)) {
-                if (JDK_NET_TCP_KEEPCOUNT == null) {
-                    return (T) Integer.valueOf(0);
-                } else {
-                    return (T) channel.getOption(JDK_NET_TCP_KEEPCOUNT);
-                }
-            } else if (TCP_KEEPINTERVAL.equals(option)) {
-                if (JDK_NET_TCP_KEEPINTERVAL == null) {
-                    return (T) Integer.valueOf(0);
-                } else {
-                    return (T) channel.getOption(JDK_NET_TCP_KEEPINTERVAL);
-                }
-            } else if (TCP_KEEPIDLE.equals(option)) {
-                if (JDK_NET_TCP_KEEPIDLE == null) {
-                    return (T) Integer.valueOf(0);
-                } else {
-                    return (T) channel.getOption(JDK_NET_TCP_KEEPIDLE);
-                }
+            if (option.equals(SO_TIMEOUT)) {
+                return (T) (Integer) socketChannel.socket().getSoTimeout();
             } else {
-                throw new UnsupportedOperationException("Unrecognized option:" + option);
+                SocketOption socketOption = toSocketOption(option);
+                if (isSupported(socketOption)) {
+                    return (T) socketChannel.getOption(socketOption);
+                } else {
+                    return null;
+                }
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
-    public <T> void set(Option<T> option, T value) {
+    public <T> boolean setIfSupported(Option<T> option, T value) {
         checkNotNull(option, "option");
         checkNotNull(value, "value");
 
         try {
-            if (TCP_NODELAY.equals(option)) {
-                channel.setOption(StandardSocketOptions.TCP_NODELAY, (Boolean) value);
-            } else if (SO_RCVBUF.equals(option)) {
-                channel.setOption(StandardSocketOptions.SO_RCVBUF, (Integer) value);
-            } else if (SO_SNDBUF.equals(option)) {
-                channel.setOption(StandardSocketOptions.SO_SNDBUF, (Integer) value);
-            } else if (SO_KEEPALIVE.equals(option)) {
-                channel.setOption(StandardSocketOptions.SO_KEEPALIVE, (Boolean) value);
-            } else if (SO_REUSEADDR.equals(option)) {
-                channel.setOption(StandardSocketOptions.SO_REUSEADDR, (Boolean) value);
-            } else if (SO_TIMEOUT.equals(option)) {
-                channel.socket().setSoTimeout((Integer) value);
-            } else if (TCP_KEEPCOUNT.equals(option)) {
-                if (JDK_NET_TCP_KEEPCOUNT == null) {
-                    if (TCP_KEEPCOUNT_PRINTED.compareAndSet(false, true)) {
-                        logger.warning("Ignoring TCP_KEEPCOUNT. "
-                                + "Please upgrade to Java 11+ or configure tcp_keepalive_probes in the kernel: "
-                                + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                                + "If this isn't dealt with, idle connections could be closed prematurely.");
-                    }
-                } else {
-                    channel.setOption(JDK_NET_TCP_KEEPCOUNT, (Integer) value);
-                }
-            } else if (TCP_KEEPIDLE.equals(option)) {
-                if (JDK_NET_TCP_KEEPIDLE == null) {
-                    if (TCP_KEEPIDLE_PRINTED.compareAndSet(false, true)) {
-                        logger.warning("Ignoring TCP_KEEPIDLE. "
-                                + "Please upgrade to Java 11+ or configure tcp_keepalive_time in the kernel. "
-                                + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                                + "If this isn't dealt with, idle connections could be closed prematurely.");
-                    }
-                } else {
-                    channel.setOption(JDK_NET_TCP_KEEPIDLE, (Integer) value);
-                }
-            } else if (TCP_KEEPINTERVAL.equals(option)) {
-                if (JDK_NET_TCP_KEEPINTERVAL == null) {
-                    if (TCP_KEEPINTERVAL_PRINTED.compareAndSet(false, true)) {
-                        logger.warning("Ignoring TCP_KEEPINTERVAL. "
-                                + "Please upgrade to Java 11+ or configure tcp_keepalive_intvl in the kernel. "
-                                + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
-                                + "If this isn't dealt with, idle connections could be closed prematurely.");
-                    }
-                } else {
-                    channel.setOption(JDK_NET_TCP_KEEPINTERVAL, (Integer) value);
-                }
+            if (option.equals(SO_TIMEOUT)) {
+                socketChannel.socket().setSoTimeout((Integer) value);
+                return true;
             } else {
-                throw new UnsupportedOperationException("Unrecognized option:" + option);
+                SocketOption socketOption = toSocketOption(option);
+                if (isSupported(socketOption)) {
+                    socketChannel.setOption(socketOption, value);
+                    return true;
+                } else {
+                    return false;
+                }
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to setOption [" + option.name() + "] with value [" + value + "]", e);
+            throw new UncheckedIOException(e);
         }
     }
 }

@@ -1093,16 +1093,16 @@
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 
-    <data-link name="mysql-database">
-        <class-name>com.hazelcast.datalink.JdbcDataLink</class-name>
+    <data-connection name="mysql-database">
+        <type>jdbc</type>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
         <shared>false</shared>
-    </data-link>
+    </data-connection>
 
-    <alto enabled="true">
+    <tpc enabled="true">
         <eventloop-count>12</eventloop-count>
-    </alto>
+    </tpc>
 
 </hazelcast>

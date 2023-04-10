@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -28,6 +29,7 @@ import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
+import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 
@@ -75,8 +77,8 @@ public final class Mappers {
     }
 
     @Nonnull
-    public static <T> FunctionEx<ChangeStreamDocument<Document>, T> streamToClass(Class<T> type) {
-        return doc -> {
+    public static <T> BiFunctionEx<ChangeStreamDocument<Document>, Long, T> streamToClass(Class<T> type) {
+        return (doc, ts) -> {
             assert doc.getFullDocument() != null;
             return map(doc.getFullDocument(), type);
         };
@@ -99,5 +101,17 @@ public final class Mappers {
         DocumentCodec codec = new DocumentCodec();
         DecoderContext decoderContext = DecoderContext.builder().build();
         return codec.decode(new BsonDocumentReader(bsonDocument), decoderContext);
+    }
+
+    /**
+     * Converts given {@link Bson} to {@link Document}.
+     */
+    @Nonnull
+    public static Document bsonToDocument(@Nonnull Bson bson) {
+        if (bson instanceof Document) {
+            return (Document) bson;
+        }
+        BsonDocument document = bson.toBsonDocument(BsonDocument.class, INSTANCE.pojoCodecRegistry);
+        return bsonDocumentToDocument(document);
     }
 }

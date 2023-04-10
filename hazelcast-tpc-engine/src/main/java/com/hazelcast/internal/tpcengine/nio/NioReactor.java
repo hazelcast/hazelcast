@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AcceptRequest;
+import com.hazelcast.internal.tpcengine.net.AcceptRequest;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 
@@ -31,11 +31,7 @@ public final class NioReactor extends Reactor {
 
     final Selector selector;
 
-    public NioReactor() {
-        this(new NioReactorBuilder());
-    }
-
-    public NioReactor(NioReactorBuilder builder) {
+    NioReactor(NioReactorBuilder builder) {
         super(builder);
         this.selector = ((NioEventloop) eventloop()).selector;
     }

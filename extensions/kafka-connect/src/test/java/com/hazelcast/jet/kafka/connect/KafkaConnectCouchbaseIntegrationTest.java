@@ -32,15 +32,20 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.apache.kafka.connect.data.Values;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.couchbase.BucketDefinition;
 import org.testcontainers.couchbase.CouchbaseContainer;
 
@@ -52,27 +57,48 @@ import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
-    private static final ILogger LOGGER = Logger.getLogger(KafkaConnectCouchbaseIntegrationTest.class);
-    private static final String BUCKET_NAME = "mybucket";
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectCouchbaseIntegrationTest.class);
 
-    @ClassRule
+    private static final String BUCKET_NAME = "mybucket";
     public static final CouchbaseContainer container = new CouchbaseContainer("couchbase/server:7.1.1")
-            .withBucket(new BucketDefinition(BUCKET_NAME));
+            .withBucket(new BucketDefinition(BUCKET_NAME))
+            .withStartupTimeout(Duration.ofSeconds(120))
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
 
 
     private static final int ITEM_COUNT = 1_000;
 
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
             + "/tests/couchbase-kafka-connect-couchbase-4.1.11.zip";
+    private static final String COUCHBASE_LOGS_IN_CONTAINER = "/opt/couchbase/var/lib/couchbase/logs";
+    private static final String COUCHBASE_LOGS_FILE = "couchbase-logs.tar.gz";
+
+    @BeforeClass
+    public static void setUpDocker() {
+        assumeDockerEnabled();
+        container.start();
+    }
+
+    @AfterClass
+    public static void afterAll() throws Exception {
+        if (container != null) {
+            container.execInContainer("tar", "-czvf", "/tmp/" + COUCHBASE_LOGS_FILE, COUCHBASE_LOGS_IN_CONTAINER);
+            container.copyFileFromContainer("/tmp/" + COUCHBASE_LOGS_FILE,
+                    "target/" + COUCHBASE_LOGS_FILE);
+            container.stop();
+        }
+    }
 
     @Test
     public void testReading() throws Exception {

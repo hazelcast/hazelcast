@@ -29,7 +29,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -127,8 +127,8 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
-import com.hazelcast.config.alto.AltoConfig;
-import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -183,14 +183,14 @@ import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMo
 import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.internal.config.ConfigSections.ADVANCED_NETWORK;
-import static com.hazelcast.internal.config.ConfigSections.ALTO;
+import static com.hazelcast.internal.config.ConfigSections.TPC;
 import static com.hazelcast.internal.config.ConfigSections.AUDITLOG;
 import static com.hazelcast.internal.config.ConfigSections.CACHE;
 import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
-import static com.hazelcast.internal.config.ConfigSections.DATA_LINK;
+import static com.hazelcast.internal.config.ConfigSections.DATA_CONNECTION;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
@@ -387,10 +387,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDynamicConfiguration(node);
         } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
             handleIntegrityChecker(node);
-        } else if (matches(DATA_LINK.getName(), nodeName)) {
-            handleDataLinks(node);
-        } else if (matches(ALTO.getName(), nodeName)) {
-            handleAlto(node);
+        } else if (matches(DATA_CONNECTION.getName(), nodeName)) {
+            handleDataConnections(node);
+        } else if (matches(TPC.getName(), nodeName)) {
+            handleTpc(node);
         } else {
             return true;
         }
@@ -976,8 +976,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleRestApi(child);
             } else if (matches("memcache-protocol", nodeName)) {
                 handleMemcacheProtocol(child);
-            } else if (matches("alto-socket", nodeName)) {
-                handleAltoSocketConfig(child, config.getNetworkConfig().getAltoSocketConfig());
+            } else if (matches("tpc-socket", nodeName)) {
+                handleTpcSocketConfig(child, config.getNetworkConfig().getTpcSocketConfig());
             }
         }
     }
@@ -1146,21 +1146,21 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSocketOptions(node, endpointConfig);
         } else if (matches("symmetric-encryption", nodeName)) {
             handleViaReflection(node, endpointConfig, new SymmetricEncryptionConfig());
-        } else if (matches("alto-socket", nodeName)) {
-            handleAltoSocketConfig(node, endpointConfig.getAltoSocketConfig());
+        } else if (matches("tpc-socket", nodeName)) {
+            handleTpcSocketConfig(node, endpointConfig.getTpcSocketConfig());
         }
     }
 
-    private void handleAltoSocketConfig(Node node, AltoSocketConfig altoSocketConfig) {
+    private void handleTpcSocketConfig(Node node, TpcSocketConfig tpcSocketConfig) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("port-range", nodeName)) {
-                altoSocketConfig.setPortRange(getTextContent(child));
+                tpcSocketConfig.setPortRange(getTextContent(child));
             } else if (matches("receive-buffer-size-kb", nodeName)) {
-                altoSocketConfig.setReceiveBufferSizeKB(
+                tpcSocketConfig.setReceiveBufferSizeKB(
                         getIntegerValue("receive-buffer-size-kb", getTextContent(child)));
             } else if (matches("send-buffer-size-kb", nodeName)) {
-                altoSocketConfig.setSendBufferSizeKB(
+                tpcSocketConfig.setSendBufferSizeKB(
                         getIntegerValue("send-buffer-size-kb", getTextContent(child)));
             }
         }
@@ -3471,36 +3471,36 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getIntegrityCheckerConfig().setEnabled(enabled);
     }
 
-    private void handleAlto(Node node) {
+    private void handleTpc(Node node) {
         Node attrEnabled = getNamedItemNode(node, "enabled");
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
-        AltoConfig altoConfig = config.getAltoConfig();
-        altoConfig.setEnabled(enabled);
+        TpcConfig tpcConfig = config.getTpcConfig();
+        tpcConfig.setEnabled(enabled);
 
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
             if (matches("eventloop-count", childName)) {
-                altoConfig.setEventloopCount(getIntegerValue("eventloop-count", getTextContent(child)));
+                tpcConfig.setEventloopCount(getIntegerValue("eventloop-count", getTextContent(child)));
             }
         }
     }
 
-    protected void handleDataLinks(Node node) {
+    protected void handleDataConnections(Node node) {
         String name = getAttribute(node, "name");
-        DataLinkConfig dataLinkConfig = ConfigUtils.getByNameOrNew(config.getDataLinkConfigs(),
-                name, DataLinkConfig.class);
-        handleDataLink(node, dataLinkConfig);
+        DataConnectionConfig dataConnectionConfig = ConfigUtils.getByNameOrNew(config.getDataConnectionConfigs(),
+                name, DataConnectionConfig.class);
+        handleDataConnection(node, dataConnectionConfig);
     }
 
-    protected void handleDataLink(Node node, DataLinkConfig dataLinkConfig) {
+    protected void handleDataConnection(Node node, DataConnectionConfig dataConnectionConfig) {
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
-            if (matches("class-name", childName)) {
-                dataLinkConfig.setClassName(getTextContent(child));
+            if (matches("type", childName)) {
+                dataConnectionConfig.setType(getTextContent(child));
             } else if (matches("properties", childName)) {
-                fillProperties(child, dataLinkConfig.getProperties());
+                fillProperties(child, dataConnectionConfig.getProperties());
             } else if (matches("shared", childName)) {
-                dataLinkConfig.setShared(getBooleanValue(getTextContent(child)));
+                dataConnectionConfig.setShared(getBooleanValue(getTextContent(child)));
             }
         }
     }

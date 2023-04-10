@@ -31,9 +31,9 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -57,10 +57,10 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureDummyDataLink;
-import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureJdbcDataLink;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureDummyDataConnection;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureJdbcDataConnection;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -73,10 +73,9 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
-    private static final String JDBC_DATA_LINK = "jdbc-data-link";
-    private static final String DUMMY_DATA_LINK = "dummy-data-link";
+    private static final String JDBC_DATA_CONNECTION = "jdbc-data-connection";
+    private static final String DUMMY_DATA_CONNECTION = "dummy-data-connection";
 
-    @ClassRule
     @SuppressWarnings({"rawtypes", "resource"})
     public static PostgreSQLContainer container = new PostgreSQLContainer<>("postgres:12.1")
             .withCommand("postgres -c max_prepared_transactions=10 -c max_connections=500");
@@ -88,16 +87,21 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     private String tableName;
 
     @BeforeClass
-    public static void beforeClassCheckDocker() {
+    public static void setupClass() {
         assumeDockerEnabled();
+        container.start();
+
+        Config config = smallInstanceConfig();
+        configureJdbcDataConnection(JDBC_DATA_CONNECTION, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
+        configureDummyDataConnection(DUMMY_DATA_CONNECTION, config);
+        initialize(2, config);
     }
 
-    @BeforeClass
-    public static void setupClass() {
-        Config config = smallInstanceConfig();
-        configureJdbcDataLink(JDBC_DATA_LINK, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
-        configureDummyDataLink(DUMMY_DATA_LINK, config);
-        initialize(2, config);
+    @AfterClass
+    public static void afterAll() {
+        if (container != null) {
+            container.stop();
+        }
     }
 
     @Before
@@ -139,7 +143,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
             while (resultSet.next()) {
                 row = new StringBuilder();
                 for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                    row.append(resultSet.getObject(i) + "\t|\t");
+                    row.append(resultSet.getObject(i)).append("\t|\t");
                 }
                 rows.add(row.toString());
 
@@ -183,7 +187,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                 ));
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
-        assertTrue(hikariDataSource.isClosed());
+        assertTrueEventually(() -> assertTrue(hikariDataSource.isClosed()));
     }
 
     private static DataSource createHikariDataSource() {
@@ -197,13 +201,13 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_data_link_config() throws SQLException {
+    public void test_data_connection_config() throws SQLException {
         assertEquals(0, rowCount());
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
                 .map(item -> entry(item, item.toString()))
                 .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                        dataLinkRef(JDBC_DATA_LINK),
+                        dataConnectionRef(JDBC_DATA_CONNECTION),
                         (stmt, item) -> {
                             stmt.setInt(1, item.getKey());
                             stmt.setString(2, item.getValue());

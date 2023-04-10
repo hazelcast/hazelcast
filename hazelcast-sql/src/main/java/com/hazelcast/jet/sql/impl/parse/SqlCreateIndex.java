@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.printIndent;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -150,23 +152,7 @@ public class SqlCreateIndex extends SqlCreate {
         writer.keyword("TYPE");
         type.unparse(writer, leftPrec, rightPrec);
 
-        if (options.size() > 0) {
-            writer.newlineAndIndent();
-            writer.keyword("OPTIONS");
-            SqlWriter.Frame withFrame = writer.startList("(", ")");
-            for (SqlNode property : options) {
-                printIndent(writer);
-                property.unparse(writer, leftPrec, rightPrec);
-            }
-            writer.newlineAndIndent();
-            writer.endList(withFrame);
-        }
-    }
-
-    private static void printIndent(SqlWriter writer) {
-        writer.sep(",", false);
-        writer.newlineAndIndent();
-        writer.print("  ");
+        unparseOptions(writer, options);
     }
 
     @Override

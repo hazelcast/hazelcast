@@ -40,4 +40,7 @@ public final class DateUtil {
     public static String toLocalTime(long timestamp) {
         return toZonedDateTime(timestamp).toLocalTime().format(LOCAL_TIME_FORMATTER);
     }
+    public static String toEpochMillis(long timestamp) {
+        return toZonedDateTime(timestamp).toLocalTime().format(LOCAL_TIME_FORMATTER);
+    }
 }

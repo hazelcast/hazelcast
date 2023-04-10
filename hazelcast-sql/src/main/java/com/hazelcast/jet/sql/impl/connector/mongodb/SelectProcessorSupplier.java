@@ -15,7 +15,6 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -41,7 +40,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.JSON;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonDateTimeToLocalDateTime;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.bsonTimestampToLocalDateTime;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Projections.excludeId;
@@ -53,7 +53,6 @@ import static java.util.Objects.requireNonNull;
  * ProcessorSupplier that creates {@linkplain com.hazelcast.jet.mongodb.impl.ReadMongoP} processors on each instance.
  */
 public class SelectProcessorSupplier implements ProcessorSupplier {
-
     private transient SupplierEx<? extends MongoClient> clientSupplier;
     private final String databaseName;
     private final String collectionName;
@@ -63,9 +62,11 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private final List<String> projection;
     private final Long startAt;
     private final String connectionString;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private transient ExpressionEvalContext evalContext;
     private final QueryDataType[] types;
+
+    private final boolean forceMongoParallelismOne;
 
     SelectProcessorSupplier(MongoTable table, Document predicate, List<String> projection, BsonTimestamp startAt, boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
@@ -74,13 +75,14 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.predicate = predicate;
         this.projection = projection;
         this.connectionString = table.connectionString;
-        this.dataLinkName = table.dataLinkName;
+        this.dataConnectionName = table.dataConnectionName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
         this.startAt = startAt == null ? null : startAt.getValue();
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.types = table.resolveColumnTypes(projection);
+        this.forceMongoParallelismOne = table.isForceMongoParallelismOne();
     }
 
 
@@ -127,7 +129,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             Processor processor = new ReadMongoP<>(
                     new ReadMongoParams<JetSqlRow>(stream)
                             .setClientSupplier(clientSupplierEx)
-                            .setDataLinkRef(dataLinkName)
+                            .setDataConnectionRef(dataConnectionName)
                             .setAggregates(aggregates)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
@@ -135,6 +137,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                             .setMapStreamFn(this::convertStreamDocToRow)
                             .setStartAtTimestamp(startAt == null ? null : new BsonTimestamp(startAt))
                             .setEventTimePolicy(eventTimePolicy)
+                            .setNonDistributed(forceMongoParallelismOne)
             );
 
             processors.add(processor);
@@ -143,26 +146,19 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     }
 
     private JetSqlRow convertDocToRow(Document doc) {
-        Object[] row = new Object[doc.size()];
+        Object[] row = new Object[projection.size()];
 
         for (Map.Entry<String, Object> value : doc.entrySet()) {
             int index = indexInProjection(value.getKey());
-            row[index] = convert(value.getValue(), index);
+            if (index != -1) {
+                row[index] = ConversionsFromBson.convertFromBson(value.getValue(), types[index]);
+            }
         }
 
         return new JetSqlRow(evalContext.getSerializationService(), row);
     }
 
-    private Object convert(Object value, int index) {
-        value = BsonTypes.unwrap(value);
-        if (value instanceof Document && types[index].getTypeFamily() == JSON) {
-            Document doc = (Document) value;
-            return new HazelcastJsonValue(doc.toJson());
-        }
-        return types[index].convert(value);
-    }
-
-    private JetSqlRow convertStreamDocToRow(ChangeStreamDocument<Document> changeStreamDocument) {
+    private JetSqlRow convertStreamDocToRow(ChangeStreamDocument<Document> changeStreamDocument, Long ts) {
         Document doc = changeStreamDocument.getFullDocument();
         requireNonNull(doc, "Document is empty");
         Object[] row = new Object[projection.size()];
@@ -172,10 +168,13 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             if (index == -1) {
                 continue;
             }
-            row[index] = convert(entry.getValue(), index);
+            row[index] = ConversionsFromBson.convertFromBson(entry.getValue(), types[index]);
         }
         addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
         addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);
+        addIfInProjection(ts, "ts", row);
+        addIfInProjection(bsonDateTimeToLocalDateTime(changeStreamDocument.getWallTime()), "wallTime", row);
+        addIfInProjection(bsonTimestampToLocalDateTime(changeStreamDocument.getClusterTime()), "clusterTime", row);
 
         return new JetSqlRow(evalContext.getSerializationService(), row);
     }

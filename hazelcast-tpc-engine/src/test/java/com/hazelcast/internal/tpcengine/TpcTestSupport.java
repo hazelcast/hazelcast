@@ -32,7 +32,10 @@ import static org.junit.Assert.fail;
 
 public class TpcTestSupport {
 
+    // the unit of the above 2 timeouts is milliseconds.
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
+    public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY = getInteger("hazelcast.assertTrueEventually.timeout.nightly", 240);
+
     public static final int TERMINATION_TIMEOUT_SECONDS = 30;
 
     public static void assertCompletesEventually(final Future future) {
@@ -74,6 +77,32 @@ public class TpcTestSupport {
         try {
             if (!reactor.awaitTermination(TERMINATION_TIMEOUT_SECONDS, SECONDS)) {
                 throw new RuntimeException("Reactor failed to terminate within timeout.");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void assertJoinable(Thread... threads) {
+        assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
+    }
+
+    public static void assertJoinable(long timeoutSeconds, Thread... threads) {
+        try {
+            long remainingTimeout = SECONDS.toMillis(timeoutSeconds);
+            for (Thread thread : threads) {
+                long start = System.currentTimeMillis();
+                thread.join(remainingTimeout);
+
+                if (thread.isAlive()) {
+                    fail("Timeout waiting for thread " + thread.getName() + " to terminate");
+                }
+
+                long duration = System.currentTimeMillis() - start;
+                remainingTimeout -= duration;
+                if (remainingTimeout <= 0) {
+                    fail("Timeout waiting for thread " + thread.getName() + " to terminate");
+                }
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

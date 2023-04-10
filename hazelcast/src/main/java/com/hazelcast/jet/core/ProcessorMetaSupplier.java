@@ -18,8 +18,8 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.DataLinkService;
+import com.hazelcast.dataconnection.DataConnection;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.SerializableByConvention;
@@ -43,8 +43,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Collections;
@@ -747,10 +749,19 @@ public interface ProcessorMetaSupplier extends Serializable {
         ClassLoader classLoader();
 
         /**
-         * A service to access {@link DataLink}s in processors.
+         * A service to access {@link DataConnection}s in processors.
          *
          * @since 5.3
          */
-        DataLinkService dataLinkService();
+        DataConnectionService dataConnectionService();
+
+        /**
+         * Check if the current Subject has the given permission granted (or implied).
+         *
+         * @param permission Permission to be checked
+         * @throws AccessControlException when the security is enabled and the checked permission is not implied for the current
+         *         {@link Subject}
+         */
+        void checkPermission(@Nonnull Permission permission) throws AccessControlException;
     }
 }

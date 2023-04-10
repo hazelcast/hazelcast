@@ -25,6 +25,8 @@ import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import java.io.IOException;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkHasText;
+
 /**
  * Contains the configuration for attributes used to create
  * {@link AttributePartitioningStrategy}
@@ -57,7 +59,7 @@ public class PartitioningAttributeConfig implements IdentifiedDataSerializable {
      * @param attributeName - name of the attribute to set.
      */
     public void setAttributeName(final String attributeName) {
-        this.attributeName = attributeName;
+        this.attributeName = checkHasText(attributeName, "AttributeName must not be empty");
     }
 
     @Override

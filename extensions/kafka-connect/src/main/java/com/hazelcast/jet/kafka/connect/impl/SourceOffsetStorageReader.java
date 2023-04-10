@@ -25,10 +25,10 @@ import java.util.Map;
 
 class SourceOffsetStorageReader implements OffsetStorageReader {
 
-    private final Map<Map<String, ?>, Map<String, ?>> partitionsToOffset;
+    private final State state;
 
-    SourceOffsetStorageReader(Map<Map<String, ?>, Map<String, ?>> partitionsToOffset) {
-        this.partitionsToOffset = partitionsToOffset;
+    SourceOffsetStorageReader(State state) {
+        this.state = state;
     }
 
     @Override
@@ -40,7 +40,8 @@ class SourceOffsetStorageReader implements OffsetStorageReader {
     public <V> Map<Map<String, V>, Map<String, Object>> offsets(Collection<Map<String, V>> partitions) {
         Map<Map<String, V>, Map<String, Object>> map = new HashMap<>();
         for (Map<String, V> partition : partitions) {
-            Map<String, Object> offset = (Map<String, Object>) partitionsToOffset.get(partition);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> offset = (Map<String, Object>) state.getOffset(partition);
             map.put(partition, offset);
         }
         return map;

@@ -86,7 +86,7 @@ public enum SqlColumnType {
     /**
      * This type and the value representing it is likely to change or be removed in the future release
      * <p>
-     * ROW type, represented by {@link RowValue}
+     * ROW type, represented by the private API {@link RowValue}
      * */
     @Beta
     ROW(16, RowValue.class);

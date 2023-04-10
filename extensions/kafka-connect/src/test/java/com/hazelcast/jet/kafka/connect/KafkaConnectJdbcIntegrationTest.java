@@ -26,14 +26,21 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.apache.kafka.connect.data.Values;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 
 import java.net.URL;
 import java.sql.Connection;
@@ -44,26 +51,45 @@ import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
-    public static final String USERNAME = "mysql";
-    public static final String PASSWORD = "mysql";
-
-    @ClassRule
-    public static final MySQLContainer<?> mysql = new MySQLContainer<>().withUsername(USERNAME).withPassword(PASSWORD);
-
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
+
+    public static final String USERNAME = "mysql";
+    public static final String PASSWORD = "mysql";
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectJdbcIntegrationTest.class);
+
+    private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:5.7.34")
+            .withUsername(USERNAME).withPassword(PASSWORD)
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
+
+
 
     private static final int ITEM_COUNT = 1_000;
 
     private static final String CONNECTOR_URL = "https://repository.hazelcast.com/download"
             + "/tests/confluentinc-kafka-connect-jdbc-10.6.3.zip";
+
+    @BeforeClass
+    public static void setUpDocker() {
+        assumeDockerEnabled();
+        mysql.start();
+    }
+
+    @AfterClass
+    public static void afterAll() {
+        if (mysql != null) {
+            mysql.stop();
+        }
+    }
 
     @Test
     public void testReading() throws Exception {

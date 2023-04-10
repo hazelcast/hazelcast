@@ -16,17 +16,22 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.InternalDataLinkService;
+import com.hazelcast.dataconnection.DataConnection;
+import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
@@ -39,7 +44,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
-import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropDataLinkPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropDataConnectionPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
@@ -54,10 +59,12 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.DataLinksResolver;
+import com.hazelcast.jet.sql.impl.schema.DataConnectionResolver;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
+import com.hazelcast.jet.sql.impl.validate.UpdateDataConnectionOperation;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
 import com.hazelcast.map.impl.MapContainer;
@@ -67,7 +74,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -78,9 +85,10 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.schema.datalink.DataLink;
+import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
@@ -90,6 +98,8 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -105,19 +115,22 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
-import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataConnectionPlan;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
-import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.singletonList;
 
@@ -127,23 +140,29 @@ public class PlanExecutor {
     private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
 
     private final TableResolverImpl catalog;
-    private final DataLinksResolver dataLinksCatalog;
+    private final DataConnectionResolver dataConnectionCatalog;
     private final HazelcastInstance hazelcastInstance;
+    private final NodeEngine nodeEngine;
     private final QueryResultRegistry resultRegistry;
+
+    private final ILogger logger;
 
     // test-only
     private final AtomicLong directIMapQueriesExecuted = new AtomicLong();
 
     public PlanExecutor(
+            NodeEngine nodeEngine,
             TableResolverImpl catalog,
-            DataLinksResolver dataLinksCatalog,
-            HazelcastInstance hazelcastInstance,
+            DataConnectionResolver dataConnectionResolver,
             QueryResultRegistry resultRegistry
     ) {
+        this.nodeEngine = nodeEngine;
+        this.hazelcastInstance = nodeEngine.getHazelcastInstance();
         this.catalog = catalog;
-        this.dataLinksCatalog = dataLinksCatalog;
-        this.hazelcastInstance = hazelcastInstance;
+        this.dataConnectionCatalog = dataConnectionResolver;
         this.resultRegistry = resultRegistry;
+
+        logger = nodeEngine.getLogger(getClass());
     }
 
     SqlResult execute(CreateMappingPlan plan) {
@@ -156,29 +175,34 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(CreateDataLinkPlan plan) {
-        InternalDataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
-        if (plan.ifNotExists() && dlService.existsDataLink(plan.name())) {
-            throw new HazelcastException("Data link '" + plan.name() + "' already exists");
-        }
+    SqlResult execute(CreateDataConnectionPlan plan) {
+        InternalDataConnectionService dlService = nodeEngine.getDataConnectionService();
+        assert !plan.ifNotExists() || !plan.isReplace();
 
-        dlService.createSqlDataLink(plan.name(), plan.type(), plan.options(), plan.isReplace());
-        dataLinksCatalog.createDataLink(
-                new DataLink(plan.name(), plan.type(), plan.options()),
+        if (dlService.existsConfigDataConnection(plan.name())) {
+            throw new HazelcastException("Cannot replace a data connection created from configuration");
+        }
+        boolean added = dataConnectionCatalog.createDataConnection(
+                new DataConnectionCatalogEntry(
+                        plan.name(),
+                        plan.type(),
+                        plan.shared(),
+                        plan.options()),
                 plan.isReplace(),
                 plan.ifNotExists());
+        if (added) {
+            broadcastUpdateDataConnectionOperations(plan.name());
+        }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(DropDataLinkPlan plan) {
-        InternalDataLinkService dlService = getNodeEngine(hazelcastInstance).getDataLinkService();
-        if (plan.ifExists()) {
-            if (!dlService.existsDataLink(plan.name())) {
-                throw new HazelcastException("Data link '" + plan.name() + "' not found");
-            }
+    SqlResult execute(DropDataConnectionPlan plan) {
+        InternalDataConnectionService dlService = nodeEngine.getDataConnectionService();
+        if (dlService.existsConfigDataConnection(plan.name())) {
+            throw new HazelcastException("Data connection '" + plan.name() + "' is configured via Config and can't be removed");
         }
-        dlService.removeDataLink(plan.name());
-        dataLinksCatalog.removeDataLink(plan.name(), plan.ifExists());
+        dataConnectionCatalog.removeDataConnection(plan.name(), plan.ifExists());
+        broadcastUpdateDataConnectionOperations(plan.name());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
@@ -358,13 +382,22 @@ public class PlanExecutor {
                 rows = catalog.getViewNames().stream();
                 break;
             case JOBS:
-                NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
                 JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
                 rows = jetServiceBackend.getJobRepository().getActiveJobNames().stream();
                 break;
             case TYPES:
                 rows = catalog.getTypeNames().stream();
                 break;
+            case DATACONNECTIONS:
+                InternalDataConnectionService service = nodeEngine.getDataConnectionService();
+                DataConnectionServiceImpl dataConnectionService = (DataConnectionServiceImpl) service;
+                rows = DataConnectionResolver
+                        .getAllDataConnectionEntries(dataConnectionService, dataConnectionCatalog.getDataConnectionStorage())
+                        .stream()
+                        .map(DataConnectionCatalogEntry::name);
+                break;
+            case RESOURCES:
+                return executeShowResources(plan.getDataConnectionName());
             default:
                 throw new AssertionError("Unsupported SHOW statement target");
         }
@@ -375,6 +408,40 @@ public class PlanExecutor {
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(
                         rows.sorted().map(name -> new JetSqlRow(serializationService, new Object[]{name})).iterator()),
+                metadata,
+                false
+        );
+    }
+
+    private SqlResult executeShowResources(@Nullable String dataConnectionName) {
+        if (dataConnectionName == null) {
+            throw QueryException.error("Data connections exist only in the 'public' schema");
+        }
+
+        final SqlRowMetadata metadata = new SqlRowMetadata(asList(
+                new SqlColumnMetadata("name", VARCHAR, false),
+                new SqlColumnMetadata("type", VARCHAR, false)
+        ));
+        final InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+        final InternalDataConnectionService dataConnectionService = getNodeEngine(hazelcastInstance).getDataConnectionService();
+
+        final List<JetSqlRow> rows;
+        final DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(
+                dataConnectionName, DataConnection.class);
+        try {
+            rows = dataConnection.listResources().stream()
+                                 .map(resource -> new JetSqlRow(
+                                         serializationService,
+                                         new Object[]{resource.name(), resource.type()}
+                                 ))
+                                 .collect(Collectors.toList());
+        } finally {
+            dataConnection.release();
+        }
+
+        return new SqlResultImpl(
+                QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
+                new StaticQueryResultProducerImpl(rows.iterator()),
                 metadata,
                 false
         );
@@ -454,7 +521,10 @@ public class PlanExecutor {
     SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(args, serializationService);
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                serializationService,
+                Util.getNodeEngine(hazelcastInstance));
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<JetSqlRow> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
@@ -480,7 +550,10 @@ public class PlanExecutor {
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                Util.getSerializationService(hazelcastInstance),
+                Util.getNodeEngine(hazelcastInstance));
         List<Entry<Object, Object>> entries = plan.entriesFn().apply(evalContext);
         if (!entries.isEmpty()) {
             assert entries.size() == 1;
@@ -501,7 +574,10 @@ public class PlanExecutor {
 
     SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                Util.getSerializationService(hazelcastInstance),
+                Util.getNodeEngine(hazelcastInstance));
         Map<Object, Object> entries = plan.entriesFn().apply(evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .putAllAsync(entries)
@@ -512,7 +588,10 @@ public class PlanExecutor {
 
     SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                Util.getSerializationService(hazelcastInstance),
+                Util.getNodeEngine(hazelcastInstance));
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, plan.updaterSupplier().get(arguments))
@@ -524,7 +603,10 @@ public class PlanExecutor {
 
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                Util.getSerializationService(hazelcastInstance),
+                Util.getNodeEngine(hazelcastInstance));
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
@@ -537,7 +619,6 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateTypePlan plan) {
-        NodeEngineImpl nodeEngine = getNodeEngine(hazelcastInstance);
         if (!nodeEngine.getProperties().getBoolean(SQL_CUSTOM_TYPES_ENABLED)) {
             throw QueryException.error("Experimental feature of creating custom types isn't enabled. To enable, set "
                     + SQL_CUSTOM_TYPES_ENABLED + " to true");
@@ -689,6 +770,31 @@ public class PlanExecutor {
         MapService mapService = mapProxy.getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.getMapContainer(map.getName());
+    }
+
+    private void broadcastUpdateDataConnectionOperations(@Nonnull String dataConnectionName) {
+        List<Tuple2<Address, CompletableFuture<?>>> futures = new ArrayList<>();
+        for (Member m : nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR)) {
+            UpdateDataConnectionOperation op = new UpdateDataConnectionOperation(dataConnectionName);
+            Address target = m.getAddress();
+            InvocationFuture<Object> future = nodeEngine.getOperationService()
+                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, target)
+                    .invoke();
+            futures.add(tuple2(target, future));
+        }
+
+        for (Tuple2<Address, CompletableFuture<?>> tuple : futures) {
+            try {
+                assert tuple.f1() != null;
+                tuple.f1().get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (ExecutionException e) {
+                logger.warning("Failed to update data connection '" + dataConnectionName + "' on member '" + tuple.f0()
+                        + "'. Background process should resolve this");
+            }
+        }
     }
 
     public long getDirectIMapQueriesExecuted() {

@@ -1,0 +1,43 @@
+{
+  "instance": {
+    "hazelcast": {
+      "data-connection": {
+        "mysql-database": {
+          "type": 123,
+          "properties": [
+            "jdbc:mysql://dummy:3306"
+          ],
+          "shared": "false"
+        }
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/DataConnectionConfig/additionalProperties",
+    "pointerToViolation": "#/hazelcast/data-connection/mysql-database",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/DataConnectionConfig/additionalProperties/properties/type",
+        "pointerToViolation": "#/hazelcast/data-connection/mysql-database/type",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: String, found: Integer"
+      },
+      {
+        "schemaLocation": "#/definitions/DataConnectionConfig/additionalProperties/properties/properties",
+        "pointerToViolation": "#/hazelcast/data-connection/mysql-database/properties",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONObject, found: JSONArray"
+      },
+      {
+        "schemaLocation": "#/definitions/DataConnectionConfig/additionalProperties/properties/shared",
+        "pointerToViolation": "#/hazelcast/data-connection/mysql-database/shared",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      }
+    ],
+    "message": "3 schema violations found"
+  }
+}

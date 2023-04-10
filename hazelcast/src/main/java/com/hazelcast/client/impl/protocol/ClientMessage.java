@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.tpcengine.AsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 
 import java.util.Arrays;
 import java.util.Objects;

@@ -19,8 +19,8 @@ package com.hazelcast.config;
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.alto.AltoConfig;
-import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -4518,118 +4518,117 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testDataLinkConfigs() {
+    public void testDataConnectionConfigs() {
         String xml = HAZELCAST_START_TAG
-                + "    <data-link name=\"mysql-database\">\n"
-                + "        <class-name>com.hazelcast.datalink.JdbcDataLink</class-name>\n"
+                + "    <data-connection name=\"mysql-database\">\n"
+                + "        <type>jdbc</type>\n"
                 + "        <properties>\n"
                 + "            <property name=\"jdbcUrl\">jdbc:mysql://dummy:3306</property>\n"
                 + "            <property name=\"some.property\">dummy-value</property>\n"
                 + "        </properties>\n"
                 + "      <shared>true</shared>\n"
-                + "    </data-link>"
-                + "    <data-link name=\"other-database\">\n"
-                + "        <class-name>com.hazelcast.datalink.OtherDataLink</class-name>\n"
-                + "    </data-link>"
+                + "    </data-connection>"
+                + "    <data-connection name=\"other-database\">\n"
+                + "        <type>other</type>\n"
+                + "    </data-connection>"
                 + HAZELCAST_END_TAG;
 
-        Map<String, DataLinkConfig> dataLinkConfigs = buildConfig(xml).getDataLinkConfigs();
+        Map<String, DataConnectionConfig> dataConnectionConfigs = buildConfig(xml).getDataConnectionConfigs();
 
-        assertThat(dataLinkConfigs).hasSize(2);
-        assertThat(dataLinkConfigs).containsKey("mysql-database");
-        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
-        assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
-        assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
-        assertThat(mysqlDataLinkConfig.isShared()).isTrue();
-        assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(dataConnectionConfigs).hasSize(2);
+        assertThat(dataConnectionConfigs).containsKey("mysql-database");
+        DataConnectionConfig mysqlDataConnectionConfig = dataConnectionConfigs.get("mysql-database");
+        assertThat(mysqlDataConnectionConfig.getType()).isEqualTo("jdbc");
+        assertThat(mysqlDataConnectionConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataConnectionConfig.isShared()).isTrue();
+        assertThat(mysqlDataConnectionConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataConnectionConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(dataLinkConfigs).containsKey("other-database");
-        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
-        assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
+        assertThat(dataConnectionConfigs).containsKey("other-database");
+        DataConnectionConfig otherDataConnectionConfig = dataConnectionConfigs.get("other-database");
+        assertThat(otherDataConnectionConfig.getType()).isEqualTo("other");
     }
 
     @Override
     @Test
-    public void testAltoConfig() {
+    public void testTpcConfig() {
         String xml = HAZELCAST_START_TAG
-                + "    <alto enabled=\"true\">\n"
+                + "    <tpc enabled=\"true\">\n"
                 + "        <eventloop-count>12</eventloop-count>\n"
-                + "    </alto>"
+                + "    </tpc>"
                 + HAZELCAST_END_TAG;
 
-        AltoConfig altoConfig = buildConfig(xml).getAltoConfig();
+        TpcConfig tpcConfig = buildConfig(xml).getTpcConfig();
 
-        assertThat(altoConfig.isEnabled()).isTrue();
-        assertThat(altoConfig.getEventloopCount()).isEqualTo(12);
+        assertThat(tpcConfig.isEnabled()).isTrue();
+        assertThat(tpcConfig.getEventloopCount()).isEqualTo(12);
     }
 
     @Override
     @Test
-    public void testAltoSocketConfig() {
+    public void testTpcSocketConfig() {
         String xml = HAZELCAST_START_TAG
                 + "    <network>"
-                + "        <alto-socket>\n"
+                + "        <tpc-socket>\n"
                 + "            <port-range>14000-16000</port-range>\n"
                 + "            <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
                 + "            <send-buffer-size-kb>256</send-buffer-size-kb>\n"
-                + "        </alto-socket>\n"
+                + "        </tpc-socket>\n"
                 + "    </network>"
                 + HAZELCAST_END_TAG;
 
-        AltoSocketConfig altoConfig = buildConfig(xml).getNetworkConfig().getAltoSocketConfig();
+        TpcSocketConfig tpcSocketConfig = buildConfig(xml).getNetworkConfig().getTpcSocketConfig();
 
-        assertThat(altoConfig.getPortRange()).isEqualTo("14000-16000");
-        assertThat(altoConfig.getReceiveBufferSizeKB()).isEqualTo(256);
-        assertThat(altoConfig.getSendBufferSizeKB()).isEqualTo(256);
+        assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+        assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+        assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
     }
 
-    @Override
     @Test
-    public void testAltoSocketConfigAdvanced() {
+    public void testTpcSocketConfigAdvanced() {
         String xml = HAZELCAST_START_TAG
                 + "    <advanced-network enabled=\"true\">\n"
                 + "        <member-server-socket-endpoint-config>\n"
-                + "            <alto-socket>\n"
+                + "            <tpc-socket>\n"
                 + "                <port-range>14000-16000</port-range>\n"
                 + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
                 + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
-                + "            </alto-socket>\n"
+                + "            </tpc-socket>\n"
                 + "        </member-server-socket-endpoint-config>\n"
                 + "        <client-server-socket-endpoint-config>\n"
-                + "            <alto-socket>\n"
+                + "            <tpc-socket>\n"
                 + "                <port-range>14000-16000</port-range>\n"
                 + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
                 + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
-                + "            </alto-socket>\n"
+                + "            </tpc-socket>\n"
                 + "        </client-server-socket-endpoint-config>\n"
                 + "        <memcache-server-socket-endpoint-config>\n"
-                + "            <alto-socket>\n"
+                + "            <tpc-socket>\n"
                 + "                <port-range>14000-16000</port-range>\n"
                 + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
                 + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
-                + "            </alto-socket>\n"
+                + "            </tpc-socket>\n"
                 + "        </memcache-server-socket-endpoint-config>\n"
                 + "        <rest-server-socket-endpoint-config>\n"
-                + "            <alto-socket>\n"
+                + "            <tpc-socket>\n"
                 + "                <port-range>14000-16000</port-range>\n"
                 + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
                 + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
-                + "            </alto-socket>\n"
+                + "            </tpc-socket>\n"
                 + "        </rest-server-socket-endpoint-config>\n"
                 + "        <wan-endpoint-config name=\"tokyo\">\n"
-                + "            <alto-socket>\n"
+                + "            <tpc-socket>\n"
                 + "                <port-range>14000-16000</port-range>\n"
                 + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
                 + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
-                + "            </alto-socket>\n"
+                + "            </tpc-socket>\n"
                 + "        </wan-endpoint-config>\n"
                 + "        <wan-server-socket-endpoint-config name=\"london\">\n"
-                + "            <alto-socket>\n"
+                + "            <tpc-socket>\n"
                 + "                <port-range>14000-16000</port-range>\n"
                 + "                <receive-buffer-size-kb>256</receive-buffer-size-kb>\n"
                 + "                <send-buffer-size-kb>256</send-buffer-size-kb>\n"
-                + "            </alto-socket>\n"
+                + "            </tpc-socket>\n"
                 + "        </wan-server-socket-endpoint-config>\n"
                 + "    </advanced-network>"
                 + HAZELCAST_END_TAG;
@@ -4641,11 +4640,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertThat(endpointConfigs).hasSize(6);
 
         endpointConfigs.forEach((endpointQualifier, endpointConfig) -> {
-            AltoSocketConfig altoSocketConfig = endpointConfig.getAltoSocketConfig();
+            TpcSocketConfig tpcSocketConfig = endpointConfig.getTpcSocketConfig();
 
-            assertThat(altoSocketConfig.getPortRange()).isEqualTo("14000-16000");
-            assertThat(altoSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
-            assertThat(altoSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
+            assertThat(tpcSocketConfig.getPortRange()).isEqualTo("14000-16000");
+            assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+            assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
         });
     }
 

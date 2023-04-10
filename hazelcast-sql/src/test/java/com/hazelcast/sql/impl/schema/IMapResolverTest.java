@@ -48,26 +48,26 @@ public class IMapResolverTest extends SqlTestSupport {
 
         Member member = instance().getCluster().getLocalMember();
         String mappingDdl1 = ((SqlClientService) client().getSql()).mappingDdl(member, "m1").get();
-        assertEquals("CREATE MAPPING \"m1\"" + LE
-                        + "TYPE IMap" + LE
+        assertEquals("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m1\" EXTERNAL NAME \"m1\"" + LE
+                        + "TYPE \"IMap\"" + LE
                         + "OPTIONS (" + LE
-                        + "  'keyFormat' = 'java'," + LE
-                        + "  'keyJavaClass' = 'java.lang.Integer'," + LE
-                        + "  'valueFormat' = 'java'," + LE
-                        + "  'valueJavaClass' = 'java.math.BigDecimal'" + LE
+                        + "  'keyFormat'='java'," + LE
+                        + "  'keyJavaClass'='java.lang.Integer'," + LE
+                        + "  'valueFormat'='java'," + LE
+                        + "  'valueJavaClass'='java.math.BigDecimal'" + LE
                         + ")",
                 mappingDdl1);
         instance().getSql().execute(mappingDdl1); // we check that it doesn't fail
 
         instance().getMap("m2").put("foo", new Person("person name"));
         String mappingDdl2 = ((SqlClientService) client().getSql()).mappingDdl(member, "m2").get();
-        assertEquals("CREATE MAPPING \"m2\"" + LE
-                        + "TYPE IMap" + LE
+        assertEquals("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m2\" EXTERNAL NAME \"m2\"" + LE
+                        + "TYPE \"IMap\"" + LE
                         + "OPTIONS (" + LE
-                        + "  'keyFormat' = 'java'," + LE
-                        + "  'keyJavaClass' = 'java.lang.String'," + LE
-                        + "  'valueFormat' = 'java'," + LE
-                        + "  'valueJavaClass' = 'com.hazelcast.jet.sql.impl.schema.model.Person'" + LE
+                        + "  'keyFormat'='java'," + LE
+                        + "  'keyJavaClass'='java.lang.String'," + LE
+                        + "  'valueFormat'='java'," + LE
+                        + "  'valueJavaClass'='com.hazelcast.jet.sql.impl.schema.model.Person'" + LE
                         + ")",
                 mappingDdl2);
         instance().getSql().execute(mappingDdl2);

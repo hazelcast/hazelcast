@@ -17,13 +17,15 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
-import com.hazelcast.datalink.JdbcDataLink;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
@@ -36,21 +38,28 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * TestSupport for tests of JdbcSqlConnector
  */
+@Category(IgnoreInJenkinsOnWindows.class)
 public abstract class JdbcSqlTestSupport extends SqlTestSupport {
 
-    protected static final String TEST_DATABASE_REF = "test-database-ref";
+    protected static final String TEST_DATABASE_REF = "testDatabaseRef";
 
     protected static TestDatabaseProvider databaseProvider;
 
     protected static String dbConnectionUrl;
     protected static SqlService sqlService;
+
+    @BeforeClass
+    public static void checkDockerEnabled() {
+        assumeDockerEnabled();
+    }
 
     public static void initialize(TestDatabaseProvider provider) {
         initialize(provider, smallInstanceConfig());
@@ -61,9 +70,9 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", dbConnectionUrl);
-        config.addDataLinkConfig(
-                new DataLinkConfig(TEST_DATABASE_REF)
-                        .setClassName(JdbcDataLink.class.getName())
+        config.addDataConnectionConfig(
+                new DataConnectionConfig(TEST_DATABASE_REF)
+                        .setType("jdbc")
                         .setProperties(properties)
         );
         initialize(2, config);
@@ -82,6 +91,12 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     @Nonnull
     protected static String randomTableName() {
         return "table_" + randomName();
+    }
+
+    protected String quote(String... parts) {
+        return Arrays.stream(parts)
+                     .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
+                     .collect(joining("."));
     }
 
     /**
@@ -140,28 +155,29 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
     protected static void createMapping(String tableName, String mappingName) {
         execute(
                 "CREATE MAPPING \"" + mappingName + "\""
-                        + " EXTERNAL NAME \"" + tableName + "\""
+                        + " EXTERNAL NAME " + tableName + " "
                         + " ("
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
+    protected static void createJdbcMappingUsingDataConnection(String name, String dataConnection) {
+        try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + name +
+                " DATA CONNECTION " + quoteName(dataConnection) + "\n"
+        )) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
+    }
 
     protected static void execute(String sql, Object... arguments) {
         requireNonNull(dbConnectionUrl);

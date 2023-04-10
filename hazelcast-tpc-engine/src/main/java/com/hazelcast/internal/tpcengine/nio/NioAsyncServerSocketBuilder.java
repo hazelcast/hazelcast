@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AcceptRequest;
-import com.hazelcast.internal.tpcengine.AsyncServerSocket;
-import com.hazelcast.internal.tpcengine.AsyncServerSocketBuilder;
+import com.hazelcast.internal.tpcengine.net.AcceptRequest;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocketBuilder;
 import com.hazelcast.internal.tpcengine.Option;
 
 import java.io.IOException;
@@ -61,11 +61,10 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
     }
 
     @Override
-    public <T> NioAsyncServerSocketBuilder set(Option<T> option, T value) {
+    public <T> boolean setIfSupported(Option<T> option, T value) {
         verifyNotBuild();
 
-        options.set(option, value);
-        return this;
+        return options.setIfSupported(option, value);
     }
 
     @SuppressWarnings("java:S1181")

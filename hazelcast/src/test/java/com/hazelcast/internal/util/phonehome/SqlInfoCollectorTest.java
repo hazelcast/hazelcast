@@ -17,7 +17,7 @@ package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,7 +50,7 @@ public class SqlInfoCollectorTest {
     NodeEngineImpl nodeEngine;
 
     @Mock
-    SqlServiceImpl sqlService;
+    InternalSqlService sqlService;
 
     @Before
     public void setUp() throws Exception {

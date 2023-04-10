@@ -15,6 +15,8 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -25,19 +27,19 @@ import com.mongodb.client.MongoDatabase;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public abstract class MongoSqlTest extends SqlTestSupport {
     private static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
 
-    @ClassRule
     public static final MongoDBContainer mongoContainer
             = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
 
@@ -46,16 +48,32 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     protected static MongoDatabase database;
     protected static String databaseName;
     protected static String collectionName;
+    private static String connectionString;
 
     @Rule
     public final TestName testName = new TestName();
 
     @BeforeClass
-    public static void beforeClass() {
-        initialize(1, null);
-        sqlService = instance().getSql();
-        mongoClient = MongoClients.create(mongoContainer.getConnectionString());
+    public static void beforeClass() throws InterruptedException {
+        assumeDockerEnabled();
+        mongoContainer.start();
+        connectionString = mongoContainer.getConnectionString();
         databaseName = randomName();
+
+        Config conf = new Config();
+        conf.getJetConfig().setEnabled(true);
+        DataConnectionConfig testMongo = new DataConnectionConfig();
+        testMongo.setShared(true)
+                 .setType("MongoDB")
+                 .setName("testMongo")
+                 .setProperty("connectionString", connectionString)
+                 .setProperty("database", databaseName);
+        conf.addDataConnectionConfig(testMongo);
+        initialize(2, conf);
+
+        sqlService = instance().getSql();
+
+        mongoClient = MongoClients.create(connectionString);
         database = mongoClient.getDatabase(databaseName);
     }
 
@@ -63,6 +81,9 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     public static void close() {
         if (mongoClient != null) {
             mongoClient.close();
+        }
+        if (mongoContainer != null) {
+            mongoContainer.stop();
         }
     }
 

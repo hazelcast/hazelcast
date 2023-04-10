@@ -21,10 +21,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.bootstrap.AltoServerBootstrap;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.tpc.TpcServerBootstrap;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,7 +35,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.version.MemberVersion;
 import org.junit.After;
@@ -91,7 +90,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
     protected OperationExecutorImpl initExecutor() {
         // Tpc is disabled in these tests. To not get NPE we mock the bootstrap.
-        AltoServerBootstrap bootstrap = mock(AltoServerBootstrap.class);
+        TpcServerBootstrap bootstrap = mock(TpcServerBootstrap.class);
         when(bootstrap.isEnabled()).thenReturn(false);
 
         props = new HazelcastProperties(config);
@@ -103,19 +102,16 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     }
 
     public static <E> void assertEqualsEventually(final PartitionSpecificCallable task, final E expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(task + " has not given a response", task.completed());
-                assertEquals(expected, task.getResult());
-            }
+        assertTrueEventually(() -> {
+            assertTrue(task + " has not given a response", task.completed());
+            assertEquals(expected, task.getResult());
         });
     }
 
     class DummyResponsePacketConsumer implements Consumer<Packet> {
 
-        List<Packet> packets = synchronizedList(new LinkedList<Packet>());
-        List<Response> responses = synchronizedList(new LinkedList<Response>());
+        List<Packet> packets = synchronizedList(new LinkedList<>());
+        List<Response> responses = synchronizedList(new LinkedList<>());
 
         @Override
         public void accept(Packet packet) {
@@ -187,8 +183,8 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
     class DummyOperationRunnerFactory implements OperationRunnerFactory {
 
-        List<DummyOperationRunner> partitionOperationHandlers = new LinkedList<DummyOperationRunner>();
-        List<DummyOperationRunner> genericOperationHandlers = new LinkedList<DummyOperationRunner>();
+        List<DummyOperationRunner> partitionOperationHandlers = new LinkedList<>();
+        List<DummyOperationRunner> genericOperationHandlers = new LinkedList<>();
         DummyOperationRunner adhocHandler;
 
         @Override
@@ -219,9 +215,9 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
     class DummyOperationRunner extends OperationRunner {
 
-        List<Packet> packets = synchronizedList(new LinkedList<Packet>());
-        List<Operation> operations = synchronizedList(new LinkedList<Operation>());
-        List<Runnable> tasks = synchronizedList(new LinkedList<Runnable>());
+        List<Packet> packets = synchronizedList(new LinkedList<>());
+        List<Operation> operations = synchronizedList(new LinkedList<>());
+        List<Runnable> tasks = synchronizedList(new LinkedList<>());
 
         DummyOperationRunner(int partitionId) {
             super(partitionId);

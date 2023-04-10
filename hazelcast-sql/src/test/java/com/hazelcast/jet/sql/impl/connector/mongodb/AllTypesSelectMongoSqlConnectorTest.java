@@ -44,13 +44,13 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Collection;
 
+import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 
@@ -89,10 +89,9 @@ public class AllTypesSelectMongoSqlConnectorTest extends MongoSqlTest {
                 {"double", "DECIMAL", 1.5d, new BigDecimal("1.5")},
                 {"double", "REAL", 1.5f, 1.5f},
                 {"double", "DOUBLE", 1.8d, 1.8d},
-                {"date", "DATE", LocalDate.parse("2022-12-30"), LocalDate.of(2022, 12, 30)},
+                {"date", "DATE", atUtc().toLocalDate(), atLocal().toLocalDate()},
                 {"date", "TIMESTAMP", atUtc(), atLocal()},
-                {"timestamp", "TIMESTAMP", atLocalTimestamp(), atUtc()},
-                {"timestamp", "DATE_TIME", atLocalTimestamp(), atUtc()},
+                {"timestamp", "TIMESTAMP", atLocalTimestamp(), atLocal()},
                 {"minKey", "OBJECT", new MinKey(), new MinKey()},
                 {"maxKey", "OBJECT", new MaxKey(), new MaxKey()},
                 {"objectId", "OBJECT", EXAMPLE_OBJECT_ID, EXAMPLE_OBJECT_ID},
@@ -117,8 +116,14 @@ public class AllTypesSelectMongoSqlConnectorTest extends MongoSqlTest {
                 LocalTime.of(23, 59, 59));
     }
     private static BsonTimestamp atLocalTimestamp() {
-        return new BsonTimestamp(Timestamp.valueOf(atLocal()).getTime());
+        return new BsonTimestamp((int) atLocal().atZone(systemDefault()).toEpochSecond(), 0);
     }
+
+    /**
+     * {@link #atLocal()} converted to UTC.
+     * If system timezone is UTC, result is identical; if for example system timezone is CET, then result will be
+     * 1 hour before.
+     */
     private static LocalDateTime atUtc() {
         ZoneId zoneId = ZoneId.systemDefault();
         return atLocal().atZone(zoneId).withZoneSameInstant(UTC).toLocalDateTime();

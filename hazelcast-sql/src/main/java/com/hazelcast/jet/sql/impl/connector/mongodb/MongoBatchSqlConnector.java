@@ -34,9 +34,11 @@ import static java.util.stream.Collectors.toList;
  */
 public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
 
+    public static final String TYPE_NAME = "MongoDB";
+
     @Override
     public String typeName() {
-        return "MongoDB";
+        return TYPE_NAME;
     }
 
     @Override
@@ -86,4 +88,14 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
         );
     }
 
+    @Nonnull
+    @Override
+    public Vertex deleteProcessor(@Nonnull DagBuildContext context) {
+        MongoTable table = context.getTable();
+
+        return context.getDag().newUniqueVertex(
+                "Delete(" + table.getSqlName() + ")",
+                new DeleteProcessorSupplier(table)
+        );
+    }
 }

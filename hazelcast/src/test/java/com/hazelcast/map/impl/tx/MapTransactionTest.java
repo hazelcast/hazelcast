@@ -28,9 +28,6 @@ import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
-import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
-import com.hazelcast.map.impl.operation.MapOperation;
-import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.Predicate;
@@ -1375,21 +1372,5 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 return null;
             }
         });
-    }
-
-    private static class WaitTimeoutSetterMapOperationProvider extends DefaultMapOperationProvider {
-
-        private final MapOperationProvider operationProvider;
-
-        WaitTimeoutSetterMapOperationProvider(MapOperationProvider operationProvider) {
-            this.operationProvider = operationProvider;
-        }
-
-        @Override
-        public MapOperation createContainsKeyOperation(String name, Data dataKey) {
-            MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, dataKey);
-            containsKeyOperation.setWaitTimeout(TimeUnit.SECONDS.toMillis(3));
-            return containsKeyOperation;
-        }
     }
 }

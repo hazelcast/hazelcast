@@ -97,8 +97,9 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
+        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
+                mapping.externalName(), mapping.dataConnection()))
                 .willThrow(new RuntimeException("expected test exception"));
 
         // when
@@ -115,8 +116,9 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
+        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
+                mapping.externalName(), mapping.dataConnection()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
         given(relationsStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
@@ -133,8 +135,9 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
+        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
+                mapping.externalName(), mapping.dataConnection()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
         given(relationsStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
@@ -150,8 +153,9 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
+        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
+                mapping.externalName(), mapping.dataConnection()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
 
         // when
@@ -302,7 +306,7 @@ public class TableResolverImplTest {
     // endregion
 
     private static Mapping mapping() {
-        return new Mapping("name", "external_name", "type", emptyList(), emptyMap());
+        return new Mapping("name", "external_name", null, "type", null, emptyList(), emptyMap());
     }
 
     private static View view() {

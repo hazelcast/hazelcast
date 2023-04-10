@@ -80,7 +80,7 @@ public class TcpClientConnection implements ClientConnection {
     private volatile String closeReason;
     private volatile UUID remoteUuid;
     private volatile UUID clusterUuid;
-    private volatile Channel[] altoChannels;
+    private volatile Channel[] tpcChannels;
 
     public TcpClientConnection(HazelcastClientInstanceImpl client,
                                int connectionId,
@@ -118,8 +118,8 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        Channel[] altoChannels = this.altoChannels;
-        if (altoChannels == null) {
+        Channel[] tpcChannels = this.tpcChannels;
+        if (tpcChannels == null) {
             return channel.write(frame);
         }
 
@@ -129,8 +129,8 @@ public class TcpClientConnection implements ClientConnection {
             return channel.write(frame);
         }
 
-        int channelIndex = partitionId % altoChannels.length;
-        return altoChannels[channelIndex].write(frame);
+        int channelIndex = partitionId % tpcChannels.length;
+        return tpcChannels[channelIndex].write(frame);
     }
 
     @Override
@@ -233,12 +233,12 @@ public class TcpClientConnection implements ClientConnection {
 
     @SuppressWarnings("java:S1135")
     protected void innerClose() throws IOException {
-        if (altoChannels != null) {
-            for (Channel altoChannel : altoChannels) {
+        if (tpcChannels != null) {
+            for (Channel tpcChannel : tpcChannels) {
                 try {
-                    altoChannel.close();
+                    tpcChannel.close();
                 } catch (Exception e) {
-                    logger.warning("Exception while closing Alto channel " + e.getMessage());
+                    logger.warning("Exception while closing TPC channel " + e.getMessage());
                 }
             }
         }
@@ -342,11 +342,12 @@ public class TcpClientConnection implements ClientConnection {
         return channelInitializer;
     }
 
-    public void setAltoChannels(Channel[] altoChannels) {
-        this.altoChannels = altoChannels;
+    public void setTpcChannels(Channel[] tpcChannels) {
+        this.tpcChannels = tpcChannels;
     }
 
-    public Channel[] getAltoChannels() {
-        return altoChannels;
+    @Override
+    public Channel[] getTpcChannels() {
+        return tpcChannels;
     }
 }
