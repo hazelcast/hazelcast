@@ -437,7 +437,11 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     public void handleLocalRegistration(Registration registration) {
-        registration.setListener(listenerCache.remove(registration.getId()));
+        Object listener = listenerCache.remove(registration.getId());
+        if (isLocal(registration) && listener == null) {
+            throw new IllegalStateException("Listener cannot be null for local registration");
+        }
+        registration.setListener(listener);
         EventServiceSegment segment = getSegment(registration.getServiceName(), true);
         segment.addRegistration(registration.getTopic(), registration);
     }
