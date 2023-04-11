@@ -87,6 +87,7 @@ public interface IMapOpStep extends Step<State> {
      * @return name of the executor to execute this map operation step
      */
     default String getExecutorName(State state) {
+        // TODO use separate pool for tstore enabled map
         return MAP_STORE_OFFLOADABLE_EXECUTOR;
     }
 }
