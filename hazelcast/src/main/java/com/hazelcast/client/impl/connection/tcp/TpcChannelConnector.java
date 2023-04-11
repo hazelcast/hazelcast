@@ -16,9 +16,12 @@
 
 package com.hazelcast.client.impl.connection.tcp;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ExperimentalTpcAuthenticationCodec;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.logging.ILogger;
@@ -26,12 +29,13 @@ import com.hazelcast.logging.LoggingService;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.UUID_SIZE_IN_BYTES;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeUUID;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
 /**
@@ -42,9 +46,12 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
  * with the connection.
  */
 public final class TpcChannelConnector {
+    private final HazelcastClientInstanceImpl client;
+    private final long authenticationTimeoutMillis;
     private final UUID clientUuid;
     private final TcpClientConnection connection;
     private final List<Integer> tpcPorts;
+    private final byte[] tpcToken;
     private final ExecutorService executor;
     private final ChannelInitializer channelInitializer;
     private final ChannelCreator channelCreator;
@@ -53,16 +60,22 @@ public final class TpcChannelConnector {
     private final AtomicInteger remaining;
     private volatile boolean failed;
 
-    public TpcChannelConnector(UUID clientUuid,
+    public TpcChannelConnector(HazelcastClientInstanceImpl client,
+                               long authenticationTimeoutMillis,
+                               UUID clientUuid,
                                TcpClientConnection connection,
                                List<Integer> tpcPorts,
+                               byte[] tpcToken,
                                ExecutorService executor,
                                ChannelInitializer channelInitializer,
                                ChannelCreator channelCreator,
                                LoggingService loggingService) {
+        this.client = client;
+        this.authenticationTimeoutMillis = authenticationTimeoutMillis;
         this.clientUuid = clientUuid;
         this.connection = connection;
         this.tpcPorts = tpcPorts;
+        this.tpcToken = tpcToken;
         this.executor = executor;
         this.channelInitializer = channelInitializer;
         this.channelCreator = channelCreator;
@@ -103,27 +116,25 @@ public final class TpcChannelConnector {
         try {
             Address address = new Address(host, port);
             channel = channelCreator.create(address, connection, channelInitializer);
-            writeAuthenticationBytes(channel);
+            authenticate(channel);
             onSuccessfulChannelConnection(channel, index);
-        } catch (Exception e) {
+        } catch (Throwable throwable) {
             logger.warning("Exception during the connection to attempt to TPC channel on port "
-                    + port + " for " + connection + ": " + e, e);
+                    + port + " for " + connection + ": " + throwable, throwable);
             onFailure(channel);
         }
     }
 
-    private void writeAuthenticationBytes(Channel channel) {
-        // first thing we need to send is the clientUuid so this new socket can be connected
-        // to the connection on the member.
-        ClientMessage clientUuidMessage = ClientMessage.createForEncode();
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(
-                new byte[UUID_SIZE_IN_BYTES], UNFRAGMENTED_MESSAGE);
-        encodeUUID(initialFrame.content, 0, clientUuid);
-        clientUuidMessage.add(initialFrame);
-        if (!channel.write(clientUuidMessage)) {
-            throw new HazelcastException("Cannot write authentication bytes to the TPC channel "
-                    + channel + " for " + connection);
-        }
+    private void authenticate(Channel channel) throws ExecutionException, InterruptedException, TimeoutException {
+        ConcurrentMap attributeMap = channel.attributeMap();
+        ClientConnection adapter = (ClientConnection) attributeMap.get(TpcChannelClientConnectionAdapter.class);
+
+        ClientMessage request = ExperimentalTpcAuthenticationCodec.encodeRequest(clientUuid, tpcToken);
+        ClientInvocation invocation = new ClientInvocation(client, request, null, adapter);
+        // TODO: We might consider not blocking here, and use 'whenCompleteAsync'
+        //  on the invocation future and use the client's task scheduler to fail
+        //  the invocation future if it does not complete on time.
+        invocation.invokeUrgent().get(authenticationTimeoutMillis, TimeUnit.MILLISECONDS);
     }
 
     private void onSuccessfulChannelConnection(Channel channel, int index) {
@@ -176,11 +187,12 @@ public final class TpcChannelConnector {
 
             failed = true;
             closeAllChannels();
-            logger.warning("TPC channel establishments for the " + connection + " have failed. "
-                    + "The client will not be using the TPC channels to route partition specific invocations, "
-                    + "and fallback to the smart routing mode for this connection. Check the firewall settings "
-                    + "to make sure the TPC channels are accessible from the client.");
         }
+
+        logger.warning("TPC channel establishments for the " + connection + " have failed. "
+                + "The client will not be using the TPC channels to route partition specific invocations, "
+                + "and fallback to the smart routing mode for this connection. Check the firewall settings "
+                + "to make sure the TPC channels are accessible from the client.");
     }
 
     private boolean connectionFailed() {

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster using custom credentials.
  */
-@Generated("3e4757e36011a3bfa3693b679ac82169")
+@Generated("86bf81c867ab5f5690a72dcd757b589d")
 public final class ExperimentalAuthenticationCustomCodec {
     //hex: 0xFD0200
     public static final int REQUEST_MESSAGE_TYPE = 16581120;
@@ -182,9 +182,15 @@ public final class ExperimentalAuthenticationCustomCodec {
          * Returns the list of TPC ports or null if TPC is disabled.
          */
         public @Nullable java.util.List<java.lang.Integer> tpcPorts;
+
+        /**
+         * Returns the token to use while authenticating TPC channels 
+         * or null if TPC is disabled.
+         */
+        public @Nullable byte[] tpcToken;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts, @Nullable byte[] tpcToken) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -199,6 +205,7 @@ public final class ExperimentalAuthenticationCustomCodec {
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
         CodecUtil.encodeNullable(clientMessage, tpcPorts, ListIntegerCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, tpcToken, ByteArrayCodec::encode);
         return clientMessage;
     }
 
@@ -215,6 +222,7 @@ public final class ExperimentalAuthenticationCustomCodec {
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
         response.tpcPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
+        response.tpcToken = CodecUtil.decodeNullable(iterator, ByteArrayCodec::decode);
         return response;
     }
 }

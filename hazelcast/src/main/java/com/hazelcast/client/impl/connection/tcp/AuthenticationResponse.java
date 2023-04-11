@@ -41,6 +41,7 @@ public final class AuthenticationResponse {
     private final UUID clusterId;
     private final boolean failoverSupported;
     private final List<Integer> tpcPorts;
+    private final byte[] tpcToken;
 
     private AuthenticationResponse(byte status,
                                    Address address,
@@ -50,7 +51,8 @@ public final class AuthenticationResponse {
                                    int partitionCount,
                                    UUID clusterId,
                                    boolean failoverSupported,
-                                   List<Integer> tpcPorts) {
+                                   List<Integer> tpcPorts,
+                                   byte[] tpcToken) {
         this.status = status;
         this.address = address;
         this.memberUuid = memberUuid;
@@ -60,6 +62,7 @@ public final class AuthenticationResponse {
         this.clusterId = clusterId;
         this.failoverSupported = failoverSupported;
         this.tpcPorts = tpcPorts;
+        this.tpcToken = tpcToken;
     }
 
     /**
@@ -138,6 +141,15 @@ public final class AuthenticationResponse {
         return tpcPorts;
     }
 
+    /**
+     * Returns the token to be used to authenticate TPC channels
+     * or {@code null} if TPC is disabled.
+     */
+    @Nullable
+    public byte[] getTpcToken() {
+        return tpcToken;
+    }
+
     public static AuthenticationResponse from(ClientMessage message) {
         switch (message.getMessageType()) {
             case ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE:
@@ -164,6 +176,7 @@ public final class AuthenticationResponse {
                 parameters.partitionCount,
                 parameters.clusterId,
                 parameters.failoverSupported,
+                null,
                 null
         );
     }
@@ -179,6 +192,7 @@ public final class AuthenticationResponse {
                 parameters.partitionCount,
                 parameters.clusterId,
                 parameters.failoverSupported,
+                null,
                 null
         );
     }
@@ -195,7 +209,8 @@ public final class AuthenticationResponse {
                 parameters.partitionCount,
                 parameters.clusterId,
                 parameters.failoverSupported,
-                parameters.tpcPorts
+                parameters.tpcPorts,
+                parameters.tpcToken
         );
     }
 
@@ -211,7 +226,8 @@ public final class AuthenticationResponse {
                 parameters.partitionCount,
                 parameters.clusterId,
                 parameters.failoverSupported,
-                parameters.tpcPorts
+                parameters.tpcPorts,
+                parameters.tpcToken
         );
     }
 }

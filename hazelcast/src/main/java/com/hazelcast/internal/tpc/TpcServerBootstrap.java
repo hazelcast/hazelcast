@@ -203,7 +203,7 @@ public class TpcServerBootstrap {
             Reactor reactor = tpcEngine.reactor(k);
 
             Supplier<AsyncSocketReader> readHandlerSupplier =
-                    () -> new ClientAsyncSocketReader(nodeEngine.getNode().clientEngine);
+                    () -> new ClientAsyncSocketReader(nodeEngine.getNode().clientEngine, nodeEngine.getProperties());
             readHandlerSuppliers.put(reactor, readHandlerSupplier);
 
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
