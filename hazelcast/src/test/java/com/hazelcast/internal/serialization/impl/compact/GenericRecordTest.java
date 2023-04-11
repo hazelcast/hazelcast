@@ -47,6 +47,7 @@ import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)

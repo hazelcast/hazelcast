@@ -86,7 +86,6 @@ public class ClientCompatibilityNullTest_2_0 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertFalse(parameters.isAltoPortsExists);
     }
 
     @Test
@@ -110,7 +109,6 @@ public class ClientCompatibilityNullTest_2_0 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
-        assertFalse(parameters.isAltoPortsExists);
     }
 
     @Test
@@ -5766,7 +5764,7 @@ public class ClientCompatibilityNullTest_2_0 {
     @Test
     public void test_DynamicConfigAddMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 729;
-        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, null, aBoolean, aString, aString, anInt, aString, null, null, aBoolean, null, null, null, null, null, null, null, null, null, null, null, null, anInt, aBoolean, aDataPersistenceConfig, aTieredStoreConfig);
+        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, null, aBoolean, aString, aString, anInt, aString, null, null, aBoolean, null, null, null, null, null, null, null, null, null, null, null, null, anInt, aBoolean, aDataPersistenceConfig, aTieredStoreConfig, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

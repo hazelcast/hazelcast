@@ -67,8 +67,8 @@ public class TestFailingSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
@@ -80,10 +80,10 @@ public class TestFailingSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull List<MappingField> resolvedFields) {
         return new TestFailingTable(
                 this,
                 schemaName,

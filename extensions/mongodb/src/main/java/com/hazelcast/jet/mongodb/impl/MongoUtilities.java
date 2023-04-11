@@ -15,8 +15,12 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
+import com.hazelcast.jet.JetException;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
+import com.mongodb.connection.ClusterDescription;
 import org.bson.BsonArray;
 import org.bson.BsonDateTime;
 import org.bson.BsonString;
@@ -28,22 +32,18 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.mongodb.client.model.Aggregates.addFields;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.unset;
+import static java.time.ZoneId.systemDefault;
+import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public final class MongoUtilities {
-    /**
-     * 1 millisecond converted to nanoseconds.
-     */
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private static final int MILLIS_TO_NANOS = 1000 * 1000;
 
     private MongoUtilities() {
     }
@@ -104,6 +104,19 @@ public final class MongoUtilities {
     public static BsonTimestamp bsonTimestampFromTimeMillis(long time) {
         return new BsonTimestamp((int) MILLISECONDS.toSeconds(time), 0);
     }
+
+    /**
+     * Converts given bson timest1amp to unix epoch.
+     */
+    @Nullable
+    public static BsonTimestamp localDateTimeToTimestamp(@Nullable LocalDateTime time) {
+        if (time == null) {
+            return null;
+        }
+
+        return new BsonTimestamp((int) time.atZone(systemDefault()).withZoneSameInstant(UTC).toEpochSecond(), 0);
+    }
+
     /**
      * Converts given bson timestamp to unix epoch.
      */
@@ -113,22 +126,40 @@ public final class MongoUtilities {
             return null;
         }
         Instant instant = Instant.ofEpochMilli(time.getValue());
-        return LocalDateTime.from(instant);
+        return instant.atZone(UTC).withZoneSameInstant(systemDefault()).toLocalDateTime();
     }
+
     /**
-     * Converts given bson timest1amp to unix epoch.
+     * Converts given bson timestamp to unix epoch.
      */
     @Nullable
-    @SuppressWarnings("checkstyle:MagicNumber")
     public static LocalDateTime bsonTimestampToLocalDateTime(@Nullable BsonTimestamp time) {
         if (time == null) {
             return null;
         }
-        long v = time.getValue();
-        // gets last 3 digits - millisecond in the epoch timestamp - and converts it to nanoseconds
-        int millisOfSecond = (int) (v % 1000);
-        int nanoOfSecond = millisOfSecond * MILLIS_TO_NANOS;
-        return LocalDateTime.ofEpochSecond(v / 1000, nanoOfSecond, ZoneOffset.UTC);
+        long v = time.getTime();
+        return LocalDateTime.ofEpochSecond(v, 0, UTC)
+                            .atZone(UTC)
+                            .withZoneSameInstant(systemDefault())
+                            .toLocalDateTime();
     }
 
+    static void checkCollectionExists(MongoDatabase database, String collectionName) {
+        for (String name : database.listCollectionNames()) {
+            if (name.equals(collectionName)) {
+                return;
+            }
+        }
+        throw new JetException("Collection " + collectionName + " in database " + database.getName() + " does not exist");
+    }
+
+    static void checkDatabaseExists(MongoClient client, String databaseName) {
+        for (String name : client.listDatabaseNames()) {
+            if (name.equalsIgnoreCase(databaseName)) {
+                return;
+            }
+        }
+        ClusterDescription clusterDescription = client.getClusterDescription();
+        throw new JetException("Database " + databaseName + " does not exist in cluster " + clusterDescription);
+    }
 }

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.string.SubstringFunction;
@@ -280,7 +280,7 @@ public class SubstringFunctionIntegrationTest extends ExpressionTestSupport {
                 ConstantExpression.create(10, QueryDataType.INT)
         );
 
-        SubstringFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_SUBSTRING);
+        SubstringFunction restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_SUBSTRING);
 
         checkEquals(original, restored, true);
     }

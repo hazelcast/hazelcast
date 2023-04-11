@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AsyncSocket_RpcTest;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket_RpcTest;
 
 public class NioAsyncSocket_RpcTest extends AsyncSocket_RpcTest {
 

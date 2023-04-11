@@ -18,11 +18,14 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -31,7 +34,6 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rex.RexNode;
-import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -44,8 +46,8 @@ import java.util.Map;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
-import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
+import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -71,10 +73,15 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName) {
+        if (externalName.length > 2) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+                    + ", external name for Mongo is allowed to have only one component (collection)"
+                    + " or two components (database and collection)");
+        }
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        return fieldResolver.resolveFields(externalName, options, userFields, isStream());
+        return fieldResolver.resolveFields(externalName, dataConnectionName, options, userFields, isStream());
     }
 
     @Nonnull
@@ -87,10 +94,11 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     @Nonnull
     @Override
     public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
-                             @Nonnull String collectionName, @Nonnull Map<String, String> options,
-                             @Nonnull List<MappingField> resolvedFields) {
+                             @Nonnull String[] externalName, @Nullable String dataConnectionName,
+                             @Nonnull Map<String, String> options, @Nonnull List<MappingField> resolvedFields) {
+        String collectionName = externalName[0]; // TODO HZ-2260
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        String databaseName = Options.getDatabaseName(nodeEngine, options);
+        String databaseName = Options.getDatabaseName(nodeEngine, dataConnectionName, options);
         ConstantTableStatistics stats = new ConstantTableStatistics(0);
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
@@ -109,18 +117,21 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     resolvedField.type(),
                     fieldExternalName,
                     false,
+                    resolvedField.externalType(),
                     resolvedField.isPrimaryKey()));
             hasPK |= resolvedField.isPrimaryKey();
         }
 
         if (!containsId) {
             if (isStreaming) {
-                fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id", true, !hasPK));
+                fields.add(0, new MongoTableField("fullDocument._id", OBJECT, "fullDocument._id",
+                        true, "DOCUMENT", !hasPK));
             } else {
-                fields.add(0, new MongoTableField("_id", OBJECT, "_id", true, !hasPK));
+                fields.add(0, new MongoTableField("_id", OBJECT, "_id", true,
+                        "DOCUMENT", !hasPK));
             }
         }
-        return new MongoTable(schemaName, mappingName, databaseName, collectionName, options, this,
+        return new MongoTable(schemaName, mappingName, databaseName, collectionName, dataConnectionName, options, this,
                 fields, stats, isStreaming);
     }
 
@@ -146,13 +157,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 : allFieldsExternalNames(table);
         boolean needTwoSteps = !filter.allProceeded || !projections.allProceeded;
 
-        SelectProcessorSupplier supplier;
+        ProcessorMetaSupplier supplier;
         if (isStream()) {
             BsonTimestamp startAt = Options.startAt(table.getOptions());
-            supplier = new SelectProcessorSupplier(table, filter.result, projectionList, startAt,
-                    eventTimePolicyProvider);
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionList, startAt,
+                    eventTimePolicyProvider));
         } else {
-            supplier = new SelectProcessorSupplier(table, filter.result, projectionList);
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionList));
         }
 
         DAG dag = context.getDag();
@@ -179,6 +190,13 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         return sourceVertex;
     }
 
+    protected static ProcessorMetaSupplier wrap(DagBuildContext ctx, ProcessorSupplier supplier) {
+        MongoTable table = ctx.getTable();
+        return table.isForceMongoParallelismOne()
+                ? ProcessorMetaSupplier.forceTotalParallelismOne(supplier)
+                : ProcessorMetaSupplier.of(supplier);
+    }
+
     private static TranslationResult<Document> translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {
         try {
             if (filterNode == null) {
@@ -187,8 +205,8 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             Object result = filterNode.unwrap(RexNode.class).accept(visitor);
             assert result instanceof Bson;
 
-            BsonDocument expression = ((Bson) result).toBsonDocument(BsonDocument.class, defaultCodecRegistry());
-            return new TranslationResult<>(bsonDocumentToDocument(expression), true);
+            Document expression = bsonToDocument((Bson) result);
+            return new TranslationResult<>(expression, true);
         } catch (Throwable t) {
             return new TranslationResult<>(null, false);
         }

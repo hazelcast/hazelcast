@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
+import com.hazelcast.sql.impl.schema.type.Type;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -25,6 +26,7 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
 import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.pretty.SqlPrettyWriter;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.util.ImmutableNullableList;
@@ -37,7 +39,14 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.identifier;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.nodeList;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.printIndent;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.reconstructOptions;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.isCatalogObjectNameValid;
+import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 import static java.util.Objects.requireNonNull;
 
 public class SqlCreateType extends SqlCreate {
@@ -104,7 +113,7 @@ public class SqlCreateType extends SqlCreate {
         if (getReplace()) {
             writer.keyword("OR REPLACE");
         }
-
+        writer.keyword("TYPE");
         if (ifNotExists) {
             writer.keyword("IF NOT EXISTS");
         }
@@ -112,25 +121,30 @@ public class SqlCreateType extends SqlCreate {
         name.unparse(writer, leftPrec, rightPrec);
 
         if (!columns.isEmpty()) {
-            writer.keyword("(");
+            SqlWriter.Frame frame = writer.startList("(", ")");
             for (final SqlNode column : columns) {
-                writer.sep(",", false);
+                printIndent(writer);
                 column.unparse(writer, leftPrec, rightPrec);
             }
-            writer.keyword(")");
+            writer.newlineAndIndent();
+            writer.endList(frame);
         }
 
-        if (options().isEmpty()) {
-            return;
-        }
+        unparseOptions(writer, options);
+    }
 
-        writer.keyword("OPTIONS");
-        writer.keyword("(");
-        for (final SqlNode option : options) {
-            writer.sep(",", false);
-            option.unparse(writer, leftPrec, rightPrec);
-        }
-        writer.keyword(")");
+    public static String unparse(Type type) {
+        SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
+
+        SqlCreateType t = new SqlCreateType(
+                identifier(CATALOG, SCHEMA_NAME_PUBLIC, type.getName()),
+                nodeList(type.getFields(), f -> new SqlTypeColumn(
+                        identifier(f.getName()), new SqlDataType(f.getQueryDataType(), SqlParserPos.ZERO), SqlParserPos.ZERO)),
+                reconstructOptions(type.options()),
+                true, false, SqlParserPos.ZERO);
+
+        t.unparse(writer, 0, 0);
+        return writer.toString();
     }
 
     public String typeName() {

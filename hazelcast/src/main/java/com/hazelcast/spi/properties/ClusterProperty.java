@@ -209,6 +209,63 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.socket.keep.alive", true);
 
     /**
+     * Keep-Alive idle time: the number of seconds of idle time before keep-alive initiates a probe.
+     * <p/>
+     * Caveats:
+     * <ul>
+     *     <li>This option is only applicable to member-side sockets when {@link #SOCKET_KEEP_ALIVE keep alive is true}.</li>
+     *     <li>When using {@link AdvancedNetworkConfig}, set the respective socket option in {@link EndpointConfig}.</li>
+     *     <li>Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     *     <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.</li>
+     * </ul>
+     *
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPIDLE">
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPIDLE</a>
+     */
+    public static final HazelcastProperty SOCKET_KEEP_IDLE
+            = new HazelcastProperty("hazelcast.socket.keep.idle", 7200);
+
+    /**
+     * Keep-Alive interval: the number of seconds between keep-alive probes.
+     * <p/>
+     * Caveats:
+     * <ul>
+     *     <li>This option is only applicable to member-side sockets when {@link #SOCKET_KEEP_ALIVE keep alive is true}.</li>
+     *     <li>When using {@link AdvancedNetworkConfig}, set the respective socket option in {@link EndpointConfig}.</li>
+     *     <li>Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     *     <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.</li>
+     * </ul>
+     *
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/
+     ExtendedSocketOptions.html#TCP_KEEPINTERVAL">
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPINTERVAL</a>
+     */
+    public static final HazelcastProperty SOCKET_KEEP_INTERVAL
+            = new HazelcastProperty("hazelcast.socket.keep.interval", 75);
+
+    /**
+     * Keep-Alive count: the maximum number of TCP keep-alive probes to send before giving up and closing the connection if no
+     * response is obtained from the other side.
+     * <p/>
+     * Caveats:
+     * <ul>
+     *     <li>This option is only applicable to member-side sockets when {@link #SOCKET_KEEP_ALIVE keep alive is true}.</li>
+     *     <li>When using {@link AdvancedNetworkConfig}, set the respective socket option in {@link EndpointConfig}.</li>
+     *     <li>Requires a recent JDK 8, JDK 11 or greater version that includes the required
+     *     <a href="https://bugs.openjdk.org/browse/JDK-8194298">JDK support</a>.</li>
+     * </ul>
+     *
+     * @return the configured value of Keep-Alive probe count.
+     * @since 5.3.0
+     * @see <a href="https://docs.oracle.com/en/java/javase/11/docs/api/jdk.net/jdk/net/ExtendedSocketOptions.html#TCP_KEEPCOUNT">
+     *     jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT</a>
+     */
+    public static final HazelcastProperty SOCKET_KEEP_COUNT
+            = new HazelcastProperty("hazelcast.socket.keep.count", 8);
+
+    /**
      * Socket set TCP no delay.
      */
     public static final HazelcastProperty SOCKET_NO_DELAY

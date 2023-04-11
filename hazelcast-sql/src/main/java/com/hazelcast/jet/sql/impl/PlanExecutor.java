@@ -23,9 +23,9 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.DataLinkServiceImpl;
-import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.impl.InternalDataLinkService;
+import com.hazelcast.dataconnection.DataConnection;
+import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -44,7 +44,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
-import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropDataLinkPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropDataConnectionPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
@@ -59,11 +59,11 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.DataLinksResolver;
+import com.hazelcast.jet.sql.impl.schema.DataConnectionResolver;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
-import com.hazelcast.jet.sql.impl.validate.UpdateDataLinkOperation;
+import com.hazelcast.jet.sql.impl.validate.UpdateDataConnectionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
@@ -85,9 +85,10 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
+import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
@@ -119,16 +120,16 @@ import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
-import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataLinkPlan;
+import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataConnectionPlan;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
-import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.singletonList;
@@ -139,7 +140,7 @@ public class PlanExecutor {
     private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
 
     private final TableResolverImpl catalog;
-    private final DataLinksResolver dataLinksCatalog;
+    private final DataConnectionResolver dataConnectionCatalog;
     private final HazelcastInstance hazelcastInstance;
     private final NodeEngine nodeEngine;
     private final QueryResultRegistry resultRegistry;
@@ -150,15 +151,15 @@ public class PlanExecutor {
     private final AtomicLong directIMapQueriesExecuted = new AtomicLong();
 
     public PlanExecutor(
-            TableResolverImpl catalog,
-            DataLinksResolver dataLinksResolver,
             NodeEngine nodeEngine,
+            TableResolverImpl catalog,
+            DataConnectionResolver dataConnectionResolver,
             QueryResultRegistry resultRegistry
     ) {
-        this.catalog = catalog;
-        this.dataLinksCatalog = dataLinksResolver;
         this.nodeEngine = nodeEngine;
         this.hazelcastInstance = nodeEngine.getHazelcastInstance();
+        this.catalog = catalog;
+        this.dataConnectionCatalog = dataConnectionResolver;
         this.resultRegistry = resultRegistry;
 
         logger = nodeEngine.getLogger(getClass());
@@ -174,30 +175,34 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(CreateDataLinkPlan plan) {
-        InternalDataLinkService dlService = nodeEngine.getDataLinkService();
+    SqlResult execute(CreateDataConnectionPlan plan) {
+        InternalDataConnectionService dlService = nodeEngine.getDataConnectionService();
         assert !plan.ifNotExists() || !plan.isReplace();
 
-        if (dlService.existsConfigDataLink(plan.name())) {
-            throw new HazelcastException("Cannot replace a data link created from configuration");
+        if (dlService.existsConfigDataConnection(plan.name())) {
+            throw new HazelcastException("Cannot replace a data connection created from configuration");
         }
-        boolean added = dataLinksCatalog.createDataLink(
-                new DataLinkCatalogEntry(plan.name(), plan.type(), plan.options()),
+        boolean added = dataConnectionCatalog.createDataConnection(
+                new DataConnectionCatalogEntry(
+                        plan.name(),
+                        plan.type(),
+                        plan.shared(),
+                        plan.options()),
                 plan.isReplace(),
                 plan.ifNotExists());
         if (added) {
-            broadcastUpdateDataLinkOperations(plan.name());
+            broadcastUpdateDataConnectionOperations(plan.name());
         }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(DropDataLinkPlan plan) {
-        InternalDataLinkService dlService = nodeEngine.getDataLinkService();
-        if (dlService.existsConfigDataLink(plan.name())) {
-            throw new HazelcastException("Data link '" + plan.name() + "' is configured via Config and can't be removed");
+    SqlResult execute(DropDataConnectionPlan plan) {
+        InternalDataConnectionService dlService = nodeEngine.getDataConnectionService();
+        if (dlService.existsConfigDataConnection(plan.name())) {
+            throw new HazelcastException("Data connection '" + plan.name() + "' is configured via Config and can't be removed");
         }
-        dataLinksCatalog.removeDataLink(plan.name(), plan.ifExists());
-        broadcastUpdateDataLinkOperations(plan.name());
+        dataConnectionCatalog.removeDataConnection(plan.name(), plan.ifExists());
+        broadcastUpdateDataConnectionOperations(plan.name());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
@@ -383,13 +388,16 @@ public class PlanExecutor {
             case TYPES:
                 rows = catalog.getTypeNames().stream();
                 break;
-            case DATALINKS:
-                InternalDataLinkService service = nodeEngine.getDataLinkService();
-                DataLinkServiceImpl dataLinkService = (DataLinkServiceImpl) service;
-                rows = dataLinkService.getDataLinks().keySet().stream();
+            case DATACONNECTIONS:
+                InternalDataConnectionService service = nodeEngine.getDataConnectionService();
+                DataConnectionServiceImpl dataConnectionService = (DataConnectionServiceImpl) service;
+                rows = DataConnectionResolver
+                        .getAllDataConnectionEntries(dataConnectionService, dataConnectionCatalog.getDataConnectionStorage())
+                        .stream()
+                        .map(DataConnectionCatalogEntry::name);
                 break;
             case RESOURCES:
-                return executeShowResources(plan.getDataLinkName());
+                return executeShowResources(plan.getDataConnectionName());
             default:
                 throw new AssertionError("Unsupported SHOW statement target");
         }
@@ -405,9 +413,9 @@ public class PlanExecutor {
         );
     }
 
-    private SqlResult executeShowResources(@Nullable String dataLinkName) {
-        if (dataLinkName == null) {
-            throw QueryException.error("Data links exist only in the 'public' schema");
+    private SqlResult executeShowResources(@Nullable String dataConnectionName) {
+        if (dataConnectionName == null) {
+            throw QueryException.error("Data connections exist only in the 'public' schema");
         }
 
         final SqlRowMetadata metadata = new SqlRowMetadata(asList(
@@ -415,16 +423,20 @@ public class PlanExecutor {
                 new SqlColumnMetadata("type", VARCHAR, false)
         ));
         final InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
-        final InternalDataLinkService dataLinkService = getNodeEngine(hazelcastInstance).getDataLinkService();
+        final InternalDataConnectionService dataConnectionService = getNodeEngine(hazelcastInstance).getDataConnectionService();
 
         final List<JetSqlRow> rows;
-        final DataLink dataLink = dataLinkService.getAndRetainDataLink(dataLinkName, DataLink.class);
+        final DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(
+                dataConnectionName, DataConnection.class);
         try {
-            rows = dataLink.listResources().stream()
-                    .map(resource -> new JetSqlRow(serializationService, new Object[]{resource.name(), resource.type()}))
-                    .collect(Collectors.toList());
+            rows = dataConnection.listResources().stream()
+                                 .map(resource -> new JetSqlRow(
+                                         serializationService,
+                                         new Object[]{resource.name(), resource.type()}
+                                 ))
+                                 .collect(Collectors.toList());
         } finally {
-            dataLink.release();
+            dataConnection.release();
         }
 
         return new SqlResultImpl(
@@ -509,7 +521,10 @@ public class PlanExecutor {
     SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(args, serializationService);
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                serializationService,
+                Util.getNodeEngine(hazelcastInstance));
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<JetSqlRow> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
@@ -535,7 +550,10 @@ public class PlanExecutor {
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                Util.getSerializationService(hazelcastInstance),
+                Util.getNodeEngine(hazelcastInstance));
         List<Entry<Object, Object>> entries = plan.entriesFn().apply(evalContext);
         if (!entries.isEmpty()) {
             assert entries.size() == 1;
@@ -556,7 +574,10 @@ public class PlanExecutor {
 
     SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                Util.getSerializationService(hazelcastInstance),
+                Util.getNodeEngine(hazelcastInstance));
         Map<Object, Object> entries = plan.entriesFn().apply(evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .putAllAsync(entries)
@@ -567,7 +588,10 @@ public class PlanExecutor {
 
     SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                Util.getSerializationService(hazelcastInstance),
+                Util.getNodeEngine(hazelcastInstance));
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, plan.updaterSupplier().get(arguments))
@@ -579,7 +603,10 @@ public class PlanExecutor {
 
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        ExpressionEvalContext evalContext = new ExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                Util.getSerializationService(hazelcastInstance),
+                Util.getNodeEngine(hazelcastInstance));
         Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
         CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
@@ -745,10 +772,10 @@ public class PlanExecutor {
         return mapServiceContext.getMapContainer(map.getName());
     }
 
-    private void broadcastUpdateDataLinkOperations(@Nonnull String dataLinkName) {
+    private void broadcastUpdateDataConnectionOperations(@Nonnull String dataConnectionName) {
         List<Tuple2<Address, CompletableFuture<?>>> futures = new ArrayList<>();
         for (Member m : nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR)) {
-            UpdateDataLinkOperation op = new UpdateDataLinkOperation(dataLinkName);
+            UpdateDataConnectionOperation op = new UpdateDataConnectionOperation(dataConnectionName);
             Address target = m.getAddress();
             InvocationFuture<Object> future = nodeEngine.getOperationService()
                     .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, target)
@@ -764,7 +791,7 @@ public class PlanExecutor {
                 Thread.currentThread().interrupt();
                 break;
             } catch (ExecutionException e) {
-                logger.warning("Failed to update datalink '" + dataLinkName + "' on member '" + tuple.f0()
+                logger.warning("Failed to update data connection '" + dataConnectionName + "' on member '" + tuple.f0()
                         + "'. Background process should resolve this");
             }
         }

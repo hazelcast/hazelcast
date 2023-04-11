@@ -84,6 +84,11 @@ public class LateItemsDropP extends AbstractProcessor {
     }
 
     @Override
+    public boolean isCooperative() {
+        return timestampExpression.isCooperative();
+    }
+
+    @Override
     public boolean closeIsCooperative() {
         return true;
     }

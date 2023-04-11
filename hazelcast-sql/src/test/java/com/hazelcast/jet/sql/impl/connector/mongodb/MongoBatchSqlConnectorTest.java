@@ -20,7 +20,6 @@ import com.hazelcast.logging.LogListener;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.mongodb.MongoBulkWriteException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import org.bson.Document;
@@ -32,6 +31,8 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -112,6 +113,27 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         }
     }
 
+    @Test
+    public void readsUsingDataConnection() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
+        collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Rey").append("jedi", true));
+
+        execute("CREATE MAPPING " + collectionName
+                + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
+                + "DATA CONNECTION testMongo");
+
+        assertRowsAnyOrder("select firstName, lastName from " + collectionName + " where lastName = ?",
+                singletonList("Skywalker"),
+                asList(
+                        new Row("Luke", "Skywalker"),
+                        new Row("Anakin", "Skywalker")
+                )
+        );
+    }
+
 
     protected void execute(String sql, Object... arguments) {
         sqlService.execute(sql, arguments).close();
@@ -134,6 +156,89 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                         new Row("Anakin", "Skywalker", true)
                 )
         );
+    }
+
+    @Test
+    public void readWithOneProcessor() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", "true"));
+
+        Pattern parallelismDagPattern = Pattern.compile("\\[localParallelism=(\\d)+]");
+        AtomicBoolean otherFound = new AtomicBoolean(false);
+        LogListener lookForProjectAndFilterStep = log -> {
+            String message = log.getLogRecord().getMessage();
+            Matcher matcher = parallelismDagPattern.matcher(message);
+            if (matcher.find()) {
+                String number = matcher.group(1);
+                if (!"1".equals(number)) {
+                    otherFound.set(true);
+                }
+            }
+        };
+        for (HazelcastInstance instance : instances()) {
+            instance.getLoggingService().addLogListener(Level.FINE, lookForProjectAndFilterStep);
+        }
+
+        execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
+                + "    'database' = '" +  databaseName + "', "
+                + "    'forceMongoReadParallelismOne' = 'true' "
+                + ")");
+
+        assertRowsAnyOrder("select firstName, lastName, jedi from " + collectionName + " where lastName = ?",
+                singletonList("Skywalker"),
+                singletonList(new Row("Luke", "Skywalker", true))
+        );
+        assertThat(otherFound.get())
+                .describedAs("Not all vertices had local parallelism = 1")
+                .isFalse();
+
+        for (HazelcastInstance instance : instances()) {
+            instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
+        }
+    }
+
+    @Test
+    public void readWithByDefaultInParallel() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", "true"));
+
+        Pattern parallelismDagPattern = Pattern.compile("\\[localParallelism=(\\d)+]");
+        AtomicBoolean otherFound = new AtomicBoolean(false);
+        LogListener lookForProjectAndFilterStep = log -> {
+            String message = log.getLogRecord().getMessage();
+            Matcher matcher = parallelismDagPattern.matcher(message);
+            if (matcher.find()) {
+                String number = matcher.group(1);
+                if ("1".equals(number)) {
+                    otherFound.set(true);
+                }
+            }
+        };
+        for (HazelcastInstance instance : instances()) {
+            instance.getLoggingService().addLogListener(Level.FINE, lookForProjectAndFilterStep);
+        }
+
+        execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
+                + "TYPE MongoDB "
+                + "OPTIONS ("
+                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
+                + "    'database' = '" +  databaseName + "'"
+                + ")");
+
+        assertRowsAnyOrder("select firstName, lastName, jedi from " + collectionName + " where lastName = ?",
+                singletonList("Skywalker"),
+                singletonList(new Row("Luke", "Skywalker", true))
+        );
+        assertThat(otherFound.get())
+                .describedAs("By default it should read with higher parallelism")
+                .isFalse();
+
+        for (HazelcastInstance instance : instances()) {
+            instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
+        }
     }
 
     @Test
@@ -226,7 +331,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     public void testInsertsIntoMongo(boolean includeId, String sql, Object... args) {
         MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", "true"));
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
         createMapping(includeId);
 
@@ -270,7 +375,6 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         createMapping(true);
         assertThatThrownBy(() -> execute("insert into " + collectionName + " (id, firstName, jedi) values (?, ?, ?)",
                 insertedId, "yolo", false))
-                .hasRootCauseInstanceOf(MongoBulkWriteException.class)
                 .hasMessageContaining("E11000 duplicate key error collection");
     }
 
@@ -402,6 +506,27 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         assertEquals("Leia", item.getString("firstName"));
         assertEquals("Organa", item.getString("lastName"));
         assertEquals(true, item.getBoolean("jedi"));
+    }
+
+    @Test
+    public void deletes_inserted_item() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        ObjectId objectId = ObjectId.get();
+        collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
+                                                          .append("jedi", true));
+        collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp2").append("lastName", "temp2")
+                                                          .append("jedi", true));
+        collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp3").append("lastName", "temp3")
+                                                          .append("jedi", true));
+
+        createMapping(true);
+
+        execute("delete from " + collectionName + " where id = ?", objectId);
+        ArrayList<Document> list = collection.find().into(new ArrayList<>());
+        assertThat(list).hasSize(2);
+        execute("delete from " + collectionName);
+        list = collection.find().into(new ArrayList<>());
+        assertThat(list).isEmpty();
     }
 
     private void createMapping(boolean includeIdInMapping) {

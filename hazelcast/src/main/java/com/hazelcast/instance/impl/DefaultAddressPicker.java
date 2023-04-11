@@ -140,9 +140,11 @@ class DefaultAddressPicker
         boolean bindAny = hazelcastProperties.getBoolean(ClusterProperty.SOCKET_SERVER_BIND_ANY);
         AddressDefinition bindAddressDef = pickAddressDef();
 
+        // if advanced network config is enabled, pick the appropriate EndpointConfig to pass server socket options
+        // otherwise, construct an EndpointConfig and populate it with socket options from relevant properties.
         EndpointConfig endpoint = config.getAdvancedNetworkConfig().isEnabled()
                 ? config.getAdvancedNetworkConfig().getEndpointConfigs().get(endpointQualifier)
-                : null;
+                : endpointConfigFromProperties(hazelcastProperties);
 
         serverSocketChannel = createServerSocketChannel(logger, endpoint, bindAddressDef.inetAddress,
                 bindAddressDef.port == 0 ? port : bindAddressDef.port, portCount, isPortAutoIncrement, isReuseAddress, bindAny);
@@ -156,6 +158,17 @@ class DefaultAddressPicker
         }
 
         return getPublicAddress(port);
+    }
+
+    static EndpointConfig endpointConfigFromProperties(HazelcastProperties properties) {
+        EndpointConfig endpointConfig = new EndpointConfig();
+        endpointConfig.setSocketKeepAlive(properties.getBoolean(ClusterProperty.SOCKET_KEEP_ALIVE));
+        endpointConfig.setSocketKeepIdleSeconds(properties.getInteger(ClusterProperty.SOCKET_KEEP_IDLE));
+        endpointConfig.setSocketKeepIntervalSeconds(properties.getInteger(ClusterProperty.SOCKET_KEEP_INTERVAL));
+        endpointConfig.setSocketKeepCount(properties.getInteger(ClusterProperty.SOCKET_KEEP_COUNT));
+        endpointConfig.setSocketRcvBufferSizeKb(properties.getInteger(ClusterProperty.SOCKET_RECEIVE_BUFFER_SIZE));
+
+        return endpointConfig;
     }
 
     private static Address createAddress(AddressDefinition addressDef, int port) {

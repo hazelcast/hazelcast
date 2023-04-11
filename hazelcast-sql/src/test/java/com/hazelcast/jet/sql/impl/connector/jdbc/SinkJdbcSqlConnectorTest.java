@@ -21,8 +21,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
-
 public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private String tableName;
@@ -66,10 +64,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("SINK INTO " + tableName + " VALUES (0, 'name-0')");
@@ -98,10 +93,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("SINK INTO " + tableName + " (fullName, id) VALUES ('name-0', 0), ('name-1', 1)");
@@ -132,13 +124,7 @@ public class SinkJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void sinkIntoTableReverseColumnOrder() throws Exception {
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)");
-        execute(
-                "CREATE MAPPING " + tableName
-                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + " OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
-        );
+        execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
 
         execute("SINK INTO " + tableName + " (name, id) VALUES ('name-0', 0)");
 

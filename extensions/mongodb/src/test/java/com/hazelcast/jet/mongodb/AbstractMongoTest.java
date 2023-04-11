@@ -17,11 +17,10 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
@@ -34,6 +33,7 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
@@ -47,17 +47,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
-import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
-
 public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
     static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
-
-    static final String SOURCE_NAME = "source";
-    static final String SINK_NAME = "sink";
 
     static MongoClient mongo;
     static BsonTimestamp startAtOperationTime;
@@ -86,8 +82,8 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
 
         Config config = new Config();
         config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
-        config.addDataLinkConfig(new DataLinkConfig("mongoDB")
-                .setClassName(MongoDataLink.class.getName())
+        config.addDataConnectionConfig(new DataConnectionConfig("mongoDB")
+                .setType("MongoDB")
                 .setName("mongoDB")
                 .setShared(true)
                 .setProperty("connectionString", mongoContainer.getConnectionString())
@@ -96,21 +92,28 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
         initialize(2, config);
     }
 
+    @Before
+    public void createDefaultCollection() {
+        mongo.getDatabase(defaultDatabase()).createCollection(testName.getMethodName());
+    }
+
     @After
     public void clear() {
-        try (MongoClient mongoClient = MongoClients.create(mongoContainer.getConnectionString())) {
-            for (String databaseName : mongoClient.listDatabaseNames()) {
-                if (databaseName.startsWith("test")) {
-                    MongoDatabase database = mongoClient.getDatabase(databaseName);
-                    database.drop();
+        if (mongoContainer != null) {
+            try (MongoClient mongoClient = MongoClients.create(mongoContainer.getConnectionString())) {
+                for (String databaseName : mongoClient.listDatabaseNames()) {
+                    if (databaseName.startsWith("test")) {
+                        MongoDatabase database = mongoClient.getDatabase(databaseName);
+                        database.drop();
+                    }
                 }
+                List<String> allowedDatabasesLeft = asList("admin", "local", "config", "tech");
+                assertTrueEventually(() -> {
+                    ArrayList<String> databasesLeft = mongoClient.listDatabaseNames().into(new ArrayList<>());
+                    assertEquals(allowedDatabasesLeft.size(), databasesLeft.size());
+                    assertContainsAll(databasesLeft, allowedDatabasesLeft);
+                });
             }
-            List<String> allowedDatabasesLeft = asList("admin", "local", "config", "tech");
-            assertTrueEventually(() -> {
-                ArrayList<String> databasesLeft = mongoClient.listDatabaseNames().into(new ArrayList<>());
-                assertEquals(allowedDatabasesLeft.size(), databasesLeft.size());
-                assertContainsAll(databasesLeft, allowedDatabasesLeft);
-            });
         }
     }
 

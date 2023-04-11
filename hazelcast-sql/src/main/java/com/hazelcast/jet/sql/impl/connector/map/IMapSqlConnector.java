@@ -58,7 +58,6 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -69,7 +68,9 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
+import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -105,8 +106,12 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName) {
+        if (externalName.length > 1) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+                    + ", external name for IMap is allowed to have only a single component referencing the map name");
+        }
         return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
@@ -116,10 +121,10 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull List<MappingField> resolvedFields) {
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
         KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
@@ -138,9 +143,10 @@ public class IMapSqlConnector implements SqlConnector {
 
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
-        MapContainer container = context.getExistingMapContainer(externalName);
+        String mapName = externalName[0];
+        MapContainer container = context.getExistingMapContainer(mapName);
 
-        long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, externalName);
+        long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, mapName);
         boolean hd = container != null && container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;
         List<MapTableIndex> indexes = container != null
                 ? MapTableUtils.getPartitionedMapIndexes(container, fields)
@@ -149,7 +155,7 @@ public class IMapSqlConnector implements SqlConnector {
         return new PartitionedMapTable(
                 schemaName,
                 mappingName,
-                externalName,
+                mapName,
                 fields,
                 new ConstantTableStatistics(estimatedRowCount),
                 keyMetadata.getQueryTargetDescriptor(),
@@ -214,8 +220,8 @@ public class IMapSqlConnector implements SqlConnector {
                 tableIndex.getName(),
                 table.getKeyDescriptor(),
                 table.getValueDescriptor(),
-                Arrays.asList(table.paths()),
-                Arrays.asList(table.types()),
+                asList(table.paths()),
+                asList(table.types()),
                 indexFilter,
                 context.convertProjection(projection),
                 context.convertFilter(remainingFilter),

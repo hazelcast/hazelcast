@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AsyncServerSocketBuilderTest;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocketBuilderTest;
 
 public class NioAsyncServerSocketBuilderTest extends AsyncServerSocketBuilderTest {
 
