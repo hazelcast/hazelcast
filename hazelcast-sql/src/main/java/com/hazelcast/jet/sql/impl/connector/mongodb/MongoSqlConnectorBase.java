@@ -34,6 +34,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
 import org.apache.calcite.rex.RexNode;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
@@ -148,24 +149,24 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
         RexToMongoVisitor visitor = new RexToMongoVisitor();
 
-        Document filter = translateFilter(predicate, visitor);
+        TranslationResult<Document> filter = translateFilter(predicate, visitor);
         TranslationResult<List<ProjectionData>> projections = translateProjections(projection, context, visitor);
 
         // if not all filters are pushed down, then we cannot push down projection
         // because later filters may use those fields
         // We could do it smarter and check field usage in the filters, but it's something TODO
 
-        boolean needTwoSteps = !projections.allProceeded;
-        List<ProjectionData> projectionData = projections.allProceeded
+        boolean needTwoSteps = !filter.allProceeded || !projections.allProceeded;
+        List<ProjectionData> projectionData = !needTwoSteps
                 ? projections.result
                 : allFieldsProjection(table);
         ProcessorMetaSupplier supplier;
         if (isStream()) {
             BsonTimestamp startAt = Options.startAt(table.getOptions());
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projectionData, startAt,
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionData, startAt,
                     eventTimePolicyProvider));
         } else {
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projectionData));
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionData));
         }
 
         DAG dag = context.getDag();
@@ -199,19 +200,24 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 : ProcessorMetaSupplier.of(supplier);
     }
 
-    private static Document translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {
+    @Nonnull
+    private static TranslationResult<Document> translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {
         if (filterNode == null) {
-            return null;
+            return new TranslationResult<>(null, true);
         }
-        Object result = filterNode.unwrap(RexNode.class).accept(visitor);
-        boolean isBson = result instanceof Bson;
-        assert isBson || result instanceof InputRef;
+        try {
+            Object result = filterNode.unwrap(RexNode.class).accept(visitor);
+            boolean isBson = result instanceof Bson;
+            assert isBson || result instanceof InputRef;
 
-        if (isBson) {
-            return bsonToDocument((Bson) result);
-        } else {
-            InputRef placeholder = (InputRef) result;
-            return bsonToDocument(Filters.eq(placeholder.asString(), true));
+            if (isBson) {
+                return new TranslationResult<>(bsonToDocument((Bson) result), true);
+            } else {
+                InputRef placeholder = (InputRef) result;
+                return new TranslationResult<>(bsonToDocument(Filters.eq(placeholder.asString(), true)), true);
+            }
+        } catch (UnsupportedOperationException e) {
+            return new TranslationResult<>(null, false);
         }
     }
 
@@ -232,6 +238,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     Document projectionExpr = bsonToDocument(include(externalNames));
                     projection.add(new ProjectionData(externalName, projectionExpr, i, table.fieldType(externalName)));
                 } else {
+                    // name is not really important, it's by-index at the end
                     Document projectionExpr = new Document("projected_value_" + i, new Document("$literal", translated));
                     projection.add(new ProjectionData("projected_value_" + i, projectionExpr, i, null));
                 }
@@ -254,7 +261,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         for (TableField tableField : fields) {
             MongoTableField field = (MongoTableField) tableField;
 
-            projectionData.add(new ProjectionData(field.externalName, null, index++, field.getType()));
+            projectionData.add(new ProjectionData(field.externalName, bsonToDocument(Projections.include(field.externalName)), index++, field.getType()));
         }
         return projectionData;
     }

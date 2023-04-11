@@ -57,6 +57,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final List<String> updatedFieldNames;
     private final List<? extends Serializable> updates;
     private final String dataConnectionName;
+    private final String[] externalNames;
     private ExpressionEvalContext evalContext;
     private transient SupplierEx<MongoClient> clientSupplier;
     private final String pkExternalName;
@@ -71,6 +72,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         this.updatedFieldNames = updatedFieldNames;
         this.updates = updates;
         this.pkExternalName = table.primaryKeyExternalName();
+        externalNames = table.externalNames();
     }
 
     @Override
@@ -139,7 +141,8 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                     InputRef ref = InputRef.match(updateExpr);
                     if (ref != null) {
                         int index = ref.getInputIndex();
-                        updateToPerform.add(Aggregates.set(new Field<>(fieldName, row.get(index))));
+
+                        updateToPerform.add(Aggregates.set(new Field<>(fieldName, "$" + externalNames[index])));
                     } else {
                         updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
                     }

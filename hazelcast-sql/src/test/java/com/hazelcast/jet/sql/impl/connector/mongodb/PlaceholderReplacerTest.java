@@ -34,6 +34,10 @@ import java.util.List;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
@@ -97,7 +101,9 @@ public class PlaceholderReplacerTest {
     }
 
     private ExpressionEvalContext evalContext(List<Object> arguments) {
-        return new ExpressionEvalContextImpl(arguments, getInternalSerializationService(), null);
+        ExpressionEvalContext mock = mock(ExpressionEvalContext.class);
+        doAnswer(inv -> arguments.get(inv.getArgument(0))).when(mock).getArgument(anyInt());
+        return mock;
     }
 
     private static InternalSerializationService getInternalSerializationService() {
