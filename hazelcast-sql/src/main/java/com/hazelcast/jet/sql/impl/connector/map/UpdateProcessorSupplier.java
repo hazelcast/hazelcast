@@ -93,7 +93,6 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     private CompletableFuture<Traverser<Integer>> update(List<JetSqlRow> rows, IMap<Object, Object> map) {
         Set<Object> keys = new HashSet<>();
         for (JetSqlRow row : rows) {
-            assert row.getFieldCount() == 1;
             keys.add(row.get(0));
         }
         return map.submitToKeys(keys, updaterSupplier.get(evalContext.getArguments()))
