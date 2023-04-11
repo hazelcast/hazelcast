@@ -23,6 +23,7 @@ import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Aggregates;
@@ -31,6 +32,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.WriteModel;
+import org.bson.BsonType;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -59,7 +61,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final String collectionName;
     private final List<String> updatedFieldNames;
     private final List<? extends Serializable> updates;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private final String[] externalNames;
     private ExpressionEvalContext evalContext;
     private transient SupplierEx<MongoClient> clientSupplier;
@@ -70,7 +72,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                             List<? extends Serializable> updates,
                             Serializable predicate) {
         this.connectionString = table.connectionString;
-        this.dataLinkName = table.dataLinkName;
+        this.dataConnectionName = table.dataConnectionName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
 
@@ -102,7 +104,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                 Processor processor = new UpdateMongoP<>(
                         new WriteMongoParams<Document>()
                                 .setClientSupplier(clientSupplier)
-                                .setDataLinkRef(dataLinkName)
+                                .setDataConnectionRef(dataConnectionName)
                                 .setDatabaseName(databaseName)
                                 .setCollectionName(collectionName)
                                 .setDocumentType(Document.class),
@@ -118,7 +120,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
             Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<Document>()
                             .setClientSupplier(clientSupplier)
-                            .setDataLinkRef(dataLinkName)
+                            .setDataConnectionRef(dataConnectionName)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Document.class)

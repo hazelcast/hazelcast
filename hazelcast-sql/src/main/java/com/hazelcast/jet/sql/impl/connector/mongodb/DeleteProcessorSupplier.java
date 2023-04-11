@@ -52,14 +52,14 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
     private final Serializable predicate;
     private final String[] externalNames;
     private transient SupplierEx<MongoClient> clientSupplier;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private final String idField;
     private ExpressionEvalContext evalContext;
 
     DeleteProcessorSupplier(MongoTable table, Serializable predicate) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
-        this.dataLinkName = table.dataLinkName;
+        this.dataConnectionName = table.dataConnectionName;
         this.collectionName = table.collectionName;
         this.externalNames = table.externalNames();
         this.idField = table.primaryKeyExternalName();
@@ -88,7 +88,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
                 processor = new WriteMongoP<>(
                         new WriteMongoParams<>()
                                 .setClientSupplier(clientSupplier)
-                                .setDataLinkRef(dataLinkName)
+                                .setDataConnectionRef(dataConnectionName)
                                 .setDatabaseName(databaseName)
                                 .setCollectionName(collectionName)
                                 .setDocumentType(Object.class)
@@ -102,7 +102,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
                 processor = new UpdateMongoP<>(
                         new WriteMongoParams<Document>()
                                 .setClientSupplier(clientSupplier)
-                                .setDataLinkRef(dataLinkName)
+                                .setDataConnectionRef(dataConnectionName)
                                 .setDatabaseName(databaseName)
                                 .setCollectionName(collectionName)
                                 .setDocumentType(Document.class),

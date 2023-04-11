@@ -40,17 +40,17 @@ public class SqlShowStatement extends SqlCall {
     public static final SqlSpecialOperator SHOW_VIEWS = new SqlSpecialOperator("SHOW VIEWS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_JOBS = new SqlSpecialOperator("SHOW JOBS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_TYPES = new SqlSpecialOperator("SHOW TYPES", SqlKind.OTHER);
-    public static final SqlSpecialOperator SHOW_DATALINKS = new SqlSpecialOperator("SHOW DATA LINKS", SqlKind.OTHER);
+    public static final SqlSpecialOperator SHOW_DATA_CONNECTIONS = new SqlSpecialOperator("SHOW DATA CONNECTIONS", SqlKind.OTHER);
     public static final SqlSpecialOperator SHOW_RESOURCES = new SqlSpecialOperator("SHOW RESOURCES FOR", SqlKind.OTHER);
 
     private final ShowStatementTarget target;
-    private final SqlIdentifier dataLinkName;
+    private final SqlIdentifier dataConnectionName;
 
-    public SqlShowStatement(SqlParserPos pos, @Nonnull ShowStatementTarget target, @Nullable SqlIdentifier dataLinkName) {
+    public SqlShowStatement(SqlParserPos pos, @Nonnull ShowStatementTarget target, @Nullable SqlIdentifier dataConnectionName) {
         super(pos);
         this.target = target;
-        this.dataLinkName = dataLinkName;
-        assert dataLinkName == null || target == RESOURCES;
+        this.dataConnectionName = dataConnectionName;
+        assert dataConnectionName == null || target == RESOURCES;
     }
 
     public ShowStatementTarget getTarget() {
@@ -58,15 +58,15 @@ public class SqlShowStatement extends SqlCall {
     }
 
     /**
-     * For target=RESOURCES returns the datalink name. Returns null, if:<ul>
+     * For target=RESOURCES returns the data connection name. Returns null, if:<ul>
      *     <li>target is other than RESOURCES
      *     <li>the schema isn't "hazelcast.public"
      * </ul>
      */
     @Nullable
-    public String getDataLinkNameWithoutSchema() {
-        return dataLinkName != null && isCatalogObjectNameValid(dataLinkName)
-                ? dataLinkName.names.get(dataLinkName.names.size() - 1)
+    public String getDataConnectionNameWithoutSchema() {
+        return dataConnectionName != null && isCatalogObjectNameValid(dataConnectionName)
+                ? dataConnectionName.names.get(dataConnectionName.names.size() - 1)
                 : null;
     }
 
@@ -79,8 +79,8 @@ public class SqlShowStatement extends SqlCall {
     @Nonnull
     @Override
     public List<SqlNode> getOperandList() {
-        if (dataLinkName != null) {
-            return ImmutableNullableList.of(dataLinkName);
+        if (dataConnectionName != null) {
+            return ImmutableNullableList.of(dataConnectionName);
         } else {
             return Collections.emptyList();
         }
@@ -89,9 +89,9 @@ public class SqlShowStatement extends SqlCall {
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
         writer.keyword(target.operator.getName());
-        if (target.operator.equals(SHOW_RESOURCES) && dataLinkName != null) {
+        if (target.operator.equals(SHOW_RESOURCES) && dataConnectionName != null) {
             writer.keyword("FOR");
-            dataLinkName.unparse(writer, leftPrec, rightPrec);
+            dataConnectionName.unparse(writer, leftPrec, rightPrec);
         }
     }
 
@@ -103,7 +103,7 @@ public class SqlShowStatement extends SqlCall {
         VIEWS(SHOW_VIEWS),
         JOBS(SHOW_JOBS),
         TYPES(SHOW_TYPES),
-        DATALINKS(SHOW_DATALINKS),
+        DATACONNECTIONS(SHOW_DATA_CONNECTIONS),
         RESOURCES(SHOW_RESOURCES);
 
         private final SqlSpecialOperator operator;

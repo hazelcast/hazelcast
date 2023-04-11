@@ -19,7 +19,7 @@ package com.hazelcast.internal.dynamicconfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.EndpointConfig;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryYamlConfig;
 import com.hazelcast.config.MemberAddressProviderConfig;
@@ -518,21 +518,21 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
 
 
     @Test
-    public void testDataLinkConfig() {
+    public void testDataConnectionConfig() {
         Config expectedConfig = new Config();
 
         Properties properties = new Properties();
         properties.put("jdbcUrl", "jdbc:h2:mem:" + DynamicConfigYamlGeneratorTest.class.getSimpleName());
-        DataLinkConfig dataLinkConfig = new DataLinkConfig()
-                .setName("test-data-link")
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+                .setName("test-data-connection")
                 .setType("jdbc")
                 .setProperties(properties);
 
-        expectedConfig.addDataLinkConfig(dataLinkConfig);
+        expectedConfig.addDataConnectionConfig(dataConnectionConfig);
 
         Config actualConfig = getNewConfigViaGenerator(expectedConfig);
 
-        assertEquals(expectedConfig.getDataLinkConfigs(), actualConfig.getDataLinkConfigs());
+        assertEquals(expectedConfig.getDataConnectionConfigs(), actualConfig.getDataConnectionConfigs());
     }
 
     @Override

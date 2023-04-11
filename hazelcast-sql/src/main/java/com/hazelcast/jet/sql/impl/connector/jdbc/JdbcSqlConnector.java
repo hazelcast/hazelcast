@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datalink.impl.JdbcDataLink;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -82,16 +82,16 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName) {
-        if (dataLinkName == null) {
-            throw QueryException.error("You must provide data link when using the Jdbc connector");
+            @Nullable String dataConnectionName) {
+        if (dataConnectionName == null) {
+            throw QueryException.error("You must provide data connection when using the Jdbc connector");
         }
         if (externalName.length == 0 || externalName.length > 3) {
             throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                     + ", external name for Jdbc must have either 1, 2 or 3 components (catalog, schema and relation)");
         }
         ExternalJdbcTableName externalTableName = new ExternalJdbcTableName(externalName);
-        Map<String, DbField> dbFields = readDbFields(nodeEngine, dataLinkName, externalTableName);
+        Map<String, DbField> dbFields = readDbFields(nodeEngine, dataConnectionName, externalTableName);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -135,18 +135,18 @@ public class JdbcSqlConnector implements SqlConnector {
 
     private Map<String, DbField> readDbFields(
             NodeEngine nodeEngine,
-            String dataLinkName,
+            String dataConnectionName,
             ExternalJdbcTableName externalTableName
     ) {
-        JdbcDataLink dataLink = getAndRetainDataLink(nodeEngine, dataLinkName);
-        try (Connection connection = dataLink.getConnection()) {
+        JdbcDataConnection dataConnection = getAndRetainDataConnection(nodeEngine, dataConnectionName);
+        try (Connection connection = dataConnection.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
             Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, databaseMetaData);
             return readColumns(externalTableName, databaseMetaData, pkColumns);
         } catch (Exception e) {
             throw new HazelcastException("Could not execute readDbFields for table " + externalTableName, e);
         } finally {
-            dataLink.release();
+            dataConnection.release();
         }
     }
 
@@ -190,10 +190,10 @@ public class JdbcSqlConnector implements SqlConnector {
         return fields;
     }
 
-    private static JdbcDataLink getAndRetainDataLink(NodeEngine nodeEngine, String dataLinkName) {
+    private static JdbcDataConnection getAndRetainDataConnection(NodeEngine nodeEngine, String dataConnectionName) {
         return nodeEngine
-                .getDataLinkService()
-                .getAndRetainDataLink(dataLinkName, JdbcDataLink.class);
+                .getDataConnectionService()
+                .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
     }
 
     private void validateType(MappingField field, DbField dbField) {
@@ -211,10 +211,10 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String mappingName,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields) {
-        assert dataLinkName != null;
+        assert dataConnectionName != null;
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         for (MappingField resolvedField : resolvedFields) {
@@ -229,7 +229,7 @@ public class JdbcSqlConnector implements SqlConnector {
             ));
         }
 
-        SqlDialect dialect = resolveDialect(nodeEngine, dataLinkName);
+        SqlDialect dialect = resolveDialect(nodeEngine, dataConnectionName);
 
         return new JdbcTable(
                 this,
@@ -239,23 +239,23 @@ public class JdbcSqlConnector implements SqlConnector {
                 mappingName,
                 new ConstantTableStatistics(0),
                 externalName,
-                dataLinkName,
+                dataConnectionName,
                 parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
                 nodeEngine.getSerializationService()
         );
     }
 
-    private SqlDialect resolveDialect(NodeEngine nodeEngine, String dataLinkRef) {
-        JdbcDataLink dataLink = getAndRetainDataLink(nodeEngine, dataLinkRef);
-        try (Connection connection = dataLink.getConnection()) {
+    private SqlDialect resolveDialect(NodeEngine nodeEngine, String dataConnectionName) {
+        JdbcDataConnection dataConnection = getAndRetainDataConnection(nodeEngine, dataConnectionName);
+        try (Connection connection = dataConnection.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
             SupportedDatabases.logOnceIfDatabaseNotSupported(databaseMetaData);
             return dialect;
         } catch (Exception e) {
-            throw new HazelcastException("Could not determine dialect for dataLinkRef: " + dataLinkRef, e);
+            throw new HazelcastException("Could not determine dialect for data connection: " + dataConnectionName, e);
         } finally {
-            dataLink.release();
+            dataConnection.release();
         }
     }
 
@@ -279,7 +279,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 "Select(" + table.getExternalNameList() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         new SelectProcessorSupplier(
-                                table.getDataLinkName(),
+                                table.getDataConnectionName(),
                                 builder.query(),
                                 builder.parameterPositions()
                         ))
@@ -295,7 +295,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return new VertexWithInputConfig(context.getDag().newUniqueVertex(
                 "Insert(" + table.getExternalNameList() + ")",
                 new InsertProcessorSupplier(
-                        table.getDataLinkName(),
+                        table.getDataConnectionName(),
                         builder.query(),
                         table.getBatchLimit()
                 )
@@ -345,7 +345,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return context.getDag().newUniqueVertex(
                 "Update(" + table.getExternalNameList() + ")",
                 new UpdateProcessorSupplier(
-                        table.getDataLinkName(),
+                        table.getDataConnectionName(),
                         builder.query(),
                         builder.parameterPositions(),
                         table.getBatchLimit()
@@ -369,7 +369,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return context.getDag().newUniqueVertex(
                 "Delete(" + table.getExternalNameList() + ")",
                 new DeleteProcessorSupplier(
-                        table.getDataLinkName(),
+                        table.getDataConnectionName(),
                         builder.query(),
                         table.getBatchLimit()
                 )
@@ -390,7 +390,7 @@ public class JdbcSqlConnector implements SqlConnector {
             return context.getDag().newUniqueVertex(
                     "sinkProcessor(" + jdbcTable.getExternalNameList() + ")",
                     new UpsertProcessorSupplier(
-                            jdbcTable.getDataLinkName(),
+                            jdbcTable.getDataConnectionName(),
                             upsertStatement,
                             jdbcTable.getBatchLimit()
                     )

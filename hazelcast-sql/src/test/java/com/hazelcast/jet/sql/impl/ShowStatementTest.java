@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.TestProcessors;
@@ -51,15 +51,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ShowStatementTest extends SqlTestSupport {
 
-    private static final String DATA_LINK_NAME = "test-data-link";
+    private static final String DATA_CONNECTION_NAME = "test-data-connection";
 
     private final SqlService sqlService = instance().getSql();
 
     @BeforeClass
     public static void beforeClass() {
         final Config config = smallInstanceConfig();
-        config.getDataLinkConfigs().put(DATA_LINK_NAME, new DataLinkConfig()
-                .setName(DATA_LINK_NAME)
+        config.getDataConnectionConfigs().put(DATA_CONNECTION_NAME, new DataConnectionConfig()
+                .setName(DATA_CONNECTION_NAME)
                 .setType("dummy"));
         initialize(2, config);
     }
@@ -170,7 +170,7 @@ public class ShowStatementTest extends SqlTestSupport {
 
     @Test
     public void test_showResources() {
-        assertRowsOrdered("SHOW RESOURCES FOR \"" + DATA_LINK_NAME + "\"", rows(2,
+        assertRowsOrdered("SHOW RESOURCES FOR \"" + DATA_CONNECTION_NAME + "\"", rows(2,
                 "testName1", "testType1",
                 "testName2", "testType2"
         ));
@@ -178,16 +178,16 @@ public class ShowStatementTest extends SqlTestSupport {
 
     @Test
     public void test_showResources_nonExistent() {
-        assertThatThrownBy(() -> sqlService.execute("SHOW RESOURCES FOR non_existent_datalink"))
+        assertThatThrownBy(() -> sqlService.execute("SHOW RESOURCES FOR non_existent_data_connection"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Data link 'non_existent_datalink' not found");
+                .hasMessageContaining("Data connection 'non_existent_data_connection' not found");
     }
 
     @Test
     public void test_showResources_nonExistent_wrongSchema() {
-        assertThatThrownBy(() -> sqlService.execute("SHOW RESOURCES FOR foo_schema.\"" + DATA_LINK_NAME + "\""))
+        assertThatThrownBy(() -> sqlService.execute("SHOW RESOURCES FOR foo_schema.\"" + DATA_CONNECTION_NAME + "\""))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Data links exist only in the 'public' schema");
+                .hasMessageContaining("Data connections exist only in the 'public' schema");
     }
 
     private void createJobInJava(String jobName) {

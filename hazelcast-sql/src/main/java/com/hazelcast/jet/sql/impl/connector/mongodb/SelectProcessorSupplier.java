@@ -62,7 +62,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
 
     private final Long startAt;
     private final String connectionString;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private transient ExpressionEvalContext evalContext;
 
     private final boolean forceMongoParallelismOne;
@@ -76,7 +76,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.predicate = predicate;
         this.projection = projection;
         this.connectionString = table.connectionString;
-        this.dataLinkName = table.dataLinkName;
+        this.dataConnectionName = table.dataConnectionName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
         this.startAt = startAt == null ? null : startAt.getValue();
@@ -134,7 +134,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             Processor processor = new ReadMongoP<>(
                     new ReadMongoParams<JetSqlRow>(stream)
                             .setClientSupplier(clientSupplierEx)
-                            .setDataLinkRef(dataLinkName)
+                            .setDataConnectionRef(dataConnectionName)
                             .setAggregates(aggregates)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)

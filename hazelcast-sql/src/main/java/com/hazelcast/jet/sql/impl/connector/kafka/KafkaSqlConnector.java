@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.kafka.KafkaProcessors;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -88,7 +88,7 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName) {
+            @Nullable String dataConnectionName) {
         if (externalName.length > 1) {
             throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                     + ", external name for Kafka is allowed to have only a single component referencing the topic " +
@@ -104,7 +104,7 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String mappingName,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields) {
         KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, options, null);
@@ -119,7 +119,7 @@ public class KafkaSqlConnector implements SqlConnector {
                 fields,
                 new ConstantTableStatistics(0),
                 externalName[0],
-                dataLinkName,
+                dataConnectionName,
                 options,
                 keyMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
@@ -144,7 +144,7 @@ public class KafkaSqlConnector implements SqlConnector {
                         StreamKafkaP.PREFERRED_LOCAL_PARALLELISM,
                         new RowProjectorProcessorSupplier(
                                 table.kafkaConsumerProperties(),
-                                table.dataLinkName(),
+                                table.dataConnectionName(),
                                 table.topicName(),
                                 eventTimePolicyProvider,
                                 table.paths(),
@@ -195,7 +195,7 @@ public class KafkaSqlConnector implements SqlConnector {
 
         Vertex vEnd = context.getDag().newUniqueVertex(
                 table.toString(),
-                table.dataLinkName() == null
+                table.dataConnectionName() == null
                         ?
                         KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
                                 table.kafkaProducerProperties(),
@@ -205,7 +205,7 @@ public class KafkaSqlConnector implements SqlConnector {
                                 true)
                         :
                         KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
-                                new DataLinkRef(table.dataLinkName()),
+                                new DataConnectionRef(table.dataConnectionName()),
                                 table.topicName(),
                                 Entry::getKey,
                                 Entry::getValue,

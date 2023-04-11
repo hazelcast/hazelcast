@@ -141,8 +141,8 @@ public class ConfigCompatibilityChecker {
                 new InstanceTrackingConfigChecker());
         checkCompatibleConfigs("native memory", c1.getNativeMemoryConfig(), c2.getNativeMemoryConfig(),
                 new NativeMemoryConfigChecker());
-        checkCompatibleConfigs("data link", c1, c2, c1.getDataLinkConfigs(), c2.getDataLinkConfigs(),
-                new DataLinkConfigChecker());
+        checkCompatibleConfigs("data connection", c1, c2, c1.getDataConnectionConfigs(), c2.getDataConnectionConfigs(),
+                new DataConnectionConfigChecker());
         checkCompatibleConfigs("tpc", c1, c2, singletonMap("", c1.getTpcConfig()),
                 singletonMap("", c2.getTpcConfig()), new TpcConfigChecker());
 
@@ -692,9 +692,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    private static class DataLinkConfigChecker extends ConfigChecker<DataLinkConfig> {
+    private static class DataConnectionConfigChecker extends ConfigChecker<DataConnectionConfig> {
         @Override
-        boolean check(DataLinkConfig c1, DataLinkConfig c2) {
+        boolean check(DataConnectionConfig c1, DataConnectionConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -708,8 +708,8 @@ public class ConfigCompatibilityChecker {
         }
 
         @Override
-        DataLinkConfig getDefault(Config c) {
-            return c.getDataLinkConfig("default");
+        DataConnectionConfig getDefault(Config c) {
+            return c.getDataConnectionConfig("default");
         }
     }
 

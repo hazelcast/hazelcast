@@ -18,7 +18,7 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.JdbcDataLink;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -305,31 +305,32 @@ public final class SecuredFunctions {
     }
 
     public static <T> ProcessorSupplier readJdbcProcessorFn(
-            String dataLinkName,
+            String dataConnectionName,
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         return new ProcessorSupplier() {
 
-            private transient JdbcDataLink dataLink;
+            private transient JdbcDataConnection dataConnection;
 
             @Override
             public void init(@Nonnull ProcessorSupplier.Context context) {
-                dataLink = context.dataLinkService().getAndRetainDataLink(dataLinkName, JdbcDataLink.class);
+                dataConnection = context.dataConnectionService()
+                                        .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
             }
 
             @Nonnull
             @Override
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadJdbcP<T>(() -> dataLink.getConnection(), resultSetFn, mapOutputFn))
+                        .mapToObj(i -> new ReadJdbcP<T>(() -> dataConnection.getConnection(), resultSetFn, mapOutputFn))
                         .collect(Collectors.toList());
             }
 
             @Override
             public void close(@Nullable Throwable error) {
-                if (dataLink != null) {
-                    dataLink.release();
+                if (dataConnection != null) {
+                    dataConnection.release();
                 }
             }
 

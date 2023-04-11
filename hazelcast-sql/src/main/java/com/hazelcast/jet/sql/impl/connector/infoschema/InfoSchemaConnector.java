@@ -69,7 +69,7 @@ final class InfoSchemaConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName) {
+            @Nullable String dataConnectionName) {
         throw new UnsupportedOperationException();
     }
 
@@ -79,7 +79,7 @@ final class InfoSchemaConnector implements SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String mappingName,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException();

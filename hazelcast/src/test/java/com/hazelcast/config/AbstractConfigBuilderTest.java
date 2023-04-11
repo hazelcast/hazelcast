@@ -705,7 +705,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testIntegrityCheckerConfig();
 
     @Test
-    public abstract void testDataLinkConfigs();
+    public abstract void testDataConnectionConfigs();
 
     @Test
     public abstract void testTpcConfig();

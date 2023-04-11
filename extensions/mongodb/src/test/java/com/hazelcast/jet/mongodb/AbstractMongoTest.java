@@ -17,7 +17,7 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -82,7 +82,7 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
 
         Config config = new Config();
         config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
-        config.addDataLinkConfig(new DataLinkConfig("mongoDB")
+        config.addDataConnectionConfig(new DataConnectionConfig("mongoDB")
                 .setType("MongoDB")
                 .setName("mongoDB")
                 .setShared(true)

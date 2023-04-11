@@ -1,7 +1,7 @@
 {
   "instance": {
     "hazelcast": {
-      "data-link": {
+      "data-connection": {
         "mysql-database": {
           "type": "jdbc",
           "properties": {

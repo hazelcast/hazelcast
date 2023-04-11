@@ -60,12 +60,12 @@ public class UpdateProcessorSupplier
      *     ({@code -i - 1}) is dynamic argument reference.
      */
     public UpdateProcessorSupplier(
-            @Nonnull String dataLinkName,
+            @Nonnull String dataConnectionName,
             @Nonnull String query,
             @Nonnull int[] parameterPositions,
             int batchLimit
     ) {
-        super(dataLinkName);
+        super(dataConnectionName);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
         this.batchLimit = batchLimit;
@@ -107,12 +107,12 @@ public class UpdateProcessorSupplier
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(dataLinkName, ACTION_WRITE));
+        return singletonList(ConnectorPermission.jdbc(dataConnectionName, ACTION_WRITE));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(dataLinkName);
+        out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
         out.writeInt(batchLimit);
@@ -120,7 +120,7 @@ public class UpdateProcessorSupplier
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        dataLinkName = in.readString();
+        dataConnectionName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
         batchLimit = in.readInt();

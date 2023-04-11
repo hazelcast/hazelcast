@@ -644,7 +644,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         sqlService.execute(sb.toString());
     }
 
-    public static void createDataLink(
+    public static void createDataConnection(
             HazelcastInstance instance,
             String name,
             String type,
@@ -652,7 +652,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             Map<String, String> options
     ) {
         StringBuilder queryBuilder = new StringBuilder()
-                .append("CREATE OR REPLACE DATA LINK ")
+                .append("CREATE OR REPLACE DATA CONNECTION ")
                 .append(quoteName(name))
                 .append(" TYPE ")
                 .append(quoteName(type))

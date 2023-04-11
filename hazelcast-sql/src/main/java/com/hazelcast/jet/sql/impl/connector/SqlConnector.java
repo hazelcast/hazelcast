@@ -209,12 +209,12 @@ public interface SqlConnector {
      * the user can see it by listing the catalog. Jet will later pass it to
      * {@link #createTable}.
      *
-     * @param nodeEngine   an instance of {@link NodeEngine}
-     * @param options      user-provided options
-     * @param userFields   user-provided list of fields, possibly empty
-     * @param externalName external name of the table
-     * @param dataLinkName name of the data link to use, may be null if the connector supports specifying
-     *                     connection details in options
+     * @param nodeEngine         an instance of {@link NodeEngine}
+     * @param options            user-provided options
+     * @param userFields         user-provided list of fields, possibly empty
+     * @param externalName       external name of the table
+     * @param dataConnectionName name of the data connection to use, may be null if the connector supports specifying
+     *                           connection details in options
      * @return final field list, must not be empty
      */
     @Nonnull
@@ -223,7 +223,7 @@ public interface SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName);
+            @Nullable String dataConnectionName);
 
     /**
      * Creates a {@link Table} object with the given fields. Should return
@@ -232,12 +232,12 @@ public interface SqlConnector {
      * <p>
      * Jet calls this method for each statement execution and for each mapping.
      *
-     * @param nodeEngine     an instance of {@link NodeEngine}
-     * @param dataLinkName   name of the data link to use, may be null if the connector supports specifying
-     *                       connection details in options
-     * @param options        connector specific options
-     * @param resolvedFields list of fields as returned from {@link
-     *                       #resolveAndValidateFields}
+     * @param nodeEngine         an instance of {@link NodeEngine}
+     * @param dataConnectionName name of the data connection to use, may be null if the connector supports specifying
+     *                           connection details in options
+     * @param options            connector specific options
+     * @param resolvedFields     list of fields as returned from {@link
+     *                           #resolveAndValidateFields}
      */
     @Nonnull
     Table createTable(
@@ -245,7 +245,7 @@ public interface SqlConnector {
             @Nonnull String schemaName,
             @Nonnull String mappingName,
             @Nonnull String[] externalName,
-            @Nullable String dataLinkName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields);
 

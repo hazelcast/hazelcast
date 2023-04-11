@@ -23,7 +23,7 @@ data: {
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
-      "com.hazelcast.jet.sql.impl.parse.SqlCreateDataLink"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateDataConnection"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
@@ -31,7 +31,7 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlCreateType"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
-      "com.hazelcast.jet.sql.impl.parse.SqlDropDataLink"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropDataConnection"
       "com.hazelcast.jet.sql.impl.parse.SqlDropIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
       "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
@@ -55,12 +55,11 @@ data: {
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
       "CONNECTOR"
+      "CONNECTIONS"
       "IF"
       "INDEX"
       "JOB"
       "JOBS"
-      "LINK"
-      "LINKS"
       "MAPPING"
       "MAPPINGS"
       "RESUME"
@@ -403,8 +402,6 @@ data: {
       "EXTERNAL"
       "JOB"
       "JOBS"
-      "LINK"
-      "LINKS"
       "MAPPING"
       "MAPPINGS"
       "RESUME"
@@ -471,7 +468,7 @@ data: {
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
     # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
-      "SqlCreateDataLink"
+      "SqlCreateDataConnection"
       "SqlCreateIndex"
       "SqlCreateJob"
       "SqlCreateMapping"
@@ -484,7 +481,7 @@ data: {
     # Each must accept arguments "(SqlParserPos pos)".
     # Example: "SqlDropSchema".
     dropStatementParserMethods: [
-      "SqlDropDataLink"
+      "SqlDropDataConnection"
       "SqlDropIndex"
       "SqlDropJob"
       "SqlDropMapping"

@@ -4518,35 +4518,35 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testDataLinkConfigs() {
+    public void testDataConnectionConfigs() {
         String xml = HAZELCAST_START_TAG
-                + "    <data-link name=\"mysql-database\">\n"
+                + "    <data-connection name=\"mysql-database\">\n"
                 + "        <type>jdbc</type>\n"
                 + "        <properties>\n"
                 + "            <property name=\"jdbcUrl\">jdbc:mysql://dummy:3306</property>\n"
                 + "            <property name=\"some.property\">dummy-value</property>\n"
                 + "        </properties>\n"
                 + "      <shared>true</shared>\n"
-                + "    </data-link>"
-                + "    <data-link name=\"other-database\">\n"
+                + "    </data-connection>"
+                + "    <data-connection name=\"other-database\">\n"
                 + "        <type>other</type>\n"
-                + "    </data-link>"
+                + "    </data-connection>"
                 + HAZELCAST_END_TAG;
 
-        Map<String, DataLinkConfig> dataLinkConfigs = buildConfig(xml).getDataLinkConfigs();
+        Map<String, DataConnectionConfig> dataConnectionConfigs = buildConfig(xml).getDataConnectionConfigs();
 
-        assertThat(dataLinkConfigs).hasSize(2);
-        assertThat(dataLinkConfigs).containsKey("mysql-database");
-        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
-        assertThat(mysqlDataLinkConfig.getType()).isEqualTo("jdbc");
-        assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
-        assertThat(mysqlDataLinkConfig.isShared()).isTrue();
-        assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(dataConnectionConfigs).hasSize(2);
+        assertThat(dataConnectionConfigs).containsKey("mysql-database");
+        DataConnectionConfig mysqlDataConnectionConfig = dataConnectionConfigs.get("mysql-database");
+        assertThat(mysqlDataConnectionConfig.getType()).isEqualTo("jdbc");
+        assertThat(mysqlDataConnectionConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataConnectionConfig.isShared()).isTrue();
+        assertThat(mysqlDataConnectionConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataConnectionConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(dataLinkConfigs).containsKey("other-database");
-        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
-        assertThat(otherDataLinkConfig.getType()).isEqualTo("other");
+        assertThat(dataConnectionConfigs).containsKey("other-database");
+        DataConnectionConfig otherDataConnectionConfig = dataConnectionConfigs.get("other-database");
+        assertThat(otherDataConnectionConfig.getType()).isEqualTo("other");
     }
 
     @Override

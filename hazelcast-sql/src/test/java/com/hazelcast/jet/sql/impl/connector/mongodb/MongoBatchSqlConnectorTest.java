@@ -99,7 +99,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     }
 
     @Test
-    public void readsUsingDataLink() {
+    public void readsUsingDataConnection() {
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
         collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
@@ -108,7 +108,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
         execute("CREATE MAPPING " + collectionName
                 + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
-                + "DATA LINK testMongo");
+                + "DATA CONNECTION testMongo");
 
         assertRowsAnyOrder("select firstName, lastName from " + collectionName + " where lastName = ?",
                 singletonList("Skywalker"),

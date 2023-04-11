@@ -54,13 +54,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureDummyDataLink;
-import static com.hazelcast.datalink.impl.DataLinkTestUtil.configureJdbcDataLink;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureDummyDataConnection;
+import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureJdbcDataConnection;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -73,8 +74,8 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
-    private static final String JDBC_DATA_LINK = "jdbc-data-link";
-    private static final String DUMMY_DATA_LINK = "dummy-data-link";
+    private static final String JDBC_DATA_CONNECTION = "jdbc-data-connection";
+    private static final String DUMMY_DATA_CONNECTION = "dummy-data-connection";
 
     @SuppressWarnings({"rawtypes", "resource"})
     public static PostgreSQLContainer container = new PostgreSQLContainer<>("postgres:12.1")
@@ -83,7 +84,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     private static final int PERSON_COUNT = 10;
 
     private static final AtomicInteger TABLE_COUNTER = new AtomicInteger();
-    private static HikariDataSource hikariDataSource;
+
     private String tableName;
 
     @BeforeClass
@@ -92,8 +93,8 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         container.start();
 
         Config config = smallInstanceConfig();
-        configureJdbcDataLink(JDBC_DATA_LINK, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
-        configureDummyDataLink(DUMMY_DATA_LINK, config);
+        configureJdbcDataConnection(JDBC_DATA_CONNECTION, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
+        configureDummyDataConnection(DUMMY_DATA_CONNECTION, config);
         initialize(2, config);
     }
 
@@ -114,10 +115,6 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     @After
     public void tearDown() throws Exception {
-        if (hikariDataSource != null) {
-            hikariDataSource.close();
-        }
-
         listRemainingConnections();
     }
 
@@ -176,10 +173,12 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     public void test_supplied_closeable_datasource_is_closed() throws SQLException {
         Pipeline p = Pipeline.create();
 
+        CopyOnWriteArrayList<HikariDataSource> hikariDataSourceList = new CopyOnWriteArrayList<>();
+
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
                 .map(item -> entry(item, item.toString()))
                 .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                        WriteJdbcPTest::createHikariDataSource,
+                        () -> createHikariDataSource(hikariDataSourceList),
                         (stmt, item) -> {
                             stmt.setInt(1, item.getKey());
                             stmt.setString(2, item.getValue());
@@ -187,11 +186,12 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                 ));
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
-        assertTrueEventually(() -> assertTrue(hikariDataSource.isClosed()));
+        assertTrueEventually(() -> assertTrue(hikariDataSourceList.stream().allMatch(HikariDataSource::isClosed)));
     }
 
-    private static DataSource createHikariDataSource() {
-        hikariDataSource = new HikariDataSource();
+    private static DataSource createHikariDataSource(CopyOnWriteArrayList<HikariDataSource> hikariDataSourceList) {
+        HikariDataSource hikariDataSource = new HikariDataSource();
+        hikariDataSourceList.add(hikariDataSource);
         assertThat(hikariDataSource).isInstanceOf(AutoCloseable.class);
 
         hikariDataSource.setJdbcUrl(container.getJdbcUrl());
@@ -201,13 +201,13 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_data_link_config() throws SQLException {
+    public void test_data_connection_config() throws SQLException {
         assertEquals(0, rowCount());
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
                 .map(item -> entry(item, item.toString()))
                 .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                        dataLinkRef(JDBC_DATA_LINK),
+                        dataConnectionRef(JDBC_DATA_CONNECTION),
                         (stmt, item) -> {
                             stmt.setInt(1, item.getKey());
                             stmt.setString(2, item.getValue());
