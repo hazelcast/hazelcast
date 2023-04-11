@@ -47,13 +47,13 @@ class DeleteNewLogicalRule extends RelRule<RelRule.Config> {
     @Value.Immutable
     interface Config extends RelRule.Config {
         RelRule.Config DEFAULT = ImmutableDeleteNewLogicalRule.Config.builder()
-                                                                     .description(DeleteNewLogicalRule.class.getSimpleName())
-                                                                     .operandSupplier(b0 -> b0.operand(TableModify.class)
-                                                                                              .predicate(TableModify::isDelete)
-                                                                                              .trait(Convention.NONE)
-                                                                                              .inputs(b1 -> b1.operand(RelNode.class)
-                                                                                                              .noInputs())
-                                                                     ).build();
+             .description(DeleteNewLogicalRule.class.getSimpleName())
+             .operandSupplier(b0 -> b0.operand(TableModify.class)
+                                      .predicate(TableModify::isDelete)
+                                      .trait(Convention.NONE)
+                                      .inputs(b1 -> b1.operand(RelNode.class)
+                                                      .noInputs())
+             ).build();
 
         @Override
         default RelOptRule toRule() {
