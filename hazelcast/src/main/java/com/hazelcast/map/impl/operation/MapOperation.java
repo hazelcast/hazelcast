@@ -35,8 +35,8 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.map.impl.operation.steps.IMapStepAwareOperation;
 import com.hazelcast.map.impl.operation.steps.engine.State;
-import com.hazelcast.map.impl.operation.steps.engine.StepAwareOperation;
 import com.hazelcast.map.impl.operation.steps.engine.StepRunner;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -71,7 +71,7 @@ import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
         implements IdentifiedDataSerializable, ServiceNamespaceAware,
-        StepAwareOperation<State> {
+        IMapStepAwareOperation {
 
     private static final boolean ASSERTION_ENABLED = MapOperation.class.desiredAssertionStatus();
 
