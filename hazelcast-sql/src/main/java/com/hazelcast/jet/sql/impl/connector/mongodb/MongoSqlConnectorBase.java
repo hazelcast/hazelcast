@@ -261,7 +261,8 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         for (TableField tableField : fields) {
             MongoTableField field = (MongoTableField) tableField;
 
-            projectionData.add(new ProjectionData(field.externalName, bsonToDocument(Projections.include(field.externalName)), index++, field.getType()));
+            projectionData.add(new ProjectionData(field.externalName,
+                    bsonToDocument(Projections.include(field.externalName)), index++, field.getType()));
         }
         return projectionData;
     }
