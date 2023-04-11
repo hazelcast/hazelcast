@@ -62,7 +62,7 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
                                   @Nonnull List<String> fieldNames,
                                   @Nonnull List<HazelcastRexNode> expressions) {
         MongoTable table = context.getTable();
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table.externalNames());
+        RexToMongoVisitor visitor = new RexToMongoVisitor();
         List<? extends Serializable> updates = expressions.stream()
                                                           .map(e -> e.unwrap(RexNode.class).accept(visitor))
                                                           .map(doc -> {

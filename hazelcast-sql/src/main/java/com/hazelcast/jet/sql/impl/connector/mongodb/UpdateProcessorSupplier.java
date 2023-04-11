@@ -57,8 +57,6 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final List<String> updatedFieldNames;
     private final List<? extends Serializable> updates;
     private final String dataConnectionName;
-    private final QueryDataType pkType;
-    private final BsonType pkExternalType;
     private ExpressionEvalContext evalContext;
     private transient SupplierEx<MongoClient> clientSupplier;
     private final String pkExternalName;

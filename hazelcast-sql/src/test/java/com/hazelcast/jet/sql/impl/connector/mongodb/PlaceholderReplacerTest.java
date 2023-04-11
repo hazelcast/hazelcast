@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -96,7 +97,7 @@ public class PlaceholderReplacerTest {
     }
 
     private ExpressionEvalContext evalContext(List<Object> arguments) {
-        return new ExpressionEvalContext(arguments, getInternalSerializationService());
+        return new ExpressionEvalContextImpl(arguments, getInternalSerializationService(), null);
     }
 
     private static InternalSerializationService getInternalSerializationService() {

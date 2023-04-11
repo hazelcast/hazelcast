@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -65,7 +66,8 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
 
     private final boolean forceMongoParallelismOne;
 
-    SelectProcessorSupplier(MongoTable table, Document predicate, List<ProjectionData> projection, BsonTimestamp startAt, boolean stream,
+    SelectProcessorSupplier(MongoTable table, Document predicate, List<ProjectionData> projection, BsonTimestamp startAt,
+                            boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         checkArgument(projection != null && !projection.isEmpty(), "projection cannot be empty");
 
@@ -83,8 +85,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.externalNames = table.externalNames();
     }
 
-
-    SelectProcessorSupplier(MongoTable table, Document predicate, List<ProjectionData > projection, BsonTimestamp startAt,
+    SelectProcessorSupplier(MongoTable table, Document predicate, List<ProjectionData> projection, BsonTimestamp startAt,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         this(table, predicate, projection, startAt, true, eventTimePolicyProvider);
     }
@@ -164,7 +165,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         Document doc = changeStreamDocument.getFullDocument();
         requireNonNull(doc, "Document is empty");
         Object[] row = new Object[projection.size()];
-`
+
         for (ProjectionData entry : projection) {
             Object fromDoc = doc.get(entry.externalName.replaceFirst("fullDocument.", ""));
             int index = entry.index;

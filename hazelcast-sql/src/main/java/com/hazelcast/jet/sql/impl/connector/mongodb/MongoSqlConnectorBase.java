@@ -34,9 +34,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Projections;
 import org.apache.calcite.rex.RexNode;
-import org.bson.BsonDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -49,15 +47,12 @@ import java.util.Map;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.mongodb.impl.Mappers.bsonDocumentToDocument;
-import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
-import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.mongodb.client.model.Projections.include;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Base for MongoDB SQL Connectors.
@@ -153,24 +148,24 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
         RexToMongoVisitor visitor = new RexToMongoVisitor();
 
-        TranslationResult<Document> filter = translateFilter(predicate, visitor);
+        Document filter = translateFilter(predicate, visitor);
         TranslationResult<List<ProjectionData>> projections = translateProjections(projection, context, visitor);
 
         // if not all filters are pushed down, then we cannot push down projection
         // because later filters may use those fields
         // We could do it smarter and check field usage in the filters, but it's something TODO
-        List<String> projectionList = filter.allProceeded
-                ? projections.result
-                : allFieldsExternalNames(table);
-        boolean needTwoSteps = !filter.allProceeded || !projections.allProceeded;
 
+        boolean needTwoSteps = !projections.allProceeded;
+        List<ProjectionData> projectionData = projections.allProceeded
+                ? projections.result
+                : allFieldsProjection(table);
         ProcessorMetaSupplier supplier;
         if (isStream()) {
             BsonTimestamp startAt = Options.startAt(table.getOptions());
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionList, startAt,
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projectionData, startAt,
                     eventTimePolicyProvider));
         } else {
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionList));
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projectionData));
         }
 
         DAG dag = context.getDag();
@@ -216,8 +211,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             return bsonToDocument((Bson) result);
         } else {
             InputRef placeholder = (InputRef) result;
-            return bsonDocumentToDocument(Filters.eq(placeholder.asString(), true)
-                                                 .toBsonDocument(BsonDocument.class, defaultCodecRegistry()));
+            return bsonToDocument(Filters.eq(placeholder.asString(), true));
         }
     }
 
@@ -227,33 +221,42 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             RexToMongoVisitor visitor
     ) {
         List<ProjectionData> projection = new ArrayList<>();
-
-        MongoTable table = context.getTable();
-        String[] externalNames = table.externalNames();
-        for (int i = 0; i < projectionNodes.size(); i++) {
-            Object translated = projectionNodes.get(i).unwrap(RexNode.class).accept(visitor);
-            InputRef ref = InputRef.match(translated);
-            if (ref != null) {
-                String externalName = externalNames[ref.getInputIndex()];
-                Document projectionExpr = bsonToDocument(include(externalNames));
-                projection.add(new ProjectionData(externalName, projectionExpr, i, table.fieldType(externalName)));
-            } else {
-                Document projectionExpr = new Document("projected_value_" + i, new Document("$literal", translated));
-                projection.add(new ProjectionData("projected_value_" + i, projectionExpr, i, null));
+        try {
+            MongoTable table = context.getTable();
+            String[] externalNames = table.externalNames();
+            for (int i = 0; i < projectionNodes.size(); i++) {
+                Object translated = projectionNodes.get(i).unwrap(RexNode.class).accept(visitor);
+                InputRef ref = InputRef.match(translated);
+                if (ref != null) {
+                    String externalName = externalNames[ref.getInputIndex()];
+                    Document projectionExpr = bsonToDocument(include(externalNames));
+                    projection.add(new ProjectionData(externalName, projectionExpr, i, table.fieldType(externalName)));
+                } else {
+                    Document projectionExpr = new Document("projected_value_" + i, new Document("$literal", translated));
+                    projection.add(new ProjectionData("projected_value_" + i, projectionExpr, i, null));
+                }
             }
-        }
 
-        if (projection.isEmpty()) {
-            throw new IllegalArgumentException("Projection list cannot be empty");
-        }
+            if (projection.isEmpty()) {
+                throw new IllegalArgumentException("Projection list cannot be empty");
+            }
 
-        return projection;
+            return new TranslationResult<>(projection, true);
+        } catch (UnsupportedOperationException e) {
+            return new TranslationResult<>(emptyList(), false);
+        }
     }
 
-    private static List<String> allFieldsExternalNames(MongoTable table) {
-        return table.getFields().stream()
-                    .map(f -> ((MongoTableField) f).externalName)
-                    .collect(toList());
+    private static List<ProjectionData> allFieldsProjection(MongoTable table) {
+        List<TableField> fields = table.getFields();
+        List<ProjectionData> projectionData = new ArrayList<>(fields.size());
+        int index = 0;
+        for (TableField tableField : fields) {
+            MongoTableField field = (MongoTableField) tableField;
+
+            projectionData.add(new ProjectionData(field.externalName, null, index++, field.getType()));
+        }
+        return projectionData;
     }
 
     static final class TranslationResult<T> {
