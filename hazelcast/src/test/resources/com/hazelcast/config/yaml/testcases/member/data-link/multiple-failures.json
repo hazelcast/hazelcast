@@ -1,7 +1,7 @@
 {
   "instance": {
     "hazelcast": {
-      "data-link": {
+      "data-connection": {
         "mysql-database": {
           "type": 123,
           "properties": [
@@ -13,26 +13,26 @@
     }
   },
   "error": {
-    "schemaLocation": "#/definitions/DataLinkConfig/additionalProperties",
-    "pointerToViolation": "#/hazelcast/data-link/mysql-database",
+    "schemaLocation": "#/definitions/DataConnectionConfig/additionalProperties",
+    "pointerToViolation": "#/hazelcast/data-connection/mysql-database",
     "causingExceptions": [
       {
-        "schemaLocation": "#/definitions/DataLinkConfig/additionalProperties/properties/type",
-        "pointerToViolation": "#/hazelcast/data-link/mysql-database/type",
+        "schemaLocation": "#/definitions/DataConnectionConfig/additionalProperties/properties/type",
+        "pointerToViolation": "#/hazelcast/data-connection/mysql-database/type",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: String, found: Integer"
       },
       {
-        "schemaLocation": "#/definitions/DataLinkConfig/additionalProperties/properties/properties",
-        "pointerToViolation": "#/hazelcast/data-link/mysql-database/properties",
+        "schemaLocation": "#/definitions/DataConnectionConfig/additionalProperties/properties/properties",
+        "pointerToViolation": "#/hazelcast/data-connection/mysql-database/properties",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: JSONObject, found: JSONArray"
       },
       {
-        "schemaLocation": "#/definitions/DataLinkConfig/additionalProperties/properties/shared",
-        "pointerToViolation": "#/hazelcast/data-link/mysql-database/shared",
+        "schemaLocation": "#/definitions/DataConnectionConfig/additionalProperties/properties/shared",
+        "pointerToViolation": "#/hazelcast/data-connection/mysql-database/shared",
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: Boolean, found: String"

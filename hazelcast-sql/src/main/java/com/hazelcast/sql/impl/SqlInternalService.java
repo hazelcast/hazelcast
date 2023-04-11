@@ -41,7 +41,7 @@ public class SqlInternalService {
             NodeServiceProvider nodeServiceProvider,
             long stateCheckFrequency,
             PlanCacheChecker planCacheChecker,
-            DataLinkConsistencyChecker dataLinkConsistencyChecker) {
+            DataConnectionConsistencyChecker dataConnectionConsistencyChecker) {
         this.resultRegistry = resultRegistry;
 
         // Create state registries since they do not depend on anything.
@@ -53,7 +53,7 @@ public class SqlInternalService {
                 nodeServiceProvider,
                 clientStateRegistry,
                 planCacheChecker,
-                dataLinkConsistencyChecker,
+                dataConnectionConsistencyChecker,
                 stateCheckFrequency
         );
     }

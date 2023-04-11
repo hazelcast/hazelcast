@@ -95,7 +95,7 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + " ("
                 + "table_column " + mappingType
                 + ") "
-                + "DATA LINK " + TEST_DATABASE_REF
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder("SELECT * FROM " + mappingName, new Row(expected));

@@ -38,7 +38,7 @@ public class JdbcTable extends JetTable {
     private final SqlDialect sqlDialect;
     private final String[] externalName;
     private final List<String> externalNameList;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private final int batchLimit;
     private final SerializationService serializationService;
 
@@ -50,7 +50,7 @@ public class JdbcTable extends JetTable {
             @Nonnull String name,
             @Nonnull TableStatistics statistics,
             @Nonnull String[] externalName,
-            @Nonnull String dataLinkName,
+            @Nonnull String dataConnectionName,
             int batchLimit,
             @Nonnull SerializationService serializationService) {
 
@@ -72,7 +72,7 @@ public class JdbcTable extends JetTable {
         this.sqlDialect = dialect;
         this.externalName = externalName;
         this.externalNameList = Arrays.asList(externalName);
-        this.dataLinkName = dataLinkName;
+        this.dataConnectionName = dataConnectionName;
         this.batchLimit = batchLimit;
         this.serializationService = serializationService;
     }
@@ -93,8 +93,8 @@ public class JdbcTable extends JetTable {
         return externalNameList;
     }
 
-    public String getDataLinkName() {
-        return dataLinkName;
+    public String getDataConnectionName() {
+        return dataConnectionName;
     }
 
     public int getBatchLimit() {

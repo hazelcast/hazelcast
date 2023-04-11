@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
@@ -69,8 +69,8 @@ public class JdbcSqlConnectorBounceTest {
     private Config getConfig(String jdbcUrl) {
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", jdbcUrl);
-        return smallInstanceConfig().addDataLinkConfig(
-                new DataLinkConfig(TEST_DATABASE_REF)
+        return smallInstanceConfig().addDataConnectionConfig(
+                new DataConnectionConfig(TEST_DATABASE_REF)
                         .setType("jdbc")
                         .setProperties(properties)
         );
@@ -87,7 +87,7 @@ public class JdbcSqlConnectorBounceTest {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
         );
     }

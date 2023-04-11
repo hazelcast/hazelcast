@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapstore;
 
-import com.hazelcast.datalink.impl.JdbcDataLink;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
@@ -36,11 +36,11 @@ import static com.hazelcast.mapstore.JdbcParameters.convert;
  * <p>
  * Usage:
  * <p>
- * First define data link, e.g. for JDBC use {@link JdbcDataLink}:
+ * First define data connection, e.g. for JDBC use {@link JdbcDataConnection}:
  * <pre>{@code Config config = new Config();
- * config.addDataLinkConfig(
- *   new DataLinkConfig("mysql-ref")
- *     .setClassName(JdbcDataLink.class.getName())
+ * config.addDataConnectionConfig(
+ *   new DataConnectionConnection("mysql-ref")
+ *     .setType("Jdbc")
  *     .setProperty("jdbcUrl", dbConnectionUrl)
  * );}</pre>
  * <p>
@@ -48,7 +48,7 @@ import static com.hazelcast.mapstore.JdbcParameters.convert;
  * <pre>{@code MapConfig mapConfig = new MapConfig(mapName);
  * MapStoreConfig mapStoreConfig = new MapStoreConfig();
  * mapStoreConfig.setClassName(GenericMapStore.class.getName());
- * mapStoreConfig.setProperty(JdbcSqlConnector.OPTION_DATA_LINK_NAME, "mysql-name");
+ * mapStoreConfig.setProperty(GenericMapStore.DATA_CONNECTION_REF_PROPERTY, "mysql-name");
  * mapConfig.setMapStoreConfig(mapStoreConfig);
  * instance().getConfig().addMapConfig(mapConfig);}</pre>
  * <p>

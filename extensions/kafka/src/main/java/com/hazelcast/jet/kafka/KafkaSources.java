@@ -19,7 +19,7 @@ package com.hazelcast.jet.kafka;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Stage;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.StreamSourceStage;
@@ -59,17 +59,17 @@ public final class KafkaSources {
     }
 
     /**
-     * Convenience for {@link #kafka(DataLinkRef, FunctionEx, String...)}
+     * Convenience for {@link #kafka(DataConnectionRef, FunctionEx, String...)}
      * wrapping the output in {@code Map.Entry}.
      * @since 5.3
      */
     @Beta
     @Nonnull
     public static <K, V> StreamSource<Entry<K, V>> kafka(
-            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull String ... topics
     ) {
-        return KafkaSources.<K, V, Entry<K, V>>kafka(dataLinkRef, r -> entry(r.key(), r.value()), topics);
+        return KafkaSources.<K, V, Entry<K, V>>kafka(dataConnectionRef, r -> entry(r.key(), r.value()), topics);
     }
 
     /**
@@ -249,7 +249,7 @@ public final class KafkaSources {
      * Returns a source that consumes one or more Apache Kafka topics and emits
      * items from them as {@code Map.Entry} instances.
      * <p>
-     * The source uses the supplied DataLink to obtain a new {@code KafkaConsumer}
+     * The source uses the supplied DataConnection to obtain a new {@code KafkaConsumer}
      * instance for each {@link Processor}. It assigns a subset of
      * Kafka partitions to each of them using manual partition assignment (it
      * ignores the {@code group.id} property). The Kafka's message timestamp
@@ -261,15 +261,15 @@ public final class KafkaSources {
      * <p>
      * If you start a new job from an exported state, you can change the source
      * parameters as needed:<ul>
-     *     <li>if you add a topic, it will be consumed from the default position
-     *     <li>if you remove a topic, restored offsets for that topic will be
-     *     ignored (there will be a warning logged)
-     *     <li>if you connect to another cluster, the offsets will be used based
-     *     on the equality of the topic name. If you want to start from default
-     *     position, give different {@linkplain Stage#setName name} to this
-     *     source
-     *     <li>if the partition count is lower after a restart, the extra
-     *     offsets will be ignored
+     * <li>if you add a topic, it will be consumed from the default position
+     * <li>if you remove a topic, restored offsets for that topic will be
+     * ignored (there will be a warning logged)
+     * <li>if you connect to another cluster, the offsets will be used based
+     * on the equality of the topic name. If you want to start from default
+     * position, give different {@linkplain Stage#setName name} to this
+     * source
+     * <li>if the partition count is lower after a restart, the extra
+     * offsets will be ignored
      * </ul>
      * <p>
      * The source can work in two modes:
@@ -287,7 +287,7 @@ public final class KafkaSources {
      *     in the given properties. Refer to Kafka documentation for the
      *     descriptions of these properties.
      * </ol>
-     *
+     * <p>
      * If you add Kafka partitions at run-time, consumption from them will
      * start after a delay, based on the {@code metadata.max.age.ms} Kafka
      * property. Note, however, that events from them can be dropped as late if
@@ -308,23 +308,23 @@ public final class KafkaSources {
      * byte[]} for messages and deserialize manually in a subsequent mapping
      * step.
      *
-     * @param dataLinkRef dataLinkRef to an existing KafkaDataLink that will be
-     *                    used to create consumers
-     * @param projectionFn function to create output objects from the Kafka record.
-     *                    If the projection returns a {@code null} for an item,
-     *                    that item will be filtered out.
-     * @param topics the topics to consume, at least one is required
+     * @param dataConnectionRef dataConnectionRef to an existing KafkaDataConnection that will be
+     *                          used to create consumers
+     * @param projectionFn      function to create output objects from the Kafka record.
+     *                          If the projection returns a {@code null} for an item,
+     *                          that item will be filtered out.
+     * @param topics            the topics to consume, at least one is required
      * @since 5.3
      */
     @Beta
     @Nonnull
     public static <K, V, T> StreamSource<T> kafka(
-            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull FunctionEx<ConsumerRecord<K, V>, T> projectionFn,
             @Nonnull String ... topics
     ) {
         checkPositive(topics.length, "At least one topic required");
         return streamFromProcessorWithWatermarks("kafkaSource(" + String.join(",", topics) + ")",
-                true, w -> streamKafkaP(dataLinkRef, projectionFn, w, topics));
+                true, w -> streamKafkaP(dataConnectionRef, projectionFn, w, topics));
     }
 }

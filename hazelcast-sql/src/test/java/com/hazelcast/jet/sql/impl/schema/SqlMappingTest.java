@@ -156,14 +156,14 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_dataLinkDoesNotExist_then_fail() {
+    public void when_dataConnectionDoesNotExist_then_fail() {
         String dlName = randomName();
         String mappingName = randomName();
         assertThatThrownBy(() ->
                 instance().getSql().execute("CREATE OR REPLACE MAPPING " + mappingName +
-                        " DATA LINK " + dlName + "\nOPTIONS ()"))
+                        " DATA CONNECTION " + dlName + "\nOPTIONS ()"))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Data link '" + dlName + "' not found");
+                .hasMessageContaining("Data connection '" + dlName + "' not found");
     }
 
     @Test

@@ -42,7 +42,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.kafka.KafkaCreateDataLinkSqlTest.options;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -100,13 +99,13 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void createKafkaMappingWithDataLink() {
+    public void createKafkaMappingWithDataConnection() {
         String dlName = randomName();
-        sqlService.execute("CREATE DATA LINK " + dlName + " TYPE Kafka SHARED " + options());
+        sqlService.execute("CREATE DATA CONNECTION " + dlName + " TYPE Kafka SHARED " + options());
 
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + ' '
-                + "DATA LINK " + dlName + ' '
+                + "DATA CONNECTION " + dlName + ' '
                 + "OPTIONS ( "
                 + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
                 + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''

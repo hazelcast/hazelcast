@@ -30,7 +30,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.ConsistencyCheckStrategy;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -898,23 +898,23 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
     }
 
 
-    // DATA LINK
+    // DATA CONNECTION
 
     @Test
-    public void testDataLink() {
+    public void testDataConnection() {
         Properties properties = new Properties();
         properties.setProperty("prop1", "val1");
         properties.setProperty("prop2", "val2");
-        DataLinkConfig expectedConfig = new DataLinkConfig()
+        DataConnectionConfig expectedConfig = new DataConnectionConfig()
                 .setName("some-name")
                 .setType("some-type")
                 .setProperties(properties);
 
-        Config config = new Config().addDataLinkConfig(expectedConfig);
+        Config config = new Config().addDataConnectionConfig(expectedConfig);
 
         Config decConfig = getNewConfigViaGenerator(config);
 
-        DataLinkConfig actualConfig = decConfig.getDataLinkConfig(expectedConfig.getName());
+        DataConnectionConfig actualConfig = decConfig.getDataConnectionConfig(expectedConfig.getName());
         assertEquals(expectedConfig, actualConfig);
     }
 

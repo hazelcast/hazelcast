@@ -66,7 +66,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " person_id INT EXTERNAL NAME id, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE person_id = 0");
@@ -94,7 +94,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE fullName = 'name-0'");
@@ -127,7 +127,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id2 INT, "
                         + " name VARCHAR"
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE id = 0 AND id2 = 1");
@@ -148,7 +148,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " name VARCHAR, "
                         + " id INT "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE id = 0");
@@ -164,7 +164,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         insertItems(tableName, 1);
 
         execute(
-                "CREATE MAPPING " + tableName + " DATA LINK " + TEST_DATABASE_REF
+                "CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE \"person-id\" = 0");

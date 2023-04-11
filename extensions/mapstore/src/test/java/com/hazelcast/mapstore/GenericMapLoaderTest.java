@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapLoader.DATA_LINK_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.MAPPING_PREFIX;
 import static com.hazelcast.mapstore.GenericMapLoader.TABLE_NAME_PROPERTY;
@@ -190,7 +190,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         executeJdbc("INSERT INTO " + mapName + " VALUES(0, 'name-0', 42, 'Palo Alto, CA 94306')");
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(COLUMNS_PROPERTY, "id,name,age");
         mapLoader = createMapLoader(properties, hz);
 
@@ -211,7 +211,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         // This simulates a second map store on a different instance. The mapping is created, but must be validated
         // (e.g. the config might differ on members)
         Properties secondProps = new Properties();
-        secondProps.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        secondProps.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         secondProps.setProperty(COLUMNS_PROPERTY, "id,name,age");
         mapLoader = createUnitUnderTest(secondProps, hz, false);
         mapLoader.init(hz, secondProps, mapName);
@@ -227,7 +227,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty("columns", "name,age");
         mapLoader = createMapLoader(properties, hz);
@@ -246,7 +246,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         // This simulates a second map loader on a different instance. The mapping is created, but must be validated
         // (e.g. the config might differ on members)
         Properties secondProps = new Properties();
-        secondProps.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        secondProps.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         secondProps.setProperty(COLUMNS_PROPERTY, "id,name,age");
         mapLoader = createUnitUnderTest(secondProps, hz, false);
         mapLoader.init(hz, secondProps, mapName);
@@ -273,7 +273,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(TYPE_NAME_PROPERTY, "my.Person");
         mapLoader = createMapLoader(properties, hz);
 
@@ -287,7 +287,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapLoader = createMapLoader(properties, hz);
         GenericRecord record = mapLoader.load(0);
@@ -302,7 +302,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(COLUMNS_PROPERTY, "name");
         mapLoader = createMapLoader(properties, hz);
 
@@ -345,7 +345,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapLoader = createMapLoader(properties, hz);
         GenericRecord record = mapLoader.loadAll(newArrayList(0)).get(0);
@@ -380,7 +380,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapLoader = createMapLoader(properties, hz);
@@ -410,7 +410,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         mapLoader = new GenericMapLoader<>();
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         assertThatThrownBy(() -> mapLoader.init(hz, properties, mapName))
                 .isInstanceOf(HazelcastException.class)
@@ -425,7 +425,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         insertItems(tableName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         properties.setProperty(TABLE_NAME_PROPERTY, tableName);
         mapLoader = createMapLoader(properties, hz);
 
@@ -439,7 +439,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     private <K> GenericMapLoader<K> createMapLoader(HazelcastInstance instance) {
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         return createMapLoader(properties, instance);
     }
 

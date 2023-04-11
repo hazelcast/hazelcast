@@ -18,7 +18,7 @@ package com.hazelcast.mapstore.mongodb;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -84,8 +84,8 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         Config memberConfig = smallInstanceConfig()
                 // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
-                .addDataLinkConfig(
-                        new DataLinkConfig(TEST_DATABASE_REF)
+                .addDataConnectionConfig(
+                        new DataConnectionConfig(TEST_DATABASE_REF)
                                 .setType("MongoDB")
                                 .setShared(false)
                                 .setProperty("connectionString", connectionString)
@@ -115,7 +115,7 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         MapConfig mapConfig = new MapConfig(tableName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
-        mapStoreConfig.setProperty("data-link-ref", TEST_DATABASE_REF);
+        mapStoreConfig.setProperty("data-connection-ref", TEST_DATABASE_REF);
         mapStoreConfig.setProperty("type-name", "org.example.PersonWithId");
         mapStoreConfig.setProperty("id-column", "personId");
         mapConfig.setMapStoreConfig(mapStoreConfig);

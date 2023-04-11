@@ -44,7 +44,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated'");
@@ -64,7 +64,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE id=0");
@@ -84,7 +84,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE id = ?", 0);
@@ -104,7 +104,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE name='name-0'");
@@ -124,7 +124,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " person_id INT EXTERNAL NAME id, "
                         + " name VARCHAR"
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE person_id = 0");
@@ -144,7 +144,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name"
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET fullName = 'updated' WHERE id = 0");
@@ -164,7 +164,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated-'||id");
@@ -184,7 +184,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = ?", "updated");
@@ -203,7 +203,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " person_id INT EXTERNAL NAME id, "
                         + " name VARCHAR "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated-'||person_id");
@@ -225,7 +225,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " fullName VARCHAR EXTERNAL NAME name,"
                         + " age INT "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET age = 42 WHERE fullName='name-0'");
@@ -247,7 +247,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " name VARCHAR,"
                         + " age INT "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET age = ? WHERE name = ?", 42, "name-0");
@@ -269,7 +269,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " name VARCHAR,"
                         + " age INT "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET age = ?, name = ? WHERE id = ?", 42, "updated", 0);
@@ -308,7 +308,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id2 INT, "
                         + " name VARCHAR"
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE id = 0 AND id2 = 1");
@@ -330,7 +330,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " name VARCHAR, "
                         + " id INT "
                         + ") "
-                        + "DATA LINK " + TEST_DATABASE_REF
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE id = 0");
@@ -346,7 +346,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         createTable(tableName);
         insertItems(tableName, 1);
 
-        execute("CREATE MAPPING " + tableName + " DATA LINK " + TEST_DATABASE_REF);
+        execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE id = 0");
         assertJdbcRowsAnyOrder(tableName,
@@ -359,7 +359,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         createTable(tableName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(tableName, 1);
 
-        execute("CREATE MAPPING " + tableName + " DATA LINK " + TEST_DATABASE_REF);
+        execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
 
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE \"person-id\" = 0");
         assertJdbcRowsAnyOrder(tableName,
@@ -372,7 +372,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         createTable(tableName, "id INT PRIMARY KEY", "\"full-name\" VARCHAR(100)");
         insertItems(tableName, 1);
 
-        execute("CREATE MAPPING " + tableName + " DATA LINK " + TEST_DATABASE_REF);
+        execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
 
         execute("UPDATE " + tableName + " SET \"full-name\" = 'updated' WHERE id = 0");
         assertJdbcRowsAnyOrder(tableName,
