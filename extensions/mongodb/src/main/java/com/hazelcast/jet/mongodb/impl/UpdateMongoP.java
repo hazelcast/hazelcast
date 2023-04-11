@@ -49,7 +49,7 @@ public class UpdateMongoP<I> extends AbstractProcessor {
     public UpdateMongoP(WriteMongoParams<I> params,
                         SupplierEx<WriteModel<I>> writeModelFunction
     ) {
-        this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> {
+        this.connection = new MongoConnection(params.clientSupplier, params.dataConnectionRef, client -> {
         });
 
         this.writeModelFunction = writeModelFunction;
