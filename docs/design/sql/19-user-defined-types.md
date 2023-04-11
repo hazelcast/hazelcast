@@ -1,4 +1,4 @@
-# Nested fields access design document
+# User Defined Types design document
 
 |||
 |---|---|
@@ -141,7 +141,8 @@ As is the case with other schema objects, we don't track dependencies at DDL
 time, mainly due to the lack of a consistent transactional metadata store, so if
 the type a type or mapping depends on is modified or dropped later, it will not
 fail when the type is dropped, but at run-time when that type is about to be
-used and is missing.
+used and is missing. Additionally cyclic types are meant to be supported for Java
+format.
 
 ## Behavior of custom types
 
@@ -152,12 +153,14 @@ All the behavior of `OBJECT` will also apply to UDTs, but additionally:
 This has notable consequences:
 
 - when a custom-typed value is returned to the client, the value will be the
-  java instance or a `GenericRecord`. Non-java clients must use `TO_ROW`
-  function, an object can't be deserialized by a non-java client.
+  java instance or a `GenericRecord`. Non-java clients must either query individual primitive fields
+  or alternatively convert the object into JSON with `CAST(udtObject AS JSON)` operator,
+  as an java object can't be deserialized by a non-java client.
 
 - comparison operators (and most notably, the `=` operator) will compare the
-  java instances, not the values field-by-field. Again, one can use `TO_ROW` to
-  compare field-by-field. This might seem counter-intuitive, but it is the
+  java instances, not the values field-by-field. To compared field by field users can manually
+  compare each field or alternatively convert the object into JSON with `CAST(udtObject AS JSON)`
+  operator and compare that. This might seem counter-intuitive, but it is the
   limitation already present: if the imap's `__key` field is compared, we compare
   the instances and not the individual fields, if they are expanded.
 
@@ -198,7 +201,7 @@ This behavior remains unchanged, that is, even if there is a UDT for `Person`,
 `this` will have `OBJECT` type. In this case, the top-level OBJECT fields cannot
 be assigned in an INSERT/UPDATE stmt (TODO test this).
 
-The user can explicitly map the complex key or value to a UDT (TODO test this):
+The user can explicitly map the complex key or value to a UDT:
 
 ```sql
 CREATE TYPE Person_Type AS (name VARCHAR, birthdate ...);
@@ -218,38 +221,22 @@ In this case the Person's field cannot be mapped. I.e. mapping `this` as
 
 The SQL standards specifies the ROW type. A ROW value contains an array of
 values, but doesn't contain field names. It is important to note that UDT values
-aren't ROW values. However, they can be converted both ways:
-
-- `TO_ROW` function converts a UDT value to `ROW` value
-
-- `CAST(rowExpression AS <UDT name>)`: converts a `ROW` value to a UDT value.
-  The ROW value must have the same number and types of fields as the UDT, in the
-  same order.
-
-When the ROW value is returned to the client, a
-`com.hazelcast.sql.impl.expression.RowValue` is returned to the java client.
-Note that it is a private API class - the reason is that STRUCT types aren't
-supported by JDBC. We could make this API public in our custom SQL API, but we
-consider JDBC to be the primary Java API. This is also what PG and Oracle do
-(TODO confirm Oracle). The user can reasonably only use `toString` on the value,
-which is what JDBC UI clients do, the `toString` will contain comma-separated
-list of all fields.
-
-The `ROW` type supports comparison operators that is different from how the
-comparison operator works with `OBJECT` type. It compares all field one by one,
-from left to right (this is important for operators other than `=`).
-
-The `ROW` type can also be assigned to another `ROW` type, provided they have
-the same number and types of fields. This is important with `ROW` literals, they
-can be used to create UDT values:
+aren't ROW values. However, ROW values are implicitly converted into target UDT on INSERT/UPDATE:
 
 ```sql
-UPDATE m
-SET address=CAST(('street', 'city', 12345, 'Slovakia') AS AddressType
-WHERE ...;
+CREATE TYPE UserType (id BIGINT, username VARCHAR) OPTIONS ('format'='compact', 'compactTypeName'='UserType');
+CREATE MAPPING tMap TYPE IMap (__key BIGINT, entryId BIGINT, user UserType)
+OPTIONS ('keyFormat'='bigint', 'valueFormat'='compact', 'valueCompactTypeName'='obj');
+
+INSERT INTO tMap VALUES (1, 100, (101, 'testUserName'));
 ```
 
-### Semantics of comparison operators
+In the example above ROW value `(101, 'testUserName')` is implicitly converted into UDT during INSERT operation.
+Note that this mechanism does not support cyclic structures as ROW type can not support cycles in current implementation.
+
+Additionally its possible to manually construct ROW values inside of SELECT, but
+
+### Semantics of comparison operators (not currently supported)
 
 Comparison operators are: `=`, `!=`, `<`, `>`, `<=`, `>=`. `IS [NOT] DISTINCT
 FROM` isn't currently supported.
@@ -279,13 +266,16 @@ fields are equal, any field determines the result.
 
 ### Issues with `CAST(field AS ROW)`
 
-For some reason we weren't able to implement this (TODO ivan).
+Due to current parser limitations its not possible to implement `CAST(field AS ROW)` because the specification for
+`ROW` type requires providing full list of columns e.g. `CAST(field AS ROW(BIGINT, VARCHAR, ROW(BIGINT, VARCHAR)))`
+which is not very practical. It might be possible to override this behavior, but it most likely requires extensive
+changes to the parser/validation as wel.
 
 ## DML operations
 
 ### INSERT/SINK
 
-For inserting with SQL literals, one can use ROW values (TODO test):
+For inserting with SQL literals, one can use ROW values:
 
 ```sql
 INSERT INTO foo_map(__key, udtField) VALUES(1, ('value1', 'value2'))
@@ -326,7 +316,7 @@ We need to provide these new tables:
 - `ATTRIBUTES`
 
 We should provide `INFORMATION_SCHEMA.USER_DEFINED_TYPES` view, which is SQL
-standard. I couldn't find an information schema table to list type fields.
+standard.
 
 # Implementation details
 

@@ -19,9 +19,7 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
-import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
-import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -154,7 +152,7 @@ public class NestedTypesDDLTest extends SqlTestSupport {
     public void when_compactTypeNoColumns_then_fail() {
         assertThatThrownBy(() ->
                 execute("CREATE TYPE FirstType OPTIONS ('format'='compact','compactTypeName'='foo')"))
-                .hasMessage("At least one field is required for compact format");
+                .hasMessage("Column list is required to create Compact-based Types");
     }
 
     @Test
