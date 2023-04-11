@@ -93,13 +93,13 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     static final String MAPPING_PREFIX = "__map-store.";
 
-    static final String DATA_CONNECTION_REF_PROPERTY = "data-connection-ref";
-    static final String TABLE_NAME_PROPERTY = "table-name";
+    public static final String DATA_CONNECTION_REF_PROPERTY = "data-connection-ref";
+    public static final String TABLE_NAME_PROPERTY = "table-name";
 
-    static final String ID_COLUMN_PROPERTY = "id-column";
+    public static final String ID_COLUMN_PROPERTY = "id-column";
 
-    static final String COLUMNS_PROPERTY = "columns";
-    static final String TYPE_NAME_PROPERTY = "type-name";
+    public static final String COLUMNS_PROPERTY = "columns";
+    public static final String TYPE_NAME_PROPERTY = "type-name";
 
     protected SqlService sqlService;
 
