@@ -104,10 +104,18 @@ public class JobExecutionRecord implements IdentifiedDataSerializable {
     }
 
     /**
-     * Updates the quorum size if it's larger than the current value. Ignores, if it's not.
+     * Updates the quorum size if it's larger than the current value and
+     * returns the previous value.
      */
-    void setLargerQuorumSize(int newQuorumSize) {
-        quorumSize.getAndAccumulate(newQuorumSize, Math::max);
+    int setLargerQuorumSize(int newQuorumSize) {
+        return quorumSize.getAndAccumulate(newQuorumSize, Math::max);
+    }
+
+    /**
+     * Sets the quorum size to zero and returns the previous value.
+     */
+    int resetQuorumSize() {
+        return quorumSize.getAndSet(0);
     }
 
     /**

@@ -1295,7 +1295,7 @@ public class JobCoordinationService {
         return false;
     }
 
-    private int getQuorumSize() {
+    int getQuorumSize() {
         return (getDataMemberCount() / 2) + 1;
     }
 
