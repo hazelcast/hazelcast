@@ -23,12 +23,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.client.impl.protocol.codec.ExperimentalTpcAuthenticationCodec;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.nio.Protocols;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -39,6 +40,8 @@ import static com.hazelcast.spi.properties.ClusterProperty.CLIENT_PROTOCOL_UNVER
  * payloads being the {@link ClientMessage}.
  */
 public class ClientAsyncSocketReader extends AsyncSocketReader {
+
+    private static final byte[] PROTOCOL_BYTES = Protocols.CLIENT_BINARY.getBytes(StandardCharsets.UTF_8);
 
     private final ClientEngine clientEngine;
     private final ClientMessageReader clientMessageReader;
@@ -80,17 +83,17 @@ public class ClientAsyncSocketReader extends AsyncSocketReader {
     }
 
     private boolean consumeProtocolBytes(ByteBuffer buffer) {
-        if (buffer.remaining() < Protocols.PROTOCOL_LENGTH) {
+        if (buffer.remaining() < PROTOCOL_BYTES.length) {
             // Not enough bytes read
             return false;
         }
 
-        // CP2 -> [67, 80, 50]
-        if (buffer.get() != 67 || buffer.get() != 80 || buffer.get() != 50) {
+        if (buffer.get() != PROTOCOL_BYTES[0] || buffer.get() != PROTOCOL_BYTES[1] || buffer.get() != PROTOCOL_BYTES[2]) {
             throw new IllegalStateException("Received unexpected protocol bytes over socket " + socket);
         }
 
-        return protocolBytesReceived = true;
+        protocolBytesReceived = true;
+        return true;
     }
 
     private void loadConnection(ClientMessage message) {

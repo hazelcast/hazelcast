@@ -184,7 +184,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     private ClientMessage prepareSerializationVersionMismatchClientMessage() {
         boolean failoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
-        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null, (byte) -1, "", -1, null, failoverSupported, null, null);
+        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null, (byte) -1, "",
+                -1, null, failoverSupported, null, null);
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {
