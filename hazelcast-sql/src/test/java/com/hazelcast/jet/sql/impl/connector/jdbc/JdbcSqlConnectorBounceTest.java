@@ -17,9 +17,8 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.JdbcDataLink;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.ChangeLoggingRule;
@@ -40,7 +39,6 @@ import java.util.Properties;
 
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsAnyOrder;
 import static com.hazelcast.jet.sql.SqlTestSupport.randomName;
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -71,9 +69,9 @@ public class JdbcSqlConnectorBounceTest {
     private Config getConfig(String jdbcUrl) {
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", jdbcUrl);
-        return smallInstanceConfig().addDataLinkConfig(
-                new DataLinkConfig(TEST_DATABASE_REF)
-                        .setClassName(JdbcDataLink.class.getName())
+        return smallInstanceConfig().addDataConnectionConfig(
+                new DataConnectionConfig(TEST_DATABASE_REF)
+                        .setType("jdbc")
                         .setProperties(properties)
         );
     }
@@ -89,10 +87,8 @@ public class JdbcSqlConnectorBounceTest {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
         );
     }
 

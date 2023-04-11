@@ -45,8 +45,8 @@ public abstract class IndexFilterTestSupport extends SqlTestSupport {
 
     protected static IndexFilterValue intValue(Integer value, boolean allowNull) {
         return new IndexFilterValue(
-            Collections.singletonList(constant(value, QueryDataType.INT)),
-            Collections.singletonList(allowNull)
+                Collections.singletonList(constant(value, QueryDataType.INT)),
+                Collections.singletonList(allowNull)
         );
     }
 
@@ -55,14 +55,14 @@ public abstract class IndexFilterTestSupport extends SqlTestSupport {
     }
 
     protected static IndexFilterValue intValues(
-        Integer value1,
-        boolean allowNull1,
-        Integer value2,
-        boolean allowNull2
+            Integer value1,
+            boolean allowNull1,
+            Integer value2,
+            boolean allowNull2
     ) {
         return new IndexFilterValue(
-            Arrays.asList(constant(value1, QueryDataType.INT), constant(value2, QueryDataType.INT)),
-            Arrays.asList(allowNull1, allowNull2)
+                Arrays.asList(constant(value1, QueryDataType.INT), constant(value2, QueryDataType.INT)),
+                Arrays.asList(allowNull1, allowNull2)
         );
     }
 }

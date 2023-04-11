@@ -1019,9 +1019,9 @@ hazelcast:
   sql:
     statement-timeout-millis: 0
 
-  data-link:
+  data-connection:
     mysql-database:
-      class-name: com.hazelcast.datalink.JdbcDataLink
+      type: jdbc
       properties:
         jdbcUrl: jdbc:mysql://dummy:3306
       shared: false

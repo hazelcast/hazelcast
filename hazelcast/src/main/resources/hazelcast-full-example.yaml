@@ -3867,18 +3867,18 @@ hazelcast:
   # Integrity Checker is disabled by default.
   integrity-checker:
     enabled: false
-  #      ===== HAZELCAST DATA LINK CONFIGURATION =====
+  #      ===== HAZELCAST DATA CONNECTION CONFIGURATION =====
   #
-  #      Configuration element's name is <data-link>. Contains configuration of data links
+  #      Configuration element's name is <data-connection>. Contains configuration of data connections
   #      used by map stores and jdbc sinks and sources.
-  data-link:
+  data-connection:
     mysql-database:
-      class-name: com.hazelcast.datalink.JdbcDataLink
+      type: jdbc
       properties:
         jdbcUrl: jdbc:mysql://dummy:3306
       shared: false
     other-database:
-      class-name: com.hazelcast.datalink.OtherDataLink
+      type: other
 
   #    ===== HAZELCAST TPC CONFIGURATION =====
   #

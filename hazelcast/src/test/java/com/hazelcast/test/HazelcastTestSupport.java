@@ -89,6 +89,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -1023,6 +1024,16 @@ public abstract class HazelcastTestSupport {
     public static void assertSizeEventually(final int expectedSize, final Collection collection, long timeoutSeconds) {
         assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:" + collection, expectedSize,
                 collection.size()), timeoutSeconds);
+    }
+
+    public static void assertSizeEventually(int expectedSize, Supplier<Collection> collectionSupplier) {
+        assertSizeEventually(expectedSize, collectionSupplier, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertSizeEventually(int expectedSize, Supplier<Collection> collectionSupplier, long timeoutSeconds) {
+        assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:"
+                        + collectionSupplier.get(), expectedSize, collectionSupplier.get().size()),
+                timeoutSeconds);
     }
 
     public static void assertSizeEventually(int expectedSize, Map<?, ?> map) {

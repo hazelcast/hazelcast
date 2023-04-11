@@ -35,7 +35,6 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
-import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -73,32 +72,27 @@ public final class BootstrappedInstanceProxy implements HazelcastInstance {
 
     private boolean shutDownAllowed = true;
 
-    private BootstrappedInstanceProxy(HazelcastInstance instance, JetService jetService) {
+    BootstrappedInstanceProxy(HazelcastInstance instance, BootstrappedJetProxy jetProxy) {
         this.instance = instance;
-        this.jetProxy = new BootstrappedJetProxy(jetService);
-    }
-
-    public static BootstrappedInstanceProxy createWithJetProxy(@Nonnull HazelcastInstance instance) {
-        JetService jetService = instance.getJet();
-        return new BootstrappedInstanceProxy(instance, jetService);
-    }
-
-    public void setThreadLocalParameters(ExecuteJobParameters executeJobParameters) {
-        jetProxy.setThreadLocalParameters(executeJobParameters);
-    }
-
-    public void removeThreadLocalParameters() {
-        jetProxy.removeThreadLocalParameters();
+        this.jetProxy = jetProxy;
     }
 
     public List<Job> getSubmittedJobs() {
-        ExecuteJobParameters executeJobParameters = jetProxy.getThreadLocalParameters();
+        ExecuteJobParameters executeJobParameters = jetProxy.getExecuteJobParameters();
         return executeJobParameters.getSubmittedJobs();
     }
 
     public BootstrappedInstanceProxy setShutDownAllowed(boolean shutDownAllowed) {
         this.shutDownAllowed = shutDownAllowed;
         return this;
+    }
+
+    public void setExecuteJobParameters(ExecuteJobParameters executeJobParameters) {
+        jetProxy.setExecuteJobParameters(executeJobParameters);
+    }
+
+    public void removeExecuteJobParameters() {
+        jetProxy.removeExecuteJobParameters();
     }
 
     @Nonnull
@@ -330,5 +324,4 @@ public final class BootstrappedInstanceProxy implements HazelcastInstance {
             LOGGER.severe("Shutdown of BootstrappedInstanceProxy is not allowed");
         }
     }
-
 }

@@ -75,7 +75,7 @@ import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.TokenCredentials;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.CoreQueryUtils;
 
 import javax.annotation.Nonnull;
 import java.io.EOFException;
@@ -936,7 +936,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
             // we might be lucky...
             for (int i = 0; i < SQL_CONNECTION_RANDOM_ATTEMPTS; i++) {
-                Member member = QueryUtils.memberOfLargerSameVersionGroup(
+                Member member = CoreQueryUtils.memberOfLargerSameVersionGroup(
                         client.getClientClusterService().getMemberList(), null);
                 if (member == null) {
                     break;

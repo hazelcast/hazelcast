@@ -19,12 +19,10 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.SQLException;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
@@ -50,10 +48,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
@@ -68,10 +63,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertThatThrownBy(() ->
@@ -93,10 +85,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -126,10 +115,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -159,10 +145,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -218,19 +201,19 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
     public void joinWithOtherJdbcNonDefaultSchema() throws SQLException {
-        String schemaName = randomTableName();
+        String schemaName = randomName();
         executeJdbc("CREATE SCHEMA " + schemaName);
         String fullyQualifiedTable = schemaName + "." + tableName;
         createTable(fullyQualifiedTable);
         insertItems(fullyQualifiedTable, ITEM_COUNT);
-        createMapping(fullyQualifiedTable);
+        String mappingName = randomTableName();
+        createMapping(fullyQualifiedTable, mappingName);
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
                         "FROM " + tableName + " t1 " +
-                        "JOIN \"" + fullyQualifiedTable + "\" t2 " +
+                        "JOIN \"" + mappingName + "\" t2 " +
                         "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),

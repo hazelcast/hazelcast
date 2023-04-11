@@ -79,6 +79,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
     @Override
     public void onMatch(RelOptRuleCall call) {
         JoinLogicalRel join = call.rel(0);
+        RelNode leftInput = call.rel(1);
+        RelNode rightInput = call.rel(2);
 
         JoinRelType joinType = join.getJoinType();
         if (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT && joinType != JoinRelType.RIGHT) {
@@ -86,8 +88,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                     fail(join, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types"));
         }
 
-        RelNode left = RelRule.convert(join.getLeft(), join.getLeft().getTraitSet().replace(PHYSICAL));
-        RelNode right = RelRule.convert(join.getRight(), join.getRight().getTraitSet().replace(PHYSICAL));
+        RelNode left = RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
+        RelNode right = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
 
         WatermarkedFields leftFields = metadataQuery(left).extractWatermarkedFields(left);
         WatermarkedFields rightFields = metadataQuery(right).extractWatermarkedFields(right);
@@ -135,9 +137,20 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
 
         if (!foundLeft || !foundRight) {
+            List<String> leftWatermarkedColumnNames = leftFields.getFieldIndexes().stream()
+                    .map(left.getRowType().getFieldNames()::get)
+                    .collect(Collectors.toList());
+            List<String> rightWatermarkedColumnNames = rightFields.getFieldIndexes().stream()
+                    .map(right.getRowType().getFieldNames()::get)
+                    .collect(Collectors.toList());
+
             call.transformTo(
-                    fail(join, "A stream-to-stream join must have a join condition constraining the maximum " +
-                            "difference between time values of the joined tables in both directions"));
+                    fail(join, String.format(
+                            "A stream-to-stream join must have a join condition constraining the maximum " +
+                            "difference between time values of the joined tables in both directions. " +
+                            "Time columns on the left side: %s, time columns on the right side: %s",
+                            // note that the join can be transposed and sides may not match original query
+                            leftWatermarkedColumnNames, rightWatermarkedColumnNames)));
             return;
         }
 

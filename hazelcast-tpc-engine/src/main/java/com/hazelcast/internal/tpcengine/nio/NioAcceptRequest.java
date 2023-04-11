@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AcceptRequest;
+import com.hazelcast.internal.tpcengine.net.AcceptRequest;
 
 import java.nio.channels.SocketChannel;
 

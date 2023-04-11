@@ -34,7 +34,7 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
-import com.hazelcast.datalink.impl.DataLinkServiceImplTest;
+import com.hazelcast.dataconnection.impl.DataConnectionServiceImplTest;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
@@ -1482,21 +1482,21 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDataLinkConfig() {
+    public void testDataConnectionConfig() {
         Config expectedConfig = new Config();
 
         Properties properties = new Properties();
-        properties.put("jdbcUrl", "jdbc:h2:mem:" + DataLinkServiceImplTest.class.getSimpleName());
-        DataLinkConfig dataLinkConfig = new DataLinkConfig()
-                .setName("test-data-link")
-                .setClassName("com.hazelcast.dtalink.JdbcDataLink")
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + DataConnectionServiceImplTest.class.getSimpleName());
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+                .setName("test-data-connection")
+                .setType("jdbc")
                 .setProperties(properties);
 
-        expectedConfig.addDataLinkConfig(dataLinkConfig);
+        expectedConfig.addDataConnectionConfig(dataConnectionConfig);
 
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
 
-        assertEquals(expectedConfig.getDataLinkConfigs(), actualConfig.getDataLinkConfigs());
+        assertEquals(expectedConfig.getDataConnectionConfigs(), actualConfig.getDataConnectionConfigs());
     }
 
     @Test

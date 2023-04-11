@@ -49,13 +49,13 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
     private final QueryDataType[] types;
     private final BsonType[] externalTypes;
     private transient SupplierEx<MongoClient> clientSupplier;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private final String idField;
 
     InsertProcessorSupplier(MongoTable table, WriteMode writeMode) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
-        this.dataLinkName = table.dataLinkName;
+        this.dataConnectionName = table.dataConnectionName;
         this.collectionName = table.collectionName;
         this.paths = table.externalNames();
         this.types = table.fieldTypes();
@@ -81,7 +81,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
             Processor processor = new WriteMongoP<>(
                     new WriteMongoParams<Document>()
                             .setClientSupplier(clientSupplier)
-                            .setDataLinkRef(dataLinkName)
+                            .setDataConnectionRef(dataConnectionName)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
                             .setDocumentType(Document.class)

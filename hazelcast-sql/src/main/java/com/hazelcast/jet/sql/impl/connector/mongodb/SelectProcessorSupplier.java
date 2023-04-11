@@ -23,7 +23,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -51,7 +50,6 @@ import static java.util.stream.Collectors.toList;
  * ProcessorSupplier that creates {@linkplain com.hazelcast.jet.mongodb.impl.ReadMongoP} processors on each instance.
  */
 public class SelectProcessorSupplier implements ProcessorSupplier {
-
     private transient SupplierEx<? extends MongoClient> clientSupplier;
     private final String databaseName;
     private final String collectionName;
@@ -61,9 +59,11 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
     private final List<ProjectionData> projection;
     private final Long startAt;
     private final String connectionString;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private transient ExpressionEvalContext evalContext;
     private final String[] externalNames;
+
+    private final boolean forceMongoParallelismOne;
 
     SelectProcessorSupplier(MongoTable table, Document predicate, List<ProjectionData> projection, BsonTimestamp startAt, boolean stream,
                             FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
@@ -72,12 +72,13 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         this.predicate = predicate;
         this.projection = projection;
         this.connectionString = table.connectionString;
-        this.dataLinkName = table.dataLinkName;
+        this.dataConnectionName = table.dataConnectionName;
         this.databaseName = table.databaseName;
         this.collectionName = table.collectionName;
         this.startAt = startAt == null ? null : startAt.getValue();
         this.stream = stream;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
+        this.forceMongoParallelismOne = table.isForceMongoParallelismOne();
 
         this.externalNames = table.externalNames();
     }
@@ -127,7 +128,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
             Processor processor = new ReadMongoP<>(
                     new ReadMongoParams<JetSqlRow>(stream)
                             .setClientSupplier(clientSupplierEx)
-                            .setDataLinkRef(dataLinkName)
+                            .setDataConnectionRef(dataConnectionName)
                             .setAggregates(aggregates)
                             .setDatabaseName(databaseName)
                             .setCollectionName(collectionName)
@@ -135,6 +136,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                             .setMapStreamFn(this::convertStreamDocToRow)
                             .setStartAtTimestamp(startAt == null ? null : new BsonTimestamp(startAt))
                             .setEventTimePolicy(eventTimePolicy)
+                            .setNonDistributed(forceMongoParallelismOne)
             );
 
             processors.add(processor);

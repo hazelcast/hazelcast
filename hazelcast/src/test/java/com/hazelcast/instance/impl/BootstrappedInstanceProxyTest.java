@@ -21,6 +21,7 @@ import com.hazelcast.jet.impl.AbstractJetInstance;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import static com.hazelcast.instance.impl.BootstrappedInstanceProxyFactory.createWithMemberJetProxy;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
@@ -35,8 +36,7 @@ public class BootstrappedInstanceProxyTest {
         // When shutdown is called throw exception
         when(hazelcastInstance.getLifecycleService()).thenThrow(new IllegalStateException());
 
-        BootstrappedInstanceProxy bootstrappedInstanceProxy = BootstrappedInstanceProxy
-                .createWithJetProxy(hazelcastInstance);
+        BootstrappedInstanceProxy bootstrappedInstanceProxy = createWithMemberJetProxy(hazelcastInstance);
 
 
         bootstrappedInstanceProxy.setShutDownAllowed(false);
@@ -55,8 +55,7 @@ public class BootstrappedInstanceProxyTest {
         // When shutdown is called throw exception
         when(hazelcastInstance.getLifecycleService()).thenThrow(new IllegalStateException());
 
-        BootstrappedInstanceProxy bootstrappedInstanceProxy = BootstrappedInstanceProxy
-                .createWithJetProxy(hazelcastInstance);
+        BootstrappedInstanceProxy bootstrappedInstanceProxy = createWithMemberJetProxy(hazelcastInstance);
         bootstrappedInstanceProxy.setShutDownAllowed(true);
 
         // Shutdown is allowed so exception should be thrown

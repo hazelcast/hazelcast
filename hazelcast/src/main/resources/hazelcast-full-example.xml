@@ -3965,22 +3965,22 @@
     <integrity-checker enabled="false"/>
 
     <!--
-      ===== HAZELCAST DATA LINK CONFIGURATION =====
+      ===== HAZELCAST DATA CONNECTION CONFIGURATION =====
 
-      Configuration element's name is <data-link>. Contains configuration of data links
+      Configuration element's name is <data-connection>. Contains configuration of data connections
       used by map stores and jdbc sinks and sources
       -->
-    <data-link name="mysql-database">
-        <class-name>com.hazelcast.datalink.JdbcDataLink</class-name>
+    <data-connection name="mysql-database">
+        <type>jdbc</type>
         <properties>
             <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
         <shared>false</shared>
-    </data-link>
+    </data-connection>
 
-    <data-link name="other-database">
-        <class-name>com.hazelcast.datalink.OtherDataLink</class-name>
-    </data-link>
+    <data-connection name="other-database">
+        <type>other</type>
+    </data-connection>
 
     <!--
     ===== HAZELCAST TPC CONFIGURATION =====

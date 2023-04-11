@@ -156,7 +156,6 @@ public class TimedMemberStateFactory {
         }
         memberState.setClients(serializableClientEndPoints);
         memberState.setName(instance.getName());
-
         memberState.setUuid(node.getThisUuid());
         if (instance.getConfig().getCPSubsystemConfig().getCPMemberCount() == 0) {
             memberState.setCpMemberUuid(null);

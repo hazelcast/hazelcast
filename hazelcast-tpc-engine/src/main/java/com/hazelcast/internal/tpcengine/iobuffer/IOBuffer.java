@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.iobuffer;
 
-import com.hazelcast.internal.tpcengine.AsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;

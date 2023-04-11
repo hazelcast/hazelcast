@@ -18,9 +18,7 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.JdbcDataLink;
-import com.hazelcast.datalink.impl.InternalDataLinkService;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
@@ -39,7 +37,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
-import com.hazelcast.sql.impl.schema.datalink.DataLinkCatalogEntry;
+import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -141,12 +139,12 @@ public class TableResolverImpl implements TableResolver {
     private Mapping resolveMapping(Mapping mapping) {
         Map<String, String> options = mapping.options();
         String type = mapping.connectorType();
-        String dataLink = mapping.dataLink();
+        String dataConnection = mapping.dataConnection();
         List<MappingField> resolvedFields;
         SqlConnector connector;
 
         if (type == null) {
-            connector = extractConnector(dataLink);
+            connector = extractConnector(dataConnection);
         } else {
             connector = connectorCache.forType(type);
         }
@@ -154,34 +152,26 @@ public class TableResolverImpl implements TableResolver {
                 nodeEngine,
                 options,
                 mapping.fields(),
-                mapping.externalName()
+                mapping.externalName(),
+                mapping.dataConnection()
         );
 
         return new Mapping(
                 mapping.name(),
                 mapping.externalName(),
-                mapping.dataLink(), type,
+                mapping.dataConnection(), type,
                 mapping.objectType(),
                 new ArrayList<>(resolvedFields),
                 new LinkedHashMap<>(options)
         );
     }
 
-    private SqlConnector extractConnector(@Nonnull String dataLink) {
-        SqlConnector connector;
-        InternalDataLinkService dataLinkService = nodeEngine.getDataLinkService();
-        DataLink dl = dataLinkService.getAndRetainDataLink(dataLink, DataLink.class);
-        try {
-            // TODO: support more
-            if (dl instanceof JdbcDataLink) {
-                connector = connectorCache.forType("JDBC");
-            } else {
-                throw QueryException.error("Unknown data link class: " + dl.getClass().getName());
-            }
-        } finally {
-            dl.release();
-        }
-        return connector;
+    private SqlConnector extractConnector(@Nonnull String dataConnection) {
+        InternalDataConnectionService dataConnectionService = nodeEngine.getDataConnectionService();
+        // TODO atm data connection and connector types match, but that's
+        // not going to be universally true in the future
+        String type = dataConnectionService.typeForDataConnection(dataConnection);
+        return connectorCache.forType(type);
     }
 
     public void removeMapping(String name, boolean ifExists) {
@@ -281,8 +271,8 @@ public class TableResolverImpl implements TableResolver {
                 views.add((View) o);
             } else if (o instanceof Type) {
                 types.add((Type) o);
-            } else if (o instanceof DataLinkCatalogEntry) {
-                // Note: data link is not a 'table' or 'relation',
+            } else if (o instanceof DataConnectionCatalogEntry) {
+                // Note: data connection is not a 'table' or 'relation',
                 // It's stored in a separate namespace.
                 continue;
             } else {
@@ -303,7 +293,7 @@ public class TableResolverImpl implements TableResolver {
     private Table toTable(Mapping mapping) {
         SqlConnector connector;
         if (mapping.connectorType() == null) {
-            connector = extractConnector(mapping.dataLink());
+            connector = extractConnector(mapping.dataConnection());
         } else {
             connector = connectorCache.forType((mapping.connectorType()));
         }
@@ -314,7 +304,7 @@ public class TableResolverImpl implements TableResolver {
                     SCHEMA_NAME_PUBLIC,
                     mapping.name(),
                     mapping.externalName(),
-                    mapping.options(),
+                    mapping.dataConnection(), mapping.options(),
                     mapping.fields()
             );
         } catch (Throwable e) {

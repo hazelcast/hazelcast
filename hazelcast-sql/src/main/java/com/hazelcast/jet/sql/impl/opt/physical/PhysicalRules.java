@@ -44,7 +44,6 @@ public final class PhysicalRules {
                 AggregateBatchPhysicalRule.INSTANCE,
                 AggregateSlidingWindowPhysicalRule.WITH_CALC_INSTANCE,
                 AggregateSlidingWindowPhysicalRule.NO_CALC_INSTANCE,
-                StreamAggregateCannotExecuteRule.INSTANCE,
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,
@@ -74,6 +73,7 @@ public final class PhysicalRules {
                 UpdateByKeyMapPhysicalRule.INSTANCE,
                 DeleteByKeyMapPhysicalRule.INSTANCE,
 
+                StreamAggregateConverterRule.INSTANCE,
                 StreamingInsertMustNotExecuteRule.INSTANCE,
 
                 MustNotExecuteRule.INSTANCE,
