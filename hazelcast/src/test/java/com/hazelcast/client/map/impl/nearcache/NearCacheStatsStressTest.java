@@ -39,6 +39,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,19 +82,9 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
 
         String mapName = randomMapName();
 
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setName(mapName);
-        nearCacheConfig.setInvalidateOnChange(true);
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
 
-        if (evictionEnabled) {
-            nearCacheConfig.getEvictionConfig()
-                    .setEvictionPolicy(EvictionPolicy.LFU)
-                    .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
-                    .setSize(20);
-        }
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addNearCacheConfig(nearCacheConfig);
+        ClientConfig clientConfig = getClientConfig(nearCacheConfig);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
@@ -151,8 +142,32 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
         public void run() {
             while (!stop.get()) {
                 Object key = getInt(KEY_SPACE);
-                nearCache.invalidate(key);
+                Data keyData = ss.toData(key);
+                nearCache.invalidate(keyData);
             }
         }
+    }
+
+    @Nonnull
+    protected ClientConfig getClientConfig(NearCacheConfig nearCacheConfig) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addNearCacheConfig(nearCacheConfig);
+        return clientConfig;
+    }
+
+    @Nonnull
+    protected NearCacheConfig getNearCacheConfig(String mapName) {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setName(mapName)
+                .setInvalidateOnChange(true)
+                .setSerializeKeys(true);
+
+        if (evictionEnabled) {
+            nearCacheConfig.getEvictionConfig()
+                    .setEvictionPolicy(EvictionPolicy.LFU)
+                    .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                    .setSize(20);
+        }
+        return nearCacheConfig;
     }
 }

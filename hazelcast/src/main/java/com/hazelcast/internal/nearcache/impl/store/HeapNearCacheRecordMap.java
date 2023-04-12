@@ -96,13 +96,13 @@ public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
         if (evictionCandidate == null) {
             return false;
         }
-        V record = remove(evictionCandidate.getAccessor());
-        if (record == null || record.getReservationId() != NearCacheRecord.READ_PERMITTED) {
+        V removedRecord = remove(evictionCandidate.getAccessor());
+        if (removedRecord == null || removedRecord.getReservationId() != NearCacheRecord.READ_PERMITTED) {
             // no record was removed or the record was a placeholder marked for update
             return false;
         }
         if (evictionListener != null) {
-            evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable(), false);
+            evictionListener.onEvict(evictionCandidate.getAccessor(), removedRecord, false);
         }
         return true;
     }

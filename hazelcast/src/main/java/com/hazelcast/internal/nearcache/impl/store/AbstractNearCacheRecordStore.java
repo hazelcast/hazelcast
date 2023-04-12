@@ -205,12 +205,17 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     @SuppressWarnings("unused")
     protected void onExpire(K key, R record) {
+        if (!canUpdateStats(record)) {
+            return;
+        }
         nearCacheStats.incrementExpirations();
     }
 
     @Override
     public void onEvict(KS key, R record, boolean wasExpired) {
-
+        if (!canUpdateStats(record)) {
+            return;
+        }
         if (wasExpired) {
             nearCacheStats.incrementExpirations();
         } else {
