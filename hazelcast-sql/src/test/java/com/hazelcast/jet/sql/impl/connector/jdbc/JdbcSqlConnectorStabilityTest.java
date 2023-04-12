@@ -16,33 +16,74 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.OrderWith;
+import org.junit.runner.manipulation.Alphanumeric;
+import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.sql.SQLException;
+import java.util.Properties;
 
 import static com.hazelcast.function.ConsumerEx.noop;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
-/**
- * This test should not be subclassed by a DB Provider that uses TestContainers underneath.
- * Because when H2 is shut down, it will not re-start when we try to get a new JDBC connection
- * <p>
- * But TestContainers based DB providers such a MySQLDatabaseProvider
- * will automatically re-start the container. So it is not possible to shut them down
- */
+// The order of tests is important
+@OrderWith(Alphanumeric.class)
 public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
+
+    protected static JdbcDatabaseContainer<?> jdbcDatabaseContainer;
+
+    private static final H2DatabaseProvider h2DatabaseProvider = new H2DatabaseProvider();
+
+    public static void initialize() {
+        Config config = smallInstanceConfig();
+        if (jdbcDatabaseContainer != null) {
+            jdbcDatabaseContainer.start();
+            if (jdbcDatabaseContainer instanceof MySQLContainer) {
+                dbConnectionUrl = jdbcDatabaseContainer.getJdbcUrl() + "?user=" + jdbcDatabaseContainer.getUsername() +
+                                  "&password=" + jdbcDatabaseContainer.getPassword();
+            } else if (jdbcDatabaseContainer instanceof PostgreSQLContainer) {
+                dbConnectionUrl = jdbcDatabaseContainer.getJdbcUrl() + "&user=" + jdbcDatabaseContainer.getUsername() +
+                                  "&password=" + jdbcDatabaseContainer.getPassword();
+            }
+
+        } else {
+            dbConnectionUrl = h2DatabaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
+        }
+        Properties properties = new Properties();
+        properties.setProperty("jdbcUrl", dbConnectionUrl);
+        config.addDataConnectionConfig(
+                new DataConnectionConfig(TEST_DATABASE_REF)
+                        .setType("jdbc")
+                        .setProperties(properties));
+
+        initialize(2, config);
+        sqlService = instance().getSql();
+    }
+
+    void stopDatabase() {
+        if (jdbcDatabaseContainer != null) {
+            jdbcDatabaseContainer.stop();
+        } else {
+            h2DatabaseProvider.shutdown();
+        }
+    }
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(new H2DatabaseProvider());
+        initialize();
     }
 
     @Test
-    public void dataConnectionDownShouldTimeout() throws SQLException {
+    public void a_dataConnectionDownShouldTimeout() throws SQLException {
         String tableName = "table1";
         createTable(tableName);
         insertItems(tableName, 5);
@@ -55,25 +96,19 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
                 + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
-        // Shut down H2 for the entire test suite
-        databaseProvider.shutdown();
+        stopDatabase();
 
-        // We should not be able to access H2 anymore
+        // We should not be able to access DB anymore
         assertThatThrownBy(() -> {
             sqlService
                     .execute("SELECT * FROM " + tableName)
                     .forEach(noop());
-        }).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Mapping 'table1' is invalid: com.hazelcast.core.HazelcastException: " +
-                                      "Could not determine dialect for data connection: testDatabaseRef");
+        }).isInstanceOf(HazelcastSqlException.class);
     }
 
     @Test
-    public void dataConnectionDownShouldNotAffectUnrelatedQueries() {
-        // Shut down H2 for the entire test suite
-        databaseProvider.shutdown();
-
-        // Still we should be able to read from generated table
+    public void b_dataConnectionDownShouldNotAffectUnrelatedQueries() {
+        // We should be able to read from generated table even if the DB is stopped
         assertRowsAnyOrder(
                 "SELECT * FROM TABLE(generate_series(0, 4))",
                 newArrayList(
