@@ -103,16 +103,16 @@ final class Options {
             return externalName[0];
         }
         if (dataConnectionName != null) {
-            MongoDataConnection link =
+            MongoDataConnection dataConnection =
                     nodeEngine.getDataConnectionService().getAndRetainDataConnection(
                             dataConnectionName, MongoDataConnection.class);
             try {
-                String name = link.getDatabaseName();
+                String name = dataConnection.getDatabaseName();
                 if (name != null) {
                     return name;
                 }
             } finally {
-                link.release();
+                dataConnection.release();
             }
         }
         throw new IllegalArgumentException("Database must be provided in the mapping or data connection.");

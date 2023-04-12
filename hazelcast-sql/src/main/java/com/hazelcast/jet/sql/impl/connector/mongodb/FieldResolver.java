@@ -26,7 +26,6 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import org.bson.BsonType;
 import org.bson.Document;
-import org.immutables.value.Value;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -159,22 +158,15 @@ class FieldResolver {
         }
     }
 
-    @Value.Immutable
-    interface ClientWithDataConnection {
-        MongoClient client();
-        @Nullable MongoDataConnection dataConnection();
-    }
-
     Map<String, DocumentField> readFields(String[] externalNames,
                                           String dataConnectionName,
                                           Map<String, String> options,
                                           boolean stream) {
         String collectionName = externalNames.length == 2 ? externalNames[1] : externalNames[0];
         String databaseName = Options.getDatabaseName(nodeEngine, externalNames, dataConnectionName);
-        ClientWithDataConnection connect = connect(dataConnectionName, options);
 
         Map<String, DocumentField> fields = new HashMap<>();
-        try (MongoClient client = connect.client()) {
+        try (MongoClient client = connect(dataConnectionName, options)) {
             requireNonNull(client);
 
             MongoDatabase database = client.getDatabase(databaseName);
@@ -225,11 +217,6 @@ class FieldResolver {
                 fields.put("ts", new DocumentField(BsonType.DATE_TIME, "ts"));
                 fields.put("clusterTime", new DocumentField(BsonType.TIMESTAMP, "clusterTime"));
             }
-        } finally {
-            MongoDataConnection connection = connect.dataConnection();
-            if (connection != null) {
-                connection.release();
-            }
         }
         return fields;
     }
@@ -246,17 +233,21 @@ class FieldResolver {
         return returned;
     }
 
-    private ClientWithDataConnection connect(String dataConnectionName, Map<String, String> options) {
+    private MongoClient connect(String dataConnectionName, Map<String, String> options) {
         if (dataConnectionName != null) {
             MongoDataConnection link = nodeEngine.getDataConnectionService().getAndRetainDataConnection(
                     dataConnectionName,
                     MongoDataConnection.class);
-            return ImmutableClientWithDataConnection.builder().client(link.getClient()).dataConnection(link).build();
+            try {
+                return link.getClient();
+            } finally {
+                link.release();
+            }
         } else {
             String connectionString = requireNonNull(options.get(CONNECTION_STRING_OPTION),
                     "Cannot connect to MongoDB, connectionString was not provided");
 
-            return ImmutableClientWithDataConnection.builder().client(MongoClients.create(connectionString)).build();
+            return MongoClients.create(connectionString);
         }
     }
 
