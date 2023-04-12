@@ -129,9 +129,9 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
             while (!stop.get()) {
                 Object key = getInt(KEY_SPACE);
                 Data keyData = ss.toData(key);
-                long reservationId = nearCache.tryReserveForUpdate(key, keyData, READ_UPDATE);
+                long reservationId = nearCache.tryReserveForUpdate(keyData, keyData, READ_UPDATE);
                 if (reservationId != NOT_RESERVED) {
-                    nearCache.tryPublishReserved(key, keyData, reservationId, false);
+                    nearCache.tryPublishReserved(keyData, keyData, reservationId, false);
                 }
             }
         }
