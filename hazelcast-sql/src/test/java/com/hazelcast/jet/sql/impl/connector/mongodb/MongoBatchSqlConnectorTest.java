@@ -86,7 +86,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
         String mappingName = collectionName;
         String externalName = databaseName + "." + mappingName;
-        execute("CREATE MAPPING " + mappingName + " external name " + externalName + " ("
+        execute("CREATE MAPPING " + mappingName + " EXTERNAL NAME " + externalName + " ("
                 + (includeIdInMapping ? " id VARCHAR EXTERNAL NAME _id, " : "")
                 + " firstName VARCHAR, "
                 + " lastName VARCHAR, "
