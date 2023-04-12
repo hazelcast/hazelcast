@@ -21,18 +21,21 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
+import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.header.Header;
@@ -74,6 +77,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.kafka.connect.data.Values.convertToString;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -132,7 +136,15 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
     }
 
     @Test
-    public void test_reading_with_timestamps() throws Exception {
+    public void windowing_withNativeTimestamps_should_fail_when_records_without_native_timestamps() throws Exception {
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+
+
         Properties randomProperties = new Properties();
         randomProperties.setProperty("name", "datagen-connector");
         randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
@@ -140,36 +152,18 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("kafka.topic", "orders");
         randomProperties.setProperty("quickstart", "orders");
 
+
         Pipeline pipeline = Pipeline.create();
-        StreamStage<SourceRecord> streamStage = pipeline.readFrom(connect(randomProperties))
+        pipeline.readFrom(connect(randomProperties, ConnectRecord::hashCode))
                 .withNativeTimestamps(0)
-                .setLocalParallelism(1);
-        streamStage.writeTo(Sinks.logger());
-        streamStage
-                .writeTo(AssertionSinks.assertCollectedEventually(60,
-                        list -> assertEquals(ITEM_COUNT, list.size())));
+                .setLocalParallelism(1)
+                .window(WindowDefinition.tumbling(5))
+                .aggregate(AggregateOperations.counting())
+                .writeTo(Sinks.noop());
 
-        JobConfig jobConfig = new JobConfig();
-        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
-
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
-        Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
-
-        try {
-            job.join();
-            fail("Job should have completed with an AssertionCompletedException, but completed normally");
-        } catch (CompletionException e) {
-            String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
-            assertTrueEventually(() -> {
-                List<Long> pollTotalList = getSourceRecordPollTotalList();
-                assertThat(pollTotalList).isNotEmpty();
-                Long sourceRecordPollTotal = pollTotalList.get(0);
-                assertThat(sourceRecordPollTotal).isGreaterThan(ITEM_COUNT);
-            });
-        }
+        assertThatThrownBy(() -> hazelcastInstance.getJet().newJob(pipeline, jobConfig).join())
+                .isInstanceOf(CompletionException.class)
+                .hasMessageContaining("Neither timestampFn nor nativeEventTime specified");
     }
 
     @Test

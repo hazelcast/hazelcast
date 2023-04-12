@@ -105,7 +105,9 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
             this.traverser = sourceRecords.isEmpty() ? eventTimeMapper.flatMapIdle() :
                     traverseIterable(sourceRecords)
                             .flatMap(rec -> {
-                                long eventTime = rec.timestamp() == null ? 0 : rec.timestamp();
+                                long eventTime = rec.timestamp() == null ?
+                                        EventTimeMapper.NO_NATIVE_TIME
+                                        : rec.timestamp();
                                 T projectedRecord = projectionFn.apply(rec);
                                 taskRunner.commitRecord(rec);
                                 return eventTimeMapper.flatMapEvent(projectedRecord, 0, eventTime);
