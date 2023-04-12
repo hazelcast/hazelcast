@@ -64,7 +64,7 @@ public abstract class MongoSqlTest extends SqlTestSupport {
         conf.getJetConfig().setEnabled(true);
         DataConnectionConfig testMongo = new DataConnectionConfig();
         testMongo.setShared(true)
-                 .setType("MongoDB")
+                 .setType("Mongo")
                  .setName("testMongo")
                  .setProperty("connectionString", connectionString)
                  .setProperty("database", databaseName);
