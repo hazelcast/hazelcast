@@ -22,8 +22,6 @@ import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.engine.StepAwareOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
-import javax.annotation.Nullable;
-
 
 /**
  * {@link StepAwareOperation} specialized for {@link
@@ -45,7 +43,6 @@ public interface IMapStepAwareOperation extends StepAwareOperation<State> {
                 mapOperation.runInternalDirect();
             }
 
-            @Nullable
             @Override
             public Step nextStep(State state) {
                 return UtilSteps.FINAL_STEP;
