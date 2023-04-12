@@ -136,17 +136,19 @@ public abstract class MapOperation extends AbstractNamedOperation
                 && getStartingStep() != null
                 && mapConfig.getTieredStoreConfig().isEnabled();
 
-        if (mapStoreOffloadEnabled) {
-            assert !tieredStoreEnabled;
-        }
-
-        if (tieredStoreEnabled) {
-            assert !mapStoreOffloadEnabled;
-        }
-
+        assertOnlyOneOfMapStoreOrTieredStoreEnabled();
         assertNativeMapOnPartitionThread();
 
         innerBeforeRun();
+    }
+
+    private void assertOnlyOneOfMapStoreOrTieredStoreEnabled() {
+        if (!ASSERTION_ENABLED) {
+            return;
+        }
+
+        assert mapStoreOffloadEnabled ? !tieredStoreEnabled
+                : (tieredStoreEnabled ? !mapStoreOffloadEnabled : true);
     }
 
     @Nullable

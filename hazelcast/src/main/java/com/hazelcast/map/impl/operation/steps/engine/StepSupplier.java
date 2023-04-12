@@ -139,9 +139,8 @@ public class StepSupplier implements Supplier<Runnable> {
         boolean runningOnPartitionThread = isRunningOnPartitionThread();
         boolean metWithPreconditions = true;
         try {
+            state.getRecordStore().beforeOperation();
             try {
-                state.getRecordStore().beforeOperation();
-
                 if (runningOnPartitionThread && state.getThrowable() == null) {
                     metWithPreconditions = metWithPreconditions();
                 }

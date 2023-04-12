@@ -37,7 +37,12 @@ import java.util.Map;
  */
 public interface Storage<K, R> {
 
-    default Step newCompactorStep() {
+    /**
+     * Injects extra step for an operation which
+     * is modeled as a sequence of {@link Step}
+     * @return new step to be injected before an operation is finalized.
+     */
+    default Step newInjectedStep() {
         return null;
     }
 
