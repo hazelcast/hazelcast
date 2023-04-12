@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.MetricTarget;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -116,12 +117,16 @@ public class MetricsCompressor {
     private MetricsDictionary dictionary;
 
     // output streams for the blob containing the dictionary
+    @Nonnull
     private DataOutputStream dictionaryDos;
+    @Nonnull
     private Deflater dictionaryCompressor;
     private MorePublicByteArrayOutputStream dictionaryBaos = new MorePublicByteArrayOutputStream(INITIAL_BUFFER_SIZE_DICTIONARY);
 
     // output streams for the blob containing the metrics
+    @Nonnull
     private DataOutputStream metricDos;
+    @Nonnull
     private Deflater metricsCompressor;
     private MorePublicByteArrayOutputStream metricBaos = new MorePublicByteArrayOutputStream(INITIAL_BUFFER_SIZE_METRICS);
 
@@ -346,15 +351,9 @@ public class MetricsCompressor {
     public void close() {
         try {
             dictionaryDos.close();
-            if (dictionaryCompressor != null) {
-                dictionaryCompressor.end();
-                dictionaryCompressor = null;
-            }
+            dictionaryCompressor.end();
             metricDos.close();
-            if (metricsCompressor != null) {
-                metricsCompressor.end();
-                metricsCompressor = null;
-            }
+            metricsCompressor.end();
         } catch (IOException e) {
             // should never be thrown
             throw new RuntimeException(e);
