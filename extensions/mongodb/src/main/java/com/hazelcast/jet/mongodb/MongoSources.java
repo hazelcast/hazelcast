@@ -50,9 +50,10 @@ public final class MongoSources {
      * <p>
      * Example usage:
      * <pre>{@code
-     * BatchSource<Document> batchSource =
+     * BatchSource<MyDTO> batchSource =
      *         MongoSources.batch(() -> MongoClients.create("mongodb://127.0.0.1:27017"))
-     *                 .into("myDatabase", "myCollection")
+     *                 .database("myDatabase")
+     *                 .collection("myCollection", MyDTO.class)
      *                 .filter(new Document("age", new Document("$gt", 10)),
      *                 .projection(new Document("age", 1))
      *         );
@@ -77,7 +78,8 @@ public final class MongoSources {
      * <pre>{@code
      * BatchSource<Document> batchSource =
      *         MongoSources.batch(dataConnectionRef("mongo"))
-     *                 .into("myDatabase", "myCollection")
+     *                 .database("myDatabase")
+     *                 .collection("myCollection")
      *                 .filter(new Document("age", new Document("$gt", 10)),
      *                 .projection(new Document("age", 1))
      *         );
@@ -218,7 +220,8 @@ public final class MongoSources {
      * <pre>{@code
      * StreamSource<Document> streamSource =
      *         MongoSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
-     *                 .into("myDatabase", "myCollection")
+     *                 .database("myDatabase")
+     *                 .collection("myCollection")
      *                 .filter(new Document("fullDocument.age", new Document("$gt", 10)),
      *                 .projection(new Document("fullDocument.age", 1))
      *         );
