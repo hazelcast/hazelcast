@@ -91,7 +91,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + " lastName VARCHAR, "
                 + " jedi BOOLEAN "
                 + ") "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" +  databaseName + "' "
@@ -180,7 +180,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         }
 
         execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
                 + "    'database' = '" +  databaseName + "', "
@@ -222,7 +222,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         }
 
         execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
                 + "    'database' = '" +  databaseName + "'"
@@ -258,13 +258,13 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         peopleBirthPlanet.put(2, "Corellia");
 
         execute("CREATE MAPPING peopleName external name \"peopleName\" (personId INT, name VARCHAR) "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" +  databaseName + "'"
                 + ")");
         execute("CREATE MAPPING peopleProfession external name \"peopleProfession\" (personId INT, profession VARCHAR) "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" + databaseName + "'"
@@ -294,7 +294,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         peopleBirthPlanet.put(2, "Corellia");
 
         execute("CREATE MAPPING peopleName external name \"peopleName2\" (personId INT, name VARCHAR) "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" +  databaseName + "'"
@@ -451,7 +451,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + " lastName VARCHAR, "
                 + " jedi BOOLEAN "
                 + ") "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
                 + "    'database' = '" +  databaseName + "', "
@@ -537,7 +537,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + " lastName VARCHAR, "
                 + " jedi BOOLEAN "
                 + ") "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
                 + "    'database' = '" +  databaseName + "', "

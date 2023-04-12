@@ -27,7 +27,7 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
     @Test
     public void test() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA CONNECTION " + dlName + " TYPE MongoDB SHARED " + options());
+        instance().getSql().execute("CREATE DATA CONNECTION " + dlName + " TYPE Mongo SHARED " + options());
 
 
         DataConnection dataConnection = getNodeEngineImpl(
