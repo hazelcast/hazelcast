@@ -86,20 +86,36 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifecycleSupport {
 
     /**
+     * Property key to define data connection
+     */
+    public static final String DATA_CONNECTION_REF_PROPERTY = "data-connection-ref";
+    /**
+     * Property key to define table name in database
+     */
+    public static final String TABLE_NAME_PROPERTY = "table-name";
+
+    /**
+     * Property key to define id column name in database
+     */
+    public static final String ID_COLUMN_PROPERTY = "id-column";
+
+    /**
+     * Property key to define column names in database
+     */
+    public static final String COLUMNS_PROPERTY = "columns";
+
+    /**
+     * Property key to data connection type name
+     */
+    public static final String TYPE_NAME_PROPERTY = "type-name";
+
+    /**
      * Timeout for initialization of GenericMapLoader
      */
     public static final HazelcastProperty MAPSTORE_INIT_TIMEOUT
             = new HazelcastProperty("hazelcast.mapstore.init.timeout", 30, SECONDS);
 
     static final String MAPPING_PREFIX = "__map-store.";
-
-    public static final String DATA_CONNECTION_REF_PROPERTY = "data-connection-ref";
-    public static final String TABLE_NAME_PROPERTY = "table-name";
-
-    public static final String ID_COLUMN_PROPERTY = "id-column";
-
-    public static final String COLUMNS_PROPERTY = "columns";
-    public static final String TYPE_NAME_PROPERTY = "type-name";
 
     protected SqlService sqlService;
 
