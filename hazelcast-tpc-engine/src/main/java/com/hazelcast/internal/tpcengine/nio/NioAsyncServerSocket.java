@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AcceptRequest;
-import com.hazelcast.internal.tpcengine.AsyncServerSocket;
-import com.hazelcast.internal.tpcengine.AsyncSocketOptions;
+import com.hazelcast.internal.tpcengine.net.AcceptRequest;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

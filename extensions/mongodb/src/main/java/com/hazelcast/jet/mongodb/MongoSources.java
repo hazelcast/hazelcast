@@ -20,7 +20,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.mongodb.MongoSourceBuilder.Batch;
 import com.hazelcast.jet.mongodb.MongoSourceBuilder.Stream;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
@@ -51,7 +51,7 @@ public final class MongoSources {
      * Example usage:
      * <pre>{@code
      * BatchSource<Document> batchSource =
-     *         MongoSources.batch("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *         MongoSources.batch(() -> MongoClients.create("mongodb://127.0.0.1:27017"))
      *                 .into("myDatabase", "myCollection")
      *                 .filter(new Document("age", new Document("$gt", 10)),
      *                 .projection(new Document("age", 1))
@@ -61,16 +61,13 @@ public final class MongoSources {
      * }</pre>
      *
      * @since 5.3
-     * @param name descriptive name for the source (diagnostic purposes) client.
      * @param clientSupplier a function that creates MongoDB client.
      * @return Batch Mongo source builder
      */
     @Beta
     @Nonnull
-    public static MongoSourceBuilder.Batch<Document> batch(
-            @Nonnull String name,
-            @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
-        return MongoSourceBuilder.batch(name, clientSupplier);
+    public static MongoSourceBuilder.Batch<Document> batch(@Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
+        return MongoSourceBuilder.batch(clientSupplier);
     }
 
     /**
@@ -79,7 +76,7 @@ public final class MongoSources {
      * Example usage:
      * <pre>{@code
      * BatchSource<Document> batchSource =
-     *         MongoSources.batch("batch-source", dataLinkRef("mongo"))
+     *         MongoSources.batch(dataConnectionRef("mongo"))
      *                 .into("myDatabase", "myCollection")
      *                 .filter(new Document("age", new Document("$gt", 10)),
      *                 .projection(new Document("age", 1))
@@ -88,20 +85,17 @@ public final class MongoSources {
      * BatchStage<Document> srcStage = p.readFrom(batchSource);
      * }</pre>
      *
-     * Connector will use provided data link reference to obtain an instance of {@link MongoClient}. Depending
+     * Connector will use provided data connection reference to obtain an instance of {@link MongoClient}. Depending
      * on the configuration this client may be shared between processors or not.
      *
      * @since 5.3
-     * @param name descriptive name for the source (diagnostic purposes) client.
-     * @param dataLinkRef a reference to mongo data link
+     * @param dataConnectionRef a reference to mongo data connection
      * @return Batch Mongo source builder
      */
     @Beta
     @Nonnull
-    public static MongoSourceBuilder.Batch<Document> batch(
-            @Nonnull String name,
-            @Nonnull DataLinkRef dataLinkRef) {
-        return MongoSourceBuilder.batch(name, dataLinkRef);
+    public static MongoSourceBuilder.Batch<Document> batch(@Nonnull DataConnectionRef dataConnectionRef) {
+        return MongoSourceBuilder.batch(dataConnectionRef);
     }
 
     /**
@@ -118,7 +112,6 @@ public final class MongoSources {
      * <pre>{@code
      * BatchSource<Document> batchSource =
      *         MongoSources.batch(
-     *                 "batch-source",
      *                 "mongodb://127.0.0.1:27017",
      *                 "myDatabase",
      *                 "myCollection",
@@ -131,7 +124,6 @@ public final class MongoSources {
      *
      * @since 5.3
      *
-     * @param name             a descriptive name for the source (diagnostic purposes)
      * @param connectionString a connection string URI to MongoDB for example:
      *                         {@code mongodb://127.0.0.1:27017}
      * @param database         the name of the database
@@ -142,13 +134,13 @@ public final class MongoSources {
     @Beta
     @Nonnull
     public static BatchSource<Document> batch(
-            @Nonnull String name,
             @Nonnull String connectionString,
             @Nonnull String database,
             @Nonnull String collection,
             @Nullable Bson filter,
             @Nullable Bson projection
     ) {
+        String name = name(database, collection);
         Batch<Document> builder = MongoSourceBuilder
                 .batch(name, () -> MongoClients.create(connectionString))
                 .database(database)
@@ -176,8 +168,7 @@ public final class MongoSources {
      * <pre>{@code
      * BatchSource<Document> batchSource =
      *         MongoSources.batch(
-     *                 "batch-source",
-     *                 dataLinkRef("mongoDb"),
+     *                 dataConnectionRef("mongoDb"),
      *                 "myDatabase",
      *                 "myCollection",
      *                 new Document("age", new Document("$gt", 10)),
@@ -186,31 +177,29 @@ public final class MongoSources {
      * Pipeline p = Pipeline.create();
      * BatchStage<Document> srcStage = p.readFrom(batchSource);
      * }</pre>
-     *
-     * Connector will use provided data link reference to obtain an instance of {@link MongoClient}. Depending
+     * <p>
+     * Connector will use provided data connection reference to obtain an instance of {@link MongoClient}. Depending
      * on the configuration this client may be shared between processors or not.
      *
+     * @param dataConnectionRef a reference to some mongo data connection
+     * @param database          the name of the database
+     * @param collection        the name of the collection
+     * @param filter            filter object as a {@link Document}
+     * @param projection        projection object as a {@link Document}
      * @since 5.3
-     *
-     * @param name             a descriptive name for the source (diagnostic purposes)
-     * @param dataLinkRef      a reference to some mongo data link
-     * @param database         the name of the database
-     * @param collection       the name of the collection
-     * @param filter           filter object as a {@link Document}
-     * @param projection       projection object as a {@link Document}
      */
     @Beta
     @Nonnull
     public static BatchSource<Document> batch(
-            @Nonnull String name,
-            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull String database,
             @Nonnull String collection,
             @Nullable Bson filter,
             @Nullable Bson projection
     ) {
+        String name = name(database, collection);
         Batch<Document> builder = MongoSourceBuilder
-                .batch(name, dataLinkRef)
+                .batch(name, dataConnectionRef)
                 .database(database)
                 .collection(collection);
         if (projection != null) {
@@ -272,7 +261,6 @@ public final class MongoSources {
      * <pre>{@code
      * StreamSource<? extends Document> streamSource =
      *         MongoSources.stream(
-     *                 "stream-source",
      *                 "mongodb://127.0.0.1:27017",
      *                 "myDatabase",
      *                 "myCollection",
@@ -287,7 +275,6 @@ public final class MongoSources {
      *
      * @since 5.3
      *
-     * @param name             a descriptive name for the source (diagnostic purposes)
      * @param connectionString a connection string URI to MongoDB for example:
      *                         {@code mongodb://127.0.0.1:27017}
      * @param database         the name of the database
@@ -298,13 +285,13 @@ public final class MongoSources {
     @Beta
     @Nonnull
     public static StreamSource<? extends Document> stream(
-            @Nonnull String name,
             @Nonnull String connectionString,
             @Nonnull String database,
             @Nonnull String collection,
             @Nullable Document filter,
             @Nullable Document projection
     ) {
+        String name = name(database, collection);
         Stream<Document> builder = MongoSourceBuilder
                 .stream(name, () -> MongoClients.create(connectionString))
                 .database(database)
@@ -318,5 +305,9 @@ public final class MongoSources {
         }
         builder.startAtOperationTime(bsonTimestampFromTimeMillis(System.currentTimeMillis()));
         return builder.build();
+    }
+
+    private static String name(String database, String collection) {
+        return "MongoSource(" + database + "/" + collection + ")";
     }
 }

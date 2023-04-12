@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.datalink.impl.JdbcDataLink;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
@@ -155,9 +155,9 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                     @Override
                     public Collection<? extends Processor> get(int count) {
                         return IntStream.range(0, count)
-                                .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
-                                        exactlyOnce, batchLimit))
-                                .collect(Collectors.toList());
+                                        .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
+                                                exactlyOnce, batchLimit))
+                                        .collect(Collectors.toList());
                     }
 
                     @Override
@@ -173,7 +173,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nullable String jdbcUrl,
             @Nonnull String updateQuery,
-            @Nonnull String dataLinkName,
+            @Nonnull String dataConnectionName,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
             boolean exactlyOnce,
             int batchLimit
@@ -183,36 +183,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
-                new ProcessorSupplier() {
-                    private transient JdbcDataLink dataLink;
-                    private transient CommonDataSource dataSource;
-
-                    @Override
-                    public void init(@Nonnull Context context) {
-                        dataLink = context.dataLinkService().getAndRetainDataLink(dataLinkName, JdbcDataLink.class);
-                        dataSource = new DataSourceFromConnectionSupplier(dataLink::getConnection);
-                    }
-
-                    @Override
-                    public void close(Throwable error) throws Exception {
-                        if (dataLink != null) {
-                            dataLink.release();
-                        }
-                    }
-
-                    @Nonnull @Override
-                    public Collection<? extends Processor> get(int count) {
-                        return IntStream.range(0, count)
-                                .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
-                                        exactlyOnce, batchLimit))
-                                .collect(Collectors.toList());
-                    }
-
-                    @Override
-                    public List<Permission> permissions() {
-                        return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
-                    }
-                });
+                new WriteJdbcSupplier(dataConnectionName, updateQuery, bindFn, exactlyOnce, batchLimit, jdbcUrl));
     }
 
     @Override
@@ -388,4 +359,55 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                 || (next != null && e != next && isNonTransientException(next));
     }
 
+    static class WriteJdbcSupplier<T> implements ProcessorSupplier {
+
+        private static final long serialVersionUID = 1L;
+
+        private final String dataConnectionName;
+        private final String updateQuery;
+        private final BiConsumerEx<? super PreparedStatement, ? super T> bindFn;
+        private final boolean exactlyOnce;
+        private final int batchLimit;
+        private final String jdbcUrl;
+        private transient JdbcDataConnection dataConnection;
+        private transient CommonDataSource dataSource;
+
+        WriteJdbcSupplier(String dataConnectionName, String updateQuery, BiConsumerEx<?
+                super PreparedStatement, ? super T> bindFn, boolean exactlyOnce, int batchLimit, String jdbcUrl) {
+            this.dataConnectionName = dataConnectionName;
+            this.updateQuery = updateQuery;
+            this.bindFn = bindFn;
+            this.exactlyOnce = exactlyOnce;
+            this.batchLimit = batchLimit;
+            this.jdbcUrl = jdbcUrl;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            dataConnection = context
+                    .dataConnectionService()
+                    .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
+            dataSource = new DataSourceFromConnectionSupplier(dataConnection::getConnection);
+        }
+
+        @Override
+        public void close(Throwable error) throws Exception {
+            if (dataConnection != null) {
+                dataConnection.release();
+            }
+        }
+
+        @Nonnull @Override
+        public Collection<? extends Processor> get(int count) {
+            return IntStream.range(0, count)
+                            .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
+                                    exactlyOnce, batchLimit))
+                            .collect(Collectors.toList());
+        }
+
+        @Override
+        public List<Permission> permissions() {
+            return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
+        }
+    }
 }

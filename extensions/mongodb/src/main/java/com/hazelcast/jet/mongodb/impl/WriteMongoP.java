@@ -27,10 +27,12 @@ import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.Transactio
 import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.WriteMode;
+import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoBulkWriteException;
+import com.mongodb.MongoClientException;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoSocketException;
@@ -39,6 +41,7 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
@@ -67,6 +70,9 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkCollectionExists;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkDatabaseExists;
+import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 import static com.mongodb.MongoException.TRANSIENT_TRANSACTION_ERROR_LABEL;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.stream.Collectors.groupingBy;
@@ -116,6 +122,11 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
      * Max number of items processed (written) in one invocation of {@linkplain #process}.
      */
     private static final int MAX_BATCH_SIZE = 2_000;
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static final RetryStrategy BACKPRESSURE_RETRY_STRATEGY =
+            RetryStrategies.custom()
+                           .intervalFunction(exponentialBackoffWithCap(100, 2.0, 3000))
+                           .build();
 
     private final MongoConnection connection;
     private final Class<I> documentType;
@@ -128,6 +139,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
      * {@link #documentIdentityFn} and {@link #documentIdentityFieldName} are easier to reason about.
      */
     private final FunctionEx<IN, I> intermediateMappingFn;
+    private final RetryTracker backpressureTracker;
     private ILogger logger;
 
     private UnboundedTransactionsProcessorUtility<MongoTransactionId, MongoTransaction> transactionUtility;
@@ -150,7 +162,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
      * Creates a new processor that will always insert to the same database and collection.
      */
     public WriteMongoP(WriteMongoParams<I> params) {
-        this.connection = new MongoConnection(params.clientSupplier, params.dataLinkRef, client -> {
+        this.connection = new MongoConnection(params.clientSupplier, params.dataConnectionRef, client -> {
         });
         this.documentIdentityFn = params.documentIdentityFn;
         this.documentIdentityFieldName = params.documentIdentityFieldName;
@@ -163,15 +175,17 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
         this.transactionOptionsSup = params.transactionOptionsSup;
 
         if (params.databaseName != null) {
-            this.collectionPicker = new ConstantCollectionPicker<>(params.databaseName, params.collectionName);
+            this.collectionPicker = new ConstantCollectionPicker<>(params.throwOnNonExisting, params.databaseName,
+                    params.collectionName);
         } else {
-            this.collectionPicker = new FunctionalCollectionPicker<>(params.databaseNameSelectFn,
-                    params.collectionNameSelectFn);
+            this.collectionPicker = new FunctionalCollectionPicker<>(params.throwOnNonExisting,
+                    params.databaseNameSelectFn, params.collectionNameSelectFn);
         }
         this.intermediateMappingFn = params.getIntermediateMappingFn();
         this.writeMode = params.getWriteMode();
 
         this.writeModelFn = params.getOptionalWriteModelFn().orElse(this::defaultWriteModelSupplier);
+        this.backpressureTracker = new RetryTracker(BACKPRESSURE_RETRY_STRATEGY);
     }
 
     @Override
@@ -213,6 +227,9 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
         if (!connection.reconnectIfNecessary()) {
             return;
         }
+        if (backpressureTracker.needsToWait()) {
+            return;
+        }
 
         try {
             MongoTransaction mongoTransaction = transactionUtility.activeTransaction();
@@ -246,15 +263,18 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
             for (int i = 0; i < items.size(); i++) {
                 inbox.remove();
             }
+            backpressureTracker.reset();
         } catch (MongoBulkWriteException e) {
             if (e.hasErrorLabel(TRANSIENT_TRANSACTION_ERROR_LABEL)) {
-                logger.info("Unable to process element: " + e.getMessage());
+                logger.warning("Unable to process element: " + e.getMessage());
+                backpressureTracker.attemptFailed();
                 // not removing from inbox, so it will be retried
             } else {
                 throw new JetException(e);
             }
-        } catch (MongoSocketException | MongoServerException e) {
-            logger.info("Unable to process Mongo Sink: " + e.getMessage());
+        } catch (MongoSocketException | MongoClientException | MongoServerException e) {
+            logger.warning("Unable to process Mongo Sink, will retry " + e.getMessage(), e);
+            backpressureTracker.attemptFailed();
             // not removing from inbox, so it will be retried
         } catch (Exception e) {
             throw new JetException(e);
@@ -546,8 +566,8 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
         private final MongoCollectionKey key;
 
-        private ConstantCollectionPicker(String databaseName, String collectionName) {
-            this.key = new MongoCollectionKey(databaseName, collectionName);
+        private ConstantCollectionPicker(boolean throwOnNonExisting, String databaseName, String collectionName) {
+            this.key = new MongoCollectionKey(throwOnNonExisting, databaseName, collectionName);
         }
 
 
@@ -562,9 +582,14 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
         private final FunctionEx<I, String> databaseNameSelectFn;
         private final FunctionEx<I, String> collectionNameSelectFn;
+        private final boolean throwOnNonExisting;
 
-        private FunctionalCollectionPicker(FunctionEx<I, String> databaseNameSelectFn,
-                                           FunctionEx<I, String> collectionNameSelectFn) {
+        private FunctionalCollectionPicker(
+                boolean throwOnNonExisting,
+                FunctionEx<I, String> databaseNameSelectFn,
+                FunctionEx<I, String> collectionNameSelectFn
+        ) {
+            this.throwOnNonExisting = throwOnNonExisting;
             this.databaseNameSelectFn = databaseNameSelectFn;
             this.collectionNameSelectFn = collectionNameSelectFn;
         }
@@ -574,7 +599,7 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
         public MongoCollectionKey pick(I item) {
             String databaseName = databaseNameSelectFn.apply(item);
             String collectionName = collectionNameSelectFn.apply(item);
-            return new MongoCollectionKey(databaseName, collectionName);
+            return new MongoCollectionKey(throwOnNonExisting, databaseName, collectionName);
         }
 
     }
@@ -582,8 +607,10 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
     private static final class MongoCollectionKey {
         private final @Nonnull String collectionName;
         private final @Nonnull String databaseName;
+        private final boolean throwOnNonExisting;
 
-        MongoCollectionKey(@Nonnull String databaseName, @Nonnull String collectionName) {
+        MongoCollectionKey(boolean throwOnNonExisting, @Nonnull String databaseName, @Nonnull String collectionName) {
+            this.throwOnNonExisting = throwOnNonExisting;
             this.collectionName = collectionName;
             this.databaseName = databaseName;
         }
@@ -615,9 +642,15 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
         @Nonnull
         public <I> MongoCollection<I> get(MongoClient mongoClient, Class<I> documentType) {
-            return mongoClient.getDatabase(databaseName)
-                              .getCollection(collectionName, documentType)
-                              .withCodecRegistry(defaultCodecRegistry());
+            if (throwOnNonExisting) {
+                checkDatabaseExists(mongoClient, databaseName);
+            }
+            MongoDatabase database = mongoClient.getDatabase(databaseName);
+            if (throwOnNonExisting) {
+                checkCollectionExists(database, collectionName);
+            }
+            return database.getCollection(collectionName, documentType)
+                           .withCodecRegistry(defaultCodecRegistry());
         }
     }
 

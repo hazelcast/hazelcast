@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +40,8 @@ import java.util.Objects;
 public class Mapping implements SqlCatalogObject, Versioned {
 
     private String name;
-    private String externalName;
-    private String dataLink;
+    private String[] externalName;
+    private String dataConnection;
     private String connectorType;
     private String objectType;
     private List<MappingField> mappingFields;
@@ -52,16 +53,28 @@ public class Mapping implements SqlCatalogObject, Versioned {
     public Mapping(
             String name,
             String externalName,
-            String dataLink,
+            String dataConnection,
             String connectorType,
             String objectType,
             List<MappingField> fields,
             Map<String, String> options
     ) {
-        assert connectorType == null || dataLink == null;
+        this(name, new String[]{externalName}, dataConnection, connectorType, objectType, fields, options);
+    }
+
+    public Mapping(
+            String name,
+            String[] externalName,
+            String dataConnection,
+            String connectorType,
+            String objectType,
+            List<MappingField> fields,
+            Map<String, String> options
+    ) {
+        assert connectorType == null || dataConnection == null;
         this.name = name;
         this.externalName = externalName;
-        this.dataLink = dataLink;
+        this.dataConnection = dataConnection;
         this.connectorType = connectorType;
         this.objectType = objectType;
         this.mappingFields = fields;
@@ -72,7 +85,7 @@ public class Mapping implements SqlCatalogObject, Versioned {
         return name;
     }
 
-    public String externalName() {
+    public String[] externalName() {
         return externalName;
     }
 
@@ -80,8 +93,8 @@ public class Mapping implements SqlCatalogObject, Versioned {
         return connectorType;
     }
 
-    public String dataLink() {
-        return dataLink;
+    public String dataConnection() {
+        return dataConnection;
     }
 
     public String objectType() {
@@ -104,10 +117,14 @@ public class Mapping implements SqlCatalogObject, Versioned {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
-        out.writeString(externalName);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            out.writeStringArray(externalName);
+        } else {
+            out.writeString(externalName[0]);
+        }
         out.writeString(connectorType);
         if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
-            out.writeString(dataLink);
+            out.writeString(dataConnection);
             out.writeString(objectType);
         }
         out.writeObject(mappingFields);
@@ -117,10 +134,14 @@ public class Mapping implements SqlCatalogObject, Versioned {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readString();
-        externalName = in.readString();
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            externalName = in.readStringArray();
+        } else {
+            externalName = new String[]{in.readString()};
+        }
         connectorType = in.readString();
         if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
-            dataLink = in.readString();
+            dataConnection = in.readString();
             objectType = in.readString();
         }
         mappingFields = in.readObject();
@@ -137,8 +158,8 @@ public class Mapping implements SqlCatalogObject, Versioned {
         }
         Mapping mapping = (Mapping) o;
         return Objects.equals(name, mapping.name)
-                && Objects.equals(externalName, mapping.externalName)
-                && Objects.equals(dataLink, mapping.dataLink)
+                && Arrays.equals(externalName, mapping.externalName)
+                && Objects.equals(dataConnection, mapping.dataConnection)
                 && Objects.equals(connectorType, mapping.connectorType)
                 && Objects.equals(objectType, mapping.objectType)
                 && Objects.equals(mappingFields, mapping.mappingFields)
@@ -147,7 +168,7 @@ public class Mapping implements SqlCatalogObject, Versioned {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, externalName, dataLink, connectorType, objectType, mappingFields, options);
+        return Objects.hash(name, externalName, dataConnection, connectorType, objectType, mappingFields, options);
     }
 
     @Override

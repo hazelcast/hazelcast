@@ -89,12 +89,12 @@ public class GetDdlTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_queryDataLinkFromDatalinkNamespace_then_success() {
-        String createDataLinkQuery = "CREATE OR REPLACE DATA LINK \"hazelcast\".\"public\".\"dl\"" + LE
+    public void when_queryDataConnectionFromDataConnectionNamespace_then_success() {
+        String createDataConnectionQuery = "CREATE OR REPLACE DATA CONNECTION \"hazelcast\".\"public\".\"dl\"" + LE
                 + "TYPE \"DUMMY\"" + LE + "SHARED";
 
-        instance().getSql().execute(createDataLinkQuery);
-        assertRowsAnyOrder("SELECT GET_DDL('datalink', 'dl')", ImmutableList.of(new Row(createDataLinkQuery)));
+        instance().getSql().execute(createDataConnectionQuery);
+        assertRowsAnyOrder("SELECT GET_DDL('dataconnection', 'dl')", ImmutableList.of(new Row(createDataConnectionQuery)));
     }
 
     @Test

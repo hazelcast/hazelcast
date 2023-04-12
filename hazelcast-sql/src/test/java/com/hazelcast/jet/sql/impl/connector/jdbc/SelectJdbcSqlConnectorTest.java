@@ -19,12 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.sql.SQLException;
-
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static org.assertj.core.util.Lists.emptyList;
 import static org.assertj.core.util.Lists.newArrayList;
 
@@ -50,10 +46,7 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
@@ -123,10 +116,7 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -162,10 +152,7 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -198,10 +185,7 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
@@ -219,50 +203,4 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
-    @Test
-    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
-    public void selectAllFromTableNonDefaultSchema() throws SQLException {
-        String schemaName = randomName();
-        executeJdbc("CREATE SCHEMA " + schemaName);
-        String fullyQualifiedTable = schemaName + "." + tableName;
-
-        createTable(fullyQualifiedTable);
-        insertItems(fullyQualifiedTable, ITEM_COUNT);
-        createMapping(fullyQualifiedTable);
-
-        assertRowsAnyOrder(
-                "SELECT * FROM \"" + fullyQualifiedTable + "\"",
-                newArrayList(
-                        new Row(0, "name-0"),
-                        new Row(1, "name-1"),
-                        new Row(2, "name-2"),
-                        new Row(3, "name-3"),
-                        new Row(4, "name-4")
-                )
-        );
-    }
-
-    @Test
-    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
-    public void selectAllFromTableSpaceInSchema() throws SQLException {
-        String schemaName = "\"prefix " + randomName() + "\"";
-        executeJdbc("CREATE SCHEMA " + schemaName);
-        String fullyQualifiedTable = schemaName + "." + tableName;
-        String mappingName = randomName();
-
-        createTable(fullyQualifiedTable);
-        insertItems(fullyQualifiedTable, ITEM_COUNT);
-        createMapping("\"" + schemaName + "\"." + tableName, mappingName);
-
-        assertRowsAnyOrder(
-                "SELECT * FROM " + mappingName,
-                newArrayList(
-                        new Row(0, "name-0"),
-                        new Row(1, "name-1"),
-                        new Row(2, "name-2"),
-                        new Row(3, "name-3"),
-                        new Row(4, "name-4")
-                )
-        );
-    }
 }

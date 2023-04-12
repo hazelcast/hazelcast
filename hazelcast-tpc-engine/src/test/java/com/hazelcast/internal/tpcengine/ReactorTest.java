@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import org.junit.After;
 import org.junit.Test;
 
@@ -214,9 +217,9 @@ public abstract class ReactorTest {
         Reactor clientReactor = newReactor();
         clientReactor.start();
         AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
-                .setReadHandler(new ReadHandler() {
+                .setReader(new AsyncSocketReader() {
                     @Override
-                    public void onRead(ByteBuffer receiveBuffer) {
+                    public void onRead(ByteBuffer src) {
                     }
                 })
                 .build();

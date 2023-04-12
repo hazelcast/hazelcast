@@ -23,8 +23,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.impl.DataLinkServiceImpl;
-import com.hazelcast.datalink.impl.InternalDataLinkService;
+import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -136,7 +136,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final InternalDataLinkService dataLinkService;
+    private final InternalDataConnectionService dataConnectionService;
     private final TpcServerBootstrap tpcServerBootstrap;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
@@ -165,7 +165,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = createSqlService();
-            this.dataLinkService = new DataLinkServiceImpl(node, configClassLoader);
+            this.dataConnectionService = new DataConnectionServiceImpl(node, configClassLoader);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
@@ -405,8 +405,8 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public InternalDataLinkService getDataLinkService() {
-        return dataLinkService;
+    public InternalDataConnectionService getDataConnectionService() {
+        return dataConnectionService;
     }
 
     @Override
@@ -613,8 +613,8 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
-        if (dataLinkService != null) {
-            dataLinkService.shutdown();
+        if (dataConnectionService != null) {
+            dataConnectionService.shutdown();
         }
 
     }

@@ -201,7 +201,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
     }
 
-    static class CreateDataLinkPlan extends SqlPlanImpl {
+    static class CreateDataConnectionPlan extends SqlPlanImpl {
         private final boolean replace;
         private final boolean ifNotExists;
         private final String name;
@@ -210,7 +210,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Map<String, String> options;
         private final PlanExecutor planExecutor;
 
-        CreateDataLinkPlan(
+        CreateDataConnectionPlan(
                 PlanKey planKey,
                 boolean replace,
                 boolean ifNotExists,
@@ -276,18 +276,18 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoArguments("CREATE DATA LINK", arguments);
-            SqlPlanImpl.ensureNoTimeout("CREATE DATA LINK", timeout);
+            SqlPlanImpl.ensureNoArguments("CREATE DATA CONNECTION", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE DATA CONNECTION", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropDataLinkPlan extends SqlPlanImpl {
+    static class DropDataConnectionPlan extends SqlPlanImpl {
         private final String name;
         private final boolean ifExists;
         private final PlanExecutor planExecutor;
 
-        DropDataLinkPlan(
+        DropDataConnectionPlan(
                 PlanKey planKey,
                 String name,
                 boolean ifExists,
@@ -325,7 +325,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoTimeout("DROP DATA LINK", timeout);
+            SqlPlanImpl.ensureNoTimeout("DROP DATA CONNECTION", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -893,19 +893,19 @@ abstract class SqlPlanImpl extends SqlPlan {
 
     static class ShowStatementPlan extends SqlPlanImpl {
         private final ShowStatementTarget showTarget;
-        private final String dataLinkName;
+        private final String dataConnectionName;
         private final PlanExecutor planExecutor;
 
         ShowStatementPlan(
                 PlanKey planKey,
                 ShowStatementTarget showTarget,
-                String dataLinkName,
+                String dataConnectionName,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
 
             this.showTarget = showTarget;
-            this.dataLinkName = dataLinkName;
+            this.dataConnectionName = dataConnectionName;
             this.planExecutor = planExecutor;
         }
 
@@ -913,8 +913,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             return showTarget;
         }
 
-        String getDataLinkName() {
-            return dataLinkName;
+        String getDataConnectionName() {
+            return dataConnectionName;
         }
 
         @Override

@@ -4542,10 +4542,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testDataLinkConfigs() {
+    public void testDataConnectionConfigs() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  data-link:\n"
+                + "  data-connection:\n"
                 + "    mysql-database:\n"
                 + "      type: jdbc\n"
                 + "      properties:\n"
@@ -4557,20 +4557,20 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         Config config = new InMemoryYamlConfig(yaml);
 
-        Map<String, DataLinkConfig> dataLinkConfigs = config.getDataLinkConfigs();
+        Map<String, DataConnectionConfig> dataConnectionConfigs = config.getDataConnectionConfigs();
 
-        assertThat(dataLinkConfigs).hasSize(2);
-        assertThat(dataLinkConfigs).containsKey("mysql-database");
-        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
-        assertThat(mysqlDataLinkConfig.getType()).isEqualTo("jdbc");
-        assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
-        assertThat(mysqlDataLinkConfig.isShared()).isTrue();
-        assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(dataConnectionConfigs).hasSize(2);
+        assertThat(dataConnectionConfigs).containsKey("mysql-database");
+        DataConnectionConfig mysqlDataConnectionConfig = dataConnectionConfigs.get("mysql-database");
+        assertThat(mysqlDataConnectionConfig.getType()).isEqualTo("jdbc");
+        assertThat(mysqlDataConnectionConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataConnectionConfig.isShared()).isTrue();
+        assertThat(mysqlDataConnectionConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataConnectionConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(dataLinkConfigs).containsKey("other-database");
-        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
-        assertThat(otherDataLinkConfig.getType()).isEqualTo("other");
+        assertThat(dataConnectionConfigs).containsKey("other-database");
+        DataConnectionConfig otherDataConnectionConfig = dataConnectionConfigs.get("other-database");
+        assertThat(otherDataConnectionConfig.getType()).isEqualTo("other");
     }
 
     @Override

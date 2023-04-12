@@ -148,8 +148,8 @@
         "integrity-checker": {
           "$ref": "#/definitions/IntegrityChecker"
         },
-        "data-link": {
-          "$ref": "#/definitions/DataLinkConfig"
+        "data-connection": {
+          "$ref": "#/definitions/DataConnectionConfig"
         },
         "tpc": {
           "$ref": "#/definitions/TpcConfig"
@@ -5013,7 +5013,7 @@
       ],
       "description": "Enables/disables Integrity Checker. Integrity Checker can be disabled to improve startup time."
     },
-    "DataLinkConfig": {
+    "DataConnectionConfig": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
@@ -5021,18 +5021,18 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Name of the data link configuration."
+            "description": "Name of the data connection configuration."
           },
           "type": {
             "type": "string",
-            "description": "The type of the DataLink."
+            "description": "The type of the DataConnection."
           },
           "shared": {
             "type": "boolean",
-            "description": "true if an instance of the data link will be shared. Depending on the implementation of the DataLink the shared instance may be single a thread-safe instance, or not thread-safe, but a pooled instance; false when on each usage a new instance of the underlying resource should be created.The default is true."
+            "description": "true if an instance of the data connection will be shared. Depending on the implementation of the data connection, the shared instance may be single a thread-safe instance, or not thread-safe, but a pooled instance; false when on each usage a new instance of the underlying resource should be created.The default is true."
           },
           "properties": {
-            "description": "The \"properties\" used for configuring data link",
+            "description": "The \"properties\" used for configuring data connection",
             "type": "object"
           }
         }

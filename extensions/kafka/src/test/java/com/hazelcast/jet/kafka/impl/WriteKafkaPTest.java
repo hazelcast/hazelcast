@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.kafka.impl;
 
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Traverser;
@@ -31,7 +31,7 @@ import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.impl.connector.SinkStressTestUtil;
 import com.hazelcast.jet.kafka.KafkaSinks;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sources;
@@ -120,15 +120,15 @@ public class WriteKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void testWriteToTopicWithDataLink() {
-        instance().getConfig().addDataLinkConfig(
-                new DataLinkConfig("kafka-data-link")
+    public void testWriteToTopicWithDataConnection() {
+        instance().getConfig().addDataConnectionConfig(
+                new DataConnectionConfig("kafka-data-connection")
                         .setType("Kafka")
                         .setProperties(properties)
         );
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.map(sourceIMap))
-         .writeTo(KafkaSinks.kafka(DataLinkRef.dataLinkRef("kafka-data-link"), topic));
+         .writeTo(KafkaSinks.kafka(DataConnectionRef.dataConnectionRef("kafka-data-connection"), topic));
         instance().getJet().newJob(p).join();
 
         kafkaTestSupport.assertTopicContentsEventually(topic, sourceIMap, false);

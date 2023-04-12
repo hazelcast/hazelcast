@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.datalink.impl.JdbcDataLink;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 
@@ -28,27 +28,28 @@ import static java.util.Objects.requireNonNull;
 
 abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSupplier {
 
-    protected String dataLinkName;
+    protected String dataConnectionName;
 
-    protected transient JdbcDataLink dataLink;
+    protected transient JdbcDataConnection dataConnection;
     protected transient DataSource dataSource;
 
     AbstractJdbcSqlConnectorProcessorSupplier() {
     }
 
-    AbstractJdbcSqlConnectorProcessorSupplier(String dataLinkName) {
-        this.dataLinkName = requireNonNull(dataLinkName, "dataLinkName must not be null");
+    AbstractJdbcSqlConnectorProcessorSupplier(String dataConnectionName) {
+        this.dataConnectionName = requireNonNull(dataConnectionName, "dataConnectionName must not be null");
     }
 
     public void init(@Nonnull Context context) throws Exception {
-        dataLink = context.dataLinkService().getAndRetainDataLink(dataLinkName, JdbcDataLink.class);
-        dataSource = new DataSourceFromConnectionSupplier(dataLink::getConnection);
+        dataConnection = context.dataConnectionService()
+                                .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
+        dataSource = new DataSourceFromConnectionSupplier(dataConnection::getConnection);
     }
 
     @Override
     public void close(@Nullable Throwable error) throws Exception {
-        if (dataLink != null) {
-            dataLink.release();
+        if (dataConnection != null) {
+            dataConnection.release();
         }
     }
 }

@@ -33,7 +33,7 @@ import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVar
 
 public class GetDdlFunction extends TriExpression<String> {
     static final String RELATION_NAMESPACE = "relation";
-    static final String DATALINK_NAMESPACE = "datalink";
+    static final String DATACONNECTION_NAMESPACE = "dataconnection";
 
     public GetDdlFunction() {
     }
@@ -60,15 +60,15 @@ public class GetDdlFunction extends TriExpression<String> {
 
         IMap<?, ?> sqlCatalog = context.getNodeEngine().getHazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
         final String ddl;
-        if (!(namespace.equals(RELATION_NAMESPACE) || namespace.equals(DATALINK_NAMESPACE))) {
+        if (!(namespace.equals(RELATION_NAMESPACE) || namespace.equals(DATACONNECTION_NAMESPACE))) {
             throw QueryException.error(
-                    "Namespace '" + namespace + "' is not supported."
-                            + " Only '" + RELATION_NAMESPACE + "' and '" + DATALINK_NAMESPACE + "' namespaces are supported.");
+                    "Namespace '" + namespace + "' is not supported. Only '" + RELATION_NAMESPACE + "' and '"
+                            + DATACONNECTION_NAMESPACE + "' namespaces are supported.");
         }
 
         String keyName = objectName;
-        if (namespace.equals(DATALINK_NAMESPACE)) {
-            keyName = QueryUtils.wrapDataLinkKey(objectName);
+        if (namespace.equals(DATACONNECTION_NAMESPACE)) {
+            keyName = QueryUtils.wrapDataConnectionKey(objectName);
         }
 
         final Object obj = sqlCatalog.get(keyName);
