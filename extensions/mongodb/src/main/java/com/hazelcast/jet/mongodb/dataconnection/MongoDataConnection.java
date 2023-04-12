@@ -93,7 +93,7 @@ public class MongoDataConnection extends DataConnectionBase {
         this.host = config.getProperty(HOST_PROPERTY);
         this.authDb = config.getProperty(AUTH_DB_PROPERTY, "admin");
 
-        checkState(allSame((username == null), (password == null), (host == null), (authDb == null)),
+        checkState(allSame((username == null), (password == null), (host == null)),
         "You have to provide connectionString property or combination of username, password and host");
 
         if (config.isShared()) {
