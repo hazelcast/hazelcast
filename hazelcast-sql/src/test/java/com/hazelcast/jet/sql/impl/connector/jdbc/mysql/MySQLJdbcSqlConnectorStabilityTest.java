@@ -26,13 +26,21 @@ import org.testcontainers.containers.MySQLContainer;
 @Category(NightlyTest.class)
 public class MySQLJdbcSqlConnectorStabilityTest extends JdbcSqlConnectorStabilityTest {
 
+    static MySQLContainer<?> mySQLContainer;
+
     // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
     public static void beforeClass() {
-        jdbcDatabaseContainer = new MySQLContainer<>("mysql:8.0.11");
-        jdbcDatabaseContainer.start();
-        dbConnectionUrl = jdbcDatabaseContainer.getJdbcUrl() + "?user=" + jdbcDatabaseContainer.getUsername() +
-                          "&password=" + jdbcDatabaseContainer.getPassword();
+        mySQLContainer = new MySQLContainer<>("mysql:8.0.11");
+        mySQLContainer.start();
+        dbConnectionUrl = mySQLContainer.getJdbcUrl() + "?user=" + mySQLContainer.getUsername() +
+                          "&password=" + mySQLContainer.getPassword();
         initialize();
+    }
+
+    @Override
+    protected void stopDatabase() {
+        mySQLContainer.stop();
+        mySQLContainer = null;
     }
 }

@@ -25,13 +25,21 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @Category(NightlyTest.class)
 public class PostgresJdbcSqlConnectorStabilityTest extends JdbcSqlConnectorStabilityTest {
 
+    static PostgreSQLContainer<?> postgreSQLContainer;
+
     // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
     public static void beforeClass() {
-        jdbcDatabaseContainer = new PostgreSQLContainer<>("postgres:12.1");
-        jdbcDatabaseContainer.start();
-        dbConnectionUrl = jdbcDatabaseContainer.getJdbcUrl() + "&user=" + jdbcDatabaseContainer.getUsername() +
-                          "&password=" + jdbcDatabaseContainer.getPassword();
+        postgreSQLContainer = new PostgreSQLContainer<>("postgres:12.1");
+        postgreSQLContainer.start();
+        dbConnectionUrl = postgreSQLContainer.getJdbcUrl() + "&user=" + postgreSQLContainer.getUsername() +
+                          "&password=" + postgreSQLContainer.getPassword();
         initialize();
+    }
+
+    @Override
+    protected void stopDatabase() {
+        postgreSQLContainer.stop();
+        postgreSQLContainer = null;
     }
 }

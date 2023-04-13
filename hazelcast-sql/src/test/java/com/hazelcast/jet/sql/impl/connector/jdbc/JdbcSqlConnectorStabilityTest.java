@@ -24,7 +24,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.OrderWith;
 import org.junit.runner.manipulation.Alphanumeric;
-import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import java.sql.SQLException;
 import java.util.Properties;
@@ -36,8 +35,6 @@ import static org.assertj.core.util.Lists.newArrayList;
 // The order of tests is important
 @OrderWith(Alphanumeric.class)
 public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
-
-    protected static JdbcDatabaseContainer<?> jdbcDatabaseContainer;
 
     private static H2DatabaseProvider h2DatabaseProvider;
 
@@ -54,14 +51,10 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
         sqlService = instance().getSql();
     }
 
-    void stopDatabase() {
-        if (jdbcDatabaseContainer != null) {
-            jdbcDatabaseContainer.stop();
-            jdbcDatabaseContainer = null;
-        } else {
-            h2DatabaseProvider.shutdown();
-            h2DatabaseProvider = null;
-        }
+    // Extending test class must override this method
+    protected void stopDatabase() {
+        h2DatabaseProvider.shutdown();
+        h2DatabaseProvider = null;
     }
 
     @BeforeClass
