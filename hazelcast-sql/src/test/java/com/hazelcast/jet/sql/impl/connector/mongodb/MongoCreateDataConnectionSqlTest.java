@@ -27,13 +27,13 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
     @Test
     public void test() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA CONNECTION " + dlName + " TYPE MongoDB SHARED " + options());
+        instance().getSql().execute("CREATE DATA CONNECTION " + dlName + " TYPE Mongo SHARED " + options());
 
 
         DataConnection dataConnection = getNodeEngineImpl(
                 instance()).getDataConnectionService().getAndRetainDataConnection(dlName, MongoDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
-        assertThat(dataConnection.getConfig().getType()).isEqualTo("MongoDB");
+        assertThat(dataConnection.getConfig().getType()).isEqualTo("Mongo");
     }
 }

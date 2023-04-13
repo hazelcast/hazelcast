@@ -26,7 +26,7 @@ public class MongoStreamSqlConnector extends MongoSqlConnectorBase {
 
     @Override
     public String typeName() {
-        return "MongoDBStream";
+        return "MongoStream";
     }
 
     @Override

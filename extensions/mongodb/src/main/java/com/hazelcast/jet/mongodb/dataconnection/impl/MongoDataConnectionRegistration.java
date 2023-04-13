@@ -27,11 +27,11 @@ import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 public class MongoDataConnectionRegistration implements DataConnectionRegistration {
 
     /**
-     * Returns "MongoDB" - will be used to determine DataConnection class based on it's this mapping type.
+     * Returns "Mongo" - will be used to determine DataConnection class based on it's this mapping type.
      */
     @Override
     public String type() {
-        return "MongoDB";
+        return "Mongo";
     }
 
     /**
