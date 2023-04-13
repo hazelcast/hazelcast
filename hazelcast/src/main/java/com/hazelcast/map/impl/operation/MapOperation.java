@@ -127,12 +127,15 @@ public abstract class MapOperation extends AbstractNamedOperation
                 && recordStore != null
                 && recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE);
 
-        // check mapStoreOffloadEnabled is true for current operation
-        mapStoreOffloadEnabled = recordStore != null && hasUserConfiguredOffload
+        // check if mapStoreOffloadEnabled is true for current operation
+        mapStoreOffloadEnabled = recordStore != null
+                && hasUserConfiguredOffload
                 && getStartingStep() != null
                 && !mapConfig.getTieredStoreConfig().isEnabled();
 
+        // check if tieredStoreEnabled is true for current operation
         tieredStoreEnabled = recordStore != null
+                && recordStore.getStorage().isPerPartitionCompactorEnabled()
                 && getStartingStep() != null
                 && mapConfig.getTieredStoreConfig().isEnabled();
 
@@ -181,12 +184,7 @@ public abstract class MapOperation extends AbstractNamedOperation
             }
         }
 
-        if (isMapStoreOffloadEnabled()) {
-            assert recordStore != null;
-            return offloadOperation();
-        }
-
-        if (tieredStoreEnabled) {
+        if (isMapStoreOffloadEnabled() || tieredStoreEnabled) {
             assert recordStore != null;
             return offloadOperation();
         }

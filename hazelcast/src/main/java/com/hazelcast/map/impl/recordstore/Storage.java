@@ -38,6 +38,14 @@ import java.util.Map;
 public interface Storage<K, R> {
 
     /**
+     * @return true if compaction for tiered
+     * store is enabled, false otherwise.
+     */
+    default boolean isPerPartitionCompactorEnabled() {
+        return false;
+    }
+
+    /**
      * Injects extra step for an operation which
      * is modeled as a sequence of {@link Step}
      * @return new step to be injected before an operation is finalized.
