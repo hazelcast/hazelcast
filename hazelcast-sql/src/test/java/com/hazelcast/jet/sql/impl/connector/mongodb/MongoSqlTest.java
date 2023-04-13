@@ -48,7 +48,7 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     protected static MongoDatabase database;
     protected static String databaseName;
     protected static String collectionName;
-    private static String connectionString;
+    protected static String connectionString;
 
     @Rule
     public final TestName testName = new TestName();

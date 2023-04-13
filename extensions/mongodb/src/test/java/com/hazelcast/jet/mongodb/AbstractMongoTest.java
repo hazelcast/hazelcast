@@ -83,7 +83,7 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
         Config config = new Config();
         config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
         config.addDataConnectionConfig(new DataConnectionConfig("mongoDB")
-                .setType("MongoDB")
+                .setType("Mongo")
                 .setName("mongoDB")
                 .setShared(true)
                 .setProperty("connectionString", mongoContainer.getConnectionString())
