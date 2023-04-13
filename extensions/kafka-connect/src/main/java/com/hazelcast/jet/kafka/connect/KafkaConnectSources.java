@@ -69,6 +69,7 @@ public final class KafkaConnectSources {
      *                     If the projection returns a {@code null} for an item,
      *                     that item will be filtered out.
      * @return a source to use in {@link com.hazelcast.jet.pipeline.Pipeline#readFrom(StreamSource)}
+     * @since 5.3
      */
     @Nonnull
     @Beta
@@ -116,6 +117,7 @@ public final class KafkaConnectSources {
      *
      * @param properties Kafka connect properties
      * @return a source to use in {@link com.hazelcast.jet.pipeline.Pipeline#readFrom(StreamSource)}
+     * @since 5.3
      */
     @Nonnull
     @Beta
