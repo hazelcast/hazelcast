@@ -531,7 +531,9 @@ public class MasterJobContext {
         if (jobStatus != NOT_RUNNING && jobStatus != STARTING && jobStatus != RUNNING) {
             throw new IllegalStateException("Restart scheduled in an unexpected state: " + jobStatus);
         }
-        mc.setJobStatus(NOT_RUNNING, description, false);
+        if (jobStatus != NOT_RUNNING) {
+            mc.setJobStatus(NOT_RUNNING, description, false);
+        }
         mc.coordinationService().scheduleRestart(mc.jobId());
     }
 

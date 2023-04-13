@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
@@ -83,7 +84,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     private static final int PERSON_COUNT = 10;
 
     private static final AtomicInteger TABLE_COUNTER = new AtomicInteger();
-    private static HikariDataSource hikariDataSource;
+
     private String tableName;
 
     @BeforeClass
@@ -114,10 +115,6 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     @After
     public void tearDown() throws Exception {
-        if (hikariDataSource != null) {
-            hikariDataSource.close();
-        }
-
         listRemainingConnections();
     }
 
@@ -176,10 +173,12 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     public void test_supplied_closeable_datasource_is_closed() throws SQLException {
         Pipeline p = Pipeline.create();
 
+        CopyOnWriteArrayList<HikariDataSource> hikariDataSourceList = new CopyOnWriteArrayList<>();
+
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
                 .map(item -> entry(item, item.toString()))
                 .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
-                        WriteJdbcPTest::createHikariDataSource,
+                        () -> createHikariDataSource(hikariDataSourceList),
                         (stmt, item) -> {
                             stmt.setInt(1, item.getKey());
                             stmt.setString(2, item.getValue());
@@ -187,11 +186,12 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                 ));
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
-        assertTrueEventually(() -> assertTrue(hikariDataSource.isClosed()));
+        assertTrueEventually(() -> assertTrue(hikariDataSourceList.stream().allMatch(HikariDataSource::isClosed)));
     }
 
-    private static DataSource createHikariDataSource() {
-        hikariDataSource = new HikariDataSource();
+    private static DataSource createHikariDataSource(CopyOnWriteArrayList<HikariDataSource> hikariDataSourceList) {
+        HikariDataSource hikariDataSource = new HikariDataSource();
+        hikariDataSourceList.add(hikariDataSource);
         assertThat(hikariDataSource).isInstanceOf(AutoCloseable.class);
 
         hikariDataSource.setJdbcUrl(container.getJdbcUrl());
