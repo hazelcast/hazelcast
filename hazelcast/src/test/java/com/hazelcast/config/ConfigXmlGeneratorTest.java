@@ -108,8 +108,15 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
         cfg.setLicenseKey("HazelcastLicenseKey");
 
+        cfg.getSecurityConfig().addRealmConfig("simple",
+                new RealmConfig().setSimpleAuthenticationConfig(new SimpleAuthenticationConfig().addUser("test", "pass"))
+                        .setUsernamePasswordIdentityConfig("myidentity", "mypasswd"))
+                .addRealmConfig("ldap", new RealmConfig().setLdapAuthenticationConfig(
+                        new LdapAuthenticationConfig().setSystemUserDn("cn=test").setSystemUserPassword("ldappass")));
+
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
+        SecurityConfig secCfg = newConfigViaXMLGenerator.getSecurityConfig();
 
         assertEquals(MASK_FOR_SENSITIVE_DATA, generatedSSLConfig.getProperty("keyStorePassword"));
         assertEquals(MASK_FOR_SENSITIVE_DATA, generatedSSLConfig.getProperty("trustStorePassword"));
@@ -119,6 +126,11 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(MASK_FOR_SENSITIVE_DATA, secPassword);
         assertEquals(MASK_FOR_SENSITIVE_DATA, theSalt);
         assertEquals(MASK_FOR_SENSITIVE_DATA, newConfigViaXMLGenerator.getLicenseKey());
+        RealmConfig simpleRealm = secCfg.getRealmConfig("simple");
+        assertEquals(MASK_FOR_SENSITIVE_DATA, simpleRealm.getSimpleAuthenticationConfig().getPassword("test"));
+        assertEquals(MASK_FOR_SENSITIVE_DATA, simpleRealm.getUsernamePasswordIdentityConfig().getPassword());
+        assertEquals(MASK_FOR_SENSITIVE_DATA,
+                secCfg.getRealmConfig("ldap").getLdapAuthenticationConfig().getSystemUserPassword());
     }
 
     @Test
@@ -657,7 +669,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("ldapRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
-        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -715,7 +727,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         );
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("simpleRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
-        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
