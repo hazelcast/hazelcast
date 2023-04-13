@@ -25,8 +25,6 @@ import org.junit.Test;
 import org.junit.runner.OrderWith;
 import org.junit.runner.manipulation.Alphanumeric;
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.sql.SQLException;
 import java.util.Properties;
@@ -41,23 +39,10 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
 
     protected static JdbcDatabaseContainer<?> jdbcDatabaseContainer;
 
-    private static final H2DatabaseProvider h2DatabaseProvider = new H2DatabaseProvider();
+    private static H2DatabaseProvider h2DatabaseProvider;
 
-    public static void initialize() {
+    protected static void initialize() {
         Config config = smallInstanceConfig();
-        if (jdbcDatabaseContainer != null) {
-            jdbcDatabaseContainer.start();
-            if (jdbcDatabaseContainer instanceof MySQLContainer) {
-                dbConnectionUrl = jdbcDatabaseContainer.getJdbcUrl() + "?user=" + jdbcDatabaseContainer.getUsername() +
-                                  "&password=" + jdbcDatabaseContainer.getPassword();
-            } else if (jdbcDatabaseContainer instanceof PostgreSQLContainer) {
-                dbConnectionUrl = jdbcDatabaseContainer.getJdbcUrl() + "&user=" + jdbcDatabaseContainer.getUsername() +
-                                  "&password=" + jdbcDatabaseContainer.getPassword();
-            }
-
-        } else {
-            dbConnectionUrl = h2DatabaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
-        }
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", dbConnectionUrl);
         config.addDataConnectionConfig(
@@ -72,13 +57,17 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
     void stopDatabase() {
         if (jdbcDatabaseContainer != null) {
             jdbcDatabaseContainer.stop();
+            jdbcDatabaseContainer = null;
         } else {
             h2DatabaseProvider.shutdown();
+            h2DatabaseProvider = null;
         }
     }
 
     @BeforeClass
     public static void beforeClass() {
+        h2DatabaseProvider = new H2DatabaseProvider();
+        dbConnectionUrl = h2DatabaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
         initialize();
     }
 
