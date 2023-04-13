@@ -91,7 +91,7 @@ public enum EntryOpSteps implements IMapOpStep {
 
     RUN_OFFLOADED_ENTRY_PROCESSOR() {
         @Override
-        public boolean isStoreStep() {
+        public boolean isOffloadStep(State state) {
             return true;
         }
 
