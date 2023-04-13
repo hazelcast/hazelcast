@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpcengine.util.OS;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -163,6 +164,13 @@ public final class SelectorOptimizer {
 
         @Override
         public boolean contains(Object o) {
+            if (!OS.isLinux()) {
+                for (int i = 0; i < size(); i++) {
+                    if (o.equals(activeKeys.keys[i])) {
+                        return true;
+                    }
+                }
+            }
             return false;
         }
     }

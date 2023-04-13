@@ -17,6 +17,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
@@ -164,6 +165,13 @@ public final class SelectorOptimizer {
 
         @Override
         public boolean contains(Object o) {
+            if (!OS.isLinux()) {
+                for (int i = 0; i < size(); i++) {
+                    if (o.equals(activeKeys.keys[i])) {
+                        return true;
+                    }
+                }
+            }
             return false;
         }
     }
