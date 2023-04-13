@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -109,6 +110,23 @@ public class JobTimeoutTest extends JetTestSupport {
         job.suspend();
 
         assertJobStatusEventually(job, SUSPENDED);
+
+        assertThrows(CancellationException.class, job::join);
+        assertEquals(FAILED, job.getStatus());
+        assertFalse(job.isUserCancelled());
+    }
+
+    @Test
+    public void when_jobTimeoutIsSetLater_jobIsCancelled() {
+        final HazelcastInstance hz = createHazelcastInstance();
+        final Job job = hz.getJet().newJob(streamingDag());
+
+        assertJobStatusEventually(job, RUNNING);
+        job.suspend();
+
+        assertJobStatusEventually(job, SUSPENDED);
+        job.updateConfig(new DeltaJobConfig().setTimeoutMillis(1000));
+        job.resume();
 
         assertThrows(CancellationException.class, job::join);
         assertEquals(FAILED, job.getStatus());

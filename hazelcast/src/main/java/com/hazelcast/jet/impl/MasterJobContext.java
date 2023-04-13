@@ -21,6 +21,7 @@ import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
@@ -298,6 +299,11 @@ public class MasterJobContext {
                   finalizeExecution(e);
               }
           });
+
+        if (mc.hasTimeout()) {
+            long remainingTime = mc.remainingTime(Clock.currentTimeMillis());
+            mc.coordinationService().scheduleJobTimeout(mc.jobId(), Math.max(1, remainingTime));
+        }
     }
 
     private CompletableFuture<Map<MemberInfo, ExecutionPlan>> createExecutionPlans(
