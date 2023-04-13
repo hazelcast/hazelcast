@@ -62,7 +62,7 @@ public final class KafkaConnectSources {
      * <p>
      * Hazelcast Jet will instantiate tasks on a random cluster member and use local parallelism for scaling.
      * Property <code>tasks.max</code> is not allowed. Use {@link StreamStage#setLocalParallelism(int)} in the pipeline
-     * instead.
+     * instead. This limitation can be changed in the future.
      *
      * @param properties   Kafka connect properties
      * @param projectionFn function to create output objects from the Kafka {@link SourceRecord}s.
