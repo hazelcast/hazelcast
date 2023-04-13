@@ -34,6 +34,6 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
                 instance()).getDataConnectionService().getAndRetainDataConnection(dlName, MongoDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
-        assertThat(dataConnection.getConfig().getType()).isEqualTo("MongoDB");
+        assertThat(dataConnection.getConfig().getType()).isEqualTo("Mongo");
     }
 }
