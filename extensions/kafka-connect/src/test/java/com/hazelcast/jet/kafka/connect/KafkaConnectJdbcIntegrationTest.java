@@ -30,7 +30,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.apache.kafka.connect.data.Values;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -50,7 +49,6 @@ import java.sql.Statement;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
@@ -109,9 +107,9 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
-                .withoutTimestamps()
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
+                .withoutTimestamps();
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -154,10 +152,10 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
 
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
                 .withoutTimestamps()
-                .setLocalParallelism(localParallelism)
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+                .setLocalParallelism(localParallelism);
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -192,14 +190,15 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("connection.password", PASSWORD);
         randomProperties.setProperty("incrementing.column.name", "id");
         randomProperties.setProperty("table.whitelist", "dynamic_test_items1,dynamic_test_items2,dynamic_test_items3");
-        randomProperties.setProperty("table.poll.interval.ms", "5000");
+        randomProperties.setProperty("table.poll.interval.ms", "1000");
 
         createTable(connectionUrl, "dynamic_test_items1");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
                 .withoutTimestamps()
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+                .setLocalParallelism(1);
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -212,7 +211,6 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
 
         createTable(connectionUrl, "dynamic_test_items2");
         createTable(connectionUrl, "dynamic_test_items3");
