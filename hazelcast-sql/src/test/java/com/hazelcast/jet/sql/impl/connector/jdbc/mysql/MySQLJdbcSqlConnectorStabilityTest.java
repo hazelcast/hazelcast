@@ -18,29 +18,16 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnectorStabilityTest;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
-import org.testcontainers.containers.MySQLContainer;
-
 
 @Category(NightlyTest.class)
 public class MySQLJdbcSqlConnectorStabilityTest extends JdbcSqlConnectorStabilityTest {
 
-    static MySQLContainer<?> mySQLContainer;
-
-    // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
     public static void beforeClass() {
-        mySQLContainer = new MySQLContainer<>("mysql:8.0.11");
-        mySQLContainer.start();
-        dbConnectionUrl = mySQLContainer.getJdbcUrl() + "?user=" + mySQLContainer.getUsername() +
-                          "&password=" + mySQLContainer.getPassword();
-        initialize();
+        initialize(new MySQLDatabaseProvider());
     }
 
-    @Override
-    protected void stopDatabase() {
-        mySQLContainer.stop();
-        mySQLContainer = null;
-    }
 }

@@ -18,28 +18,16 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnectorStabilityTest;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 @Category(NightlyTest.class)
 public class PostgresJdbcSqlConnectorStabilityTest extends JdbcSqlConnectorStabilityTest {
 
-    static PostgreSQLContainer<?> postgreSQLContainer;
-
-    // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
     public static void beforeClass() {
-        postgreSQLContainer = new PostgreSQLContainer<>("postgres:12.1");
-        postgreSQLContainer.start();
-        dbConnectionUrl = postgreSQLContainer.getJdbcUrl() + "&user=" + postgreSQLContainer.getUsername() +
-                          "&password=" + postgreSQLContainer.getPassword();
-        initialize();
+        initialize(new PostgresDatabaseProvider());
     }
 
-    @Override
-    protected void stopDatabase() {
-        postgreSQLContainer.stop();
-        postgreSQLContainer = null;
-    }
 }

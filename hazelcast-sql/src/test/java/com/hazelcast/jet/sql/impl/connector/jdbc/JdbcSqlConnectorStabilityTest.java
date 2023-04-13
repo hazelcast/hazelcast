@@ -16,71 +16,43 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.OrderWith;
-import org.junit.runner.manipulation.Alphanumeric;
 
 import java.sql.SQLException;
-import java.util.Properties;
 
 import static com.hazelcast.function.ConsumerEx.noop;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
-// The order of tests is important
-@OrderWith(Alphanumeric.class)
 public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
 
-    private static H2DatabaseProvider h2DatabaseProvider;
-
-    protected static void initialize() {
-        Config config = smallInstanceConfig();
-        Properties properties = new Properties();
-        properties.setProperty("jdbcUrl", dbConnectionUrl);
-        config.addDataConnectionConfig(
-                new DataConnectionConfig(TEST_DATABASE_REF)
-                        .setType("jdbc")
-                        .setProperties(properties));
-
-        initialize(2, config);
-        sqlService = instance().getSql();
-    }
-
-    // Extending test class must override this method
-    protected void stopDatabase() {
-        h2DatabaseProvider.shutdown();
-        h2DatabaseProvider = null;
-    }
+    private static String tableName;
 
     @BeforeClass
-    public static void beforeClass() {
-        h2DatabaseProvider = new H2DatabaseProvider();
-        dbConnectionUrl = h2DatabaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
-        initialize();
-    }
+    public static void beforeClass() throws Exception {
+        initialize(new H2DatabaseProvider());
 
-    @Test
-    public void a_dataConnectionDownShouldTimeout() throws SQLException {
-        String tableName = "table1";
+        tableName = randomTableName();
         createTable(tableName);
         insertItems(tableName, 5);
 
         execute(
                 "CREATE MAPPING " + tableName + " ("
-                + " id INT, "
-                + " name VARCHAR "
-                + ") "
-                + "DATA CONNECTION " + TEST_DATABASE_REF
+                        + " id INT, "
+                        + " name VARCHAR "
+                        + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
-        stopDatabase();
+        databaseProvider.shutdown();
+    }
 
-        // We should not be able to access DB anymore
+    // We should not be able to access DB anymore
+    @Test
+    public void dataConnectionDownShouldTimeout() throws SQLException {
         assertThatThrownBy(() -> {
             sqlService
                     .execute("SELECT * FROM " + tableName)
@@ -88,9 +60,9 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
         }).isInstanceOf(HazelcastSqlException.class);
     }
 
+    // We should be able to read from generated table even if the DB is stopped
     @Test
-    public void b_dataConnectionDownShouldNotAffectUnrelatedQueries() {
-        // We should be able to read from generated table even if the DB is stopped
+    public void dataConnectionDownShouldNotAffectUnrelatedQueries() {
         assertRowsAnyOrder(
                 "SELECT * FROM TABLE(generate_series(0, 4))",
                 newArrayList(
