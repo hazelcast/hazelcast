@@ -75,7 +75,7 @@ public class PlaceholderReplacerTest {
         // then
         assertThat(result).isInstanceOf(Document.class);
 
-        Document expected = new Document("jeden", new Document("test", "$dwa"));
+        Document expected = new Document("jeden", new Document("test", "dwa"));
         assertThat(result).isEqualTo(expected);
     }
 

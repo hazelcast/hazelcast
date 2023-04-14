@@ -45,13 +45,13 @@ import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPT
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.DynamicallyReplacedPlaceholder.replacePlaceholdersInPredicate;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
 /**
  * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance,
  *  that will update given items.
  */
-@SuppressWarnings("unchecked")
 public class UpdateProcessorSupplier implements ProcessorSupplier {
 
     private final String connectionString;
@@ -136,14 +136,14 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private SupplierEx<WriteModel<Document>> writeModel(Document predicate) {
         return () -> {
             Document values = valuesToUpdateDoc(externalNames);
-            List<Bson> pipeline = requireNonNull(values.get("update", List.class), "no update is not possible");
+            List<Bson> pipeline = singletonList(values.get("update", Bson.class));
             WriteModel<Document> doc = new UpdateManyModel<>(predicate, pipeline);
             return doc;
         };
     }
 
     private WriteModel<Document> write(Document update) {
-        List<? extends Bson> updates = requireNonNull(update.get("update", List.class), "no update is not possible");
+        Bson updates = requireNonNull(update.get("update", Bson.class), "updateList");
         Bson filter = requireNonNull(update.get("filter", Bson.class));
         return new UpdateOneModel<>(filter, updates);
     }
@@ -162,7 +162,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private Document valuesToUpdateDoc(Object[] values) {
         Object pkValue = values[0];
 
-        List<Bson> updateToPerform = new ArrayList<>();
+        List<Field<?>> updateToPerform = new ArrayList<>();
         for (int i = 0; i < updatedFieldNames.size(); i++) {
             String fieldName = updatedFieldNames.get(i);
             Object updateExpr = updates.get(i);
@@ -171,18 +171,19 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                         .toBsonDocument(Document.class, defaultCodecRegistry()).toJson());
                 PlaceholderReplacer.replacePlaceholders(document, evalContext, values);
                 updateExpr = document;
-                updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
+                updateToPerform.add(new Field<>(fieldName, updateExpr));
             } else if (updateExpr instanceof String) {
                 String expr = (String) updateExpr;
                 Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, externalNames, false);
-                updateToPerform.add(Aggregates.set(new Field<>(fieldName, withReplacements)));
+                updateToPerform.add(new Field<>(fieldName, withReplacements));
             } else {
-                updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
+                updateToPerform.add(new Field<>(fieldName, updateExpr));
             }
         }
 
         Bson filter = Filters.eq(pkExternalName, pkValue);
+        Bson update = Aggregates.set(updateToPerform);
         return new Document("filter", filter)
-                .append("update", updateToPerform);
+                .append("update", update);
     }
 }

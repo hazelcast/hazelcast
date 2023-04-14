@@ -80,12 +80,10 @@ public final class LogicalRules {
                 TableModifyLogicalRule.INSTANCE,
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
-//                UpdateWithScanLogicalRule.INSTANCE,
-//                UpdateNoScanLogicalRule.INSTANCE,
-                UpdateNewLogicalRule.INSTANCE,
-//                DeleteWithScanLogicalRule.INSTANCE,
-//                DeleteNoScanLogicalRule.INSTANCE,
-                DeleteNewLogicalRule.INSTANCE,
+                UpdateWithScanLogicalRule.INSTANCE,
+                UpdateNoScanLogicalRule.INSTANCE,
+                DeleteWithScanLogicalRule.INSTANCE,
+                DeleteNoScanLogicalRule.INSTANCE,
 
                 // imap-by-key access optimization rules
                 InsertMapLogicalRule.INSTANCE,
