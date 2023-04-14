@@ -159,7 +159,11 @@ public class QueryDataTypeTest extends CoreSqlTestSupport {
     public void testSerialization() {
         for (Converter converter : Converters.getConverters()) {
             QueryDataType original = new QueryDataType(converter);
-            QueryDataType restored = serializeAndCheck(original, SqlDataSerializerHook.QUERY_DATA_TYPE);
+            QueryDataType restored = serializeAndCheck(
+                    original,
+                    SqlDataSerializerHook.F_ID,
+                    SqlDataSerializerHook.QUERY_DATA_TYPE
+            );
 
             checkEquals(original, restored, true);
         }
