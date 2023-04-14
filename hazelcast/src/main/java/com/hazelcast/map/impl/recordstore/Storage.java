@@ -41,7 +41,7 @@ public interface Storage<K, R> {
      * @return true if compaction for tiered
      * store is enabled, false otherwise.
      */
-    default boolean isPerPartitionCompactorEnabled() {
+    default boolean isPartitionCompactorEnabled() {
         return false;
     }
 

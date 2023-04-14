@@ -135,7 +135,7 @@ public abstract class MapOperation extends AbstractNamedOperation
 
         // check if tieredStoreEnabled is true for current operation
         tieredStoreEnabled = recordStore != null
-                && recordStore.getStorage().isPerPartitionCompactorEnabled()
+                && recordStore.getStorage().isPartitionCompactorEnabled()
                 && getStartingStep() != null
                 && mapConfig.getTieredStoreConfig().isEnabled();
 
