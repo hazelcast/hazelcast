@@ -214,9 +214,7 @@ public abstract class MapOperation extends AbstractNamedOperation
                 .setPartitionId(getPartitionId())
                 .setCallerAddress(getCallerAddress())
                 .setCallerProvenance(getCallerProvenance())
-                .setDisableWanReplicationEvent(disableWanReplicationEvent())
-                .setTieredStorageEnabled(mapContainer.getMapConfig()
-                        .getTieredStoreConfig().isEnabled());
+                .setDisableWanReplicationEvent(disableWanReplicationEvent());
     }
 
     protected void runInternal() {
