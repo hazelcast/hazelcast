@@ -84,21 +84,21 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
         collection.insertOne(new Document("firstName", "Rey").append("jedi", true));
 
-        execute("CREATE MAPPING " + collectionName
-                + " ("
-                + (includeIdInMapping ? " id VARCHAR external name _id, " : "")
+        String mappingName = collectionName;
+        String externalName = databaseName + "." + mappingName;
+        execute("CREATE MAPPING " + mappingName + " EXTERNAL NAME " + externalName + " ("
+                + (includeIdInMapping ? " id VARCHAR EXTERNAL NAME _id, " : "")
                 + " firstName VARCHAR, "
                 + " lastName VARCHAR, "
                 + " jedi BOOLEAN "
                 + ") "
                 + "TYPE Mongo "
                 + "OPTIONS ("
-                + "    'connectionString' = '" + connectionString + "', "
-                + "    'database' = '" +  databaseName + "' "
+                + "    'connectionString' = '" + connectionString + "'"
                 + ")");
 
         String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
-        assertRowsAnyOrder("select firstName, lastName from " + collectionName
+        assertRowsAnyOrder("select firstName, lastName from " + mappingName
                         + " where (lastName = ? or lastName is null) and jedi=true" + force,
                 singletonList("Skywalker"),
                 asList(
@@ -180,10 +180,8 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         }
 
         execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
-                + "TYPE Mongo "
+                + "DATA CONNECTION testMongo "
                 + "OPTIONS ("
-                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
-                + "    'database' = '" +  databaseName + "', "
                 + "    'forceMongoReadParallelismOne' = 'true' "
                 + ")");
 
@@ -222,11 +220,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         }
 
         execute("CREATE MAPPING " + collectionName + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
-                + "TYPE Mongo "
-                + "OPTIONS ("
-                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
-                + "    'database' = '" +  databaseName + "'"
-                + ")");
+                + "DATA CONNECTION testMongo ");
 
         assertRowsAnyOrder("select firstName, lastName, jedi from " + collectionName + " where lastName = ?",
                 singletonList("Skywalker"),
@@ -256,14 +250,14 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         IMap<Integer, String> peopleBirthPlanet = instance().getMap("peopleBirthPlanet");
         peopleBirthPlanet.put(1, "Polis Massa");
         peopleBirthPlanet.put(2, "Corellia");
-
-        execute("CREATE MAPPING peopleName external name \"peopleName\" (personId INT, name VARCHAR) "
+        execute("CREATE MAPPING peopleName external name " + databaseName + ".peopleName (personId INT, name VARCHAR) "
                 + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" +  databaseName + "'"
                 + ")");
-        execute("CREATE MAPPING peopleProfession external name \"peopleProfession\" (personId INT, profession VARCHAR) "
+        execute("CREATE MAPPING peopleProfession external name " + databaseName + ".\"peopleProfession\" " +
+                "(personId INT, profession VARCHAR) "
                 + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
@@ -283,8 +277,6 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void readsWithJoinsToIMap() {
-        final String connectionString = mongoContainer.getConnectionString();
-
         MongoCollection<Document> peopleName = database.getCollection("peopleName2");
         peopleName.insertOne(new Document("personId", 1).append("name", "Luke Skywalker"));
         peopleName.insertOne(new Document("personId", 2).append("name", "Han Solo"));
@@ -294,11 +286,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         peopleBirthPlanet.put(2, "Corellia");
 
         execute("CREATE MAPPING peopleName external name \"peopleName2\" (personId INT, name VARCHAR) "
-                + "TYPE Mongo "
-                + "OPTIONS ("
-                + "    'connectionString' = '" + connectionString + "', "
-                + "    'database' = '" +  databaseName + "'"
-                + ")");
+                + "DATA CONNECTION testMongo");
         execute("CREATE MAPPING peopleBirthPlanet (__key INT, this VARCHAR) "
                 + "TYPE IMap "
                 + "OPTIONS ("
@@ -451,13 +439,8 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + " lastName VARCHAR, "
                 + " jedi BOOLEAN "
                 + ") "
-                + "TYPE Mongo "
-                + "OPTIONS ("
-                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
-                + "    'database' = '" +  databaseName + "', "
-                + "    'collection' = '" + collectionName + "', "
-                + "    'idColumn' = 'myPK' "
-                + ")");
+                + "DATA CONNECTION testMongo "
+                + "OPTIONS ('idColumn' = 'myPK')");
         execute("update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
                 "where firstName = ?", "Han", "Solo", false, "temp");
 
@@ -530,19 +513,17 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     }
 
     private void createMapping(boolean includeIdInMapping) {
-        execute("CREATE MAPPING " + collectionName
-                + " ("
+        execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
                 + (includeIdInMapping ? " id OBJECT external name _id, " : "")
-                + " firstName VARCHAR, "
-                + " lastName VARCHAR, "
-                + " jedi BOOLEAN "
-                + ") "
-                + "TYPE Mongo "
-                + "OPTIONS ("
-                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
-                + "    'database' = '" +  databaseName + "', "
-                + "    'collection' = '" + collectionName + "' "
-                + ")");
+                + " firstName VARCHAR, \n"
+                + " lastName VARCHAR, \n"
+                + " jedi BOOLEAN \n"
+                + ") \n"
+                + "TYPE Mongo \n"
+                + "OPTIONS (\n"
+                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "' \n"
+                + ")"
+        );
     }
 
 }

@@ -83,7 +83,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
             MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
             collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
-            execute("CREATE MAPPING " + tableName
+            execute("CREATE MAPPING " + tableName + " external name "  + databaseName + "." + collectionName
                     + " ("
                     + (includeIdInMapping ? " id VARCHAR external name \"fullDocument._id\", " : "")
                     + " firstName VARCHAR, "
@@ -94,8 +94,6 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                     + "TYPE MongoStream "
                     + "OPTIONS ("
                     + "    'connectionString' = '" + connectionString + "', "
-                    + "    'database' = '" + databaseName + "', "
-                    + "    'collection' = '" + collectionName + "', "
                     + "    'startAt' = 'now' "
                     + ")");
 
@@ -135,7 +133,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
         MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
-        execute("CREATE MAPPING " + tableName
+        execute("CREATE MAPPING " + tableName + " external name " + databaseName + "." + collectionName
                 + " ("
                 + " id VARCHAR external name \"fullDocument._id\", "
                 + " firstName VARCHAR, "

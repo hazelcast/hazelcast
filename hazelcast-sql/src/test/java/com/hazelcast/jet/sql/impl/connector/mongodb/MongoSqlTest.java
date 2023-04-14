@@ -97,8 +97,8 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     }
 
     protected static String options() {
-        return String.format("OPTIONS ( 'database' = '%s', 'connectionString' = '%s', 'idColumn' = 'id') ", databaseName,
-                mongoContainer.getConnectionString());
+        return String.format("OPTIONS ('connectionString' = '%s', 'idColumn' = 'id') ",
+                connectionString);
     }
 
 }

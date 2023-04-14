@@ -133,7 +133,7 @@ public final class MongoSinks {
      * Example usage:
      * <pre>{@code
      * Sink<Document> mongoSink =
-     *         MongoSinks.builder(
+     *         MongoSinks.mongodb(
      *                 "mongodb://127.0.0.1:27017",
      *                 "myDatabase",
      *                 "myCollection"
@@ -169,7 +169,7 @@ public final class MongoSinks {
      * Example usage:
      * <pre>{@code
      * Sink<Document> mongoSink =
-     *         MongoSinks.builder(
+     *         MongoSinks.mongodb(
      *                 dataConnectionRef("someMongoDB"),
      *                 "myDatabase",
      *                 "myCollection"

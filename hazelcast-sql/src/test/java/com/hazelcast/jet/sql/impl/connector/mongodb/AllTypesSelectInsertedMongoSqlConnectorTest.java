@@ -130,7 +130,7 @@ public class AllTypesSelectInsertedMongoSqlConnectorTest extends MongoSqlTest {
 
         String mappingName = "mapping_" + randomName();
         execute("CREATE MAPPING " + mappingName
-                + " EXTERNAL NAME " + collectionName
+                + " EXTERNAL NAME " + databaseName + "." + collectionName
                 + " ("
                 + "id INT, "
                 + "table_column " + mappingType

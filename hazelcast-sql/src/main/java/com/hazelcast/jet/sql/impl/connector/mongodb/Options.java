@@ -39,11 +39,6 @@ final class Options {
     static final String CONNECTION_STRING_OPTION = "connectionString";
 
     /**
-     * The name of the database from which the collection should be read.
-     */
-    static final String DATABASE_NAME_OPTION = "database";
-
-    /**
      * Option for streaming source only and mandatory for them.
      * <p>
      * Indicates a moment from which the oplog (changeStream) will be read. Possible values:
@@ -103,25 +98,24 @@ final class Options {
         }
     }
 
-    static String getDatabaseName(NodeEngine nodeEngine, String dataConnectionName, Map<String, String> options) {
-        String name = options.get(Options.DATABASE_NAME_OPTION);
-        if (name != null) {
-            return name;
+    static String getDatabaseName(NodeEngine nodeEngine, String[] externalName, String dataConnectionName) {
+        if (externalName.length == 2) {
+            return externalName[0];
         }
         if (dataConnectionName != null) {
-            MongoDataConnection link =
+            MongoDataConnection dataConnection =
                     nodeEngine.getDataConnectionService().getAndRetainDataConnection(
                             dataConnectionName, MongoDataConnection.class);
             try {
-                name = link.getDatabaseName();
+                String name = dataConnection.getDatabaseName();
                 if (name != null) {
                     return name;
                 }
             } finally {
-                link.release();
+                dataConnection.release();
             }
         }
-        throw new IllegalArgumentException(DATABASE_NAME_OPTION + " must be provided in the mapping or data connection.");
+        throw new IllegalArgumentException("Database must be provided in the mapping or data connection.");
     }
 
     static Predicate<MappingField> getPkColumnChecker(Map<String, String> options, boolean isStreaming) {
