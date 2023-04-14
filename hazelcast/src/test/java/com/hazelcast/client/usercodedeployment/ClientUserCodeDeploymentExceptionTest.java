@@ -40,6 +40,7 @@ import java.io.FileNotFoundException;
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -119,6 +120,21 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         ClientConfig clientConfig2 = new ClientConfig()
                 .setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig2);
         factory.newHazelcastClient(clientConfig2);
+    }
+
+    @Test
+    public void testClientWithAsyncStart_ClientShutdowns_WhenUserCodeDeploymentFails() {
+        ClientConfig clientConfig = createClientConfig();
+        clientConfig.getUserCodeDeploymentConfig().setEnabled(true);
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        Config config = createNodeConfig();
+
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+
+        assertTrueEventually(() -> {
+            assertFalse(client.getLifecycleService().isRunning());
+        });
     }
 
     @Test(expected = ClassNotFoundException.class)

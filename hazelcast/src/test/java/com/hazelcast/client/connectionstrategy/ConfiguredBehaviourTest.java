@@ -24,10 +24,12 @@ import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,6 +38,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import usercodedeployment.IncrementingEntryProcessor;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -116,15 +119,36 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
 
     @Test
     public void testAsyncStartTrueShouldNotBlock_whenThereIsClientStateToSend() {
-        class A { }
+        Config config = new Config();
+        config.getUserCodeDeploymentConfig().setEnabled(true);
+        hazelcastFactory.newHazelcastInstance(config);
+
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(-1);
         ClientUserCodeDeploymentConfig clientUserCodeDeploymentConfig = new ClientUserCodeDeploymentConfig();
-        clientUserCodeDeploymentConfig.addClass(A.class);
+        clientUserCodeDeploymentConfig.addClass(IncrementingEntryProcessor.class);
         clientUserCodeDeploymentConfig.setEnabled(true);
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig);
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
-        hazelcastFactory.newHazelcastClient(clientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        // The following logic verifies user code deployment works
+        int keyCount = 100;
+        IMap<Integer, Integer> map = client.getMap(randomName());
+
+        for (int i = 0; i < keyCount; i++) {
+            map.put(i, 0);
+        }
+
+        int incrementCount = 5;
+        //doing the call a few times so that the invocation can be done on different members
+        for (int i = 0; i < incrementCount; i++) {
+            map.executeOnEntries(new IncrementingEntryProcessor());
+        }
+
+        for (int i = 0; i < keyCount; i++) {
+            assertEquals(incrementCount, (int) map.get(i));
+        }
     }
 
     @Test(expected = HazelcastClientNotActiveException.class)
