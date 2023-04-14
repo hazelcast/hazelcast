@@ -44,7 +44,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.StreamSupport;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -124,8 +123,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
             if (jobDefinition instanceof DAG) {
                 DAG dag = (DAG) jobDefinition;
                 dag.lock();
-                serialize = StreamSupport.stream(dag.spliterator(), false)
-                        .anyMatch(vertex -> vertex.getMetaSupplier().isStateful());
+                serialize = dag.vertices().stream().anyMatch(v -> v.getMetaSupplier().isStateful());
             }
             config.lock();
         }
