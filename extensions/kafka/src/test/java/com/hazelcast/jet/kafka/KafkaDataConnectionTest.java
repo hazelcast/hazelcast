@@ -32,6 +32,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
@@ -100,7 +101,7 @@ public class KafkaDataConnectionTest {
 
         Collection<DataConnectionResource> resources = kafkaDataConnection.listResources();
         List<DataConnectionResource> withoutConfluent =
-                resources.stream().filter(r -> !r.name().contains("__confluent")).collect(toList());
+                resources.stream().filter(r -> !Arrays.toString(r.name()).contains("__confluent")).collect(toList());
         assertThat(withoutConfluent).isEmpty();
     }
 
@@ -115,7 +116,7 @@ public class KafkaDataConnectionTest {
 
             Collection<DataConnectionResource> resources = kafkaDataConnection.listResources();
             List<DataConnectionResource> withoutConfluent =
-                    resources.stream().filter(r -> !r.name().contains("__confluent")).collect(toList());
+                    resources.stream().filter(r -> !Arrays.toString(r.name()).contains("__confluent")).collect(toList());
             assertThat(withoutConfluent)
                     .containsExactly(new DataConnectionResource("topic", "my-topic"));
         } finally {
