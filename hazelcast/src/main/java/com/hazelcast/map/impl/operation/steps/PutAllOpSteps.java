@@ -167,7 +167,8 @@ public enum PutAllOpSteps implements IMapOpStep {
 
                 if (loadOldValue && oldValue != null) {
                     // TODO why do we need to convert to heap data here?
-                    oldValueByKey.put(perKeyState.getKey(), mapServiceContext.toData(oldValue));
+                    oldValueByKey.put(perKeyState.getKey(),
+                            mapServiceContext.toData(perKeyState.getOldValue()));
                 }
             }
 
@@ -230,7 +231,7 @@ public enum PutAllOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

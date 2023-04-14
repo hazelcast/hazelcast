@@ -140,7 +140,7 @@ public enum PutOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             if (state.isStopExecution()) {
-                return UtilSteps.SEND_RESPONSE;
+                return UtilSteps.FINAL_STEP;
             }
             return state.getStaticParams().isTransient() ? ON_STORE : STORE;
         }
@@ -201,7 +201,7 @@ public enum PutOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 
