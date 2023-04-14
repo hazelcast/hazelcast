@@ -21,7 +21,6 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
 import org.immutables.value.Value;
@@ -46,7 +45,7 @@ class DeleteNoScanLogicalRule extends RelRule<RelRule.Config> {
                         .inputs(b1 -> b1.operand(RelNode.class)
                                 .predicate(input ->
                                         // TODO: see comment in UpdateNoScanLogicalRule
-                                        !(input instanceof TableScan) && !(input instanceof Calc))
+                                        !(input instanceof TableScan))
                                 .anyInputs())
                 ).build();
 

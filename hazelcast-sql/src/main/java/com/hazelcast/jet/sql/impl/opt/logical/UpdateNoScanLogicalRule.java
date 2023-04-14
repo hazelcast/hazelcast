@@ -26,7 +26,6 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.sql.SqlUpdate;
@@ -131,8 +130,8 @@ class UpdateNoScanLogicalRule extends RelRule<RelRule.Config> {
                                  //  2. TableModify -> TableScan
                                  //  3. TableModify -> Calc -> TableScan
                                  //  + maybe even more complex?
-                                 .predicate(r -> !(r instanceof TableScan) && !(r instanceof Calc))
-                                 .noInputs())
+                                 .predicate(r -> !(r instanceof TableScan))
+                                 .anyInputs())  //TODO: noInputs?
                 ).build();
 
         @Override
