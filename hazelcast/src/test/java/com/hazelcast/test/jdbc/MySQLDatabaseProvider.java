@@ -18,6 +18,10 @@ package com.hazelcast.test.jdbc;
 
 import org.testcontainers.jdbc.ContainerDatabaseDriver;
 
+import java.util.Arrays;
+
+import static java.util.stream.Collectors.joining;
+
 public class MySQLDatabaseProvider implements TestDatabaseProvider {
 
     private static final int LOGIN_TIMEOUT = 120;
@@ -37,5 +41,13 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
             ContainerDatabaseDriver.killContainer(jdbcUrl);
             jdbcUrl = null;
         }
+    }
+
+    @Override
+    public String quote(String[] parts) {
+        return Arrays.stream(parts)
+                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
+                     .collect(joining("."));
+
     }
 }

@@ -40,7 +40,6 @@ import java.util.Properties;
 
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -94,9 +93,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     protected String quote(String... parts) {
-        return Arrays.stream(parts)
-                     .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
-                     .collect(joining("."));
+        return databaseProvider.quote(parts);
     }
 
     /**
