@@ -44,9 +44,9 @@ public class IMapResolverTest extends SqlTestSupport {
 
     @Test
     public void smokeTest() throws Exception {
-        instance().getMap("m1").put(42, new BigDecimal((43)));
-
         Member member = instance().getCluster().getLocalMember();
+
+        instance().getMap("m1").put(42, new BigDecimal((43)));
         String mappingDdl1 = ((SqlClientService) client().getSql()).mappingDdl(member, "m1").get();
         assertEquals("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m1\" EXTERNAL NAME \"m1\"" + LE
                         + "TYPE \"IMap\"" + LE
@@ -71,5 +71,33 @@ public class IMapResolverTest extends SqlTestSupport {
                         + ")",
                 mappingDdl2);
         instance().getSql().execute(mappingDdl2);
+    }
+
+    @Test
+    public void testCompactSerialization() throws Exception {
+        Member member = instance().getCluster().getLocalMember();
+
+        instance().getMap("m3").put("foo", new CompactClass(1));
+        String mappingDdl = ((SqlClientService) client().getSql()).mappingDdl(member, "m3").get();
+        assertEquals("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"m3\" EXTERNAL NAME \"m3\" (" + LE
+                        + "  \"field\" INTEGER EXTERNAL NAME \"this.field\"" + LE
+                        + ")" + LE
+                        + "TYPE \"IMap\"" + LE
+                        + "OPTIONS (" + LE
+                        + "  'keyFormat'='java'," + LE
+                        + "  'keyJavaClass'='java.lang.String'," + LE
+                        + "  'valueFormat'='compact'," + LE
+                        + "  'valueCompactTypeName'='com.hazelcast.sql.impl.schema.IMapResolverTest$CompactClass'" + LE
+                        + ")",
+                mappingDdl);
+        instance().getSql().execute(mappingDdl);
+    }
+
+    private static class CompactClass {
+        private Integer field;
+
+        CompactClass(Integer field) {
+            this.field = field;
+        }
     }
 }
