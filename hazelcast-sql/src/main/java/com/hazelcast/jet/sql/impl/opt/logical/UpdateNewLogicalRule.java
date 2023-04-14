@@ -57,10 +57,10 @@ class UpdateNewLogicalRule extends RelRule<RelRule.Config> {
     interface Config extends RelRule.Config {
         RelRule.Config DEFAULT = ImmutableUpdateNewLogicalRule.Config.builder()
                 .description(UpdateNewLogicalRule.class.getSimpleName())
-                .operandSupplier(b0 -> b0.operand(TableModify.class)
-                                         .predicate(TableModify::isUpdate)
-                                         .inputs(b1 -> b1.operand(RelNode.class)
-                                                         .noInputs())
+                .operandSupplier(b0 -> b0.operand(TableModifyLogicalRel.class)
+                        .predicate(TableModify::isUpdate)
+                        .inputs(b1 -> b1.operand(RelNode.class)
+                                .anyInputs())
                 ).build();
 
         @Override
@@ -75,7 +75,7 @@ class UpdateNewLogicalRule extends RelRule<RelRule.Config> {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        TableModify update = call.rel(0);
+        TableModifyLogicalRel update = call.rel(0);
         RelNode input2 = call.rel(1);
 
         if (input2 instanceof FullScanLogicalRel) {

@@ -20,7 +20,6 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
@@ -47,13 +46,12 @@ class DeleteNewLogicalRule extends RelRule<RelRule.Config> {
     @Value.Immutable
     interface Config extends RelRule.Config {
         RelRule.Config DEFAULT = ImmutableDeleteNewLogicalRule.Config.builder()
-                                                                     .description(DeleteNewLogicalRule.class.getSimpleName())
-                                                                     .operandSupplier(b0 -> b0.operand(TableModify.class)
-                                                                                              .predicate(TableModify::isDelete)
-                                                                                              .trait(Convention.NONE)
-                                                                                              .inputs(b1 -> b1.operand(RelNode.class)
-                                                                                                              .noInputs())
-                                                                     ).build();
+                .description(DeleteNewLogicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0.operand(TableModify.class)
+                        .predicate(TableModify::isDelete)
+                        .inputs(b1 -> b1.operand(RelNode.class)
+                                .anyInputs())
+                ).build();
 
         @Override
         default RelOptRule toRule() {

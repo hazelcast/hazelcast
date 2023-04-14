@@ -77,9 +77,14 @@ public final class LogicalRules {
                 ValuesLogicalRules.UNION_INSTANCE,
 
                 // DML rules
+                TableModifyLogicalRule.INSTANCE,
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
+//                UpdateWithScanLogicalRule.INSTANCE,
+//                UpdateNoScanLogicalRule.INSTANCE,
                 UpdateNewLogicalRule.INSTANCE,
+//                DeleteWithScanLogicalRule.INSTANCE,
+//                DeleteNoScanLogicalRule.INSTANCE,
                 DeleteNewLogicalRule.INSTANCE,
 
                 // imap-by-key access optimization rules
