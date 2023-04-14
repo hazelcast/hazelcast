@@ -181,6 +181,7 @@ public class StepSupplier implements Supplier<Runnable> {
 
         // check timeout for only first step, as in no-offload flows
         if (firstStep && operationRunner.timeout(state.getOperation())) {
+            firstStep = false;
             return false;
         }
 
@@ -192,7 +193,6 @@ public class StepSupplier implements Supplier<Runnable> {
      * otherwise finds next step by calling {@link Step#nextStep}
      */
     private Step nextStep(Step step) {
-        firstStep = false;
         if (state.getThrowable() != null
                 && currentStep != UtilSteps.HANDLE_ERROR) {
             return UtilSteps.HANDLE_ERROR;
