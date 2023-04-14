@@ -157,7 +157,7 @@ public class AllTypesInsertMongoSqlConnectorTest extends MongoSqlTest {
                 + "id INT, "
                 + "table_column " + mappingType
                 + ") "
-                + "TYPE MongoDB " + options()
+                + "TYPE Mongo " + options()
         );
 
         if (sqlInsertValue != null) {

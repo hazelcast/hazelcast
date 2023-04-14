@@ -26,8 +26,6 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import javax.annotation.Nullable;
-
 /**
  * The task that creates UploadJobMultiPartOperation with client protocol message
  */
@@ -41,9 +39,8 @@ public class JetUploadJobMultipartTask extends
     }
 
     @Override
-    @Nullable
     public String[] actions() {
-        return new String[]{ActionConstants.ACTION_ADD_RESOURCES};
+        return new String[]{ActionConstants.ACTION_SUBMIT, ActionConstants.ACTION_ADD_RESOURCES};
     }
 
     @Override

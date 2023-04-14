@@ -135,7 +135,7 @@ public class AllTypesSelectInsertedMongoSqlConnectorTest extends MongoSqlTest {
                 + "id INT, "
                 + "table_column " + mappingType
                 + ") "
-                + "TYPE MongoDB " + options()
+                + "TYPE Mongo " + options()
         );
 
         MongoCollection<Document> sourceCollection = database.getCollection(collectionName);

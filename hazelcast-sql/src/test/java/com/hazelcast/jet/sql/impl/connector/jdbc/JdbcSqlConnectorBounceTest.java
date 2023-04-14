@@ -49,7 +49,7 @@ public class JdbcSqlConnectorBounceTest {
 
     private static final int ITEM_COUNT = 5;
     private static final int CONCURRENCY = 10;
-    private static final String TEST_DATABASE_REF = "test-database-ref";
+    private static final String TEST_DATABASE_REF = "test_database_ref";
 
     private String tableName;
 
@@ -88,7 +88,6 @@ public class JdbcSqlConnectorBounceTest {
                         + " name VARCHAR "
                         + ") "
                         + "DATA CONNECTION " + TEST_DATABASE_REF
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
         );
     }
 

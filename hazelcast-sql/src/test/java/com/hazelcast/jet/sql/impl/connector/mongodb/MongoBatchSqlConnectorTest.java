@@ -92,7 +92,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + " lastName VARCHAR, "
                 + " jedi BOOLEAN "
                 + ") "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "'"
                 + ")");
@@ -250,16 +250,15 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         IMap<Integer, String> peopleBirthPlanet = instance().getMap("peopleBirthPlanet");
         peopleBirthPlanet.put(1, "Polis Massa");
         peopleBirthPlanet.put(2, "Corellia");
-
         execute("CREATE MAPPING peopleName external name " + databaseName + ".peopleName (personId INT, name VARCHAR) "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" +  databaseName + "'"
                 + ")");
         execute("CREATE MAPPING peopleProfession external name " + databaseName + ".\"peopleProfession\" " +
                 "(personId INT, profession VARCHAR) "
-                + "TYPE MongoDB "
+                + "TYPE Mongo "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" + databaseName + "'"
@@ -520,7 +519,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + " lastName VARCHAR, \n"
                 + " jedi BOOLEAN \n"
                 + ") \n"
-                + "TYPE MongoDB \n"
+                + "TYPE Mongo \n"
                 + "OPTIONS (\n"
                 + "    'connectionString' = '" + mongoContainer.getConnectionString() + "' \n"
                 + ")"

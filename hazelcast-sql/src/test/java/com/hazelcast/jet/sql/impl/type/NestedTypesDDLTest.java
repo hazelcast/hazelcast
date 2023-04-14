@@ -19,7 +19,9 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -27,8 +29,17 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_VERSION;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -87,6 +98,61 @@ public class NestedTypesDDLTest extends SqlTestSupport {
                 .hasMessage("Type does not exist: Foo");
 
         execute("DROP TYPE IF EXISTS Foo");
+    }
+
+    @Test
+    public void test_createTwoTypesForSameJavaClass() {
+        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+        execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+    }
+
+    @Test
+    public void test_createTwoTypesForSamePortableClass() {
+        execute("CREATE TYPE FirstType(a INT, b INT) OPTIONS ('format'='portable','portableFactoryId'='123','portableClassId'='456')");
+        execute("CREATE TYPE SecondType(c VARCHAR, d VARCHAR) OPTIONS ('format'='portable','portableFactoryId'='123','portableClassId'='456')");
+
+        try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + "m(" +
+                "e varchar" +
+                ")" + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Long.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + 123 + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + 456 + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + 0 + '\''
+                + ")"
+        )) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
+    }
+
+    @Test
+    public void test_createTwoTypesForSameCompactClass() {
+        execute("CREATE TYPE FirstType(a int, b varchar) OPTIONS ('format'='compact','compactTypeName'='foo')");
+        execute("CREATE TYPE SecondType(a int, b varchar) OPTIONS ('format'='compact','compactTypeName'='foo')");
+    }
+
+    @Test
+    public void when_javaClassUnknown_then_fail() {
+        assertThatThrownBy(() ->
+                execute("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='foo')"))
+                .hasRootCauseMessage("foo")
+                .hasRootCauseInstanceOf(ClassNotFoundException.class);
+    }
+
+    @Test
+    public void when_portableClassDefNotKnown_then_requireFields() {
+        assertThatThrownBy(() ->
+                execute("CREATE TYPE FirstType OPTIONS ('format'='portable','portableFactoryId'='123','portableClassId'='456')"))
+                .hasMessage("The given FactoryID/ClassID/Version combination not known to the member. You need to provide column list for this type");
+    }
+
+    @Test
+    public void when_compactTypeNoColumns_then_fail() {
+        assertThatThrownBy(() ->
+                execute("CREATE TYPE FirstType OPTIONS ('format'='compact','compactTypeName'='foo')"))
+                .hasMessage("Column list is required to create Compact-based Types");
     }
 
     @Test

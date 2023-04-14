@@ -155,7 +155,7 @@ public class AllTypesSelectMongoSqlConnectorTest extends MongoSqlTest {
         execute("CREATE MAPPING " + mappingName
                 + " EXTERNAL NAME " + databaseName + "." + collectionName
                 + " (document_column " + mappingType + ") "
-                + "TYPE MongoDB " + options()
+                + "TYPE Mongo " + options()
         );
 
         assertRowsAnyOrder("SELECT * FROM " + mappingName, new Row(expected));
