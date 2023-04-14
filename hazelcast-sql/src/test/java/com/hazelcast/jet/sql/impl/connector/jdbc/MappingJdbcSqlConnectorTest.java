@@ -166,11 +166,8 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     public void createMappingNoColumnsTableDoesNotExist() {
         tableName = randomTableName();
         assertThatThrownBy(() -> execute(
-                "CREATE MAPPING " + tableName + " "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
-        ))
-                .isInstanceOf(HazelcastSqlException.class);
-
+                "CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF
+        )).isInstanceOf(HazelcastSqlException.class);
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
