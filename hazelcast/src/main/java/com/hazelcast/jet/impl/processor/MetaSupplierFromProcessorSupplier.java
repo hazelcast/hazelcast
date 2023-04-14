@@ -78,6 +78,16 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
     }
 
     @Override
+    public Permission getRequiredPermission() {
+        return permission;
+    }
+
+    @Override
+    public boolean isStateful() {
+        return processorSupplier.isStateful();
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(preferredLocalParallelism);
         out.writeObject(processorSupplier);
@@ -89,10 +99,5 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
         preferredLocalParallelism = in.readInt();
         processorSupplier = in.readObject();
         permission = in.readObject();
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return permission;
     }
 }

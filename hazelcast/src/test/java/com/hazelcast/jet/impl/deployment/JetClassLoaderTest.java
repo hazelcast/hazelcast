@@ -337,11 +337,6 @@ public class JetClassLoaderTest extends JetTestSupport {
         public void close(@Nullable Throwable error) throws Exception {
             classLoaders.putClassLoader("close");
         }
-
-        @Override
-        public boolean isStateful() {
-            return false;
-        }
     }
 
     private static final class ClassLoaderMap {

@@ -186,13 +186,14 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Returns {@code true} if this instance is stateful.
      * <p>
      * When a job is to be submitted, the job definition ({@link DAG} or
-     * {@link Pipeline}) is serialized. This serialization can be avoided if the
-     * local member is the job coordinator and the {@link DAG} is stateless.
+     * {@link Pipeline}) is serialized. This serialization can be avoided
+     * for light jobs if the DAG is stateless.
      *
+     * @see ProcessorSupplier#isStateful()
      * @since 5.3
      */
     default boolean isStateful() {
-        return true;
+        return false;
     }
 
     /**
@@ -453,6 +454,11 @@ public interface ProcessorMetaSupplier extends Serializable {
             public Permission getRequiredPermission() {
                 return permission;
             }
+
+            @Override
+            public boolean isStateful() {
+                return supplier.isStateful();
+            }
         };
     }
 
@@ -523,6 +529,11 @@ public interface ProcessorMetaSupplier extends Serializable {
         @Override
         public int preferredLocalParallelism() {
             return 1;
+        }
+
+        @Override
+        public boolean isStateful() {
+            return supplier.isStateful();
         }
 
         @Override

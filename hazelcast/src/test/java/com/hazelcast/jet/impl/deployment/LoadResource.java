@@ -85,10 +85,5 @@ public class LoadResource extends AbstractProcessor {
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return (Address x) -> new LoadResourceSupplier();
         }
-
-        @Override
-        public boolean isStateful() {
-            return false;
-        }
     }
 }

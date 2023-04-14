@@ -98,4 +98,9 @@ public class KinesisSinkPSupplier<T> implements ProcessorSupplier {
             client.shutdown();
         }
     }
+
+    @Override
+    public boolean isStateful() {
+        return true;
+    }
 }

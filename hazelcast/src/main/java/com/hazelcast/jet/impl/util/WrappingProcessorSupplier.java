@@ -77,6 +77,11 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier, Ident
     }
 
     @Override
+    public boolean isStateful() {
+        return wrapped.isStateful();
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(wrapped);
         out.writeObject(wrapperSupplier);

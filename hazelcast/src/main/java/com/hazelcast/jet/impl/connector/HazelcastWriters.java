@@ -195,11 +195,6 @@ public final class HazelcastWriters {
             public Permission getRequiredPermission() {
                 return new RingBufferPermission(name, ACTION_CREATE, ACTION_PUT);
             }
-
-            @Override
-            public boolean isStateful() {
-                return false;
-            }
         };
     }
 

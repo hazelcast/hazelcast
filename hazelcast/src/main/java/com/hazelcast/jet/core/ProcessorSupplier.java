@@ -21,6 +21,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
+import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.impl.function.SecuredFunction;
 
@@ -97,6 +98,20 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
      *              that it's non-null if the job didn't complete successfully.
      */
     default void close(@Nullable Throwable error) throws Exception {
+    }
+
+    /**
+     * Returns {@code true} if this instance is stateful.
+     * <p>
+     * When a job is to be submitted, the job definition ({@link DAG} or
+     * {@link Pipeline}) is serialized. This serialization can be avoided
+     * for light jobs if the DAG is stateless.
+     *
+     * @see ProcessorMetaSupplier#isStateful()
+     * @since 5.3
+     */
+    default boolean isStateful() {
+        return false;
     }
 
     /**

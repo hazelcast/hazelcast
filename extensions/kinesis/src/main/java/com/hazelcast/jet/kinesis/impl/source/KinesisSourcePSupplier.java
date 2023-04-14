@@ -134,4 +134,9 @@ public class KinesisSourcePSupplier<T> implements ProcessorSupplier {
             client.shutdown();
         }
     }
+
+    @Override
+    public boolean isStateful() {
+        return true;
+    }
 }

@@ -113,4 +113,9 @@ public class KinesisSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
         }
         return addressRanges;
     }
+
+    @Override
+    public boolean isStateful() {
+        return true;
+    }
 }

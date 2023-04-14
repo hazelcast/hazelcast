@@ -138,6 +138,11 @@ public final class WriteHadoopNewApiP<T, K, V> extends AbstractProcessor {
         public FunctionEx<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new Supplier<>(configuration, extractKeyFn, extractValueFn);
         }
+
+        @Override
+        public boolean isStateful() {
+            return true;
+        }
     }
 
     private static class Supplier<T, K, V> implements ProcessorSupplier {
@@ -193,6 +198,11 @@ public final class WriteHadoopNewApiP<T, K, V> extends AbstractProcessor {
                 }
 
             }).collect(toList());
+        }
+
+        @Override
+        public boolean isStateful() {
+            return true;
         }
     }
 
