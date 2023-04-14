@@ -85,7 +85,7 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
                 .addDataConnectionConfig(
                         new DataConnectionConfig(TEST_DATABASE_REF)
-                                .setType("MongoDB")
+                                .setType("Mongo")
                                 .setShared(false)
                                 .setProperty("connectionString", connectionString)
                                 .setProperty("database", database.getName())

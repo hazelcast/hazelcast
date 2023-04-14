@@ -43,5 +43,10 @@ public class MySQLAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbcS
         assumeThat(type).describedAs("TIMESTAMP WITH TIME ZONE not supported on MySQL")
                 .isNotEqualTo("TIMESTAMP WITH TIME ZONE");
 
+        // MySQL REAL type is by default a synonym for DOUBLE PRECISION
+        // MySQL uses FLOAT as 4-byte floating point type
+        if (type.equals("REAL")) {
+            type = "FLOAT";
+        }
     }
 }

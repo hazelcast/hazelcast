@@ -55,18 +55,18 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_LINK;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_DATACONNECTION;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_LINK;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_DATACONNECTION;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_INDEX;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_LINK;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_DATACONNECTION;
 
 abstract class SqlPlanImpl extends SqlPlan {
 
@@ -268,9 +268,9 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             if (isReplace()) {
-                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK, ACTION_DROP_LINK));
+                context.checkPermission(new SqlPermission(name, ACTION_CREATE_DATACONNECTION, ACTION_DROP_DATACONNECTION));
             } else {
-                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK));
+                context.checkPermission(new SqlPermission(name, ACTION_CREATE_DATACONNECTION));
             }
         }
 
@@ -315,7 +315,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_DROP_LINK));
+            context.checkPermission(new SqlPermission(name, ACTION_VIEW_DATACONNECTION, ACTION_DROP_DATACONNECTION));
         }
 
         @Override

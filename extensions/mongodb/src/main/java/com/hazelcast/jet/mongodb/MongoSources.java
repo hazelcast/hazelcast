@@ -50,9 +50,10 @@ public final class MongoSources {
      * <p>
      * Example usage:
      * <pre>{@code
-     * BatchSource<Document> batchSource =
+     * BatchSource<MyDTO> batchSource =
      *         MongoSources.batch(() -> MongoClients.create("mongodb://127.0.0.1:27017"))
-     *                 .into("myDatabase", "myCollection")
+     *                 .database("myDatabase")
+     *                 .collection("myCollection", MyDTO.class)
      *                 .filter(new Document("age", new Document("$gt", 10)),
      *                 .projection(new Document("age", 1))
      *         );
@@ -77,7 +78,8 @@ public final class MongoSources {
      * <pre>{@code
      * BatchSource<Document> batchSource =
      *         MongoSources.batch(dataConnectionRef("mongo"))
-     *                 .into("myDatabase", "myCollection")
+     *                 .database("myDatabase")
+     *                 .collection("myCollection")
      *                 .filter(new Document("age", new Document("$gt", 10)),
      *                 .projection(new Document("age", 1))
      *         );
@@ -217,8 +219,9 @@ public final class MongoSources {
      * Example usage:
      * <pre>{@code
      * StreamSource<Document> streamSource =
-     *         MongoSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
-     *                 .into("myDatabase", "myCollection")
+     *         MongoSources.stream(() -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *                 .database("myDatabase")
+     *                 .collection("myCollection")
      *                 .filter(new Document("fullDocument.age", new Document("$gt", 10)),
      *                 .projection(new Document("fullDocument.age", 1))
      *         );
@@ -228,16 +231,14 @@ public final class MongoSources {
      *
      * @since 5.3
      *
-     * @param name descriptive name for the source (diagnostic purposes) client.
      * @param clientSupplier a function that creates MongoDB client.
      * @return Stream Mongo source builder
      */
     @Beta
     @Nonnull
     public static MongoSourceBuilder.Stream<Document> stream(
-            @Nonnull String name,
             @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
-        return MongoSourceBuilder.stream(name, clientSupplier);
+        return MongoSourceBuilder.stream(clientSupplier);
     }
 
     /**

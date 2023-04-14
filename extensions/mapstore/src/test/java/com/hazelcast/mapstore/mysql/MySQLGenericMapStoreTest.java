@@ -18,16 +18,11 @@ package com.hazelcast.mapstore.mysql;
 
 import com.hazelcast.mapstore.GenericMapStoreTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-import java.util.Arrays;
-
-import static java.util.stream.Collectors.joining;
-
-@Category({NightlyTest.class, ParallelJVMTest.class})
+@Category(NightlyTest.class)
 public class MySQLGenericMapStoreTest extends GenericMapStoreTest {
 
     @BeforeClass
@@ -35,10 +30,4 @@ public class MySQLGenericMapStoreTest extends GenericMapStoreTest {
         initialize(new MySQLDatabaseProvider());
     }
 
-    @Override
-    protected String quote(String... parts) {
-        return Arrays.stream(parts)
-                     .map(part -> '`' + part.replaceAll("`", "``") + '`')
-                     .collect(joining("."));
-    }
 }

@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.jdbc.mysql.HazelcastMySqlDialect;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -37,6 +38,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlDialectFactoryImpl;
+import org.apache.calcite.sql.SqlDialects;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -49,6 +51,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -249,7 +252,15 @@ public class JdbcSqlConnector implements SqlConnector {
         JdbcDataConnection dataConnection = getAndRetainDataConnection(nodeEngine, dataConnectionName);
         try (Connection connection = dataConnection.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
-            SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
+            SqlDialect dialect;
+            switch (databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim()) {
+                case "MYSQL":
+                    dialect = new HazelcastMySqlDialect(SqlDialects.createContext(databaseMetaData));
+                    break;
+
+                default:
+                    dialect = SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
+            }
             SupportedDatabases.logOnceIfDatabaseNotSupported(databaseMetaData);
             return dialect;
         } catch (Exception e) {
