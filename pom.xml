@@ -93,7 +93,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.443</aws.sdk.version>
+        <aws.sdk.version>1.12.448</aws.sdk.version>
         <classgraph.version>4.8.157</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
@@ -118,7 +118,7 @@
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.0</parquet.version>
-        <picocli.version>4.7.1</picocli.version>
+        <picocli.version>4.7.2</picocli.version>
         <postgresql.version>42.5.4</postgresql.version>
         <prometheus.version>0.18.0</prometheus.version>
 
@@ -135,7 +135,7 @@
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <snakeyaml.engine.version>2.6</snakeyaml.engine.version>
-        <mongodb.version>4.9.0</mongodb.version>
+        <mongodb.version>4.9.1</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
@@ -1610,7 +1610,7 @@
             <dependency>
                 <groupId>com.google.auth</groupId>
                 <artifactId>google-auth-library-bom</artifactId>
-                <version>1.16.0</version>
+                <version>1.16.1</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

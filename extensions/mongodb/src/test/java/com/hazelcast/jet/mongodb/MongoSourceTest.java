@@ -223,7 +223,7 @@ public class MongoSourceTest extends AbstractMongoTest {
 
         IList<Object> list = instance().getList(collectionName);
         String connectionString = mongoContainer.getConnectionString();
-        Stream<?> sourceBuilder = stream("customName", () -> mongoClient(connectionString))
+        Stream<?> sourceBuilder = stream(() -> mongoClient(connectionString))
                                               .database(defaultDatabase())
                                               .collection(collectionName, Document.class);
         sourceBuilder = streamFilters(sourceBuilder);

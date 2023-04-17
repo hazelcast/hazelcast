@@ -34,7 +34,7 @@ import static java.util.stream.Collectors.toList;
  */
 public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
 
-    public static final String TYPE_NAME = "MongoDB";
+    public static final String TYPE_NAME = "Mongo";
 
     @Override
     public String typeName() {
