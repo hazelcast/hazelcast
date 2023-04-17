@@ -22,7 +22,6 @@ import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
-import com.hazelcast.internal.tpcengine.util.JVM;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +42,6 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
-import static org.junit.Assume.assumeTrue;
 
 public abstract class AsyncSocket_LargePayloadTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
@@ -60,9 +58,6 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     @Before
     public void before() {
-        // in 5.4 we will drop support for java 8 anyway
-        // so it's not worth to solve it for ibm jdk8
-        assumeTrue(JVM.getMajorVersion() >= 11);
         clientReactor = newReactorBuilder().build().start();
         serverReactor = newReactorBuilder().build().start();
         printThread.start();
