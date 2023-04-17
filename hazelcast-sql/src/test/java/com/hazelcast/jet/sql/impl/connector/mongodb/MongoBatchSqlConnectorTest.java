@@ -409,18 +409,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
-        execute("CREATE MAPPING " + collectionName
-                + " ("
-                + " firstName VARCHAR, "
-                + " id OBJECT external name _id, "
-                + " lastName VARCHAR, "
-                + " jedi BOOLEAN "
-                + ") "
-                + "TYPE MongoDB "
-                + "OPTIONS ("
-                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "', "
-                + "    'database' = '" +  databaseName + "' "
-                + ")");
+        createMapping(true);
 
         execute("update " + collectionName + " set firstName = lastName, lastName = ?, jedi=? " +
                         "where firstName = ?", "Solo", false, "temp");

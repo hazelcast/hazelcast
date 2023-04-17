@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -29,6 +30,8 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
 import javax.annotation.Nullable;
 import java.util.List;
+
+import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
 public class FullScanLogicalRel extends FullScan implements LogicalRel {
 
@@ -52,10 +55,17 @@ public class FullScanLogicalRel extends FullScan implements LogicalRel {
         // Prefer scans with smaller number of results/expressions.
         // This is needed to ensure that UPDATE scans use only key column
         // TODO: make this calculation consistent with FullScanPhysicalRel cost
-        RelOptCost baseCost = super.computeSelfCost(planner, mq);
-        if (table.getRowType().getFieldCount() > 1) {
-            return CostUtils.preferSingleExpressionScan(baseCost);
-        }
-        return baseCost;
+        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
+        double totalRowCount = table.getStatistic().getRowCount() != null
+                ? table.getTotalRowCount()
+                : getTable().getRowCount();
+
+        double scanCpu = totalRowCount * TABLE_SCAN_CPU_MULTIPLIER;
+        double projectCpu = CostUtils.getProjectCpu(totalRowCount, table.getProjects().size());
+        return planner.getCostFactory().makeCost(
+                totalRowCount,
+                scanCpu + projectCpu,
+                0
+        );
     }
 }
