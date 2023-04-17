@@ -24,7 +24,6 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
-import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
@@ -61,14 +60,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({QuickTest.class})
 public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     private static Config memberConfig;
+
     @Rule
     public TestName testName = new TestName();
 
+    private String prefix = "generic_";
+
     private String tableName;
+
+    protected void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
 
     @BeforeClass
     public static void beforeClass() {
@@ -97,7 +103,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        tableName = testName.getMethodName().toLowerCase(Locale.ROOT);
+        tableName = prefix + testName.getMethodName().toLowerCase(Locale.ROOT);
         createTable(tableName);
         insertItems(tableName, 1);
 
@@ -314,6 +320,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     public void testExceptionIsConstructable() {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
+        // Method call to create the lazy mapping in GenericMapStore
         map.loadAll(false);
 
         String mappingName = "__map-store." + tableName;
