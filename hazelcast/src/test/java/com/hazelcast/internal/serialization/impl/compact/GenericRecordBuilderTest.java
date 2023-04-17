@@ -187,7 +187,7 @@ public class GenericRecordBuilderTest {
         builder.build();
         assertThatThrownBy(() -> {
             builder.setInt32("bar", 2);
-        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Cannot modify the GenericRecordBuilder after building");
+        }).isInstanceOf(UnsupportedOperationException.class).hasMessageContaining("Cannot modify the GenericRecordBuilder after building");
     }
 
     @Test
@@ -197,7 +197,7 @@ public class GenericRecordBuilderTest {
         schemaBoundBuilder.build();
         assertThatThrownBy(() -> {
             schemaBoundBuilder.setInt32("bar", 3);
-        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Cannot modify the GenericRecordBuilder after building");
+        }).isInstanceOf(UnsupportedOperationException.class).hasMessageContaining("Cannot modify the GenericRecordBuilder after building");
     }
 
     @Test
@@ -207,7 +207,7 @@ public class GenericRecordBuilderTest {
         cloner.build();
         assertThatThrownBy(() -> {
             cloner.setInt32("bar", 2);
-        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Cannot modify the GenericRecordBuilder after building");
+        }).isInstanceOf(UnsupportedOperationException.class).hasMessageContaining("Cannot modify the GenericRecordBuilder after building");
     }
 
     private void assertSetterThrows(GenericRecordBuilder builder, String fieldName, int value, String errorMessage) {

@@ -54,7 +54,7 @@ public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuild
 
     protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldKind) {
         if (this.built) {
-            throw new HazelcastSerializationException("Cannot modify the GenericRecordBuilder after building");
+            throw new UnsupportedOperationException("Cannot modify the GenericRecordBuilder after building");
         }
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
