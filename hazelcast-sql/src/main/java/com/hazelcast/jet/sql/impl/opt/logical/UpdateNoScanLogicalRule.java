@@ -28,6 +28,7 @@ import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.core.Values;
 import org.apache.calcite.sql.SqlUpdate;
 import org.immutables.value.Value;
 
@@ -130,8 +131,11 @@ class UpdateNoScanLogicalRule extends RelRule<RelRule.Config> {
                                  //  2. TableModify -> TableScan
                                  //  3. TableModify -> Calc -> TableScan
                                  //  + maybe even more complex?
-                                 .predicate(r -> !(r instanceof TableScan))
-                                 .anyInputs())  //TODO: noInputs?
+//                                 .predicate(r -> !(r instanceof TableScan))
+//                                 .anyInputs())  //TODO: noInputs?
+                                 .predicate(r -> !(r instanceof Values) && !(r instanceof TableScan))
+                                 .noInputs())
+
                 ).build();
 
         @Override
