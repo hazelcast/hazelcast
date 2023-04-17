@@ -79,8 +79,8 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     @AfterClass
-    public static void afterClass() throws SQLException {
-        if (dbConnectionUrl != null) {
+    public static void afterClass() {
+        if (databaseProvider != null) {
             databaseProvider.shutdown();
             databaseProvider = null;
             dbConnectionUrl = null;
