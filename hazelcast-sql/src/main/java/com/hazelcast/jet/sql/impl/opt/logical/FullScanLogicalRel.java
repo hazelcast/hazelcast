@@ -60,6 +60,11 @@ public class FullScanLogicalRel extends FullScan implements LogicalRel {
                 ? table.getTotalRowCount()
                 : getTable().getRowCount();
 
+        // In case of lack of statistics assume 1 row, so we do not have 0 cost
+        if (totalRowCount == 0) {
+            totalRowCount = 1;
+        }
+
         double scanCpu = totalRowCount * TABLE_SCAN_CPU_MULTIPLIER;
         double projectCpu = CostUtils.getProjectCpu(totalRowCount, table.getProjects().size());
         return planner.getCostFactory().makeCost(
