@@ -144,12 +144,33 @@ public class JdbcSqlConnector implements SqlConnector {
         JdbcDataConnection dataConnection = getAndRetainDataConnection(nodeEngine, dataConnectionName);
         try (Connection connection = dataConnection.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
+            checkTableExists(externalTableName, databaseMetaData);
             Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, databaseMetaData);
             return readColumns(externalTableName, databaseMetaData, pkColumns);
         } catch (Exception e) {
             throw new HazelcastException("Could not execute readDbFields for table " + externalTableName, e);
         } finally {
             dataConnection.release();
+        }
+    }
+
+    private static void checkTableExists(ExternalJdbcTableName externalTableName, DatabaseMetaData databaseMetaData)
+            throws SQLException {
+
+        try (ResultSet tables = databaseMetaData.getTables(
+                externalTableName.catalog,
+                externalTableName.schema,
+                externalTableName.table,
+                new String[]{"TABLE", "VIEW"}
+        )) {
+            if (!tables.next()) {
+                String fullTableName = quoteCompoundIdentifier(
+                        externalTableName.catalog,
+                        externalTableName.schema,
+                        externalTableName.table
+                );
+                throw new HazelcastException("Could not find table " + fullTableName);
+            }
         }
     }
 
@@ -170,7 +191,8 @@ public class JdbcSqlConnector implements SqlConnector {
         return pkColumns;
     }
 
-    private static Map<String, DbField> readColumns(ExternalJdbcTableName externalTableName, DatabaseMetaData databaseMetaData,
+    private static Map<String, DbField> readColumns(ExternalJdbcTableName externalTableName,
+                                                    DatabaseMetaData databaseMetaData,
                                                     Set<String> pkColumns) {
         Map<String, DbField> fields = new LinkedHashMap<>();
         try (ResultSet resultSet = databaseMetaData.getColumns(
@@ -474,10 +496,10 @@ public class JdbcSqlConnector implements SqlConnector {
         @Override
         public String toString() {
             return "DbField{" +
-                   "name='" + columnName + '\'' +
-                   ", typeName='" + columnTypeName + '\'' +
-                   ", primaryKey=" + primaryKey +
-                   '}';
+                    "name='" + columnName + '\'' +
+                    ", typeName='" + columnTypeName + '\'' +
+                    ", primaryKey=" + primaryKey +
+                    '}';
         }
     }
 
