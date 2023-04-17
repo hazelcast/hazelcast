@@ -19,8 +19,10 @@ package com.hazelcast.test.jdbc;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Database provider allows changing database used in a test by providing
@@ -53,4 +55,13 @@ public interface TestDatabaseProvider {
      * Stops the database
      */
     void shutdown();
+
+    /**
+     * Quote individual parts of a compound identifier and concat with `.` delimiter
+     */
+    default String quote(String[] parts) {
+        return Arrays.stream(parts)
+                     .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
+                     .collect(joining("."));
+    };
 }

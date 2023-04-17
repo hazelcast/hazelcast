@@ -160,7 +160,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromWithQuotedColumnInWhere() throws Exception {
-        createTable(tableName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(tableName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(tableName, 1);
 
         execute(

@@ -34,6 +34,8 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 
@@ -67,7 +69,7 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void list_resources_should_return_map() throws Exception {
+    public void list_resources_should_return_map() {
         IMap<Integer, String> map = instance.getMap("my_map");
         map.put(42, "42");
 
@@ -80,7 +82,7 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void list_resources_should_not_return_system_maps() throws Exception {
+    public void list_resources_should_not_return_system_maps() {
         DataConnectionConfig dataConnectionConfig = sharedDataConnectionConfig(clusterName);
 
         hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig);
@@ -98,8 +100,34 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         assertThatThrownBy(() -> hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("HazelcastDataConnection with name 'data-connection-name' "
-                        + "could not be created, provide either client_xml or client_yml property "
-                        + "with the client configuration.");
+                            + "could not be created, "
+                            + "provide either a file path with one of "
+                            + "\"client_xml_path\" or \"client_yml_path\" properties "
+                            + "or a string content with one of \"client_xml\" or \"client_yml\" properties "
+                            + "for the client configuration.");
+    }
+
+    @Test
+    public void should_throw_with_empty_filepath() {
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig("data-link-name")
+                .setType(HazelcastDataConnection.class.getName())
+                .setProperty(HazelcastDataConnection.CLIENT_YML_PATH, "")
+                .setShared(true);
+
+        assertThatThrownBy(() -> hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig))
+                .isInstanceOf(HazelcastException.class);
+    }
+
+    @Test
+    public void should_throw_with_filepath_string() {
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig("data-link-name")
+                .setType(HazelcastDataConnection.class.getName())
+                .setProperty(HazelcastDataConnection.CLIENT_YML_PATH, "")
+                .setProperty(HazelcastDataConnection.CLIENT_YML, "")
+                .setShared(true);
+
+        assertThatThrownBy(() -> hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig))
+                .isInstanceOf(HazelcastException.class);
     }
 
     @Test
@@ -114,6 +142,28 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         } finally {
             c1.shutdown();
             c2.shutdown();
+        }
+    }
+
+    @Test
+    public void shared_client_from_file_should_return_same_instance() {
+        DataConnectionConfig dataConnectionConfig = sharedDataConnectionConfigFromFile(clusterName);
+        hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig);
+        HazelcastInstance c1 = hazelcastDataConnection.getClient();
+        HazelcastInstance c2 = hazelcastDataConnection.getClient();
+
+        try {
+            assertThat(c1).isSameAs(c2);
+        } finally {
+            c1.shutdown();
+            c2.shutdown();
+            // Delete the file at the end of the test
+            try {
+                String filePath = dataConnectionConfig.getProperty(HazelcastDataConnection.CLIENT_XML_PATH);
+                assert filePath != null;
+                Files.delete(Paths.get(filePath));
+            } catch (IOException ignored) {
+            }
         }
     }
 
@@ -136,6 +186,7 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         return sharedDataConnectionConfig(clusterName)
                 .setShared(false);
     }
+
     @Nonnull
     private static DataConnectionConfig sharedDataConnectionConfig(String clusterName) {
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig("data-connection-name")
@@ -145,6 +196,24 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
             byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
             String xmlString = new String(bytes, StandardCharsets.UTF_8).replace("$CLUSTER_NAME$", clusterName);
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
+            return dataConnectionConfig;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Nonnull
+    private static DataConnectionConfig sharedDataConnectionConfigFromFile(String clusterName) {
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig("data-link-name")
+                .setType(HazelcastDataConnection.class.getName())
+                .setShared(true);
+        try {
+            byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
+            String xmlString = new String(bytes, StandardCharsets.UTF_8).replace("$CLUSTER_NAME$", clusterName);
+            Path tempFile = Files.createTempFile("test_client", ".xml");
+            Files.write(tempFile, xmlString.getBytes(StandardCharsets.UTF_8));
+            dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML_PATH, tempFile.toString());
+
             return dataConnectionConfig;
         } catch (IOException e) {
             throw new RuntimeException(e);

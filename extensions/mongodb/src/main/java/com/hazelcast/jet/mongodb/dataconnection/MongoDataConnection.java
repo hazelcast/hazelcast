@@ -19,6 +19,10 @@ import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.spi.annotation.Beta;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoClientSettings.Builder;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -27,8 +31,9 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
+import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static java.util.Collections.singletonList;
 
 /**
  * Creates a MongoDB DataConnection.
@@ -51,24 +56,76 @@ public class MongoDataConnection extends DataConnectionBase {
      * will point.
      */
     public static final String DATABASE_PROPERTY = "database";
+
+    /**
+     * Name of the property holding username.
+     */
+    public static final String USERNAME_PROPERTY = "username";
+    /**
+     * Name of the property holding user password.
+     */
+    public static final String PASSWORD_PROPERTY = "password";
+    /**
+     * Name of a property which holds host:port address of the mongodb instance.
+     */
+    public static final String HOST_PROPERTY = "host";
+    /**
+     * Name of the property holding the name of the database in which user is created.
+     * Default value is {@code admin}.
+     */
+    public static final String AUTH_DB_PROPERTY = "authDb";
+
     private volatile MongoClient mongoClient;
     private final String databaseName;
+    private final String username;
+    private final String password;
+    private final String host;
+    private final String authDb;
 
     /**
      * Creates a new data connection based on given config.
      */
     public MongoDataConnection(DataConnectionConfig config) {
         super(config);
+        this.databaseName = config.getProperty(DATABASE_PROPERTY);
+        this.username = config.getProperty(USERNAME_PROPERTY);
+        this.password = config.getProperty(PASSWORD_PROPERTY);
+        this.host = config.getProperty(HOST_PROPERTY);
+        this.authDb = config.getProperty(AUTH_DB_PROPERTY, "admin");
+
+        checkState(allSame((username == null), (password == null), (host == null)),
+        "You have to provide connectionString property or combination of username, password and host");
+
         if (config.isShared()) {
             this.mongoClient = new CloseableMongoClient(createClient(config), this::release);
         }
-        this.databaseName = config.getProperty(DATABASE_PROPERTY);
+    }
+
+    private static boolean allSame(boolean... booleans) {
+        if (booleans.length == 0) {
+            return true;
+        }
+        boolean first = booleans[0];
+        for (boolean aBoolean : booleans) {
+            if (first != aBoolean) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private MongoClient createClient(DataConnectionConfig config) {
         String connectionString = config.getProperty(CONNECTION_STRING_PROPERTY);
-        checkNotNull(connectionString, "connectionString property cannot be null");
-        return MongoClients.create(connectionString);
+        if (connectionString != null) {
+            return MongoClients.create(connectionString);
+        }
+        ServerAddress serverAddress = new ServerAddress(host);
+        MongoCredential credential = MongoCredential.createCredential(username, authDb, password.toCharArray());
+        Builder builder = MongoClientSettings.builder()
+                                             .codecRegistry(defaultCodecRegistry())
+                                             .applyToClusterSettings(s -> s.hosts(singletonList(serverAddress)))
+                                             .credential(credential);
+        return MongoClients.create(builder.build());
     }
 
     /**
