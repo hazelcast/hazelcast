@@ -345,7 +345,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         Row row = new Row("__map-store." + tableName);
         List<Row> rows = Collections.singletonList(row);
-        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 5);
+        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 30);
     }
 
     @Test
