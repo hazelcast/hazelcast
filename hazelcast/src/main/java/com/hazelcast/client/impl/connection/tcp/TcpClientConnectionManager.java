@@ -431,9 +431,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         try {
                             client.sendStateToCluster();
                         } catch (Throwable e) {
-                            logger.severe("Could not send state to cluster during async start. " +
-                                    "Client will shutdown because it cannot operate with state not sent to cluster." +
-                                    " Error: " + e.getMessage());
+                            logger.severe("Could not send state to cluster during async start. "
+                                    + "Client will shutdown because it cannot operate with state not sent to cluster."
+                                    + " Error: " + e.getMessage());
                             client.shutdown();
                         }
                     });
