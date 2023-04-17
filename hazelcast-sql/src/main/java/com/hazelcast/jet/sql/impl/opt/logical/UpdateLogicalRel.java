@@ -69,10 +69,12 @@ public class UpdateLogicalRel extends AbstractRelNode implements LogicalRel {
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        if (input != null) {
-            return planner.getCostFactory().makeHugeCost();
-        }
-        return planner.getCostFactory().makeTinyCost();
+        // If we have input, each row has to be updated separately,
+        // so we get cost of scan + cost of update.
+        // If there is no input, the update still has to executed in the connected system
+        // which will also have cost proportional to number of rows.
+        // Version with no input will be preferred because of smaller total cost.
+        return super.computeSelfCost(planner, mq);
     }
 
     @Nonnull
@@ -122,7 +124,7 @@ public class UpdateLogicalRel extends AbstractRelNode implements LogicalRel {
                 traitSet,
                 getTable(),
                 getCatalogReader(),
-                sole(inputs),
+                sole(inputs),  //TODO: inputs can be empty/null
                 getUpdateColumnList(),
                 getSourceExpressionList(),
                 isFlattened(),

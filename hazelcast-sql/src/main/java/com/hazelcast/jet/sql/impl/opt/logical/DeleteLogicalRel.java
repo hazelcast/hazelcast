@@ -99,11 +99,12 @@ public class DeleteLogicalRel extends AbstractRelNode implements LogicalRel {
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        if (input == null) {
-            return planner.getCostFactory().makeTinyCost();
-        } else {
-            return planner.getCostFactory().makeHugeCost();
-        }
+        // If we have input, each row has to be deleted separately,
+        // so we get cost of scan + cost of delete.
+        // If there is no input, the delete still has to executed in the connected system
+        // which will also have cost proportional to number of rows.
+        // Version with no input will be preferred because of smaller total cost.
+        return super.computeSelfCost(planner, mq);
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.cost;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 
@@ -46,6 +47,8 @@ public final class CostUtils {
 
     /** Replacement value if filter selectivity cannot be determined.  */
     private static final double UNKNOWN_SELECTIVITY = 0.25d;
+    /** Penalty for some scans with more than 1 projection expression (prefers key-only scan) */
+    private static final double MANY_EXPRESSION_MULTIPLIER = 1.1;
 
     private CostUtils() {
         // No-op.
@@ -116,5 +119,12 @@ public final class CostUtils {
         }
 
         return res;
+    }
+
+    public static RelOptCost preferSingleExpressionScan(RelOptCost baseCost) {
+        Cost cost = (Cost) baseCost;
+        return new Cost(cost.getRowsInternal(),
+                cost.getCpuInternal() * MANY_EXPRESSION_MULTIPLIER,
+                cost.getNetworkInternal() * MANY_EXPRESSION_MULTIPLIER);
     }
 }
