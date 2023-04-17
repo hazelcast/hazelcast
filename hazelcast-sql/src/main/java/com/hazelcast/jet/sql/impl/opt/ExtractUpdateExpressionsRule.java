@@ -105,9 +105,12 @@ public class ExtractUpdateExpressionsRule extends RelRule<RelRule.Config> {
             }
         }
 
+        // TODO: why is it needed?
         // move PK fields to the beginning of the row type
-        Permutation permutation = permutePkFieldsToBeginning(sqlConnector.getPrimaryKey(hzTable.getTarget()),
-                update.getInput().getRowType());
+//        Permutation permutation = permutePkFieldsToBeginning(sqlConnector.getPrimaryKey(hzTable.getTarget()),
+//                update.getInput().getRowType());
+        Permutation permutation = new Permutation(update.getInput().getRowType().getFieldCount());
+        permutation.identity();
 
         // do the transformation, if needed
         if (expressionsAdded || !permutation.isIdentity()) {
