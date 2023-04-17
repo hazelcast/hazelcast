@@ -43,6 +43,7 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
     public void shutdown() {
         if (container != null) {
             container.stop();
+            container = null;
         }
     }
 }

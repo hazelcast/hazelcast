@@ -18,10 +18,9 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.sql.SQLException;
 
 import static com.hazelcast.function.ConsumerEx.noop;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,7 +32,11 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        initialize(new H2DatabaseProvider());
+        initializeStabilityTest(new H2DatabaseProvider());
+    }
+
+    public static void initializeStabilityTest(TestDatabaseProvider provider) throws Exception {
+        initialize(provider);
 
         tableName = randomTableName();
         createTable(tableName);
@@ -41,10 +44,10 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
 
         execute(
                 "CREATE MAPPING " + tableName + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         databaseProvider.shutdown();
@@ -52,7 +55,7 @@ public class JdbcSqlConnectorStabilityTest extends JdbcSqlTestSupport {
 
     // We should not be able to access DB anymore
     @Test
-    public void dataConnectionDownShouldTimeout() throws SQLException {
+    public void dataConnectionDownShouldTimeout() {
         assertThatThrownBy(() -> {
             sqlService
                     .execute("SELECT * FROM " + tableName)
