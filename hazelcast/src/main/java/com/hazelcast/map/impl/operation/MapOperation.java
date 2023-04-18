@@ -204,6 +204,10 @@ public abstract class MapOperation extends AbstractNamedOperation
         return mapStoreOffloadEnabled;
     }
 
+    public boolean isTieredStoreAndPartitionCompactorEnabled() {
+        return tieredStoreAndPartitionCompactorEnabled;
+    }
+
     protected Offload offloadOperation() {
         return new StepRunner(this);
     }

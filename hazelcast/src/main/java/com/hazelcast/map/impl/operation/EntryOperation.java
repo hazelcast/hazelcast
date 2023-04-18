@@ -162,6 +162,7 @@ public class EntryOperation extends LockAwareOperation
     private transient int setUnlockRetryCount;
     private transient long begin;
     private transient boolean mapStoreOffloadEnabled;
+    private transient boolean tieredStoreAndPartitionCompactorEnabled;
 
     public EntryOperation() {
     }
@@ -187,8 +188,10 @@ public class EntryOperation extends LockAwareOperation
         // to enter map-store-api-offloading procedure.
         if (readOnly && recordStore.existInMemory(dataKey)) {
             mapStoreOffloadEnabled = false;
+            tieredStoreAndPartitionCompactorEnabled = false;
         } else {
             mapStoreOffloadEnabled = isMapStoreOffloadEnabled();
+            tieredStoreAndPartitionCompactorEnabled = isTieredStoreAndPartitionCompactorEnabled();
         }
     }
 
@@ -206,7 +209,8 @@ public class EntryOperation extends LockAwareOperation
         // When mapStoreOffloadEnabled is true, run all procedure
         // in this class, including EP-offload, as a series
         // of Steps. See EntryOpSteps to check how it works.
-        if (mapStoreOffloadEnabled) {
+        if (mapStoreOffloadEnabled
+                || tieredStoreAndPartitionCompactorEnabled) {
             assert recordStore != null;
             return offloadOperation();
         }
@@ -317,7 +321,8 @@ public class EntryOperation extends LockAwareOperation
             value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
             justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload
+                && (!mapStoreOffloadEnabled || !tieredStoreAndPartitionCompactorEnabled)) {
             return null;
         }
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
@@ -327,7 +332,8 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public boolean shouldBackup() {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload
+                && (!mapStoreOffloadEnabled || !tieredStoreAndPartitionCompactorEnabled)) {
             return false;
         }
         return mapContainer.getTotalBackupCount() > 0
