@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+
 import com.hazelcast.jet.mongodb.impl.UpdateMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
@@ -45,7 +46,6 @@ import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPT
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.DynamicallyReplacedPlaceholder.replacePlaceholdersInPredicate;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -133,17 +133,19 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         return asList(processors);
     }
 
+    @SuppressWarnings("unchecked")
     private SupplierEx<WriteModel<Document>> writeModel(Document predicate) {
         return () -> {
             Document values = valuesToUpdateDoc(externalNames);
-            List<Bson> pipeline = singletonList(values.get("update", Bson.class));
+            List<Bson> pipeline = values.get("update", List.class);
             WriteModel<Document> doc = new UpdateManyModel<>(predicate, pipeline);
             return doc;
         };
     }
 
+    @SuppressWarnings("unchecked")
     private WriteModel<Document> write(Document update) {
-        Bson updates = requireNonNull(update.get("update", Bson.class), "updateList");
+        List<Bson> updates = requireNonNull(update.get("update", List.class), "updateList");
         Bson filter = requireNonNull(update.get("filter", Bson.class));
         return new UpdateOneModel<>(filter, updates);
     }
@@ -162,28 +164,27 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private Document valuesToUpdateDoc(Object[] values) {
         Object pkValue = values[0];
 
-        List<Field<?>> updateToPerform = new ArrayList<>();
+        List<Bson> updateToPerform = new ArrayList<>();
         for (int i = 0; i < updatedFieldNames.size(); i++) {
             String fieldName = updatedFieldNames.get(i);
             Object updateExpr = updates.get(i);
             if (updateExpr instanceof Bson) {
                 Document document = Document.parse(((Bson) updateExpr)
                         .toBsonDocument(Document.class, defaultCodecRegistry()).toJson());
-                PlaceholderReplacer.replacePlaceholders(document, evalContext, values);
+                PlaceholderReplacer.replacePlaceholders(document, evalContext, values, externalNames, true);
                 updateExpr = document;
-                updateToPerform.add(new Field<>(fieldName, updateExpr));
+                updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
             } else if (updateExpr instanceof String) {
                 String expr = (String) updateExpr;
-                Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, externalNames, false);
-                updateToPerform.add(new Field<>(fieldName, withReplacements));
+                Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, values, externalNames, false, false);
+                updateToPerform.add(Aggregates.set(new Field<>(fieldName, withReplacements)));
             } else {
-                updateToPerform.add(new Field<>(fieldName, updateExpr));
+                updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
             }
         }
 
         Bson filter = Filters.eq(pkExternalName, pkValue);
-        Bson update = Aggregates.set(updateToPerform);
         return new Document("filter", filter)
-                .append("update", update);
+                .append("update", updateToPerform);
     }
 }

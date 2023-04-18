@@ -47,24 +47,32 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void readsFromMongo_withId_withUnsupportedExpr() {
-       readsFromMongo(true, true);
+       readsFromMongo(true, true, true);
     }
 
     @Test
     public void readsFromMongo_withId_withoutUnsupportedExpr() {
-       readsFromMongo(true, false);
+       readsFromMongo(true, false, false);
     }
 
     @Test
     public void readsFromMongo_withoutId_withUnsupportedExpr() {
-       readsFromMongo(false, true);
+       readsFromMongo(false, true, true);
     }
     @Test
     public void readsFromMongo_withoutId_withoutUnsupportedExpr() {
-       readsFromMongo(false, false);
+       readsFromMongo(false, false, false);
+    }
+    @Test
+    public void readsFromMongo_withtId_withUnsupportedExprInProjection_withoutUnsupportedExprInPredicate() {
+       readsFromMongo(true, true, false);
+    }    @Test
+    public void readsFromMongo_withouttId_withUnsupportedExprInProjection_withUnsupportedExprInPredicate() {
+       readsFromMongo(true, false, true);
     }
 
-    public void readsFromMongo(boolean includeIdInMapping, boolean useUnsupportedExpression) {
+    public void readsFromMongo(boolean includeIdInMapping, boolean useUnsupportedExpressionInProjection,
+                               boolean useUnsupportedExpressionInPredicate) {
         final String connectionString = mongoContainer.getConnectionString();
 
         MongoCollection<Document> collection = database.getCollection(collectionName);
@@ -86,14 +94,15 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
                 + "    'connectionString' = '" + connectionString + "'"
                 + ")");
 
-        String force = useUnsupportedExpression ? " and cast(jedi as varchar) = 'true' " : "";
-        assertRowsAnyOrder("select firstName, lastName from " + mappingName
+        String force = useUnsupportedExpressionInPredicate ? " and cast(jedi as varchar) = 'true' " : "";
+        String inProjection = useUnsupportedExpressionInProjection ? ", cast(jedi as varchar) " : ", jedi ";
+        assertRowsAnyOrder("select firstName, lastName " + inProjection + "from " + mappingName
                         + " where (lastName = ? or lastName is null) and jedi=true" + force,
                 singletonList("Skywalker"),
                 asList(
-                        new Row("Luke", "Skywalker"),
-                        new Row("Anakin", "Skywalker"),
-                        new Row("Rey", null)
+                        new Row("Luke", "Skywalker", useUnsupportedExpressionInProjection ? "true" : true),
+                        new Row("Anakin", "Skywalker", useUnsupportedExpressionInProjection ? "true" : true),
+                        new Row("Rey", null, useUnsupportedExpressionInProjection ? "true" : true)
                 )
         );
     }
@@ -458,7 +467,7 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         execute("update " + collectionName + " set firstName = lastName, lastName = ?, jedi=? " +
                         "where cast(jedi as varchar) = ?", "Solo", false, "true");
 
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "temp"))
+        ArrayList<Document> list = collection.find(Filters.eq("lastName", "Solo"))
                                              .into(new ArrayList<>());
         assertEquals(1, list.size());
         Document item = list.get(0);

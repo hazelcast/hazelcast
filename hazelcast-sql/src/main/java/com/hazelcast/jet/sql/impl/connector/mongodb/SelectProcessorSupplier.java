@@ -112,8 +112,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         ArrayList<Bson> aggregates = new ArrayList<>();
 
         if (this.predicate != null) {
-            JetSqlRow rowWithColumns = new JetSqlRow(new DefaultSerializationServiceBuilder().build(), externalNames);
-            Bson filterWithParams = PlaceholderReplacer.replacePlaceholders(predicate, evalContext, rowWithColumns);
+            Bson filterWithParams = PlaceholderReplacer.replacePlaceholders(predicate, evalContext, (Object[]) null, externalNames, false);
             aggregates.add(match(filterWithParams.toBsonDocument()));
         }
         Bson proj = fields(projection.stream().map(p -> p.projectionExpr).collect(toList()));

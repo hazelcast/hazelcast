@@ -30,9 +30,9 @@ final class PlaceholderReplacer {
     private PlaceholderReplacer() {
     }
 
-    static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext, JetSqlRow inputRow) {
+    static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext, JetSqlRow inputRow, String[] externalNames, boolean forRow) {
         Object[] values = inputRow.getValues();
-        return replacePlaceholders(doc, evalContext, values);
+        return replacePlaceholders(doc, evalContext, values, externalNames, forRow);
     }
 
     /**
@@ -48,15 +48,15 @@ final class PlaceholderReplacer {
      * Similar restrictions are in the case of input references - input reference value is known only to the processor
      * receiving the input rows during job execution.
      */
-    static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext, Object[] inputRow) {
+    static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext, Object[] inputRow, String[] externalNames, boolean forRow) {
         Document result = new Document();
         for (Entry<String, Object> entry : doc.entrySet()) {
             String entryKey = entry.getKey();
             Object entryValue = entry.getValue();
 
-            entryKey = (String) replace(entryKey, evalContext, inputRow, true);
+            entryKey = (String) replace(entryKey, evalContext, inputRow, externalNames, true, forRow);
             if (entryValue instanceof String) {
-               entryValue = replace((String) entryValue, evalContext, inputRow, false);
+               entryValue = replace((String) entryValue, evalContext, inputRow, externalNames, false, forRow);
             }
 
             if (entryValue instanceof List) {
@@ -64,15 +64,15 @@ final class PlaceholderReplacer {
                 for (Object val : (List<?>) entryValue) {
                     Object v = val;
                    if (val instanceof Document) {
-                       v = replacePlaceholders((Document) val, evalContext, inputRow);
+                       v = replacePlaceholders((Document) val, evalContext, inputRow, externalNames, forRow);
                    } else if (val instanceof String) {
-                       v = replace((String) val, evalContext, inputRow, false);
+                       v = replace((String) val, evalContext, inputRow, externalNames, false, forRow);
                    }
                    newValues.add(v);
                 }
                 entryValue = newValues;
             } else if (entryValue instanceof Document) {
-                entryValue = replacePlaceholders((Document) entryValue, evalContext, inputRow);
+                entryValue = replacePlaceholders((Document) entryValue, evalContext, inputRow, externalNames, forRow);
             }
 
             result.append(entryKey, entryValue);
@@ -81,7 +81,8 @@ final class PlaceholderReplacer {
         return result;
     }
 
-    static Object replace(String entryKey, ExpressionEvalContext evalContext, Object[] inputRow, boolean key) {
+    static Object replace(String entryKey, ExpressionEvalContext evalContext, Object[] inputRow,
+                          String[] externalNames, boolean key, boolean forRow) {
         DynamicParameter dynamicParameter = DynamicParameter.matches(entryKey);
         if (dynamicParameter != null) {
             Object arg = evalContext.getArgument(dynamicParameter.getIndex());
@@ -90,10 +91,13 @@ final class PlaceholderReplacer {
         }
         InputRef ref = InputRef.match(entryKey);
         if (ref != null) {
-            String prefix = key
-                    ? ""
-                    : "$";
-            return prefix + inputRow[ref.getInputIndex()];
+            if (key) {
+                return externalNames[ref.getInputIndex()];
+            } else if (!forRow) {
+                return "$" + externalNames[ref.getInputIndex()];
+            } else {
+                return inputRow[ref.getInputIndex()];
+            }
         }
         return entryKey;
     }

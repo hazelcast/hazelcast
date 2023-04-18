@@ -50,7 +50,7 @@ public class PlaceholderReplacerTest {
         List<Object> arguments = asList("jeden", "dwa");
 
         // when
-        Document result = PlaceholderReplacer.replacePlaceholders(doc, evalContext(arguments), (Object[]) null);
+        Document result = PlaceholderReplacer.replacePlaceholders(doc, evalContext(arguments), (Object[]) null, null, false);
 
         // then
         assertThat(result).isInstanceOf(Document.class);
@@ -60,7 +60,7 @@ public class PlaceholderReplacerTest {
     }
 
     @Test
-    public void replaces_input_ref() {
+    public void replaces_input_ref_takes_from_input() {
         // given
         Document embedded = new Document("test", "<!InputRef(1)!>");
         Document doc = new Document("<!InputRef(0)!>", embedded);
@@ -69,13 +69,35 @@ public class PlaceholderReplacerTest {
 
         // when
         Object[] inputs = {"jeden", "dwa"};
+        String[] externalNames = {"jeden", "dwa"};
         JetSqlRow inputRow = new JetSqlRow(getInternalSerializationService(), inputs);
-        Bson result = PlaceholderReplacer.replacePlaceholders(doc, evalContext(arguments), inputRow);
+        Bson result = PlaceholderReplacer.replacePlaceholders(doc, evalContext(arguments), inputRow, externalNames, true);
 
         // then
         assertThat(result).isInstanceOf(Document.class);
 
-        Document expected = new Document("jeden", new Document("test", "$dwa"));
+        Document expected = new Document("jeden", new Document("test", "dwa"));
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    public void replaces_input_ref_makes_reference() {
+        // given
+        Document embedded = new Document("test", "<!InputRef(1)!>");
+        Document doc = new Document("<!InputRef(0)!>", embedded);
+
+        List<Object> arguments = Collections.emptyList();
+
+        // when
+        Object[] inputs = {"jeden", "dwa"};
+        String[] externalNames = {"jeden", "col2"};
+        JetSqlRow inputRow = new JetSqlRow(getInternalSerializationService(), inputs);
+        Bson result = PlaceholderReplacer.replacePlaceholders(doc, evalContext(arguments), inputRow, externalNames, false);
+
+        // then
+        assertThat(result).isInstanceOf(Document.class);
+
+        Document expected = new Document("jeden", new Document("test", "$col2"));
         assertThat(result).isEqualTo(expected);
     }
 
@@ -88,13 +110,14 @@ public class PlaceholderReplacerTest {
         // when
         List<Object> arguments = singletonList("dwa");
         Object[] inputs = {"jeden", "test"};
+        String[] externalNames = {"col1", "col2"};
         JetSqlRow inputRow = new JetSqlRow(getInternalSerializationService(), inputs);
-        Bson result = PlaceholderReplacer.replacePlaceholders(doc, evalContext(arguments), inputRow);
+        Bson result = PlaceholderReplacer.replacePlaceholders(doc, evalContext(arguments), inputRow, externalNames, true);
 
         // then
         assertThat(result).isInstanceOf(Document.class);
 
-        Document expected = new Document("jeden", new Document("test", "dwa"));
+        Document expected = new Document("col1", new Document("col2", "dwa"));
         assertThat(result).isEqualTo(expected);
     }
 
