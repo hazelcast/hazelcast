@@ -1008,7 +1008,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         for (PartitionContainer partitionContainer : partitionContainers) {
             RecordStore rs = partitionContainer.getExistingRecordStore(MAP_NAME);
             if (rs != null) {
-                Record record = rs.getRecordOrNull(key);
+                Record record = rs.getRecordOrNull(key, false);
 
                 if (record != null) {
                     assertEquals(expectedTtl, rs.getExpirySystem().getExpiryMetadata(key).getTtl());
