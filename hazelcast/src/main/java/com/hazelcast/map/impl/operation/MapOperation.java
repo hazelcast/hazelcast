@@ -160,7 +160,8 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     protected void innerBeforeRun() throws Exception {
-        if (recordStore != null) {
+        if (recordStore != null
+                && !isTieredStoreAndPartitionCompactorEnabled()) {
             recordStore.beforeOperation();
         }
         // Concrete classes can override this method.
@@ -241,7 +242,8 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     @Override
     public final void afterRun() throws Exception {
-        if (mapStoreOffloadEnabled || tieredStoreAndPartitionCompactorEnabled) {
+        if (mapStoreOffloadEnabled
+                || tieredStoreAndPartitionCompactorEnabled) {
             return;
         }
         afterRunInternal();
