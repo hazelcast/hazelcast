@@ -22,6 +22,10 @@ import org.junit.BeforeClass;
 
 public class MariaDBGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
 
+    public MariaDBGenericMapStoreIntegrationTest() {
+        setPrefix("maria_");
+    }
+
     // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
     public static void beforeClass() {
