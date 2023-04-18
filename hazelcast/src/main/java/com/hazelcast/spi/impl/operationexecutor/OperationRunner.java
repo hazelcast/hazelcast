@@ -187,13 +187,13 @@ public abstract class OperationRunner {
             op.pushThreadContext();
             op.beforeRun();
             CallStatus callStatus = op.call();
+            op.afterRun();
+
             if (callStatus.ordinal() == OFFLOAD_ORDINAL) {
-                op.afterRun();
                 Offload offload = (Offload) callStatus;
                 offload.init(nodeEngine, asyncOperations);
                 offload.start();
             }
-            op.afterRun();
         } finally {
             op.popThreadContext();
             op.afterRunFinal();

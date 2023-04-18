@@ -252,7 +252,10 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     @Override
     public void afterRunFinal() {
-        if (recordStore != null) {
+        // when tieredStoreAndPartitionCompactorEnabled is
+        // true, we handle afterOperation in StepSupplier
+        if (!tieredStoreAndPartitionCompactorEnabled
+                && recordStore != null) {
             recordStore.afterOperation();
         }
     }
