@@ -30,7 +30,8 @@ final class PlaceholderReplacer {
     private PlaceholderReplacer() {
     }
 
-    static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext, JetSqlRow inputRow, String[] externalNames, boolean forRow) {
+    static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext, JetSqlRow inputRow,
+                                        String[] externalNames, boolean forRow) {
         Object[] values = inputRow.getValues();
         return replacePlaceholders(doc, evalContext, values, externalNames, forRow);
     }
@@ -48,7 +49,8 @@ final class PlaceholderReplacer {
      * Similar restrictions are in the case of input references - input reference value is known only to the processor
      * receiving the input rows during job execution.
      */
-    static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext, Object[] inputRow, String[] externalNames, boolean forRow) {
+    static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext,
+                                        Object[] inputRow, String[] externalNames, boolean forRow) {
         Document result = new Document();
         for (Entry<String, Object> entry : doc.entrySet()) {
             String entryKey = entry.getKey();

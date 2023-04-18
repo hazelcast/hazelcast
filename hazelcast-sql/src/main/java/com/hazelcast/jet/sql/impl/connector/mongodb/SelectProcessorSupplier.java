@@ -17,7 +17,6 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -112,7 +111,8 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         ArrayList<Bson> aggregates = new ArrayList<>();
 
         if (this.predicate != null) {
-            Bson filterWithParams = PlaceholderReplacer.replacePlaceholders(predicate, evalContext, (Object[]) null, externalNames, false);
+            Bson filterWithParams = PlaceholderReplacer.replacePlaceholders(predicate, evalContext, (Object[]) null,
+                    externalNames, false);
             aggregates.add(match(filterWithParams.toBsonDocument()));
         }
         Bson proj = fields(projection.stream().map(p -> p.projectionExpr).collect(toList()));

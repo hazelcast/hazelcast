@@ -49,7 +49,8 @@ public interface DynamicallyReplacedPlaceholder extends Serializable {
                 throw new UnsupportedOperationException("unknown predicate " + predicate);
             }
         } else if (predicate instanceof Document) {
-            return PlaceholderReplacer.replacePlaceholders((Document) predicate, evalContext, (Object[]) null, externalNames, false);
+            return PlaceholderReplacer.replacePlaceholders((Document) predicate, evalContext, (Object[]) null,
+                    externalNames, false);
         }
         assert predicate instanceof Bson;
         return bsonToDocument((Bson) predicate);
