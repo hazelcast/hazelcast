@@ -108,17 +108,29 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         cfg.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
         cfg.setLicenseKey("HazelcastLicenseKey");
 
+        cfg.getSecurityConfig().addRealmConfig("simple",
+                new RealmConfig().setSimpleAuthenticationConfig(new SimpleAuthenticationConfig().addUser("test", "pass"))
+                        .setUsernamePasswordIdentityConfig("myidentity", "mypasswd"))
+                .addRealmConfig("ldap", new RealmConfig().setLdapAuthenticationConfig(
+                        new LdapAuthenticationConfig().setSystemUserDn("cn=test").setSystemUserPassword("ldappass")));
+
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
         SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
+        SecurityConfig secCfg = newConfigViaXMLGenerator.getSecurityConfig();
 
-        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), MASK_FOR_SENSITIVE_DATA);
-        assertEquals(generatedSSLConfig.getProperty("trustStorePassword"), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, generatedSSLConfig.getProperty("keyStorePassword"));
+        assertEquals(MASK_FOR_SENSITIVE_DATA, generatedSSLConfig.getProperty("trustStorePassword"));
 
         String secPassword = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
         String theSalt = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
-        assertEquals(secPassword, MASK_FOR_SENSITIVE_DATA);
-        assertEquals(theSalt, MASK_FOR_SENSITIVE_DATA);
-        assertEquals(newConfigViaXMLGenerator.getLicenseKey(), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, secPassword);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, theSalt);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, newConfigViaXMLGenerator.getLicenseKey());
+        RealmConfig simpleRealm = secCfg.getRealmConfig("simple");
+        assertEquals(MASK_FOR_SENSITIVE_DATA, simpleRealm.getSimpleAuthenticationConfig().getPassword("test"));
+        assertEquals(MASK_FOR_SENSITIVE_DATA, simpleRealm.getUsernamePasswordIdentityConfig().getPassword());
+        assertEquals(MASK_FOR_SENSITIVE_DATA,
+                secCfg.getRealmConfig("ldap").getLdapAuthenticationConfig().getSystemUserPassword());
     }
 
     @Test
@@ -145,17 +157,17 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg, false);
         SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
 
-        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), password);
-        assertEquals(generatedSSLConfig.getProperty("trustStorePassword"), password);
+        assertEquals(password, generatedSSLConfig.getProperty("keyStorePassword"));
+        assertEquals(password, generatedSSLConfig.getProperty("trustStorePassword"));
 
         String secPassword = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
         String theSalt = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
-        assertEquals(secPassword, password);
-        assertEquals(theSalt, salt);
-        assertEquals(newConfigViaXMLGenerator.getLicenseKey(), licenseKey);
+        assertEquals(password, secPassword);
+        assertEquals(salt, theSalt);
+        assertEquals(licenseKey, newConfigViaXMLGenerator.getLicenseKey());
         SecurityConfig securityConfig = newConfigViaXMLGenerator.getSecurityConfig();
         RealmConfig realmConfig = securityConfig.getRealmConfig(securityConfig.getMemberRealm());
-        assertEquals(realmConfig.getUsernamePasswordIdentityConfig().getPassword(), password);
+        assertEquals(password, realmConfig.getUsernamePasswordIdentityConfig().getPassword());
     }
 
     private MemberAddressProviderConfig getMemberAddressProviderConfig(Config cfg) {
@@ -646,7 +658,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("ldapRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
-        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -704,7 +716,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         );
         SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("simpleRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
-        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }
 
