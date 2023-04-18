@@ -32,7 +32,7 @@ public enum GetOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
-            Record record = recordStore.getRecordOrNull(state.getKey());
+            Record record = recordStore.getRecordOrNull(state.getKey(), false);
             if (record != null) {
                 state.setOldValue(record.getValue());
                 state.setRecordExistsInMemory(true);

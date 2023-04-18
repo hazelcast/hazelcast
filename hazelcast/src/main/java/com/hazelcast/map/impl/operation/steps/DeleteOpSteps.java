@@ -33,7 +33,7 @@ public enum DeleteOpSteps implements IMapOpStep {
             MapContainer mapContainer = recordStore.getMapContainer();
             MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
 
-            Record record = recordStore.getRecordOrNull(state.getKey());
+            Record record = recordStore.getRecordOrNull(state.getKey(), false);
             state.setOldValue(record == null ? null : record.getValue());
             state.setRecordExistsInMemory(record != null);
 

@@ -1243,9 +1243,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Record getRecordOrNull(Data key) {
+    public Record getRecordOrNull(Data key, boolean backup) {
         long now = getNow();
-        return getRecordOrNull(key, now, false);
+        return getRecordOrNull(key, now, backup);
     }
 
     public Record getRecordOrNull(Data key, long now, boolean backup) {
