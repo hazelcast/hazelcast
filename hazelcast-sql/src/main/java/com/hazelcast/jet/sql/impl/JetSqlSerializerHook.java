@@ -344,12 +344,14 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors =
                 new ConstructorFunction[SqlDataSerializerHook.LEN];
+        constructors[SqlDataSerializerHook.QUERY_DATA_TYPE] = arg -> new QueryDataType();
+        // SqlDataSerializerHook.QUERY_ID
         constructors[SqlDataSerializerHook.MAPPING] = arg -> new Mapping();
         constructors[SqlDataSerializerHook.MAPPING_FIELD] = arg -> new MappingField();
         constructors[SqlDataSerializerHook.VIEW] = arg -> new View();
         constructors[SqlDataSerializerHook.TYPE] = arg -> new Type();
         constructors[SqlDataSerializerHook.TYPE_FIELD] = arg -> new Type.TypeField();
-        constructors[SqlDataSerializerHook.QUERY_DATA_TYPE] = arg -> new QueryDataType();
+        // SqlDataSerializerHook.ROW_VALUE
         constructors[SqlDataSerializerHook.QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
 
         mapDataFactory.mergeConstructors(constructors);
