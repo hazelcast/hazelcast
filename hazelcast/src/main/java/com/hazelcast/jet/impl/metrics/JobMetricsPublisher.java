@@ -77,6 +77,7 @@ public class JobMetricsPublisher implements MetricsPublisher {
             MetricsCompressor compressor = entry.getValue();
             // remove compressors that didn't receive any metrics
             if (compressor.count() == 0) {
+                compressor.close();
                 it.remove();
             }
 
