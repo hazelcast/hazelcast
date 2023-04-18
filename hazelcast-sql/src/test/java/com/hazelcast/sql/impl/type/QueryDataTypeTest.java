@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.sql.impl.CoreSqlTestSupport;
 import com.hazelcast.sql.impl.SqlCustomClass;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
 import com.hazelcast.sql.impl.type.converter.BooleanConverter;
@@ -159,7 +159,11 @@ public class QueryDataTypeTest extends CoreSqlTestSupport {
     public void testSerialization() {
         for (Converter converter : Converters.getConverters()) {
             QueryDataType original = new QueryDataType(converter);
-            QueryDataType restored = serializeAndCheck(original, JetSqlSerializerHook.QUERY_DATA_TYPE);
+            QueryDataType restored = serializeAndCheck(
+                    original,
+                    SqlDataSerializerHook.F_ID,
+                    SqlDataSerializerHook.QUERY_DATA_TYPE
+            );
 
             checkEquals(original, restored, true);
         }
