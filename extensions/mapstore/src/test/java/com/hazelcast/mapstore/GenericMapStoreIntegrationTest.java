@@ -44,6 +44,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -317,11 +318,17 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void testExceptionIsConstructable() {
+    public void testExceptionIsConstructable() throws SQLException {
         HazelcastInstance client = client();
+        // Add some more items for all members
+        insertItems(tableName, 2, 5);
+
         IMap<Integer, Person> map = client.getMap(tableName);
         // Method call to create the lazy mapping in GenericMapStore
         map.loadAll(false);
+
+        // This should ensure that all members have created the mapping
+        assertTrueEventually(() -> assertThat(map.size()).isEqualTo(6));
 
         String mappingName = "__map-store." + tableName;
         execute("DROP MAPPING \"" + mappingName + "\"");
@@ -339,7 +346,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                 .hasCauseInstanceOf(QueryException.class)
                 .hasStackTraceContaining(message);
 
-        assertThat(map.size()).isEqualTo(1);
+        assertThat(map.size()).isEqualTo(6);
     }
 
     @Test
