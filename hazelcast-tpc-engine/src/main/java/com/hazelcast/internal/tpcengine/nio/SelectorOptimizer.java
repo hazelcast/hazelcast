@@ -163,7 +163,7 @@ public final class SelectorOptimizer {
 
         @Override
         public boolean contains(Object o) {
-            for (int i = 0; i < size(); i++) {
+            for (int i = 0; i < activeKeys.size; i++) {
                 if (o.equals(activeKeys.keys[i])) {
                     return true;
                 }
