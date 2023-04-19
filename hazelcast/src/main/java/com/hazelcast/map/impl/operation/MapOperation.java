@@ -83,9 +83,9 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     protected transient boolean createRecordStoreOnDemand = true;
     protected transient boolean disposeDeferredBlocks = true;
+    protected transient boolean tieredStoreAndPartitionCompactorEnabled;
+    protected transient boolean mapStoreOffloadEnabled;
 
-    private transient boolean tieredStoreAndPartitionCompactorEnabled;
-    private transient boolean mapStoreOffloadEnabled;
     private transient boolean canPublishWanEvent;
 
     public MapOperation() {
@@ -160,8 +160,10 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     protected void innerBeforeRun() throws Exception {
+        // when tieredStoreAndPartitionCompactorEnabled is true,
+        // StepSupplier calls beforeOperation and afterOperation
         if (recordStore != null
-                && !isTieredStoreAndPartitionCompactorEnabled()) {
+                && !tieredStoreAndPartitionCompactorEnabled) {
             recordStore.beforeOperation();
         }
         // Concrete classes can override this method.
@@ -194,7 +196,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         return returnsResponse() ? RESPONSE : VOID;
     }
 
-    protected final boolean isMapStoreOffloadEnabled() {
+    private boolean isMapStoreOffloadEnabled() {
         // This is for nested calls from partition thread. When we see
         // nested call we directly run the call without offloading.
         if (mapStoreOffloadEnabled
@@ -203,10 +205,6 @@ public abstract class MapOperation extends AbstractNamedOperation
             return false;
         }
         return mapStoreOffloadEnabled;
-    }
-
-    public boolean isTieredStoreAndPartitionCompactorEnabled() {
-        return tieredStoreAndPartitionCompactorEnabled;
     }
 
     protected Offload offloadOperation() {
