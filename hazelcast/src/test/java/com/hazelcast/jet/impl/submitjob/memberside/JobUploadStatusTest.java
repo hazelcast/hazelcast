@@ -29,6 +29,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -193,5 +194,19 @@ public class JobUploadStatusTest {
 
         jobUploadStatus.changeLastUpdatedTime();
         assertEquals(fixedInstant, jobUploadStatus.lastUpdatedTime);
+    }
+
+    @Test
+    public void testGetJarPath() throws IOException {
+        Path jarPath = null;
+        try {
+            when(jobMetaDataParameterObject.getTempDirectoryPath()).thenReturn(".");
+            jarPath = jobUploadStatus.getJarPath();
+            assertTrue(Files.exists(jarPath));
+        } finally {
+            if (jarPath != null) {
+                Files.delete(jarPath);
+            }
+        }
     }
 }

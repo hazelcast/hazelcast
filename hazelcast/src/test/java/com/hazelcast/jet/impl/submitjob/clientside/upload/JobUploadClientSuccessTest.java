@@ -31,6 +31,7 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.SubmitJobParameters;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -77,6 +78,19 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled() throws IOException {
         createCluster();
+        JetClientInstanceImpl jetService = getClientJetService();
+
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
+                .setJarPath(getJarPath());
+
+        jetService.submitJobFromJar(submitJobParameters);
+
+        assertJobIsRunning(jetService);
+    }
+
+    @Test
+    public void test_jarUpload_tempdir_whenResourceUploadIsEnabled() throws IOException {
+        createClusterWithTempDirectory(".");
         JetClientInstanceImpl jetService = getClientJetService();
 
         SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
@@ -236,6 +250,15 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
     private void createCluster() {
         Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        createHazelcastInstance(config);
+    }
+
+    private void createClusterWithTempDirectory(String tempDirectory) {
+        Config config = smallInstanceConfig();
+        config.setProperty(ClusterProperty.JAR_UPLOAD_TEMP_DIR_PATH.getName(), tempDirectory);
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 

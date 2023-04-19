@@ -1872,6 +1872,12 @@ public final class ClusterProperty {
     public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY = new HazelcastProperty(
             "hazelcast.persistence.auto.cluster.state.strategy", ClusterState.NO_MIGRATION);
 
+    /**
+     * The temporary directory path to be used for uploaded jars
+     */
+    public static final HazelcastProperty JAR_UPLOAD_TEMP_DIR_PATH
+            = new HazelcastProperty("hazelcast.cluster.jarupload.tempdir");
+
     private ClusterProperty() {
     }
 }

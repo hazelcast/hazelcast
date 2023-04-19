@@ -43,6 +43,8 @@ public class JobMetaDataParameterObject {
 
     private Path jarPath;
 
+    private String tempDirectoryPath;
+
     public UUID getSessionId() {
         return sessionId;
     }
@@ -119,8 +121,16 @@ public class JobMetaDataParameterObject {
         this.jarPath = jarPath;
     }
 
+    public String getTempDirectoryPath() {
+        return tempDirectoryPath;
+    }
+
+    public void setTempDirectoryPath(String tempDirectoryPath) {
+        this.tempDirectoryPath = tempDirectoryPath;
+    }
+
     // Not all parameters need to be exposed
-    // Convert only parameters that should be with an exception
+    // Show only relevant parameters that should be in the exception
     public String exceptionString() {
         return "JobMetaDataParameterObject{" +
                "jarOnMember='" + jarOnMember + '\'' +
