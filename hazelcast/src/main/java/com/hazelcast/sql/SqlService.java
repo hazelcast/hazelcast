@@ -90,6 +90,40 @@ public interface SqlService {
     }
 
     /**
+     * Convenient method to execute a distributed query with the given
+     * parameter values.
+     * <p>
+     * Converts passed SQL string and parameter values into an {@link
+     * SqlStatement} object and invokes {@link #execute(SqlStatement)}.
+     *
+     * <p>
+     * This method is meant to be used for statements other than "SELECT" queries and only if user does not really need the
+     * count of updated entries.
+     *
+     * @param sql       SQL string
+     * @param arguments query parameter values that will be passed to {@link SqlStatement#setParameters(List)}
+     * @throws NullPointerException     if the SQL string is null
+     * @throws IllegalArgumentException if the SQL string is empty
+     * @throws HazelcastSqlException    in case of execution error
+     * @see SqlService
+     * @see SqlStatement
+     * @see #execute(SqlStatement)
+     */
+    @SuppressWarnings({"EmptyTryBlock", "checkstyle:EmptyBlock"})
+    default void executeStatement(@Nonnull String sql, Object... arguments) {
+        SqlStatement statement = new SqlStatement(sql);
+
+        if (arguments != null) {
+            for (Object arg : arguments) {
+                statement.addParameter(arg);
+            }
+
+        }
+        try (SqlResult ignored = execute(statement)) {
+        }
+    }
+
+    /**
      * Executes an SQL statement.
      *
      * @param statement statement to be executed
