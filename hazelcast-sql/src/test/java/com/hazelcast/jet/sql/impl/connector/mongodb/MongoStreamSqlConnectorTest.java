@@ -28,6 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -97,8 +98,14 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                     + "    'startAt' = 'now' "
                     + ")");
 
+            CountDownLatch latch = new CountDownLatch(1);
             String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
             spawn(() -> {
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 sleep(200);
                 collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
                 sleep(100);
@@ -113,7 +120,8 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                             new Row("Luke", "Skywalker", "insert"),
                             new Row("Anakin", "Skywalker", "insert")
                     ),
-                    TimeUnit.SECONDS.toMillis(10)
+                    TimeUnit.SECONDS.toMillis(30),
+                    latch::countDown
             );
 
             assertEquals(forceTwoSteps, projectAndFilterFound.get());
