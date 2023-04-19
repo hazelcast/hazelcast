@@ -97,8 +97,8 @@ public interface SqlService {
      * SqlStatement} object and invokes {@link #execute(SqlStatement)}.
      *
      * <p>
-     * This method is meant to be used for statements other than "SELECT" queries and only if user does not really need the
-     * count of updated entries.
+     * This method is meant to be used for statements other than "SELECT" queries. The returned value is the
+     * number of updated(/inserted/deleted) rows.
      *
      * @param sql       SQL string
      * @param arguments query parameter values that will be passed to {@link SqlStatement#setParameters(List)}
@@ -107,19 +107,18 @@ public interface SqlService {
      * @throws HazelcastSqlException    in case of execution error
      * @see SqlService
      * @see SqlStatement
+     *
      * @see #execute(SqlStatement)
+     * @see #execute(String, Object...)
+     *
+     * @return The number of updated(/inserted/deleted) rows.
+     *
+     * @since 5.3
      */
-    @SuppressWarnings({"EmptyTryBlock", "checkstyle:EmptyBlock"})
-    default void executeStatement(@Nonnull String sql, Object... arguments) {
-        SqlStatement statement = new SqlStatement(sql);
-
-        if (arguments != null) {
-            for (Object arg : arguments) {
-                statement.addParameter(arg);
-            }
-
-        }
-        try (SqlResult ignored = execute(statement)) {
+    default long executeUpdate(@Nonnull String sql, Object... arguments) {
+        try (SqlResult result = execute(sql, arguments)) {
+            assert !result.isRowSet() : "Result should not contain rowSet when called from executeUpdate";
+            return result.updateCount();
         }
     }
 

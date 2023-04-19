@@ -74,7 +74,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     @Test
     public void when_createSharedDataConnection_then_success() {
         String dlName = randomName();
-        instance().getSql().executeStatement("CREATE DATA CONNECTION " + dlName
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName
                 + " TYPE \"DUMMY\" "
                 + " SHARED "
                 + " OPTIONS ('b' = 'c')");
@@ -91,7 +91,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     @Test
     public void when_createDefaultSharingDataConnection_then_success() {
         String dlName = randomName();
-        instance().getSql().executeStatement("CREATE DATA CONNECTION " + dlName
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName
                 + " TYPE \"DUMMY\" "
                 + " OPTIONS ('b' = 'c')");
 
@@ -107,7 +107,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     @Test
     public void when_createDataConnection_fullyQualified_then_success() {
         String dlName = randomName();
-        instance().getSql().executeStatement("CREATE DATA CONNECTION hazelcast.public." + dlName
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION hazelcast.public." + dlName
                 + " TYPE \"DUMMY\" "
                 + " OPTIONS ('b' = 'c')");
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
@@ -122,7 +122,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     public void when_createDataConnectionInWrongNameSpace_then_throws() {
         String dlName = randomName();
         assertThatThrownBy(() ->
-                instance().getSql().executeStatement("CREATE DATA CONNECTION hazelcast.yyy." + dlName
+                instance().getSql().executeUpdate("CREATE DATA CONNECTION hazelcast.yyy." + dlName
                         + " TYPE \"DUMMY\" "
                         + " NOT SHARED "
                         + " OPTIONS ('b' = 'c')"))
@@ -133,7 +133,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     @Test
     public void when_createDataConnectionIfAlreadyExists_then_throws() {
         String dlName = randomName();
-        instance().getSql().executeStatement("CREATE DATA CONNECTION " + dlName
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName
                 + " TYPE \"DUMMY\" "
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
@@ -144,7 +144,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         }
 
         assertThatThrownBy(() ->
-                instance().getSql().executeStatement("CREATE DATA CONNECTION " + dlName
+                instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName
                         + " TYPE \"DUMMY\" "
                         + " NOT SHARED "
                         + " OPTIONS ('b' = 'c')"))
@@ -163,7 +163,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         }
 
         assertThatThrownBy(() ->
-                instance().getSql().executeStatement("CREATE DATA CONNECTION " + dlName
+                instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName
                         + " TYPE \"DUMMY\" "
                         + " NOT SHARED "
                         + " OPTIONS ('b' = 'c')"))
@@ -175,7 +175,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     public void when_createDataConnectionWithoutType_then_throws() {
         String dlName = randomName();
         assertThatThrownBy(() ->
-                instance().getSql().executeStatement("CREATE DATA CONNECTION " + dlName))
+                instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Was expecting one of:" + System.lineSeparator() + "    \"TYPE\" ...");
     }
@@ -198,7 +198,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     public void when_createDataConnectionWithoutOptions_then_success() {
         String dlName = randomName();
 
-        instance().getSql().executeStatement("CREATE DATA CONNECTION " + dlName  + " TYPE DUMMY SHARED");
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName  + " TYPE DUMMY SHARED");
 
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
@@ -211,11 +211,11 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         String dlName1 = randomName();
         String dlName2 = randomName();
 
-        instance().getSql().executeStatement("CREATE DATA CONNECTION " + dlName1
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName1
                 + " TYPE \"DUMMY\" "
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
-        instance().getSql().executeStatement("CREATE DATA CONNECTION " + dlName2
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName2
                 + " TYPE \"DUMMY\" "
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
@@ -248,7 +248,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         }
 
         assertThatThrownBy(() ->
-                instance().getSql().executeStatement("DROP DATA CONNECTION " + dlName))
+                instance().getSql().executeUpdate("DROP DATA CONNECTION " + dlName))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("is configured via Config and can't be removed");
     }
@@ -256,14 +256,14 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     @Test
     public void when_dropNonExistentDataConnection_withIfExists_then_success() {
         // this should throw no error
-        instance().getSql().executeStatement("DROP DATA CONNECTION IF EXISTS " + randomName());
+        instance().getSql().executeUpdate("DROP DATA CONNECTION IF EXISTS " + randomName());
     }
 
     @Test
     public void when_dropNonExistentDataConnection_withoutIfExists_then_throws() {
         String dlName = randomName();
         assertThatThrownBy(() ->
-                instance().getSql().executeStatement("DROP DATA CONNECTION " + dlName))
+                instance().getSql().executeUpdate("DROP DATA CONNECTION " + dlName))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Data connection does not exist");
     }
@@ -271,12 +271,12 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     @Test
     public void when_createIfNotExists_then_notOverwritten() {
         String dlName = randomName();
-        instance().getSql().executeStatement("CREATE DATA CONNECTION " + dlName
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName
                 + " TYPE \"DUMMY\" "
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')");
 
-        instance().getSql().executeStatement("CREATE DATA CONNECTION IF NOT EXISTS " + dlName
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION IF NOT EXISTS " + dlName
                 + " TYPE \"DUMMY\" "
                 + " NOT SHARED "
                 + " OPTIONS ('d' = 'e')");
