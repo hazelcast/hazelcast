@@ -183,7 +183,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     private void createOrReadMapping() {
         logger.fine("Initializing for map " + mapName);
         try {
-            String mappingColumns = null;
+            List<SqlColumnMetadata> mappingColumns = null;
             if (genericMapStoreProperties.hasColumns()) {
                 mappingColumns = resolveMappingColumns();
                 logger.fine("Discovered following mapping columns: " + mappingColumns);
@@ -215,7 +215,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         }
     }
 
-    private String resolveMappingColumns() {
+    private List<SqlColumnMetadata> resolveMappingColumns() {
         // Create a temporary mapping
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
         mappingHelper.createMapping(
@@ -233,8 +233,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         return genericMapStoreProperties.getAllColumns().stream()
                 .map(columnName -> validateColumn(rowMetadata, columnName))
                 .map(rowMetadata::getColumn)
-                .map(columnMetadata1 -> columnMetadata1.getName() + " " + columnMetadata1.getType())
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.toList());
     }
 
     private void readExistingMapping() {

@@ -20,32 +20,69 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
+import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
 import java.util.List;
 
 final class MappingHelper {
 
+    private final SqlDialect dialect = CalciteSqlDialect.DEFAULT;
     private final SqlService sqlService;
 
     MappingHelper(SqlService sqlService) {
         this.sqlService = sqlService;
     }
 
-    public void createMapping(String mappingName, String tableName, String mappingColumns,
-                              String dataConnectionRef, String idColumn) {
+    public void createMapping(
+            String mappingName,
+            String tableName,
+            List<SqlColumnMetadata> mappingColumns,
+            String dataConnectionRef,
+            String idColumn
+    ) {
+
         sqlService.execute(
-                "CREATE MAPPING \"" + mappingName + "\" "
-                + "EXTERNAL NAME \"" + tableName + "\" "
-                + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
-                + " DATA CONNECTION \"" + dataConnectionRef + "\" "
-                + " OPTIONS ("
-                + "    'idColumn' = '" + idColumn + "' "
-                + ")"
+                createMappingQuery(mappingName, tableName, mappingColumns, dataConnectionRef, idColumn)
         ).close();
     }
 
+    private String createMappingQuery(
+            String mappingName,
+            String tableName,
+            List<SqlColumnMetadata> mappingColumns,
+            String dataConnectionRef,
+            String idColumn
+    ) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("CREATE MAPPING ");
+        dialect.quoteIdentifier(sb, mappingName);
+        sb.append(" EXTERNAL NAME ");
+        dialect.quoteIdentifier(sb, tableName);
+        if (mappingColumns != null) {
+            sb.append(" ( ");
+            for (SqlColumnMetadata mc : mappingColumns) {
+                dialect.quoteIdentifier(sb, mc.getName());
+                sb.append(' ');
+                sb.append(mc.getType());
+            }
+            sb.append(" )");
+        }
+        sb.append(" DATA CONNECTION ");
+        dialect.quoteIdentifier(sb, dataConnectionRef);
+        sb.append(" OPTIONS (");
+        sb.append(" 'idColumn' = ");
+        dialect.quoteStringLiteral(sb, null, idColumn);
+        sb.append(" )");
+        String createMappingQuery = sb.toString();
+        return createMappingQuery;
+    }
+
     public void dropMapping(String mappingName) {
-        sqlService.execute("DROP MAPPING IF EXISTS \"" + mappingName + "\"").close();
+        StringBuilder sb = new StringBuilder()
+                .append("DROP MAPPING IF EXISTS ");
+        dialect.quoteIdentifier(sb, mappingName);
+        sqlService.execute(sb.toString()).close();
     }
 
     public List<SqlColumnMetadata> loadColumnMetadataFromMapping(String mapping) {
@@ -53,7 +90,11 @@ final class MappingHelper {
     }
 
     public SqlRowMetadata loadRowMetadataFromMapping(String mapping) {
-        try (SqlResult result = sqlService.execute("SELECT * FROM \"" + mapping + "\" LIMIT 0")) {
+        StringBuilder sb = new StringBuilder()
+                .append("SELECT * FROM ");
+        dialect.quoteIdentifier(sb, mapping);
+        sb.append(" LIMIT 0");
+        try (SqlResult result = sqlService.execute(sb.toString())) {
             return result.getRowMetadata();
         }
     }
