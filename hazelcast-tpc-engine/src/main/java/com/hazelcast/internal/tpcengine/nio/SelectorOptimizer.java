@@ -163,11 +163,15 @@ public final class SelectorOptimizer {
 
         @Override
         public boolean contains(Object o) {
-            for (int i = 0; i < activeKeys.size; i++) {
-                if (o.equals(activeKeys.keys[i])) {
+            final int size = activeKeys.size;
+            final SelectionKey[] keys = activeKeys.keys;
+
+            for (int i = 0; i < size; i++) {
+                if (o.equals(keys[i])) {
                     return true;
                 }
             }
+
             return false;
         }
     }
