@@ -77,6 +77,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
 
+import static com.hazelcast.jet.function.RunnableEx.noop;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
@@ -251,7 +252,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             Collection<Row> expectedRows,
             long timeoutForNextMs
     ) {
-        assertRowsEventuallyInAnyOrder(sql, arguments, expectedRows, timeoutForNextMs, () -> {});
+        assertRowsEventuallyInAnyOrder(sql, arguments, expectedRows, timeoutForNextMs, noop());
     }
 
     /**
