@@ -29,10 +29,15 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
  */
 public interface IMapStepAwareOperation extends StepAwareOperation<State> {
 
+    @Override
     default Step getStartingStep() {
         assert this instanceof MapOperation;
 
-        if (!(this instanceof BackupOperation)) {
+        // only backup operations of
+        // tieredStoreAndPartitionCompactorEnabled
+        // maps can be created as a Step.
+        if (!(this instanceof BackupOperation
+                && ((MapOperation) this).isTieredStoreAndPartitionCompactorEnabled())) {
             return StepAwareOperation.super.getStartingStep();
         }
 

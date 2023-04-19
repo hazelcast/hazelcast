@@ -145,13 +145,22 @@ public abstract class MapOperation extends AbstractNamedOperation
         innerBeforeRun();
     }
 
+    // Currently we don't allow both map-store and
+    // tiered-store configured for the same map
     private void assertOnlyOneOfMapStoreOrTieredStoreEnabled() {
         if (!ASSERTION_ENABLED) {
             return;
         }
 
-        assert mapStoreOffloadEnabled ? !tieredStoreAndPartitionCompactorEnabled
-                : (tieredStoreAndPartitionCompactorEnabled ? !mapStoreOffloadEnabled : true);
+        if (mapStoreOffloadEnabled) {
+            assert !tieredStoreAndPartitionCompactorEnabled;
+            return;
+        }
+
+        if (tieredStoreAndPartitionCompactorEnabled) {
+            assert !mapStoreOffloadEnabled;
+            return;
+        }
     }
 
     @Nullable
@@ -495,5 +504,9 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     public MapContainer getMapContainer() {
         return mapContainer;
+    }
+
+    public boolean isTieredStoreAndPartitionCompactorEnabled() {
+        return tieredStoreAndPartitionCompactorEnabled;
     }
 }
