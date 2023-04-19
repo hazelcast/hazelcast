@@ -181,6 +181,7 @@ public class JobUploadStatus {
         jobMetaDataParameterObject.setJarPath(jarPath);
     }
 
+    @SuppressWarnings("java:S5443")
     Path getJarPath() throws IOException {
         Path jarPath;
         if (jobMetaDataParameterObject.getTempDirectoryPath() != null) {
