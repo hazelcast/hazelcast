@@ -392,7 +392,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Override
     protected <K> GenericMapStore<K> createUnitUnderTest(Properties properties, HazelcastInstance instance, boolean init) {
-        MapConfig mapConfig = createMapConfigWithMapStore(mapName);
+        MapConfig mapConfig = createMapConfigWithMapStore(mapName, properties);
         instance.getConfig().addMapConfig(mapConfig);
 
         GenericMapStore<K> mapStore = new GenericMapStore<>();
@@ -403,9 +403,10 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         return mapStore;
     }
 
-    private MapConfig createMapConfigWithMapStore(String mapName) {
+    private MapConfig createMapConfigWithMapStore(String mapName, Properties properties) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
+        mapStoreConfig.setProperties(properties);
         MapConfig mapConfig = new MapConfig(mapName);
         mapConfig.setMapStoreConfig(mapStoreConfig);
         return mapConfig;

@@ -17,6 +17,7 @@
 package com.hazelcast.mapstore;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
@@ -165,8 +166,14 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     private void validateMapStoreConfig(HazelcastInstance instance, String mapName) {
         MapConfig mapConfig = instance.getConfig().findMapConfig(mapName);
-        if (!mapConfig.getMapStoreConfig().isOffload()) {
-            throw new HazelcastException("Config for GenericMapStore must have `offload` property set to true");
+        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        if (!mapStoreConfig.isOffload()) {
+            throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
+                                         " must have `offload` property set to true");
+        }
+        if (mapStoreConfig.getProperty(DATA_CONNECTION_REF_PROPERTY) == null) {
+            throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
+                                         " must have `" + DATA_CONNECTION_REF_PROPERTY + "` property set");
         }
     }
 
