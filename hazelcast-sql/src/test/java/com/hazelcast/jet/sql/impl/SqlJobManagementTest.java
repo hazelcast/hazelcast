@@ -26,6 +26,8 @@ import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.stream.Stream;
+
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -369,6 +371,14 @@ public class SqlJobManagementTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("ALTER JOB j SUSPEND", "param"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("ALTER JOB does not support dynamic parameters");
+    }
+
+    @Test
+    public void when_alterJobWithUnsupportedOptions_then_fail() {
+        Stream.of("processingGuarantee", "initialSnapshotName").forEach(option ->
+                assertThatThrownBy(() -> sqlService.execute("ALTER JOB j OPTIONS ('" + option + "'='value')"))
+                        .isInstanceOf(HazelcastSqlException.class)
+                        .hasMessageContaining(option + " is not supported for ALTER JOB"));
     }
 
     @Test
