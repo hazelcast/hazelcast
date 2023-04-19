@@ -38,7 +38,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -132,9 +131,13 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     private void setReadable0(boolean readable) {
         if (readable) {
-            key.interestOps(key.interestOps() | OP_READ);
+            // Signal that we are interested in OP_READ events.
+            key.interestOpsOr(OP_READ);
         } else {
-            key.interestOps(key.interestOps() & ~OP_READ);
+            // Signal that we are not interesting in OP_READ events.
+            // So even if data is received or still available on the socket,
+            // we will not get further events.
+            key.interestOpsAnd(~OP_READ);
         }
     }
 
@@ -411,7 +414,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             }
 
             metrics.incBytesRead(read);
-            upcast(rcvBuffer).flip();
+            rcvBuffer.flip();
             reader.onRead(rcvBuffer);
             compactOrClear(rcvBuffer);
         }

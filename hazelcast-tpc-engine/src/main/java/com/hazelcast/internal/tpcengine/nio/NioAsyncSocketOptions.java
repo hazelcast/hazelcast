@@ -17,8 +17,9 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 
-import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.Option;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
+import jdk.net.ExtendedSocketOptions;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -27,17 +28,9 @@ import java.net.StandardSocketOptions;
 import java.nio.channels.SocketChannel;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.tpcengine.util.ReflectionUtil.findStaticFieldValue;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "java:S3776"})
 public class NioAsyncSocketOptions implements AsyncSocketOptions {
-
-    private static final java.net.SocketOption<Integer> EXT_SOCK_OPTS_TCP_KEEPCOUNT
-            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPCOUNT");
-    private static final java.net.SocketOption<Integer> EXT_SOCK_OPTS_TCP_KEEPIDLE
-            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPIDLE");
-    private static final java.net.SocketOption<Integer> EXT_SO_OPTS_TCP_KEEPINTERVAL
-            = findStaticFieldValue("jdk.net.ExtendedSocketOptions", "TCP_KEEPINTERVAL");
 
     private final SocketChannel socketChannel;
 
@@ -58,11 +51,11 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
         } else if (SO_REUSEADDR.equals(option)) {
             return StandardSocketOptions.SO_REUSEADDR;
         } else if (TCP_KEEPCOUNT.equals(option)) {
-            return EXT_SOCK_OPTS_TCP_KEEPCOUNT;
+            return ExtendedSocketOptions.TCP_KEEPCOUNT;
         } else if (TCP_KEEPINTERVAL.equals(option)) {
-            return EXT_SO_OPTS_TCP_KEEPINTERVAL;
+            return ExtendedSocketOptions.TCP_KEEPINTERVAL;
         } else if (TCP_KEEPIDLE.equals(option)) {
-            return EXT_SOCK_OPTS_TCP_KEEPIDLE;
+            return ExtendedSocketOptions.TCP_KEEPIDLE;
         } else {
             return null;
         }
