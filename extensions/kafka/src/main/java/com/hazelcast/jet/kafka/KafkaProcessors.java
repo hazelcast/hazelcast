@@ -145,4 +145,18 @@ public final class KafkaProcessors {
     ) {
         return ProcessorMetaSupplier.of(1, WriteKafkaP.supplier(dataConnectionRef, toRecordFn, exactlyOnce));
     }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link KafkaSinks#kafka(Properties, FunctionEx)}.
+     */
+    public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<? super T, ? extends ProducerRecord<K, V>> toRecordFn,
+            boolean exactlyOnce
+    ) {
+        return ProcessorMetaSupplier.of(1, WriteKafkaP.supplier(dataConnectionRef, properties, toRecordFn, exactlyOnce));
+    }
+
 }

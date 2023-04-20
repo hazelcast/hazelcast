@@ -34,6 +34,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static java.util.stream.Collectors.toList;
@@ -169,6 +170,29 @@ public class KafkaDataConnectionTest {
         assertThatThrownBy(() -> p1.partitionsFor("my-topic"))
                 .isInstanceOf(KafkaException.class)
                 .hasMessage("Requested metadata update after close");
+    }
+
+    @Test
+    public void properties_merge_test() {
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+
+        Properties existingProps = properties(kafkaTestSupport);
+        Properties newProps = new Properties();
+        newProps.put("A", "B");
+        newProps.put("C", "D");
+
+        Properties mergedProps = kafkaDataConnection.mergeProps(newProps);
+        assertThat(mergedProps.size()).isEqualTo(existingProps.size() + newProps.size());
+
+        for (Map.Entry<Object, Object> entry : existingProps.entrySet()) {
+            assertThat(mergedProps).contains(entry);
+        }
+
+        for (Map.Entry<Object, Object> entry : newProps.entrySet()) {
+            assertThat(mergedProps).contains(entry);
+        }
+
+        kafkaDataConnection.release();
     }
 
     private KafkaDataConnection createKafkaDataConnection(KafkaTestSupport kafkaTestSupport) {
