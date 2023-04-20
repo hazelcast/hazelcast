@@ -35,7 +35,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeL
 import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
-import static com.hazelcast.spi.properties.ClusterProperty.JAR_UPLOAD_TEMP_DIR_PATH;
+import static com.hazelcast.spi.properties.ClusterProperty.JAR_UPLOAD_DIR_PATH;
 
 /**
  * Uploads the metadata of a job to be executed by a jar
@@ -79,11 +79,11 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
     }
 
     private void runJarOnClient() {
-        // Assign the temporary directory to be used
+        // Assign the upload directory path
         NodeEngine nodeEngine = getNodeEngine();
         HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
-        String tempDirectory = hazelcastProperties.getString(JAR_UPLOAD_TEMP_DIR_PATH);
-        jobMetaDataParameterObject.setTempDirectoryPath(tempDirectory);
+        String uploadDirectoryPath = hazelcastProperties.getString(JAR_UPLOAD_DIR_PATH);
+        jobMetaDataParameterObject.setUploadDirectoryPath(uploadDirectoryPath);
 
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
         jetServiceBackend.jarOnClient(jobMetaDataParameterObject);

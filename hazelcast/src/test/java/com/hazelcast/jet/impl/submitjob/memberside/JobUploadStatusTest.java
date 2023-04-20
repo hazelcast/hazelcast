@@ -200,7 +200,7 @@ public class JobUploadStatusTest {
     public void testGetJarPath() throws IOException {
         Path jarPath = null;
         try {
-            when(jobMetaDataParameterObject.getTempDirectoryPath()).thenReturn(".");
+            when(jobMetaDataParameterObject.getUploadDirectoryPath()).thenReturn(".");
             jarPath = jobUploadStatus.getJarPath();
             assertTrue(Files.exists(jarPath));
         } finally {

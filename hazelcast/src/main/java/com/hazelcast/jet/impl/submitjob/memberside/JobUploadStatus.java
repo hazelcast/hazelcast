@@ -184,8 +184,8 @@ public class JobUploadStatus {
     @SuppressWarnings("java:S5443")
     Path getJarPath() throws IOException {
         Path jarPath;
-        if (jobMetaDataParameterObject.getTempDirectoryPath() != null) {
-            Path path = Paths.get(jobMetaDataParameterObject.getTempDirectoryPath());
+        if (jobMetaDataParameterObject.getUploadDirectoryPath() != null) {
+            Path path = Paths.get(jobMetaDataParameterObject.getUploadDirectoryPath());
             // Create a new temporary file in the given directory
             jarPath = Files.createTempFile(path, jobMetaDataParameterObject.getFileName(), ".jar");
         } else {

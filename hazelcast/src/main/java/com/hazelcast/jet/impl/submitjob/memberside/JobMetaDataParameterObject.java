@@ -43,7 +43,7 @@ public class JobMetaDataParameterObject {
 
     private Path jarPath;
 
-    private String tempDirectoryPath;
+    private String uploadDirectoryPath;
 
     public UUID getSessionId() {
         return sessionId;
@@ -121,12 +121,12 @@ public class JobMetaDataParameterObject {
         this.jarPath = jarPath;
     }
 
-    public String getTempDirectoryPath() {
-        return tempDirectoryPath;
+    public String getUploadDirectoryPath() {
+        return uploadDirectoryPath;
     }
 
-    public void setTempDirectoryPath(String tempDirectoryPath) {
-        this.tempDirectoryPath = tempDirectoryPath;
+    public void setUploadDirectoryPath(String uploadDirectoryPath) {
+        this.uploadDirectoryPath = uploadDirectoryPath;
     }
 
     // Not all parameters need to be exposed

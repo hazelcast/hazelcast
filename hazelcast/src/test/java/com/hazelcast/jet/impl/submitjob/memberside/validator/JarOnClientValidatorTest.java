@@ -25,9 +25,9 @@ public class JarOnClientValidatorTest {
 
     @Test
     public void testValidateTempDirectoryPath() {
-        assertThatThrownBy(() -> JarOnClientValidator.validateTempDirectoryPath("foo"))
+        assertThatThrownBy(() -> JarOnClientValidator.validateUploadDirectoryPath("foo"))
                 .isInstanceOf(JetException.class)
-                .hasMessageContaining("The temporary file path does not exist: foo");
+                .hasMessageContaining("The upload directory path does not exist: foo");
     }
 
     @Test

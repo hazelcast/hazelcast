@@ -1,4 +1,5 @@
 /*
+/*
  * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1873,10 +1874,10 @@ public final class ClusterProperty {
             "hazelcast.persistence.auto.cluster.state.strategy", ClusterState.NO_MIGRATION);
 
     /**
-     * The temporary directory path to be used for uploaded jars
+     * The directory path to be used for jar uploading
      */
-    public static final HazelcastProperty JAR_UPLOAD_TEMP_DIR_PATH
-            = new HazelcastProperty("hazelcast.cluster.jarupload.tempdir");
+    public static final HazelcastProperty JAR_UPLOAD_DIR_PATH
+            = new HazelcastProperty("hazelcast.cluster.jarupload.dirpath");
 
     private ClusterProperty() {
     }

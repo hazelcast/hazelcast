@@ -39,15 +39,15 @@ public final class JarOnClientValidator {
             throw new JetException("Request is not configured for jar on client");
         }
 
-        validateTempDirectoryPath(parameterObject.getTempDirectoryPath());
+        validateUploadDirectoryPath(parameterObject.getUploadDirectoryPath());
         validateJobParameters(parameterObject.getJobParameters());
     }
 
-    static void validateTempDirectoryPath(String  tempDirectoryPath) {
-        if (tempDirectoryPath != null) {
-            Path path = Paths.get(tempDirectoryPath);
+    static void validateUploadDirectoryPath(String  uploadDirectoryPath) {
+        if (uploadDirectoryPath != null) {
+            Path path = Paths.get(uploadDirectoryPath);
             if (!Files.exists(path)) {
-                String errorMessage = String.format("The temporary file path does not exist: %s ", path);
+                String errorMessage = String.format("The upload directory path does not exist: %s ", path);
                 throw new JetException(errorMessage);
             }
         }
