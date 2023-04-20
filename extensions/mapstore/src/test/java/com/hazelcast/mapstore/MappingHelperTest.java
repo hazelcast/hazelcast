@@ -28,6 +28,7 @@ import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.verify;
 
@@ -60,6 +61,30 @@ public class MappingHelperTest {
                 "CREATE MAPPING \"myMapping\" " +
                         "EXTERNAL NAME \"myTable\" " +
                         "( \"id\" INTEGER ) " +
+                        "DATA CONNECTION \"dataConnectionRef\" " +
+                        "OPTIONS (" +
+                        " 'idColumn' = 'idColumn' " +
+                        ")"
+        );
+    }
+
+    @Test
+    public void when_createMappingWithTwoColumns_then_quoteParameters() {
+        mappingHelper.createMapping(
+                "myMapping",
+                "myTable",
+                asList(
+                        new SqlColumnMetadata("id", SqlColumnType.INTEGER, true),
+                        new SqlColumnMetadata("name", SqlColumnType.VARCHAR, true)
+                ),
+                "dataConnectionRef",
+                "idColumn"
+        );
+
+        verify(sqlService).execute(
+                "CREATE MAPPING \"myMapping\" " +
+                        "EXTERNAL NAME \"myTable\" " +
+                        "( \"id\" INTEGER, \"name\" VARCHAR ) " +
                         "DATA CONNECTION \"dataConnectionRef\" " +
                         "OPTIONS (" +
                         " 'idColumn' = 'idColumn' " +
@@ -106,27 +131,22 @@ public class MappingHelperTest {
     public void when_loadColumnMetadataFromMapping_then_quoteMappingName() {
         mappingHelper.loadColumnMetadataFromMapping("myMapping");
 
-        verify(sqlService).execute("SELECT * FROM \"myMapping\" LIMIT 0");
+        verify(sqlService).execute(
+                "SELECT * FROM information_schema.columns "
+                        + "WHERE table_name = ? ORDER BY ordinal_position ASC",
+                "myMapping"
+        );
     }
 
     @Test
     public void when_loadColumnMetadataFromMapping_then_escapeMappingName() {
         mappingHelper.loadColumnMetadataFromMapping("my\"Mapping");
 
-        verify(sqlService).execute("SELECT * FROM \"my\"\"Mapping\" LIMIT 0");
+        verify(sqlService).execute(
+                "SELECT * FROM information_schema.columns "
+                        + "WHERE table_name = ? ORDER BY ordinal_position ASC",
+                "my\"Mapping"
+        );
     }
 
-    @Test
-    public void when_loadRowMetadataFromMapping_then_quoteMappingName() {
-        mappingHelper.loadColumnMetadataFromMapping("myMapping");
-
-        verify(sqlService).execute("SELECT * FROM \"myMapping\" LIMIT 0");
-    }
-
-    @Test
-    public void when_loadRowMetadataFromMapping_then_escapeMappingName() {
-        mappingHelper.loadColumnMetadataFromMapping("my\"Mapping");
-
-        verify(sqlService).execute("SELECT * FROM \"my\"\"Mapping\" LIMIT 0");
-    }
 }

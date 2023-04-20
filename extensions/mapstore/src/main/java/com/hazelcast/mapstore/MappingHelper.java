@@ -17,13 +17,16 @@
 package com.hazelcast.mapstore;
 
 import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 final class MappingHelper {
 
@@ -61,10 +64,14 @@ final class MappingHelper {
         DIALECT.quoteIdentifier(sb, tableName);
         if (mappingColumns != null) {
             sb.append(" ( ");
-            for (SqlColumnMetadata mc : mappingColumns) {
+            for (Iterator<SqlColumnMetadata> iterator = mappingColumns.iterator(); iterator.hasNext(); ) {
+                SqlColumnMetadata mc = iterator.next();
                 DIALECT.quoteIdentifier(sb, mc.getName());
                 sb.append(' ');
                 sb.append(mc.getType());
+                if (iterator.hasNext()) {
+                    sb.append(", ");
+                }
             }
             sb.append(" )");
         }
@@ -85,16 +92,17 @@ final class MappingHelper {
     }
 
     public List<SqlColumnMetadata> loadColumnMetadataFromMapping(String mapping) {
-        return loadRowMetadataFromMapping(mapping).getColumns();
-    }
-
-    private SqlRowMetadata loadRowMetadataFromMapping(String mapping) {
-        StringBuilder sb = new StringBuilder()
-                .append("SELECT * FROM ");
-        DIALECT.quoteIdentifier(sb, mapping);
-        sb.append(" LIMIT 0");
-        try (SqlResult result = sqlService.execute(sb.toString())) {
-            return result.getRowMetadata();
+        String query = "SELECT * FROM information_schema.columns WHERE table_name = ? ORDER BY ordinal_position ASC";
+        try (SqlResult result = sqlService.execute(query, mapping)) {
+            return StreamSupport
+                    .stream(result.spliterator(), false)
+                    .map(row -> {
+                        String name = row.getObject("column_name");
+                        SqlColumnType type = SqlColumnType.valueOf(row.getObject("data_type"));
+                        boolean isNullable = Boolean.parseBoolean(row.getObject("is_nullable"));
+                        return new SqlColumnMetadata(name, type, isNullable);
+                    })
+                    .collect(Collectors.toList());
         }
     }
 }
