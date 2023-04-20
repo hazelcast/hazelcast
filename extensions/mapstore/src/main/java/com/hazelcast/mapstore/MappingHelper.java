@@ -21,7 +21,9 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 final class MappingHelper {
 
@@ -33,14 +35,18 @@ final class MappingHelper {
 
     public void createMapping(String mappingName, String tableName, String mappingColumns,
                               String dataConnectionRef, String idColumn) {
+
+        String externalName = Arrays.stream(tableName.split("\\."))
+                .map(s -> "\"" + s + "\"")
+                .collect(Collectors.joining("."));
         sqlService.execute(
                 "CREATE MAPPING \"" + mappingName + "\" "
-                + "EXTERNAL NAME \"" + tableName + "\" "
-                + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
-                + " DATA CONNECTION \"" + dataConnectionRef + "\" "
-                + " OPTIONS ("
-                + "    'idColumn' = '" + idColumn + "' "
-                + ")"
+                        + "EXTERNAL NAME " + externalName + " "
+                        + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
+                        + " DATA CONNECTION \"" + dataConnectionRef + "\" "
+                        + " OPTIONS ("
+                        + "    'idColumn' = '" + idColumn + "' "
+                        + ")"
         ).close();
     }
 

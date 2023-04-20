@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -448,6 +449,28 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         GenericRecord record = mapLoader.load(0);
         assertThat(record).isNotNull();
+    }
+
+    @Test
+    public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchema() throws Exception {
+        String schemaName = "custom_schema";
+        createSchema(schemaName);
+        String tableName = schemaName + "." + randomTableName();
+
+        createTable(tableName);
+        insertItems(tableName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(TABLE_NAME_PROPERTY, tableName);
+        mapLoader = createMapLoader(properties, hz);
+
+        GenericRecord record = mapLoader.load(0);
+        assertThat(record).isNotNull();
+    }
+
+    private static void createSchema(String schemaName) throws SQLException {
+        executeJdbc("CREATE SCHEMA IF NOT EXISTS " + schemaName + " ");
     }
 
     private <K> GenericMapLoader<K> createMapLoader() {
