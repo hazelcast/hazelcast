@@ -3957,36 +3957,36 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", -1);
         Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
 
-        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds",0);
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 0);
         Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
 
-        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds",32768);
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 32768);
         Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
     }
 
     @Override
     @Test
     public void testAdvancedNetworkConfig_whenInvalidSocketKeepIntervalSeconds() {
-        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds",-1);
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", -1);
         Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
 
-        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds",0);
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 0);
         Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
 
-        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds",32768);
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 32768);
         Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
     }
 
     @Override
     @Test
     public void testAdvancedNetworkConfig_whenInvalidSocketKeepCount() {
-        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-count",-1);
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-count", -1);
         Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
 
-        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-count",0);
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-count", 0);
         Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
 
-        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-count",128);
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-count", 128);
         Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
     }
 
