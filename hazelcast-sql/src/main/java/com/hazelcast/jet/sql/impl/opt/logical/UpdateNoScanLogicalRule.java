@@ -125,14 +125,12 @@ class UpdateNoScanLogicalRule extends RelRule<RelRule.Config> {
                 .operandSupplier(b0 -> b0.operand(TableModifyLogicalRel.class)
                          .predicate(TableModify::isUpdate)
                          .inputs(b1 -> b1.operand(RelNode.class)
-                                 // TODO: this does not cover all cases
-                                 //  we should have:
-                                 //  1. TableModify
-                                 //  2. TableModify -> TableScan
-                                 //  3. TableModify -> Calc -> TableScan
-                                 //  + maybe even more complex?
-//                                 .predicate(r -> !(r instanceof TableScan))
-//                                 .anyInputs())  //TODO: noInputs?
+                                 // no support for UPDATE FROM SELECT case (which is not yet implemented)
+                                 // once joins are there we need to create complementary rule
+                                 //
+                                 // Calcite replaces the table scan with empty VALUES when the WHERE clause
+                                 // is always false
+                                 // i.e. '... WHERE __key = 1 AND __key = 2'
                                  .predicate(r -> !(r instanceof Values) && !(r instanceof TableScan))
                                  .noInputs())
 

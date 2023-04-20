@@ -123,6 +123,7 @@ class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {
                 OptUtils.toLogicalConvention(update.getTraitSet()),
                 update.getTable(),
                 update.getCatalogReader(),
+                // TODO: this is IMap specific, in other cases we need to project more that just a key
                 rewriteScan(scan),
                 requireNonNull(update.getUpdateColumnList()),
                 requireNonNull(update.getSourceExpressionList()),

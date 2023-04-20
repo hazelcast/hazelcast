@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
@@ -78,6 +79,18 @@ public class ExtractUpdateExpressionsRule extends RelRule<RelRule.Config> {
         assert update.getSourceExpressionList() != null;
         assert update.isUpdate();
 
+        if (OptUtils.hasTableType(update, PartitionedMapTable.class)) {
+            // FIXME HACK: we do not perform this transformation for IMap because:
+            // 1) it is not necessary. IMap updates are executed via submitToKey and support all expressions
+            //    and no filters can be used in the submitToKey (obviously).
+            // 2) it may introduce mismatch between RexInputRef indexes in sourceExpressions and the row data
+            //    that will be project by KvRowProjector which has structure consistent with table structure.
+            //    So the projections we define here will be ignored anyway.
+            //    It may be also related to the fact that UpdateWithScanLogicalRule.rewriteScan keeps only key.
+            // (see update_complexKey test).
+            return;
+        }
+
         HazelcastTable hzTable = OptUtils.extractHazelcastTable(update);
         SqlConnector sqlConnector = getJetSqlConnector(hzTable.getTarget());
 
@@ -98,6 +111,7 @@ public class ExtractUpdateExpressionsRule extends RelRule<RelRule.Config> {
             if (expr instanceof RexInputRef || expr instanceof RexDynamicParam) {
                 continue;
             }
+            //TODO: visit entire expression, not only top operator!
             if (!sqlConnector.supportsExpression(wrap(expr))) {
                 expressionsAdded = true;
                 sourceExpressions.set(i, rexBuilder.makeInputRef(expr.getType(), projections.size()));
@@ -105,12 +119,10 @@ public class ExtractUpdateExpressionsRule extends RelRule<RelRule.Config> {
             }
         }
 
-        // TODO: why is it needed?
         // move PK fields to the beginning of the row type
-//        Permutation permutation = permutePkFieldsToBeginning(sqlConnector.getPrimaryKey(hzTable.getTarget()),
-//                update.getInput().getRowType());
-        Permutation permutation = new Permutation(update.getInput().getRowType().getFieldCount());
-        permutation.identity();
+        // to conform with SqlConnector.updateProcessor row structure convention
+        Permutation permutation = permutePkFieldsToBeginning(sqlConnector.getPrimaryKey(hzTable.getTarget()),
+                update.getInput().getRowType());
 
         // do the transformation, if needed
         if (expressionsAdded || !permutation.isIdentity()) {
@@ -119,6 +131,8 @@ public class ExtractUpdateExpressionsRule extends RelRule<RelRule.Config> {
             permutation.set(projections.size() - 1, projections.size() - 1, true);
             projections = Mappings.apply(permutation, projections);
 
+            // This creates LogicalUpdate -> LogicalProject (permutation) -> LogicalProject (original) -> LogicalScan
+            // rel node tree if there is a projection
             RelNode newProject = call.builder()
                     .push(update.getInput())
                     .project(projections)
