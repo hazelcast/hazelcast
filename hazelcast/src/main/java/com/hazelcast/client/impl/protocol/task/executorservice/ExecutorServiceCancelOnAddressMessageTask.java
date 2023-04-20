@@ -73,7 +73,7 @@ public class ExecutorServiceCancelOnAddressMessageTask
         String name = getDistributedObjectName();
         if (name == null) {
             // The permission constructor expects a non-null name.
-            return null;
+            name = ExecutorServicePermission.EMPTY_EXECUTOR_NAME;
         }
 
         return new ExecutorServicePermission(name, ActionConstants.ACTION_MODIFY);

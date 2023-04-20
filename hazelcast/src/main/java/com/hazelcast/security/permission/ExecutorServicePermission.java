@@ -18,6 +18,12 @@ package com.hazelcast.security.permission;
 
 public class ExecutorServicePermission extends InstancePermission {
 
+    /**
+     * The name of the executor used when no such executor
+     * is found for the client invocations.
+     */
+    public static final String EMPTY_EXECUTOR_NAME = "<EMPTY>";
+
     private static final int READ = 4;
     private static final int MODIFY = 8;
     private static final int ALL = CREATE | DESTROY | READ | MODIFY;
