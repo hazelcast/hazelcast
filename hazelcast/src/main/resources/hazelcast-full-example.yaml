@@ -104,7 +104,7 @@ hazelcast:
   # It configures addresses from which clients are allowed to run cluster management tasks over the Hazelcast client protocol.
   # You can give an IP addresses range using the wildcards (*) or intervals in the IPv4 address
   # (e.g. 192.168.1.* or 192.168.1.100-110).
-  # Default value is empty, meaning all clients are allowed to run cluster management tasks.
+  # Default value is empty, meaning all Management Center connections can execute management tasks.
   #
   # Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
   # in your cluster. To use it for more members, you need to have either a Management Center,

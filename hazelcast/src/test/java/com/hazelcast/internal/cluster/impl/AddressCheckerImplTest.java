@@ -93,6 +93,9 @@ public class AddressCheckerImplTest extends HazelcastTestSupport {
     public void testIntervalRange() throws UnknownHostException {
         AddressCheckerImpl joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.0.110-115.*"), logger);
         assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.110.1")));
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.112.1")));
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.115.255")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.0.116.255")));
         assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.0.1.1")));
 
         joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.0.110-115.1-2"), logger);
