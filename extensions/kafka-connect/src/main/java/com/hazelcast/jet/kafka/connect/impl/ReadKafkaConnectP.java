@@ -62,7 +62,7 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
     private Traverser<Entry<BroadcastKey<String>, State>> snapshotTraverser;
     private boolean snapshotsEnabled;
     private int processorIndex;
-    private Traverser<?> traverser;
+    private Traverser<?> traverser = Traversers.empty();
     private final LocalKafkaConnectStatsImpl localKafkaConnectStats = new LocalKafkaConnectStatsImpl();
 
     public ReadKafkaConnectP(@Nonnull ConnectorWrapper connectorWrapper,
@@ -96,24 +96,25 @@ public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMe
         if (snapshotInProgress) {
             return false;
         }
-        if (traverser == null) {
-            long start = Timer.nanos();
-            List<SourceRecord> sourceRecords = taskRunner.poll();
-            long durationInNanos = Timer.nanosElapsed(start);
-            localKafkaConnectStats.addSourceRecordPollDuration(Duration.ofNanos(durationInNanos));
-            localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
-            this.traverser = sourceRecords.isEmpty() ? eventTimeMapper.flatMapIdle() :
-                    traverseIterable(sourceRecords)
-                            .flatMap(rec -> {
-                                long eventTime = rec.timestamp() == null ?
-                                        EventTimeMapper.NO_NATIVE_TIME
-                                        : rec.timestamp();
-                                T projectedRecord = projectionFn.apply(rec);
-                                taskRunner.commitRecord(rec);
-                                return eventTimeMapper.flatMapEvent(projectedRecord, 0, eventTime);
-                            })
-                            .onFirstNull(() -> traverser = null);
+        if (!emitFromTraverser(traverser)) {
+            return false;
         }
+
+        long start = Timer.nanos();
+        List<SourceRecord> sourceRecords = taskRunner.poll();
+        long durationInNanos = Timer.nanosElapsed(start);
+        localKafkaConnectStats.addSourceRecordPollDuration(Duration.ofNanos(durationInNanos));
+        localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
+        this.traverser = sourceRecords.isEmpty() ? eventTimeMapper.flatMapIdle() :
+                traverseIterable(sourceRecords)
+                        .flatMap(rec -> {
+                            long eventTime = rec.timestamp() == null ?
+                                    EventTimeMapper.NO_NATIVE_TIME
+                                    : rec.timestamp();
+                            T projectedRecord = projectionFn.apply(rec);
+                            taskRunner.commitRecord(rec);
+                            return eventTimeMapper.flatMapEvent(projectedRecord, 0, eventTime);
+                        });
         emitFromTraverser(traverser);
         return false;
     }

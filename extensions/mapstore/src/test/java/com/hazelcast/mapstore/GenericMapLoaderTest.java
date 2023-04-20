@@ -401,7 +401,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     @Test
     public void givenMapStoreConfigWithOffloadDisabled_thenFail() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
-                .setClassName(GenericMapStore.class.getName())
+                .setClassName(GenericMapLoader.class.getName())
                 .setOffload(false);
 
         MapConfig mapConfig = new MapConfig(mapName);
@@ -414,7 +414,24 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         assertThatThrownBy(() -> mapLoader.init(hz, properties, mapName))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessage("Config for GenericMapStore must have `offload` property set to true");
+                .hasMessage("MapStoreConfig for " + mapName + " must have `offload` property set to true");
+    }
+
+    @Test
+    public void givenMapStoreConfig_WithoutDataConnection_thenFail() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setClassName(GenericMapLoader.class.getName());
+
+        MapConfig mapConfig = new MapConfig(mapName);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        instance().getConfig().addMapConfig(mapConfig);
+
+        mapLoader = new GenericMapLoader<>();
+        Properties properties = new Properties();
+
+        assertThatThrownBy(() -> mapLoader.init(hz, properties, mapName))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("MapStoreConfig for " + mapName + " must have `data-connection-ref` property set");
     }
 
     @Test
@@ -449,7 +466,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     protected <K> GenericMapLoader<K> createUnitUnderTest(Properties properties, HazelcastInstance instance,
                                                           boolean init) {
-        MapConfig mapConfig = createMapConfigWithMapStore(mapName);
+        MapConfig mapConfig = createMapConfigWithMapStore(mapName, properties);
         instance.getConfig().addMapConfig(mapConfig);
 
         GenericMapLoader<K> mapLoader = new GenericMapLoader<>();
@@ -460,9 +477,10 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         return mapLoader;
     }
 
-    private MapConfig createMapConfigWithMapStore(String mapName) {
+    private MapConfig createMapConfigWithMapStore(String mapName, Properties properties) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapLoader.class.getName());
+        mapStoreConfig.setProperties(properties);
         MapConfig mapConfig = new MapConfig(mapName);
         mapConfig.setMapStoreConfig(mapStoreConfig);
         return mapConfig;

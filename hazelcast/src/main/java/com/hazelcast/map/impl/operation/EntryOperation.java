@@ -161,7 +161,6 @@ public class EntryOperation extends LockAwareOperation
     private transient boolean readOnly;
     private transient int setUnlockRetryCount;
     private transient long begin;
-    private transient boolean mapStoreOffloadEnabled;
 
     public EntryOperation() {
     }
@@ -185,10 +184,28 @@ public class EntryOperation extends LockAwareOperation
         // When EP is readOnly and entry is in memory, we
         // don't expect any map-store api call, so no need
         // to enter map-store-api-offloading procedure.
-        if (readOnly && recordStore.existInMemory(dataKey)) {
+        if (readOnly && existInMemory(dataKey)) {
             mapStoreOffloadEnabled = false;
+            tieredStoreAndPartitionCompactorEnabled = false;
+        }
+    }
+
+    private boolean existInMemory(Data dataKey) {
+        // When tieredStoreAndPartitionCompactorEnabled is false.
+        if (!tieredStoreAndPartitionCompactorEnabled) {
+            return recordStore.existInMemory(dataKey);
+        }
+
+        // When tieredStoreAndPartitionCompactorEnabled is true, in this
+        // case we will set tieredStoreAndPartitionCompactorEnabled to
+        // false if entry is in memory and flow will continue based on
+        // the false value of tieredStoreAndPartitionCompactorEnabled
+        recordStore.beforeOperation();
+        if (recordStore.existInMemory(dataKey)) {
+            return true;
         } else {
-            mapStoreOffloadEnabled = isMapStoreOffloadEnabled();
+            recordStore.afterOperation();
+            return false;
         }
     }
 
@@ -203,10 +220,12 @@ public class EntryOperation extends LockAwareOperation
         // to EntryOffloadableSetUnlockOperation
         disposeDeferredBlocks = !offload;
 
-        // When mapStoreOffloadEnabled is true, run all procedure
-        // in this class, including EP-offload, as a series
-        // of Steps. See EntryOpSteps to check how it works.
-        if (mapStoreOffloadEnabled) {
+        // When mapStoreOffloadEnabled or
+        // tieredStoreAndPartitionCompactorEnabled is true, run
+        // all procedure in this class, including EP-offload, as a
+        // series of Steps. See EntryOpSteps to check how it works.
+        if (mapStoreOffloadEnabled
+                || tieredStoreAndPartitionCompactorEnabled) {
             assert recordStore != null;
             return offloadOperation();
         }
@@ -281,7 +300,8 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public Object getResponse() {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload && !mapStoreOffloadEnabled
+                && !tieredStoreAndPartitionCompactorEnabled) {
             return null;
         }
         return response;
@@ -289,7 +309,8 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public boolean returnsResponse() {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload && !mapStoreOffloadEnabled
+                && !tieredStoreAndPartitionCompactorEnabled) {
             // This has to be false, since the operation uses the
             // deferred-response mechanism. This method returns false, but
             // the response will be send later on using the response handler
@@ -301,7 +322,8 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload && !mapStoreOffloadEnabled
+                && !tieredStoreAndPartitionCompactorEnabled) {
             // This is required since if the returnsResponse() method returns
             // false there won't be any response sent to the invoking
             // party - this means that the operation won't be retried if
@@ -317,7 +339,8 @@ public class EntryOperation extends LockAwareOperation
             value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
             justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload && !mapStoreOffloadEnabled
+                && !tieredStoreAndPartitionCompactorEnabled) {
             return null;
         }
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
@@ -327,7 +350,8 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public boolean shouldBackup() {
-        if (offload && !mapStoreOffloadEnabled) {
+        if (offload && !mapStoreOffloadEnabled
+                && !tieredStoreAndPartitionCompactorEnabled) {
             return false;
         }
         return mapContainer.getTotalBackupCount() > 0
