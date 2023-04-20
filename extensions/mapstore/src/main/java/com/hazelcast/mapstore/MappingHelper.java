@@ -27,7 +27,7 @@ import java.util.List;
 
 final class MappingHelper {
 
-    private final SqlDialect dialect = CalciteSqlDialect.DEFAULT;
+    private static final SqlDialect DIALECT = CalciteSqlDialect.DEFAULT;
     private final SqlService sqlService;
 
     MappingHelper(SqlService sqlService) {
@@ -56,32 +56,31 @@ final class MappingHelper {
     ) {
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE MAPPING ");
-        dialect.quoteIdentifier(sb, mappingName);
+        DIALECT.quoteIdentifier(sb, mappingName);
         sb.append(" EXTERNAL NAME ");
-        dialect.quoteIdentifier(sb, tableName);
+        DIALECT.quoteIdentifier(sb, tableName);
         if (mappingColumns != null) {
             sb.append(" ( ");
             for (SqlColumnMetadata mc : mappingColumns) {
-                dialect.quoteIdentifier(sb, mc.getName());
+                DIALECT.quoteIdentifier(sb, mc.getName());
                 sb.append(' ');
                 sb.append(mc.getType());
             }
             sb.append(" )");
         }
         sb.append(" DATA CONNECTION ");
-        dialect.quoteIdentifier(sb, dataConnectionRef);
+        DIALECT.quoteIdentifier(sb, dataConnectionRef);
         sb.append(" OPTIONS (");
         sb.append(" 'idColumn' = ");
-        dialect.quoteStringLiteral(sb, null, idColumn);
+        DIALECT.quoteStringLiteral(sb, null, idColumn);
         sb.append(" )");
-        String createMappingQuery = sb.toString();
-        return createMappingQuery;
+        return sb.toString();
     }
 
     public void dropMapping(String mappingName) {
         StringBuilder sb = new StringBuilder()
                 .append("DROP MAPPING IF EXISTS ");
-        dialect.quoteIdentifier(sb, mappingName);
+        DIALECT.quoteIdentifier(sb, mappingName);
         sqlService.execute(sb.toString()).close();
     }
 
@@ -89,10 +88,10 @@ final class MappingHelper {
         return loadRowMetadataFromMapping(mapping).getColumns();
     }
 
-    public SqlRowMetadata loadRowMetadataFromMapping(String mapping) {
+    private SqlRowMetadata loadRowMetadataFromMapping(String mapping) {
         StringBuilder sb = new StringBuilder()
                 .append("SELECT * FROM ");
-        dialect.quoteIdentifier(sb, mapping);
+        DIALECT.quoteIdentifier(sb, mapping);
         sb.append(" LIMIT 0");
         try (SqlResult result = sqlService.execute(sb.toString())) {
             return result.getRowMetadata();

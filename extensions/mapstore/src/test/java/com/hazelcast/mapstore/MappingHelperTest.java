@@ -42,7 +42,7 @@ public class MappingHelperTest {
     private MappingHelper mappingHelper;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         mappingHelper = new MappingHelper(sqlService);
     }
 
