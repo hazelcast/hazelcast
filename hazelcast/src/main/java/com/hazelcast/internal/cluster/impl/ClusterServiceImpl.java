@@ -32,6 +32,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.operations.DemoteDataMemberOp;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.PromoteLiteMemberOp;
@@ -1031,13 +1032,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             }
 
             MemberImpl localMemberInMemberList = membershipManager.getMember(member.getAddress());
-            boolean result = localMemberInMemberList.isLiteMember();
+            boolean isStillLiteMember = localMemberInMemberList.isLiteMember();
             node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_PROMOTE_MEMBER)
                 .message("Promotion of the lite member")
-                .addParameter("success", result)
+                .addParameter("success", !isStillLiteMember)
                 .addParameter("address", node.getThisAddress())
                 .log();
-            if (result) {
+            if (isStillLiteMember) {
                 throw new IllegalStateException("Cannot promote to data member! Previous master was: " + master.getAddress()
                         + ", Current master is: " + getMasterAddress());
             }
@@ -1061,6 +1062,62 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 .build();
         node.loggingService.setThisMember(localMember);
         return localMember;
+    }
+
+    MemberImpl demoteAndGetLocalMember() {
+        MemberImpl member = getLocalMember();
+        assert !member.isLiteMember() : "Local member is not data member!";
+        assert clusterServiceLock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
+
+        localMember = new MemberImpl.Builder(member.getAddressMap())
+                .version(member.getVersion())
+                .localMember(true)
+                .uuid(member.getUuid())
+                .attributes(member.getAttributes())
+                .memberListJoinVersion(member.getMemberListJoinVersion())
+                .instance(node.hazelcastInstance)
+                .liteMember(true)
+                .build();
+        node.loggingService.setThisMember(localMember);
+        return localMember;
+    }
+
+
+    @Override
+    public void demoteLocalDataMember() {
+        MemberImpl member = getLocalMember();
+        if (member.isLiteMember()) {
+            throw new IllegalStateException(member + " is not a data member!");
+        }
+
+        MemberImpl master = getMasterMember();
+        DemoteDataMemberOp op = new DemoteDataMemberOp();
+        op.setCallerUuid(member.getUuid());
+
+        InvocationFuture<MembersView> future =
+                nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, op, master.getAddress());
+        MembersView view = future.joinInternal();
+
+        clusterServiceLock.lock();
+        try {
+            if (!member.getAddress().equals(master.getAddress())) {
+                updateMembers(view, master.getAddress(), master.getUuid(), getThisUuid());
+            }
+
+            MemberImpl localMemberInMemberList = membershipManager.getMember(member.getAddress());
+            boolean isNowLiteMember = localMemberInMemberList.isLiteMember();
+            node.getNodeExtension().getAuditlogService().eventBuilder(AuditlogTypeIds.CLUSTER_DEMOTE_MEMBER)
+                    .message("Demotion of the data member")
+                    .addParameter("success", isNowLiteMember)
+                    .addParameter("address", node.getThisAddress())
+                    .log();
+            if (!isNowLiteMember) {
+                throw new IllegalStateException("Cannot demote to lite member! Previous master was: " + master.getAddress()
+                        + ", Current master is: " + getMasterAddress());
+            }
+        } finally {
+            clusterServiceLock.unlock();
+        }
     }
 
     @Override

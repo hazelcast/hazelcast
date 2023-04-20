@@ -113,6 +113,20 @@ public interface Cluster {
     void promoteLocalLiteMember();
 
     /**
+     * Demotes the local data member to a lite member.
+     * When this method returns, both {@link #getLocalMember()} and {@link #getMembers()}
+     * reflect the demotion.
+     * <p>
+     * Supported only for members of the cluster, clients will throw a {@code UnsupportedOperationException}.
+     *
+     * @throws IllegalStateException when member is not a data member or mastership claim is in progress
+     *                               or local member cannot be identified as a member of the cluster
+     *                               or cluster state doesn't allow migrations/repartitioning
+     * @since 5.3
+     */
+    void demoteLocalDataMember();
+
+    /**
      * Returns the cluster-wide time in milliseconds.
      * <p>
      * Cluster tries to keep a cluster-wide time which might be different than the member's own system time.
