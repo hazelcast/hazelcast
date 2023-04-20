@@ -111,6 +111,11 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     public static final String TYPE_NAME_PROPERTY = "type-name";
 
     /**
+     * Property key to control loading of all keys when IMap is first created
+     */
+    public static final String LOAD_ALL_KEYS_PROPERTY = "load_all_keys";
+
+    /**
      * Timeout for initialization of GenericMapLoader
      */
     public static final HazelcastProperty MAPSTORE_INIT_TIMEOUT
@@ -260,9 +265,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     @Override
     public void destroy() {
-        ManagedExecutorService asyncExecutor = nodeEngine()
-                .getExecutionService()
-                .getExecutor(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
+        ManagedExecutorService asyncExecutor = getMapStoreExecutor();
 
         asyncExecutor.submit(() -> {
             awaitInitFinished();
@@ -328,10 +331,14 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     @Override
     public Iterable<K> loadAllKeys() {
+        // If loadAllKeys property is disabled, don't load anything
+        if (!genericMapStoreProperties.loadAllKeys) {
+            return null;
+        }
+
         awaitSuccessfulInit();
 
         String sql = queries.loadAllKeys();
-        //noinspection resource
         SqlResult keysResult = sqlService.execute(sql);
 
         // The contract for loadAllKeys says that if iterator implements Closable

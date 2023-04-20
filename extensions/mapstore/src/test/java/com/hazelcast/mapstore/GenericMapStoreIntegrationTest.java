@@ -53,6 +53,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 
+import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.TABLE_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -115,6 +117,30 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         mapStoreConfig.setProperty(TYPE_NAME_PROPERTY, "org.example.Person");
         mapConfig.setMapStoreConfig(mapStoreConfig);
         instance().getConfig().addMapConfig(mapConfig);
+    }
+
+    @Test
+    public void testLoadAllKeys() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setClassName(GenericMapStore.class.getName());
+        mapStoreConfig.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        mapStoreConfig.setProperty(TABLE_NAME_PROPERTY, tableName);
+        mapStoreConfig.setProperty(TYPE_NAME_PROPERTY, "org.example.Person");
+        mapStoreConfig.setProperty(LOAD_ALL_KEYS_PROPERTY, "false");
+
+        String mapName = tableName + "_disabled";
+        MapConfig mapConfig = new MapConfig(mapName);
+
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        instance().getConfig().addMapConfig(mapConfig);
+
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(mapName);
+
+        // LOAD_ALL_KEYS_PROPERTY is disabled, but we still can load
+        Person p = map.get(0);
+        assertThat(p.getId()).isZero();
+        assertThat(p.getName()).isEqualTo("name-0");
     }
 
     @Test
