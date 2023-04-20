@@ -153,7 +153,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
 
         hazelcastInstance.shutdown();
 
-        List<Future> futures = new ArrayList<Future>(numThreads);
+        List<Future<?>> futures = new ArrayList<>(numThreads);
         for (int i = 0; i < numThreads; i++) {
             futures.add(executor.submit(new Runnable() {
                 @Override

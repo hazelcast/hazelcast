@@ -70,18 +70,23 @@ public class SchemaJdbcConnectorTest extends JdbcSqlTestSupport {
                 },
                 {
                         "schema.with.dot",
+                        "table1",
+                        "\"schema.with.dot\".\"table1\"",
+                },
+                {
+                        "schema1",
                         "table.with.dot",
-                        "\"schema.with.dot\".\"table.with.dot\"",
+                        "\"schema1\".\"table.with.dot\"",
                 },
                 {
-                        "schema.with.quote\"",
-                        "table.with.quote\"",
-                        "\"schema.with.quote\"\"\".\"table.with.quote\"\"\"",
+                        "schema_with_quote\"",
+                        "table_with_quote\"",
+                        "\"schema_with_quote\"\"\".\"table_with_quote\"\"\"",
                 },
                 {
-                        "schema.with.backtick`",
-                        "table.with.backtick`",
-                        "\"schema.with.backtick`\".\"table.with.backtick`\"",
+                        "schema_with_backtick`",
+                        "table_with_backtick`",
+                        "\"schema_with_backtick`\".\"table_with_backtick`\"",
                 }
         });
     }

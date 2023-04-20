@@ -162,6 +162,18 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
+    @Test
+    public void createMappingNoColumnsTableDoesNotExist() {
+        tableName = randomTableName();
+        assertThatThrownBy(() -> execute(
+                "CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF
+        )).isInstanceOf(HazelcastSqlException.class);
+
+        assertRowsAnyOrder("SHOW MAPPINGS",
+                emptyList()
+        );
+    }
+
     private Condition<Throwable> hasMessage(String message) {
         return new Condition<Throwable>() {
             @Override
@@ -277,10 +289,11 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void when_mappingIsDeclaredWithDataConnection_then_itIsAvailable() {
+    public void when_mappingIsDeclaredWithDataConnection_then_itIsAvailable() throws Exception {
         // given
         String dlName = randomName();
         String name = randomName();
+        createTable(name);
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 

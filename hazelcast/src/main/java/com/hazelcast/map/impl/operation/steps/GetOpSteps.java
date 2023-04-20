@@ -16,6 +16,9 @@
 
 package com.hazelcast.map.impl.operation.steps;
 
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.ToHeapDataConverter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
@@ -32,9 +35,11 @@ public enum GetOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
-            Record record = recordStore.getRecordOrNull(state.getKey());
+            Record record = recordStore.getRecordOrNull(state.getKey(), false);
             if (record != null) {
-                state.setOldValue(record.getValue());
+                Object oldValue = record.getValue();
+                state.setOldValue(recordStore.getInMemoryFormat() == InMemoryFormat.NATIVE
+                        ? ToHeapDataConverter.toHeapData((Data) oldValue) : oldValue);
                 state.setRecordExistsInMemory(true);
             }
         }
@@ -103,7 +108,7 @@ public enum GetOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

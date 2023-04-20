@@ -24,7 +24,6 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
-import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
@@ -45,6 +44,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -61,14 +61,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({QuickTest.class})
 public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     private static Config memberConfig;
+
     @Rule
     public TestName testName = new TestName();
 
+    private String prefix = "generic_";
+
     private String tableName;
+
+    protected void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
 
     @BeforeClass
     public static void beforeClass() {
@@ -97,7 +104,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        tableName = testName.getMethodName().toLowerCase(Locale.ROOT);
+        tableName = prefix + testName.getMethodName().toLowerCase(Locale.ROOT);
         createTable(tableName);
         insertItems(tableName, 1);
 
@@ -311,10 +318,17 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void testExceptionIsConstructable() {
+    public void testExceptionIsConstructable() throws SQLException {
         HazelcastInstance client = client();
+        // Add some more items for all members
+        insertItems(tableName, 2, 5);
+
         IMap<Integer, Person> map = client.getMap(tableName);
+        // Method call to create the lazy mapping in GenericMapStore
         map.loadAll(false);
+
+        // This should ensure that all members have created the mapping
+        assertTrueEventually(() -> assertThat(map.size()).isEqualTo(6));
 
         String mappingName = "__map-store." + tableName;
         execute("DROP MAPPING \"" + mappingName + "\"");
@@ -332,7 +346,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                 .hasCauseInstanceOf(QueryException.class)
                 .hasStackTraceContaining(message);
 
-        assertThat(map.size()).isEqualTo(1);
+        assertThat(map.size()).isEqualTo(6);
     }
 
     @Test
@@ -345,7 +359,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         Row row = new Row("__map-store." + tableName);
         List<Row> rows = Collections.singletonList(row);
-        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 5);
+        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 30);
     }
 
     @Test

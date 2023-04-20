@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
@@ -47,6 +48,8 @@ import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -387,5 +390,39 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         };
 
         testSplitBrain(firstSubClusterSize, secondSubClusterSize, beforeSplit, onSplit, afterMerge);
+    }
+
+    @Test
+    public void when_splitBrainProtectionDisabledLater_then_jobRestarts() {
+        HazelcastInstance[] hz = startInitialCluster(createConfig(), 2);
+        Job job = hz[0].getJet().newJob(streamingDag(), new JobConfig().setSplitBrainProtection(true));
+        assertJobStatusEventually(job, RUNNING);
+        job.suspend();
+        assertJobStatusEventually(job, SUSPENDED);
+
+        job.updateConfig(new DeltaJobConfig().setSplitBrainProtection(false));
+        job.resume();
+        long executionId = assertJobRunningEventually(hz[0], job, null);
+        // The cluster size becomes one less than the initial quorum size (2).
+        hz[1].getLifecycleService().terminate();
+        assertJobRunningEventually(hz[0], job, executionId);
+    }
+
+    @Test
+    public void when_splitBrainProtectionEnabledLater_then_jobDoesNotRestartOnMinority() {
+        HazelcastInstance[] hz = startInitialCluster(createConfig(), 2);
+        Job job = hz[0].getJet().newJob(streamingDag(), new JobConfig().setSplitBrainProtection(false));
+        String[] lastStatus = new String[1];
+        job.addStatusListener(e -> lastStatus[0] = e.getDescription());
+        assertJobStatusEventually(job, RUNNING);
+        job.suspend();
+        assertJobStatusEventually(job, SUSPENDED);
+
+        job.updateConfig(new DeltaJobConfig().setSplitBrainProtection(true));
+        job.resume();
+        assertJobStatusEventually(job, RUNNING);
+        // The cluster size becomes one less than the initial quorum size (2).
+        hz[1].getLifecycleService().terminate();
+        assertEqualsEventually(() -> lastStatus[0], "Quorum is absent");
     }
 }

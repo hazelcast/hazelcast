@@ -17,6 +17,7 @@
 package com.hazelcast.mapstore;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
@@ -86,20 +87,36 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifecycleSupport {
 
     /**
+     * Property key to define data connection
+     */
+    public static final String DATA_CONNECTION_REF_PROPERTY = "data-connection-ref";
+    /**
+     * Property key to define table name in database
+     */
+    public static final String TABLE_NAME_PROPERTY = "table-name";
+
+    /**
+     * Property key to define id column name in database
+     */
+    public static final String ID_COLUMN_PROPERTY = "id-column";
+
+    /**
+     * Property key to define column names in database
+     */
+    public static final String COLUMNS_PROPERTY = "columns";
+
+    /**
+     * Property key to data connection type name
+     */
+    public static final String TYPE_NAME_PROPERTY = "type-name";
+
+    /**
      * Timeout for initialization of GenericMapLoader
      */
     public static final HazelcastProperty MAPSTORE_INIT_TIMEOUT
             = new HazelcastProperty("hazelcast.mapstore.init.timeout", 30, SECONDS);
 
     static final String MAPPING_PREFIX = "__map-store.";
-
-    static final String DATA_CONNECTION_REF_PROPERTY = "data-connection-ref";
-    static final String TABLE_NAME_PROPERTY = "table-name";
-
-    static final String ID_COLUMN_PROPERTY = "id-column";
-
-    static final String COLUMNS_PROPERTY = "columns";
-    static final String TYPE_NAME_PROPERTY = "type-name";
 
     protected SqlService sqlService;
 
@@ -149,8 +166,14 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     private void validateMapStoreConfig(HazelcastInstance instance, String mapName) {
         MapConfig mapConfig = instance.getConfig().findMapConfig(mapName);
-        if (!mapConfig.getMapStoreConfig().isOffload()) {
-            throw new HazelcastException("Config for GenericMapStore must have `offload` property set to true");
+        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        if (!mapStoreConfig.isOffload()) {
+            throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
+                                         " must have `offload` property set to true");
+        }
+        if (mapStoreConfig.getProperty(DATA_CONNECTION_REF_PROPERTY) == null) {
+            throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
+                                         " must have `" + DATA_CONNECTION_REF_PROPERTY + "` property set");
         }
     }
 

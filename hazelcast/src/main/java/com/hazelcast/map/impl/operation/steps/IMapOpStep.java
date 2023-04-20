@@ -46,6 +46,12 @@ public interface IMapOpStep extends Step<State> {
      * </ul>
      */
     default boolean isOffloadStep(State state) {
+        if (state.getRecordStore()
+                .getMapDataStore().isNullImpl()) {
+            // indicates no map-store is configured
+            return false;
+        }
+
         if (isLoadStep()) {
             return true;
         }
