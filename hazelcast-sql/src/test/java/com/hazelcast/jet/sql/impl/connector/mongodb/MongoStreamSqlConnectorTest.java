@@ -83,6 +83,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
             MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
             collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
+            long startAt = System.currentTimeMillis();
             execute("CREATE MAPPING " + tableName + " external name "  + databaseName + "." + collectionName
                     + " ("
                     + (includeIdInMapping ? " id VARCHAR external name \"fullDocument._id\", " : "")
@@ -94,7 +95,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                     + "TYPE MongoStream "
                     + "OPTIONS ("
                     + "    'connectionString' = '" + connectionString + "', "
-                    + "    'startAt' = 'now' "
+                    + "    'startAt' = '" + startAt + "' "
                     + ")");
 
             String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
@@ -113,7 +114,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                             new Row("Luke", "Skywalker", "insert"),
                             new Row("Anakin", "Skywalker", "insert")
                     ),
-                    TimeUnit.SECONDS.toMillis(10)
+                    TimeUnit.SECONDS.toMillis(30)
             );
 
             assertEquals(forceTwoSteps, projectAndFilterFound.get());
@@ -133,6 +134,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
         MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
+        long startAt = System.currentTimeMillis();
         execute("CREATE MAPPING " + tableName + " external name " + databaseName + "." + collectionName
                 + " ("
                 + " id VARCHAR external name \"fullDocument._id\", "
@@ -146,7 +148,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" + databaseName + "', "
-                + "    'startAt' = 'now' "
+                + "    'startAt' = '" + startAt + "' "
                 + ")");
 
         spawn(() -> {
