@@ -49,7 +49,7 @@ public enum RemoveOpSteps implements IMapOpStep {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
             return !state.isRecordExistsInMemory() ? RemoveOpSteps.LOAD
                     : (recordStore.persistenceEnabledFor(state.getCallerProvenance())
-                    ? RemoveOpSteps.DELETE : UtilSteps.SEND_RESPONSE);
+                    ? RemoveOpSteps.DELETE : UtilSteps.FINAL_STEP);
         }
     },
 
@@ -70,7 +70,7 @@ public enum RemoveOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.getOldValue() == null
-                    ? UtilSteps.SEND_RESPONSE : RemoveOpSteps.DELETE;
+                    ? UtilSteps.FINAL_STEP : RemoveOpSteps.DELETE;
         }
     },
 
@@ -112,7 +112,7 @@ public enum RemoveOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

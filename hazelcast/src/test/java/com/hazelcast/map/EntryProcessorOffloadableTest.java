@@ -119,7 +119,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     @Override
     public Config getConfig() {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(),
                 String.valueOf(runWithForceOffload));
         config.getMetricsConfig().setEnabled(false);

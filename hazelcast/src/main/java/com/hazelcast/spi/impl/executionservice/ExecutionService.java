@@ -87,6 +87,12 @@ public interface ExecutionService {
     String MAP_STORE_OFFLOADABLE_EXECUTOR = "hz:map-store-offloadable";
 
     /**
+     * Name of the offloadable executor for offloaded
+     * tiered store compaction executions.
+     */
+    String MAP_TIERED_STORE_COMPACTION_OFFLOADABLE_EXECUTOR = "hz:map-tiered-store-compaction-offloadable";
+
+    /**
      * Name of the map-loader executor that loads the entry values
      * for a given key set locally on the member owning the partition
      * which contains the keys. This is the executor you want to
