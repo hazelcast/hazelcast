@@ -112,11 +112,23 @@
         Management Center can't access the data if at least one member has the data access disabled.
         Default value is true.
 
+        You can also specify <trusted-interfaces> as child element.
+        It includes allowed IP addresses for Management Center connections.
+        More preciselly, the element configures addresses from which clients are allowed to run cluster
+        management tasks over the Hazelcast client protocol.
+        You can give an IP addresses range using the wildcards (*) or intervals in the IPv4 address
+        (e.g. 192.168.1.* or 192.168.1.100-110).
+
         Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
         in your cluster. To use it for more members, you need to have either a Management Center,
         Hazelcast Enterprise or Hazelcast Enterprise HD license.
     -->
-    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="true"/>
+    <management-center scripting-enabled="false" console-enabled="false" data-access-enabled="true">
+        <trusted-interfaces>
+            <interface>10.10.1.*</interface>
+            <interface>10.10.2.*</interface>
+        </trusted-interfaces>
+    </management-center>
     <!--
         The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
         the Hazelcast modules.
