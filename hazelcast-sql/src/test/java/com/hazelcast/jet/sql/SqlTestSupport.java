@@ -77,7 +77,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
 
-import static com.hazelcast.jet.function.RunnableEx.noop;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
@@ -252,30 +251,6 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             Collection<Row> expectedRows,
             long timeoutForNextMs
     ) {
-        assertRowsEventuallyInAnyOrder(sql, arguments, expectedRows, timeoutForNextMs, noop());
-    }
-
-    /**
-     * Execute a query and wait for the results to contain all the {@code
-     * expectedRows}. Suitable for streaming queries that don't terminate, but
-     * return a deterministic set of rows. Rows can arrive in any order.
-     * <p>
-     * After all expected rows are received, the method further waits a little
-     * more if any extra rows are received, and fails, if they are.
-     *
-     * @param sql          The query
-     * @param arguments    The query arguments
-     * @param expectedRows Expected rows
-     * @param timeoutForNextMs The number of ms to wait for more rows after all the
-     *                         expected rows were received
-     */
-    public static void assertRowsEventuallyInAnyOrder(
-            String sql,
-            List<Object> arguments,
-            Collection<Row> expectedRows,
-            long timeoutForNextMs,
-            Runnable afterQueryExecuted
-    ) {
         SqlService sqlService = instance().getSql();
         CompletableFuture<Void> future = new CompletableFuture<>();
         Deque<Row> rows = new ArrayDeque<>();
@@ -285,7 +260,6 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             arguments.forEach(statement::addParameter);
 
             try (SqlResult result = sqlService.execute(statement)) {
-                afterQueryExecuted.run();
                 ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
                 for (
                         int i = 0;

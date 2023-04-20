@@ -28,7 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -84,6 +83,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
             MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
             collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
+            long startAt = System.currentTimeMillis();
             execute("CREATE MAPPING " + tableName + " external name "  + databaseName + "." + collectionName
                     + " ("
                     + (includeIdInMapping ? " id VARCHAR external name \"fullDocument._id\", " : "")
@@ -95,17 +95,11 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                     + "TYPE MongoStream "
                     + "OPTIONS ("
                     + "    'connectionString' = '" + connectionString + "', "
-                    + "    'startAt' = 'now' "
+                    + "    'startAt' = '" + startAt + "' "
                     + ")");
 
-            CountDownLatch latch = new CountDownLatch(1);
             String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
             spawn(() -> {
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
                 sleep(200);
                 collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
                 sleep(100);
@@ -120,8 +114,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                             new Row("Luke", "Skywalker", "insert"),
                             new Row("Anakin", "Skywalker", "insert")
                     ),
-                    TimeUnit.SECONDS.toMillis(30),
-                    latch::countDown
+                    TimeUnit.SECONDS.toMillis(30)
             );
 
             assertEquals(forceTwoSteps, projectAndFilterFound.get());
@@ -141,6 +134,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
         MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
+        long startAt = System.currentTimeMillis();
         execute("CREATE MAPPING " + tableName + " external name " + databaseName + "." + collectionName
                 + " ("
                 + " id VARCHAR external name \"fullDocument._id\", "
@@ -154,7 +148,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" + databaseName + "', "
-                + "    'startAt' = 'now' "
+                + "    'startAt' = '" + startAt + "' "
                 + ")");
 
         spawn(() -> {
