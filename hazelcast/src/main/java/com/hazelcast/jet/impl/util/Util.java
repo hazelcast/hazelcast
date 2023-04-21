@@ -572,7 +572,8 @@ public final class Util {
     }
 
     /**
-     *
+     * Merge two {@link Properties} instances into one.
+     * {@code newProperties}'s keys has priority over {@code original} keys.
      */
     public static Properties mergeProps(Properties original, Properties newProperties) {
         Properties props = new Properties();
@@ -668,7 +669,7 @@ public final class Util {
      * output order. The output field named {@code age} is missing in input, so
      * the value for it is {@code null} for any input.
      *
-     * @param inputFields the input headers
+     * @param inputFields  the input headers
      * @param outputFields the output headers
      * @return the indices to map input to output
      */
@@ -708,7 +709,7 @@ public final class Util {
         } else if (instance instanceof HazelcastInstanceProxy) {
             return ((HazelcastInstanceProxy) instance).getSerializationService();
         } else if (instance instanceof HazelcastClientInstanceImpl) {
-            return  ((HazelcastClientInstanceImpl) instance).getSerializationService();
+            return ((HazelcastClientInstanceImpl) instance).getSerializationService();
         } else if (instance instanceof HazelcastClientProxy) {
             return ((HazelcastClientProxy) instance).getSerializationService();
         } else {

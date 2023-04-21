@@ -174,7 +174,9 @@ public class KafkaDataConnection extends DataConnectionBase {
      * @param properties      properties. E.g, SQL mappings provide separate
      *                        options, and they should be merged with
      *                        data connection's properties. These properties
-     *                        has higher priority than data connection properties.
+     *                        have higher priority than data connection properties.
+     *                        If {@link KafkaDataConnection} is shared, then
+     *                        {@link HazelcastException} would be thrown.
      */
     @Nonnull
     public <K, V> KafkaProducer<K, V> getProducer(
