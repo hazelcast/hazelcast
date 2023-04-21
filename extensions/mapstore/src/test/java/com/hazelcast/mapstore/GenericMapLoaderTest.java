@@ -455,7 +455,8 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchema() throws Exception {
         String schemaName = "custom_schema";
         createSchema(schemaName);
-        String tableName = schemaName + "." + randomTableName();
+        char delimiter = tableNameDelimiter();
+        String tableName = schemaName + "." + delimiter + randomTableName() + ".with_dot" + delimiter;
 
         createTable(tableName);
         insertItems(tableName, 1);
@@ -467,6 +468,10 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         GenericRecord record = mapLoader.load(0);
         assertThat(record).isNotNull();
+    }
+
+    protected char tableNameDelimiter() {
+        return '"';
     }
 
     private static void createSchema(String schemaName) throws SQLException {

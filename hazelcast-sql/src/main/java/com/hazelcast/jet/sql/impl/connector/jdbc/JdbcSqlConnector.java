@@ -156,11 +156,17 @@ public class JdbcSqlConnector implements SqlConnector {
 
     private static void checkTableExists(ExternalJdbcTableName externalTableName, DatabaseMetaData databaseMetaData)
             throws SQLException {
-
+        String table = externalTableName.table;
+        if (databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim().equals("MYSQL")) {
+            //MySQL databaseMetaData.getTables requires quotes/backticks in case of fancy names (e.g. with dots)
+            //To make it simple we wrap all table names
+            table = databaseMetaData.getIdentifierQuoteString() + externalTableName.table
+                    + databaseMetaData.getIdentifierQuoteString();
+        }
         try (ResultSet tables = databaseMetaData.getTables(
                 externalTableName.catalog,
                 externalTableName.schema,
-                externalTableName.table,
+                table,
                 new String[]{"TABLE", "VIEW"}
         )) {
             if (!tables.next()) {

@@ -26,8 +26,12 @@ import org.junit.experimental.categories.Category;
 public class MySQLGenericMapStoreTest extends GenericMapStoreTest {
 
     @BeforeClass
-    public static void beforeClass()  {
+    public static void beforeClass() {
         initialize(new MySQLDatabaseProvider());
     }
 
+    @Override
+    protected char tableNameDelimiter() {
+        return '`';
+    }
 }
