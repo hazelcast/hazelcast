@@ -84,8 +84,6 @@ public class SqlCreateMapping extends SqlCreate {
         this.connectorType = connectorType;
         this.objectType = objectType;
         this.options = requireNonNull(options, "Options should not be null");
-
-        assert dataConnection == null || connectorType == null; // the syntax doesn't allow this
     }
 
     public String nameWithoutSchema() {

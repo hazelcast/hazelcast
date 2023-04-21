@@ -32,6 +32,7 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -309,6 +310,22 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         Object object = resultIt.next().getObject(0);
         assertThat(resultIt.hasNext()).isFalse();
         assertThat(object).isEqualTo(name);
+    }
+
+    @Test
+    public void test_() throws Exception {
+        // given
+        String dlName = randomName();
+        String name = randomName();
+        createTable(name);
+        Map<String, String> options = new HashMap<>();
+        options.put("jdbcUrl", dbConnectionUrl);
+
+        createDataConnection(instance(), dlName, "JDBC", false, options);
+        createJdbcMappingUsingDataConnection(name, dlName);
+        sqlService.execute("DROP DATA CONNECTION " + dlName);
+
+        assertRowsAnyOrder("SHOW DATA CONNECTIONS ", Collections.singletonList(new Row(TEST_DATABASE_REF)));
     }
 
     @Test

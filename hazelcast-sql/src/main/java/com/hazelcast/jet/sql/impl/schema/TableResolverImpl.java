@@ -138,16 +138,8 @@ public class TableResolverImpl implements TableResolver {
 
     private Mapping resolveMapping(Mapping mapping) {
         Map<String, String> options = mapping.options();
-        String type = mapping.connectorType();
-        String dataConnection = mapping.dataConnection();
         List<MappingField> resolvedFields;
-        SqlConnector connector;
-
-        if (type == null) {
-            connector = extractConnector(dataConnection);
-        } else {
-            connector = connectorCache.forType(type);
-        }
+        SqlConnector connector = connectorCache.forType(mapping.connectorType());
         resolvedFields = connector.resolveAndValidateFields(
                 nodeEngine,
                 options,
@@ -159,7 +151,8 @@ public class TableResolverImpl implements TableResolver {
         return new Mapping(
                 mapping.name(),
                 mapping.externalName(),
-                mapping.dataConnection(), type,
+                mapping.dataConnection(),
+                mapping.connectorType(),
                 mapping.objectType(),
                 new ArrayList<>(resolvedFields),
                 new LinkedHashMap<>(options)
@@ -169,7 +162,7 @@ public class TableResolverImpl implements TableResolver {
     private SqlConnector extractConnector(@Nonnull String dataConnection) {
         InternalDataConnectionService dataConnectionService = nodeEngine.getDataConnectionService();
         // TODO atm data connection and connector types match, but that's
-        // not going to be universally true in the future
+        //  not going to be universally true in the future
         String type = dataConnectionService.typeForDataConnection(dataConnection);
         return connectorCache.forType(type);
     }
@@ -291,13 +284,7 @@ public class TableResolverImpl implements TableResolver {
     }
 
     private Table toTable(Mapping mapping) {
-        SqlConnector connector;
-        if (mapping.connectorType() == null) {
-            connector = extractConnector(mapping.dataConnection());
-        } else {
-            connector = connectorCache.forType((mapping.connectorType()));
-        }
-        assert connector != null;
+        SqlConnector connector = connectorCache.forType((mapping.connectorType()));
         try {
             return connector.createTable(
                     nodeEngine,

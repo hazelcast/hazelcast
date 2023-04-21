@@ -71,7 +71,6 @@ public class Mapping implements SqlCatalogObject, Versioned {
             List<MappingField> fields,
             Map<String, String> options
     ) {
-        assert connectorType == null || dataConnection == null;
         this.name = name;
         this.externalName = externalName;
         this.dataConnection = dataConnection;

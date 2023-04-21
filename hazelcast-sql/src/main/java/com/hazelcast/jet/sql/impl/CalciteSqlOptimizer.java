@@ -376,11 +376,20 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             throw new HazelcastException("Cannot create a mapping with a data connection or an object type " +
                     "until the cluster is upgraded to 5.3");
         }
+        String connectorType = node.connectorType();
+        // We want to compute connector type immediately to keep lazy dependency management strategy for SQL mappings.
+        if (connectorType == null) {
+            // if type is null, then data connection was used
+            String type = nodeEngine.getDataConnectionService()
+                    .typeForDataConnection(node.dataConnectionNameWithoutSchema());
+            connectorType = connectorCache.forType(type).typeName();
+        }
+
         mapping = new Mapping(
                 node.nameWithoutSchema(),
                 node.externalName(),
                 node.dataConnectionNameWithoutSchema(),
-                node.connectorType(),
+                connectorType,
                 node.objectType(),
                 mappingFields,
                 node.options()
