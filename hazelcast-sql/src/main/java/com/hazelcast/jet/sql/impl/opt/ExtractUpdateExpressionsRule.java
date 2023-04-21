@@ -77,17 +77,23 @@ public class ExtractUpdateExpressionsRule extends RelRule<RelRule.Config> {
     public void onMatch(RelOptRuleCall call) {
         TableModify update = call.rel(0);
         assert update.getSourceExpressionList() != null;
-        assert update.isUpdate();
 
         if (OptUtils.hasTableType(update, PartitionedMapTable.class)) {
-            // FIXME HACK: we do not perform this transformation for IMap because:
+            // We do not perform this transformation for IMap because:
             // 1) it is not necessary. IMap updates are executed via submitToKey and support all expressions
             //    and no filters can be used in the submitToKey (obviously).
-            // 2) it may introduce mismatch between RexInputRef indexes in sourceExpressions and the row data
-            //    that will be project by KvRowProjector which has structure consistent with table structure.
-            //    So the projections we define here will be ignored anyway.
-            //    It may be also related to the fact that UpdateWithScanLogicalRule.rewriteScan keeps only key.
-            // (see update_complexKey test).
+            // 2) for IMap we always will get a 2 node plan, we will never get plan with Calc, because full scan
+            //    on IMap supports all predicates:
+            //      UpdateLogicalRel
+            //      -- FullScanLogicalRel
+            // 3) it might introduce mismatch between RexInputRef indexes in sourceExpressions and the row data
+            //    that will be projected by KvRowProjector which has structure consistent with table structure.
+            //    So the projections we define here would be ignored anyway and we have indexes the same as in
+            //    Table definition for IMap. Fortunately, it seems that initial indexes are such, also the ones
+            //    used in source expressions.
+            //
+            // At the end we will make FullScanPhysicalRel to project only key, so it shows sensible plan for the user
+            // but likely would break the optimization.
             return;
         }
 

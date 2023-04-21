@@ -79,7 +79,8 @@ class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {
         FullScanLogicalRel scan = call.rel(1);
 
         // IMap optimization to execute IMap operation directly
-        if (!OptUtils.requiresJob(update) && OptUtils.hasTableType(scan, PartitionedMapTable.class)) {
+        boolean isImap = OptUtils.hasTableType(scan, PartitionedMapTable.class);
+        if (!OptUtils.requiresJob(update) && isImap) {
             RelOptTable table = scan.getTable();
             RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, update.getCluster().getRexBuilder());
             if (keyCondition != null) {
@@ -123,8 +124,9 @@ class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {
                 OptUtils.toLogicalConvention(update.getTraitSet()),
                 update.getTable(),
                 update.getCatalogReader(),
-                // TODO: this is IMap specific, in other cases we need to project more that just a key
-                rewriteScan(scan),
+                // this is IMap specific, in other cases we need to project more that just a key
+                // TODO: we should project only columns needed in the update
+                isImap ? rewriteScan(scan) : scan,
                 requireNonNull(update.getUpdateColumnList()),
                 requireNonNull(update.getSourceExpressionList()),
                 update.isFlattened(),
