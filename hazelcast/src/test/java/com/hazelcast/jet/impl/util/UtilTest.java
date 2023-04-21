@@ -27,6 +27,8 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -180,6 +182,28 @@ public class UtilTest {
         assertEquals(AT_LEAST_ONCE, Util.min(AT_LEAST_ONCE, EXACTLY_ONCE));
         assertEquals(NONE, Util.min(NONE, EXACTLY_ONCE));
         assertEquals(NONE, Util.min(NONE, NONE));
+    }
+
+    @Test
+    public void test_mergeProps() {
+        Properties newProps = new Properties();
+        newProps.put("A", "B");
+        newProps.put("C", "D");
+
+        Properties existingProps =  new Properties();
+        existingProps.put("B", "C");
+        existingProps.put("D", "E");
+
+        Properties mergedProps = Util.mergeProps(existingProps, newProps);
+        assertThat(mergedProps.size()).isEqualTo(existingProps.size() + newProps.size());
+
+        for (Map.Entry<Object, Object> entry : existingProps.entrySet()) {
+            assertThat(mergedProps).contains(entry);
+        }
+
+        for (Map.Entry<Object, Object> entry : newProps.entrySet()) {
+            assertThat(mergedProps).contains(entry);
+        }
     }
 
     @Test

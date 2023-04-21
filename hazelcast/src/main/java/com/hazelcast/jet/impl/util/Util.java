@@ -68,6 +68,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -568,6 +569,16 @@ public final class Util {
     @Nonnull
     public static <T, R> List<R> toList(@Nonnull Collection<T> coll, @Nonnull Function<? super T, ? extends R> mapFn) {
         return coll.stream().map(mapFn).collect(Collectors.toList());
+    }
+
+    /**
+     *
+     */
+    public static Properties mergeProps(Properties original, Properties newProperties) {
+        Properties props = new Properties();
+        props.putAll(original);
+        props.putAll(newProperties);
+        return props;
     }
 
     /**

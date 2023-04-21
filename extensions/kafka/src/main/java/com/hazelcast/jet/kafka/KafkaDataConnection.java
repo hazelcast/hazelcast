@@ -22,6 +22,7 @@ import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.kafka.impl.NonClosingKafkaProducer;
 import com.hazelcast.spi.annotation.Beta;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -113,7 +114,7 @@ public class KafkaDataConnection extends DataConnectionBase {
      */
     @Nonnull
     public <K, V> Consumer<K, V> newConsumer(Properties properties) {
-        return new KafkaConsumer<>(mergeProps(properties));
+        return new KafkaConsumer<>(Util.mergeProps(getConfig().getProperties(), properties));
     }
 
     /**
@@ -182,7 +183,7 @@ public class KafkaDataConnection extends DataConnectionBase {
         if (getConfig().isShared()) {
             throw new HazelcastException("Shared Kafka producer can be created only with data connection options");
         } else {
-            Properties props = mergeProps(properties);
+            Properties props = Util.mergeProps(getConfig().getProperties(), properties);
             if (transactionalId != null) {
                 props.put("transactional.id", transactionalId);
             }
@@ -190,15 +191,8 @@ public class KafkaDataConnection extends DataConnectionBase {
         }
     }
 
-    Properties mergeProps(Properties properties) {
-        Properties props = new Properties();
-        props.putAll(getConfig().getProperties());
-        props.putAll(properties);
-        return props;
-    }
-
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if ((producerSupplier != null) && (producerSupplier.remembered() != null)) {
             producerSupplier.remembered().doClose();
             producerSupplier = null;
