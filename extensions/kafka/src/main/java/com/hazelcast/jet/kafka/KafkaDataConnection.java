@@ -104,7 +104,7 @@ public class KafkaDataConnection extends DataConnectionBase {
 
     /**
      * Creates new instance of {@link KafkaConsumer} based on the DataConnection
-     * configuration.
+     * configuration and given properties parameter.
      * Always creates a new instance of the consumer because
      * {@link KafkaConsumer} is not thread-safe.
      * The caller is responsible for closing the consumer instance.
