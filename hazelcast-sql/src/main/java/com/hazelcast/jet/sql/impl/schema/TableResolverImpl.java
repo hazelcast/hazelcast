@@ -291,7 +291,8 @@ public class TableResolverImpl implements TableResolver {
                     SCHEMA_NAME_PUBLIC,
                     mapping.name(),
                     mapping.externalName(),
-                    mapping.dataConnection(), mapping.options(),
+                    mapping.dataConnection(),
+                    mapping.options(),
                     mapping.fields()
             );
         } catch (Throwable e) {

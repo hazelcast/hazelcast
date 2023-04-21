@@ -32,12 +32,12 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.emptyList;
@@ -108,7 +108,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
+                .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
     }
 
     @Test
@@ -125,7 +125,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
+                .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
     }
 
     @Test
@@ -142,7 +142,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("You must provide data connection when using the Jdbc connector");
+                .hasMessageContaining("You must provide data connection when using the Jdbc connector");
     }
 
     @Test
@@ -221,7 +221,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("Could not resolve field with name fullName");
+                .hasMessageContaining("Could not resolve field with name fullName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -246,7 +246,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("Could not resolve field with external name myName");
+                .hasMessageContaining("Could not resolve field with external name myName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -266,7 +266,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
+                .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -312,8 +312,11 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertThat(object).isEqualTo(name);
     }
 
+    /**
+     * Source : <a href=https://github.com/hazelcast/hazelcast/issues/24337">issue #24337</a>.
+     */
     @Test
-    public void test_() throws Exception {
+    public void given_mappingIsDeclaredWithDataConn_when_DataConnWasRemoved_then_success() throws Exception {
         // given
         String dlName = randomName();
         String name = randomName();
@@ -321,11 +324,19 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
+        // when
         createDataConnection(instance(), dlName, "JDBC", false, options);
         createJdbcMappingUsingDataConnection(name, dlName);
         sqlService.execute("DROP DATA CONNECTION " + dlName);
 
-        assertRowsAnyOrder("SHOW DATA CONNECTIONS ", Collections.singletonList(new Row(TEST_DATABASE_REF)));
+        // then
+        assertThat(dlName).isNotEqualTo(TEST_DATABASE_REF);
+        assertRowsAnyOrder("SHOW DATA CONNECTIONS ", singletonList(new Row(TEST_DATABASE_REF)));
+
+        // Mapping doesn't provide data, since data connection was removed.
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + name))
+                .hasMessageContaining("com.hazelcast.core.HazelcastException: Data connection '"
+                        + dlName + "' not found");
     }
 
     @Test
