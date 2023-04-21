@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
 @Beta
 public class KafkaDataConnection extends DataConnectionBase {
 
-    private ConcurrentMemoizingSupplier<NonClosingKafkaProducer<?, ?>> producerSupplier;
+    private volatile ConcurrentMemoizingSupplier<NonClosingKafkaProducer<?, ?>> producerSupplier;
 
     /**
      * Create {@link KafkaDataConnection} based on given config
@@ -69,9 +69,8 @@ public class KafkaDataConnection extends DataConnectionBase {
     public KafkaDataConnection(@Nonnull DataConnectionConfig config) {
         super(config);
 
-        producerSupplier = new ConcurrentMemoizingSupplier<>(() -> {
-            return new NonClosingKafkaProducer<>(config.getProperties(), this::release);
-        });
+        producerSupplier = new ConcurrentMemoizingSupplier<>(() ->
+                new NonClosingKafkaProducer<>(config.getProperties(), this::release));
     }
 
     @Nonnull
@@ -158,7 +157,7 @@ public class KafkaDataConnection extends DataConnectionBase {
 
     /**
      * Returns an instance of {@link KafkaProducer} based on the DataConnection
-     * configuration.
+     * configuration and given properties.
      * <p>
      * The caller is responsible for closing the producer instance.
      * For non-shared producers the producer will be closed immediately
@@ -172,21 +171,16 @@ public class KafkaDataConnection extends DataConnectionBase {
      *                        property to a new KafkaProducer instance,
      *                        must be null for shared producer
      * @param properties      properties. E.g, SQL mappings provide separate
-     *                        options, and the should be merged with
-     *                        data connection's ones
+     *                        options, and they should be merged with
+     *                        data connection's properties. These properties
+     *                        has higher priority than data connection properties.
      */
     @Nonnull
     public <K, V> KafkaProducer<K, V> getProducer(
             @Nullable String transactionalId,
             @Nonnull Properties properties) {
         if (getConfig().isShared()) {
-            if (transactionalId != null) {
-                throw new IllegalArgumentException("Cannot use transactions with shared "
-                        + "KafkaProducer for DataConnection" + getConfig().getName());
-            }
-            retain();
-            //noinspection unchecked
-            return (KafkaProducer<K, V>) producerSupplier.get();
+            throw new HazelcastException("Shared Kafka producer can be created only with data connection options");
         } else {
             Properties props = mergeProps(properties);
             if (transactionalId != null) {
