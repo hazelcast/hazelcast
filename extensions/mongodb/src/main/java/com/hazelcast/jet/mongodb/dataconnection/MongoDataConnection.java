@@ -197,8 +197,8 @@ public class MongoDataConnection extends DataConnectionBase {
             if (mongoClient != null) {
                 ((CloseableMongoClient) mongoClient).unwrap().close();
             }
+            mongoClientSup = null;
         }
-        mongoClientSup = null;
     }
 
     /**
