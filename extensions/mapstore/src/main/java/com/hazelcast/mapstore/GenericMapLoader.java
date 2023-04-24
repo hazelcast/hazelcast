@@ -41,6 +41,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -346,7 +347,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     public Iterable<K> loadAllKeys() {
         // If loadAllKeys property is disabled, don't load anything
         if (!genericMapStoreProperties.loadAllKeys) {
-            return null;
+            return Collections.emptyList();
         }
 
         awaitSuccessfulInit();
