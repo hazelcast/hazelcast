@@ -219,7 +219,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                 @Nonnull List<Object[]> rows,
                 boolean streaming
         ) {
-            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(rows.size()), null, false);
+            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(rows.size()), null, streaming);
             this.rows = rows;
             this.streaming = streaming;
         }

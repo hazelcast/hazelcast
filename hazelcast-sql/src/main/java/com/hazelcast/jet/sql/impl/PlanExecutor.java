@@ -60,6 +60,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.DataConnectionResolver;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
@@ -95,6 +96,7 @@ import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 
@@ -356,10 +358,22 @@ public class PlanExecutor {
             fieldTypes.add(toHazelcastType(field.getType()));
         }
 
-
-        View view = new View(plan.viewName(), plan.viewQuery(), fieldNames, fieldTypes, streaming);
+        View view = new View(plan.viewName(), plan.viewQuery(), fieldNames, fieldTypes, isStream(relNode));
         catalog.createView(view, plan.isReplace(), plan.ifNotExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    private boolean isStream(RelNode relNode) {
+        if (relNode instanceof TableScan) {
+            TableScan scan = (TableScan) relNode;
+            return scan.getTable().unwrap(HazelcastTable.class).getTarget().isStreaming();
+        }
+        for (RelNode input : relNode.getInputs()) {
+            if (input != null && isStream(input)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     SqlResult execute(DropViewPlan plan) {
