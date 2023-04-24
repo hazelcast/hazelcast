@@ -151,58 +151,86 @@ public class MappingHelperTest {
     }
 
     @Test
-    public void externalName_simple() {
-        String input = "my_table";
-        String actual = MappingHelper.externalName(input);
+    public void tableName_to_externalName_simple() {
+        String tableName = "my_table";
+        String actual = MappingHelper.externalName(tableName);
         Assertions.assertThat(actual).isEqualTo("\"my_table\"");
     }
 
     @Test
-    public void externalName_with_dot() {
-        String input = "custom_schema.my_table";
-        String actual = MappingHelper.externalName(input);
+    public void tableName_to_externalName_with_dot() {
+        String tableName = "custom_schema.my_table";
+        String actual = MappingHelper.externalName(tableName);
         Assertions.assertThat(actual).isEqualTo("\"custom_schema\".\"my_table\"");
     }
 
     @Test
-    public void externalName_with_2dots() {
-        String input = "catalog.custom_schema.my_table";
-        String actual = MappingHelper.externalName(input);
+    public void tableName_to_externalName_with_hyphen() {
+        String tableName = "schema-with-hyphen.table-with-hyphen";
+        String actual = MappingHelper.externalName(tableName);
+        Assertions.assertThat(actual).isEqualTo("\"schema-with-hyphen\".\"table-with-hyphen\"");
+    }
+
+    @Test
+    public void tableName_to_externalName_with_space() {
+        String tableName = "schema with space.table with space";
+        String actual = MappingHelper.externalName(tableName);
+        Assertions.assertThat(actual).isEqualTo("\"schema with space\".\"table with space\"");
+    }
+
+    @Test
+    public void tableName_to_externalName_with_2dots() {
+        String tableName = "catalog.custom_schema.my_table";
+        String actual = MappingHelper.externalName(tableName);
         Assertions.assertThat(actual).isEqualTo("\"catalog\".\"custom_schema\".\"my_table\"");
     }
 
     @Test
-    public void externalName_withQuotes() {
-        String input = "custom_schema.\"my_table\"";
-        String actual = MappingHelper.externalName(input);
+    public void tableName_to_externalName_withQuotes() {
+        String tableName = "custom_schema.\"my_table\"";
+        String actual = MappingHelper.externalName(tableName);
         Assertions.assertThat(actual).isEqualTo("\"custom_schema\".\"my_table\"");
     }
 
     @Test
-    public void externalName_with2Quotes() {
-        String input = "\"custom_schema\".\"my_table\"";
-        String actual = MappingHelper.externalName(input);
+    public void tableName_to_externalName_withEscapedQuotes() {
+        String tableName = "custom_\"\"schema.\"my_\"\"table\"";
+        String actual = MappingHelper.externalName(tableName);
+        Assertions.assertThat(actual).isEqualTo("\"custom_\"\"schema\".\"my_\"\"table\"");
+    }
+
+    @Test
+    public void tableName_to_externalName_withMoreEscapedQuotes() {
+        String tableName = "custom_\"\"\"\"schema.\"my_\"\"table\"\"\"";
+        String actual = MappingHelper.externalName(tableName);
+        Assertions.assertThat(actual).isEqualTo("\"custom_\"\"\"\"schema\".\"my_\"\"table\"\"\"");
+    }
+
+    @Test
+    public void tableName_to_externalName_with2Quotes() {
+        String tableName = "\"custom_schema\".\"my_table\"";
+        String actual = MappingHelper.externalName(tableName);
         Assertions.assertThat(actual).isEqualTo("\"custom_schema\".\"my_table\"");
     }
 
     @Test
-    public void externalName_with3Quotes() {
-        String input = "\"catalog\".\"custom_schema\".\"my_table\"";
-        String actual = MappingHelper.externalName(input);
+    public void tableName_to_externalName_with3Quotes() {
+        String tableName = "\"catalog\".\"custom_schema\".\"my_table\"";
+        String actual = MappingHelper.externalName(tableName);
         Assertions.assertThat(actual).isEqualTo("\"catalog\".\"custom_schema\".\"my_table\"");
     }
 
     @Test
-    public void externalName_with_quotes_and_dots() {
-        String input = "custom_schema.\"table.with_dot\"";
-        String actual = MappingHelper.externalName(input);
+    public void tableName_to_externalName_with_quotes_and_dots() {
+        String tableName = "custom_schema.\"table.with_dot\"";
+        String actual = MappingHelper.externalName(tableName);
         Assertions.assertThat(actual).isEqualTo("\"custom_schema\".\"table.with_dot\"");
     }
 
     @Test
-    public void externalName_with_backticks_and_dots() {
-        String input = "custom_schema.`table.with_dot`";
-        String actual = MappingHelper.externalName(input);
-        Assertions.assertThat(actual).isEqualTo("\"custom_schema\".\"table.with_dot\"");
+    public void tableName_to_externalName_with_backticks_and_dots() {
+        String tableName = "custom_schema.`table.with_dot`";
+        String actual = MappingHelper.externalName(tableName);
+        Assertions.assertThat(actual).isEqualTo("\"custom_schema\".\"`table\".\"with_dot`\"");
     }
 }

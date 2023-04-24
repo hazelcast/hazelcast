@@ -30,8 +30,4 @@ public class MySQLGenericMapStoreTest extends GenericMapStoreTest {
         initialize(new MySQLDatabaseProvider());
     }
 
-    @Override
-    protected char tableNameDelimiter() {
-        return '`';
-    }
 }

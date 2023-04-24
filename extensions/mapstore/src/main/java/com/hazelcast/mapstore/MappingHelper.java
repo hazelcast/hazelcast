@@ -63,7 +63,7 @@ final class MappingHelper {
         sb.append("CREATE MAPPING ");
         DIALECT.quoteIdentifier(sb, mappingName);
         sb.append(" EXTERNAL NAME ");
-        DIALECT.quoteIdentifier(sb, externalName(tableName));
+        sb.append(externalName(tableName));
         if (mappingColumns != null) {
             sb.append(" ( ");
             for (Iterator<SqlColumnMetadata> iterator = mappingColumns.iterator(); iterator.hasNext(); ) {
@@ -86,12 +86,12 @@ final class MappingHelper {
         return sb.toString();
 
     }
-    
-     //package-private just for testing
+
+    //package-private just for testing
     static String externalName(String tableName) {
         return splitByNonQuotedDots(tableName).stream()
-                .map(unwrapFromQuotesIfPresent())
-                .map(DEFAULT::quoteIdentifier)
+                .map(unquoteIfQuoted())
+                .map(DIALECT::quoteIdentifier)
                 .collect(Collectors.joining("."));
     }
 
@@ -114,10 +114,16 @@ final class MappingHelper {
             }
         }
         result.add(input.substring(tokenStart));
-        return result;
+        return result.stream()
+                .map(MappingHelper::unescapeQuotes)
+                .collect(Collectors.toList());
     }
 
-    private static Function<String, String> unwrapFromQuotesIfPresent() {
+    private static String unescapeQuotes(String input) {
+        return input.replaceAll("\"\"", "\"");
+    }
+
+    private static Function<String, String> unquoteIfQuoted() {
         return s -> s.replaceAll("^\"|\"$", "");
     }
 
