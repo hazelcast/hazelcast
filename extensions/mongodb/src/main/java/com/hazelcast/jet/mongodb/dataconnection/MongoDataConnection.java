@@ -131,7 +131,8 @@ public class MongoDataConnection extends DataConnectionBase {
                                                  .credential(credential);
             return MongoClients.create(builder.build());
         } catch (Exception e) {
-            throw new HazelcastException("Unable to create Mongo client for data connection '" + config.getName() + "'", e);
+            throw new HazelcastException("Unable to create Mongo client for data connection '" + config.getName() + "'",
+                    e);
         }
     }
 
