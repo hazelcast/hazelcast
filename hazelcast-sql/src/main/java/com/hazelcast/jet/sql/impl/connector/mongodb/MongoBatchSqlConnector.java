@@ -29,6 +29,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.UPDATE_ALL_PREDICATE;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -83,7 +84,7 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
         if (hasInput) {
             return context.getDag().newUniqueVertex(
                     "Update(" + table.getSqlName() + ")",
-                    new UpdateProcessorSupplier(table, fieldNames, updates, null)
+                    new UpdateProcessorSupplier(table, fieldNames, updates, null, hasInput)
             );
         } else {
             Object predicateRaw = predicate == null
@@ -96,7 +97,7 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
             return context.getDag().newUniqueVertex(
                     "Update(" + table.getSqlName() + ")",
                     forceTotalParallelismOne(
-                        new UpdateProcessorSupplier(table, fieldNames, updates, translated)
+                        new UpdateProcessorSupplier(table, fieldNames, updates, translated, hasInput)
                     )
             );
         }
@@ -129,7 +130,7 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
             );
         } else {
             Object predicateTranslated = predicate == null
-                    ? Filters.empty()
+                    ? UPDATE_ALL_PREDICATE
                     : predicate.unwrap(RexNode.class).accept(new RexToMongoVisitor());
             Serializable predicateToSend;
             if (predicateTranslated instanceof Bson) {

@@ -37,6 +37,7 @@ import java.util.Collection;
 
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.UPDATE_ALL_PREDICATE;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.DynamicallyReplacedPlaceholder.replacePlaceholdersInPredicate;
 import static java.util.Arrays.asList;
 
@@ -79,7 +80,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
     public Collection<? extends Processor> get(int count) {
         Processor[] processors = new Processor[count];
         Document predicateWithReplacements = predicate == null
-                ? null
+                ? UPDATE_ALL_PREDICATE
                 : replacePlaceholdersInPredicate(predicate, externalNames, evalContext);
 
         for (int i = 0; i < count; i++) {
