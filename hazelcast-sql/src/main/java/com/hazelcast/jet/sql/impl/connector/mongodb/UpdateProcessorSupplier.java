@@ -19,7 +19,6 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 
-import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.jet.mongodb.impl.UpdateMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
