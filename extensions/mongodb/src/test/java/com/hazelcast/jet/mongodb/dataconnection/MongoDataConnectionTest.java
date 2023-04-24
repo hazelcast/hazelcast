@@ -32,6 +32,7 @@ import java.util.ArrayList;
 
 import static com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection.mongoDataConnectionConf;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -63,6 +64,15 @@ public class MongoDataConnectionTest extends AbstractMongoTest {
         assertThat(client1).isNotNull();
         assertThat(client2).isNotNull();
         assertThat(client1).isSameAs(client2);
+    }
+
+
+    @Test
+    public void should_initialize_lazy() {
+        dataConnection = new MongoDataConnection(mongoDataConnectionConf("mongo", "dummy"));
+        assertThatThrownBy(() -> dataConnection.getClient()).isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("The connection string is invalid");
+
     }
 
     @Test
