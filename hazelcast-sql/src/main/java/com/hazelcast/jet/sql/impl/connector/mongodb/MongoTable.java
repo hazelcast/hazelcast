@@ -86,7 +86,7 @@ class MongoTable extends JetTable {
     }
 
     private static boolean isStreaming(String objectType) {
-        return "MongoStream".equalsIgnoreCase(objectType);
+        return "ChangeStream".equalsIgnoreCase(objectType);
     }
 
     public MongoTableField getField(String name) {

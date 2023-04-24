@@ -149,20 +149,21 @@ public class TableResolverImpl implements TableResolver {
         } else {
             connector = connectorCache.forType(type);
         }
+        String objectType = mapping.objectType() == null ? connector.defaultObjectType() : mapping.objectType();
         resolvedFields = connector.resolveAndValidateFields(
                 nodeEngine,
                 options,
                 mapping.fields(),
                 mapping.externalName(),
                 mapping.dataConnection(),
-                mapping.objectType()
+                objectType
         );
 
         return new Mapping(
                 mapping.name(),
                 mapping.externalName(),
                 mapping.dataConnection(), type,
-                mapping.objectType(),
+                objectType,
                 new ArrayList<>(resolvedFields),
                 new LinkedHashMap<>(options)
         );
@@ -304,7 +305,7 @@ public class TableResolverImpl implements TableResolver {
             return connector.createTable(
                     nodeEngine,
                     SCHEMA_NAME_PUBLIC,
-                    SqlMappingContext.from(mapping),
+                    SqlMappingContext.from(mapping, connector),
                     mapping.fields()
             );
         } catch (Throwable e) {

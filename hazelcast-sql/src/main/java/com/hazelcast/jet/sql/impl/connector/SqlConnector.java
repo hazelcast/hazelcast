@@ -190,6 +190,19 @@ public interface SqlConnector {
     String typeName();
 
     /**
+     * Returns default value for the Object Type mapping property, so if user won't provide any type,
+     * this will be assumed.
+     *
+     * By default, it returns null.
+     *
+     * @since 5.3
+     */
+    @Nullable
+    default String defaultObjectType() {
+        return null;
+    }
+
+    /**
      * Resolves the final field list given an initial field list and options
      * from the user. Jet calls this method when processing a CREATE MAPPING
      * statement.
@@ -209,7 +222,9 @@ public interface SqlConnector {
      * @param externalName       external name of the table
      * @param dataConnectionName name of the data connection to use, may be null if the connector supports specifying
      *                           connection details in options
-     * @param objectType    the type of object for which fields will be resolved
+     * @param objectType    the type of object for which fields will be resolved. If connector overrides
+     *                      {@link #defaultObjectType()} and return non=null value, value of this parameter
+     *                      also will never be null.
      * @return final field list, must not be empty
      */
     @Nonnull
@@ -477,9 +492,13 @@ public interface SqlConnector {
             this.options = options;
         }
 
-        public static SqlMappingContext from(Mapping internalMapping) {
-            return new SqlMappingContext(internalMapping.name(), internalMapping.externalName(), internalMapping.dataConnection(),
-                    internalMapping.connectorType(), internalMapping.objectType(), internalMapping.options());
+        public static SqlMappingContext from(Mapping internalMapping, SqlConnector connector) {
+            String internalObjType = internalMapping.objectType() == null
+                    ? connector.defaultObjectType()
+                    : internalMapping.objectType();
+            return new SqlMappingContext(internalMapping.name(), internalMapping.externalName(),
+                    internalMapping.dataConnection(),
+                    internalMapping.connectorType(), internalObjType, internalMapping.options());
         }
 
         public String name() {

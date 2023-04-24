@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -43,6 +44,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.core.Edge.between;
@@ -67,6 +69,8 @@ import static java.util.stream.Collectors.toList;
  */
 public abstract class MongoSqlConnectorBase implements SqlConnector {
 
+    protected static final Set<String> ALLOWED_OBJECT_TYPES = ImmutableSet.of("Collection", "ChangeStream");
+
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
@@ -81,12 +85,15 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                     + ", external name for Mongo is allowed to have only one component (collection)"
                     + " or two components (database and collection)");
         }
+        if (!ALLOWED_OBJECT_TYPES.contains(objectType)) {
+            throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
+        }
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
         return fieldResolver.resolveFields(externalName, dataConnectionName, options, userFields, isStream(objectType));
     }
 
     private static boolean isStream(String objectType) {
-        return "MongoStream".equalsIgnoreCase(objectType);
+        return "ChangeStream".equalsIgnoreCase(objectType);
     }
 
     @Nonnull
@@ -96,10 +103,19 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         return singletonList(mongoTable.primaryKeyName());
     }
 
+    @Nullable
+    @Override
+    public String defaultObjectType() {
+        return "Collection";
+    }
+
     @Nonnull
     @Override
     public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull SqlMappingContext ctx,
                              @Nonnull List<MappingField> resolvedFields) {
+        if (!ALLOWED_OBJECT_TYPES.contains(ctx.objectType())) {
+            throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
+        }
         String collectionName = ctx.externalName().length == 2 ? ctx.externalName()[1] : ctx.externalName()[0];
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
         String databaseName = Options.getDatabaseName(nodeEngine, ctx.externalName(), ctx.dataConnection());

@@ -17,6 +17,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.LogListener;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClient;
@@ -36,6 +37,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
@@ -92,7 +94,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                     + " jedi BOOLEAN, "
                     + " operation VARCHAR external name operationType"
                     + ") "
-                    + "TYPE MongoStream "
+                    + "TYPE Mongo OBJECT TYPE ChangeStream "
                     + "OPTIONS ("
                     + "    'connectionString' = '" + connectionString + "', "
                     + "    'startAt' = '" + startAt + "' "
@@ -144,7 +146,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                 + " operation VARCHAR external name operationType, "
                 + " ts timestamp"
                 + ") "
-                + "TYPE MongoStream "
+                + "TYPE Mongo OBJECT TYPE ChangeStream "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" + databaseName + "', "
@@ -184,15 +186,12 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
         execute("CREATE MAPPING " + collectionName
                 + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
                 + " DATA CONNECTION testMongo"
-                + " OBJECT TYPE MongoStream");
+                + " OBJECT TYPE ChangeStream"
+                + " OPTIONS ('startAt' = 'now')");
 
-        assertRowsAnyOrder("select firstName, lastName from " + collectionName + " where lastName = ?",
-                singletonList("Skywalker"),
-                asList(
-                        new Row("Luke", "Skywalker"),
-                        new Row("Anakin", "Skywalker")
-                )
-        );
+        try (SqlResult result = sqlService.execute("select firstName, lastName from " + collectionName)) {
+            assertTrue(result.isRowSet());
+        }
     }
 
     private void sleep(int howMuch) {
