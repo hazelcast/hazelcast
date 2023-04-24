@@ -27,7 +27,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rex.RexInputRef;
@@ -39,6 +38,9 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static java.util.Collections.emptyMap;
+import static java.util.Objects.requireNonNull;
 
 /**
  * An API to bridge Jet connectors and SQL. Allows the use of a Jet
@@ -474,6 +476,11 @@ public interface SqlConnector {
         }
     }
 
+    /**
+     * Mapping specific metadata.
+     *
+     * @since 5.3
+     */
     class SqlMappingContext implements Serializable {
         private final String name;
         private final String[] externalName;
@@ -484,45 +491,60 @@ public interface SqlConnector {
 
         public SqlMappingContext(String name, String[] externalName, String dataConnection, String connectorType,
                                  String objectType, Map<String, String> options) {
-            this.name = name;
-            this.externalName = externalName;
+            this.name = requireNonNull(name, "name cannot be null");
+            this.externalName = requireNonNull(externalName, "externalName cannot be null");
             this.dataConnection = dataConnection;
-            this.connectorType = connectorType;
+            this.connectorType = requireNonNull(connectorType, "connectorType cannot be null");
             this.objectType = objectType;
             this.options = options;
         }
 
-        public static SqlMappingContext from(Mapping internalMapping, SqlConnector connector) {
-            String internalObjType = internalMapping.objectType() == null
-                    ? connector.defaultObjectType()
-                    : internalMapping.objectType();
-            return new SqlMappingContext(internalMapping.name(), internalMapping.externalName(),
-                    internalMapping.dataConnection(),
-                    internalMapping.connectorType(), internalObjType, internalMapping.options());
-        }
-
+        /**
+         * Name of this mapping.
+         */
+        @Nonnull
         public String name() {
             return name;
         }
 
+        /**
+         * Name of external object.
+         */
+        @Nonnull
         public String[] externalName() {
             return externalName;
         }
 
+        /**
+         * Data Connection used by this mapping.
+         */
+        @Nullable
         public String dataConnection() {
             return dataConnection;
         }
 
+        /**
+         * Connector Type, must match one of {@link SqlConnector#typeName()}.
+         */
+        @Nonnull
         public String connectorType() {
             return connectorType;
         }
 
+        /**
+         * Object type, must match the name of supported types for given connector.
+         */
+        @Nullable
         public String objectType() {
             return objectType;
         }
 
+        /**
+         * Options used to create the mapping.
+         */
+        @Nonnull
         public Map<String, String> options() {
-            return options;
+            return options == null ? emptyMap() : options;
         }
     }
 }

@@ -305,7 +305,7 @@ public class TableResolverImpl implements TableResolver {
             return connector.createTable(
                     nodeEngine,
                     SCHEMA_NAME_PUBLIC,
-                    SqlMappingContext.from(mapping, connector),
+                    sqlMappingContextFrom(mapping, connector),
                     mapping.fields()
             );
         } catch (Throwable e) {
@@ -313,6 +313,15 @@ public class TableResolverImpl implements TableResolver {
             return new BadTable(SCHEMA_NAME_PUBLIC, mapping.name(),
                     e instanceof QueryException ? e.getCause() : e);
         }
+    }
+
+    private static SqlMappingContext sqlMappingContextFrom(Mapping internalMapping, SqlConnector connector) {
+        String internalObjType = internalMapping.objectType() == null
+                ? connector.defaultObjectType()
+                : internalMapping.objectType();
+        return new SqlMappingContext(internalMapping.name(), internalMapping.externalName(),
+                internalMapping.dataConnection(),
+                internalMapping.connectorType(), internalObjType, internalMapping.options());
     }
 
     private Table toTable(View view) {
