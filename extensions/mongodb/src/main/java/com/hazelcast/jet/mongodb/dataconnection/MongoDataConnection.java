@@ -146,8 +146,10 @@ public class MongoDataConnection extends DataConnectionBase {
     public MongoClient getClient() {
         if (getConfig().isShared()) {
             retain();
-            checkState(mongoClientSup != null, "Mongo client should not be closed at this point");
-            return mongoClientSup.get();
+            // local copy to protect from nullifying the value between two instructions
+            ConcurrentMemoizingSupplier<MongoClient> supplier = mongoClientSup;
+            checkState(supplier != null, "Mongo client should not be closed at this point");
+            return supplier.get();
         } else {
             MongoClient client = createClient(getConfig());
             return new CloseableMongoClient(client, client::close);
@@ -193,7 +195,8 @@ public class MongoDataConnection extends DataConnectionBase {
      */
     @Override
     public void destroy() {
-        if (mongoClientSup != null) {
+        ConcurrentMemoizingSupplier<MongoClient> supplier = mongoClientSup;
+        if (supplier != null) {
             MongoClient mongoClient = mongoClientSup.remembered();
             if (mongoClient != null) {
                 ((CloseableMongoClient) mongoClient).unwrap().close();
