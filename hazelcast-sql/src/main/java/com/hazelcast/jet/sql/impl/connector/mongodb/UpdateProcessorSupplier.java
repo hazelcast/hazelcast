@@ -175,7 +175,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
             } else if (updateExpr instanceof String) {
                 String expr = (String) updateExpr;
-                Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, values, externalNames, false, false);
+                Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, values, externalNames, false, true);
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, withReplacements)));
             } else {
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
