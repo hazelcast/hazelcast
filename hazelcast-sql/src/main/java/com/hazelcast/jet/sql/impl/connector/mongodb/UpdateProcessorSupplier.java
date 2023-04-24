@@ -80,7 +80,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         this.pkExternalName = table.primaryKeyExternalName();
         this.predicate = predicate;
 
-        externalNames = table.externalNames();
+        this.externalNames = table.externalNames();
         this.withoutScan = predicate != null;
     }
 
@@ -177,7 +177,8 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
             } else if (updateExpr instanceof String) {
                 String expr = (String) updateExpr;
-                Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, values, externalNames, false, !withoutScan);
+                Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, values, externalNames, false,
+                        !withoutScan);
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, withReplacements)));
             } else {
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
