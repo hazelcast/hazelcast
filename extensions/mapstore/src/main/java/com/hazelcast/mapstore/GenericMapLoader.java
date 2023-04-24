@@ -113,7 +113,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     /**
      * Property key to control loading of all keys when IMap is first created
      */
-    public static final String LOAD_ALL_KEYS_PROPERTY = "load_all_keys";
+    public static final String LOAD_ALL_KEYS_PROPERTY = "load-all-keys";
 
     /**
      * Timeout for initialization of GenericMapLoader
@@ -180,6 +180,19 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
             throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
                                          " must have `" + DATA_CONNECTION_REF_PROPERTY + "` property set");
         }
+
+        // Validate that property is not an invalid boolean string
+        String loadAllKeys = mapStoreConfig.getProperty(LOAD_ALL_KEYS_PROPERTY);
+        if (loadAllKeys != null) {
+            if (!isBoolean(loadAllKeys)) {
+                throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
+                                             " must have `" + LOAD_ALL_KEYS_PROPERTY + "` property set as true or false");
+            }
+        }
+    }
+
+    private boolean isBoolean(String value) {
+        return value.equalsIgnoreCase("false") || value.equalsIgnoreCase("true");
     }
 
     private ManagedExecutorService getMapStoreExecutor() {

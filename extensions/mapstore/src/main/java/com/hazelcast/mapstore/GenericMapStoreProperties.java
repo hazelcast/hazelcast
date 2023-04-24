@@ -69,7 +69,6 @@ class GenericMapStoreProperties {
         compactTypeName = properties.getProperty(TYPE_NAME_PROPERTY, mapName);
 
         String value = properties.getProperty(LOAD_ALL_KEYS_PROPERTY, "true");
-        // parseBoolean() returns false if the input is case-insensitive "true"
         loadAllKeys = Boolean.parseBoolean(value);
     }
 

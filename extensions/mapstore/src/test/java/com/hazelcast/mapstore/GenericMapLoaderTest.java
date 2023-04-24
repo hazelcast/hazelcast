@@ -432,10 +432,11 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         properties.setProperty(LOAD_ALL_KEYS_PROPERTY, "invalidBooleanValue");
-        mapLoader = createMapLoader(properties, hz);
+        assertThatThrownBy(() -> createMapLoader(properties, hz))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("MapStoreConfig for " + mapName + " must have `load-all-keys` property set as true or false");
 
-        List<Integer> ids = newArrayList(mapLoader.loadAllKeys());
-        assertThat(ids).isNull();
+
     }
 
     @Test

@@ -136,6 +136,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(mapName);
+        assertThat(map.size()).isZero();
 
         // LOAD_ALL_KEYS_PROPERTY is disabled, but we still can load
         Person p = map.get(0);
