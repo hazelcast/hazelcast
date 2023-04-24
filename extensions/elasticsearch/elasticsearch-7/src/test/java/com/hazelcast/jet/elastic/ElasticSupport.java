@@ -19,6 +19,7 @@ package com.hazelcast.jet.elastic;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.impl.util.Util;
 import org.elasticsearch.client.RestClientBuilder;
+import org.testcontainers.containers.Network;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -36,9 +37,13 @@ public final class ElasticSupport {
 
     public static final int PORT = 9200;
 
+    public static Network network = Network.newNetwork();
+
     // Elastic container takes long time to start up, reusing the container for speedup
     public static final Supplier<ElasticsearchContainer> elastic = Util.memoize(() -> {
         ElasticsearchContainer elastic = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)
+                .withNetwork(network)
+                .withNetworkAliases("elastic")
                 .withStartupTimeout(Duration.ofMinutes(2L));
         elastic.start();
         Runtime.getRuntime().addShutdownHook(new Thread(elastic::stop));
