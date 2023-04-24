@@ -24,6 +24,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -164,6 +165,45 @@ public class KafkaConnectIntegrationTest extends JetTestSupport {
         assertThatThrownBy(() -> hazelcastInstance.getJet().newJob(pipeline, jobConfig).join())
                 .isInstanceOf(CompletionException.class)
                 .hasMessageContaining("Neither timestampFn nor nativeEventTime specified");
+    }
+
+    @Test
+    public void windowing_withIngestionTimestamps_should_work() throws Exception {
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "datagen-connector");
+        randomProperties.setProperty("connector.class", "io.confluent.kafka.connect.datagen.DatagenConnector");
+        randomProperties.setProperty("max.interval", "1");
+        randomProperties.setProperty("kafka.topic", "orders");
+        randomProperties.setProperty("quickstart", "orders");
+
+
+        Pipeline pipeline = Pipeline.create();
+        StreamStage<WindowResult<Long>> streamStage = pipeline.readFrom(connect(randomProperties, ConnectRecord::hashCode))
+                .withIngestionTimestamps()
+                .setLocalParallelism(1)
+                .window(WindowDefinition.tumbling(5))
+                .aggregate(AggregateOperations.counting());
+        streamStage.writeTo(Sinks.logger());
+        streamStage
+                .writeTo(AssertionSinks.assertCollectedEventually(60,
+                        list -> assertThat(list).hasSizeGreaterThan(ITEM_COUNT)));
+
+        Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
+
+        try {
+            job.join();
+            fail("Job should have completed with an AssertionCompletedException, but completed normally");
+        } catch (CompletionException e) {
+            String errorMsg = e.getCause().getMessage();
+            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+        }
     }
 
     @Test

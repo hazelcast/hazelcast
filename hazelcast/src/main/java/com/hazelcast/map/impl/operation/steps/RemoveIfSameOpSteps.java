@@ -62,7 +62,7 @@ public enum RemoveIfSameOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.getOldValue() == null
-                    ? UtilSteps.SEND_RESPONSE : RemoveIfSameOpSteps.ON_LOAD;
+                    ? UtilSteps.FINAL_STEP : RemoveIfSameOpSteps.ON_LOAD;
         }
     },
 
@@ -88,7 +88,7 @@ public enum RemoveIfSameOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.isStopExecution()
-                    ? UtilSteps.SEND_RESPONSE : RemoveIfSameOpSteps.DELETE;
+                    ? UtilSteps.FINAL_STEP : RemoveIfSameOpSteps.DELETE;
         }
     },
 
@@ -126,7 +126,7 @@ public enum RemoveIfSameOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

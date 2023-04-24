@@ -25,12 +25,11 @@ public enum TxnUnlockOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
            state.getOperation().runInternalDirect();
-            UtilSteps.SEND_RESPONSE.runStep(state);
         }
 
         @Override
         public Step nextStep(State state) {
-            return null;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

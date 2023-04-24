@@ -19,8 +19,6 @@ package com.hazelcast.config;
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.config.tpc.TpcConfig;
-import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -32,6 +30,8 @@ import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
@@ -45,6 +45,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -58,8 +59,8 @@ import java.io.Writer;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -4062,6 +4063,48 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIdleSeconds() {
+        // -1 fails XSD validation
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", -1);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid1));
+        // 0 fails XSD validation
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 0);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid2));
+        // 32768 fails range check in EndpointConfig
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIntervalSeconds() {
+        // -1 fails XSD validation
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", -1);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid1));
+        // 0 fails XSD validation
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 0);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid2));
+        // 32768 fails range check in EndpointConfig
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepCount() {
+        // -1 fails XSD validation
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-count", -1);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid1));
+        // 0 fails XSD validation
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-count", 0);
+        Assert.assertThrows(InvalidConfigurationException.class, () -> buildConfig(invalid2));
+        // 128 fails range check in EndpointConfig
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-count", 128);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
     public void testAmbiguousNetworkConfig_throwsException() {
         String xml = HAZELCAST_START_TAG
                 + "  <advanced-network enabled=\"true\">\n"
@@ -4686,4 +4729,16 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         return new InMemoryXmlConfig(xml);
     }
 
+    public String getAdvancedNetworkConfigWithSocketOption(String socketOption, int value) {
+        String xml = HAZELCAST_START_TAG
+                + "<advanced-network enabled=\"true\">"
+                + "  <member-server-socket-endpoint-config name=\"member-server-socket\">\n"
+                + "    <socket-options>"
+                + "      <" + socketOption + ">" + value + "</" + socketOption + ">"
+                + "    </socket-options>"
+                + "  </member-server-socket-endpoint-config>\n"
+                + "</advanced-network>"
+                + HAZELCAST_END_TAG;
+        return xml;
+    }
 }

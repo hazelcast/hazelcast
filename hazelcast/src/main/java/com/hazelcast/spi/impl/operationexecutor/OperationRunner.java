@@ -17,8 +17,15 @@
 package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.spi.impl.operationservice.CallStatus;
+import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
+
+import java.util.Set;
+
+import static com.hazelcast.spi.impl.operationservice.CallStatus.OFFLOAD_ORDINAL;
 
 /**
  * The OperationRunner is responsible for the actual running of operations.
@@ -151,7 +158,7 @@ public abstract class OperationRunner {
     }
 
     /**
-     * Runs operation directly without checking any conditions;
+     * Runs op directly without checking any conditions;
      * node state, partition ownership, timeouts etc.
      * <p>
      * {@link Operation#beforeRun()}, {@link Operation#call()}
@@ -159,18 +166,37 @@ public abstract class OperationRunner {
      * <p>
      * Operation responses and backups are ignored.
      *
-     * @param operation operation to run
-     * @throws Exception when one of the operation phases fails with an exception
+     * @param op op to run
+     * @throws Exception when one of the op phases fails with an exception
      */
-    public static void runDirect(Operation operation) throws Exception {
+    public static void runDirect(Operation op) throws Exception {
         try {
-            operation.pushThreadContext();
-            operation.beforeRun();
-            operation.call();
-            operation.afterRun();
+            op.pushThreadContext();
+            op.beforeRun();
+            op.call();
+            op.afterRun();
         } finally {
-            operation.popThreadContext();
-            operation.afterRunFinal();
+            op.popThreadContext();
+            op.afterRunFinal();
+        }
+    }
+
+    public static void runDirect(Operation op, NodeEngineImpl nodeEngine,
+                                 Set<Operation> asyncOperations) throws Exception {
+        try {
+            op.pushThreadContext();
+            op.beforeRun();
+            CallStatus callStatus = op.call();
+            op.afterRun();
+
+            if (callStatus.ordinal() == OFFLOAD_ORDINAL) {
+                Offload offload = (Offload) callStatus;
+                offload.init(nodeEngine, asyncOperations);
+                offload.start();
+            }
+        } finally {
+            op.popThreadContext();
+            op.afterRunFinal();
         }
     }
 }

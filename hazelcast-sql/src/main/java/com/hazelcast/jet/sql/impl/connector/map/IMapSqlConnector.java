@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
@@ -66,6 +67,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
@@ -108,10 +110,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
             @Nullable String dataConnectionName) {
-        if (externalName.length > 1) {
-            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
-                    + ", external name for IMap is allowed to have only a single component referencing the map name");
-        }
+        checkImapName(externalName);
         return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
@@ -125,6 +124,8 @@ public class IMapSqlConnector implements SqlConnector {
             @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> resolvedFields) {
+        checkImapName(externalName);
+
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
         KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
@@ -165,6 +166,17 @@ public class IMapSqlConnector implements SqlConnector {
                 indexes,
                 hd
         );
+    }
+
+    private static void checkImapName(@Nonnull String[] externalName) {
+        if (externalName.length > 1) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+                    + ", external name for IMap is allowed to have only a single component referencing the map name");
+        }
+        String mapName = externalName[0];
+        if (mapName.startsWith(INTERNAL_JET_OBJECTS_PREFIX) || mapName.equals(JetServiceBackend.SQL_CATALOG_MAP_NAME)) {
+            throw QueryException.error("Mapping of internal IMaps is not allowed");
+        }
     }
 
     @Nonnull

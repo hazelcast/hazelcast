@@ -176,7 +176,7 @@ public class SqlCreateJob extends SqlCreate {
         validator.validate(sqlInsert);
     }
 
-    private static long parseLong(SqlValidator validator, SqlOption option) {
+    static long parseLong(SqlValidator validator, SqlOption option) {
         try {
             return Long.parseLong(option.valueString());
         } catch (NumberFormatException e) {
