@@ -205,7 +205,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         return returnsResponse() ? RESPONSE : VOID;
     }
 
-    private boolean isMapStoreOffloadEnabled() {
+    protected final boolean isMapStoreOffloadEnabled() {
         // This is for nested calls from partition thread. When we see
         // nested call we directly run the call without offloading.
         if (mapStoreOffloadEnabled
@@ -214,6 +214,17 @@ public abstract class MapOperation extends AbstractNamedOperation
             return false;
         }
         return mapStoreOffloadEnabled;
+    }
+
+    public final boolean isTieredStoreAndPartitionCompactorEnabled() {
+        // This is for nested calls from partition thread. When we see
+        // nested call we directly run the call without offloading.
+        if (tieredStoreAndPartitionCompactorEnabled
+                && ThreadUtil.isRunningOnPartitionThread()
+                && isStepRunnerCurrentlyExecutingOnPartitionThread()) {
+            return false;
+        }
+        return tieredStoreAndPartitionCompactorEnabled;
     }
 
     protected Offload offloadOperation() {
@@ -504,9 +515,5 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     public MapContainer getMapContainer() {
         return mapContainer;
-    }
-
-    public boolean isTieredStoreAndPartitionCompactorEnabled() {
-        return tieredStoreAndPartitionCompactorEnabled;
     }
 }
