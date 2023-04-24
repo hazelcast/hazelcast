@@ -19,6 +19,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 
+import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.jet.mongodb.impl.UpdateMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
@@ -43,6 +44,7 @@ import java.util.List;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.UPDATE_ALL_PREDICATE;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.DynamicallyReplacedPlaceholder.replacePlaceholdersInPredicate;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
@@ -60,7 +62,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final List<? extends Serializable> updates;
     private final String dataConnectionName;
     private final String[] externalNames;
-    private final boolean withoutScan;
+    private final boolean afterScan;
     private ExpressionEvalContext evalContext;
     private transient SupplierEx<MongoClient> clientSupplier;
     private final String pkExternalName;
@@ -68,7 +70,8 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
 
     UpdateProcessorSupplier(MongoTable table, List<String> updatedFieldNames,
                             List<? extends Serializable> updates,
-                            Serializable predicate) {
+                            Serializable predicate,
+                            boolean hasInput) {
         this.connectionString = table.connectionString;
         this.dataConnectionName = table.dataConnectionName;
         this.databaseName = table.databaseName;
@@ -81,7 +84,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         this.predicate = predicate;
 
         this.externalNames = table.externalNames();
-        this.withoutScan = predicate != null;
+        this.afterScan = hasInput;
     }
 
     @Override
@@ -97,8 +100,10 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     public Collection<? extends Processor> get(int count) {
         Processor[] processors = new Processor[count];
 
-        if (predicate != null) {
-            Document predicateWithReplacements = replacePlaceholdersInPredicate(predicate, externalNames, evalContext);
+        if (!afterScan) {
+            Document predicateWithReplacements = predicate == null
+                    ? UPDATE_ALL_PREDICATE
+                    : replacePlaceholdersInPredicate(predicate, externalNames, evalContext);
             for (int i = 0; i < count; i++) {
                 Processor processor = new UpdateMongoP<>(
                         new WriteMongoParams<Document>()
@@ -107,7 +112,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                                 .setDatabaseName(databaseName)
                                 .setCollectionName(collectionName)
                                 .setDocumentType(Document.class),
-                        writeModel(predicateWithReplacements)
+                        writeModelNoScan(predicateWithReplacements)
                 );
 
                 processors[i] = processor;
@@ -126,7 +131,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
                             .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToUpdateDoc)
-                            .setWriteModelFn(this::write)
+                            .setWriteModelFn(this::writeModelAfterScan)
             );
 
             processors[i] = processor;
@@ -135,7 +140,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     }
 
     @SuppressWarnings("unchecked")
-    private SupplierEx<WriteModel<Document>> writeModel(Document predicate) {
+    private SupplierEx<WriteModel<Document>> writeModelNoScan(Document predicate) {
         return () -> {
             Document values = valuesToUpdateDoc(externalNames);
             List<Bson> pipeline = values.get("update", List.class);
@@ -145,7 +150,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     }
 
     @SuppressWarnings("unchecked")
-    private WriteModel<Document> write(Document update) {
+    private WriteModel<Document> writeModelAfterScan(Document update) {
         List<Bson> updates = requireNonNull(update.get("update", List.class), "updateList");
         Bson filter = requireNonNull(update.get("filter", Bson.class));
         return new UpdateManyModel<>(filter, updates);
@@ -160,7 +165,11 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     }
 
     /**
-     * Row parameter contains values for PK fields, values of input before update, values of input after update.
+     * Row parameter contains values for PK fields, values of input before update, values of input after update, but
+     * only when the update is performed after a scan.
+     *
+     * <p>If it's the scan-less mode, input references must be made using Mongo's {@code $reference} syntax,
+     * because there is no "previous value" in the row.</p>
      */
     private Document valuesToUpdateDoc(Object[] values) {
         Object pkValue = values[0];
@@ -172,13 +181,13 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
             if (updateExpr instanceof Bson) {
                 Document document = Document.parse(((Bson) updateExpr)
                         .toBsonDocument(Document.class, defaultCodecRegistry()).toJson());
-                PlaceholderReplacer.replacePlaceholders(document, evalContext, values, externalNames, !withoutScan);
+                PlaceholderReplacer.replacePlaceholders(document, evalContext, values, externalNames, afterScan);
                 updateExpr = document;
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
             } else if (updateExpr instanceof String) {
                 String expr = (String) updateExpr;
                 Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, values, externalNames, false,
-                        !withoutScan);
+                        afterScan);
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, withReplacements)));
             } else {
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));

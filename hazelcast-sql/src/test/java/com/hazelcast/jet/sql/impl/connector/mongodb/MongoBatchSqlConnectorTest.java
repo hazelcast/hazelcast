@@ -661,6 +661,23 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     }
 
     @Test
+    public void updatesMongo_allRows() {
+
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+        collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2").append("jedi", false));
+
+        createMapping(true);
+
+        execute("update " + collectionName + " set lastName = 'Solo'");
+
+        ArrayList<Document> list = collection.find()
+                                             .into(new ArrayList<>());
+        assertEquals(2, list.size());
+        assertThat(list).extracting(i -> i.getString("lastName")).contains("Solo", "Solo");
+    }
+
+    @Test
     public void sinkInto_allHardcoded_withId() {
         testSinksIntoMongo(true, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
     }
@@ -728,6 +745,20 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         createMapping(false);
 
         execute("delete from " + collectionName + " where cast(jedi as varchar) = ?", "true");
+        ArrayList<Document> list = collection.find().into(new ArrayList<>());
+        assertThat(list).hasSize(0);
+    }
+
+    @Test
+    public void deletes_all() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        ObjectId objectId = ObjectId.get();
+        collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
+                                                          .append("jedi", true));
+
+        createMapping(false);
+
+        execute("delete from " + collectionName);
         ArrayList<Document> list = collection.find().into(new ArrayList<>());
         assertThat(list).hasSize(0);
     }
