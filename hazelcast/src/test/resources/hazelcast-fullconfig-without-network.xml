@@ -1091,6 +1091,7 @@
 
     <sql>
         <statement-timeout-millis>0</statement-timeout-millis>
+        <catalog-persistence-enabled>false</catalog-persistence-enabled>
     </sql>
 
     <data-connection name="mysql-database">

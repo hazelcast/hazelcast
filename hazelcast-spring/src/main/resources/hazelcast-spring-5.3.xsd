@@ -5790,6 +5790,20 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="catalog-persistence-enabled" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets whether SQL Catalog persistence is enabled for the node. With SQL
+                        Catalog persistence enabled you can restart the whole cluster without
+                        losing schema definition objects (such as MAPPINGs, TYPEs and VIEWs). The
+                        feature is implemented on top of the Hot Restart feature of Hazelcast
+                        which persists the data to disk. If enabled, you have to also configure
+                        Hot Restart. Feature is disabled by default. If you enable this option in
+                        open-source, the member will fail to start, you need Enterprise to run it
+                        and obtain a license from Hazelcast.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
     </xs:complexType>
 

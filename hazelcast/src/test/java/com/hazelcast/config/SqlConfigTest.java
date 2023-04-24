@@ -27,6 +27,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -41,9 +42,11 @@ public class SqlConfigTest extends HazelcastTestSupport {
     @Test
     public void testNonEmpty() {
         SqlConfig config = new SqlConfig()
-                .setStatementTimeoutMillis(30L);
+                .setStatementTimeoutMillis(30L)
+                .setCatalogPersistenceEnabled(true);
 
         assertEquals(30L, config.getStatementTimeoutMillis());
+        assertTrue(config.isCatalogPersistenceEnabled());
     }
 
     @Test

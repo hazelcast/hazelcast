@@ -3716,6 +3716,7 @@ hazelcast:
   #
   sql:
     statement-timeout-millis: 0
+    catalog-persistence-enabled: false
 
   #  ===== HAZELCAST JET CONFIGURATION =====
   #
