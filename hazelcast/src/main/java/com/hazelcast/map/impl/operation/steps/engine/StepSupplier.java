@@ -179,12 +179,12 @@ public class StepSupplier implements Supplier<Runnable> {
         // check node and cluster health before running each step
         operationRunner.ensureNodeAndClusterHealth(state.getOperation());
 
-        // check timeout for only first step, as in no-offload flows
-        if (firstStep && operationRunner.timeout(state.getOperation())) {
+        // check timeout for only first step, as in regular
+        // flows which we don't do operation offloading
+        if (firstStep) {
             firstStep = false;
-            return false;
+            return !operationRunner.timeout(state.getOperation());
         }
-
         return true;
     }
 
