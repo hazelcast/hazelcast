@@ -60,6 +60,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private final List<? extends Serializable> updates;
     private final String dataConnectionName;
     private final String[] externalNames;
+    private final boolean withoutScan;
     private ExpressionEvalContext evalContext;
     private transient SupplierEx<MongoClient> clientSupplier;
     private final String pkExternalName;
@@ -80,6 +81,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
         this.predicate = predicate;
 
         externalNames = table.externalNames();
+        this.withoutScan = predicate != null;
     }
 
     @Override
@@ -170,12 +172,12 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
             if (updateExpr instanceof Bson) {
                 Document document = Document.parse(((Bson) updateExpr)
                         .toBsonDocument(Document.class, defaultCodecRegistry()).toJson());
-                PlaceholderReplacer.replacePlaceholders(document, evalContext, values, externalNames, true);
+                PlaceholderReplacer.replacePlaceholders(document, evalContext, values, externalNames, !withoutScan);
                 updateExpr = document;
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));
             } else if (updateExpr instanceof String) {
                 String expr = (String) updateExpr;
-                Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, values, externalNames, false, true);
+                Object withReplacements = PlaceholderReplacer.replace(expr, evalContext, values, externalNames, false, !withoutScan);
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, withReplacements)));
             } else {
                 updateToPerform.add(Aggregates.set(new Field<>(fieldName, updateExpr)));

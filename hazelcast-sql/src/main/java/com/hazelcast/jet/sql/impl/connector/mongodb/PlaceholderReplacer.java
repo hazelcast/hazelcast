@@ -48,17 +48,20 @@ final class PlaceholderReplacer {
      * <p>
      * Similar restrictions are in the case of input references - input reference value is known only to the processor
      * receiving the input rows during job execution.
+     *
+     * @param readValueFromInput if true, then input reference is read from inputRow value, otherwise
+     *                           it will use externalName to generate reference.
      */
     static Document replacePlaceholders(Document doc, ExpressionEvalContext evalContext,
-                                        Object[] inputRow, String[] externalNames, boolean forRow) {
+                                        Object[] inputRow, String[] externalNames, boolean readValueFromInput) {
         Document result = new Document();
         for (Entry<String, Object> entry : doc.entrySet()) {
             String entryKey = entry.getKey();
             Object entryValue = entry.getValue();
 
-            entryKey = (String) replace(entryKey, evalContext, inputRow, externalNames, true, forRow);
+            entryKey = (String) replace(entryKey, evalContext, inputRow, externalNames, true, readValueFromInput);
             if (entryValue instanceof String) {
-               entryValue = replace((String) entryValue, evalContext, inputRow, externalNames, false, forRow);
+               entryValue = replace((String) entryValue, evalContext, inputRow, externalNames, false, readValueFromInput);
             }
 
             if (entryValue instanceof List) {
@@ -66,15 +69,15 @@ final class PlaceholderReplacer {
                 for (Object val : (List<?>) entryValue) {
                     Object v = val;
                    if (val instanceof Document) {
-                       v = replacePlaceholders((Document) val, evalContext, inputRow, externalNames, forRow);
+                       v = replacePlaceholders((Document) val, evalContext, inputRow, externalNames, readValueFromInput);
                    } else if (val instanceof String) {
-                       v = replace((String) val, evalContext, inputRow, externalNames, false, forRow);
+                       v = replace((String) val, evalContext, inputRow, externalNames, false, readValueFromInput);
                    }
                    newValues.add(v);
                 }
                 entryValue = newValues;
             } else if (entryValue instanceof Document) {
-                entryValue = replacePlaceholders((Document) entryValue, evalContext, inputRow, externalNames, forRow);
+                entryValue = replacePlaceholders((Document) entryValue, evalContext, inputRow, externalNames, readValueFromInput);
             }
 
             result.append(entryKey, entryValue);
