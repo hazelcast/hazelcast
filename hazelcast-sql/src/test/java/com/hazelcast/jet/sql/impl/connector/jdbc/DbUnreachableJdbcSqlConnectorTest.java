@@ -34,7 +34,7 @@ public class DbUnreachableJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         sqlService.execute("CREATE DATA CONNECTION mysql "
                 + "TYPE JDBC "
                 + "OPTIONS("
-                + "'jdbcUrl'='jdbc:mysql://localhost:33066/mydb', "
+                + "'jdbcUrl'='jdbc:mysql:/fake-host:12345/noSuchDb', "
                 + "'username'='root', "
                 + "'password'='123'"
                 + ")");
