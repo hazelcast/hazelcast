@@ -24,6 +24,7 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -34,6 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertOpenEventually;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
@@ -55,6 +57,11 @@ public abstract class AsyncSocket_LargePayloadTest {
     private Reactor serverReactor;
 
     public abstract ReactorBuilder newReactorBuilder();
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        assumeNotIbmJDK8();
+    }
 
     @Before
     public void before() {
