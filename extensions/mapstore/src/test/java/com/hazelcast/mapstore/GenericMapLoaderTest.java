@@ -403,7 +403,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         mapLoader = createMapLoader(properties, hz);
 
         List<Integer> ids = newArrayList(mapLoader.loadAllKeys());
-        assertThat(ids).isNull();
+        assertThat(ids).isEmpty();
     }
 
     @Test
