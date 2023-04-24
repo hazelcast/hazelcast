@@ -4048,17 +4048,17 @@
         "keep-idle-seconds": {
           "type": "integer",
           "default": 7200,
-          "description": "Specifies the TCP Keep-Alive idle time: the number of seconds of idle time before keep-alive initiates a probe."
+          "description": "Specifies the TCP Keep-Alive idle time: the number of seconds of idle time before keep-alive initiates a probe. Valid values are 1 to 32767."
         },
         "keep-interval-seconds": {
           "type": "integer",
           "default": 75,
-          "description": "Specifies the TCP keep-alive interval: the number of seconds between keep-alive probes."
+          "description": "Specifies the TCP keep-alive interval: the number of seconds between keep-alive probes. Valid values are 1 to 32767."
         },
         "keep-count": {
           "type": "integer",
           "default": 8,
-          "description": "Specifies the TCP Keep-Alive count: the maximum number of TCP keep-alive probes to send before giving up and closing the connection if no response is obtained from the other side."
+          "description": "Specifies the TCP Keep-Alive count: the maximum number of TCP keep-alive probes to send before giving up and closing the connection if no response is obtained from the other side. Valid values are 1 to 127."
         }
       }
     },

@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.util.MutableLong;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -40,6 +41,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_MAP_STORE_WAITING_TO_BE_PROCESSED_COUNT;
 import static com.hazelcast.test.Accessors.getNode;
+import static java.lang.String.format;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -62,7 +64,7 @@ public class MapStoreForceOffloadAllOperationTest extends HazelcastTestSupport {
     }
 
     protected Config getConfig() {
-        return super.smallInstanceConfig()
+        return super.smallInstanceConfigWithoutJetAndMetrics()
                 .setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(), "true");
     }
 
@@ -72,18 +74,21 @@ public class MapStoreForceOffloadAllOperationTest extends HazelcastTestSupport {
 
         List<Future> futures = new ArrayList<>(opCount);
         for (int i = 0; i < opCount; i++) {
-            futures.add(map.setAsync(Integer.toString(i),
-                    Integer.toString(i)).toCompletableFuture());
+            futures.add(map.submitToKey(Integer.toString(i), (EntryProcessor) entry -> {
+                // mimic slow execution
+                sleepMillis(10);
+                return null;
+            }).toCompletableFuture());
         }
 
         MutableLong observedOffloadedOpCount = new MutableLong();
 
         assertTrueEventually(() -> {
             ProbeCatcher mapWithMapStore = new ProbeCatcher();
-
             registry.collect(mapWithMapStore);
-
-            assertTrue(observedOffloadedOpCount.addAndGet(mapWithMapStore.length) > 0);
+            long metricsOffloadedOpCount = observedOffloadedOpCount.addAndGet(mapWithMapStore.length);
+            assertTrue(format("Found %d metricsOffloadedOpCount", metricsOffloadedOpCount),
+                    metricsOffloadedOpCount > 0);
         });
     }
 

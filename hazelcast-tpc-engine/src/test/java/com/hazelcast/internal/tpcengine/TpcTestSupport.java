@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.util.JVM;
+
 import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -29,6 +31,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
 public class TpcTestSupport {
 
@@ -212,5 +215,12 @@ public class TpcTestSupport {
 
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         assertTrueEventually(null, task, timeoutSeconds);
+    }
+
+    public static void assumeNotIbmJDK8() {
+        String vendor = System.getProperty("java.vendor");
+        boolean isIbmJDK = vendor.toLowerCase().contains("ibm");
+        boolean isIbmJDK8 = isIbmJDK && (JVM.getMajorVersion() == 8);
+        assumeFalse(isIbmJDK8);
     }
 }

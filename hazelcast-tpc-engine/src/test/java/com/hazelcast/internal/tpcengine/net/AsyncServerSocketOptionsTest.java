@@ -19,11 +19,13 @@ package com.hazelcast.internal.tpcengine.net;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEADDR;
@@ -39,6 +41,11 @@ public abstract class AsyncServerSocketOptionsTest {
     private final List<Reactor> reactors = new ArrayList<>();
 
     public abstract ReactorBuilder newReactorBuilder();
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        assumeNotIbmJDK8();
+    }
 
     @After
     public void after() {

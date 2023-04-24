@@ -17,42 +17,81 @@
 package com.hazelcast.mapstore;
 
 import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
+import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 final class MappingHelper {
 
+    private static final SqlDialect DIALECT = CalciteSqlDialect.DEFAULT;
     private final SqlService sqlService;
 
     MappingHelper(SqlService sqlService) {
         this.sqlService = sqlService;
     }
 
-    public void createMapping(String mappingName, String tableName, String mappingColumns,
-                              String dataConnectionRef, String idColumn) {
+    public void createMapping(
+            String mappingName,
+            String tableName,
+            List<SqlColumnMetadata> mappingColumns,
+            String dataConnectionRef,
+            String idColumn
+    ) {
 
         sqlService.execute(
-                "CREATE MAPPING \"" + mappingName + "\" "
-                        + "EXTERNAL NAME " + externalName(tableName) + " "
-                        + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
-                        + " DATA CONNECTION \"" + dataConnectionRef + "\" "
-                        + " OPTIONS ("
-                        + "    'idColumn' = '" + idColumn + "' "
-                        + ")"
+                createMappingQuery(mappingName, tableName, mappingColumns, dataConnectionRef, idColumn)
         ).close();
     }
 
-    //package-private just for testing
+    private String createMappingQuery(
+            String mappingName,
+            String tableName,
+            List<SqlColumnMetadata> mappingColumns,
+            String dataConnectionRef,
+            String idColumn
+    ) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("CREATE MAPPING ");
+        DIALECT.quoteIdentifier(sb, mappingName);
+        sb.append(" EXTERNAL NAME ");
+        DIALECT.quoteIdentifier(sb, externalName(tableName));
+        if (mappingColumns != null) {
+            sb.append(" ( ");
+            for (Iterator<SqlColumnMetadata> iterator = mappingColumns.iterator(); iterator.hasNext(); ) {
+                SqlColumnMetadata mc = iterator.next();
+                DIALECT.quoteIdentifier(sb, mc.getName());
+                sb.append(' ');
+                sb.append(mc.getType());
+                if (iterator.hasNext()) {
+                    sb.append(", ");
+                }
+            }
+            sb.append(" )");
+        }
+        sb.append(" DATA CONNECTION ");
+        DIALECT.quoteIdentifier(sb, dataConnectionRef);
+        sb.append(" OPTIONS (");
+        sb.append(" 'idColumn' = ");
+        DIALECT.quoteStringLiteral(sb, null, idColumn);
+        sb.append(" )");
+        return sb.toString();
+
+    }
+    
+     //package-private just for testing
     static String externalName(String tableName) {
         return splitByNonQuotedDots(tableName).stream()
                 .map(unwrapFromQuotesIfPresent())
-                .map(wrapWithQuotes())
+                .map(DEFAULT::quoteIdentifier)
                 .collect(Collectors.joining("."));
     }
 
@@ -63,7 +102,6 @@ final class MappingHelper {
         for (int i = 0; i < input.length(); i++) {
             switch (input.charAt(i)) {
                 case '\"':
-                case '`':
                     inQuotes = !inQuotes;
                     break;
                 case '.':
@@ -80,24 +118,28 @@ final class MappingHelper {
     }
 
     private static Function<String, String> unwrapFromQuotesIfPresent() {
-        return s -> s.replaceAll("^\"|\"$|^`|`$", "");
-    }
-
-    private static Function<String, String> wrapWithQuotes() {
-        return s -> "\"" + s + "\"";
+        return s -> s.replaceAll("^\"|\"$", "");
     }
 
     public void dropMapping(String mappingName) {
-        sqlService.execute("DROP MAPPING IF EXISTS \"" + mappingName + "\"").close();
+        StringBuilder sb = new StringBuilder()
+                .append("DROP MAPPING IF EXISTS ");
+        DIALECT.quoteIdentifier(sb, mappingName);
+        sqlService.execute(sb.toString()).close();
     }
 
     public List<SqlColumnMetadata> loadColumnMetadataFromMapping(String mapping) {
-        return loadRowMetadataFromMapping(mapping).getColumns();
-    }
-
-    public SqlRowMetadata loadRowMetadataFromMapping(String mapping) {
-        try (SqlResult result = sqlService.execute("SELECT * FROM \"" + mapping + "\" LIMIT 0")) {
-            return result.getRowMetadata();
+        String query = "SELECT * FROM information_schema.columns WHERE table_name = ? ORDER BY ordinal_position ASC";
+        try (SqlResult result = sqlService.execute(query, mapping)) {
+            return StreamSupport
+                    .stream(result.spliterator(), false)
+                    .map(row -> {
+                        String name = row.getObject("column_name");
+                        SqlColumnType type = SqlColumnType.valueOf(row.getObject("data_type"));
+                        boolean isNullable = Boolean.parseBoolean(row.getObject("is_nullable"));
+                        return new SqlColumnMetadata(name, type, isNullable);
+                    })
+                    .collect(Collectors.toList());
         }
     }
 }
