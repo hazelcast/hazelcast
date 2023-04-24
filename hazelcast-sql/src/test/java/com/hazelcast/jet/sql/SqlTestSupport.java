@@ -435,10 +435,15 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     @Nonnull
     protected static List<Row> allRows(String statement, SqlService sqlService) {
-        List<Row> actualRows = new ArrayList<>();
         try (SqlResult result = sqlService.execute(statement)) {
-            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
+            return allRows(result);
         }
+    }
+
+    @Nonnull
+    protected static List<Row> allRows(SqlResult result) {
+        List<Row> actualRows = new ArrayList<>();
+        result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
         return actualRows;
     }
 

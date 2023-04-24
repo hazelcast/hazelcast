@@ -25,9 +25,7 @@ class DeleteQueryBuilder {
 
     private final String query;
 
-    DeleteQueryBuilder(JdbcTable table, List<String> pkFields) {
-        SqlDialect dialect = table.sqlDialect();
-
+    DeleteQueryBuilder(JdbcTable table, List<String> pkFields, SqlDialect dialect) {
         StringBuilder sb = new StringBuilder()
                 .append("DELETE FROM ");
         dialect.quoteIdentifier(sb, table.getExternalNameList());

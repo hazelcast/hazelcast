@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
-import org.apache.calcite.sql.SqlDialect;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -35,24 +35,24 @@ public class JdbcTable extends JetTable {
 
     private final List<String> dbFieldNames;
     private final List<String> primaryKeyFieldNames;
-    private final SqlDialect sqlDialect;
     private final String[] externalName;
     private final List<String> externalNameList;
     private final String dataConnectionName;
     private final int batchLimit;
     private final SerializationService serializationService;
+    private final DataConnectionService dataConnectionService;
 
     public JdbcTable(
             @Nonnull SqlConnector sqlConnector,
             @Nonnull List<TableField> fields,
-            @Nonnull SqlDialect dialect,
             @Nonnull String schemaName,
             @Nonnull String name,
             @Nonnull TableStatistics statistics,
             @Nonnull String[] externalName,
             @Nonnull String dataConnectionName,
             int batchLimit,
-            @Nonnull SerializationService serializationService) {
+            @Nonnull SerializationService serializationService,
+            @Nonnull DataConnectionService dataConnectionService) {
 
         super(sqlConnector, fields, schemaName, name, statistics);
 
@@ -69,20 +69,16 @@ public class JdbcTable extends JetTable {
 
         this.dbFieldNames = unmodifiableList(dbFieldNames);
         this.primaryKeyFieldNames = unmodifiableList(primaryKeyFieldNames);
-        this.sqlDialect = dialect;
         this.externalName = externalName;
         this.externalNameList = Arrays.asList(externalName);
         this.dataConnectionName = dataConnectionName;
         this.batchLimit = batchLimit;
         this.serializationService = serializationService;
+        this.dataConnectionService = dataConnectionService;
     }
 
     public List<String> dbFieldNames() {
         return dbFieldNames;
-    }
-
-    public SqlDialect sqlDialect() {
-        return sqlDialect;
     }
 
     public String[] getExternalName() {
@@ -129,6 +125,10 @@ public class JdbcTable extends JetTable {
 
     public SerializationService getSerializationService() {
         return serializationService;
+    }
+
+    public DataConnectionService getDataConnectionService() {
+        return dataConnectionService;
     }
 
     @Override

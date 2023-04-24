@@ -34,8 +34,13 @@ class UpdateQueryBuilder {
     private final String query;
     private final ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
 
-    UpdateQueryBuilder(JdbcTable table, List<String> pkFields, List<String> fieldNames, List<RexNode> expressions) {
-        SqlDialect dialect = table.sqlDialect();
+    UpdateQueryBuilder(
+            JdbcTable table,
+            SqlDialect dialect,
+            List<String> pkFields,
+            List<String> fieldNames,
+            List<RexNode> expressions
+    ) {
         SimpleContext simpleContext = new SimpleContext(dialect, value -> {
             JdbcTableField field = table.getField(value);
             return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
@@ -53,7 +58,7 @@ class UpdateQueryBuilder {
                                        })
                                        .collect(joining(", "));
 
-        String whereClause = pkFields.stream().map(e ->  dialect.quoteIdentifier(e) + " = ?")
+        String whereClause = pkFields.stream().map(e -> dialect.quoteIdentifier(e) + " = ?")
                                      .collect(joining(" AND "));
 
         query = "UPDATE " + dialect.quoteIdentifier(new StringBuilder(), Arrays.asList(table.getExternalName())) +

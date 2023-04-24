@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -94,7 +95,11 @@ public class JdbcSqlConnector implements SqlConnector {
                     + ", external name for Jdbc must have either 1, 2 or 3 components (catalog, schema and relation)");
         }
         ExternalJdbcTableName externalTableName = new ExternalJdbcTableName(externalName);
-        Map<String, DbField> dbFields = readDbFields(nodeEngine, dataConnectionName, externalTableName);
+        Map<String, DbField> dbFields = readDbFields(
+                nodeEngine.getDataConnectionService(),
+                dataConnectionName,
+                externalTableName
+        );
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -118,7 +123,8 @@ public class JdbcSqlConnector implements SqlConnector {
                         throw new IllegalStateException("Could not resolve field with external name " + f.externalName());
                     }
                     validateType(f, dbField);
-                    MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName(), dbField.columnTypeName);
+                    MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName(),
+                            dbField.columnTypeName);
                     mappingField.setPrimaryKey(dbField.primaryKey);
                     resolvedFields.add(mappingField);
                 } else {
@@ -137,11 +143,13 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private Map<String, DbField> readDbFields(
-            NodeEngine nodeEngine,
+            DataConnectionService dataConnectionService,
             String dataConnectionName,
             ExternalJdbcTableName externalTableName
     ) {
-        JdbcDataConnection dataConnection = getAndRetainDataConnection(nodeEngine, dataConnectionName);
+        JdbcDataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(
+                dataConnectionName, JdbcDataConnection.class);
+
         try (Connection connection = dataConnection.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
             checkTableExists(externalTableName, databaseMetaData);
@@ -174,7 +182,8 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
-    private static Set<String> readPrimaryKeyColumns(ExternalJdbcTableName externalTableName, DatabaseMetaData databaseMetaData) {
+    private static Set<String> readPrimaryKeyColumns(ExternalJdbcTableName externalTableName,
+                                                     DatabaseMetaData databaseMetaData) {
         Set<String> pkColumns = new HashSet<>();
         try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(
                 externalTableName.catalog,
@@ -215,17 +224,11 @@ public class JdbcSqlConnector implements SqlConnector {
         return fields;
     }
 
-    private static JdbcDataConnection getAndRetainDataConnection(NodeEngine nodeEngine, String dataConnectionName) {
-        return nodeEngine
-                .getDataConnectionService()
-                .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
-    }
-
     private void validateType(MappingField field, DbField dbField) {
         QueryDataType type = resolveType(dbField.columnTypeName);
         if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
             throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
-                                            + " does not match db type " + type.getTypeFamily());
+                    + " does not match db type " + type.getTypeFamily());
         }
     }
 
@@ -254,24 +257,25 @@ public class JdbcSqlConnector implements SqlConnector {
             ));
         }
 
-        SqlDialect dialect = resolveDialect(nodeEngine, dataConnectionName);
-
         return new JdbcTable(
                 this,
                 fields,
-                dialect,
                 schemaName,
                 mappingName,
                 new ConstantTableStatistics(0),
                 externalName,
                 dataConnectionName,
                 parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
-                nodeEngine.getSerializationService()
+                nodeEngine.getSerializationService(),
+                nodeEngine.getDataConnectionService()
         );
     }
 
-    private SqlDialect resolveDialect(NodeEngine nodeEngine, String dataConnectionName) {
-        JdbcDataConnection dataConnection = getAndRetainDataConnection(nodeEngine, dataConnectionName);
+    private static SqlDialect resolveDialect(JdbcTable table) {
+        String dataConnectionName = table.getDataConnectionName();
+        JdbcDataConnection dataConnection = table.getDataConnectionService().getAndRetainDataConnection(
+                dataConnectionName, JdbcDataConnection.class);
+
         try (Connection connection = dataConnection.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
             SqlDialect dialect;
@@ -304,10 +308,11 @@ public class JdbcSqlConnector implements SqlConnector {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
         JdbcTable table = context.getTable();
+        SqlDialect dialect = resolveDialect(table);
 
         List<RexNode> projections = Util.toList(projection, n -> n.unwrap(RexNode.class));
         RexNode filter = predicate == null ? null : predicate.unwrap(RexNode.class);
-        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), filter, projections);
+        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), dialect, filter, projections);
         return context.getDag().newUniqueVertex(
                 "Select(" + table.getExternalNameList() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
@@ -324,7 +329,7 @@ public class JdbcSqlConnector implements SqlConnector {
     public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
         JdbcTable table = context.getTable();
 
-        InsertQueryBuilder builder = new InsertQueryBuilder(table);
+        InsertQueryBuilder builder = new InsertQueryBuilder(table, resolveDialect(table));
         return new VertexWithInputConfig(context.getDag().newUniqueVertex(
                 "Insert(" + table.getExternalNameList() + ")",
                 new InsertProcessorSupplier(
@@ -357,7 +362,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 .collect(toList());
 
         List<RexNode> projections = Util.toList(expressions, n -> n.unwrap(RexNode.class));
-        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, fieldNames, projections);
+        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, resolveDialect(table), pkFields, fieldNames, projections);
 
         return context.getDag().newUniqueVertex(
                 "Update(" + table.getExternalNameList() + ")",
@@ -380,7 +385,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        DeleteQueryBuilder builder = new DeleteQueryBuilder(table, pkFields);
+        DeleteQueryBuilder builder = new DeleteQueryBuilder(table, pkFields, resolveDialect(table));
         return context.getDag().newUniqueVertex(
                 "Delete(" + table.getExternalNameList() + ")",
                 new DeleteProcessorSupplier(
@@ -395,11 +400,12 @@ public class JdbcSqlConnector implements SqlConnector {
     @Override
     public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
         JdbcTable jdbcTable = context.getTable();
+        SqlDialect dialect = resolveDialect(jdbcTable);
 
         // If dialect is supported
-        if (SupportedDatabases.isDialectSupported(jdbcTable)) {
+        if (SupportedDatabases.isDialectSupported(resolveDialect(jdbcTable))) {
             // Get the upsert statement
-            String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable);
+            String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable, dialect);
 
             // Create Vertex with the UPSERT statement
             return context.getDag().newUniqueVertex(

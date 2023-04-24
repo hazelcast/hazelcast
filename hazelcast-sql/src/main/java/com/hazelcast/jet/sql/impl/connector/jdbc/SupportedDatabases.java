@@ -70,8 +70,7 @@ final class SupportedDatabases {
         return DETECTED_DATABASE_NAMES.add(uppercaseProductName);
     }
 
-    static boolean isDialectSupported(JdbcTable jdbcTable) {
-        SqlDialect dialect = jdbcTable.sqlDialect();
+    static boolean isDialectSupported(SqlDialect dialect) {
         return dialect instanceof MysqlSqlDialect ||
                dialect instanceof PostgresqlSqlDialect ||
                dialect instanceof H2SqlDialect;
