@@ -187,6 +187,9 @@ public class EntryOperation extends LockAwareOperation
         if (readOnly && existInMemory(dataKey)) {
             mapStoreOffloadEnabled = false;
             tieredStoreAndPartitionCompactorEnabled = false;
+        } else {
+            mapStoreOffloadEnabled = isMapStoreOffloadEnabled();
+            tieredStoreAndPartitionCompactorEnabled = isTieredStoreAndPartitionCompactorEnabled();
         }
     }
 
@@ -224,8 +227,7 @@ public class EntryOperation extends LockAwareOperation
         // tieredStoreAndPartitionCompactorEnabled is true, run
         // all procedure in this class, including EP-offload, as a
         // series of Steps. See EntryOpSteps to check how it works.
-        if (mapStoreOffloadEnabled
-                || tieredStoreAndPartitionCompactorEnabled) {
+        if (steppedOperationOffloadEnabled()) {
             assert recordStore != null;
             return offloadOperation();
         }
@@ -240,6 +242,11 @@ public class EntryOperation extends LockAwareOperation
                     .getResult();
             return RESPONSE;
         }
+    }
+
+    private boolean steppedOperationOffloadEnabled() {
+        return mapStoreOffloadEnabled
+                || tieredStoreAndPartitionCompactorEnabled;
     }
 
     @Override
@@ -300,8 +307,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public Object getResponse() {
-        if (offload && !mapStoreOffloadEnabled
-                && !tieredStoreAndPartitionCompactorEnabled) {
+        if (offload && !steppedOperationOffloadEnabled()) {
             return null;
         }
         return response;
@@ -309,8 +315,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public boolean returnsResponse() {
-        if (offload && !mapStoreOffloadEnabled
-                && !tieredStoreAndPartitionCompactorEnabled) {
+        if (offload && !steppedOperationOffloadEnabled()) {
             // This has to be false, since the operation uses the
             // deferred-response mechanism. This method returns false, but
             // the response will be send later on using the response handler
@@ -322,8 +327,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        if (offload && !mapStoreOffloadEnabled
-                && !tieredStoreAndPartitionCompactorEnabled) {
+        if (offload && !steppedOperationOffloadEnabled()) {
             // This is required since if the returnsResponse() method returns
             // false there won't be any response sent to the invoking
             // party - this means that the operation won't be retried if
@@ -339,8 +343,7 @@ public class EntryOperation extends LockAwareOperation
             value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
             justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
-        if (offload && !mapStoreOffloadEnabled
-                && !tieredStoreAndPartitionCompactorEnabled) {
+        if (offload && !steppedOperationOffloadEnabled()) {
             return null;
         }
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
@@ -350,8 +353,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public boolean shouldBackup() {
-        if (offload && !mapStoreOffloadEnabled
-                && !tieredStoreAndPartitionCompactorEnabled) {
+        if (offload && !steppedOperationOffloadEnabled()) {
             return false;
         }
         return mapContainer.getTotalBackupCount() > 0
