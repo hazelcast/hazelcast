@@ -162,15 +162,19 @@ public class JdbcDataConnection extends DataConnectionBase {
 
     @Override
     public void destroy() {
-        if (pooledDataSourceSup != null) {
-            HikariDataSource dataSource = pooledDataSourceSup.get();
+        ConcurrentMemoizingSupplier<HikariDataSource> localPooledDataSourceSup = pooledDataSourceSup;
+        if (localPooledDataSourceSup != null) {
+            HikariDataSource dataSource = localPooledDataSourceSup.remembered();
             pooledDataSourceSup = null;
-            try {
-                dataSource.close();
-            } catch (Exception e) {
-                throw new HazelcastException("Could not close connection pool", e);
+            if (dataSource != null) {
+                try {
+                    dataSource.close();
+                } catch (Exception e) {
+                    throw new HazelcastException("Could not close connection pool", e);
+                }
             }
-        } else {
+        }
+        if (singleUseConnectionSup != null) {
             singleUseConnectionSup = null;
         }
     }
