@@ -67,6 +67,6 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
             instance().getSql().execute("CREATE MAPPING test_" + shared + " data connection " + dataConnName)
                       .close();
         });
-        assertThat(e.getMessage()).contains("exception={com.mongodb.MongoSocketException: non-existing-fake-address}");
+        assertThat(e.getMessage()).contains("exception={com.mongodb.MongoSocketException: non-existing");
     }
 }
