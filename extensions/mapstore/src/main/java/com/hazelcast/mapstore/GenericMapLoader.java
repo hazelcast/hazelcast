@@ -37,7 +37,6 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 
 import java.util.Collection;
@@ -54,6 +53,8 @@ import static com.hazelcast.mapstore.ExistingMappingValidator.validateColumnsExi
 import static com.hazelcast.mapstore.FromSqlRowConverter.toGenericRecord;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * GenericMapLoader is an implementation of {@link MapLoader} built
@@ -190,7 +191,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     private void createOrReadMapping() {
         logger.fine("Initializing for map " + mapName);
         try {
-            String mappingColumns = null;
+            List<SqlColumnMetadata> mappingColumns = null;
             if (genericMapStoreProperties.hasColumns()) {
                 mappingColumns = resolveMappingColumns();
                 logger.fine("Discovered following mapping columns: " + mappingColumns);
@@ -222,7 +223,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         }
     }
 
-    private String resolveMappingColumns() {
+    private List<SqlColumnMetadata> resolveMappingColumns() {
         // Create a temporary mapping
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
         mappingHelper.createMapping(
@@ -233,24 +234,26 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
                 genericMapStoreProperties.idColumn
         );
 
-        SqlRowMetadata rowMetadata = mappingHelper.loadRowMetadataFromMapping(tempMapping);
-        columnMetadataList = rowMetadata.getColumns();
+        columnMetadataList = mappingHelper.loadColumnMetadataFromMapping(tempMapping);
+        Map<String, SqlColumnMetadata> columnMap = columnMetadataList
+                .stream()
+                .collect(toMap(SqlColumnMetadata::getName, identity()));
         dropMapping(tempMapping);
 
         return genericMapStoreProperties.getAllColumns().stream()
-                .map(columnName -> validateColumn(rowMetadata, columnName))
-                .map(rowMetadata::getColumn)
-                .map(columnMetadata1 -> columnMetadata1.getName() + " " + columnMetadata1.getType())
-                .collect(Collectors.joining(", "));
+                                        .map(columnName -> validateColumn(columnMap, columnName))
+                                        .collect(Collectors.toList());
     }
 
     private void readExistingMapping() {
         logger.fine("Reading existing mapping for map" + mapName);
         try {
             // If mappingName does not exist, we get "... did you forget to CREATE MAPPING?" exception
-            SqlRowMetadata sqlRowMetadata = mappingHelper.loadRowMetadataFromMapping(mappingName);
-            validateColumnsExist(sqlRowMetadata, genericMapStoreProperties.getAllColumns());
-            columnMetadataList = sqlRowMetadata.getColumns();
+            columnMetadataList = mappingHelper.loadColumnMetadataFromMapping(mappingName);
+            Map<String, SqlColumnMetadata> columnMap = columnMetadataList
+                    .stream()
+                    .collect(toMap(SqlColumnMetadata::getName, identity()));
+            validateColumnsExist(columnMap, genericMapStoreProperties.getAllColumns());
             queries = new Queries(mappingName, genericMapStoreProperties.idColumn, columnMetadataList);
 
         } catch (Exception e) {
@@ -358,7 +361,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
             boolean finished = initFinished.await(initTimeoutMillis, MILLISECONDS);
             if (!finished) {
                 throw new HazelcastException("MapStore init for map: " + mapName + " timed out after "
-                                             + initTimeoutMillis + " ms", initFailure);
+                        + initTimeoutMillis + " ms", initFailure);
             }
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
