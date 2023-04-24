@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.networking.nio;
+package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.networking.nio.SelectorOptimizer.IteratorImpl;
-import com.hazelcast.internal.networking.nio.SelectorOptimizer.SelectionKeys;
-import com.hazelcast.internal.networking.nio.SelectorOptimizer.SelectionKeysSet;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+
+import com.hazelcast.internal.tpcengine.nio.SelectorOptimizer.IteratorImpl;
+import com.hazelcast.internal.tpcengine.nio.SelectorOptimizer.SelectionKeys;
+import com.hazelcast.internal.tpcengine.nio.SelectorOptimizer.SelectionKeysSet;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.nio.channels.SelectionKey;
 import java.util.Arrays;
@@ -42,9 +37,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class SelectionKeysSetTest extends HazelcastTestSupport {
+public class SelectionKeysSetTest {
 
     private final SelectionKey key1 = mock(SelectionKey.class);
     private final SelectionKey key2 = mock(SelectionKey.class);
