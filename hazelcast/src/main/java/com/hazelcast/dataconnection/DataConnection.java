@@ -106,6 +106,10 @@ public interface DataConnection {
     @Nonnull
     Collection<DataConnectionResource> listResources();
 
+    /**
+     * Returns the list of possible values for {@link DataConnectionResource#type()},
+     * that will be returned when {@link #listResources()} is called.
+     */
     @Nonnull
     Collection<String> resourceTypes();
 
