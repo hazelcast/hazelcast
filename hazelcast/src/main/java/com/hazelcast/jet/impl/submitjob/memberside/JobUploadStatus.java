@@ -160,7 +160,7 @@ public class JobUploadStatus {
     }
 
     void createNewTemporaryFile() throws IOException {
-        Path jarPath = getJarPath();
+        Path jarPath = createJarPath();
 
         // Make it accessible only by the owner
         File jarFile = jarPath.toFile();
@@ -182,7 +182,7 @@ public class JobUploadStatus {
     }
 
     @SuppressWarnings("java:S5443")
-    Path getJarPath() throws IOException {
+    Path createJarPath() throws IOException {
         Path jarPath;
         if (jobMetaDataParameterObject.getUploadDirectoryPath() != null) {
             Path path = Paths.get(jobMetaDataParameterObject.getUploadDirectoryPath());

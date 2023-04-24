@@ -205,7 +205,7 @@ public class JobUploadStatusTest {
             Files.createDirectories(path);
             String uploadPath = path.toAbsolutePath().toString();
             when(jobMetaDataParameterObject.getUploadDirectoryPath()).thenReturn(uploadPath);
-            jarPath = jobUploadStatus.getJarPath();
+            jarPath = jobUploadStatus.createJarPath();
             assertTrue(Files.exists(jarPath));
         } finally {
             if (jarPath != null) {
