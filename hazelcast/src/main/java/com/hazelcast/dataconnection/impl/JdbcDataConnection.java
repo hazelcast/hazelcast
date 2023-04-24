@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
+import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.spi.annotation.Beta;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -51,27 +52,32 @@ public class JdbcDataConnection extends DataConnectionBase {
 
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
-    private HikariDataSource pooledDataSource;
+    private volatile ConcurrentMemoizingSupplier<HikariDataSource> pooledDataSourceSup;
     private Supplier<Connection> singleUseConnectionSup;
 
     public JdbcDataConnection(DataConnectionConfig config) {
         super(config);
         if (config.isShared()) {
-            this.pooledDataSource = createHikariDataSource();
+            this.pooledDataSourceSup = new ConcurrentMemoizingSupplier<>(this::createHikariDataSource);
         } else {
             this.singleUseConnectionSup = createSingleConnectionSup();
         }
     }
 
     protected HikariDataSource createHikariDataSource() {
-        Properties properties = new Properties();
-        properties.putAll(getConfig().getProperties());
-        if (!properties.containsKey("poolName")) {
-            int cnt = DATA_SOURCE_COUNTER.getAndIncrement();
-            properties.put("poolName", "HikariPool-" + cnt + "-" + getName());
+        DataConnectionConfig config = getConfig();
+        try {
+            Properties properties = new Properties();
+            properties.putAll(config.getProperties());
+            if (!properties.containsKey("poolName")) {
+                int cnt = DATA_SOURCE_COUNTER.getAndIncrement();
+                properties.put("poolName", "HikariPool-" + cnt + "-" + getName());
+            }
+            HikariConfig dataSourceConfig = new HikariConfig(properties);
+            return new HikariDataSource(dataSourceConfig);
+        } catch (Exception e) {
+            throw new HazelcastException("Could not create pool for data connection '" + config.getName() + "'", e);
         }
-        HikariConfig dataSourceConfig = new HikariConfig(properties);
-        return new HikariDataSource(dataSourceConfig);
     }
 
     private Supplier<Connection> createSingleConnectionSup() {
@@ -114,7 +120,7 @@ public class JdbcDataConnection extends DataConnectionBase {
     private Connection pooledConnection() {
         retain();
         try {
-            return new ConnectionDelegate(pooledDataSource.getConnection()) {
+            return new ConnectionDelegate(pooledDataSourceSup.get().getConnection()) {
                 @Override
                 public void close() {
                     try {
@@ -156,13 +162,14 @@ public class JdbcDataConnection extends DataConnectionBase {
 
     @Override
     public void destroy() {
-        if (pooledDataSource != null) {
+        if (pooledDataSourceSup != null) {
+            HikariDataSource dataSource = pooledDataSourceSup.get();
+            pooledDataSourceSup = null;
             try {
-                pooledDataSource.close();
+                dataSource.close();
             } catch (Exception e) {
                 throw new HazelcastException("Could not close connection pool", e);
             }
-            pooledDataSource = null;
         } else {
             singleUseConnectionSup = null;
         }
@@ -172,6 +179,6 @@ public class JdbcDataConnection extends DataConnectionBase {
      * For tests only
      */
     HikariDataSource pooledDataSource() {
-        return pooledDataSource;
+        return pooledDataSourceSup.get();
     }
 }
