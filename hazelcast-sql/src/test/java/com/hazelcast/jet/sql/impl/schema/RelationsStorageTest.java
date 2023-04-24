@@ -108,6 +108,6 @@ public class RelationsStorageTest extends SimpleTestInClusterSupport {
     }
 
     private static View view(String name, String query) {
-        return new View(name, query, emptyList(), emptyList());
+        return new View(name, query, emptyList(), emptyList(), streaming);
     }
 }

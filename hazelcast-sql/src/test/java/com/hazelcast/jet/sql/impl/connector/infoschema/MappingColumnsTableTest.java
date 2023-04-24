@@ -48,7 +48,7 @@ public class MappingColumnsTableTest {
                 null,
                 singletonList(new MappingField("table-field-name", INT, "table-field-external-name")),
                 emptyMap());
-        View view = new View("view-name", "select * from table-name", singletonList("col1"), singletonList(INT));
+        View view = new View("view-name", "select * from table-name", singletonList("col1"), singletonList(INT), streaming);
         MappingColumnsTable mappingColumnsTable =
                 new MappingColumnsTable("catalog", null, "schema", singletonList(mapping), singletonList(view));
 
