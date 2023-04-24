@@ -319,9 +319,10 @@ public class TableResolverImpl implements TableResolver {
         String internalObjType = internalMapping.objectType() == null
                 ? connector.defaultObjectType()
                 : internalMapping.objectType();
+        String connectorType = connector.typeName();
         return new SqlMappingContext(internalMapping.name(), internalMapping.externalName(),
                 internalMapping.dataConnection(),
-                internalMapping.connectorType(), internalObjType, internalMapping.options());
+                connectorType, internalObjType, internalMapping.options());
     }
 
     private Table toTable(View view) {
