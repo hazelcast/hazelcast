@@ -97,7 +97,7 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connectorCache.forType(mapping.getConnectorType())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
                 mapping.externalName(), mapping.dataConnection()))
                 .willThrow(new RuntimeException("expected test exception"));
@@ -116,7 +116,7 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connectorCache.forType(mapping.getConnectorType())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
                 mapping.externalName(), mapping.dataConnection()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
@@ -135,7 +135,7 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connectorCache.forType(mapping.getConnectorType())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
                 mapping.externalName(), mapping.dataConnection()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
@@ -153,7 +153,7 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connectorCache.forType(mapping.getConnectorType())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
                 mapping.externalName(), mapping.dataConnection()))
                 .willReturn(singletonList(new MappingField("field_name", INT)));

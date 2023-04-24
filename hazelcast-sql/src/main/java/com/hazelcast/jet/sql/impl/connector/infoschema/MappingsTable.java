@@ -76,7 +76,7 @@ public class MappingsTable extends InfoSchemaTable {
                     mappingsSchema,
                     mapping.name(),
                     quoteCompoundIdentifier(mapping.externalName()),
-                    mapping.connectorType(),
+                    mapping.getConnectorType(),
                     uncheckCall(() -> JsonUtil.toJson(mapping.options()))
             };
             rows.add(row);

@@ -140,7 +140,7 @@ public class SqlPojoTest extends SqlTestSupport {
                 m.name(),
                 m.externalName(),
                 null,
-                m.connectorType(),
+                m.getConnectorType(),
                 null,
                 new ArrayList<>(m.fields()),
                 brokenOptions));

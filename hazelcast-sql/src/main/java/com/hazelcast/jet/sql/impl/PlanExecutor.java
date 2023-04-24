@@ -192,6 +192,8 @@ public class PlanExecutor {
                 plan.ifNotExists());
         if (added) {
             broadcastUpdateDataConnectionOperations(plan.name());
+            // Only when data connection operation finish execution, we must sync existing mappings
+            catalog.syncMappingsWithDataConnection(plan.name());
         }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }

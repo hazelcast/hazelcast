@@ -38,6 +38,7 @@ import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.emptyList;
@@ -339,6 +340,30 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + mappingName))
                 .hasMessageContaining("com.hazelcast.core.HazelcastException: Data connection '"
                         + dcName + "' not found");
+    }
+
+    @Test
+    public void when_dataConnectionIsAltered_then_mappingsConnectorTypesAreUpdated() throws Exception {
+        // given
+        String dcName = randomName();
+        String mappingName = randomName();
+        createTable(mappingName);
+
+        // when
+        createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
+        createJdbcMappingUsingDataConnection(mappingName, dcName);
+        sqlService.execute("DROP DATA CONNECTION " + dcName);
+        createDataConnection(instance(), dcName, "Kafka", false, singletonMap("A", "B"));
+
+        // then
+        assertRowsAnyOrder("SELECT * FROM information_schema.mappings ", singletonList(
+                new Row(
+                        "hazelcast",
+                        "public",
+                        mappingName,
+                        '"' + mappingName + '"',
+                        "Kafka",
+                        "{}")));
     }
 
     @Test

@@ -88,8 +88,12 @@ public class Mapping implements SqlCatalogObject, Versioned {
         return externalName;
     }
 
-    public String connectorType() {
+    public String getConnectorType() {
         return connectorType;
+    }
+
+    public void setConnectorType(String connectorType) {
+        this.connectorType = connectorType;
     }
 
     public String dataConnection() {

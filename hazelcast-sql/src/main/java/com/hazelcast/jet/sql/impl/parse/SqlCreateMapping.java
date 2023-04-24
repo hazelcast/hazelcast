@@ -201,7 +201,7 @@ public class SqlCreateMapping extends SqlCreate {
                         identifier(f.externalName()),
                         SqlParserPos.ZERO)),
                 identifier(mapping.dataConnection()),
-                identifier(mapping.connectorType()),
+                identifier(mapping.getConnectorType()),
                 identifier(mapping.objectType()),
                 reconstructOptions(mapping.options()),
                 true, false, SqlParserPos.ZERO

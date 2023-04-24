@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
@@ -139,7 +138,7 @@ public class TableResolverImpl implements TableResolver {
     private Mapping resolveMapping(Mapping mapping) {
         Map<String, String> options = mapping.options();
         List<MappingField> resolvedFields;
-        SqlConnector connector = connectorCache.forType(mapping.connectorType());
+        SqlConnector connector = connectorCache.forType(mapping.getConnectorType());
         resolvedFields = connector.resolveAndValidateFields(
                 nodeEngine,
                 options,
@@ -152,19 +151,21 @@ public class TableResolverImpl implements TableResolver {
                 mapping.name(),
                 mapping.externalName(),
                 mapping.dataConnection(),
-                mapping.connectorType(),
+                mapping.getConnectorType(),
                 mapping.objectType(),
                 new ArrayList<>(resolvedFields),
                 new LinkedHashMap<>(options)
         );
     }
 
-    private SqlConnector extractConnector(@Nonnull String dataConnection) {
-        InternalDataConnectionService dataConnectionService = nodeEngine.getDataConnectionService();
-        // TODO atm data connection and connector types match, but that's
-        //  not going to be universally true in the future
-        String type = dataConnectionService.typeForDataConnection(dataConnection);
-        return connectorCache.forType(type);
+    public void syncMappingsWithDataConnection(String dataConnectionName) {
+        String connectorType = nodeEngine.getDataConnectionService().typeForDataConnection(dataConnectionName);
+        // Update connector type since it is the only dependent part to data connection via name.
+        relationsStorage.getAllMappingsBasedOnDataConnection(dataConnectionName)
+                .forEach(mapping -> {
+                    mapping.setConnectorType(connectorType);
+                    relationsStorage.put(mapping.name(), mapping);
+                });
     }
 
     public void removeMapping(String name, boolean ifExists) {
@@ -284,7 +285,7 @@ public class TableResolverImpl implements TableResolver {
     }
 
     private Table toTable(Mapping mapping) {
-        SqlConnector connector = connectorCache.forType((mapping.connectorType()));
+        SqlConnector connector = connectorCache.forType((mapping.getConnectorType()));
         try {
             return connector.createTable(
                     nodeEngine,
