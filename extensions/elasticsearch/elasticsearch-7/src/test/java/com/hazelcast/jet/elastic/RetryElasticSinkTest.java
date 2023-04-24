@@ -25,6 +25,11 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
+import eu.rekawek.toxiproxy.Proxy;
+import eu.rekawek.toxiproxy.ToxiproxyClient;
+import eu.rekawek.toxiproxy.model.ToxicDirection;
+import eu.rekawek.toxiproxy.model.toxic.Timeout;
 import org.apache.http.HttpHost;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -37,6 +42,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.ToxiproxyContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +51,7 @@ import static org.elasticsearch.client.RequestOptions.DEFAULT;
 /**
  * Test running single Jet member locally and Elastic in docker
  */
+@Category(NightlyTest.class)
 public class RetryElasticSinkTest extends BaseElasticTest {
 
     @Rule
@@ -73,16 +80,20 @@ public class RetryElasticSinkTest extends BaseElasticTest {
             items[i] = new TestItem("id" + i, "name" + i);
         }
 
-        ToxiproxyContainer.ContainerProxy elasticProxy = toxiproxy.getProxy(ElasticSupport.elastic.get(), 9200);
+        final ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxiproxy.getHost(), toxiproxy.getControlPort());
+        final Proxy proxy = toxiproxyClient.createProxy("elastic", "0.0.0.0:8666", "elastic:9200");
+
+        Timeout timeout = proxy.toxics().timeout("timeout", ToxicDirection.UPSTREAM, 0);
         try {
-            elasticProxy.setConnectionCut(true);
             String address = toxiproxy.getHost();
-            HttpHost[] hosts = {new HttpHost(address, elasticProxy.getProxyPort())};
+            HttpHost[] hosts = {new HttpHost(address, toxiproxy.getMappedPort(8666))};
             Job job = submitJobNoWait(
                     retryElasticSinkTestPipeline("my-index", hosts, 5000, items)
             );
             HazelcastTestSupport.sleepSeconds(10);
-            elasticProxy.setConnectionCut(false);
+            timeout.remove();
+            timeout = null;
+
             job.join();
             refreshIndex();
 
@@ -90,8 +101,9 @@ public class RetryElasticSinkTest extends BaseElasticTest {
             TotalHits totalHits = response.getHits().getTotalHits();
             assertThat(totalHits.value).isEqualTo(batchSize);
         } finally {
-            // clean up test; we can call setConnectionCut(false) twice
-            elasticProxy.setConnectionCut(false);
+            if (timeout != null) {
+                timeout.remove();
+            }
         }
     }
 

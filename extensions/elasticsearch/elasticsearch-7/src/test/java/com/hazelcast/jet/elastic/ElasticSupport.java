@@ -43,6 +43,7 @@ public final class ElasticSupport {
     public static final Supplier<ElasticsearchContainer> elastic = Util.memoize(() -> {
         ElasticsearchContainer elastic = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)
                 .withNetwork(network)
+                .withNetworkAliases("elastic")
                 .withStartupTimeout(Duration.ofMinutes(2L));
         elastic.start();
         Runtime.getRuntime().addShutdownHook(new Thread(elastic::stop));
