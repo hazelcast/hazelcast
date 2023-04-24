@@ -32,6 +32,7 @@ import org.mockito.MockitoAnnotations;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -200,7 +201,10 @@ public class JobUploadStatusTest {
     public void testGetJarPath() throws IOException {
         Path jarPath = null;
         try {
-            when(jobMetaDataParameterObject.getUploadDirectoryPath()).thenReturn(".");
+            Path path = Paths.get("target");
+            Files.createDirectories(path);
+            String uploadPath = path.toAbsolutePath().toString();
+            when(jobMetaDataParameterObject.getUploadDirectoryPath()).thenReturn(uploadPath);
             jarPath = jobUploadStatus.getJarPath();
             assertTrue(Files.exists(jarPath));
         } finally {
