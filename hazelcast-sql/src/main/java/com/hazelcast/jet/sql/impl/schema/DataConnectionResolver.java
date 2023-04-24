@@ -21,7 +21,6 @@ import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl.DataConnectionSource;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.connector.infoschema.DataConnectionsTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Table;
@@ -32,9 +31,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
@@ -84,10 +81,6 @@ public class DataConnectionResolver implements TableResolver {
         if (!dataConnectionStorage.removeDataConnection(name) && !ifExists) {
             throw QueryException.error("Data connection does not exist: " + name);
         }
-    }
-
-    public DataConnectionStorage getDataConnectionStorage() {
-        return dataConnectionStorage;
     }
 
     @Nonnull
