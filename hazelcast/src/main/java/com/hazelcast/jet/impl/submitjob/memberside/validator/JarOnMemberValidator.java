@@ -35,10 +35,6 @@ public final class JarOnMemberValidator {
     }
 
     public static void validate(JobMetaDataParameterObject parameterObject) {
-        if (!parameterObject.isJarOnMember()) {
-            throw new JetException("Request is not configured for jar on member");
-        }
-
         Path jarPath = parameterObject.getJarPath();
         validateJarPathNotNull(jarPath);
         validateFileSizeIsNotZero(jarPath);

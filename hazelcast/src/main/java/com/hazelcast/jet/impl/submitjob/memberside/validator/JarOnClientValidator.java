@@ -35,10 +35,6 @@ public final class JarOnClientValidator {
     }
 
     public static void validate(JobMetaDataParameterObject parameterObject) {
-        if (!parameterObject.isJarOnClient()) {
-            throw new JetException("Request is not configured for jar on client");
-        }
-
         validateUploadDirectoryPath(parameterObject.getUploadDirectoryPath());
         validateJobParameters(parameterObject.getJobParameters());
     }
