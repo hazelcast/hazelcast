@@ -22,6 +22,7 @@ import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -169,6 +170,19 @@ public class KafkaDataConnectionTest {
         assertThatThrownBy(() -> p1.partitionsFor("my-topic"))
                 .isInstanceOf(KafkaException.class)
                 .hasMessage("Requested metadata update after close");
+    }
+
+    @Test
+    public void shared_producer_should_be_initialized_lazy() {
+        DataConnectionConfig config = new DataConnectionConfig("invalid-kafka-data-connection")
+                .setType("Kafka")
+                .setShared(true);
+
+        kafkaDataConnection = new KafkaDataConnection(config);
+
+        assertThatThrownBy(() -> kafkaDataConnection.getProducer(null)).isInstanceOf(ConfigException.class)
+                .hasMessageContaining("Missing required configuration");
+
     }
 
     private KafkaDataConnection createKafkaDataConnection(KafkaTestSupport kafkaTestSupport) {
