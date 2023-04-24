@@ -95,9 +95,9 @@ public class MongoDataConnectionTest extends AbstractMongoTest {
         db2.createCollection("col3");
 
         assertThat(dataConnection.listResources()).contains(
-                new DataConnectionResource("collection", "test.col1"),
-                new DataConnectionResource("collection", "test.col2"),
-                new DataConnectionResource("collection", "test2.col3")
+                new DataConnectionResource("Collection", "test.col1"),
+                new DataConnectionResource("Collection", "test.col2"),
+                new DataConnectionResource("Collection", "test2.col3")
         );
     }
 
