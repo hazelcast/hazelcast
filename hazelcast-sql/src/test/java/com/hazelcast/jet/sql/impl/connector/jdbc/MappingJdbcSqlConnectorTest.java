@@ -318,25 +318,27 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void given_mappingIsDeclaredWithDataConn_when_DataConnWasRemoved_then_success() throws Exception {
         // given
-        String dlName = randomName();
-        String name = randomName();
-        createTable(name);
+        String dcName = randomName();
+        String mappingName = randomName();
+        createTable(mappingName);
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
         // when
-        createDataConnection(instance(), dlName, "JDBC", false, options);
-        createJdbcMappingUsingDataConnection(name, dlName);
-        sqlService.execute("DROP DATA CONNECTION " + dlName);
+        createDataConnection(instance(), dcName, "JDBC", false, options);
+        createJdbcMappingUsingDataConnection(mappingName, dcName);
+        sqlService.execute("DROP DATA CONNECTION " + dcName);
 
         // then
-        assertThat(dlName).isNotEqualTo(TEST_DATABASE_REF);
         assertRowsAnyOrder("SHOW DATA CONNECTIONS ", singletonList(new Row(TEST_DATABASE_REF)));
 
-        // Mapping doesn't provide data, since data connection was removed.
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + name))
+        // Ensure that engine is not broken after Data Conn removal with some unrelated query.
+        assertRowsAnyOrder("SHOW MAPPINGS ", singletonList(new Row(mappingName)));
+
+        // Mapping shouldn't provide data, since data connection was removed.
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + mappingName))
                 .hasMessageContaining("com.hazelcast.core.HazelcastException: Data connection '"
-                        + dlName + "' not found");
+                        + dcName + "' not found");
     }
 
     @Test
