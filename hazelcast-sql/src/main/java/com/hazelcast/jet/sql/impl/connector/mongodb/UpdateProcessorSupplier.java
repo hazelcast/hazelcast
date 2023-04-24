@@ -147,7 +147,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
     private WriteModel<Document> write(Document update) {
         List<Bson> updates = requireNonNull(update.get("update", List.class), "updateList");
         Bson filter = requireNonNull(update.get("filter", Bson.class));
-        return new UpdateOneModel<>(filter, updates);
+        return new UpdateManyModel<>(filter, updates);
     }
 
     /**
