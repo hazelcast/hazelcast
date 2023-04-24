@@ -64,8 +64,4 @@ public class TestStreamSqlConnector extends TestAbstractSqlConnector {
         return TYPE_NAME;
     }
 
-    @Override
-    public boolean isStream() {
-        return true;
-    }
 }

@@ -58,18 +58,14 @@ final class InfoSchemaConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
-    @Override
-    public boolean isStream() {
-        return false;
-    }
-
     @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         throw new UnsupportedOperationException();
     }
 
@@ -77,10 +73,7 @@ final class InfoSchemaConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String mappingName,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nonnull Map<String, String> options,
+            @Nonnull SqlMappingContext ctx,
             @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException();
     }
@@ -96,7 +89,7 @@ final class InfoSchemaConnector implements SqlConnector {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        InfoSchemaTable table = (InfoSchemaTable) context.getTable();
+        InfoSchemaTable table = context.getTable();
         List<Object[]> rows = table.rows();
         Expression<Boolean> convertedPredicate = context.convertFilter(predicate);
         List<Expression<?>> convertedProjection = context.convertProjection(projection);

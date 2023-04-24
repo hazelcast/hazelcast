@@ -31,7 +31,7 @@ public final class BadTable extends Table {
     private final Throwable cause;
 
     public BadTable(String schemaName, String sqlName, Throwable cause) {
-        super(schemaName, sqlName, Collections.emptyList(), new ConstantTableStatistics(0));
+        super(schemaName, sqlName, Collections.emptyList(), new ConstantTableStatistics(0), "Bad", false);
         this.cause = cause;
     }
 

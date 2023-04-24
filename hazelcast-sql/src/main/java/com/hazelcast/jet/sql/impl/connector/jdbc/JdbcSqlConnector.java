@@ -73,11 +73,6 @@ public class JdbcSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
-    @Override
-    public boolean isStream() {
-        return false;
-    }
-
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
@@ -85,7 +80,8 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         if (dataConnectionName == null) {
             throw QueryException.error("You must provide data connection when using the Jdbc connector");
         }
@@ -234,11 +230,9 @@ public class JdbcSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String mappingName,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nonnull Map<String, String> options,
+            @Nonnull SqlMappingContext ctx,
             @Nonnull List<MappingField> resolvedFields) {
+        String dataConnectionName = ctx.dataConnection();
         assert dataConnectionName != null;
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
@@ -261,11 +255,9 @@ public class JdbcSqlConnector implements SqlConnector {
                 fields,
                 dialect,
                 schemaName,
-                mappingName,
+                ctx,
                 new ConstantTableStatistics(0),
-                externalName,
-                dataConnectionName,
-                parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
+                parseInt(ctx.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
                 nodeEngine.getSerializationService()
         );
     }

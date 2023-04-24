@@ -173,6 +173,28 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
         );
     }
 
+    @Test
+    public void readsUsingDataConnection() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
+        collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Rey").append("jedi", true));
+
+        execute("CREATE MAPPING " + collectionName
+                + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
+                + " DATA CONNECTION testMongo"
+                + " OBJECT TYPE MongoStream");
+
+        assertRowsAnyOrder("select firstName, lastName from " + collectionName + " where lastName = ?",
+                singletonList("Skywalker"),
+                asList(
+                        new Row("Luke", "Skywalker"),
+                        new Row("Anakin", "Skywalker")
+                )
+        );
+    }
+
     private void sleep(int howMuch) {
         try {
             Thread.sleep(random.nextInt(howMuch));

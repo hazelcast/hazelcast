@@ -27,12 +27,14 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rex.RexInputRef;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
@@ -188,11 +190,6 @@ public interface SqlConnector {
     String typeName();
 
     /**
-     * Returns {@code true}, if {@link #fullScanReader} is an unbounded source.
-     */
-    boolean isStream();
-
-    /**
      * Resolves the final field list given an initial field list and options
      * from the user. Jet calls this method when processing a CREATE MAPPING
      * statement.
@@ -212,6 +209,7 @@ public interface SqlConnector {
      * @param externalName       external name of the table
      * @param dataConnectionName name of the data connection to use, may be null if the connector supports specifying
      *                           connection details in options
+     * @param objectType    the type of object for which fields will be resolved
      * @return final field list, must not be empty
      */
     @Nonnull
@@ -220,7 +218,9 @@ public interface SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataConnectionName);
+            @Nullable String dataConnectionName,
+            @Nullable String objectType
+    );
 
     /**
      * Creates a {@link Table} object with the given fields. Should return
@@ -230,9 +230,6 @@ public interface SqlConnector {
      * Jet calls this method for each statement execution and for each mapping.
      *
      * @param nodeEngine         an instance of {@link NodeEngine}
-     * @param dataConnectionName name of the data connection to use, may be null if the connector supports specifying
-     *                           connection details in options
-     * @param options            connector specific options
      * @param resolvedFields     list of fields as returned from {@link
      *                           #resolveAndValidateFields}
      */
@@ -240,10 +237,7 @@ public interface SqlConnector {
     Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String mappingName,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nonnull Map<String, String> options,
+            @Nonnull SqlMappingContext mappingContext,
             @Nonnull List<MappingField> resolvedFields);
 
     /**
@@ -462,6 +456,54 @@ public interface SqlConnector {
 
         public Consumer<Edge> configureEdgeFn() {
             return configureEdgeFn;
+        }
+    }
+
+    class SqlMappingContext implements Serializable {
+        private final String name;
+        private final String[] externalName;
+        private final String dataConnection;
+        private final String connectorType;
+        private final String objectType;
+        private final Map<String, String> options;
+
+        public SqlMappingContext(String name, String[] externalName, String dataConnection, String connectorType,
+                                 String objectType, Map<String, String> options) {
+            this.name = name;
+            this.externalName = externalName;
+            this.dataConnection = dataConnection;
+            this.connectorType = connectorType;
+            this.objectType = objectType;
+            this.options = options;
+        }
+
+        public static SqlMappingContext from(Mapping internalMapping) {
+            return new SqlMappingContext(internalMapping.name(), internalMapping.externalName(), internalMapping.dataConnection(),
+                    internalMapping.connectorType(), internalMapping.objectType(), internalMapping.options());
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public String[] externalName() {
+            return externalName;
+        }
+
+        public String dataConnection() {
+            return dataConnection;
+        }
+
+        public String connectorType() {
+            return connectorType;
+        }
+
+        public String objectType() {
+            return objectType;
+        }
+
+        public Map<String, String> options() {
+            return options;
         }
     }
 }

@@ -74,14 +74,19 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         if (externalName.length > 2) {
             throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                     + ", external name for Mongo is allowed to have only one component (collection)"
                     + " or two components (database and collection)");
         }
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        return fieldResolver.resolveFields(externalName, dataConnectionName, options, userFields, isStream());
+        return fieldResolver.resolveFields(externalName, dataConnectionName, options, userFields, isStream(objectType));
+    }
+
+    private static boolean isStream(String objectType) {
+        return "MongoStream".equalsIgnoreCase(objectType);
     }
 
     @Nonnull
@@ -93,17 +98,16 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
     @Nonnull
     @Override
-    public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
-                             @Nonnull String[] externalName, @Nullable String dataConnectionName,
-                             @Nonnull Map<String, String> options, @Nonnull List<MappingField> resolvedFields) {
-        String collectionName = externalName.length == 2 ? externalName[1] : externalName[0];
+    public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull SqlMappingContext ctx,
+                             @Nonnull List<MappingField> resolvedFields) {
+        String collectionName = ctx.externalName().length == 2 ? ctx.externalName()[1] : ctx.externalName()[0];
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        String databaseName = Options.getDatabaseName(nodeEngine, externalName, dataConnectionName);
+        String databaseName = Options.getDatabaseName(nodeEngine, ctx.externalName(), ctx.dataConnection());
         ConstantTableStatistics stats = new ConstantTableStatistics(0);
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         boolean containsId = false;
-        boolean isStreaming = isStream();
+        boolean isStreaming = isStream(ctx.objectType());
         boolean hasPK = false;
         for (MappingField resolvedField : resolvedFields) {
             String externalNameFromName = (isStreaming ? "fullDocument." : "") + resolvedField.name();
@@ -131,8 +135,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                         "DOCUMENT", !hasPK));
             }
         }
-        return new MongoTable(schemaName, mappingName, databaseName, collectionName, dataConnectionName, options, this,
-                fields, stats, isStreaming);
+        return new MongoTable(schemaName, ctx.name(), databaseName, collectionName,
+                ctx.dataConnection(), ctx.options(), this,
+                fields, stats, ctx.objectType());
     }
 
     @Override
@@ -158,7 +163,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         boolean needTwoSteps = !filter.allProceeded || !projections.allProceeded;
 
         ProcessorMetaSupplier supplier;
-        if (isStream()) {
+        if (table.isStreaming()) {
             BsonTimestamp startAt = Options.startAt(table.getOptions());
             supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionList, startAt,
                     eventTimePolicyProvider));

@@ -57,18 +57,14 @@ public class TestFailingSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
-    @Override
-    public boolean isStream() {
-        return true;
-    }
-
     @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
@@ -79,15 +75,12 @@ public class TestFailingSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String mappingName,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nonnull Map<String, String> options,
+            @Nonnull SqlMappingContext ctx,
             @Nonnull List<MappingField> resolvedFields) {
         return new TestFailingTable(
                 this,
                 schemaName,
-                mappingName,
+                ctx.name(),
                 toList(resolvedFields, field -> new TableField(field.name(), field.type(), false))
         );
     }
@@ -124,7 +117,7 @@ public class TestFailingSqlConnector implements SqlConnector {
                 @Nonnull String name,
                 @Nonnull List<TableField> fields
         ) {
-            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0));
+            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0), null, true);
         }
 
         @Override

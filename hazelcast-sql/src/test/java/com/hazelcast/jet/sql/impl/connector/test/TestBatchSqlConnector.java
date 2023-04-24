@@ -94,8 +94,4 @@ public class TestBatchSqlConnector extends TestAbstractSqlConnector {
         return TYPE_NAME;
     }
 
-    @Override
-    public boolean isStream() {
-        return false;
-    }
 }

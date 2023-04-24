@@ -99,7 +99,7 @@ public class TableResolverImplTest {
 
         given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
-                mapping.externalName(), mapping.dataConnection()))
+                mapping.externalName(), mapping.dataConnection(), null))
                 .willThrow(new RuntimeException("expected test exception"));
 
         // when
@@ -118,7 +118,7 @@ public class TableResolverImplTest {
 
         given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
-                mapping.externalName(), mapping.dataConnection()))
+                mapping.externalName(), mapping.dataConnection(), null))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
         given(relationsStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
@@ -137,7 +137,7 @@ public class TableResolverImplTest {
 
         given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
-                mapping.externalName(), mapping.dataConnection()))
+                mapping.externalName(), mapping.dataConnection(), null))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
         given(relationsStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
@@ -155,7 +155,7 @@ public class TableResolverImplTest {
 
         given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
         given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
-                mapping.externalName(), mapping.dataConnection()))
+                mapping.externalName(), mapping.dataConnection(), null))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
 
         // when

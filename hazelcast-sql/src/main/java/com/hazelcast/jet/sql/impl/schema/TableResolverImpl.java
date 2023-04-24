@@ -21,6 +21,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlMappingContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
@@ -153,7 +154,8 @@ public class TableResolverImpl implements TableResolver {
                 options,
                 mapping.fields(),
                 mapping.externalName(),
-                mapping.dataConnection()
+                mapping.dataConnection(),
+                mapping.objectType()
         );
 
         return new Mapping(
@@ -302,9 +304,7 @@ public class TableResolverImpl implements TableResolver {
             return connector.createTable(
                     nodeEngine,
                     SCHEMA_NAME_PUBLIC,
-                    mapping.name(),
-                    mapping.externalName(),
-                    mapping.dataConnection(), mapping.options(),
+                    SqlMappingContext.from(mapping),
                     mapping.fields()
             );
         } catch (Throwable e) {
