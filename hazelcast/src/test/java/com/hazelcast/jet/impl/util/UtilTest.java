@@ -27,7 +27,6 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -50,6 +49,7 @@ import static com.hazelcast.jet.impl.util.Util.subtractClamped;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.entry;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -188,22 +188,19 @@ public class UtilTest {
     public void test_mergeProps() {
         Properties newProps = new Properties();
         newProps.put("A", "B");
-        newProps.put("C", "D");
+        newProps.put("B", "C");
 
         Properties existingProps =  new Properties();
-        existingProps.put("B", "C");
+        existingProps.put("B", "D");
         existingProps.put("D", "E");
 
         Properties mergedProps = Util.mergeProps(existingProps, newProps);
-        assertThat(mergedProps.size()).isEqualTo(existingProps.size() + newProps.size());
-
-        for (Map.Entry<Object, Object> entry : existingProps.entrySet()) {
-            assertThat(mergedProps).contains(entry);
-        }
-
-        for (Map.Entry<Object, Object> entry : newProps.entrySet()) {
-            assertThat(mergedProps).contains(entry);
-        }
+        assertThat(mergedProps.size()).isEqualTo(existingProps.size() + newProps.size() - 1);
+        assertThat(mergedProps).contains(
+                entry("A", "B"),
+                entry("B", "C"),
+                entry("D", "E")
+        );
     }
 
     @Test
