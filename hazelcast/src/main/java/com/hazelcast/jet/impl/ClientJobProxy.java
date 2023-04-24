@@ -220,7 +220,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     @Override
-    protected JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig) {
+    protected JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig) {
         return callAndRetryIfTargetNotFound(() -> {
             Data deltaConfigData = serializationService().toData(deltaConfig);
             ClientMessage request = JetUpdateJobConfigCodec.encodeRequest(getId(), deltaConfigData);
@@ -256,7 +256,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
 
     @Nonnull
     @Override
-    protected UUID doAddStatusListener(JobStatusListener listener) {
+    protected UUID doAddStatusListener(@Nonnull JobStatusListener listener) {
         requireNonNull(listener, "Listener cannot be null");
         try {
             ClientJobStatusEventHandler handler = new ClientJobStatusEventHandler(listener);

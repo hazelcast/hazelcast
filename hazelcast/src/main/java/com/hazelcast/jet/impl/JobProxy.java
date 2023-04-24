@@ -199,7 +199,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    protected JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig) {
+    protected JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig) {
         try {
             return this.<JobConfig>invokeOp(new UpdateJobConfigOperation(getId(), deltaConfig)).get();
         } catch (Throwable t) {
@@ -239,7 +239,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    protected UUID doAddStatusListener(JobStatusListener listener) {
+    protected UUID doAddStatusListener(@Nonnull JobStatusListener listener) {
         checkJobStatusListenerSupported(container());
         try {
             JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);

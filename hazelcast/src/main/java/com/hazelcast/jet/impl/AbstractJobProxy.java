@@ -346,14 +346,23 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     protected abstract JobConfig doGetJobConfig();
 
     /**
-     * Sends an {@link UpdateJobConfigOperation} to the master member. On the master member,
-     * if the job is SUSPENDED, the job record is updated both locally and {@linkplain
-     * JobRepository#JOB_RECORDS_MAP_NAME globally} (in order for {@link #getConfig()} to
-     * reflect the changes); otherwise, the operation fails.
+     * Applies the specified delta configuration to this job and returns the updated
+     * configuration. Synchronization with {@link #getConfig()} is handled by {@link
+     * #updateConfig}.
+     * @implNote
+     * Sends an {@link UpdateJobConfigOperation} to the master member. On the master
+     * member, if the job is SUSPENDED, the job record is updated both locally and
+     * {@linkplain JobRepository#JOB_RECORDS_MAP_NAME globally} (in order for {@link
+     * #getConfig()} to reflect the changes); otherwise, the operation fails.
      */
-    protected abstract JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig);
+    protected abstract JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig);
 
     /**
+     * Associates the specified listener to this job.
+     * @throws JobNotFoundException if the job's master context is cleaned up after job
+     *         completion/failure. This is translated to {@link IllegalStateException} by
+     *         {@link #addStatusListener}.
+     * @implNote
      * Listeners added to a job after it completes will not be removed automatically since
      * the job has already produced a terminal event. In order to make auto-deregistration
      * race-free, it is not allowed to add listeners to completed jobs. Checking the job
@@ -373,7 +382,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
      *      {@link Registration}'s {@code listener} is restored from the cache and the
      *      registration is completed. </ol>
      */
-    protected abstract UUID doAddStatusListener(JobStatusListener listener);
+    protected abstract UUID doAddStatusListener(@Nonnull JobStatusListener listener);
 
     /**
      * Return the ID of the coordinator - the master member for normal jobs and
