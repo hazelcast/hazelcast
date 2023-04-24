@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl.DataConnectionSource;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.connector.infoschema.DataConnectionsTable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Table;
@@ -32,11 +34,13 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 
 public class DataConnectionResolver implements TableResolver {
     // It will be in a separate schema, so separate resolver is implemented.
@@ -110,18 +114,29 @@ public class DataConnectionResolver implements TableResolver {
         List<DataConnectionCatalogEntry> dataConnections =
                 dataConnectionService.getConfigCreatedDataConnections()
                                      .stream()
-                                     .map(dl -> new DataConnectionCatalogEntry(
-                                             dl.getName(),
-                                             dataConnectionService.typeForDataConnection(dl.getName()),
-                                             dl.getConfig().isShared(),
-                                             dl.options(),
+                                     .map(dc -> new DataConnectionCatalogEntry(
+                                             dc.getName(),
+                                             dataConnectionService.typeForDataConnection(dc.getName()),
+                                             dc.getConfig().isShared(),
+                                             dc.options(),
                                              DataConnectionSource.CONFIG))
-                                     .collect(Collectors.toList());
+                                     .collect(toList());
 
         // And supplement them with data connections from sql catalog.
         // Note: __sql.catalog is the only source of truth for SQL-originated data connections.
         dataConnections.addAll(dataConnectionStorage.dataConnections());
         return dataConnections;
+    }
+
+    public static List<Object[]> getAllDataConnectionNameWithTypes(
+            DataConnectionServiceImpl dataConnectionService) {
+        List<DataConnection> conn = new ArrayList<>();
+        conn.addAll(dataConnectionService.getConfigCreatedDataConnections());
+        conn.addAll(dataConnectionService.getSqlCreatedDataConnections());
+
+        return conn.stream()
+                   .map(dc -> new Object[] {dc.getName(), new ArrayList<>(dc.resourceTypes())})
+                .collect(toList());
     }
 
     @Override

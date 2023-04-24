@@ -29,6 +29,7 @@ import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 /**
@@ -99,6 +100,12 @@ public class HazelcastDataConnection extends DataConnectionBase {
         HazelcastDataConnectionConfigValidator validator = new HazelcastDataConnectionConfigValidator();
         DataConnectionConfig dataConnectionConfig = getConfig();
         validator.validate(dataConnectionConfig);
+    }
+
+    @Nonnull
+    @Override
+    public Collection<String> resourceTypes() {
+        return Collections.singleton("IMap");
     }
 
     @Nonnull

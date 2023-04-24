@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.DataConnectionConfig;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -30,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
@@ -70,7 +70,8 @@ public class ShowDataConnectionsSqlTest extends SqlTestSupport {
         dlNames.add(0, "dl");
 
         // when & then
-        assertRowsOrdered("show data connections", Util.toList(dlNames, Row::new));
+        List<Row> rows = dlNames.stream().map(n -> new Row(n, asList("testType1", "testType2"))).collect(toList());
+        assertRowsOrdered("show data connections", rows);
     }
 
 }

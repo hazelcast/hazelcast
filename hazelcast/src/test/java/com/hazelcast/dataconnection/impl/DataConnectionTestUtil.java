@@ -79,6 +79,12 @@ public final class DataConnectionTestUtil {
             );
         }
 
+        @Nonnull
+        @Override
+        public Collection<String> resourceTypes() {
+            return Arrays.asList("testType1", "testType2");
+        }
+
         @Override
         public void destroy() {
             closed = true;

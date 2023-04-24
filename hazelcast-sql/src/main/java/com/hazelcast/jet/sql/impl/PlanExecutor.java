@@ -59,6 +59,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.DataConnectionResolver;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
@@ -131,10 +132,12 @@ import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.singletonList;
+import static java.util.Comparator.comparing;
 
 public class PlanExecutor {
     private static final String LE = System.lineSeparator();
@@ -386,43 +389,51 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     SqlResult execute(ShowStatementPlan plan) {
-        Stream<String> rows;
+        Stream<Object[]> rows;
 
         switch (plan.getShowTarget()) {
             case MAPPINGS:
-                rows = catalog.getMappingNames().stream();
+                rows = catalog.getMappingNames().stream().map(n -> new Comparable[] { n });
                 break;
             case VIEWS:
-                rows = catalog.getViewNames().stream();
+                rows = catalog.getViewNames().stream().map(n -> new Comparable[] { n });
                 break;
             case JOBS:
                 JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-                rows = jetServiceBackend.getJobRepository().getActiveJobNames().stream();
+                rows = jetServiceBackend.getJobRepository().getActiveJobNames().stream().map(n -> new Comparable[] { n });
                 break;
             case TYPES:
-                rows = catalog.getTypeNames().stream();
+                rows = catalog.getTypeNames().stream().map(n -> new Comparable[] { n });
                 break;
             case DATACONNECTIONS:
                 InternalDataConnectionService service = nodeEngine.getDataConnectionService();
                 DataConnectionServiceImpl dataConnectionService = (DataConnectionServiceImpl) service;
                 rows = DataConnectionResolver
-                        .getAllDataConnectionEntries(dataConnectionService, dataConnectionCatalog.getDataConnectionStorage())
-                        .stream()
-                        .map(DataConnectionCatalogEntry::name);
+                        .getAllDataConnectionNameWithTypes(dataConnectionService)
+                        .stream();
                 break;
             case RESOURCES:
                 return executeShowResources(plan.getDataConnectionName());
             default:
                 throw new AssertionError("Unsupported SHOW statement target");
         }
-        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
+        SqlRowMetadata metadata =
+                plan.getShowTarget() == ShowStatementTarget.DATACONNECTIONS
+                ?  new SqlRowMetadata(asList(
+                        new SqlColumnMetadata("name", VARCHAR, false),
+                        new SqlColumnMetadata("types", OBJECT, false)
+                ))
+                 : new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
 
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(
-                        rows.sorted().map(name -> new JetSqlRow(serializationService, new Object[]{name})).iterator()),
+                        rows.sorted(comparing(r -> (Comparable) r[0]))
+                            .map(row -> new JetSqlRow(serializationService, (Object[]) row))
+                            .iterator()),
                 metadata,
                 false
         );

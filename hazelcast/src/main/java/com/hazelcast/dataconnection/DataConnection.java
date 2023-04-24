@@ -106,6 +106,9 @@ public interface DataConnection {
     @Nonnull
     Collection<DataConnectionResource> listResources();
 
+    @Nonnull
+    Collection<String> resourceTypes();
+
     /**
      * Returns the configuration of this DataConnection.
      */
