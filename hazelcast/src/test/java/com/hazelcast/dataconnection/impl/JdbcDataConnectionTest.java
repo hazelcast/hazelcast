@@ -46,7 +46,9 @@ import static org.assertj.core.api.Assertions.entry;
 public class JdbcDataConnectionTest {
 
     private static final String TEST_CONFIG_NAME = JdbcDataConnectionTest.class.getSimpleName();
-    private static final String JDBC_URL_SHARED = "jdbc:h2:mem:" + JdbcDataConnectionTest.class.getSimpleName() + "_shared";
+    private static final String JDBC_URL_SHARED = "jdbc:h2:mem:"
+            + JdbcDataConnectionTest.class.getSimpleName() + "_shared"
+            + ";DB_CLOSE_DELAY=-1";
 
     private static final DataConnectionConfig SHARED_DATA_CONNECTION_CONFIG = new DataConnectionConfig()
             .setName(TEST_CONFIG_NAME)
@@ -69,6 +71,7 @@ public class JdbcDataConnectionTest {
         close(connection2);
         jdbcDataConnection.release();
         assertEventuallyNoHikariThreads(TEST_CONFIG_NAME);
+        executeJdbc(JDBC_URL_SHARED, "shutdown");
     }
 
     private static void close(Connection connection) throws Exception {
