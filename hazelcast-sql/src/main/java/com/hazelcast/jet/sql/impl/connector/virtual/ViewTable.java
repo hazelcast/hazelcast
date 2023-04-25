@@ -42,7 +42,7 @@ public class ViewTable extends Table {
     private RelNode viewRel;
 
     public ViewTable(String schemaName, String viewName, String viewQuery, TableStatistics statistics, boolean streaming) {
-        super(schemaName, viewName, null, statistics, null, streaming); // FIXME temp value of null
+        super(schemaName, viewName, null, statistics, "View", streaming);
         this.viewQuery = viewQuery;
     }
 
