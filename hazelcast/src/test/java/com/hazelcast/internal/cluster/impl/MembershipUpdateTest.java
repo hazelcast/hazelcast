@@ -802,6 +802,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         EntryListenerConfig listenerConfig = new EntryListenerConfig();
         CountDownLatch entryAddedLatch = new CountDownLatch(2);
         listenerConfig.setImplementation((EntryAddedListener) event -> entryAddedLatch.countDown());
+        listenerConfig.setLocal(true);
         config.getMapConfig("test").addEntryListenerConfig(listenerConfig);
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
@@ -810,7 +811,11 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, hz1, hz2);
 
         IMap<Object, Object> map = hz1.getMap("test");
-        map.put(1, 1);
+
+        String keyForHz1 = generateKeyOwnedBy(hz1);
+        String keyForHz2 = generateKeyOwnedBy(hz2);
+        map.put(keyForHz1, 1);
+        map.put(keyForHz2, 2);
 
         //Let post join continue only after put happened
         latch.countDown();
