@@ -18,6 +18,9 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.CreateCollectionOptions;
+import com.mongodb.client.model.ValidationOptions;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.Test;
@@ -26,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,6 +53,8 @@ public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
 
     @Test
     public void deletes_inserted_item() {
+        createMapping(includeIdInMapping, idFirstInMapping);
+
         MongoCollection<Document> collection = database.getCollection(collectionName);
         ObjectId objectId = ObjectId.get();
         collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
@@ -57,8 +63,6 @@ public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
                                                           .append("jedi", true));
         collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp3").append("lastName", "temp3")
                                                           .append("jedi", true));
-
-        createMapping(includeIdInMapping, idFirstInMapping);
 
         execute("delete from " + collectionName + " where firstName = ?", "temp");
         ArrayList<Document> list = collection.find().into(new ArrayList<>());
@@ -70,6 +74,8 @@ public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
 
     @Test
     public void deletes_inserted_item_byId() {
+        createMapping(true, idFirstInMapping);
+
         MongoCollection<Document> collection = database.getCollection(collectionName);
         ObjectId objectId = ObjectId.get();
         collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
@@ -78,8 +84,6 @@ public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
                                                           .append("jedi", true));
         collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp3").append("lastName", "temp3")
                                                           .append("jedi", true));
-
-        createMapping(true, idFirstInMapping);
 
         execute("delete from " + collectionName + " where id = ?", objectId);
         ArrayList<Document> list = collection.find().into(new ArrayList<>());
@@ -91,6 +95,8 @@ public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
 
     @Test
     public void deletes_selfRef_in_where() {
+        createMapping(includeIdInMapping, idFirstInMapping);
+
         MongoCollection<Document> collection = database.getCollection(collectionName);
         ObjectId objectId = ObjectId.get();
         collection.insertOne(new Document("_id", objectId).append("firstName", "someValue")
@@ -103,8 +109,6 @@ public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
                                                                 .append("lastName", "otherValue")
                                                                 .append("jedi", true));
 
-        createMapping(includeIdInMapping, idFirstInMapping);
-
         execute("delete from " + collectionName + " where firstName = lastName");
         ArrayList<Document> list = collection.find().into(new ArrayList<>());
         assertThat(list).hasSize(1);
@@ -113,12 +117,12 @@ public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
 
     @Test
     public void deletes_unsupportedExpr() {
+        createMapping(includeIdInMapping, idFirstInMapping);
+
         MongoCollection<Document> collection = database.getCollection(collectionName);
         ObjectId objectId = ObjectId.get();
         collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
                                                           .append("jedi", true));
-
-        createMapping(includeIdInMapping, idFirstInMapping);
 
         execute("delete from " + collectionName + " where cast(jedi as varchar) = ?", "true");
         ArrayList<Document> list = collection.find().into(new ArrayList<>());
@@ -127,25 +131,74 @@ public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
 
     @Test
     public void deletes_all() {
+        createMapping(includeIdInMapping, idFirstInMapping);
+
         MongoCollection<Document> collection = database.getCollection(collectionName);
         ObjectId objectId = ObjectId.get();
         collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
                                                           .append("jedi", true));
-
-        createMapping(includeIdInMapping, idFirstInMapping);
 
         execute("delete from " + collectionName);
         ArrayList<Document> list = collection.find().into(new ArrayList<>());
         assertThat(list).hasSize(0);
     }
 
+    @Test
+    public void deletesMongo_usingGT_LT() {
+        deletesMongo_using("age > 30 and age < 50");
+    }
+
+    @Test
+    public void deletesMongo_usingGTE_LTE() {
+        deletesMongo_using("age >= 40 and age <= 50");
+    }
+
+    @Test
+    public void deletesMongo_usingNonEq() {
+        deletesMongo_using("age <> 20");
+    }
+
+    private void deletesMongo_using(String expr) {
+        createMapping(includeIdInMapping, idFirstInMapping);
+
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "temp").append("age", 20).append("lastName", "Teamed"));
+        collection.insertOne(new Document("firstName", "temp2").append("age", 40).append("lastName", "Teamed"));
+
+        execute("delete from " + collectionName + " where " + expr);
+
+        List<Document> documents = collection.find().into(new ArrayList<>());
+        assertThat(documents)
+                .hasSize(1)
+                .extracting(doc -> doc.getInteger("age")).containsExactly(20);
+    }
+
     private void createMapping(boolean includeIdInMapping, boolean idFirst) {
+        CreateCollectionOptions options = new CreateCollectionOptions();
+        ValidationOptions validationOptions = new ValidationOptions();
+        validationOptions.validator(BsonDocument.parse(
+                "{\n" +
+                        "    $jsonSchema: {\n" +
+                        "      bsonType: \"object\",\n" +
+                        "      properties: {" +
+                        (includeIdInMapping ? "\"_id\": { \"bsonType\": \"objectId\" },\n" : "") +
+                        "        \"firstName\": { \"bsonType\": \"string\" },\n" +
+                        "        \"lastName\": { \"bsonType\": \"string\" },\n" +
+                        "        \"jedi\": { \"bsonType\": \"bool\" },\n" +
+                        "        \"age\": { \"bsonType\": \"int\" }\n" +
+                        "      }\n" +
+                        "    }\n" +
+                        "  }\n"
+        ));
+        options.validationOptions(validationOptions);
+        mongoClient.getDatabase(databaseName).createCollection(collectionName, options);
         if (idFirst) {
             execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
                     + (includeIdInMapping ? " id OBJECT external name _id, " : "")
                     + " firstName VARCHAR, \n"
                     + " lastName VARCHAR, \n"
-                    + " jedi BOOLEAN \n"
+                    + " jedi BOOLEAN, \n"
+                    + " age INTEGER \n"
                     + ") \n"
                     + "TYPE Mongo \n"
                     + "OPTIONS (\n"
@@ -157,7 +210,8 @@ public class MongoBatchSqlConnectorDeleteTest extends MongoSqlTest {
                     + " firstName VARCHAR, \n"
                     + " lastName VARCHAR, \n"
                     + (includeIdInMapping ? " id OBJECT external name _id, " : "")
-                    + " jedi BOOLEAN \n"
+                    + " jedi BOOLEAN, \n"
+                    + " age INTEGER \n"
                     + ") \n"
                     + "TYPE Mongo \n"
                     + "OPTIONS (\n"
