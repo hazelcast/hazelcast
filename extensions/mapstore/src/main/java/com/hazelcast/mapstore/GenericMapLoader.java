@@ -92,9 +92,9 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
      */
     public static final String DATA_CONNECTION_REF_PROPERTY = "data-connection-ref";
     /**
-     * Property key to define table name in database
+     * Property key to define external name of the table
      */
-    public static final String TABLE_NAME_PROPERTY = "table-name";
+    public static final String EXTERNAL_NAME_PROPERTY = "external-name";
 
     /**
      * Property key to define id column name in database

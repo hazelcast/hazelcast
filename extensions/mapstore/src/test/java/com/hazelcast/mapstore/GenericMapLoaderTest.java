@@ -41,9 +41,9 @@ import java.util.Properties;
 
 import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.DATA_CONNECTION_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.MAPPING_PREFIX;
-import static com.hazelcast.mapstore.GenericMapLoader.TABLE_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
 import static com.hazelcast.nio.serialization.FieldKind.NOT_AVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -444,7 +444,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
-        properties.setProperty(TABLE_NAME_PROPERTY, tableName);
+        properties.setProperty(EXTERNAL_NAME_PROPERTY, tableName);
         mapLoader = createMapLoader(properties, hz);
 
         GenericRecord record = mapLoader.load(0);
@@ -463,7 +463,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
-        properties.setProperty(TABLE_NAME_PROPERTY, schemaName + ".\"" + tableName + "\"");
+        properties.setProperty(EXTERNAL_NAME_PROPERTY, schemaName + ".\"" + tableName + "\"");
         mapLoader = createMapLoader(properties, hz);
 
         GenericRecord record = mapLoader.load(0);

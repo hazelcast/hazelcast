@@ -53,6 +53,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 
+import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -186,7 +187,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setClassName(GenericMapStore.class.getName())
                 .setProperty(DATA_CONNECTION_REF_PROPERTY, "dynamically-added-data-connection")
-                .setProperty("table-name", randomTableName);
+                .setProperty(EXTERNAL_NAME_PROPERTY, randomTableName);
         MapConfig mapConfig = new MapConfig(randomTableName).setMapStoreConfig(mapStoreConfig);
         client.getConfig().addMapConfig(mapConfig);
 
