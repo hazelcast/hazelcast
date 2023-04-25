@@ -28,7 +28,6 @@ import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
-import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexPermuteInputsShuttle;
@@ -83,7 +82,7 @@ public class ExtractUpdateExpressionsRule extends RelRule<RelRule.Config> {
             // 1) it is not necessary. IMap updates are executed via submitToKey and support all expressions
             //    and no filters can be used in the submitToKey (obviously).
             // 2) for IMap we always will get a 2 node plan, we will never get plan with Calc, because full scan
-            //    on IMap supports all predicates:
+            //    and update on IMap support all predicates:
             //      UpdateLogicalRel
             //      -- FullScanLogicalRel
             // 3) it might introduce mismatch between RexInputRef indexes in sourceExpressions and the row data
@@ -114,10 +113,9 @@ public class ExtractUpdateExpressionsRule extends RelRule<RelRule.Config> {
         for (int i = 0; i < sourceExpressions.size(); i++) {
             RexNode expr = sourceExpressions.get(i);
             // input ref must be supported by every connector
-            if (expr instanceof RexInputRef || expr instanceof RexDynamicParam) {
+            if (expr instanceof RexInputRef) {
                 continue;
             }
-            //TODO: visit entire expression, not only top operator!
             if (!sqlConnector.supportsExpression(wrap(expr))) {
                 expressionsAdded = true;
                 sourceExpressions.set(i, rexBuilder.makeInputRef(expr.getType(), projections.size()));
