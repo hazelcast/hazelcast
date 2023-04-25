@@ -21,15 +21,22 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexVisitorImpl;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(JUnitParamsRunner.class)
 public class LogicalUpdateTest extends OptimizerTestSupport {
@@ -42,7 +49,7 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
     @Test
     public void test_requiresJob() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
-        assertPlan(
+        assertImapUpdateWithScanPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = 1", true, table),
                 plan(
                         planRow(0, UpdateLogicalRel.class),
@@ -54,8 +61,9 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
     @Test
     public void test_updateWithoutWhere() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
-        assertPlan(
-                optimizeLogical("UPDATE m SET this = '2'", table),
+        LogicalRel logicalRel = optimizeLogical("UPDATE m SET this = '2'", table);
+        assertImapUpdateWithScanPlan(
+                logicalRel,
                 plan(
                         planRow(0, UpdateLogicalRel.class),
                         planRow(1, FullScanLogicalRel.class)
@@ -64,9 +72,67 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void test_updateComplexKeyWithoutWhere() {
+        HazelcastTable table = complexKeyTable();
+        LogicalRel logicalRel = optimizeLogical("UPDATE m SET this = '2'", table);
+        assertImapUpdateWithScanPlan(
+                logicalRel,
+                plan(
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
+                ),
+                2
+        );
+    }
+
+    @Test
+    public void test_updateComplexKeyWithoutWhereWithExpression() {
+        HazelcastTable table = complexKeyTable();
+        LogicalRel logicalRel = optimizeLogical("UPDATE m SET this = TO_CHAR(k_field2, '9')", table);
+        assertImapUpdateWithScanPlan(
+                logicalRel,
+                plan(
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
+                ),
+                2
+        );
+
+        boolean[] inputRefFound = new boolean[1];
+        ((UpdateLogicalRel)logicalRel).getSourceExpressionList().get(0).accept(
+                new RexVisitorImpl<Object>(true) {
+                    @Override
+                    public Object visitInputRef(RexInputRef inputRef) {
+                        // indexes are determined by IMap predefined row structure
+                        assertThat(inputRef.getIndex()).isEqualTo(1);
+                        // we found input ref
+                        inputRefFound[0] = true;
+                        return null;
+                    }
+                });
+        assertThat(inputRefFound[0]).as("Should reference input parameter").isTrue();
+    }
+
+    @Test
+    public void test_updateComplexKeyByKeyField() {
+        HazelcastTable table = partitionedTable("m",
+                asList(field("k_field1", INT), field("k_field2", VARCHAR), field(KEY, OBJECT), field(VALUE, VARCHAR)),
+                10);
+        LogicalRel logicalRel = optimizeLogical("UPDATE m SET k_field2 = '2'", table);
+        assertImapUpdateWithScanPlan(
+                logicalRel,
+                plan(
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
+                ),
+                2
+        );
+    }
+
+    @Test
     public void test_updateByValue() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
-        assertPlan(
+        assertImapUpdateWithScanPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE this = '1'", table),
                 plan(
                         planRow(0, UpdateLogicalRel.class),
@@ -78,7 +144,7 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
     @Test
     public void test_updateByKeyAndValue() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
-        assertPlan(
+        assertImapUpdateWithScanPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = 1 AND this = '1'", table),
                 plan(
                         planRow(0, UpdateLogicalRel.class),
@@ -102,7 +168,7 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
     @Test
     public void test_updateByKeyOrKey() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
-        assertPlan(
+        assertImapUpdateWithScanPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = 1 OR __key = 2", table),
                 plan(
                         planRow(0, UpdateLogicalRel.class),
@@ -114,7 +180,7 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
     @Test
     public void test_updateWithConstantCondition() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
-        assertPlan(
+        assertImapUpdateWithScanPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE 1 = 1", table),
                 plan(
                         planRow(0, UpdateLogicalRel.class),
@@ -208,7 +274,7 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
     @Test
     public void test_updateByKeyWithDynamicParamAndImplicitCastOnKey() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
-        assertPlan(
+        assertImapUpdateWithScanPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = ? + 1", table),
                 plan(
                         planRow(0, UpdateLogicalRel.class),
@@ -226,5 +292,35 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
                         planRow(0, UpdateByKeyMapLogicalRel.class)
                 )
         );
+    }
+
+    @Nonnull
+    static HazelcastTable complexKeyTable() {
+        HazelcastTable table = partitionedTable("m",
+                asList(field("k_field1", INT), field("k_field2", INT), field(KEY, OBJECT), field(VALUE, VARCHAR)),
+                10);
+        return table;
+    }
+
+    static void assertImapUpdateWithScanPlan(RelNode rel, PlanRows expected) {
+        assertImapUpdateWithScanPlan(rel, expected, 0);
+    }
+
+    static void assertImapUpdateWithScanPlan(RelNode rel, PlanRows expected, int keyFields) {
+        assertPlan(rel, expected);
+
+        HazelcastTable updateInputTable = rel.getInput(0).getTable().unwrap(HazelcastTable.class);
+        assertThatScanProjectsOnlyKey(updateInputTable, keyFields);
+    }
+
+    static void assertThatScanProjectsOnlyKey(HazelcastTable updateInputTable, int keyFields) {
+        assertThat(updateInputTable.getProjects())
+                .as("IMap should project only key for update")
+                .hasSize(1)
+                .element(0).isInstanceOfSatisfying(RexInputRef.class,
+                        input -> assertThat(input.getIndex())
+                                // IMap table first has fields of Key if Key is object and then __key as an object
+                                .as("Should project __key")
+                                .isEqualTo(keyFields));
     }
 }
