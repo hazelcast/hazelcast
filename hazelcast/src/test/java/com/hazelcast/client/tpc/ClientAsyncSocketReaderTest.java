@@ -41,7 +41,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.spi.properties.ClusterProperty.CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES;
@@ -65,8 +64,7 @@ public class ClientAsyncSocketReaderTest {
         HazelcastInstance server = newServer();
         HazelcastInstance client = newClient();
 
-        int port = getTpcPort(server);
-        try (Socket socket = new Socket("127.0.0.1", port);
+        try (Socket socket = newClientSocket(server);
              OutputStream os = socket.getOutputStream();
              InputStream is = socket.getInputStream()) {
 
@@ -81,8 +79,8 @@ public class ClientAsyncSocketReaderTest {
     @Test
     public void testInvalidProtocolBytes() throws IOException {
         HazelcastInstance server = newServer();
-        int port = getTpcPort(server);
-        try (Socket socket = new Socket("127.0.0.1", port);
+
+        try (Socket socket = newClientSocket(server);
              OutputStream os = socket.getOutputStream();
              InputStream is = socket.getInputStream()) {
 
@@ -96,8 +94,7 @@ public class ClientAsyncSocketReaderTest {
         HazelcastInstance server = newServer();
         HazelcastInstance client = newClient();
 
-        int port = getTpcPort(server);
-        try (Socket socket = new Socket("127.0.0.1", port);
+        try (Socket socket = newClientSocket(server);
              OutputStream os = socket.getOutputStream();
              InputStream is = socket.getInputStream()) {
 
@@ -118,8 +115,7 @@ public class ClientAsyncSocketReaderTest {
         HazelcastInstance server = newServer();
         HazelcastInstance client = newClient();
 
-        int port = getTpcPort(server);
-        try (Socket socket = new Socket("127.0.0.1", port);
+        try (Socket socket = newClientSocket(server);
              OutputStream os = socket.getOutputStream();
              InputStream is = socket.getInputStream()) {
 
@@ -135,8 +131,7 @@ public class ClientAsyncSocketReaderTest {
         HazelcastInstance server = newServer();
         HazelcastInstance client = newClient();
 
-        int port = getTpcPort(server);
-        try (Socket socket = new Socket("127.0.0.1", port);
+        try (Socket socket = newClientSocket(server);
              OutputStream os = socket.getOutputStream();
              InputStream is = socket.getInputStream()) {
 
@@ -157,8 +152,7 @@ public class ClientAsyncSocketReaderTest {
     public void testMessagesBeforeAuth() throws IOException {
         HazelcastInstance server = newServer();
 
-        int port = getTpcPort(server);
-        try (Socket socket = new Socket("127.0.0.1", port);
+        try (Socket socket = newClientSocket(server);
              OutputStream os = socket.getOutputStream();
              InputStream is = socket.getInputStream()) {
 
@@ -174,8 +168,7 @@ public class ClientAsyncSocketReaderTest {
         HazelcastInstance server = newServer();
         newClient();
 
-        int port = getTpcPort(server);
-        try (Socket socket = new Socket("127.0.0.1", port);
+        try (Socket socket = newClientSocket(server);
              OutputStream os = socket.getOutputStream();
              InputStream is = socket.getInputStream()) {
 
@@ -191,8 +184,7 @@ public class ClientAsyncSocketReaderTest {
         HazelcastInstance server = newServer();
         HazelcastInstance client = newClient();
 
-        int port = getTpcPort(server);
-        try (Socket socket = new Socket("127.0.0.1", port);
+        try (Socket socket = newClientSocket(server);
              OutputStream os = socket.getOutputStream();
              InputStream is = socket.getInputStream()) {
 
@@ -208,8 +200,7 @@ public class ClientAsyncSocketReaderTest {
         HazelcastInstance server = newServer();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
-        int port = getTpcPort(server);
-        try (Socket socket = new Socket("127.0.0.1", port);
+        try (Socket socket = newClientSocket(server);
              OutputStream os = socket.getOutputStream();
              InputStream is = socket.getInputStream()) {
 
@@ -232,9 +223,10 @@ public class ClientAsyncSocketReaderTest {
         return client.getLocalEndpoint().getUuid();
     }
 
-    private int getTpcPort(HazelcastInstance server) {
-        List<Integer> clientPorts = getNode(server).nodeEngine.getTpcServerBootstrap().getClientPorts();
-        return clientPorts.iterator().next();
+    private Socket newClientSocket(HazelcastInstance server) throws IOException {
+        String host = server.getCluster().getLocalMember().getAddress().getHost();
+        int port = getNode(server).nodeEngine.getTpcServerBootstrap().getClientPorts().iterator().next();
+        return new Socket(host, port);
     }
 
     private byte[] getTpcToken(HazelcastInstance server) {

@@ -118,9 +118,9 @@ public final class TpcChannelConnector {
             channel = channelCreator.create(address, connection, channelInitializer);
             authenticate(channel);
             onSuccessfulChannelConnection(channel, index);
-        } catch (Throwable throwable) {
+        } catch (Exception e) {
             logger.warning("Exception during the connection to attempt to TPC channel on port "
-                    + port + " for " + connection + ": " + throwable, throwable);
+                    + port + " for " + connection + ": " + e, e);
             onFailure(channel);
         }
     }

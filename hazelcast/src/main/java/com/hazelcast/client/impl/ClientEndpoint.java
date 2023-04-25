@@ -133,7 +133,7 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
     String toSecureString();
 
     /**
-     * Sets teh TPC token associated with this endpoint.
+     * Sets the TPC token associated with this endpoint.
      */
     void setTpcToken(@Nonnull TpcToken tpcToken);
 
