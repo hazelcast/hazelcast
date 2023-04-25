@@ -43,6 +43,7 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
 public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
@@ -321,22 +322,16 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         }
     }
 
-    private boolean isSupportedDatabase() {
-        if (databaseProvider instanceof MySQLDatabaseProvider) {
-            return true;
-        }
-        if (databaseProvider instanceof PostgresDatabaseProvider) {
-            return true;
-        }
-        return databaseProvider instanceof H2DatabaseProvider;
-    }
-
     // TEXT is not a standard SQL column type. This test may not run on all DBs
     @Test
     public void createMappingWithTextColumnType() throws Exception {
-        if (!isSupportedDatabase()) {
-            return;
-        }
+        assumeThat(databaseProvider)
+                .isInstanceOfAny(
+                        MySQLDatabaseProvider.class,
+                        PostgresDatabaseProvider.class,
+                        H2DatabaseProvider.class
+                );
+
         executeJdbc("CREATE TABLE " + tableName + " (id INTEGER NOT NULL,name TEXT NOT NULL)");
 
         insertItems(tableName, 1);

@@ -420,7 +420,7 @@ public class JdbcSqlConnector implements SqlConnector {
      * can be used in Hazelcast's distributed queries
      */
     @SuppressWarnings("ReturnCount")
-    public static QueryDataType resolveType(String columnTypeName) {
+    private static QueryDataType resolveType(String columnTypeName) {
         switch (columnTypeName.toUpperCase()) {
             case "BOOLEAN":
             case "BOOL":
