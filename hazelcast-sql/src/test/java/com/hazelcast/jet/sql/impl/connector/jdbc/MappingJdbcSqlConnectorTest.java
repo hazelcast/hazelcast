@@ -24,6 +24,8 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,7 +39,9 @@ import java.util.Iterator;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
@@ -45,7 +49,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private static final String LE = System.lineSeparator();
 
-    protected String tableName;
+    String tableName;
 
     @BeforeClass
     public static void beforeClass() {
@@ -157,7 +161,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
 
         assertRowsAnyOrder("SHOW MAPPINGS",
-                Collections.emptyList()
+                emptyList()
         );
     }
 
@@ -169,7 +173,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         )).isInstanceOf(HazelcastSqlException.class);
 
         assertRowsAnyOrder("SHOW MAPPINGS",
-                Collections.emptyList()
+                emptyList()
         );
     }
 
@@ -212,7 +216,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
          .hasMessageContaining("Could not resolve field with name fullName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
-                Collections.emptyList()
+                emptyList()
         );
     }
 
@@ -237,7 +241,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
          .hasMessageContaining("Could not resolve field with external name myName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
-                Collections.emptyList()
+                emptyList()
         );
     }
 
@@ -257,7 +261,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
          .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
-                Collections.emptyList()
+                emptyList()
         );
     }
 
@@ -315,5 +319,43 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                     .extracting(SqlColumnMetadata::getName)
                     .contains("id", "name");
         }
+    }
+
+    private boolean isSupportedDatabase() {
+        if (databaseProvider instanceof MySQLDatabaseProvider) {
+            return true;
+        }
+        if (databaseProvider instanceof PostgresDatabaseProvider) {
+            return true;
+        }
+        return databaseProvider instanceof H2DatabaseProvider;
+    }
+
+    // TEXT is not a standard SQL column type. This test may not run on all DBs
+    @Test
+    public void createMappingWithTextColumnType() throws Exception {
+        if (!isSupportedDatabase()) {
+            return;
+        }
+        executeJdbc("CREATE TABLE " + tableName + " (id INTEGER NOT NULL,name TEXT NOT NULL)");
+
+        insertItems(tableName, 1);
+
+        assertThatCode(() ->
+                execute("CREATE MAPPING myMapping "
+                        + " EXTERNAL NAME " + tableName
+                        + " ("
+                        + "id INTEGER,"
+                        + " name VARCHAR "
+                        + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
+                )
+        ).doesNotThrowAnyException();
+
+        assertRowsAnyOrder(
+                "SELECT * FROM myMapping",
+                Collections.singletonList(new Row(0, "name-0"))
+        );
+
     }
 }

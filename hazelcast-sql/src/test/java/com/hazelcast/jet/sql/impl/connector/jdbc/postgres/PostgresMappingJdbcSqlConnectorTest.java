@@ -20,12 +20,7 @@ import com.hazelcast.jet.sql.impl.connector.jdbc.MappingJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.util.Collections;
-
-import static org.assertj.core.api.Assertions.assertThatCode;
 
 @Category(NightlyTest.class)
 public class PostgresMappingJdbcSqlConnectorTest extends MappingJdbcSqlConnectorTest {
@@ -33,29 +28,6 @@ public class PostgresMappingJdbcSqlConnectorTest extends MappingJdbcSqlConnector
     @BeforeClass
     public static void beforeClass() {
         initialize(new PostgresDatabaseProvider());
-    }
-
-    // Text is not a standard SQL type. This test specific to PostgresSQL
-    @Test
-    public void createMappingWithTextColumnType() throws Exception {
-        executeJdbc("CREATE TABLE " + tableName + " (id INTEGER NOT NULL,name TEXT NOT NULL)");
-        insertItems(tableName, 1);
-
-        assertThatCode(() ->
-                execute("CREATE MAPPING postgresMapping "
-                        + " EXTERNAL NAME  " + tableName
-                        + " ("
-                        + "id INTEGER,"
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
-                )
-        ).doesNotThrowAnyException();
-
-        assertRowsAnyOrder(
-                "SELECT * FROM postgresMapping",
-                Collections.singletonList(new Row(0, "name-0"))
-        );
     }
 
 }

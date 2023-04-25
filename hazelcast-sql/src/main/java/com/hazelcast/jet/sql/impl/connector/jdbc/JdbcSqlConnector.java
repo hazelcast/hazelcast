@@ -101,7 +101,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 try {
                     MappingField mappingField = new MappingField(
                             dbField.columnName,
-                            JdbcColumnTypeNameResolver.resolveType(dbField.columnTypeName)
+                            resolveType(dbField.columnTypeName)
                     );
                     mappingField.setPrimaryKey(dbField.primaryKey);
                     resolvedFields.add(mappingField);
@@ -221,7 +221,7 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private void validateType(MappingField field, DbField dbField) {
-        QueryDataType type = JdbcColumnTypeNameResolver.resolveType(dbField.columnTypeName);
+        QueryDataType type = resolveType(dbField.columnTypeName);
         if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
             throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
                                             + " does not match db type " + type.getTypeFamily());
@@ -415,6 +415,69 @@ public class JdbcSqlConnector implements SqlConnector {
         return vertexWithInputConfig.vertex();
     }
 
+    /**
+     * Convert the column type received from database to QueryDataType. QueryDataType represents the data types that
+     * can be used in Hazelcast's distributed queries
+     */
+    @SuppressWarnings("ReturnCount")
+    public static QueryDataType resolveType(String columnTypeName) {
+        switch (columnTypeName.toUpperCase()) {
+            case "BOOLEAN":
+            case "BOOL":
+            case "BIT":
+                return QueryDataType.BOOLEAN;
+
+            case "VARCHAR":
+            case "CHARACTER VARYING":
+            case "TEXT":
+                return QueryDataType.VARCHAR;
+
+            case "TINYINT":
+                return QueryDataType.TINYINT;
+
+            case "SMALLINT":
+            case "INT2":
+                return QueryDataType.SMALLINT;
+
+            case "INT":
+            case "INT4":
+            case "INTEGER":
+                return QueryDataType.INT;
+
+            case "INT8":
+            case "BIGINT":
+                return QueryDataType.BIGINT;
+
+            case "DECIMAL":
+            case "NUMERIC":
+                return QueryDataType.DECIMAL;
+
+            case "REAL":
+            case "FLOAT":
+            case "FLOAT4":
+                return QueryDataType.REAL;
+
+            case "DOUBLE":
+            case "DOUBLE PRECISION":
+            case "FLOAT8":
+                return QueryDataType.DOUBLE;
+
+            case "DATE":
+                return QueryDataType.DATE;
+
+            case "TIME":
+                return QueryDataType.TIME;
+
+            case "TIMESTAMP":
+                return QueryDataType.TIMESTAMP;
+
+            case "TIMESTAMP WITH TIME ZONE":
+                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+
+            default:
+                throw new IllegalArgumentException("Unknown column type: " + columnTypeName);
+        }
+    }
 
     private static class DbField {
 
