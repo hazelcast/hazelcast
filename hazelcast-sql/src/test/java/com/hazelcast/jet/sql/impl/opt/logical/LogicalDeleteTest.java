@@ -27,6 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.extractHazelcastTable;
 import static com.hazelcast.jet.sql.impl.opt.logical.LogicalUpdateTest.assertImapUpdateWithScanPlan;
 import static com.hazelcast.jet.sql.impl.opt.logical.LogicalUpdateTest.complexKeyTable;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
@@ -96,7 +97,7 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
         );
 
         int[] inputRefFound = new int[1];
-        ((FullScanLogicalRel)(logicalRel.getInput(0))).getTable().unwrap(HazelcastTable.class).getFilter().accept(
+        extractHazelcastTable(logicalRel.getInput(0)).getFilter().accept(
                 new RexVisitorImpl<Object>(true) {
                     @Override
                     public Object visitInputRef(RexInputRef inputRef) {

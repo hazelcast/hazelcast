@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.extractHazelcastTable;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -99,7 +100,7 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         );
 
         boolean[] inputRefFound = new boolean[1];
-        ((UpdateLogicalRel)logicalRel).getSourceExpressionList().get(0).accept(
+        ((UpdateLogicalRel) logicalRel).getSourceExpressionList().get(0).accept(
                 new RexVisitorImpl<Object>(true) {
                     @Override
                     public Object visitInputRef(RexInputRef inputRef) {
@@ -296,10 +297,9 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
 
     @Nonnull
     static HazelcastTable complexKeyTable() {
-        HazelcastTable table = partitionedTable("m",
+        return partitionedTable("m",
                 asList(field("k_field1", INT), field("k_field2", INT), field(KEY, OBJECT), field(VALUE, VARCHAR)),
                 10);
-        return table;
     }
 
     static void assertImapUpdateWithScanPlan(RelNode rel, PlanRows expected) {
@@ -309,7 +309,7 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
     static void assertImapUpdateWithScanPlan(RelNode rel, PlanRows expected, int keyFields) {
         assertPlan(rel, expected);
 
-        HazelcastTable updateInputTable = rel.getInput(0).getTable().unwrap(HazelcastTable.class);
+        HazelcastTable updateInputTable = extractHazelcastTable(rel.getInput(0));
         assertThatScanProjectsOnlyKey(updateInputTable, keyFields);
     }
 
