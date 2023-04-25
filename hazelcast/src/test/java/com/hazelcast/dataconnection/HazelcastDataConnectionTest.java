@@ -195,7 +195,7 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         //then
         assertThat(resourcedTypes)
                 .map(r -> r.toLowerCase(Locale.ROOT))
-                .containsExactlyInAnyOrder("IMap");
+                .containsExactlyInAnyOrder("imap");
     }
 
     private static DataConnectionConfig nonSharedDataConnectionConfig(String clusterName) {
