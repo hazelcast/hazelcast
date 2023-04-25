@@ -43,6 +43,7 @@ import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.ID_COLUMN_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.MAPPING_PREFIX;
 import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
 import static com.hazelcast.nio.serialization.FieldKind.NOT_AVAILABLE;
@@ -388,6 +389,55 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         List<Integer> ids = newArrayList(mapLoader.loadAllKeys());
         assertThat(ids).contains(0);
+    }
+
+    @Test
+    public void givenFalse_whenLoadAllKeys_thenReturnNull() throws Exception {
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
+        properties.setProperty(LOAD_ALL_KEYS_PROPERTY, "false");
+        mapLoader = createMapLoader(properties, hz);
+
+        List<Integer> ids = newArrayList(mapLoader.loadAllKeys());
+        assertThat(ids).isEmpty();
+    }
+
+    @Test
+    public void givenTrue_whenLoadAllKeys_thenReturnKeys() throws Exception {
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
+        properties.setProperty(LOAD_ALL_KEYS_PROPERTY, "true");
+        mapLoader = createMapLoader(properties, hz);
+
+        List<Integer> ids = newArrayList(mapLoader.loadAllKeys());
+        assertThat(ids).contains(0);
+    }
+
+    @Test
+    public void givenInvalid_whenLoadAllKeys_thenReturnKeys() throws Exception {
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
+        properties.setProperty(LOAD_ALL_KEYS_PROPERTY, "invalidBooleanValue");
+        assertThatThrownBy(() -> createMapLoader(properties, hz))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("MapStoreConfig for " + mapName + " must have `load-all-keys` property set as true or false");
+
+
     }
 
     @Test

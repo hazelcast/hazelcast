@@ -27,6 +27,7 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -219,6 +220,11 @@ public abstract class BaseElasticTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected void refreshIndex() throws IOException {
+        // Need to refresh index because the default bulk request doesn't do it and we may not see the result
+        elasticClient.indices().refresh(new RefreshRequest("my-index"), DEFAULT);
     }
 
     protected void assertSingleDocument() throws IOException {

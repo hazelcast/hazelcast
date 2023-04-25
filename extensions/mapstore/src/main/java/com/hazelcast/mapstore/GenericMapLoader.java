@@ -40,6 +40,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -112,6 +113,11 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     public static final String TYPE_NAME_PROPERTY = "type-name";
 
     /**
+     * Property key to control loading of all keys when IMap is first created
+     */
+    public static final String LOAD_ALL_KEYS_PROPERTY = "load-all-keys";
+
+    /**
      * Timeout for initialization of GenericMapLoader
      */
     public static final HazelcastProperty MAPSTORE_INIT_TIMEOUT
@@ -176,6 +182,19 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
             throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
                                          " must have `" + DATA_CONNECTION_REF_PROPERTY + "` property set");
         }
+
+        // Validate that property is not an invalid boolean string
+        String loadAllKeys = mapStoreConfig.getProperty(LOAD_ALL_KEYS_PROPERTY);
+        if (loadAllKeys != null) {
+            if (!isBoolean(loadAllKeys)) {
+                throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
+                                             " must have `" + LOAD_ALL_KEYS_PROPERTY + "` property set as true or false");
+            }
+        }
+    }
+
+    private boolean isBoolean(String value) {
+        return value.equalsIgnoreCase("false") || value.equalsIgnoreCase("true");
     }
 
     private ManagedExecutorService getMapStoreExecutor() {
@@ -263,9 +282,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     @Override
     public void destroy() {
-        ManagedExecutorService asyncExecutor = nodeEngine()
-                .getExecutionService()
-                .getExecutor(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
+        ManagedExecutorService asyncExecutor = getMapStoreExecutor();
 
         asyncExecutor.submit(() -> {
             awaitInitFinished();
@@ -331,10 +348,14 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     @Override
     public Iterable<K> loadAllKeys() {
+        // If loadAllKeys property is disabled, don't load anything
+        if (!genericMapStoreProperties.loadAllKeys) {
+            return Collections.emptyList();
+        }
+
         awaitSuccessfulInit();
 
         String sql = queries.loadAllKeys();
-        //noinspection resource
         SqlResult keysResult = sqlService.execute(sql);
 
         // The contract for loadAllKeys says that if iterator implements Closable
