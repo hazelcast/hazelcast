@@ -99,6 +99,12 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
+    public String defaultObjectType() {
+        return "IMap";
+    }
+
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,

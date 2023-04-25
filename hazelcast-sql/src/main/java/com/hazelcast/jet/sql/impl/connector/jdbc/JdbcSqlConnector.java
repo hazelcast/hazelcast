@@ -75,6 +75,12 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
+    public String defaultObjectType() {
+        return "Table";
+    }
+
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,

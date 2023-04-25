@@ -78,6 +78,12 @@ public class KafkaSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
+    public String defaultObjectType() {
+        return "Topic";
+    }
+
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
@@ -130,7 +136,7 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        KafkaTable table = (KafkaTable) context.getTable();
+        KafkaTable table = context.getTable();
 
         return context.getDag().newUniqueVertex(
                 table.toString(),
@@ -166,7 +172,7 @@ public class KafkaSqlConnector implements SqlConnector {
 
     @Nonnull
     private Vertex writeProcessor(@Nonnull DagBuildContext context) {
-        KafkaTable table = (KafkaTable) context.getTable();
+        KafkaTable table = context.getTable();
 
         Vertex vStart = context.getDag().newUniqueVertex(
                 "Project(" + table + ")",

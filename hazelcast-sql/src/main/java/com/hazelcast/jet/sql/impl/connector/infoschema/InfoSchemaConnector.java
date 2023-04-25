@@ -58,6 +58,12 @@ final class InfoSchemaConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
+    @Override
+    public String defaultObjectType() {
+        return "InfoSchema";
+    }
+
     @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,

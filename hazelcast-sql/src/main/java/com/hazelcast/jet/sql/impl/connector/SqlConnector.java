@@ -195,14 +195,10 @@ public interface SqlConnector {
      * Returns default value for the Object Type mapping property, so if user won't provide any type,
      * this will be assumed.
      *
-     * By default, it returns null.
-     *
      * @since 5.3
      */
-    @Nullable
-    default String defaultObjectType() {
-        return null;
-    }
+    @Nonnull
+    String defaultObjectType();
 
     /**
      * Resolves the final field list given an initial field list and options
@@ -224,9 +220,8 @@ public interface SqlConnector {
      * @param externalName       external name of the table
      * @param dataConnectionName name of the data connection to use, may be null if the connector supports specifying
      *                           connection details in options
-     * @param objectType    the type of object for which fields will be resolved. If connector overrides
-     *                      {@link #defaultObjectType()} and return non=null value, value of this parameter
-     *                      also will never be null.
+     * @param objectType         the type of object for which fields will be resolved. Default value is the value
+     *                           returned by {@link #defaultObjectType()}.
      * @return final field list, must not be empty
      */
     @Nonnull
@@ -247,6 +242,7 @@ public interface SqlConnector {
      * Jet calls this method for each statement execution and for each mapping.
      *
      * @param nodeEngine         an instance of {@link NodeEngine}
+     * @param mappingContext     an object with the metadata of mapping from which this table is created
      * @param resolvedFields     list of fields as returned from {@link
      *                           #resolveAndValidateFields}
      */
@@ -516,7 +512,7 @@ public interface SqlConnector {
         }
 
         /**
-         * Data Connection used by this mapping.
+         * Name of the data connection to use, may be null if the connector supports specifying connection details in options
          */
         @Nullable
         public String dataConnection() {

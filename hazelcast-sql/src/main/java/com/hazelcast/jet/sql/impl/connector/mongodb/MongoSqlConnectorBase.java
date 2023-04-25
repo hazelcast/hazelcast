@@ -103,7 +103,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         return singletonList(mongoTable.primaryKeyName());
     }
 
-    @Nullable
+    @Nonnull
     @Override
     public String defaultObjectType() {
         return "Collection";

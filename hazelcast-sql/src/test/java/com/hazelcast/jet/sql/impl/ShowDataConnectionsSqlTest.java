@@ -64,14 +64,15 @@ public class ShowDataConnectionsSqlTest extends SqlTestSupport {
         // create data connections via SQL
         List<String> dlNames = IntStream.range(0, 5).mapToObj(i -> "dl" + i).collect(toList());
         for (String dlName : dlNames) {
-            instance().getSql().execute("CREATE DATA CONNECTION " + dlName  + " TYPE DUMMY SHARED OPTIONS ('b' = 'c')");
+            instance().getSql()
+                      .execute("CREATE DATA CONNECTION " + dlName  + " TYPE DUMMY SHARED OPTIONS ('b' = 'c')").close();
         }
 
         dlNames.add(0, "dl");
 
         // when & then
-        List<Row> rows = dlNames.stream().map(n -> new Row(n, asList("testType1", "testType2"))).collect(toList());
-        assertRowsOrdered("show data connections", rows);
+        List<Row> expectedRows = dlNames.stream().map(n -> new Row(n, asList("testType1", "testType2"))).collect(toList());
+        assertRowsOrdered("show data connections", expectedRows);
     }
 
 }

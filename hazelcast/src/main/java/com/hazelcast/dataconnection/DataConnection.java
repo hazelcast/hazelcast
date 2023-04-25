@@ -108,7 +108,8 @@ public interface DataConnection {
 
     /**
      * Returns the list of possible values for {@link DataConnectionResource#type()},
-     * that will be returned when {@link #listResources()} is called.
+     * that will be returned when {@link #listResources()} is called. Returned values are case-insensitive,
+     * e.g. {@link DataConnectionResource#type()} may return {@code MY_RES} and this method {@code my_res}.
      */
     @Nonnull
     Collection<String> resourceTypes();

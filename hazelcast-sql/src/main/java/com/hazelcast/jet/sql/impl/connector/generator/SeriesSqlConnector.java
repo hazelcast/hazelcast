@@ -55,6 +55,12 @@ class SeriesSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
+    public String defaultObjectType() {
+        return "Series";
+    }
+
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,

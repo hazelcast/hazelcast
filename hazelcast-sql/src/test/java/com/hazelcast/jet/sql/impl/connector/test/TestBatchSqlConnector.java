@@ -25,6 +25,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -92,6 +93,12 @@ public class TestBatchSqlConnector extends TestAbstractSqlConnector {
     @Override
     public String typeName() {
         return TYPE_NAME;
+    }
+
+    @Nonnull
+    @Override
+    public String defaultObjectType() {
+        return "batch";
     }
 
 }

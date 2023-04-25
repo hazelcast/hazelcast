@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlMappingContext;
@@ -50,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
@@ -149,7 +151,10 @@ public class TableResolverImpl implements TableResolver {
         } else {
             connector = connectorCache.forType(type);
         }
-        String objectType = mapping.objectType() == null ? connector.defaultObjectType() : mapping.objectType();
+        String objectType = mapping.objectType() == null
+                ? connector.defaultObjectType()
+                : mapping.objectType();
+        checkNotNull(objectType, "objectType cannot be null");
         resolvedFields = connector.resolveAndValidateFields(
                 nodeEngine,
                 options,
@@ -319,6 +324,7 @@ public class TableResolverImpl implements TableResolver {
         String internalObjType = internalMapping.objectType() == null
                 ? connector.defaultObjectType()
                 : internalMapping.objectType();
+        checkNotNull(internalObjType, "objectType cannot be null");
         String connectorType = connector.typeName();
         return new SqlMappingContext(internalMapping.name(), internalMapping.externalName(),
                 internalMapping.dataConnection(),

@@ -95,7 +95,7 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Nonnull
     @Override
     public Collection<String> resourceTypes() {
-        return Collections.singleton("TABLE");
+        return Collections.singleton("Table");
     }
 
     @Nonnull

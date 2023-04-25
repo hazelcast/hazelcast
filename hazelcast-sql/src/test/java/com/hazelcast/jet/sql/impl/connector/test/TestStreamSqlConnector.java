@@ -25,6 +25,7 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,6 +63,12 @@ public class TestStreamSqlConnector extends TestAbstractSqlConnector {
     @Override
     public String typeName() {
         return TYPE_NAME;
+    }
+
+    @Nonnull
+    @Override
+    public String defaultObjectType() {
+        return "stream";
     }
 
 }

@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -121,15 +122,15 @@ public class DataConnectionResolver implements TableResolver {
         return dataConnections;
     }
 
-    public static List<Object[]> getAllDataConnectionNameWithTypes(
+    public static List<List<?>> getAllDataConnectionNameWithTypes(
             DataConnectionServiceImpl dataConnectionService) {
         List<DataConnection> conn = new ArrayList<>();
         conn.addAll(dataConnectionService.getConfigCreatedDataConnections());
         conn.addAll(dataConnectionService.getSqlCreatedDataConnections());
 
         return conn.stream()
-                   .map(dc -> new Object[] {dc.getName(), new ArrayList<>(dc.resourceTypes())})
-                .collect(toList());
+                   .map(dc -> Arrays.asList(dc.getName(), new ArrayList<>(dc.resourceTypes())))
+                   .collect(toList());
     }
 
     @Override

@@ -114,6 +114,12 @@ public class TestAllTypesSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
+    @Override
+    public String defaultObjectType() {
+        return "Dummy";
+    }
+
     @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,

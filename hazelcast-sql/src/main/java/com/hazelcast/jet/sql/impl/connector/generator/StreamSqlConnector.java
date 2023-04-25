@@ -55,6 +55,12 @@ public class StreamSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
+    public String defaultObjectType() {
+        return "Stream";
+    }
+
+    @Nonnull
+    @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,

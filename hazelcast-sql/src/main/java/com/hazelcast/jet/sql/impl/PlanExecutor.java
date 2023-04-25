@@ -105,6 +105,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -391,21 +392,21 @@ public class PlanExecutor {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     SqlResult execute(ShowStatementPlan plan) {
-        Stream<Object[]> rows;
+        Stream<List<?>> rows;
 
         switch (plan.getShowTarget()) {
             case MAPPINGS:
-                rows = catalog.getMappingNames().stream().map(n -> new Comparable[] { n });
+                rows = catalog.getMappingNames().stream().map(Collections::singletonList);
                 break;
             case VIEWS:
-                rows = catalog.getViewNames().stream().map(n -> new Comparable[] { n });
+                rows = catalog.getViewNames().stream().map(Collections::singletonList);
                 break;
             case JOBS:
                 JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-                rows = jetServiceBackend.getJobRepository().getActiveJobNames().stream().map(n -> new Comparable[] { n });
+                rows = jetServiceBackend.getJobRepository().getActiveJobNames().stream().map(Collections::singletonList);
                 break;
             case TYPES:
-                rows = catalog.getTypeNames().stream().map(n -> new Comparable[] { n });
+                rows = catalog.getTypeNames().stream().map(Collections::singletonList);
                 break;
             case DATACONNECTIONS:
                 InternalDataConnectionService service = nodeEngine.getDataConnectionService();
@@ -431,8 +432,8 @@ public class PlanExecutor {
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(
-                        rows.sorted(comparing(r -> (Comparable) r[0]))
-                            .map(row -> new JetSqlRow(serializationService, (Object[]) row))
+                        rows.sorted(comparing(r -> (Comparable) r.get(0)))
+                            .map(row -> new JetSqlRow(serializationService, ((List<?>) row).toArray(new Object[0])))
                             .iterator()),
                 metadata,
                 false
