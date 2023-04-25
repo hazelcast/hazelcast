@@ -197,11 +197,11 @@ public class MongoDataConnection extends DataConnectionBase {
     public void destroy() {
         ConcurrentMemoizingSupplier<MongoClient> supplier = mongoClientSup;
         if (supplier != null) {
-            MongoClient mongoClient = mongoClientSup.remembered();
+            mongoClientSup = null;
+            MongoClient mongoClient = supplier.remembered();
             if (mongoClient != null) {
                 ((CloseableMongoClient) mongoClient).unwrap().close();
             }
-            mongoClientSup = null;
         }
     }
 
