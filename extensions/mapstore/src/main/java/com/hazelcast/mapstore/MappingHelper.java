@@ -62,7 +62,7 @@ final class MappingHelper {
         sb.append("CREATE MAPPING ");
         DIALECT.quoteIdentifier(sb, mappingName);
         sb.append(" EXTERNAL NAME ");
-        sb.append(quoteExternalName(tableName));
+        quoteExternalName(sb, tableName);
         if (mappingColumns != null) {
             sb.append(" ( ");
             for (Iterator<SqlColumnMetadata> iterator = mappingColumns.iterator(); iterator.hasNext(); ) {
@@ -87,19 +87,16 @@ final class MappingHelper {
     }
 
     //package-private just for testing
-    static String quoteExternalName(String externalName) {
-        StringBuilder sb = new StringBuilder();
+    static void quoteExternalName(StringBuilder sb, String externalName) {
         List<String> parts = splitByNonQuotedDots(externalName);
         for (int i = 0; i < parts.size(); i++) {
             String unescaped = unescapeQuotes(parts.get(i));
             String unquoted = unquoteIfQuoted(unescaped);
-            String quoteIdentifier = DIALECT.quoteIdentifier(unquoted);
-            sb.append(quoteIdentifier);
+            DIALECT.quoteIdentifier(sb, unquoted);
             if (i < parts.size() - 1) {
                 sb.append(".");
             }
         }
-        return sb.toString();
     }
 
     private static List<String> splitByNonQuotedDots(String input) {

@@ -124,7 +124,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
         mapStoreConfig.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
-        mapStoreConfig.setProperty(TABLE_NAME_PROPERTY, tableName);
+        mapStoreConfig.setProperty(EXTERNAL_NAME_PROPERTY, tableName);
         mapStoreConfig.setProperty(TYPE_NAME_PROPERTY, "org.example.Person");
         mapStoreConfig.setProperty(LOAD_ALL_KEYS_PROPERTY, "false");
 
