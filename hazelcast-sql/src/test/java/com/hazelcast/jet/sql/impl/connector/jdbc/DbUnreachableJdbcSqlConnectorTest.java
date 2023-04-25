@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.net.ConnectException;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 public class DbUnreachableJdbcSqlConnectorTest extends JdbcSqlTestSupport {
@@ -42,6 +44,6 @@ public class DbUnreachableJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertThatThrownBy(() ->
                 sqlService.execute("CREATE MAPPING people DATA CONNECTION mysql")
         ).hasStackTraceContaining("Could not create pool for data connection 'mysql'")
-         .hasStackTraceContaining("Connection refused (Connection refused)");
+         .hasRootCauseInstanceOf(ConnectException.class);
     }
 }
