@@ -40,6 +40,7 @@ import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertEventuallyN
 import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertPoolNameEndsWith;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -187,6 +188,18 @@ public class JdbcDataConnectionTest {
         assertThat(pool.isClosed())
                 .describedAs("Connection pool should have been closed")
                 .isTrue();
+    }
+
+    @Test
+    public void shared_connection_should_be_initialized_lazy() {
+        jdbcDataConnection = new JdbcDataConnection(new DataConnectionConfig()
+                .setName(TEST_CONFIG_NAME)
+                .setProperty("jdbcUrl", "invalid-jdbc-url")
+                .setShared(true));
+
+        assertThatThrownBy(() -> jdbcDataConnection.getConnection())
+                .hasRootCauseInstanceOf(SQLException.class)
+                .hasRootCauseMessage("No suitable driver");
     }
 
     @Test
