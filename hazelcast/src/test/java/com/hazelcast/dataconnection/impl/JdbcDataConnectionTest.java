@@ -34,6 +34,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
@@ -46,19 +47,20 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JdbcDataConnectionTest {
 
-    private static final String TEST_CONFIG_NAME = JdbcDataConnectionTest.class.getSimpleName();
+    private static final String TEST_NAME = JdbcDataConnectionTest.class.getSimpleName();
+    public static final String DB_NAME_SHARED = (TEST_NAME + "_shared").toUpperCase(Locale.ROOT);
     private static final String JDBC_URL_SHARED = "jdbc:h2:mem:"
-            + JdbcDataConnectionTest.class.getSimpleName() + "_shared"
+            + DB_NAME_SHARED
             + ";DB_CLOSE_DELAY=-1";
 
     private static final DataConnectionConfig SHARED_DATA_CONNECTION_CONFIG = new DataConnectionConfig()
-            .setName(TEST_CONFIG_NAME)
+            .setName(TEST_NAME)
             .setProperty("jdbcUrl", JDBC_URL_SHARED)
             .setShared(true);
 
     private static final DataConnectionConfig SINGLE_USE_DATA_CONNECTION_CONFIG = new DataConnectionConfig()
-            .setName(TEST_CONFIG_NAME)
-            .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataConnectionTest.class.getSimpleName() + "_single_use")
+            .setName(TEST_NAME)
+            .setProperty("jdbcUrl", "jdbc:h2:mem:" + TEST_NAME + "_single_use")
             .setShared(false);
 
     Connection connection1;
@@ -71,7 +73,7 @@ public class JdbcDataConnectionTest {
         close(connection1);
         close(connection2);
         jdbcDataConnection.release();
-        assertEventuallyNoHikariThreads(TEST_CONFIG_NAME);
+        assertEventuallyNoHikariThreads(TEST_NAME);
         executeJdbc(JDBC_URL_SHARED, "shutdown");
     }
 
@@ -84,7 +86,7 @@ public class JdbcDataConnectionTest {
     @Test
     public void should_return_name() {
         jdbcDataConnection = new JdbcDataConnection(SHARED_DATA_CONNECTION_CONFIG);
-        assertThat(jdbcDataConnection.getName()).isEqualTo(TEST_CONFIG_NAME);
+        assertThat(jdbcDataConnection.getName()).isEqualTo(TEST_NAME);
     }
 
     @Test
@@ -132,7 +134,7 @@ public class JdbcDataConnectionTest {
         jdbcDataConnection = new JdbcDataConnection(SHARED_DATA_CONNECTION_CONFIG);
         HikariDataSource pool = jdbcDataConnection.pooledDataSource();
 
-        assertPoolNameEndsWith(pool, TEST_CONFIG_NAME);
+        assertPoolNameEndsWith(pool, TEST_NAME);
     }
 
     @Test
@@ -210,7 +212,7 @@ public class JdbcDataConnectionTest {
 
         List<DataConnectionResource> dataConnectionResources = jdbcDataConnection.listResources();
         assertThat(dataConnectionResources).contains(
-                new DataConnectionResource("TABLE", "PUBLIC.MY_TABLE")
+                new DataConnectionResource("TABLE", DB_NAME_SHARED, "PUBLIC", "MY_TABLE")
         );
     }
 
@@ -223,7 +225,7 @@ public class JdbcDataConnectionTest {
 
         List<DataConnectionResource> dataConnectionResources = jdbcDataConnection.listResources();
         assertThat(dataConnectionResources).contains(
-                new DataConnectionResource("TABLE", "MY_SCHEMA.MY_TABLE")
+                new DataConnectionResource("TABLE", DB_NAME_SHARED, "MY_SCHEMA", "MY_TABLE")
         );
     }
 
@@ -236,7 +238,7 @@ public class JdbcDataConnectionTest {
 
         List<DataConnectionResource> dataConnectionResources = jdbcDataConnection.listResources();
         assertThat(dataConnectionResources).contains(
-                new DataConnectionResource("TABLE", "PUBLIC.MY_TABLE_VIEW")
+                new DataConnectionResource("TABLE", DB_NAME_SHARED, "PUBLIC", "MY_TABLE_VIEW")
         );
     }
 
