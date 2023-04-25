@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.jet.kafka.impl.NonClosingKafkaProducer;
 import com.hazelcast.spi.annotation.Beta;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -60,7 +59,7 @@ import java.util.stream.Collectors;
 @Beta
 public class KafkaDataConnection extends DataConnectionBase {
 
-    private volatile ConcurrentMemoizingSupplier<NonClosingKafkaProducer<?, ?>> producer;
+    private volatile NonClosingKafkaProducer<?, ?> producer;
 
     /**
      * Create {@link KafkaDataConnection} based on given config
@@ -69,9 +68,7 @@ public class KafkaDataConnection extends DataConnectionBase {
         super(config);
 
         if (config.isShared()) {
-            producer = new ConcurrentMemoizingSupplier<>(() ->
-                    new NonClosingKafkaProducer<>(config.getProperties(), this::release)
-            );
+            producer = new NonClosingKafkaProducer<>(config.getProperties(), this::release);
         }
     }
 
@@ -127,7 +124,7 @@ public class KafkaDataConnection extends DataConnectionBase {
             }
             retain();
             //noinspection unchecked
-            return (KafkaProducer<K, V>) producer.get();
+            return (KafkaProducer<K, V>) producer;
         } else {
             if (transactionalId != null) {
                 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -144,10 +141,7 @@ public class KafkaDataConnection extends DataConnectionBase {
     @Override
     public synchronized void destroy() {
         if (producer != null) {
-            NonClosingKafkaProducer<?, ?> remembered = producer.remembered();
-            if (remembered != null) {
-                remembered.doClose();
-            }
+            producer.doClose();
             producer = null;
         }
     }
