@@ -195,7 +195,7 @@ public class JdbcDataConnectionTest {
     @Test
     public void shared_connection_should_be_initialized_lazy() {
         jdbcDataConnection = new JdbcDataConnection(new DataConnectionConfig()
-                .setName(TEST_CONFIG_NAME)
+                .setName(TEST_NAME)
                 .setProperty("jdbcUrl", "invalid-jdbc-url")
                 .setShared(true));
 
