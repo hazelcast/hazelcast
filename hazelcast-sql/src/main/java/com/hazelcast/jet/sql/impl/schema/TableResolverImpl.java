@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
-import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlMappingContext;

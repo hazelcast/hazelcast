@@ -18,7 +18,6 @@ package com.hazelcast.jet.kafka;
 
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.dataconnection.DataConnectionResource;
-import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.producer.Producer;
