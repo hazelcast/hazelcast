@@ -102,8 +102,8 @@ abstract class FileTable extends JetTable {
                 ProcessorMetaSupplierProvider processorMetaSupplierProvider,
                 SupplierEx<QueryTarget> queryTargetSupplier
         ) {
-            super(sqlConnector, schemaName, name, fields, processorMetaSupplierProvider, queryTargetSupplier, "File");
-            // fixme temp value above
+            super(sqlConnector, schemaName, name, fields, processorMetaSupplierProvider, queryTargetSupplier,
+                    sqlConnector.defaultObjectType());
         }
 
         @Override
