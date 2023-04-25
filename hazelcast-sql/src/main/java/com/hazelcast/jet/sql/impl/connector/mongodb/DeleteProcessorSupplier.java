@@ -25,23 +25,14 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.DeleteManyModel;
-import com.mongodb.client.model.DeleteOneModel;
-import com.mongodb.client.model.DeleteOptions;
-import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.UpdateManyModel;
-import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
