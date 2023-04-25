@@ -34,16 +34,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.DATA_CONNECTION_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.MAPPING_PREFIX;
-import static com.hazelcast.mapstore.GenericMapLoader.TABLE_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
 import static com.hazelcast.nio.serialization.FieldKind.NOT_AVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -493,11 +494,34 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
-        properties.setProperty(TABLE_NAME_PROPERTY, tableName);
+        properties.setProperty(EXTERNAL_NAME_PROPERTY, tableName);
         mapLoader = createMapLoader(properties, hz);
 
         GenericRecord record = mapLoader.load(0);
         assertThat(record).isNotNull();
+    }
+
+    @Test
+    public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchema() throws Exception {
+        String schemaName = "custom_schema";
+        createSchema(schemaName);
+        String tableName = randomTableName() + ".with_dot";
+        String fullTableName = schemaName + "." + quote(tableName);
+
+        createTable(fullTableName);
+        insertItems(fullTableName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(EXTERNAL_NAME_PROPERTY, schemaName + ".\"" + tableName + "\"");
+        mapLoader = createMapLoader(properties, hz);
+
+        GenericRecord record = mapLoader.load(0);
+        assertThat(record).isNotNull();
+    }
+
+    private static void createSchema(String schemaName) throws SQLException {
+        executeJdbc("CREATE SCHEMA IF NOT EXISTS " + schemaName + " ");
     }
 
     private <K> GenericMapLoader<K> createMapLoader() {
