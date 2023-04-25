@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl.discovery;
 
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.RequiresJdk8;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,6 +40,8 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
+// animal-sniffer chokes on com.sun.net.httpserver package, even though it is present in JDK 1.6 and exported
+@RequiresJdk8
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
