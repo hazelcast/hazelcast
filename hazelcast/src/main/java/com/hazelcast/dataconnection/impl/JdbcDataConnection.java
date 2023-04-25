@@ -53,7 +53,7 @@ public class JdbcDataConnection extends DataConnectionBase {
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
     private volatile ConcurrentMemoizingSupplier<HikariDataSource> pooledDataSourceSup;
-    private Supplier<Connection> singleUseConnectionSup;
+    private volatile Supplier<Connection> singleUseConnectionSup;
 
     public JdbcDataConnection(DataConnectionConfig config) {
         super(config);
@@ -174,9 +174,7 @@ public class JdbcDataConnection extends DataConnectionBase {
                 }
             }
         }
-        if (singleUseConnectionSup != null) {
-            singleUseConnectionSup = null;
-        }
+        singleUseConnectionSup = null;
     }
 
     /**
