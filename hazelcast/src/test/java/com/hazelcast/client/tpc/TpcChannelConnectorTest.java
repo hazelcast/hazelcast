@@ -16,16 +16,17 @@
 
 package com.hazelcast.client.tpc;
 
+import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.connection.tcp.TpcChannelClientConnectionAdapter;
 import com.hazelcast.client.impl.connection.tcp.TpcChannelConnector;
-import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -38,7 +39,9 @@ import org.mockito.stubbing.OngoingStubbing;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -62,11 +65,13 @@ public class TpcChannelConnectorTest {
     private TpcChannelConnector connector;
     private TcpClientConnection mockConnection;
     private Channel[] mockTpcChannels;
-    private TpcChannelConnector.ChannelCreator mockChannelCreator;
+    private CandidateClusterContext mockContext;
+    private BiFunction<Address, TcpClientConnection, Channel> mockChannelCreator;
 
     @Before
-    public void setup() {
-        mockConnection = setupMockConnection();
+    public void setup() throws Exception {
+        mockContext = setupMockContext();
+        mockConnection = setupMockConnection(mockContext);
         mockTpcChannels = setupMockTpcChannels();
         mockChannelCreator = setupMockChannelCreator(mockTpcChannels);
         connector = new TpcChannelConnector(setupMockClient(),
@@ -76,7 +81,6 @@ public class TpcChannelConnectorTest {
                 IntStream.range(0, CHANNEL_COUNT).boxed().collect(Collectors.toList()),
                 new byte[0],
                 setupMockExecutorService(),
-                mock(ChannelInitializer.class),
                 mockChannelCreator,
                 mock(LoggingService.class, RETURNS_DEEP_STUBS));
     }
@@ -98,7 +102,7 @@ public class TpcChannelConnectorTest {
     public void testConnector_whenChannelCreationFails() throws IOException {
         doThrow(new RuntimeException("expected"))
                 .when(mockChannelCreator)
-                .create(any(), any(), any());
+                .apply(any(), any());
 
         connector.initiate();
 
@@ -118,7 +122,7 @@ public class TpcChannelConnectorTest {
 
         verify(mockConnection, never()).setTpcChannels(any());
 
-        verify(mockChannelCreator, never()).create(any(), any(), any());
+        verify(mockChannelCreator, never()).apply(any(), any());
 
         // We should not even attempt to write anything if the connection
         // is already closed
@@ -152,7 +156,7 @@ public class TpcChannelConnectorTest {
 
     @Test
     public void testConnector_whenConnectionIsClosed_afterSomeChannelsAreEstablished() throws IOException {
-        OngoingStubbing<Channel> stubbing = when(mockChannelCreator.create(any(), any(), any()));
+        OngoingStubbing<Channel> stubbing = when(mockChannelCreator.apply(any(), any()));
         int count = 0;
         for (Channel channel : mockTpcChannels) {
             if (++count < mockTpcChannels.length) {
@@ -181,7 +185,7 @@ public class TpcChannelConnectorTest {
 
     @Test
     public void testConnector_whenChannelCreationsFails_afterSomeChannelsAreEstablished() throws IOException {
-        OngoingStubbing<Channel> stubbing = when(mockChannelCreator.create(any(), any(), any()));
+        OngoingStubbing<Channel> stubbing = when(mockChannelCreator.apply(any(), any()));
         int count = 0;
         for (Channel channel : mockTpcChannels) {
             if (++count < mockTpcChannels.length) {
@@ -232,6 +236,49 @@ public class TpcChannelConnectorTest {
         }
     }
 
+    @Test
+    public void testConnector_translate() throws Exception {
+        connector.initiate();
+        verify(mockConnection, times(1)).setTpcChannels(any());
+
+        AddressProvider addressProvider = mockContext.getAddressProvider();
+        verify(addressProvider, times(CHANNEL_COUNT)).translate(any(Address.class));
+    }
+
+    @Test
+    public void testConnector_translateNull() throws Exception {
+        AddressProvider addressProvider = mockContext.getAddressProvider();
+        when(addressProvider.translate(any(Address.class))).thenReturn(null);
+
+        connector.initiate();
+        verify(mockConnection, never()).setTpcChannels(any());
+
+        // After the first translation failure, we should not even try
+        // to translate.
+        verify(addressProvider, times(1)).translate(any(Address.class));
+
+        // No channels should be created
+        verify(mockChannelCreator, never()).apply(any(), any());
+    }
+
+    @Test
+    public void testConnector_translateError() throws Exception {
+        AddressProvider addressProvider = mockContext.getAddressProvider();
+        doThrow(new RuntimeException("expected"))
+                .when(addressProvider)
+                .translate(any(Address.class));
+
+        connector.initiate();
+        verify(mockConnection, never()).setTpcChannels(any());
+
+        // After the first translation failure, we should not even try
+        // to translate.
+        verify(addressProvider, times(1)).translate(any(Address.class));
+
+        // No channels should be created
+        verify(mockChannelCreator, never()).apply(any(), any());
+    }
+
     private HazelcastClientInstanceImpl setupMockClient() {
         HazelcastClientInstanceImpl client = mock(HazelcastClientInstanceImpl.class);
         ClientInvocationServiceImpl invocationService = mock(ClientInvocationServiceImpl.class, RETURNS_DEEP_STUBS);
@@ -245,10 +292,22 @@ public class TpcChannelConnectorTest {
         return client;
     }
 
-    private TcpClientConnection setupMockConnection() {
+    private CandidateClusterContext setupMockContext() throws Exception {
+        CandidateClusterContext mockContext = mock(CandidateClusterContext.class);
+        AddressProvider mockProvider = mock(AddressProvider.class);
+        when(mockProvider.translate(any(Address.class))).thenReturn(Address.createUnresolvedAddress("localhost", 12345));
+        when(mockContext.getAddressProvider()).thenReturn(mockProvider);
+        return mockContext;
+    }
+
+    private TcpClientConnection setupMockConnection(CandidateClusterContext mockContext) {
         TcpClientConnection connection = mock(TcpClientConnection.class);
         when(connection.isAlive()).thenReturn(true);
         when(connection.getRemoteAddress()).thenReturn(Address.createUnresolvedAddress("localhost", 12345));
+
+        ConcurrentMap attributeMap = new ConcurrentHashMap();
+        attributeMap.put(CandidateClusterContext.class, mockContext);
+        when(connection.attributeMap()).thenReturn(attributeMap);
         return connection;
     }
 
@@ -275,9 +334,9 @@ public class TpcChannelConnectorTest {
         return tpcChannels;
     }
 
-    private TpcChannelConnector.ChannelCreator setupMockChannelCreator(Channel[] tpcChannels) {
-        TpcChannelConnector.ChannelCreator channelCreator = mock(TpcChannelConnector.ChannelCreator.class);
-        OngoingStubbing<Channel> stubbing = when(channelCreator.create(any(), any(), any()));
+    private BiFunction<Address, TcpClientConnection, Channel> setupMockChannelCreator(Channel[] tpcChannels) {
+        BiFunction<Address, TcpClientConnection, Channel> channelCreator = mock(BiFunction.class);
+        OngoingStubbing<Channel> stubbing = when(channelCreator.apply(any(), any()));
         for (Channel channel : tpcChannels) {
             stubbing = stubbing.thenReturn(channel);
         }
