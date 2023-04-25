@@ -62,7 +62,7 @@ public class RelationsStorage extends AbstractSchemaStorage {
         return storage().values().stream()
                 .filter(o -> o instanceof Mapping)
                 .map(o -> (Mapping) o)
-                .filter(m -> m.dataConnection().equals(dataConnectionName))
+                .filter(m -> m.dataConnection() != null && m.dataConnection().equals(dataConnectionName))
                 .collect(Collectors.toList());
     }
 
