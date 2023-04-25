@@ -39,7 +39,6 @@ import java.util.Map;
 import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
 import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertPoolNameEndsWith;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -68,7 +67,7 @@ public class JdbcDataConnectionTest {
     public void tearDown() throws Exception {
         close(connection1);
         close(connection2);
-        jdbcDataConnection.destroy();
+        jdbcDataConnection.release();
         assertEventuallyNoHikariThreads(TEST_CONFIG_NAME);
     }
 
@@ -174,7 +173,7 @@ public class JdbcDataConnectionTest {
         jdbcDataConnection = new JdbcDataConnection(SHARED_DATA_CONNECTION_CONFIG);
         HikariDataSource pool = jdbcDataConnection.pooledDataSource();
 
-        try (Connection ignored = jdbcDataConnection.getConnection()) {
+        try (Connection connection = jdbcDataConnection.getConnection()) {
             jdbcDataConnection.release();
 
             assertThat(pool.isClosed())
@@ -188,20 +187,9 @@ public class JdbcDataConnectionTest {
     }
 
     @Test
-    public void shared_connection_should_be_initialized_lazy() {
-        jdbcDataConnection = new JdbcDataConnection(new DataConnectionConfig()
-                .setName(TEST_CONFIG_NAME)
-                .setProperty("jdbcUrl", "invalid-jdbc-url")
-                .setShared(true));
-
-        assertThatThrownBy(() -> jdbcDataConnection.getConnection()).isInstanceOf(RuntimeException.class)
-                .hasMessage("Failed to get driver instance for jdbcUrl=invalid-jdbc-url");
-    }
-
-    @Test
     public void list_resources_should_return_table() throws Exception {
         jdbcDataConnection = new JdbcDataConnection(SHARED_DATA_CONNECTION_CONFIG);
-        connection1 = jdbcDataConnection.getConnection();
+
         executeJdbc(JDBC_URL_SHARED, "CREATE TABLE MY_TABLE (ID INT, NAME VARCHAR)");
 
         List<DataConnectionResource> dataConnectionResources = jdbcDataConnection.listResources();
@@ -213,7 +201,6 @@ public class JdbcDataConnectionTest {
     @Test
     public void list_resources_should_return_table_in_schema() throws Exception {
         jdbcDataConnection = new JdbcDataConnection(SHARED_DATA_CONNECTION_CONFIG);
-        connection1 = jdbcDataConnection.getConnection();
 
         executeJdbc(JDBC_URL_SHARED, "CREATE SCHEMA MY_SCHEMA");
         executeJdbc(JDBC_URL_SHARED, "CREATE TABLE MY_SCHEMA.MY_TABLE (ID INT, NAME VARCHAR)");
@@ -227,7 +214,6 @@ public class JdbcDataConnectionTest {
     @Test
     public void list_resources_should_return_view() throws Exception {
         jdbcDataConnection = new JdbcDataConnection(SHARED_DATA_CONNECTION_CONFIG);
-        connection1 = jdbcDataConnection.getConnection();
 
         executeJdbc(JDBC_URL_SHARED, "CREATE TABLE MY_TABLE (ID INT, NAME VARCHAR)");
         executeJdbc(JDBC_URL_SHARED, "CREATE VIEW MY_TABLE_VIEW AS SELECT * FROM MY_TABLE");

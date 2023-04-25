@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.spi.annotation.Beta;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -52,13 +51,13 @@ public class JdbcDataConnection extends DataConnectionBase {
 
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
-    private ConcurrentMemoizingSupplier<HikariDataSource> pooledDataSource;
+    private HikariDataSource pooledDataSource;
     private Supplier<Connection> singleUseConnectionSup;
 
     public JdbcDataConnection(DataConnectionConfig config) {
         super(config);
         if (config.isShared()) {
-            this.pooledDataSource = new ConcurrentMemoizingSupplier<>(this::createHikariDataSource);
+            this.pooledDataSource = createHikariDataSource();
         } else {
             this.singleUseConnectionSup = createSingleConnectionSup();
         }
@@ -115,7 +114,7 @@ public class JdbcDataConnection extends DataConnectionBase {
     private Connection pooledConnection() {
         retain();
         try {
-            return new ConnectionDelegate(pooledDataSource.get().getConnection()) {
+            return new ConnectionDelegate(pooledDataSource.getConnection()) {
                 @Override
                 public void close() {
                     try {
@@ -158,15 +157,12 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Override
     public void destroy() {
         if (pooledDataSource != null) {
-            HikariDataSource remembered = pooledDataSource.remembered();
-            if (remembered != null) {
-                try {
-                    remembered.close();
-                } catch (Exception e) {
-                    throw new HazelcastException("Could not close connection pool", e);
-                }
-                pooledDataSource = null;
+            try {
+                pooledDataSource.close();
+            } catch (Exception e) {
+                throw new HazelcastException("Could not close connection pool", e);
             }
+            pooledDataSource = null;
         } else {
             singleUseConnectionSup = null;
         }
@@ -176,6 +172,6 @@ public class JdbcDataConnection extends DataConnectionBase {
      * For tests only
      */
     HikariDataSource pooledDataSource() {
-        return pooledDataSource.get();
+        return pooledDataSource;
     }
 }
