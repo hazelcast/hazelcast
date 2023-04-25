@@ -6,8 +6,8 @@ Enhancements
 * Introduced WAN throttling mechanism: this prevents the WAN consumers
 from getting overloaded by the WAN producers if transferring the WAN events
 takes less time than processing them in the target cluster. This can be the case
-with WAN synchronization if the network latency is low enough. It can be configured
-using the following properties:
+with WAN synchronization if the network latency is low enough or if the source
+cluster is big. It can be configured using the following properties:
   ** hazelcast.wan.consumer.invocation.threshold
   ** hazelcast.wan.consumer.ack.delay.backoff.init
   ** hazelcast.wan.consumer.ack.delay.backoff.max
