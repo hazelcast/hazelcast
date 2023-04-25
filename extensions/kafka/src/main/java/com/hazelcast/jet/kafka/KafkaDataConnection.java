@@ -142,7 +142,7 @@ public class KafkaDataConnection extends DataConnectionBase {
     }
 
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if (producer != null) {
             NonClosingKafkaProducer<?, ?> remembered = producer.remembered();
             if (remembered != null) {
