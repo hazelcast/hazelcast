@@ -18,7 +18,6 @@ package com.hazelcast.jet.mongodb.dataconnection;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
-import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoClientSettings.Builder;
@@ -76,7 +75,7 @@ public class MongoDataConnection extends DataConnectionBase {
      */
     public static final String AUTH_DB_PROPERTY = "authDb";
 
-    private volatile ConcurrentMemoizingSupplier<MongoClient> mongoClient;
+    private volatile MongoClient mongoClient;
     private final String databaseName;
     private final String username;
     private final String password;
@@ -98,8 +97,7 @@ public class MongoDataConnection extends DataConnectionBase {
         "You have to provide connectionString property or combination of username, password and host");
 
         if (config.isShared()) {
-            this.mongoClient = new ConcurrentMemoizingSupplier<>(() -> new CloseableMongoClient(createClient(config),
-                    this::release));
+            this.mongoClient = new CloseableMongoClient(createClient(config), this::release);
         }
     }
 
@@ -132,6 +130,7 @@ public class MongoDataConnection extends DataConnectionBase {
 
     /**
      * Returns an instance of {@link MongoClient}.
+     *
      * If client is {@linkplain DataConnectionConfig#isShared()} and there will be still some usages of given client,
      * the {@linkplain MongoClient#close()} method won't take an effect.
      */
@@ -140,7 +139,7 @@ public class MongoDataConnection extends DataConnectionBase {
         if (getConfig().isShared()) {
             retain();
             checkState(mongoClient != null, "Mongo client should not be closed at this point");
-            return mongoClient.get();
+            return mongoClient;
         } else {
             MongoClient client = createClient(getConfig());
             return new CloseableMongoClient(client, client::close);
@@ -187,10 +186,7 @@ public class MongoDataConnection extends DataConnectionBase {
     @Override
     public void destroy() {
         if (mongoClient != null) {
-            MongoClient remembered = mongoClient.remembered();
-            if (remembered != null) {
-                ((CloseableMongoClient) remembered).unwrap().close();
-            }
+            ((CloseableMongoClient) mongoClient).unwrap().close();
             mongoClient = null;
         }
     }
