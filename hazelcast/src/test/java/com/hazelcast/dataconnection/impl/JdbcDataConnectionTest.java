@@ -41,6 +41,7 @@ import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertEventuallyN
 import static com.hazelcast.dataconnection.impl.HikariTestUtil.assertPoolNameEndsWith;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -48,7 +49,9 @@ public class JdbcDataConnectionTest {
 
     private static final String TEST_NAME = JdbcDataConnectionTest.class.getSimpleName();
     public static final String DB_NAME_SHARED = (TEST_NAME + "_shared").toUpperCase(Locale.ROOT);
-    private static final String JDBC_URL_SHARED = "jdbc:h2:mem:" + DB_NAME_SHARED;
+    private static final String JDBC_URL_SHARED = "jdbc:h2:mem:"
+            + DB_NAME_SHARED
+            + ";DB_CLOSE_DELAY=-1";
 
     private static final DataConnectionConfig SHARED_DATA_CONNECTION_CONFIG = new DataConnectionConfig()
             .setName(TEST_NAME)
@@ -71,6 +74,7 @@ public class JdbcDataConnectionTest {
         close(connection2);
         jdbcDataConnection.release();
         assertEventuallyNoHikariThreads(TEST_NAME);
+        executeJdbc(JDBC_URL_SHARED, "shutdown");
     }
 
     private static void close(Connection connection) throws Exception {
@@ -186,6 +190,18 @@ public class JdbcDataConnectionTest {
         assertThat(pool.isClosed())
                 .describedAs("Connection pool should have been closed")
                 .isTrue();
+    }
+
+    @Test
+    public void shared_connection_should_be_initialized_lazy() {
+        jdbcDataConnection = new JdbcDataConnection(new DataConnectionConfig()
+                .setName(TEST_NAME)
+                .setProperty("jdbcUrl", "invalid-jdbc-url")
+                .setShared(true));
+
+        assertThatThrownBy(() -> jdbcDataConnection.getConnection())
+                .hasRootCauseInstanceOf(SQLException.class)
+                .hasRootCauseMessage("No suitable driver");
     }
 
     @Test
