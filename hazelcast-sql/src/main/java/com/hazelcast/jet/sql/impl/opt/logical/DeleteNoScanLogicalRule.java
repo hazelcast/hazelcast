@@ -43,9 +43,7 @@ class DeleteNoScanLogicalRule extends RelRule<RelRule.Config> {
                 .operandSupplier(b0 -> b0.operand(TableModify.class)
                         .predicate(TableModify::isDelete)
                         .inputs(b1 -> b1.operand(RelNode.class)
-                                .predicate(input ->
-                                        // TODO: see comment in UpdateNoScanLogicalRule
-                                        !(input instanceof TableScan))
+                                .predicate(input -> !(input instanceof TableScan))
                                 .anyInputs())
                 ).build();
 
