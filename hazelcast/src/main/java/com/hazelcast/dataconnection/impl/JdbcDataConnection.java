@@ -33,9 +33,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * {@link DataConnection} implementation for JDBC.
@@ -99,11 +101,13 @@ public class JdbcDataConnection extends DataConnectionBase {
             ResultSet tables = metaData.getTables(null, null, "%", null);
             List<DataConnectionResource> result = new ArrayList<>();
             while (tables.next()) {
-                result.add(new DataConnectionResource(
-                        "TABLE",
-                        // TODO quoting? Using String[]?
-                        tables.getString("TABLE_SCHEM") + "." + tables.getString("TABLE_NAME")
-                ));
+                String[] name = Stream.of(tables.getString("TABLE_CAT"),
+                                              tables.getString("TABLE_SCHEM"),
+                                              tables.getString("TABLE_NAME"))
+                                      .filter(Objects::nonNull)
+                                      .toArray(String[]::new);
+
+                result.add(new DataConnectionResource("TABLE", name));
             }
             return result;
         } catch (Exception e) {
