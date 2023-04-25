@@ -133,7 +133,7 @@ import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
-import static com.hazelcast.sql.SqlColumnType.OBJECT;
+import static com.hazelcast.sql.SqlColumnType.JSON;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
@@ -424,7 +424,7 @@ public class PlanExecutor {
                 plan.getShowTarget() == ShowStatementTarget.DATACONNECTIONS
                 ?  new SqlRowMetadata(asList(
                         new SqlColumnMetadata("name", VARCHAR, false),
-                        new SqlColumnMetadata("types", OBJECT, false)
+                        new SqlColumnMetadata("types", JSON, false)
                 ))
                  : new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
