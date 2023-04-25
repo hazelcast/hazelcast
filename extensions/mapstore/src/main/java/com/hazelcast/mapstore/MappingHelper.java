@@ -26,7 +26,6 @@ import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -88,11 +87,19 @@ final class MappingHelper {
     }
 
     //package-private just for testing
-    static String externalName(String tableName) {
-        return splitByNonQuotedDots(tableName).stream()
-                .map(unquoteIfQuoted())
-                .map(DIALECT::quoteIdentifier)
-                .collect(Collectors.joining("."));
+    static String externalName(String externalName) {
+        StringBuilder sb = new StringBuilder();
+        List<String> parts = splitByNonQuotedDots(externalName);
+        for (int i = 0; i < parts.size(); i++) {
+            String unescaped = unescapeQuotes(parts.get(i));
+            String unquoted = unquoteIfQuoted(unescaped);
+            String quoteIdentifier = DIALECT.quoteIdentifier(unquoted);
+            sb.append(quoteIdentifier);
+            if (i < parts.size() - 1) {
+                sb.append(".");
+            }
+        }
+        return sb.toString();
     }
 
     private static List<String> splitByNonQuotedDots(String input) {
@@ -114,17 +121,15 @@ final class MappingHelper {
             }
         }
         result.add(input.substring(tokenStart));
-        return result.stream()
-                .map(MappingHelper::unescapeQuotes)
-                .collect(Collectors.toList());
+        return result;
     }
 
     private static String unescapeQuotes(String input) {
         return input.replaceAll("\"\"", "\"");
     }
 
-    private static Function<String, String> unquoteIfQuoted() {
-        return s -> s.replaceAll("^\"|\"$", "");
+    private static String unquoteIfQuoted(String input) {
+        return input.replaceAll("^\"|\"$", "");
     }
 
     public void dropMapping(String mappingName) {
