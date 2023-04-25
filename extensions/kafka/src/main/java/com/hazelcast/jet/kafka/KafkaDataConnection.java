@@ -90,7 +90,7 @@ public class KafkaDataConnection extends DataConnectionBase {
     @Nonnull
     @Override
     public Collection<String> resourceTypes() {
-        return Collections.singleton("topic");
+        return Collections.singleton("Topic");
     }
 
     /**
