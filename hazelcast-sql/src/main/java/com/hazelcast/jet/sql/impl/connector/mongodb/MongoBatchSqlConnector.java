@@ -126,7 +126,7 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
         if (hasInput) {
             return context.getDag().newUniqueVertex(
                     "Delete(" + table.getSqlName() + ")",
-                    new DeleteProcessorSupplier(table, null)
+                    new DeleteProcessorSupplier(table, null, hasInput)
             );
         } else {
             Object predicateTranslated = predicate == null
@@ -142,7 +142,7 @@ public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
 
             return context.getDag().newUniqueVertex(
                     "Delete(" + table.getSqlName() + ")",
-                    forceTotalParallelismOne(new DeleteProcessorSupplier(table, predicateToSend))
+                    forceTotalParallelismOne(new DeleteProcessorSupplier(table, predicateToSend, hasInput))
             );
         }
     }

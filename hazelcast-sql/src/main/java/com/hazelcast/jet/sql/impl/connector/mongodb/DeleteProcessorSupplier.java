@@ -25,15 +25,23 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.DeleteManyModel;
 import com.mongodb.client.model.DeleteOneModel;
+import com.mongodb.client.model.DeleteOptions;
+import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateManyModel;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
@@ -52,12 +60,13 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
     private final String collectionName;
     private final Serializable predicate;
     private final String[] externalNames;
+    private final boolean hasInput;
     private transient SupplierEx<MongoClient> clientSupplier;
     private final String dataConnectionName;
     private final String idField;
     private ExpressionEvalContext evalContext;
 
-    DeleteProcessorSupplier(MongoTable table, Serializable predicate) {
+    DeleteProcessorSupplier(MongoTable table, Serializable predicate, boolean hasInput) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
         this.dataConnectionName = table.dataConnectionName;
@@ -65,6 +74,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
         this.externalNames = table.externalNames();
         this.idField = table.primaryKeyExternalName();
         this.predicate = predicate;
+        this.hasInput = hasInput;
     }
 
     @Override
@@ -79,13 +89,10 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
     @Override
     public Collection<? extends Processor> get(int count) {
         Processor[] processors = new Processor[count];
-        Document predicateWithReplacements = predicate == null
-                ? UPDATE_ALL_PREDICATE
-                : replacePlaceholdersInPredicate(predicate, externalNames, evalContext);
 
         for (int i = 0; i < count; i++) {
             Processor processor;
-            if (predicate == null) {
+            if (hasInput) {
                 processor = new WriteMongoP<>(
                         new WriteMongoParams<>()
                                 .setClientSupplier(clientSupplier)
@@ -100,6 +107,9 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
                 );
 
             } else {
+                Document predicateWithReplacements = predicate == null
+                        ? UPDATE_ALL_PREDICATE
+                        : replacePlaceholdersInPredicate(predicate, externalNames, evalContext);
                 processor = new UpdateMongoP<>(
                         new WriteMongoParams<Document>()
                                 .setClientSupplier(clientSupplier)
@@ -118,7 +128,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
     }
 
     private WriteModel<Object> delete(Object pkValue) {
-        return new DeleteOneModel<>(Filters.eq(idField, pkValue));
+        return new DeleteManyModel<>(Filters.eq(idField, pkValue));
     }
 
     private Object rowToDoc(JetSqlRow row) {

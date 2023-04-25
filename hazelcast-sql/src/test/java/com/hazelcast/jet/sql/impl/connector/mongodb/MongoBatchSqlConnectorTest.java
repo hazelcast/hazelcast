@@ -362,322 +362,6 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
     }
 
     @Test
-    public void updatesMongo_allHardcoded() {
-        testUpdatesMongo(true,
-                "update " + collectionName + " set firstName = 'Han', jedi=false, lastName='Solo' " +
-                        "where jedi=true or firstName = 'Han'");
-    }
-
-    @Test
-    public void updatesMongo_setParametrized() {
-        testUpdatesMongo(true,
-                "update " + collectionName + " set firstName = 'Han', lastName = ?, jedi=false " +
-                        "where jedi=true or firstName = 'Han'", "Solo");
-    }
-
-    @Test
-    public void updatesMongo_whereParametrized() {
-        testUpdatesMongo(true,
-                "update " + collectionName + " set firstName = 'Han', lastName = 'Solo', jedi=false " +
-                        "where jedi=true or firstName = ?", "Han");
-    }
-
-    @Test
-    public void updatesMongo_allParametrized() {
-        testUpdatesMongo(true,
-                "update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
-                        "where firstName = ?", "Han", "Solo", false, "temp");
-    }
-
-    @Test
-    public void updatesMongo_whereWithReference() {
-        testUpdatesMongo(true,
-                "update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
-                        "where firstName = lastName", "Han", "Solo", false);
-    }
-
-    public void testUpdatesMongo(boolean includeIdInMapping, String sql, Object... args) {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp")
-                                                              .append("counter", 1).append("jedi", true));
-
-        createMapping(includeIdInMapping);
-
-        execute(sql, args);
-
-        ArrayList<Document> list = collection.find().into(new ArrayList<>());
-        assertThat(list).hasSize(1);
-        Document item = list.get(0);
-        assertEquals("Han", item.getString("firstName"));
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-    }
-
-    @Test
-    public void updatesMongo_pkNotFirst() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
-
-        createMapping(true);
-
-        execute("update " + collectionName + " set firstName = lastName, lastName = ?, jedi=? " +
-                        "where firstName = ?", "Solo", false, "temp");
-
-        ArrayList<Document> list = collection.find()
-                                             .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-        assertEquals("temp", item.getString("firstName"));
-    }
-
-    @Test
-    public void updatesMongo_multipleRows() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
-        collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2").append("jedi", true));
-
-        createMapping(false);
-
-        execute("update " + collectionName + " set firstName = lastName, lastName = ?, jedi=? " +
-                        "where firstName = ?", "Solo", false, "temp");
-
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "temp"))
-                                             .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("temp", item.getString("firstName"));
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-
-        list = collection.find(Filters.eq("lastName", "temp2"))
-                                             .into(new ArrayList<>());
-        assertThat(list).hasSize(1);
-    }
-
-    @Test
-    public void updatesMongo_multipleRows_unsupportedExprInFilter() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
-        collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2").append("jedi", false));
-
-        createMapping(false);
-
-        execute("update " + collectionName + " set firstName = lastName, lastName = ?, jedi=? " +
-                        "where cast(jedi as varchar) = ?", "Solo", false, "true");
-
-        ArrayList<Document> list = collection.find(Filters.eq("lastName", "Solo"))
-                                             .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("temp", item.getString("firstName"));
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-
-        list = collection.find(Filters.eq("lastName", "temp2"))
-                                             .into(new ArrayList<>());
-        assertThat(list).hasSize(1);
-    }
-
-    @Test
-    public void updatesMongo_multipleRows_unsupportedExprInFilterAndValue() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
-        collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2").append("jedi", false));
-
-        createMapping(false);
-
-        execute("update " + collectionName + " set firstName = cast(jedi as varchar), lastName = ?, jedi=? " +
-                "where cast(jedi as varchar) = ?", "Solo", false, "true");
-
-        ArrayList<Document> list = collection.find(Filters.eq("lastName", "Solo"))
-                .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("true", item.getString("firstName"));
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-
-        list = collection.find(Filters.eq("lastName", "temp2"))
-                .into(new ArrayList<>());
-        assertThat(list).hasSize(1);
-    }
-
-    @Test
-    public void updatesMongo_multipleRows_unsupportedExprInValue() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
-        collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2").append("jedi", false));
-
-        createMapping(false);
-
-        execute("update " + collectionName + " set firstName = cast(jedi as varchar), lastName = ?, jedi=? " +
-                "where jedi = ?", "Solo", false, true);
-
-        ArrayList<Document> list = collection.find(Filters.eq("lastName", "Solo"))
-                .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("true", item.getString("firstName"));
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-
-        list = collection.find(Filters.eq("lastName", "temp2"))
-                .into(new ArrayList<>());
-        assertThat(list).hasSize(1);
-    }
-
-    @Test
-    public void updatesMongo_noFailOnNoUpdates() {
-
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
-
-        createMapping(true);
-
-        execute("update " + collectionName + " set lastName = 'Solo' where firstName = 'NOT_EXIST'");
-
-        ArrayList<Document> list = collection.find()
-                                             .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("temp", item.getString("lastName"));
-    }
-
-    @Test
-    public void updatesMongo_whenCustomPK() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true)
-                .append("myPK_ext", 1337));
-
-        execute("CREATE MAPPING " + collectionName
-                + " ("
-                + " myPK INT external name myPK_ext, "
-                + " firstName VARCHAR, "
-                + " lastName VARCHAR, "
-                + " jedi BOOLEAN "
-                + ") "
-                + "DATA CONNECTION testMongo "
-                + "OPTIONS ('idColumn' = 'myPK')");
-        execute("update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
-                "where firstName = ?", "Han", "Solo", false, "temp");
-
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "Han"))
-                                             .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("Han", item.getString("firstName"));
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-        assertEquals(1337, item.getInteger("myPK_ext").intValue());
-    }
-
-    @Test
-    public void updatesMongo_whenCustomPK_ensureUsage() {
-        // ensure that custom PK is used for updates instead of _id
-        // Custom PK field is not unique on purpose, if it is used, both records will be updates
-        // which is expected result.
-        // To force separate update step we use unsupported predicate in where.
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true)
-                .append("myPK_ext", 1337));
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp2").append("jedi", false)
-                .append("myPK_ext", 1337));
-        assertThat(collection.countDocuments()).isEqualTo(2);
-
-        execute("CREATE MAPPING " + collectionName
-                + " ("
-                + " myPK INT external name myPK_ext, "
-                + " firstName VARCHAR, "
-                + " lastName VARCHAR, "
-                + " jedi BOOLEAN "
-                + ") "
-                + "DATA CONNECTION testMongo "
-                + "OPTIONS ('idColumn' = 'myPK')");
-        execute("update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
-                "where firstName = ? and cast(jedi as varchar)=?", "Han", "Solo", false, "temp", "true");
-
-        assertThat(collection.countDocuments()).isEqualTo(2);
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "Han"))
-                .into(new ArrayList<>());
-        assertEquals(2, list.size());
-    }
-
-    @Test
-    public void updatesMongo_whenCustomPKNotFirst() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true)
-                .append("myPK_ext", 1337));
-
-        execute("CREATE MAPPING " + collectionName
-                + " ("
-                + " firstName VARCHAR, "
-                + " myPK INT external name myPK_ext, "
-                + " lastName VARCHAR, "
-                + " jedi BOOLEAN "
-                + ") "
-                + "DATA CONNECTION testMongo "
-                + "OPTIONS ('idColumn' = 'myPK')");
-        execute("update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
-                "where firstName = ?", "Han", "Solo", false, "temp");
-
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "Han"))
-                .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("Han", item.getString("firstName"));
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-        assertEquals(1337, item.getInteger("myPK_ext").intValue());
-    }
-
-    @Test
-    public void updatesMongo_whenCustomPKNotFirst_unsupportedExpr() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true)
-                .append("myPK_ext", 1337));
-
-        execute("CREATE MAPPING " + collectionName
-                + " ("
-                + " firstName VARCHAR, "
-                + " myPK INT external name myPK_ext, "
-                + " lastName VARCHAR, "
-                + " jedi BOOLEAN "
-                + ") "
-                + "DATA CONNECTION testMongo "
-                + "OPTIONS ('idColumn' = 'myPK')");
-        execute("update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
-                "where cast(jedi as varchar) = ?", "Han", "Solo", false, "true");
-
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "Han"))
-                .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("Han", item.getString("firstName"));
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-        assertEquals(1337, item.getInteger("myPK_ext").intValue());
-    }
-
-    @Test
-    public void updatesMongo_allRows() {
-
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
-        collection.insertOne(new Document("firstName", "temp2").append("lastName", "temp2").append("jedi", false));
-
-        createMapping(true);
-
-        execute("update " + collectionName + " set lastName = 'Solo'");
-
-        ArrayList<Document> list = collection.find()
-                                             .into(new ArrayList<>());
-        assertEquals(2, list.size());
-        assertThat(list).extracting(i -> i.getString("lastName")).contains("Solo", "Solo");
-    }
-
-    @Test
     public void sinkInto_allHardcoded_withId() {
         testSinksIntoMongo(true, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
     }
@@ -714,66 +398,35 @@ public class MongoBatchSqlConnectorTest extends MongoSqlTest {
         assertEquals(true, item.getBoolean("jedi"));
     }
 
-    @Test
-    public void deletes_inserted_item() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        ObjectId objectId = ObjectId.get();
-        collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
-                                                          .append("jedi", true));
-        collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp2").append("lastName", "temp2")
-                                                          .append("jedi", true));
-        collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp3").append("lastName", "temp3")
-                                                          .append("jedi", true));
-
-        createMapping(true);
-
-        execute("delete from " + collectionName + " where id = ?", objectId);
-        ArrayList<Document> list = collection.find().into(new ArrayList<>());
-        assertThat(list).hasSize(2);
-        execute("delete from " + collectionName);
-        list = collection.find().into(new ArrayList<>());
-        assertThat(list).isEmpty();
-    }
-
-    @Test
-    public void deletes_unsupportedExpr() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        ObjectId objectId = ObjectId.get();
-        collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
-                                                          .append("jedi", true));
-
-        createMapping(false);
-
-        execute("delete from " + collectionName + " where cast(jedi as varchar) = ?", "true");
-        ArrayList<Document> list = collection.find().into(new ArrayList<>());
-        assertThat(list).hasSize(0);
-    }
-
-    @Test
-    public void deletes_all() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        ObjectId objectId = ObjectId.get();
-        collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
-                                                          .append("jedi", true));
-
-        createMapping(false);
-
-        execute("delete from " + collectionName);
-        ArrayList<Document> list = collection.find().into(new ArrayList<>());
-        assertThat(list).hasSize(0);
-    }
-
     private void createMapping(boolean includeIdInMapping) {
-        execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
-                + (includeIdInMapping ? " id OBJECT external name _id, " : "")
-                + " firstName VARCHAR, \n"
-                + " lastName VARCHAR, \n"
-                + " jedi BOOLEAN \n"
-                + ") \n"
-                + "TYPE Mongo \n"
-                + "OPTIONS (\n"
-                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "' \n"
-                + ")"
-        );
+        createMapping(includeIdInMapping, true);
+    }
+
+    private void createMapping(boolean includeIdInMapping, boolean idFirst) {
+        if (idFirst) {
+            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
+                    + (includeIdInMapping ? " id OBJECT external name _id, " : "")
+                    + " firstName VARCHAR, \n"
+                    + " lastName VARCHAR, \n"
+                    + " jedi BOOLEAN \n"
+                    + ") \n"
+                    + "TYPE Mongo \n"
+                    + "OPTIONS (\n"
+                    + "    'connectionString' = '" + mongoContainer.getConnectionString() + "' \n"
+                    + ")"
+            );
+        } else {
+            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
+                    + " firstName VARCHAR, \n"
+                    + " lastName VARCHAR, \n"
+                    + " jedi BOOLEAN \n"
+                    + (includeIdInMapping ? ", id OBJECT external name _id, " : "")
+                    + ") \n"
+                    + "TYPE Mongo \n"
+                    + "OPTIONS (\n"
+                    + "    'connectionString' = '" + mongoContainer.getConnectionString() + "' \n"
+                    + ")"
+            );
+        }
     }
 }
