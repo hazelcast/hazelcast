@@ -24,7 +24,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
-import org.assertj.core.api.Condition;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,6 +31,7 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -39,14 +39,13 @@ import java.util.Map;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.util.Lists.emptyList;
 import static org.assertj.core.util.Lists.newArrayList;
 
 public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private static final String LE = System.lineSeparator();
 
-    private String tableName;
+    protected String tableName;
 
     @BeforeClass
     public static void beforeClass() {
@@ -158,7 +157,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
 
         assertRowsAnyOrder("SHOW MAPPINGS",
-                emptyList()
+                Collections.emptyList()
         );
     }
 
@@ -170,18 +169,8 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         )).isInstanceOf(HazelcastSqlException.class);
 
         assertRowsAnyOrder("SHOW MAPPINGS",
-                emptyList()
+                Collections.emptyList()
         );
-    }
-
-    private Condition<Throwable> hasMessage(String message) {
-        return new Condition<Throwable>() {
-            @Override
-            public boolean matches(Throwable value) {
-                return value.getMessage().contains(message) ||
-                        (value.getCause() != null && matches(value.getCause()));
-            }
-        };
     }
 
     @Test
@@ -223,7 +212,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
          .hasMessageContaining("Could not resolve field with name fullName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
-                emptyList()
+                Collections.emptyList()
         );
     }
 
@@ -248,7 +237,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
          .hasMessageContaining("Could not resolve field with external name myName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
-                emptyList()
+                Collections.emptyList()
         );
     }
 
@@ -268,7 +257,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
          .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
-                emptyList()
+                Collections.emptyList()
         );
     }
 
