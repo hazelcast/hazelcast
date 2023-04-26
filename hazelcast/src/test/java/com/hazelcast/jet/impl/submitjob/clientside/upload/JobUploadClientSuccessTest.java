@@ -195,7 +195,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
                 String jobName = "job-" + value;
                 SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
                         .setJarPath(getJarPath())
-                                .setJobName(jobName);
+                        .setJobName(jobName);
 
                 jetService.submitJobFromJar(submitJobParameters);
                 submittedJobNames.add(jobName);
