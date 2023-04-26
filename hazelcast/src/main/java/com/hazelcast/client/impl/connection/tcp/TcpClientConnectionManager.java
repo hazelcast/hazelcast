@@ -431,6 +431,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         try {
                             client.sendStateToCluster();
                             clientState = ClientState.INITIALIZED_ON_CLUSTER;
+                            fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
                         } catch (Throwable e) {
                             logger.severe("Could not send state to cluster during async start. "
                                     + "Client will shutdown because it cannot operate with state not sent to cluster.", e);
@@ -1074,8 +1075,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         // INITIALIZED_ON_CLUSTER after we send the client state. Therefore, switching client state
                         // responsibility is left to the async task.
                         clientState = ClientState.INITIALIZED_ON_CLUSTER;
+                        // This event should also be fired in the async task not to modify the behaviour.
+                        // Some users may used this lifecyle event to wait for client's async initialization.
                     }
-                    fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
                 }
             }
 

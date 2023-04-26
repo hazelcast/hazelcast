@@ -135,6 +135,14 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
+        CountDownLatch connectedLatch = new CountDownLatch(1);
+
+        client.getLifecycleService().addLifecycleListener(event -> {
+            if (event.getState().equals(CLIENT_CONNECTED)) {
+                connectedLatch.countDown();
+            }
+        });
+
         // The following logic verifies user code deployment works
         int keyCount = 100;
         IMap<Integer, Integer> map = client.getMap(randomName());
