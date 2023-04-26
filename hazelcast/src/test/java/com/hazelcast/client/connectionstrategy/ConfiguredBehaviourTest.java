@@ -29,6 +29,7 @@ import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -45,6 +46,7 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -119,6 +121,8 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
     @Test
     public void testAsyncStartTrueShouldNotBlock_whenThereIsClientStateToSend() {
         Config config = new Config();
+        FilteringClassLoader filteringCL = new FilteringClassLoader(singletonList("usercodedeployment"), null);
+        config.setClassLoader(filteringCL);
         config.getUserCodeDeploymentConfig().setEnabled(true);
         hazelcastFactory.newHazelcastInstance(config);
 

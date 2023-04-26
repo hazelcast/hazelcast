@@ -388,10 +388,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             connectionManager.connectToCluster();
             ClientConnectionStrategyConfig connectionStrategyConfig = config.getConnectionStrategyConfig();
             boolean asyncStart = connectionStrategyConfig.isAsyncStart();
-            if (!asyncStart) {
-                sendStateToCluster();
-            }
-
             diagnostics.start();
 
             // static loggers at beginning of file
@@ -429,6 +425,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clientExtension.afterStart(this);
             cpSubsystem.init(clientContext);
             addClientConfigAddedListeners(configuredListeners);
+            if (!asyncStart) {
+                sendStateToCluster();
+            }
         } catch (Throwable e) {
             try {
                 lifecycleService.terminate();
