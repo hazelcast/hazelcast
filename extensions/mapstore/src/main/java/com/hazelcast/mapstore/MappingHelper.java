@@ -23,6 +23,7 @@ import com.hazelcast.sql.SqlService;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,7 +62,7 @@ final class MappingHelper {
         sb.append("CREATE MAPPING ");
         DIALECT.quoteIdentifier(sb, mappingName);
         sb.append(" EXTERNAL NAME ");
-        DIALECT.quoteIdentifier(sb, tableName);
+        quoteExternalName(sb, tableName);
         if (mappingColumns != null) {
             sb.append(" ( ");
             for (Iterator<SqlColumnMetadata> iterator = mappingColumns.iterator(); iterator.hasNext(); ) {
@@ -82,6 +83,50 @@ final class MappingHelper {
         DIALECT.quoteStringLiteral(sb, null, idColumn);
         sb.append(" )");
         return sb.toString();
+
+    }
+
+    //package-private just for testing
+    static void quoteExternalName(StringBuilder sb, String externalName) {
+        List<String> parts = splitByNonQuotedDots(externalName);
+        for (int i = 0; i < parts.size(); i++) {
+            String unescaped = unescapeQuotes(parts.get(i));
+            String unquoted = unquoteIfQuoted(unescaped);
+            DIALECT.quoteIdentifier(sb, unquoted);
+            if (i < parts.size() - 1) {
+                sb.append(".");
+            }
+        }
+    }
+
+    private static List<String> splitByNonQuotedDots(String input) {
+        List<String> result = new ArrayList<>();
+        int tokenStart = 0;
+        boolean inQuotes = false;
+        for (int i = 0; i < input.length(); i++) {
+            switch (input.charAt(i)) {
+                case '\"':
+                    inQuotes = !inQuotes;
+                    break;
+                case '.':
+                    if (!inQuotes) {
+                        result.add(input.substring(tokenStart, i));
+                        tokenStart = i + 1;
+                    }
+                    break;
+                default:
+            }
+        }
+        result.add(input.substring(tokenStart));
+        return result;
+    }
+
+    private static String unescapeQuotes(String input) {
+        return input.replaceAll("\"\"", "\"");
+    }
+
+    private static String unquoteIfQuoted(String input) {
+        return input.replaceAll("^\"|\"$", "");
     }
 
     public void dropMapping(String mappingName) {

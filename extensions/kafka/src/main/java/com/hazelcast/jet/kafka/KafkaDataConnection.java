@@ -139,7 +139,7 @@ public class KafkaDataConnection extends DataConnectionBase {
     }
 
     @Override
-    public void destroy() {
+    public synchronized void destroy() {
         if (producer != null) {
             producer.doClose();
             producer = null;

@@ -75,7 +75,7 @@ public final class DataConnectionTestUtil {
         public Collection<DataConnectionResource> listResources() {
             return Arrays.asList(
                     new DataConnectionResource("testType1", "testName1"),
-                    new DataConnectionResource("testType2", "testName2")
+                    new DataConnectionResource("testType2", "testPrefix1", "testName2")
             );
         }
 

@@ -30,6 +30,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -149,4 +150,99 @@ public class MappingHelperTest {
         );
     }
 
+    @Test
+    public void quoteExternalName_simple() {
+        String externalName = "my_table";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"my_table\"");
+    }
+
+    @Test
+    public void quoteExternalName_with_dot() {
+        String externalName = "custom_schema.my_table";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"custom_schema\".\"my_table\"");
+    }
+
+    @Test
+    public void quoteExternalName_with_hyphen() {
+        String externalName = "schema-with-hyphen.table-with-hyphen";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"schema-with-hyphen\".\"table-with-hyphen\"");
+    }
+
+    @Test
+    public void quoteExternalName_with_space() {
+        String externalName = "schema with space.table with space";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"schema with space\".\"table with space\"");
+    }
+
+    @Test
+    public void quoteExternalName_with_2dots() {
+        String externalName = "catalog.custom_schema.my_table";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"catalog\".\"custom_schema\".\"my_table\"");
+    }
+
+    @Test
+    public void quoteExternalName_withQuotes() {
+        String externalName = "custom_schema.\"my_table\"";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"custom_schema\".\"my_table\"");
+    }
+
+    @Test
+    public void quoteExternalName_withEscapedQuotes() {
+        String externalName = "custom_\"\"schema.\"my_\"\"table\"";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"custom_\"\"schema\".\"my_\"\"table\"");
+    }
+
+    @Test
+    public void quoteExternalName_withMoreEscapedQuotes() {
+        String externalName = "custom_\"\"\"\"schema.\"my_\"\"table\"\"\"";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"custom_\"\"\"\"schema\".\"my_\"\"table\"\"\"");
+    }
+
+    @Test
+    public void quoteExternalName_with2Quotes() {
+        String externalName = "\"custom_schema\".\"my_table\"";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"custom_schema\".\"my_table\"");
+    }
+
+    @Test
+    public void quoteExternalName_with3Quotes() {
+        String externalName = "\"catalog\".\"custom_schema\".\"my_table\"";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"catalog\".\"custom_schema\".\"my_table\"");
+    }
+
+    @Test
+    public void quoteExternalName_with_quotes_and_dots() {
+        String externalName = "custom_schema.\"table.with_dot\"";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"custom_schema\".\"table.with_dot\"");
+    }
+
+    @Test
+    public void quoteExternalName_with_backticks_and_dots() {
+        String externalName = "custom_schema.`table.with_dot`";
+        StringBuilder sb = new StringBuilder();
+        MappingHelper.quoteExternalName(sb, externalName);
+        assertThat(sb.toString()).isEqualTo("\"custom_schema\".\"`table\".\"with_dot`\"");
+    }
 }

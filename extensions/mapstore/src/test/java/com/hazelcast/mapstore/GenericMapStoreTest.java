@@ -40,9 +40,9 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.MAPPING_PREFIX;
-import static com.hazelcast.mapstore.GenericMapStore.TABLE_NAME_PROPERTY;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -340,7 +340,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
-        properties.setProperty(TABLE_NAME_PROPERTY, tableName);
+        properties.setProperty(EXTERNAL_NAME_PROPERTY, tableName);
         mapStore = createMapStore(properties, hz);
 
         GenericRecord record = mapStore.load(0);
