@@ -412,8 +412,6 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
     public void when_splitBrainProtectionEnabledLater_then_jobDoesNotRestartOnMinority() {
         HazelcastInstance[] hz = startInitialCluster(createConfig(), 2);
         Job job = hz[0].getJet().newJob(streamingDag(), new JobConfig().setSplitBrainProtection(false));
-        String[] lastStatus = new String[1];
-        job.addStatusListener(e -> lastStatus[0] = e.getDescription());
         assertJobStatusEventually(job, RUNNING);
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
@@ -423,6 +421,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         assertJobStatusEventually(job, RUNNING);
         // The cluster size becomes one less than the initial quorum size (2).
         hz[1].getLifecycleService().terminate();
-        assertEqualsEventually(() -> lastStatus[0], "Quorum is absent");
+        assertJobStatusEventually(job, NOT_RUNNING);
+        assertTrueAllTheTime(() -> assertEquals(NOT_RUNNING, job.getStatus()), 5);
     }
 }
