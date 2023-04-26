@@ -165,7 +165,7 @@ public class JdbcSqlConnector implements SqlConnector {
                     + databaseMetaData.getIdentifierQuoteString();
         }
 
-        // The component order
+        // The component order may be different for some DBs. For example MySQL
         externalTableName.orderFullQualifiedTableName(databaseMetaData);
 
         Connection connection = databaseMetaData.getConnection();
