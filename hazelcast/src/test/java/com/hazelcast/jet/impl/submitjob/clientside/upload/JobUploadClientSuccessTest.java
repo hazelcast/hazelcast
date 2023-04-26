@@ -242,7 +242,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
     public void test_jarUpload_tempdir_whenResourceUploadIsEnabled() throws IOException {
         Path path = Paths.get("target/jardirectory");
         try {
-            // Make sure the temp directory exist
+            // Make sure the temp directory exists
             Files.createDirectories(path);
             String directoryPath = path.toString();
 
