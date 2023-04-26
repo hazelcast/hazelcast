@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -357,6 +358,60 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         '"' + mappingName + '"',
                         "Kafka",
                         "{}")));
+    }
+
+    @Test
+    public void when_dataConnectionIsDropped_then_cachedPlansAreInvalidated() throws Exception {
+        // given
+        String dcName = randomName();
+        String mappingName = randomName();
+        createTable(mappingName);
+
+        createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
+        createJdbcMappingUsingDataConnection(mappingName, dcName);
+        // cache plan
+        assertRowsAnyOrder("select count(*) from " + mappingName, new Row(0L));
+        assertThat(sqlServiceImpl(instance()).getPlanCache().size()).isOne();
+
+        // when
+        sqlService.execute("DROP DATA CONNECTION " + dcName);
+
+        // then
+        sleepSeconds(4);
+        assertThat(sqlServiceImpl(instance()).getPlanCache().size()).as("Plan should be invalidated").isZero();
+        assertThatThrownBy(() -> sqlService.execute("select count(*) from " + mappingName).iterator().hasNext())
+                .as("Cached plan is not used")
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Mapping '"+ mappingName + "' is invalid");
+    }
+
+    @Test
+    public void when_dataConnectionIsAlteredToCorrect_then_usesNewConnectionType() throws Exception {
+        // given
+        String dcName = randomName();
+        String mappingName = randomName();
+        createTable(mappingName);
+
+        createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
+        createJdbcMappingUsingDataConnection(mappingName, dcName);
+        // cache plan with JDBC
+        assertRowsAnyOrder("select count(*) from " + mappingName, new Row(0L));
+
+        // when
+        sqlService.execute("DROP DATA CONNECTION " + dcName);
+        createDataConnection(instance(), dcName, "mongo", false,
+                // create data connection that is correct enough to parse the query
+                ImmutableMap.of("connectionString", "bad:12345", "database", "db",
+                        "idColumn", "id")
+        );
+
+        // then
+        sleepSeconds(4);
+
+        assertThatThrownBy(() -> sqlService.execute("select count(*) from " + mappingName).iterator().hasNext())
+                .as("Should detect change of data connection type")
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Cannot connect to MongoDB");
     }
 
     @Test
