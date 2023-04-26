@@ -17,16 +17,18 @@
 package com.hazelcast.mapstore;
 
 import com.hazelcast.sql.SqlColumnMetadata;
+import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.dialect.CalciteSqlDialect;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.joining;
 
 class Queries {
+
+    private static final SqlDialect DIALECT = CalciteSqlDialect.DEFAULT;
 
     private final String loadQuery;
 
@@ -43,36 +45,121 @@ class Queries {
     private final Map<Integer, String> deleteAllQueries = new ConcurrentHashMap<>();
 
     Queries(String mapping, String idColumn, List<SqlColumnMetadata> columnMetadata) {
-        loadQuery = String.format("SELECT * FROM \"%s\" WHERE \"%s\" = ?", mapping, idColumn);
+        loadQuery = buildLoadQuery(mapping, idColumn);
 
-        loadAllFactory = n -> String.format("SELECT * FROM \"%s\" WHERE \"%s\" IN (%s)", mapping, idColumn,
-                queryParams(n));
+        loadAllFactory = n -> buildLoadAllQuery(mapping, idColumn, n);
 
-        loadAllKeys = "SELECT \"" + idColumn + "\" FROM \"" + mapping + "\"";
+        loadAllKeys = buildLoadAllKeysQuery(mapping, idColumn);
 
-        String columnNames = columnMetadata.stream()
-                .map(sqlColumnMetadata -> '\"' + sqlColumnMetadata.getName() + '\"')
-                .collect(joining(", "));
+        storeSink = buildStoreSinkQuery(mapping, columnMetadata);
 
-        storeSink = String.format("SINK INTO \"%s\" (%s) VALUES (%s)", mapping, columnNames,
-                queryParams(columnMetadata.size()));
+        storeUpdate = buildStoreUpdateQuery(mapping, idColumn, columnMetadata);
 
-        String setClause = columnMetadata.stream()
-                .filter(cm -> !idColumn.equals(cm.getName()))
-                .map(cm -> '\"' + cm.getName() + "\" = ?")
-                .collect(joining(", "));
+        delete = buildDeleteQuery(mapping, idColumn);
 
-        storeUpdate = String.format("UPDATE \"%s\" SET %s WHERE \"%s\" = ?", mapping, setClause, idColumn);
-
-        delete = String.format("DELETE FROM \"%s\" WHERE \"%s\" = ?", mapping, idColumn);
-
-        deleteAllFactory = n -> String.format("DELETE FROM \"%s\" WHERE \"%s\" IN (%s)", mapping, idColumn,
-                queryParams(n));
+        deleteAllFactory = n -> buildDeleteAllQuery(mapping, idColumn, n);
     }
 
-    // Generate "?, ?" string for JDBC parameter binding
-    private String queryParams(long n) {
-        return Stream.generate(() -> "?").limit(n).collect(joining(", "));
+    private static String buildLoadQuery(String mapping, String idColumn) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT * FROM ");
+        DIALECT.quoteIdentifier(sb, mapping);
+        sb.append(" WHERE ");
+        DIALECT.quoteIdentifier(sb, idColumn);
+        sb.append(" = ?");
+        return sb.toString();
+    }
+
+    private String buildLoadAllQuery(String mapping, String idColumn, int n) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT * FROM ");
+        DIALECT.quoteIdentifier(sb, mapping);
+        sb.append(" WHERE ");
+        DIALECT.quoteIdentifier(sb, idColumn);
+        sb.append(" IN (");
+        appendQueryParams(sb, n);
+        sb.append(')');
+        return sb.toString();
+    }
+
+    private static String buildLoadAllKeysQuery(String mapping, String idColumn) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT ");
+        DIALECT.quoteIdentifier(sb, idColumn);
+        sb.append(" FROM ");
+        DIALECT.quoteIdentifier(sb, mapping);
+        return sb.toString();
+    }
+
+    private String buildStoreSinkQuery(String mapping, List<SqlColumnMetadata> columnMetadata) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SINK INTO ");
+        DIALECT.quoteIdentifier(sb, mapping);
+        sb.append(" (");
+        for (Iterator<SqlColumnMetadata> iterator = columnMetadata.iterator(); iterator.hasNext(); ) {
+            SqlColumnMetadata column = iterator.next();
+            DIALECT.quoteIdentifier(sb, column.getName());
+            if (iterator.hasNext()) {
+                sb.append(", ");
+            }
+        }
+        sb.append(") VALUES (");
+        appendQueryParams(sb, columnMetadata.size());
+        sb.append(')');
+        return sb.toString();
+    }
+
+    private String buildStoreUpdateQuery(String mapping, String idColumn, List<SqlColumnMetadata> columnMetadata) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("UPDATE ");
+        DIALECT.quoteIdentifier(sb, mapping);
+        sb.append(" SET ");
+        for (Iterator<SqlColumnMetadata> iterator = columnMetadata.iterator(); iterator.hasNext(); ) {
+            SqlColumnMetadata column = iterator.next();
+            if (idColumn.equals(column.getName())) {
+                continue;
+            }
+            DIALECT.quoteIdentifier(sb, column.getName());
+            sb.append(" = ?");
+            if (iterator.hasNext()) {
+                sb.append(", ");
+            }
+        }
+        sb.append(" WHERE ");
+        DIALECT.quoteIdentifier(sb, idColumn);
+        sb.append(" = ?");
+        return sb.toString();
+    }
+
+    private static String buildDeleteQuery(String mapping, String idColumn) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("DELETE FROM ");
+        DIALECT.quoteIdentifier(sb, mapping);
+        sb.append(" WHERE ");
+        DIALECT.quoteIdentifier(sb, idColumn);
+        sb.append(" = ?");
+        return sb.toString();
+    }
+
+    private static void appendQueryParams(StringBuilder sb, int n) {
+        for (int i = 0; i < n; i++) {
+            sb.append('?');
+            if (i < (n - 1)) {
+                sb.append(", ");
+            }
+        }
+    }
+
+    private String buildDeleteAllQuery(String mapping, String idColumn, int n) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("DELETE FROM ");
+        DIALECT.quoteIdentifier(sb, mapping);
+        sb.append(" WHERE ");
+        DIALECT.quoteIdentifier(sb, idColumn);
+        sb.append(" IN (");
+        appendQueryParams(sb, n);
+        sb.append(")");
+        return sb.toString();
     }
 
     String load() {
