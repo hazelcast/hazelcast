@@ -337,6 +337,6 @@ public class TableResolverImplTest {
     }
 
     private static View view() {
-        return new View("name", "SELECT * FROM map", singletonList("*"), asList(OBJECT, OBJECT), false);
+        return new View("name", "SELECT * FROM map", singletonList("*"), asList(OBJECT, OBJECT));
     }
 }
