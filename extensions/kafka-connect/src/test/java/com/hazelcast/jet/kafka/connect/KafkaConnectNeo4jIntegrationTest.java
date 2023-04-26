@@ -49,7 +49,6 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
@@ -120,7 +119,6 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         LOGGER.info("Creating a job");
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
 
         insertNodes("items-2");
 

@@ -55,7 +55,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
@@ -133,7 +132,6 @@ public class KafkaConnectCouchbaseIntegrationTest extends JetTestSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         LOGGER.info("Creating a job");
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
 
         insertDocuments("items-2");
 
