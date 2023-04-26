@@ -90,15 +90,15 @@ public interface SqlService {
     }
 
     /**
-     * Convenient method to execute a distributed query with the given
+     * Convenience method to execute a distributed non-DQL statement with the given
      * parameter values.
      * <p>
      * Converts passed SQL string and parameter values into an {@link
      * SqlStatement} object and invokes {@link #execute(SqlStatement)}.
      *
      * <p>
-     * This method is meant to be used for statements other than "SELECT" queries. The returned value is the
-     * number of updated(/inserted/deleted) rows.
+     * This method is meant to be used for statements other than "SELECT" queries.
+     * The returned value is the {@link SqlResult#updateCount()} value.
      *
      * @param sql       SQL string
      * @param arguments query parameter values that will be passed to {@link SqlStatement#setParameters(List)}
