@@ -359,7 +359,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void createMappingFailsIfTableExistInAnotherDatabase_ExternalNameOnlyTableName() throws SQLException {
+    public void createMappingFails_tableExistInAnotherDatabase_externalNameOnlyTableName() throws SQLException {
         assumeThat(databaseProvider)
                 .isInstanceOfAny(
                         MySQLDatabaseProvider.class,
@@ -381,10 +381,10 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", newDbUrl);
 
-        String TEST_DATABASE_REF2 = "testDatabaseRef1";
+        String NEW_TEST_DATABASE_REF = "testDatabaseRef1";
 
         config.addDataConnectionConfig(
-                new DataConnectionConfig(TEST_DATABASE_REF2)
+                new DataConnectionConfig(NEW_TEST_DATABASE_REF)
                         .setType("jdbc")
                         .setProperties(properties)
         );
@@ -395,7 +395,53 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + " id INT, "
                 + " name VARCHAR "
                 + ") "
-                + "DATA CONNECTION " + TEST_DATABASE_REF2
+                + "DATA CONNECTION " + NEW_TEST_DATABASE_REF
+        ))
+                .isInstanceOf(HazelcastSqlException.class);
+
+        // Assert that no mapping has been created
+        assertRowsAnyOrder("SHOW MAPPINGS",
+                Collections.emptyList()
+        );
+    }
+
+    @Test
+    public void createMappingFails_tableExistInAnotherDatabase_externalNameFullName() throws SQLException {
+        assumeThat(databaseProvider)
+                .isInstanceOfAny(
+                        PostgresDatabaseProvider.class
+                );
+        HazelcastInstance instance = instance();
+        Config config = instance.getConfig();
+
+        // Create table on first DB
+        createTable(tableName);
+
+        String newDBName = "db2";
+        executeJdbc("CREATE DATABASE " + newDBName);
+
+        // Add a new DB
+        String newDbUrl = dbConnectionUrl.replace("com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport",
+                newDBName);
+
+        Properties properties = new Properties();
+        properties.setProperty("jdbcUrl", newDbUrl);
+
+        String NEW_TEST_DATABASE_REF = "testDatabaseRef2";
+
+        config.addDataConnectionConfig(
+                new DataConnectionConfig(NEW_TEST_DATABASE_REF)
+                        .setType("jdbc")
+                        .setProperties(properties)
+        );
+
+        // Create mapping to new DB. Table does not exist on new DB, and we should get an exception
+        assertThatThrownBy(() -> execute(
+                "CREATE MAPPING " + tableName + " EXTERNAL NAME " + newDBName + ".public." + tableName + " ("
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + NEW_TEST_DATABASE_REF
         ))
                 .isInstanceOf(HazelcastSqlException.class);
 

@@ -54,7 +54,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.lang.Integer.parseInt;
@@ -94,8 +93,8 @@ public class JdbcSqlConnector implements SqlConnector {
             throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                     + ", external name for Jdbc must have either 1, 2 or 3 components (catalog, schema and relation)");
         }
-        ExternalJdbcTableName externalTableName = new ExternalJdbcTableName(externalName);
-        Map<String, DbField> dbFields = readDbFields(nodeEngine, dataConnectionName, externalTableName);
+
+        Map<String, DbField> dbFields = readDbFields(nodeEngine, dataConnectionName, externalName);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -140,16 +139,20 @@ public class JdbcSqlConnector implements SqlConnector {
     private Map<String, DbField> readDbFields(
             NodeEngine nodeEngine,
             String dataConnectionName,
-            ExternalJdbcTableName externalTableName
+            String[] externalName
     ) {
         JdbcDataConnection dataConnection = getAndRetainDataConnection(nodeEngine, dataConnectionName);
         try (Connection connection = dataConnection.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
+
+            ExternalJdbcTableName externalTableName = new ExternalJdbcTableName(externalName, databaseMetaData);
+
             checkTableExists(externalTableName, databaseMetaData);
             Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, databaseMetaData);
             return readColumns(externalTableName, databaseMetaData, pkColumns);
         } catch (Exception e) {
-            throw new HazelcastException("Could not execute readDbFields for table " + externalTableName, e);
+            throw new HazelcastException("Could not execute readDbFields for table "
+                                         + quoteCompoundIdentifier(externalName), e);
         } finally {
             dataConnection.release();
         }
@@ -158,15 +161,12 @@ public class JdbcSqlConnector implements SqlConnector {
     private static void checkTableExists(ExternalJdbcTableName externalTableName, DatabaseMetaData databaseMetaData)
             throws SQLException {
         String table = externalTableName.table;
-        if (ConnectionUtils.isMySQL(databaseMetaData)) {
+        if (isMySQL(databaseMetaData)) {
             //MySQL databaseMetaData.getTables requires quotes/backticks in case of fancy names (e.g. with dots)
             //To make it simple we wrap all table names
             table = databaseMetaData.getIdentifierQuoteString() + externalTableName.table
                     + databaseMetaData.getIdentifierQuoteString();
         }
-
-        // The component order may be different for some DBs. For example MySQL
-        externalTableName.orderFullQualifiedTableName(databaseMetaData);
 
         Connection connection = databaseMetaData.getConnection();
         // If catalog and schema are not specified as external name, use the catalog and schema of the connection
@@ -496,6 +496,14 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
+    private static boolean isMySQL(DatabaseMetaData databaseMetaData) throws SQLException {
+        return getProductName(databaseMetaData).equals("MYSQL");
+    }
+
+    private static String getProductName(DatabaseMetaData databaseMetaData) throws SQLException {
+        return databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim();
+    }
+
     private static class DbField {
 
         final String columnTypeName;
@@ -519,50 +527,43 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private static class ExternalJdbcTableName {
-        String catalog;
-        String schema;
+        final String catalog;
+        final String schema;
         final String table;
 
-        ExternalJdbcTableName(String[] externalName) {
+        ExternalJdbcTableName(String[] externalName, DatabaseMetaData databaseMetaData) throws SQLException {
+            String tempCatalog;
+            String tempSchema;
+            String tempTable;
+
             if (externalName.length == 1) {
-                catalog = null;
-                schema = null;
-                table = externalName[0];
+                tempCatalog = null;
+                tempSchema = null;
+                tempTable = externalName[0];
             } else if (externalName.length == 2) {
-                catalog = null;
-                schema = externalName[0];
-                table = externalName[1];
+                tempCatalog = null;
+                tempSchema = externalName[0];
+                tempTable = externalName[1];
             } else if (externalName.length == 3) {
-                catalog = externalName[0];
-                schema = externalName[1];
-                table = externalName[2];
+                tempCatalog = externalName[0];
+                tempSchema = externalName[1];
+                tempTable = externalName[2];
             } else {
-                // external name length was validater earlier, we should never get here
+                // external name length was validated earlier, we should never get here
                 throw new IllegalStateException("Invalid external name length");
             }
-        }
 
-        boolean hasCatalogAndSchema() {
-            return Stream.of(catalog, schema)
-                    .allMatch(Objects::nonNull);
-        }
-
-        void orderFullQualifiedTableName(DatabaseMetaData databaseMetaData) throws SQLException {
-            // If all 3 parts are provided in the external name, nothing to do
-            if (hasCatalogAndSchema()) {
-                return;
-            }
-
-            if (ConnectionUtils.isMySQL(databaseMetaData)) {
+            if (isMySQL(databaseMetaData)) {
                 // MySQL has no schema concept. Schema is actually catalog. Swap names
-                swapCatalogAndSchema();
+                String tempString = tempCatalog;
+                tempCatalog = tempSchema;
+                tempSchema = tempString;
             }
+
+            catalog = tempCatalog;
+            schema = tempSchema;
+            table = tempTable;
         }
 
-        private void swapCatalogAndSchema() {
-            String tempCatalog = catalog;
-            catalog = schema;
-            schema = tempCatalog;
-        }
     }
 }
