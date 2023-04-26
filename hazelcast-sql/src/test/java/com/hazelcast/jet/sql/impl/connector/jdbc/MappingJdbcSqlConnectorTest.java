@@ -377,7 +377,6 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         sqlService.execute("DROP DATA CONNECTION " + dcName);
 
         // then
-        sleepSeconds(4);
         assertThat(sqlServiceImpl(instance()).getPlanCache().size()).as("Plan should be invalidated").isZero();
         assertThatThrownBy(() -> sqlService.execute("select count(*) from " + mappingName).iterator().hasNext())
                 .as("Cached plan is not used")
@@ -406,8 +405,6 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
 
         // then
-        sleepSeconds(4);
-
         assertThatThrownBy(() -> sqlService.execute("select count(*) from " + mappingName).iterator().hasNext())
                 .as("Should detect change of data connection type")
                 .isInstanceOf(HazelcastSqlException.class)
