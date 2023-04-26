@@ -29,16 +29,12 @@ import java.util.Objects;
  * Java client has validation but non-java clients may not perform validation.
  * This class performs the validation on the member side
  */
-public final class JobMetaDataParameterObjectValidator {
+public final class JarOnMemberValidator {
 
-    private JobMetaDataParameterObjectValidator() {
+    private JarOnMemberValidator() {
     }
 
-    public static void validateJarOnMember(JobMetaDataParameterObject parameterObject) {
-        if (!parameterObject.isJarOnMember()) {
-            throw new JetException("Request is not configured for jar on member");
-        }
-
+    public static void validate(JobMetaDataParameterObject parameterObject) {
         Path jarPath = parameterObject.getJarPath();
         validateJarPathNotNull(jarPath);
         validateFileSizeIsNotZero(jarPath);

@@ -25,18 +25,18 @@ import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class JobMetaDataParameterObjectValidatorTest {
+public class JarOnMemberValidatorTest {
 
     @Test
     public void testValidateJarOnMember() {
         JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
-        assertThatThrownBy(() -> JobMetaDataParameterObjectValidator.validateJarOnMember(parameterObject))
+        assertThatThrownBy(() -> JarOnMemberValidator.validate(parameterObject))
                 .isInstanceOf(JetException.class);
     }
 
     @Test
     public void testValidateJarPathNotNull() {
-        assertThatThrownBy(() -> JobMetaDataParameterObjectValidator.validateJarPathNotNull(null))
+        assertThatThrownBy(() -> JarOnMemberValidator.validateJarPathNotNull(null))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("File path can not be null");
     }
@@ -44,7 +44,7 @@ public class JobMetaDataParameterObjectValidatorTest {
     @Test
     public void testValidateFileExtension() {
         Path jarPath = Paths.get("foo");
-        assertThatThrownBy(() -> JobMetaDataParameterObjectValidator.validateFileExtension(jarPath))
+        assertThatThrownBy(() -> JarOnMemberValidator.validateFileExtension(jarPath))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("File name extension should be .jar");
     }
@@ -52,15 +52,15 @@ public class JobMetaDataParameterObjectValidatorTest {
     @Test
     public void testValidateFileSizeIsNotZero() {
         Path jarPath = Paths.get("foo");
-        assertThatThrownBy(() -> JobMetaDataParameterObjectValidator.validateFileSizeIsNotZero(jarPath))
+        assertThatThrownBy(() -> JarOnMemberValidator.validateFileSizeIsNotZero(jarPath))
                 .isInstanceOf(JetException.class)
                 .hasMessageContaining("File is not accessible");
     }
 
     @Test
     public void testValidateJobParameters() {
-        assertThatThrownBy(() -> JobMetaDataParameterObjectValidator.validateJobParameters(null))
-                .isInstanceOf(JetException.class);
-
+        assertThatThrownBy(() -> JarOnMemberValidator.validateJobParameters(null))
+                .isInstanceOf(JetException.class)
+                .hasMessageContaining("jobParameters can not be null");
     }
 }
