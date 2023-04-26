@@ -455,9 +455,13 @@ public interface SqlConnector {
      * <p>
      * The default implementation returns true for {@link RexDynamicParam}.
      *
+     * @param expression expression to be analysed. Entire expression must be
+     *     checked, not only the root node.
      * @return true, iff the given expression can be evaluated remotely
      */
     default boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        // support only simple RexDynamicParam ref. If RexDynamicParam is inside larger expression,
+        // entire expression will have to be analysed.
         return expression.unwrap(RexNode.class) instanceof RexDynamicParam;
     }
 

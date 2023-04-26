@@ -124,7 +124,7 @@ public class UpdateLogicalRel extends AbstractRelNode implements LogicalRel {
                 traitSet,
                 getTable(),
                 getCatalogReader(),
-                sole(inputs),  //TODO: inputs can be empty/null
+                sole(inputs),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
                 isFlattened(),
