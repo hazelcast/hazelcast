@@ -1070,8 +1070,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 } else {
                     establishedInitialClusterConnection = true;
                     if (!asyncStart) {
-                        // In async start, we send client state in an async way. The state should be INITIALIZED_ON_CLUSTER
-                        // after we send the client state. Therefore, switching state responsibility is left to the async task.
+                        // For async clients, we send the client state in an async way. The state should be
+                        // INITIALIZED_ON_CLUSTER after we send the client state. Therefore, switching client state
+                        // responsibility is left to the async task.
                         clientState = ClientState.INITIALIZED_ON_CLUSTER;
                     }
                     fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
