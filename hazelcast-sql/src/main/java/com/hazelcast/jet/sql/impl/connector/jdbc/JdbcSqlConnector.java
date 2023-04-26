@@ -169,7 +169,7 @@ public class JdbcSqlConnector implements SqlConnector {
         externalTableName.orderFullQualifiedTableName(databaseMetaData);
 
         Connection connection = databaseMetaData.getConnection();
-        // If catalog and schema are not specifies as external name, use the catalog and schema of the connection
+        // If catalog and schema are not specified as external name, use the catalog and schema of the connection
         String catalog = Objects.toString(externalTableName.catalog, connection.getCatalog());
         String schema = Objects.toString(externalTableName.schema, connection.getSchema());
 
@@ -511,15 +511,14 @@ public class JdbcSqlConnector implements SqlConnector {
         @Override
         public String toString() {
             return "DbField{" +
-                   "name='" + columnName + '\'' +
-                   ", typeName='" + columnTypeName + '\'' +
-                   ", primaryKey=" + primaryKey +
-                   '}';
+                    "name='" + columnName + '\'' +
+                    ", typeName='" + columnTypeName + '\'' +
+                    ", primaryKey=" + primaryKey +
+                    '}';
         }
     }
 
     private static class ExternalJdbcTableName {
-
         String catalog;
         String schema;
         final String table;
@@ -560,7 +559,7 @@ public class JdbcSqlConnector implements SqlConnector {
             }
         }
 
-        void swapCatalogAndSchema() {
+        private void swapCatalogAndSchema() {
             String tempCatalog = catalog;
             catalog = schema;
             schema = tempCatalog;
