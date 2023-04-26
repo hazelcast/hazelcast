@@ -20,7 +20,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.model.Person;
 import com.hazelcast.sql.impl.client.SqlClientService;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -33,7 +33,7 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class IMapResolverTest extends SqlTestSupport {
 
