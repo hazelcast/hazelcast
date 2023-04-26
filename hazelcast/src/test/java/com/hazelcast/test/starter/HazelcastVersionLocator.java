@@ -18,6 +18,7 @@ package com.hazelcast.test.starter;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.version.Version;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -25,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.nio.IOUtil.drainTo;
@@ -56,16 +58,21 @@ public class HazelcastVersionLocator {
     }
 
     public static File[] locateVersion(String version, File target, boolean enterprise) {
-        File[] files = new File[enterprise ? 6 : 3];
-        files[0] = locateMember(version, target, false);
-        files[1] = locateMemberTests(version, target, false);
-        files[2] = locateClient(version, target, false);
-        if (enterprise) {
-            files[3] = locateMember(version, target, true);
-            files[4] = locateMemberTests(version, target, true);
-            files[5] = locateClient(version, target, true);
+        boolean is3_x = Version.of(version).getMajor() == 3;
+        ArrayList<File> files = new ArrayList<File>();
+        files.add(locateMember(version, target, false));
+        files.add(locateMemberTests(version, target, false));
+        if (is3_x) {
+            files.add(locateClient(version, target, false));
         }
-        return files;
+        if (enterprise) {
+            files.add(locateMember(version, target, true));
+            files.add(locateMemberTests(version, target, true));
+            if (is3_x) {
+                files.add(locateClient(version, target, true));
+            }
+        }
+        return files.toArray(new File[0]);
     }
 
     // attempts to locate member artifact in local maven repository, then downloads

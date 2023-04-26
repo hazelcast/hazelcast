@@ -45,6 +45,8 @@ public final class Packet extends HeapData implements OutboundFrame {
     // 1. URGENT (bit 4)
     // 2. Packet type (bits 0, 2, 5)
     // 3. Flags specific to a given packet type (bits 1, 6)
+    // 4. 4.x flag (bit 7)
+    // 5. 3.x flag (bit 8)
 
 
     // 1. URGENT flag
@@ -98,6 +100,12 @@ public final class Packet extends HeapData implements OutboundFrame {
      */
     public static final int FLAG_JET_FLOW_CONTROL = 1 << 1;
 
+    /**
+     * Reserved for 4.x member compatibility code to mark packets as being sent
+     * by a 4.x member. The absence of this flag does not mean the packet was
+     * not sent by a 4.x member.
+     */
+    public static final int FLAG_4_0 = 1 << 7;
 
     //            END OF HEADER FLAG SECTION
 
@@ -144,7 +152,8 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     public Type getPacketType() {
-        return Type.fromFlags(flags);
+        boolean is4x = isFlagRaised(FLAG_4_0);
+        return Type.fromFlags(flags, is4x);
     }
 
     /**
@@ -326,18 +335,33 @@ public final class Packet extends HeapData implements OutboundFrame {
          * <p>
          * {@code ordinal = 7}
          */
-        UNDEFINED7;
+        UNDEFINED7,
+        /**
+         * Type reserved for 4.x extended bind messages. The appropriate
+         * type conversion will happen in {@link #fromFlags(int, boolean)}.
+         * <p>
+         * {@code ordinal = 4}
+         */
+        COMPATIBILITY_BIND_MESSAGE(4);
 
         final char headerEncoding;
 
         private static final Type[] VALUES = values();
 
         Type() {
-            headerEncoding = (char) encodeOrdinal();
+            headerEncoding = (char) encodeHeader(ordinal());
         }
 
-        public static Type fromFlags(int flags) {
-            return VALUES[headerDecode(flags)];
+        Type(int ordinal) {
+            headerEncoding = (char) encodeHeader(ordinal);
+        }
+
+        public static Type fromFlags(int flags, boolean is4x) {
+            int ordinal = headerDecode(flags);
+            if (is4x && ordinal == BIND.ordinal()) {
+                return COMPATIBILITY_BIND_MESSAGE;
+            }
+            return VALUES[ordinal];
         }
 
         public String describeFlags(char flags) {
@@ -345,8 +369,7 @@ public final class Packet extends HeapData implements OutboundFrame {
         }
 
         @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
-        private int encodeOrdinal() {
-            final int ordinal = ordinal();
+        private int encodeHeader(int ordinal) {
             assert ordinal < 8 : "Ordinal out of range for member " + name() + ": " + ordinal;
             return (ordinal & 0x01)
                     | (ordinal & 0x02) << 1

@@ -1,5 +1,23 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.2 - VISA8 - MIGRATION ====
+Enhancements
+
+* Introduced WAN throttling mechanism: this prevents the WAN consumers
+from getting overloaded by the WAN producers if transferring the WAN events
+takes less time than processing them in the target cluster. This can be the case
+with WAN synchronization if the network latency is low enough or if the source
+cluster is big. It can be configured using the following properties:
+  ** hazelcast.wan.consumer.invocation.threshold
+  ** hazelcast.wan.consumer.ack.delay.backoff.init
+  ** hazelcast.wan.consumer.ack.delay.backoff.max
+  ** hazelcast.wan.consumer.ack.delay.backoff.multiplier
+  [#17109]
+  See https://github.com/hazelcast/hazelcast/blob/3.12.8-migration/hazelcast/src/main/java/com/hazelcast/spi/properties/GroupProperty.java#L1057 for their explanations.  By default the throttling mechanism is enabled but it may be disabled using the configuration properties.
+* Added a support for WAN Replication so that the PASSIVE (target) cluster
+is now able to process WAN replication events from a 4.0/4.1 ACTIVE (source) cluster. [#16972]
+
+
 ==== 3.12.2 - VISA8 ====
 
 1. Enhancements

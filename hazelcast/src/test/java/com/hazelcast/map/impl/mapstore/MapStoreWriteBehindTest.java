@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -581,7 +582,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         private final CountDownLatch expectedStore;
         private final CountDownLatch expectedRemove;
 
-        private final ConcurrentHashMap<String, String> store;
+        private final ConcurrentMap<String, String> store;
 
         RecordingMapStore(int expectedStore, int expectedRemove) {
             this.expectedStore = new CountDownLatch(expectedStore);
@@ -589,7 +590,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
             this.store = new ConcurrentHashMap<String, String>();
         }
 
-        public ConcurrentHashMap<String, String> getStore() {
+        public ConcurrentMap<String, String> getStore() {
             return store;
         }
 

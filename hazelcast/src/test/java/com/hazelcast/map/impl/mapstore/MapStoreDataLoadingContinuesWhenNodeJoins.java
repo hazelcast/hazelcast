@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -288,7 +289,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
     public class InMemoryMapStore implements MapStore<String, String> {
 
-        private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<String, String>();
+        private final ConcurrentMap<String, String> store = new ConcurrentHashMap<String, String>();
         private final AtomicInteger countLoadAllKeys = new AtomicInteger(0);
 
         private final CountDownLatch halfOfKeysAreLoaded;

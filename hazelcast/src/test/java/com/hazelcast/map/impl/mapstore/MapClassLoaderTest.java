@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertFalse;
 
@@ -88,8 +89,8 @@ public class MapClassLoaderTest extends HazelcastTestSupport {
 
     private class InMemoryMapStore implements MapStore<String, String> {
 
-        private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<String, String>();
-        private final ConcurrentHashMap<String, Boolean> contextClassLoaders = new ConcurrentHashMap<String, Boolean>();
+        private final ConcurrentMap<String, String> store = new ConcurrentHashMap<String, String>();
+        private final ConcurrentMap<String, Boolean> contextClassLoaders = new ConcurrentHashMap<String, Boolean>();
 
         public TreeMap<String, Boolean> getContextClassLoaders() {
             return new TreeMap<String, Boolean>(contextClassLoaders);

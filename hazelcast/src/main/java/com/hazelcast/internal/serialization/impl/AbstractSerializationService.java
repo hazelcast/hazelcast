@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySerializationConstants;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
@@ -48,7 +49,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.EMPTY_PARTITIONING_STRATEGY;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.getInterfaces;
@@ -72,12 +72,12 @@ public abstract class AbstractSerializationService implements InternalSerializat
     protected SerializerAdapter javaSerializerAdapter;
     protected SerializerAdapter javaExternalizableAdapter;
 
-    private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap = new IdentityHashMap<Class, SerializerAdapter>(
-            CONSTANT_SERIALIZERS_LENGTH);
-    private final SerializerAdapter[] constantTypeIds = new SerializerAdapter[CONSTANT_SERIALIZERS_LENGTH];
+    private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap;
+    private final SerializerAdapter[] constantTypeIds;
     private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<Class, SerializerAdapter>();
     private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<Integer, SerializerAdapter>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
+    private final boolean isCompatibility;
 
     //Global serializer may override Java Serialization or not
     private boolean overrideJavaSerialization;
@@ -98,16 +98,29 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, builder.bufferPoolFactory,
                 builder.notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer(), this);
+        this.constantTypesMap = new IdentityHashMap<Class, SerializerAdapter>(builder.isCompatibility
+                ? CompatibilitySerializationConstants.CONSTANT_SERIALIZERS_LENGTH
+                : SerializationConstants.CONSTANT_SERIALIZERS_LENGTH);
+        this.constantTypeIds = new SerializerAdapter[builder.isCompatibility
+                ? CompatibilitySerializationConstants.CONSTANT_SERIALIZERS_LENGTH
+                : SerializationConstants.CONSTANT_SERIALIZERS_LENGTH];
+        this.isCompatibility = builder.isCompatibility;
     }
 
     //region Serialization Service
     @Override
     public final <B extends Data> B toData(Object obj) {
+        if (isCompatibility) {
+            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
+        }
         return toData(obj, globalPartitioningStrategy);
     }
 
     @Override
     public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
+        if (isCompatibility) {
+            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
+        }
         if (obj == null) {
             return null;
         }
@@ -303,12 +316,12 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public final BufferObjectDataInput createObjectDataInput(byte[] data) {
-        return inputOutputFactory.createInput(data, this);
+        return inputOutputFactory.createInput(data, this, isCompatibility);
     }
 
     @Override
     public final BufferObjectDataInput createObjectDataInput(Data data) {
-        return inputOutputFactory.createInput(data, this);
+        return inputOutputFactory.createInput(data, this, isCompatibility);
     }
 
     @Override
@@ -439,7 +452,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     protected final SerializerAdapter serializerFor(final int typeId) {
         if (typeId <= 0) {
             final int index = indexForDefaultType(typeId);
-            if (index < CONSTANT_SERIALIZERS_LENGTH) {
+            if (index < constantTypeIds.length) {
                 return constantTypeIds[index];
             }
         }
@@ -570,6 +583,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         private int initialOutputBufferSize;
         private BufferPoolFactory bufferPoolFactory;
         private Supplier<RuntimeException> notActiveExceptionSupplier;
+        private boolean isCompatibility;
 
         protected Builder() {
         }
@@ -618,6 +632,26 @@ public abstract class AbstractSerializationService implements InternalSerializat
         public final T withNotActiveExceptionSupplier(Supplier<RuntimeException> notActiveExceptionSupplier) {
             this.notActiveExceptionSupplier = notActiveExceptionSupplier;
             return self();
+        }
+
+        /**
+         * Sets whether the serialization service should (de)serialize in the
+         * compatibility (4.x) format.
+         *
+         * @param isCompatibility {@code true} if the serialized format should conform to the
+         *                        4.x serialization format, {@code false} otherwise
+         */
+        public final T withCompatibility(boolean isCompatibility) {
+            this.isCompatibility = isCompatibility;
+            return self();
+        }
+
+        /**
+         * @return {@code true} if the serialized format of the serialization service should
+         * conform to the 4.x serialization format, {@code false} otherwise.
+         */
+        public boolean isCompatibility() {
+            return isCompatibility;
         }
     }
 }

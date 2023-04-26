@@ -17,7 +17,9 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.nio.Packet.Type;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,8 +32,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class PacketTest {
 
     @Test
@@ -47,7 +49,8 @@ public class PacketTest {
         Packet packet = new Packet();
         for (Packet.Type type : Packet.Type.values()) {
             packet.setPacketType(type);
-            assertSame(type, packet.getPacketType());
+            // COMPATIBILITY_BIND_MESSAGE occupies the same ordinal as BIND
+            assertSame(type == Type.COMPATIBILITY_BIND_MESSAGE ? Type.BIND : type, packet.getPacketType());
         }
     }
 
