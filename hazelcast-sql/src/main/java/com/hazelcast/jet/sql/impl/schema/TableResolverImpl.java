@@ -312,8 +312,7 @@ public class TableResolverImpl implements TableResolver {
             );
         } catch (Throwable e) {
             // will fail later if invalid table is actually used in a query
-            return new BadTable(SCHEMA_NAME_PUBLIC, mapping.name(),
-                    e instanceof QueryException ? e.getCause() : e);
+            return new BadTable(SCHEMA_NAME_PUBLIC, mapping.name(), e);
         }
     }
 
