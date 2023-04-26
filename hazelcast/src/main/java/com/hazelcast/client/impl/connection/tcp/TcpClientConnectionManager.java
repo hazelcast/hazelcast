@@ -430,6 +430,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     executor.submit(() -> {
                         try {
                             client.sendStateToCluster();
+                            clientState = ClientState.INITIALIZED_ON_CLUSTER;
                         } catch (Throwable e) {
                             logger.severe("Could not send state to cluster during async start. "
                                     + "Client will shutdown because it cannot operate with state not sent to cluster.", e);
@@ -1068,7 +1069,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     });
                 } else {
                     establishedInitialClusterConnection = true;
-                    clientState = ClientState.INITIALIZED_ON_CLUSTER;
+                    if (!asyncStart) {
+                        // In async start, we send client state in an async way. The state should be INITIALIZED_ON_CLUSTER
+                        // after we send the client state. Therefore, switching state responsibility is left to the async task.
+                        clientState = ClientState.INITIALIZED_ON_CLUSTER;
+                    }
                     fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
                 }
             }
