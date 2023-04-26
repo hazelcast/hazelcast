@@ -17,6 +17,9 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -32,11 +35,13 @@ import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -351,6 +356,52 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "SELECT * FROM myMapping",
                 Collections.singletonList(new Row(0, "name-0"))
         );
+    }
 
+    @Test
+    public void createMappingFailsIfTableExistInAnotherDatabase_ExternalNameOnlyTableName() throws SQLException {
+        assumeThat(databaseProvider)
+                .isInstanceOfAny(
+                        MySQLDatabaseProvider.class,
+                        PostgresDatabaseProvider.class
+                );
+        HazelcastInstance instance = instance();
+        Config config = instance.getConfig();
+
+        // Create table on first DB
+        createTable(tableName);
+
+        String newDBName = "db1";
+        executeJdbc("CREATE DATABASE " + newDBName);
+
+        // Add a new DB
+        String newDbUrl = dbConnectionUrl.replace("com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport",
+                newDBName);
+
+        Properties properties = new Properties();
+        properties.setProperty("jdbcUrl", newDbUrl);
+
+        String TEST_DATABASE_REF2 = "testDatabaseRef1";
+
+        config.addDataConnectionConfig(
+                new DataConnectionConfig(TEST_DATABASE_REF2)
+                        .setType("jdbc")
+                        .setProperties(properties)
+        );
+
+        // Create mapping to new DB. Table does not exist on new DB, and we should get an exception
+        assertThatThrownBy(() -> execute(
+                "CREATE MAPPING " + tableName + " EXTERNAL NAME " + tableName + " ("
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF2
+        ))
+                .isInstanceOf(HazelcastSqlException.class);
+
+        // Assert that no mapping has been created
+        assertRowsAnyOrder("SHOW MAPPINGS",
+                Collections.emptyList()
+        );
     }
 }
