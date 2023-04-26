@@ -79,12 +79,12 @@ public class SqlConfig {
     /**
      * Sets whether SQL Catalog persistence is enabled for the node. With SQL
      * Catalog persistence enabled you can restart the whole cluster without
-     * losing schema definition objects (such as MAPPINGs, TYPEs and VIEWs). The
-     * feature is implemented on top of the Hot Restart feature of Hazelcast
-     * which persists the data to disk. If enabled, you have to also configure
-     * Hot Restart. Feature is disabled by default. If you enable this option in
-     * open-source, the member will fail to start, you need Enterprise to run it
-     * and obtain a license from Hazelcast.
+     * losing schema definition objects (such as MAPPINGs, TYPEs, VIEWs and DATA
+     * CONNECTIONs). The feature is implemented on top of the Hot Restart
+     * feature of Hazelcast which persists the data to disk. If enabled, you
+     * have to also configure Hot Restart. Feature is disabled by default. If
+     * you enable this option in open-source, the member will fail to start, you
+     * need Enterprise to run it and obtain a license from Hazelcast.
      *
      * @param catalogPersistenceEnabled to enable or disable persistence for SQL Catalog
      * @return this config instance
@@ -98,7 +98,7 @@ public class SqlConfig {
     public String toString() {
         return "SqlConfig{"
             + "statementTimeoutMillis=" + statementTimeoutMillis
-            + ", persistenceEnabled=" + catalogPersistenceEnabled
+            + ", catalogPersistenceEnabled=" + catalogPersistenceEnabled
             + '}';
     }
 
