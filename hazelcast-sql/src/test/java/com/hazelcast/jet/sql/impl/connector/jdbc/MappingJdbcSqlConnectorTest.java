@@ -381,7 +381,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("select count(*) from " + mappingName).iterator().hasNext())
                 .as("Cached plan is not used")
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Mapping '"+ mappingName + "' is invalid");
+                .hasMessageContaining("Mapping '" + mappingName + "' is invalid");
     }
 
     @Test
