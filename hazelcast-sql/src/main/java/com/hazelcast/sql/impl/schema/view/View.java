@@ -42,12 +42,11 @@ public class View implements Versioned, SqlCatalogObject {
     public View() {
     }
 
-    public View(String name, String query, List<String> columnNames, List<QueryDataType> columnTypes, boolean streaming) {
+    public View(String name, String query, List<String> columnNames, List<QueryDataType> columnTypes) {
         this.name = name;
         this.query = query;
         this.viewColumnNames = columnNames;
         this.viewColumnTypes = columnTypes;
-        this.streaming = streaming;
     }
 
     public String name() {
@@ -73,10 +72,6 @@ public class View implements Versioned, SqlCatalogObject {
      */
     public List<QueryDataType> viewColumnTypes() {
         return viewColumnTypes;
-    }
-
-    public boolean isStreaming() {
-        return streaming;
     }
 
     @Override

@@ -27,6 +27,7 @@ import java.util.Set;
  */
 public abstract class Table {
 
+    protected boolean streaming;
     private final String schemaName;
     private final String sqlName;
     private List<TableField> fields;
@@ -34,7 +35,6 @@ public abstract class Table {
 
     private Set<String> conflictingSchemas;
     private final String objectType;
-    private final boolean streaming;
 
     protected Table(
             String schemaName,
