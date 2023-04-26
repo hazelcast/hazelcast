@@ -33,13 +33,14 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -305,6 +306,59 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertThat(object).isEqualTo(name);
     }
 
+    /**
+     * Source : <a href=https://github.com/hazelcast/hazelcast/issues/24337">issue #24337</a>.
+     */
+    @Test
+    public void given_mappingIsDeclaredWithDataConn_when_DataConnWasRemoved_then_success() throws Exception {
+        // given
+        String dcName = randomName();
+        String mappingName = randomName();
+        createTable(mappingName);
+        Map<String, String> options = new HashMap<>();
+        options.put("jdbcUrl", dbConnectionUrl);
+
+        // when
+        createDataConnection(instance(), dcName, "JDBC", false, options);
+        createJdbcMappingUsingDataConnection(mappingName, dcName);
+        sqlService.execute("DROP DATA CONNECTION " + dcName);
+
+        // then
+        assertRowsAnyOrder("SHOW DATA CONNECTIONS ", singletonList(new Row(TEST_DATABASE_REF)));
+
+        // Ensure that engine is not broken after Data Conn removal with some unrelated query.
+        assertRowsAnyOrder("SHOW MAPPINGS ", singletonList(new Row(mappingName)));
+
+        // Mapping shouldn't provide data, since data connection was removed.
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + mappingName))
+                .hasMessageContaining("com.hazelcast.core.HazelcastException: Data connection '"
+                        + dcName + "' not found");
+    }
+
+    @Test
+    public void when_dataConnectionIsAltered_then_mappingsConnectorTypesAreUpdated() throws Exception {
+        // given
+        String dcName = randomName();
+        String mappingName = randomName();
+        createTable(mappingName);
+
+        // when
+        createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
+        createJdbcMappingUsingDataConnection(mappingName, dcName);
+        sqlService.execute("DROP DATA CONNECTION " + dcName);
+        createDataConnection(instance(), dcName, "Kafka", false, singletonMap("A", "B"));
+
+        // then
+        assertRowsAnyOrder("SELECT * FROM information_schema.mappings ", singletonList(
+                new Row(
+                        "hazelcast",
+                        "public",
+                        mappingName,
+                        '"' + mappingName + '"',
+                        "Kafka",
+                        "{}")));
+    }
+
     @Test
     public void createMappingAutoResolveColumns() throws Exception {
         createTable(tableName);
@@ -349,7 +403,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT * FROM myMapping",
-                Collections.singletonList(new Row(0, "name-0"))
+                singletonList(new Row(0, "name-0"))
         );
 
     }
