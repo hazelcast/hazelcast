@@ -1688,7 +1688,7 @@ public class MigrationManager {
         }
 
         /**
-         * Removes members from the partition table which are not registered as cluster members and checks
+         * Removes members from the partition table which are not registered as cluster data members and checks
          * if any partitions need promotion (partition owners are missing).
          * Invoked on the master node. Acquires partition service lock.
          *
@@ -1697,7 +1697,7 @@ public class MigrationManager {
         private Map<PartitionReplica, Collection<MigrationInfo>> removeUnknownMembersAndCollectPromotions() {
             partitionServiceLock.lock();
             try {
-                partitionStateManager.removeUnknownMembers();
+                partitionStateManager.removeUnknownAndLiteMembers();
 
                 Map<PartitionReplica, Collection<MigrationInfo>> promotions = new HashMap<>();
                 for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {

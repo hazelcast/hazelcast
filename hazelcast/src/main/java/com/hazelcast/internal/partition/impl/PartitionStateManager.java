@@ -288,12 +288,12 @@ public class PartitionStateManager {
     }
 
     /**
-     * Checks all replicas for all partitions. If the cluster service does not contain the member for any
-     * address in the partition table, it will remove the address from the partition.
+     * Checks all replicas for all partitions. If the cluster service does not contain the member or the member
+     * is a lite member for any address in the partition table, it will remove the address from the partition.
      *
      * @see ClusterService#getMember(Address, UUID)
      */
-    void removeUnknownMembers() {
+    void removeUnknownAndLiteMembers() {
         ClusterServiceImpl clusterService = node.getClusterService();
 
         for (InternalPartitionImpl partition : partitions) {
@@ -303,7 +303,8 @@ public class PartitionStateManager {
                     continue;
                 }
 
-                if (clusterService.getMember(replica.address(), replica.uuid()) == null) {
+                Member member = clusterService.getMember(replica.address(), replica.uuid());
+                if (member == null || member.isLiteMember()) {
                     partition.setReplica(i, null);
                     if (logger.isFinestEnabled()) {
                         logger.finest("PartitionId=" + partition.getPartitionId() + " " + replica
