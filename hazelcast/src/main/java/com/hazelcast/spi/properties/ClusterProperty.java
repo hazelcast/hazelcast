@@ -1873,15 +1873,12 @@ public final class ClusterProperty {
             "hazelcast.persistence.auto.cluster.state.strategy", ClusterState.NO_MIGRATION);
 
     /**
-     * The absolute directory path to be used for jar uploading. The path must exist and must have
+     * The directory path to be used for jar uploading. The path must exist and must have
      * read + write + execute permissions for the Hazelcast process
      * <p>
-     * In case of a shared file system, the same absolute path can be specified for all cluster members,
-     * but this defeats the purpose of being able to distinguish jars uploaded to a specific member.
-     * Therefore, it is suggested to have a unique path per cluster member
+     * A different path can be specified for each member
      * <p>
-     * In case of a separate file system per member, the same absolute path can be used for all members
-     *
+     * The path can be absolute or relative to current working directory of Hazelcast process
      * @since 5.3
      */
     public static final HazelcastProperty JAR_UPLOAD_DIR_PATH
