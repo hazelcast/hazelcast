@@ -326,7 +326,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // then
         assertRowsAnyOrder("SHOW DATA CONNECTIONS ", singletonList(new Row(TEST_DATABASE_REF)));
 
-        // Ensure that engine is not broken after Data Conn removal with some unrelated query.
+        // Ensure that engine is not broken after Data Connection removal with some unrelated query.
         assertRowsAnyOrder("SHOW MAPPINGS ", singletonList(new Row(mappingName)));
 
         // Mapping shouldn't provide data, since data connection was removed.
