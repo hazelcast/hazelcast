@@ -371,9 +371,9 @@ public interface SqlConnector {
      *     <li><b>hasInput == false:</b> There will be no input to the
      *     processor. The processor is supposed to update all rows matching the
      *     given `predicate`. If the `predicate` is null, it's supposed to
-     *     delete all rows. The `expressions` have no input references.
+     *     update all rows. The `expressions` have no input references.
      *
-     *     <li><b>hasInput == true:</b> The processor is supposed to delete all
+     *     <li><b>hasInput == true:</b> The processor is supposed to update all
      *     rows with primary keys it receives on the input. In this mode the
      *     `predicate` is always null. The primary key fields are specified by
      *     the {@link #getPrimaryKey(Table)} method. If {@link
