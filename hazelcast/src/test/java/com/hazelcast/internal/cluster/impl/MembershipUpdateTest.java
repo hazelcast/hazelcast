@@ -799,23 +799,23 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         CountDownLatch latch = new CountDownLatch(1);
         Config config = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
 
-        EntryListenerConfig listenerConfig = new EntryListenerConfig();
         CountDownLatch entryAddedLatch = new CountDownLatch(2);
-        listenerConfig.setImplementation((EntryAddedListener) event -> entryAddedLatch.countDown());
-        listenerConfig.setLocal(true);
-        config.getMapConfig("test").addEntryListenerConfig(listenerConfig);
-
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+
+        // register a listener on the first member
+        hz1.getMap("test").addEntryListener((EntryAddedListener) event -> entryAddedLatch.countDown(), true);
+
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
 
         assertClusterSizeEventually(2, hz1, hz2);
 
-        IMap<Object, Object> map = hz1.getMap("test");
+        IMap<Object, Object> map1 = hz1.getMap("test");
+        IMap<Object, Object> map2 = hz2.getMap("test");
 
         String keyForHz1 = generateKeyOwnedBy(hz1);
         String keyForHz2 = generateKeyOwnedBy(hz2);
-        map.put(keyForHz1, 1);
-        map.put(keyForHz2, 2);
+        map1.put(keyForHz1, 1);
+        map2.put(keyForHz2, 2);
 
         //Let post join continue only after put happened
         latch.countDown();
