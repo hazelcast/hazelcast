@@ -40,8 +40,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.List;
@@ -78,19 +81,6 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled() throws IOException {
         createCluster();
-        JetClientInstanceImpl jetService = getClientJetService();
-
-        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
-                .setJarPath(getJarPath());
-
-        jetService.submitJobFromJar(submitJobParameters);
-
-        assertJobIsRunning(jetService);
-    }
-
-    @Test
-    public void test_jarUpload_tempdir_whenResourceUploadIsEnabled() throws IOException {
-        createClusterWithUploadDirectoryPath(".");
         JetClientInstanceImpl jetService = getClientJetService();
 
         SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
@@ -248,6 +238,36 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
         });
     }
 
+    @Test
+    public void test_jarUpload_tempdir_whenResourceUploadIsEnabled() throws IOException {
+        Path path = Paths.get("target/jardirectory");
+        try {
+            // Make sure the temp directory exist
+            Files.createDirectories(path);
+            String directoryPath = path.toString();
+
+            // Start cluster with the temp directory path
+            createClusterWithUploadDirectoryPath(directoryPath);
+
+            JetClientInstanceImpl jetService = getClientJetService();
+
+            SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
+                    .setJarPath(getJarPath());
+
+            jetService.submitJobFromJar(submitJobParameters);
+
+            assertJobIsRunning(jetService);
+
+            // After a job is executed the jar is deleted. Test that no file exists in the temp dir
+            File directory = new File(directoryPath);
+            File[] jarFiles = directory.listFiles((dir, name) -> name.endsWith(".jar"));
+            assertThat(jarFiles).isNotNull().isEmpty();
+        } finally {
+            // Cleanup
+            Files.deleteIfExists(path);
+        }
+    }
+
     private void createCluster() {
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
@@ -256,7 +276,7 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
         createHazelcastInstance(config);
     }
 
-    private void createClusterWithUploadDirectoryPath(String uploadDirectoryPath) {
+    public void createClusterWithUploadDirectoryPath(String uploadDirectoryPath) {
         Config config = smallInstanceConfig();
         config.setProperty(ClusterProperty.JAR_UPLOAD_DIR_PATH.getName(), uploadDirectoryPath);
         JetConfig jetConfig = config.getJetConfig();

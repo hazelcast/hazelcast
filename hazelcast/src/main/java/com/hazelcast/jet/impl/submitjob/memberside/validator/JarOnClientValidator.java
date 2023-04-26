@@ -43,7 +43,7 @@ public final class JarOnClientValidator {
         if (uploadDirectoryPath != null) {
             Path path = Paths.get(uploadDirectoryPath);
             if (!Files.exists(path)) {
-                String errorMessage = String.format("The upload directory path does not exist: %s ", path);
+                String errorMessage = String.format("The upload directory path does not exist: %s", path);
                 throw new JetException(errorMessage);
             }
         }
