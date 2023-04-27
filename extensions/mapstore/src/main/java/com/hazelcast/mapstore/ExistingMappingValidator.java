@@ -17,11 +17,10 @@
 package com.hazelcast.mapstore;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.SqlColumnMetadata;
 
+import java.util.Map;
 import java.util.Set;
-
-import static com.hazelcast.sql.SqlRowMetadata.COLUMN_NOT_FOUND;
 
 /**
  * Validates if database and GenericMapStoreProperties columns match
@@ -34,17 +33,17 @@ final class ExistingMappingValidator {
     /**
      * Validate if database rows contain all column names in GenericMapStoreProperties
      */
-    public static void validateColumnsExist(SqlRowMetadata sqlRowMetadata, Set<String> allColumns) {
+    public static void validateColumnsExist(Map<String, SqlColumnMetadata> columnMap, Set<String> allColumns) {
         // All columns must exist on the database
-        allColumns.forEach(columnName -> validateColumn(sqlRowMetadata, columnName));
+        allColumns.forEach(columnName -> validateColumn(columnMap, columnName));
     }
 
     /**
      * Validate if columnName exists in the database row
      */
-    public static int validateColumn(SqlRowMetadata sqlRowMetadata, String columnName) {
-        int column = sqlRowMetadata.findColumn(columnName);
-        if (column == COLUMN_NOT_FOUND) {
+    public static SqlColumnMetadata validateColumn(Map<String, SqlColumnMetadata> columnMap, String columnName) {
+        SqlColumnMetadata column = columnMap.get(columnName);
+        if (column == null) {
             throw new HazelcastException("Column '" + columnName + "' not found");
         }
         return column;

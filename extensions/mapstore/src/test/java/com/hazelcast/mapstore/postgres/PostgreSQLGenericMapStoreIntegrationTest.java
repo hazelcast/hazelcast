@@ -22,6 +22,10 @@ import org.junit.BeforeClass;
 
 public class PostgreSQLGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
 
+    public PostgreSQLGenericMapStoreIntegrationTest() {
+        setPrefix("postgre_");
+    }
+
     // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass
     public static void beforeClass() {

@@ -23,6 +23,7 @@ import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 
+import javax.annotation.Nullable;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
@@ -58,12 +59,49 @@ public class StepSupplier implements Supplier<Runnable> {
         assert operation != null;
 
         this.state = operation.createState();
-        this.currentStep = operation.getStartingStep();
+        Step injectedStep = operation.getRecordStore().getStorage().newInjectedStep();
+        Step currentFirstStep = operation.getStartingStep();
+        this.currentStep = injectedStep == null
+                ? currentFirstStep : setAndGetInjectedStepAsFirstStep(currentFirstStep, injectedStep);
         this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
         this.checkCurrentThread = checkCurrentThread;
 
         assert state != null;
-        assert currentStep != null;
+        assert this.currentStep != null;
+    }
+
+    /**
+     * Sets injected step as starting step.
+     * <p>
+     * Current starting step becomes 2nd step in this case.
+     * @param currentStep  starting step of operation
+     * @param injectedStep new step to inject before currentStep
+     * @return injected step after setting its next step to currentStep
+     */
+    private static Step setAndGetInjectedStepAsFirstStep(Step currentStep, Step injectedStep) {
+        return new Step<State>() {
+
+            @Override
+            public boolean isOffloadStep(State state) {
+                return injectedStep.isOffloadStep(state);
+            }
+
+            @Override
+            public void runStep(State state) {
+                injectedStep.runStep(state);
+            }
+
+            @Override
+            public String getExecutorName(State state) {
+                return injectedStep.getExecutorName(state);
+            }
+
+            @Nullable
+            @Override
+            public Step nextStep(State state) {
+                return currentStep;
+            }
+        };
     }
 
     @Override
@@ -139,6 +177,7 @@ public class StepSupplier implements Supplier<Runnable> {
         boolean runningOnPartitionThread = isRunningOnPartitionThread();
         boolean metWithPreconditions = true;
         try {
+            state.getRecordStore().beforeOperation();
             try {
                 if (runningOnPartitionThread && state.getThrowable() == null) {
                     metWithPreconditions = metWithPreconditions();
@@ -153,6 +192,8 @@ public class StepSupplier implements Supplier<Runnable> {
                 rerunWithForcedEviction(() -> {
                     step.runStep(state);
                 });
+            } finally {
+                state.getRecordStore().afterOperation();
             }
         } catch (Throwable throwable) {
             if (runningOnPartitionThread) {
@@ -176,11 +217,13 @@ public class StepSupplier implements Supplier<Runnable> {
         // check node and cluster health before running each step
         operationRunner.ensureNodeAndClusterHealth(state.getOperation());
 
-        // check timeout for only first step, as in no-offload flows
-        if (firstStep && operationRunner.timeout(state.getOperation())) {
-            return false;
+        // check timeout for only first step,
+        // as in regular operation-runner
+        if (firstStep) {
+            assert firstStep;
+            firstStep = false;
+            return !operationRunner.timeout(state.getOperation());
         }
-
         return true;
     }
 
@@ -189,7 +232,6 @@ public class StepSupplier implements Supplier<Runnable> {
      * otherwise finds next step by calling {@link Step#nextStep}
      */
     private Step nextStep(Step step) {
-        firstStep = false;
         if (state.getThrowable() != null
                 && currentStep != UtilSteps.HANDLE_ERROR) {
             return UtilSteps.HANDLE_ERROR;

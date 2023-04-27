@@ -48,7 +48,7 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     protected static MongoDatabase database;
     protected static String databaseName;
     protected static String collectionName;
-    private static String connectionString;
+    protected static String connectionString;
 
     @Rule
     public final TestName testName = new TestName();
@@ -64,7 +64,7 @@ public abstract class MongoSqlTest extends SqlTestSupport {
         conf.getJetConfig().setEnabled(true);
         DataConnectionConfig testMongo = new DataConnectionConfig();
         testMongo.setShared(true)
-                 .setType("MongoDB")
+                 .setType("Mongo")
                  .setName("testMongo")
                  .setProperty("connectionString", connectionString)
                  .setProperty("database", databaseName);
@@ -97,8 +97,8 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     }
 
     protected static String options() {
-        return String.format("OPTIONS ( 'database' = '%s', 'connectionString' = '%s', 'idColumn' = 'id') ", databaseName,
-                mongoContainer.getConnectionString());
+        return String.format("OPTIONS ('connectionString' = '%s', 'idColumn' = 'id') ",
+                connectionString);
     }
 
 }

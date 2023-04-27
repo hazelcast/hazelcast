@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-/**
- * Stream-query MongoDB SQL Connector.
- *
- * @see MongoSqlConnectorBase
- *
- * @see FieldResolver
- */
-public class MongoStreamSqlConnector extends MongoSqlConnectorBase {
+package com.hazelcast.jet.kafka.connect;
 
-    @Override
-    public String typeName() {
-        return "MongoDBStream";
+import org.apache.kafka.connect.data.Values;
+import org.apache.kafka.connect.source.SourceRecord;
+
+public final class SourceRecordUtil {
+
+    private SourceRecordUtil() {
     }
 
-    @Override
-    public boolean isStream() {
-        return true;
+    static String convertToString(SourceRecord rec) {
+        return Values.convertToString(rec.valueSchema(), rec.value());
     }
 }

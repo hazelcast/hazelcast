@@ -75,13 +75,18 @@ public class JobMetricsPublisher implements MetricsPublisher {
             Map.Entry<Long, MetricsCompressor> entry = it.next();
 
             MetricsCompressor compressor = entry.getValue();
-            // remove compressors that didn't receive any metrics
-            if (compressor.count() == 0) {
-                it.remove();
-            }
 
             Long executionId = entry.getKey();
-            byte[] blob = compressor.getBlobAndReset();
+            byte[] blob;
+
+            if (compressor.count() == 0) {
+                // remove compressors that didn't receive any metrics
+                blob = compressor.getBlobAndClose();
+                it.remove();
+            } else {
+                blob = compressor.getBlobAndReset();
+            }
+
             jobExecutionService.updateMetrics(executionId, RawJobMetrics.of(blob));
         }
     }

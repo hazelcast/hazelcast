@@ -37,7 +37,7 @@ public abstract class InfoSchemaTable extends JetTable {
             String name,
             TableStatistics statistics
     ) {
-        super(InfoSchemaConnector.INSTANCE, fields, schemaName, name, statistics);
+        super(InfoSchemaConnector.INSTANCE, fields, schemaName, name, statistics, null, false);
 
         this.catalog = catalog;
     }

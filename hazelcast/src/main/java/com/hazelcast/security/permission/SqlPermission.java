@@ -25,11 +25,11 @@ public class SqlPermission extends InstancePermission {
     private static final int DROP_VIEW = CREATE_VIEW << 1;
     private static final int CREATE_TYPE = DROP_VIEW << 1;
     private static final int DROP_TYPE = CREATE_TYPE << 1;
-    private static final int VIEW_LINK = DROP_TYPE << 1;
-    private static final int CREATE_LINK = VIEW_LINK << 1;
-    private static final int DROP_LINK = CREATE_LINK << 1;
+    private static final int VIEW_DATACONNECTION = DROP_TYPE << 1;
+    private static final int CREATE_DATACONNECTION = VIEW_DATACONNECTION << 1;
+    private static final int DROP_DATACONNECTION = CREATE_DATACONNECTION << 1;
     private static final int ALL = CREATE_MAPPING | DROP_MAPPING | CREATE_INDEX | CREATE_VIEW | DROP_VIEW
-            | CREATE_TYPE | DROP_TYPE | VIEW_LINK | CREATE_LINK | DROP_LINK;
+            | CREATE_TYPE | DROP_TYPE | VIEW_DATACONNECTION | CREATE_DATACONNECTION | DROP_DATACONNECTION;
 
     public SqlPermission(String name, String... actions) {
         super(name, actions);
@@ -57,12 +57,12 @@ public class SqlPermission extends InstancePermission {
                     mask |= CREATE_TYPE;
                 } else if (ActionConstants.ACTION_DROP_TYPE.equals(action)) {
                     mask |= DROP_TYPE;
-                } else if (ActionConstants.ACTION_VIEW_LINK.equals(action)) {
-                    mask |= VIEW_LINK;
-                } else if (ActionConstants.ACTION_CREATE_LINK.equals(action)) {
-                    mask |= CREATE_LINK;
-                } else if (ActionConstants.ACTION_DROP_LINK.equals(action)) {
-                    mask |= DROP_LINK;
+                } else if (ActionConstants.ACTION_VIEW_DATACONNECTION.equals(action)) {
+                    mask |= VIEW_DATACONNECTION;
+                } else if (ActionConstants.ACTION_CREATE_DATACONNECTION.equals(action)) {
+                    mask |= CREATE_DATACONNECTION;
+                } else if (ActionConstants.ACTION_DROP_DATACONNECTION.equals(action)) {
+                    mask |= DROP_DATACONNECTION;
                 }
                 // Note: DROP INDEX is not implemented yet, no need to have separate permission.
             }

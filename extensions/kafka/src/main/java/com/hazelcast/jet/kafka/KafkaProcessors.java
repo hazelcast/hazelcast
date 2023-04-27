@@ -124,6 +124,25 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for
+     * {@link KafkaSinks#kafka(DataConnectionRef, Properties, String, FunctionEx, FunctionEx)}.
+     */
+    public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull Properties properties,
+            @Nonnull String topic,
+            @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> extractValueFn,
+            boolean exactlyOnce
+    ) {
+        return writeKafkaP(dataConnectionRef,
+                properties,
+                (T t) -> new ProducerRecord<>(topic, extractKeyFn.apply(t), extractValueFn.apply(t)),
+                exactlyOnce
+        );
+    }
+
+    /**
+     * Returns a supplier of processors for
      * {@link KafkaSinks#kafka(Properties, FunctionEx)}.
      */
     public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
@@ -145,4 +164,18 @@ public final class KafkaProcessors {
     ) {
         return ProcessorMetaSupplier.of(1, WriteKafkaP.supplier(dataConnectionRef, toRecordFn, exactlyOnce));
     }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link KafkaSinks#kafka(Properties, FunctionEx)}.
+     */
+    public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<? super T, ? extends ProducerRecord<K, V>> toRecordFn,
+            boolean exactlyOnce
+    ) {
+        return ProcessorMetaSupplier.of(1, WriteKafkaP.supplier(dataConnectionRef, properties, toRecordFn, exactlyOnce));
+    }
+
 }

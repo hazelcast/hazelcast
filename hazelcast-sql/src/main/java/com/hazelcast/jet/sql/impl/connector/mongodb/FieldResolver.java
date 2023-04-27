@@ -16,7 +16,6 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -37,7 +36,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.getBsonType;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
@@ -164,12 +162,12 @@ class FieldResolver {
                                           String dataConnectionName,
                                           Map<String, String> options,
                                           boolean stream) {
-        String collectionName = externalNames[0]; // TODO HZ-2260
+        String collectionName = externalNames.length == 2 ? externalNames[1] : externalNames[0];
+        String databaseName = Options.getDatabaseName(nodeEngine, externalNames, dataConnectionName);
+
         Map<String, DocumentField> fields = new HashMap<>();
-        Tuple2<MongoClient, MongoDataConnection> connect = connect(dataConnectionName, options);
-        try (MongoClient client = connect.f0()) {
+        try (MongoClient client = connect(dataConnectionName, options)) {
             requireNonNull(client);
-            String databaseName = Options.getDatabaseName(nodeEngine, dataConnectionName, options);
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()
@@ -219,10 +217,6 @@ class FieldResolver {
                 fields.put("ts", new DocumentField(BsonType.DATE_TIME, "ts"));
                 fields.put("clusterTime", new DocumentField(BsonType.TIMESTAMP, "clusterTime"));
             }
-        } finally {
-            if (connect.f1() != null) {
-                connect.f1().release();
-            }
         }
         return fields;
     }
@@ -239,17 +233,21 @@ class FieldResolver {
         return returned;
     }
 
-    private Tuple2<MongoClient, MongoDataConnection> connect(String dataConnectionName, Map<String, String> options) {
+    private MongoClient connect(String dataConnectionName, Map<String, String> options) {
         if (dataConnectionName != null) {
             MongoDataConnection link = nodeEngine.getDataConnectionService().getAndRetainDataConnection(
                     dataConnectionName,
                     MongoDataConnection.class);
-            return tuple2(link.getClient(), link);
+            try {
+                return link.getClient();
+            } finally {
+                link.release();
+            }
         } else {
             String connectionString = requireNonNull(options.get(CONNECTION_STRING_OPTION),
                     "Cannot connect to MongoDB, connectionString was not provided");
 
-            return tuple2(MongoClients.create(connectionString), null);
+            return MongoClients.create(connectionString);
         }
     }
 

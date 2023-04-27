@@ -356,7 +356,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateMappingWithQuotedColumnInWhere() throws Exception {
-        createTable(tableName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(tableName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(tableName, 1);
 
         execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
@@ -369,7 +369,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateMappingWithQuotedColumnInSet() throws Exception {
-        createTable(tableName, "id INT PRIMARY KEY", "\"full-name\" VARCHAR(100)");
+        createTable(tableName, "id INT PRIMARY KEY", quote("full-name") + " VARCHAR(100)");
         insertItems(tableName, 1);
 
         execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);

@@ -173,7 +173,12 @@ public class ProxyServiceImpl
             calls.add(f);
         }
 
-        destroyLocalDistributedObject(serviceName, name, source, true);
+        try {
+            destroyLocalDistributedObject(serviceName, name, source, true);
+        } catch (Throwable e) {
+            logger.warning("Destroying local DistributedObject failed", e);
+            throw e;
+        }
         waitWithDeadline(calls, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS, destroyProxyExceptionHandler);
     }
 

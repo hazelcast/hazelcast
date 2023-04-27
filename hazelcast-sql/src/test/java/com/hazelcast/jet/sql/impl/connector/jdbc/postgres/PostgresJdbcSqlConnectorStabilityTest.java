@@ -26,7 +26,7 @@ import org.junit.experimental.categories.Category;
 public class PostgresJdbcSqlConnectorStabilityTest extends JdbcSqlConnectorStabilityTest {
 
     @BeforeClass
-    public static void beforeClass() {
-        initialize(new PostgresDatabaseProvider());
+    public static void beforeClass() throws Exception {
+        initializeStabilityTest(new PostgresDatabaseProvider());
     }
 }

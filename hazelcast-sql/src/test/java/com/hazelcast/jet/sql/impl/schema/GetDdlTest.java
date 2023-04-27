@@ -30,6 +30,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENAB
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class GetDdlTest extends SqlTestSupport {
+    private static String LE = System.lineSeparator();
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -44,16 +45,17 @@ public class GetDdlTest extends SqlTestSupport {
         createMapping("a", int.class, int.class);
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', 'a')", ImmutableList.of(
-                new Row("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (\n" +
-                        "  \"__key\" INTEGER EXTERNAL NAME \"__key\",\n" +
-                        "  \"this\" INTEGER EXTERNAL NAME \"this\"\n" +
-                        ")\n" +
-                        "TYPE \"IMap\"\n" +
-                        "OPTIONS (\n" +
-                        "  'keyFormat'='java',\n" +
-                        "  'keyJavaClass'='int',\n" +
-                        "  'valueFormat'='java',\n" +
-                        "  'valueJavaClass'='int'\n" +
+                new Row("CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (" + LE +
+                        "  \"__key\" INTEGER EXTERNAL NAME \"__key\"," + LE +
+                        "  \"this\" INTEGER EXTERNAL NAME \"this\"" + LE +
+                        ")" + LE +
+                        "TYPE \"IMap\"" + LE +
+                        "OBJECT TYPE \"IMap\"" + LE +
+                        "OPTIONS (" + LE +
+                        "  'keyFormat'='java'," + LE +
+                        "  'keyJavaClass'='int'," + LE +
+                        "  'valueFormat'='java'," + LE +
+                        "  'valueJavaClass'='int'" + LE +
                         ")"))
         );
     }
@@ -64,23 +66,23 @@ public class GetDdlTest extends SqlTestSupport {
         instance().getSql().execute("CREATE VIEW v AS SELECT * FROM a");
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', 'v')", ImmutableList.of(
-                new Row("CREATE OR REPLACE VIEW \"hazelcast\".\"public\".\"v\" AS\n" +
-                        "SELECT \"a\".\"__key\", \"a\".\"this\"\n" +
+                new Row("CREATE OR REPLACE VIEW \"hazelcast\".\"public\".\"v\" AS" + LE +
+                        "SELECT \"a\".\"__key\", \"a\".\"this\"" + LE +
                         "FROM \"hazelcast\".\"public\".\"a\" AS \"a\""))
         );
     }
 
     @Test
     public void when_queryTypeFromRelationNamespace_then_success() {
-        String createTypeQuery = "CREATE OR REPLACE TYPE \"hazelcast\".\"public\".\"t\" (\n" +
-                "  \"a\" INTEGER,\n" +
-                "  \"b\" INTEGER\n" +
-                ")\n" +
-                "OPTIONS (\n" +
-                "  'format'='portable',\n" +
-                "  'portableFactoryId'='1',\n" +
-                "  'portableClassId'='3',\n" +
-                "  'portableClassVersion'='0'\n" +
+        String createTypeQuery = "CREATE OR REPLACE TYPE \"hazelcast\".\"public\".\"t\" (" + LE +
+                "  \"a\" INTEGER," + LE +
+                "  \"b\" INTEGER" + LE +
+                ")" + LE +
+                "OPTIONS (" + LE +
+                "  'format'='portable'," + LE +
+                "  'portableFactoryId'='1'," + LE +
+                "  'portableClassId'='3'," + LE +
+                "  'portableClassVersion'='0'" + LE +
                 ")";
 
         instance().getSql().execute(createTypeQuery);
@@ -89,8 +91,8 @@ public class GetDdlTest extends SqlTestSupport {
 
     @Test
     public void when_queryDataConnectionFromDataConnectionNamespace_then_success() {
-        String createDataConnectionQuery = "CREATE OR REPLACE DATA CONNECTION \"hazelcast\".\"public\".\"dl\"\n"
-                + "TYPE \"DUMMY\"\nSHARED";
+        String createDataConnectionQuery = "CREATE OR REPLACE DATA CONNECTION \"hazelcast\".\"public\".\"dl\"" + LE
+                + "TYPE \"DUMMY\"" + LE + "SHARED";
 
         instance().getSql().execute(createDataConnectionQuery);
         assertRowsAnyOrder("SELECT GET_DDL('dataconnection', 'dl')", ImmutableList.of(new Row(createDataConnectionQuery)));
@@ -161,16 +163,17 @@ public class GetDdlTest extends SqlTestSupport {
 
         assertRowsAnyOrder("SELECT GET_DDL('relation', this) FROM a",
                 ImmutableList.of(new Row(
-                        "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (\n" +
-                                "  \"__key\" INTEGER EXTERNAL NAME \"__key\",\n" +
-                                "  \"this\" VARCHAR EXTERNAL NAME \"this\"\n" +
-                                ")\n" +
-                                "TYPE \"IMap\"\n" +
-                                "OPTIONS (\n" +
-                                "  'keyFormat'='java',\n" +
-                                "  'keyJavaClass'='int',\n" +
-                                "  'valueFormat'='java',\n" +
-                                "  'valueJavaClass'='java.lang.String'\n" +
+                        "CREATE OR REPLACE EXTERNAL MAPPING \"hazelcast\".\"public\".\"a\" EXTERNAL NAME \"a\" (" + LE +
+                                "  \"__key\" INTEGER EXTERNAL NAME \"__key\"," + LE +
+                                "  \"this\" VARCHAR EXTERNAL NAME \"this\"" + LE +
+                                ")" + LE +
+                                "TYPE \"IMap\"" + LE +
+                                "OBJECT TYPE \"IMap\"" + LE +
+                                "OPTIONS (" + LE +
+                                "  'keyFormat'='java'," + LE +
+                                "  'keyJavaClass'='int'," + LE +
+                                "  'valueFormat'='java'," + LE +
+                                "  'valueJavaClass'='java.lang.String'" + LE +
                                 ")")));
     }
 }

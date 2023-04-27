@@ -40,7 +40,7 @@ import static java.lang.String.format;
  *
  * @param <K> the type of the key stored in Near Cache
  * @param <V> the type of the value stored in Near Cache
- * @param <R> the type of the value of the underlying {@link com.hazelcast.internal.nearcache.impl.NearCacheRecordMap}
+ * @param <R> the type of the value of the underlying {@link com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap}
  */
 public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheRecord>
         extends AbstractNearCacheRecordStore<K, V, K, R, HeapNearCacheRecordMap<K, R>> {
@@ -98,6 +98,9 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
 
     @Override
     public void onEvict(K key, R record, boolean wasExpired) {
+        if (!canUpdateStats(record)) {
+            return;
+        }
         super.onEvict(key, record, wasExpired);
         nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
     }

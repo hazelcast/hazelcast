@@ -56,7 +56,7 @@ class CompactUpsertTarget implements UpsertTarget {
         boolean hasField = schema.hasField(path);
         if (!hasField) {
             return value -> {
-                throw QueryException.error("Unable to inject a non-null value to \"" + path + "\"");
+                throw QueryException.error("Field \"" + path + "\" doesn't exist in Compact Schema");
             };
         }
 

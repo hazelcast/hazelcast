@@ -569,10 +569,11 @@ public class JobExecutionService implements DynamicMetricsProvider {
                       .thenApply(r -> {
                           RawJobMetrics terminalMetrics;
                           if (collectMetrics) {
-                              JobMetricsCollector metricsRenderer =
-                                      new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger);
-                              nodeEngine.getMetricsRegistry().collect(metricsRenderer);
-                              terminalMetrics = metricsRenderer.getMetrics();
+                              try (JobMetricsCollector metricsRenderer =
+                                      new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger)) {
+                                  nodeEngine.getMetricsRegistry().collect(metricsRenderer);
+                                  terminalMetrics = metricsRenderer.getMetrics();
+                              }
                           } else {
                               terminalMetrics = null;
                           }
@@ -740,7 +741,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
-    private static class JobMetricsCollector implements MetricsCollector {
+    private static class JobMetricsCollector implements MetricsCollector, AutoCloseable {
 
         private final Long executionId;
         private final MetricsCompressor compressor;
@@ -785,7 +786,12 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         @Nonnull
         public RawJobMetrics getMetrics() {
-            return RawJobMetrics.of(compressor.getBlobAndReset());
+            return RawJobMetrics.of(compressor.getBlobAndClose());
+        }
+
+        @Override
+        public void close() {
+            compressor.close();
         }
     }
 }

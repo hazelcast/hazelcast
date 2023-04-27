@@ -26,6 +26,7 @@ import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.partition.ChunkSupplier;
 import com.hazelcast.internal.partition.ChunkedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
@@ -294,12 +295,15 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
 
     @Override
     public void onBeforeLock(String distributedObjectName, Data key) {
-        int partitionId = mapServiceContext.getNodeEngine().getPartitionService().getPartitionId(key);
+        IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        int partitionId = partitionService.getPartitionId(key);
         RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, distributedObjectName);
-        // we have no use for the return value, invoked just for the side effects
+        boolean owner = partitionService.isPartitionOwner(partitionId);
         recordStore.beforeOperation();
         try {
-            recordStore.getRecordOrNull(key);
+            // we have no use for the return value,
+            // invoked just for the side effects
+            recordStore.getRecordOrNull(key, !owner);
         } finally {
             recordStore.afterOperation();
         }

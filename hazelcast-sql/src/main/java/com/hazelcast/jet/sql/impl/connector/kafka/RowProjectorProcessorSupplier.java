@@ -109,8 +109,8 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         for (int i = 0; i < count; i++) {
             KvRowProjector projector = projectorSupplier.get(evalContext, extractors);
             Processor processor = new StreamKafkaP<>(
-                    dataConnectionName == null ? StreamKafkaP.kafkaConsumerFn(properties)
-                            : StreamKafkaP.kafkaConsumerFn(new DataConnectionRef(dataConnectionName)),
+                    (dataConnectionName == null) ? StreamKafkaP.kafkaConsumerFn(properties)
+                            : StreamKafkaP.kafkaConsumerFn(new DataConnectionRef(dataConnectionName), properties),
                     singletonList(topic),
                     record -> projector.project(record.key(), record.value()),
                     eventTimePolicy
