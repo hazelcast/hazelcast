@@ -63,7 +63,7 @@ public enum ClearOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.getRecordStore() == null
-                    ? UtilSteps.SEND_RESPONSE : ClearOpSteps.CLEAR_MAP_STORE;
+                    ? UtilSteps.FINAL_STEP : ClearOpSteps.CLEAR_MAP_STORE;
         }
     },
 
@@ -100,7 +100,7 @@ public enum ClearOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

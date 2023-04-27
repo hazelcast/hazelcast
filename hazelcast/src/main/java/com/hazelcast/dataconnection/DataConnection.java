@@ -73,7 +73,9 @@ import java.util.Map;
  * handled as remove+create.
  * <p>
  * Implementations of DataConnection must provide a constructor with a single argument
- * of type {@link DataConnectionConfig}.
+ * of type {@link DataConnectionConfig}. The constructor must not throw an exception
+ * under any circumstances. Any resource allocation should be done either asynchronously
+ * or lazily when the underlying instance is requested.
  *
  * @since 5.3
  */

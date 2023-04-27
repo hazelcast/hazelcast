@@ -172,12 +172,15 @@ public final class FieldsUtil {
     public static QueryDataType resolveType(@Nonnull FieldKind kind) {
         switch (kind) {
             case BOOLEAN:
+            case NULLABLE_BOOLEAN:
                 return QueryDataType.BOOLEAN;
 
             case INT8:
+            case NULLABLE_INT8:
                 return QueryDataType.TINYINT;
 
             case INT16:
+            case NULLABLE_INT16:
                 return QueryDataType.SMALLINT;
 
             case CHAR:
@@ -187,15 +190,19 @@ public final class FieldsUtil {
                 return QueryDataType.VARCHAR;
 
             case INT32:
+            case NULLABLE_INT32:
                 return QueryDataType.INT;
 
             case INT64:
+            case NULLABLE_INT64:
                 return QueryDataType.BIGINT;
 
             case FLOAT32:
+            case NULLABLE_FLOAT32:
                 return QueryDataType.REAL;
 
             case FLOAT64:
+            case NULLABLE_FLOAT64:
                 return QueryDataType.DOUBLE;
 
             case DECIMAL:

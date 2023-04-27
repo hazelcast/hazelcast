@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
@@ -55,6 +57,34 @@ public class SqlMappingTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(query))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Invalid external name \"schema1\".\"mapName\"");
+    }
+
+    @Test
+    public void testSqlCatalogCannotBeMapped() {
+        testInternalMapCannotBeMapped(JetServiceBackend.SQL_CATALOG_MAP_NAME);
+    }
+
+    @Test
+    public void testJetImapsCannotBeMapped() {
+        testInternalMapCannotBeMapped(JobRepository.JOB_RECORDS_MAP_NAME);
+        testInternalMapCannotBeMapped(JobRepository.JOB_EXECUTION_RECORDS_MAP_NAME);
+        testInternalMapCannotBeMapped(JobRepository.JOB_RESULTS_MAP_NAME);
+        testInternalMapCannotBeMapped(JobRepository.JOB_METRICS_MAP_NAME);
+    }
+
+    private void testInternalMapCannotBeMapped(String name) {
+        String query = "CREATE MAPPING map EXTERNAL NAME \"" + name + "\" "
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Object.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Object.class.getName() + '\''
+                + ")";
+
+        assertThatThrownBy(() -> sqlService.execute(query))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Mapping of internal IMaps is not allowed");
     }
 
 }
