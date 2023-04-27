@@ -17,10 +17,10 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -239,7 +239,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         }
 
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING " + tableName
+                sqlService.executeUpdate("CREATE MAPPING " + tableName
                         + " ("
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME myName "
@@ -304,13 +304,14 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertThat(dlService.existsSqlDataConnection(dlName)).isTrue();
 
         createJdbcMappingUsingDataConnection(name, dlName);
-        SqlResult mappings = sqlService.execute("SHOW MAPPINGS");
-        Iterator<SqlRow> resultIt = mappings.iterator();
-        assertThat(resultIt.hasNext()).isTrue();
+        try(SqlResult mappings = sqlService.execute("SHOW MAPPINGS")) {
+            Iterator<SqlRow> resultIt = mappings.iterator();
+            assertThat(resultIt.hasNext()).isTrue();
 
-        Object object = resultIt.next().getObject(0);
-        assertThat(resultIt.hasNext()).isFalse();
-        assertThat(object).isEqualTo(name);
+            Object object = resultIt.next().getObject(0);
+            assertThat(resultIt.hasNext()).isFalse();
+            assertThat(object).isEqualTo(name);
+        }
     }
 
     /**
@@ -328,10 +329,10 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // when
         createDataConnection(instance(), dcName, "JDBC", false, options);
         createJdbcMappingUsingDataConnection(mappingName, dcName);
-        sqlService.execute("DROP DATA CONNECTION " + dcName);
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
 
         // then
-        assertRowsAnyOrder("SHOW DATA CONNECTIONS ", singletonList(new Row(TEST_DATABASE_REF)));
+        assertRowsAnyOrder("SHOW DATA CONNECTIONS ", singletonList(new Row(TEST_DATABASE_REF, singletonList("Table"))));
 
         // Ensure that engine is not broken after Data Connection removal with some unrelated query.
         assertRowsAnyOrder("SHOW MAPPINGS ", singletonList(new Row(mappingName)));
@@ -352,7 +353,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // when
         createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
         createJdbcMappingUsingDataConnection(mappingName, dcName);
-        sqlService.execute("DROP DATA CONNECTION " + dcName);
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
         createDataConnection(instance(), dcName, "Kafka", false, singletonMap("A", "B"));
 
         // then
@@ -380,7 +381,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertThat(sqlServiceImpl(instance()).getPlanCache().size()).isOne();
 
         // when
-        sqlService.execute("DROP DATA CONNECTION " + dcName);
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
 
         // then
         assertThat(sqlServiceImpl(instance()).getPlanCache().size()).as("Plan should be invalidated").isZero();
@@ -403,7 +404,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertRowsAnyOrder("select count(*) from " + mappingName, new Row(0L));
 
         // when
-        sqlService.execute("DROP DATA CONNECTION " + dcName);
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
         createDataConnection(instance(), dcName, "mongo", false,
                 // create data connection that is correct enough to parse the query
                 ImmutableMap.of("connectionString", "bad:12345", "database", "db",
@@ -414,7 +415,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute("select count(*) from " + mappingName).iterator().hasNext())
                 .as("Should detect change of data connection type")
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Cannot connect to MongoDB");
+                .hasMessageContaining("Mongo connector allows only object types");
     }
 
     @Test
