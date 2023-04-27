@@ -241,16 +241,17 @@ public interface SqlConnector {
      * <p>
      * Jet calls this method for each statement execution and for each mapping.
      *
-     * @param nodeEngine         an instance of {@link NodeEngine}
-     * @param mappingContext     an object with the metadata of mapping from which this table is created
-     * @param resolvedFields     list of fields as returned from {@link
-     *                           #resolveAndValidateFields}
+     * @param nodeEngine       an instance of {@link NodeEngine}
+     * @param externalResource an object for which this table is created
+     * @param resolvedFields   list of fields as returned from {@link
+     *                         #resolveAndValidateFields}
      */
     @Nonnull
     Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext mappingContext,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields);
 
     /**
@@ -473,34 +474,24 @@ public interface SqlConnector {
     }
 
     /**
-     * Mapping specific metadata.
+     * Data describing external resource (table, topic, stream, IMap etc)
      *
      * @since 5.3
      */
-    class SqlMappingContext implements Serializable {
-        private final String name;
+    class SqlExternalResource implements Serializable {
         private final String[] externalName;
         private final String dataConnection;
         private final String connectorType;
         private final String objectType;
         private final Map<String, String> options;
 
-        public SqlMappingContext(String name, String[] externalName, String dataConnection, String connectorType,
-                                 String objectType, Map<String, String> options) {
-            this.name = requireNonNull(name, "name cannot be null");
+        public SqlExternalResource(@Nonnull String[] externalName, String dataConnection, @Nonnull String connectorType,
+                                   String objectType, Map<String, String> options) {
             this.externalName = requireNonNull(externalName, "externalName cannot be null");
             this.dataConnection = dataConnection;
             this.connectorType = requireNonNull(connectorType, "connectorType cannot be null");
             this.objectType = objectType;
             this.options = options;
-        }
-
-        /**
-         * Name of this mapping.
-         */
-        @Nonnull
-        public String name() {
-            return name;
         }
 
         /**

@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlMappingContext;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlExternalResource;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -48,12 +48,13 @@ public class JdbcTable extends JetTable {
             @Nonnull List<TableField> fields,
             @Nonnull SqlDialect dialect,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource ctx,
             @Nonnull TableStatistics statistics,
             int batchLimit,
             @Nonnull SerializationService serializationService) {
 
-        super(sqlConnector, fields, schemaName, ctx.name(), statistics, ctx.objectType(), false);
+        super(sqlConnector, fields, schemaName, mappingName, statistics, ctx.objectType(), false);
 
         List<String> dbFieldNames = new ArrayList<>(fields.size());
         List<String> primaryKeyFieldNames = new ArrayList<>(1);

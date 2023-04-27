@@ -104,27 +104,28 @@ public class KafkaSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, ctx.options(), null);
-        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, ctx.options(), null);
+        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, externalResource.options(), null);
+        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, externalResource.options(), null);
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 
         return new KafkaTable(
                 this,
                 schemaName,
-                ctx.name(),
+                mappingName,
                 fields,
                 new ConstantTableStatistics(0),
-                ctx.externalName()[0],
-                ctx.dataConnection(),
-                ctx.options(),
+                externalResource.externalName()[0],
+                externalResource.dataConnection(),
+                externalResource.options(),
                 keyMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getQueryTargetDescriptor(),
                 valueMetadata.getUpsertTargetDescriptor(),
-                ctx.objectType()
+                externalResource.objectType()
         );
     }
 

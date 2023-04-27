@@ -21,7 +21,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlMappingContext;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlExternalResource;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
@@ -309,9 +309,9 @@ public class TableResolverImpl implements TableResolver {
             return connector.createTable(
                     nodeEngine,
                     SCHEMA_NAME_PUBLIC,
-                    sqlMappingContextFrom(mapping, connector),
-                    mapping.fields()
-            );
+                    mapping.name(),
+                    sqlExternalResourceFrom(mapping, connector),
+                    mapping.fields());
         } catch (Throwable e) {
             // will fail later if invalid table is actually used in a query
             return new BadTable(SCHEMA_NAME_PUBLIC, mapping.name(), mapping.objectType(),
@@ -319,13 +319,13 @@ public class TableResolverImpl implements TableResolver {
         }
     }
 
-    private static SqlMappingContext sqlMappingContextFrom(Mapping internalMapping, SqlConnector connector) {
+    private static SqlExternalResource sqlExternalResourceFrom(Mapping internalMapping, SqlConnector connector) {
         String internalObjType = internalMapping.objectType() == null
                 ? connector.defaultObjectType()
                 : internalMapping.objectType();
         checkNotNull(internalObjType, "objectType cannot be null");
         String connectorType = connector.typeName();
-        return new SqlMappingContext(internalMapping.name(), internalMapping.externalName(),
+        return new SqlExternalResource(internalMapping.externalName(),
                 internalMapping.dataConnection(),
                 connectorType, internalObjType, internalMapping.options());
     }

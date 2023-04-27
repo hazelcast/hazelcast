@@ -91,18 +91,19 @@ public class FileSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, ctx.options());
+        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, externalResource.options());
 
         return new FileTable.SpecificFileTable(
                 INSTANCE,
                 schemaName,
-                ctx.name(),
+                mappingName,
                 metadata.fields(),
                 metadata.processorMetaSupplier(),
                 metadata.queryTargetSupplier(),
-                ctx.objectType()
+                externalResource.objectType()
         );
     }
 

@@ -122,21 +122,22 @@ public class IMapSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        checkImapName(ctx.externalName());
+        checkImapName(externalResource.externalName());
 
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
         KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
                 true,
                 resolvedFields,
-                ctx.options(), ss
+                externalResource.options(), ss
         );
         KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
                 false,
                 resolvedFields,
-                ctx.options(),
+                externalResource.options(),
                 ss
         );
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
@@ -144,7 +145,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
-        String mapName = ctx.externalName()[0];
+        String mapName = externalResource.externalName()[0];
         MapContainer container = context.getExistingMapContainer(mapName);
 
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, mapName);
@@ -155,7 +156,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         return new PartitionedMapTable(
                 schemaName,
-                ctx.name(),
+                mappingName,
                 mapName,
                 fields,
                 new ConstantTableStatistics(estimatedRowCount),

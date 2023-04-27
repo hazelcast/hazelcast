@@ -81,12 +81,13 @@ public class TestFailingSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
         return new TestFailingTable(
                 this,
                 schemaName,
-                ctx.name(),
+                mappingName,
                 toList(resolvedFields, field -> new TableField(field.name(), field.type(), false))
         );
     }

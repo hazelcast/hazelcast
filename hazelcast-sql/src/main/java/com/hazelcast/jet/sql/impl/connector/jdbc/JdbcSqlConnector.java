@@ -248,9 +248,10 @@ public class JdbcSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        String dataConnectionName = ctx.dataConnection();
+        String dataConnectionName = externalResource.dataConnection();
         assert dataConnectionName != null;
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
@@ -273,9 +274,10 @@ public class JdbcSqlConnector implements SqlConnector {
                 fields,
                 dialect,
                 schemaName,
-                ctx,
+                mappingName,
+                externalResource,
                 new ConstantTableStatistics(0),
-                parseInt(ctx.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
+                parseInt(externalResource.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
                 nodeEngine.getSerializationService()
         );
     }

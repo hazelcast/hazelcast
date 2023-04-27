@@ -138,9 +138,10 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        Map<String, String> options = ctx.options();
+        Map<String, String> options = externalResource.options();
         String[] names = options.get(OPTION_NAMES).split(DELIMITER);
         String[] types = options.get(OPTION_TYPES).split(DELIMITER);
 
@@ -175,7 +176,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
         }
 
         boolean streaming = Boolean.parseBoolean(options.get(OPTION_STREAMING));
-        return new TestTable(this, schemaName, ctx.name(), fields, rows, streaming);
+        return new TestTable(this, schemaName, mappingName, fields, rows, streaming);
     }
 
     @Nonnull
