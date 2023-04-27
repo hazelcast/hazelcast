@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.dataconnection.DataConnectionService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlMappingContext;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
@@ -40,8 +38,6 @@ public class JdbcTable extends JetTable {
     private final List<String> externalNameList;
     private final String dataConnectionName;
     private final int batchLimit;
-    private final SerializationService serializationService;
-    private final DataConnectionService dataConnectionService;
 
     public JdbcTable(
             @Nonnull SqlConnector sqlConnector,
@@ -49,9 +45,7 @@ public class JdbcTable extends JetTable {
             @Nonnull String schemaName,
             @Nonnull SqlMappingContext ctx,
             @Nonnull TableStatistics statistics,
-            int batchLimit,
-            @Nonnull SerializationService serializationService,
-            @Nonnull DataConnectionService dataConnectionService) {
+            int batchLimit) {
 
         super(sqlConnector, fields, schemaName, ctx.name(), statistics, ctx.objectType(), false);
 
@@ -72,8 +66,6 @@ public class JdbcTable extends JetTable {
         this.externalNameList = Arrays.asList(externalName);
         this.dataConnectionName = ctx.dataConnection();
         this.batchLimit = batchLimit;
-        this.serializationService = serializationService;
-        this.dataConnectionService = dataConnectionService;
     }
 
     public List<String> dbFieldNames() {
@@ -120,14 +112,6 @@ public class JdbcTable extends JetTable {
 
     public List<String> getPrimaryKeyList() {
         return primaryKeyFieldNames;
-    }
-
-    public SerializationService getSerializationService() {
-        return serializationService;
-    }
-
-    public DataConnectionService getDataConnectionService() {
-        return dataConnectionService;
     }
 
     @Override

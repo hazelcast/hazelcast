@@ -268,16 +268,16 @@ public class JdbcSqlConnector implements SqlConnector {
                 schemaName,
                 ctx,
                 new ConstantTableStatistics(0),
-                parseInt(ctx.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
-                nodeEngine.getSerializationService(),
-                nodeEngine.getDataConnectionService()
+                parseInt(ctx.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE))
         );
     }
 
-    private static SqlDialect resolveDialect(JdbcTable table) {
+    private static SqlDialect resolveDialect(JdbcTable table, DagBuildContext context) {
         String dataConnectionName = table.getDataConnectionName();
-        JdbcDataConnection dataConnection = table.getDataConnectionService().getAndRetainDataConnection(
-                dataConnectionName, JdbcDataConnection.class);
+        JdbcDataConnection dataConnection = context
+                .getNodeEngine()
+                .getDataConnectionService()
+                .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
 
         try (Connection connection = dataConnection.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
@@ -311,7 +311,7 @@ public class JdbcSqlConnector implements SqlConnector {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
         JdbcTable table = context.getTable();
-        SqlDialect dialect = resolveDialect(table);
+        SqlDialect dialect = resolveDialect(table, context);
 
         List<RexNode> projections = Util.toList(projection, n -> n.unwrap(RexNode.class));
         RexNode filter = predicate == null ? null : predicate.unwrap(RexNode.class);
@@ -332,7 +332,7 @@ public class JdbcSqlConnector implements SqlConnector {
     public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
         JdbcTable table = context.getTable();
 
-        InsertQueryBuilder builder = new InsertQueryBuilder(table, resolveDialect(table));
+        InsertQueryBuilder builder = new InsertQueryBuilder(table, resolveDialect(table, context));
         return new VertexWithInputConfig(context.getDag().newUniqueVertex(
                 "Insert(" + table.getExternalNameList() + ")",
                 new InsertProcessorSupplier(
@@ -365,7 +365,13 @@ public class JdbcSqlConnector implements SqlConnector {
                 .collect(toList());
 
         List<RexNode> projections = Util.toList(expressions, n -> n.unwrap(RexNode.class));
-        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, resolveDialect(table), pkFields, fieldNames, projections);
+        UpdateQueryBuilder builder = new UpdateQueryBuilder(
+                table,
+                resolveDialect(table, context),
+                pkFields,
+                fieldNames,
+                projections
+        );
 
         return context.getDag().newUniqueVertex(
                 "Update(" + table.getExternalNameList() + ")",
@@ -388,7 +394,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        DeleteQueryBuilder builder = new DeleteQueryBuilder(table, pkFields, resolveDialect(table));
+        DeleteQueryBuilder builder = new DeleteQueryBuilder(table, pkFields, resolveDialect(table, context));
         return context.getDag().newUniqueVertex(
                 "Delete(" + table.getExternalNameList() + ")",
                 new DeleteProcessorSupplier(
@@ -403,10 +409,10 @@ public class JdbcSqlConnector implements SqlConnector {
     @Override
     public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
         JdbcTable jdbcTable = context.getTable();
-        SqlDialect dialect = resolveDialect(jdbcTable);
+        SqlDialect dialect = resolveDialect(jdbcTable, context);
 
         // If dialect is supported
-        if (SupportedDatabases.isDialectSupported(resolveDialect(jdbcTable))) {
+        if (SupportedDatabases.isDialectSupported(dialect)) {
             // Get the upsert statement
             String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable, dialect);
 
