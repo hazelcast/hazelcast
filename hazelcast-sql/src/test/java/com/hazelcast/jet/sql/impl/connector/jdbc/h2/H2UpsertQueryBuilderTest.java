@@ -35,7 +35,7 @@ public class H2UpsertQueryBuilderTest {
     @Mock
     JdbcTable table;
 
-    SqlDialect sqlDialect = H2SqlDialect.DEFAULT;
+    SqlDialect dialect = H2SqlDialect.DEFAULT;
 
     @Before
     public void setUp() {
@@ -45,12 +45,11 @@ public class H2UpsertQueryBuilderTest {
         when(table.getExternalNameList()).thenReturn(Collections.singletonList("table1"));
         when(table.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(table.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
-        when(table.sqlDialect()).thenReturn(sqlDialect);
     }
 
     @Test
     public void appendMergeClause() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendMergeClause(sb);
 
@@ -60,7 +59,7 @@ public class H2UpsertQueryBuilderTest {
 
     @Test
     public void appendKeyClause() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendKeyClause(sb);
 
@@ -70,7 +69,7 @@ public class H2UpsertQueryBuilderTest {
 
     @Test
     public void appendValuesClause() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendValuesClause(sb);
 
@@ -80,7 +79,7 @@ public class H2UpsertQueryBuilderTest {
 
     @Test
     public void testQuery() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
 
         String query = builder.query();
         assertThat(query).isEqualTo("MERGE INTO \"table1\" (\"field1\",\"field2\") KEY (\"pk1\",\"pk2\") VALUES (?,?)");

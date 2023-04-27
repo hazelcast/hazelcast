@@ -26,7 +26,6 @@ import org.mockito.MockitoAnnotations;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 public class SupportedDatabasesTest {
 
@@ -47,17 +46,13 @@ public class SupportedDatabasesTest {
 
     @Test
     public void testUpsertDialectNotSupported() {
-        when(jdbcTable.sqlDialect()).thenReturn(sybaseSqlDialect);
-
-        boolean result = SupportedDatabases.isDialectSupported(jdbcTable);
+        boolean result = SupportedDatabases.isDialectSupported(sybaseSqlDialect);
         assertFalse(result);
     }
 
     @Test
     public void testUpsertDialectSupported() {
-        when(jdbcTable.sqlDialect()).thenReturn(mysqlSqlDialect);
-
-        boolean result = SupportedDatabases.isDialectSupported(jdbcTable);
+        boolean result = SupportedDatabases.isDialectSupported(mysqlSqlDialect);
         assertTrue(result);
     }
 
