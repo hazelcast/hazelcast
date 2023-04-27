@@ -64,6 +64,9 @@ public class HazelcastDataConnection extends DataConnectionBase {
      */
     public static final String CLIENT_YML_PATH = "client_yml_path";
 
+    /**
+     * IMap resource type name
+     */
     public static final String OBJECT_TYPE_IMAP = "IMap";
 
     private final ClientConfig clientConfig;
