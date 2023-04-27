@@ -102,7 +102,7 @@ public class PipeliningTest extends HazelcastTestSupport {
 
     @Test
     public void test() throws Exception {
-        int maxValue  = 100_000;
+        int maxValue = 100_000;
         List<Integer> expected = new ArrayList<>();
         Map<Integer, Integer> entriesToAdd = new HashMap<>();
 
@@ -115,11 +115,11 @@ public class PipeliningTest extends HazelcastTestSupport {
                     expected.add(value);
                 });
         // Populate IMap
-        IMap<Integer,Integer> map = hz.getMap("map");
+        IMap<Integer, Integer> map = hz.getMap("map");
         map.putAll(entriesToAdd);
 
         Pipelining<Integer> pipelining = new Pipelining<>(1);
-        for (int index = 0; index < maxValue ; index++) {
+        for (int index = 0; index < maxValue; index++) {
             pipelining.add(map.getAsync(index));
         }
 
