@@ -46,7 +46,6 @@ import javax.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -74,9 +73,10 @@ public class JdbcSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return false;
+    public String defaultObjectType() {
+        return "Table";
     }
 
     @Nonnull
@@ -86,7 +86,8 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         if (dataConnectionName == null) {
             throw QueryException.error("You must provide data connection when using the Jdbc connector");
         }
@@ -164,11 +165,17 @@ public class JdbcSqlConnector implements SqlConnector {
 
     private static void checkTableExists(ExternalJdbcTableName externalTableName, DatabaseMetaData databaseMetaData)
             throws SQLException {
-
+        String table = externalTableName.table;
+        if (databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim().equals("MYSQL")) {
+            //MySQL databaseMetaData.getTables requires quotes/backticks in case of fancy names (e.g. with dots)
+            //To make it simple we wrap all table names
+            table = databaseMetaData.getIdentifierQuoteString() + externalTableName.table
+                    + databaseMetaData.getIdentifierQuoteString();
+        }
         try (ResultSet tables = databaseMetaData.getTables(
                 externalTableName.catalog,
                 externalTableName.schema,
-                externalTableName.table,
+                table,
                 new String[]{"TABLE", "VIEW"}
         )) {
             if (!tables.next()) {
@@ -237,11 +244,9 @@ public class JdbcSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String mappingName,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nonnull Map<String, String> options,
+            @Nonnull SqlMappingContext ctx,
             @Nonnull List<MappingField> resolvedFields) {
+        String dataConnectionName = ctx.dataConnection();
         assert dataConnectionName != null;
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
@@ -261,11 +266,9 @@ public class JdbcSqlConnector implements SqlConnector {
                 this,
                 fields,
                 schemaName,
-                mappingName,
+                ctx,
                 new ConstantTableStatistics(0),
-                externalName,
-                dataConnectionName,
-                parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
+                parseInt(ctx.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
                 nodeEngine.getSerializationService(),
                 nodeEngine.getDataConnectionService()
         );
@@ -423,13 +426,11 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     /**
-     * Using {@link ResultSetMetaData#getColumnTypeName(int)} seems more
-     * reliable than {@link ResultSetMetaData#getColumnClassName(int)},
-     * which doesn't allow to distinguish between timestamp and timestamp
-     * with time zone, or between tinyint/smallint and int for some JDBC drivers.
+     * Convert the column type received from database to QueryDataType. QueryDataType represents the data types that
+     * can be used in Hazelcast's distributed queries
      */
     @SuppressWarnings("ReturnCount")
-    private QueryDataType resolveType(String columnTypeName) {
+    private static QueryDataType resolveType(String columnTypeName) {
         switch (columnTypeName.toUpperCase()) {
             case "BOOLEAN":
             case "BOOL":
@@ -438,6 +439,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
             case "VARCHAR":
             case "CHARACTER VARYING":
+            case "TEXT":
                 return QueryDataType.VARCHAR;
 
             case "TINYINT":

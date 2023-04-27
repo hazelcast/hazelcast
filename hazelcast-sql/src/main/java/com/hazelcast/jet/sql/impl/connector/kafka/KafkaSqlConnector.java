@@ -76,9 +76,10 @@ public class KafkaSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return true;
+    public String defaultObjectType() {
+        return "Topic";
     }
 
     @Nonnull
@@ -88,7 +89,8 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         if (externalName.length > 1) {
             throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                     + ", external name for Kafka is allowed to have only a single component referencing the topic " +
@@ -102,29 +104,27 @@ public class KafkaSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String mappingName,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nonnull Map<String, String> options,
+            @Nonnull SqlMappingContext ctx,
             @Nonnull List<MappingField> resolvedFields) {
-        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, options, null);
-        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, options, null);
+        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, ctx.options(), null);
+        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, ctx.options(), null);
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 
         return new KafkaTable(
                 this,
                 schemaName,
-                mappingName,
+                ctx.name(),
                 fields,
                 new ConstantTableStatistics(0),
-                externalName[0],
-                dataConnectionName,
-                options,
+                ctx.externalName()[0],
+                ctx.dataConnection(),
+                ctx.options(),
                 keyMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getQueryTargetDescriptor(),
-                valueMetadata.getUpsertTargetDescriptor()
+                valueMetadata.getUpsertTargetDescriptor(),
+                ctx.objectType()
         );
     }
 
@@ -136,7 +136,7 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        KafkaTable table = (KafkaTable) context.getTable();
+        KafkaTable table = context.getTable();
 
         return context.getDag().newUniqueVertex(
                 table.toString(),
@@ -172,7 +172,7 @@ public class KafkaSqlConnector implements SqlConnector {
 
     @Nonnull
     private Vertex writeProcessor(@Nonnull DagBuildContext context) {
-        KafkaTable table = (KafkaTable) context.getTable();
+        KafkaTable table = context.getTable();
 
         Vertex vStart = context.getDag().newUniqueVertex(
                 "Project(" + table + ")",
@@ -201,6 +201,7 @@ public class KafkaSqlConnector implements SqlConnector {
                         :
                         KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
                                 new DataConnectionRef(table.dataConnectionName()),
+                                table.kafkaProducerProperties(),
                                 table.topicName(),
                                 Entry::getKey,
                                 Entry::getValue,
