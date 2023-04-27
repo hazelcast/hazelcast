@@ -304,7 +304,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertThat(dlService.existsSqlDataConnection(dlName)).isTrue();
 
         createJdbcMappingUsingDataConnection(name, dlName);
-        try(SqlResult mappings = sqlService.execute("SHOW MAPPINGS")) {
+        try (SqlResult mappings = sqlService.execute("SHOW MAPPINGS")) {
             Iterator<SqlRow> resultIt = mappings.iterator();
             assertThat(resultIt.hasNext()).isTrue();
 
