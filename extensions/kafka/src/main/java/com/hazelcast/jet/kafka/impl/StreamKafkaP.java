@@ -363,4 +363,20 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         };
     }
 
+    public static <K, V> FunctionEx<Processor.Context, Consumer<K, V>> kafkaConsumerFn(
+            DataConnectionRef dataConnectionRef,
+            Properties mappingProperties
+    ) {
+        return (context) -> {
+            KafkaDataConnection kafkaDataConnection = context
+                    .dataConnectionService()
+                    .getAndRetainDataConnection(dataConnectionRef.getName(), KafkaDataConnection.class);
+            try {
+                return kafkaDataConnection.newConsumer(mappingProperties);
+            } finally {
+                kafkaDataConnection.release();
+            }
+        };
+    }
+
 }

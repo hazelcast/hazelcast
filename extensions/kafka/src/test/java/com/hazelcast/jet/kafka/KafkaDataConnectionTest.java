@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka;
 
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -170,6 +171,30 @@ public class KafkaDataConnectionTest {
         assertThatThrownBy(() -> p1.partitionsFor("my-topic"))
                 .isInstanceOf(KafkaException.class)
                 .hasMessage("Requested metadata update after close");
+    }
+
+    @Test
+    public void shared_producer_should_not_be_created_with_additional_props() {
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+        Properties properties = new Properties();
+        properties.put("A", "B");
+
+        assertThatThrownBy(() -> kafkaDataConnection.getProducer(null, properties))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Shared Kafka producer can be created only with data connection options");
+
+        kafkaDataConnection.release();
+    }
+
+    @Test
+    public void shared_producer_is_allowed_to_be_created_with_empty_props() {
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+
+        Producer<Object, Object> kafkaProducer = kafkaDataConnection.getProducer(null, new Properties());
+        assertThat(kafkaProducer).isNotNull();
+
+        kafkaProducer.close();
+        kafkaDataConnection.release();
     }
 
     private KafkaDataConnection createKafkaDataConnection(KafkaTestSupport kafkaTestSupport) {

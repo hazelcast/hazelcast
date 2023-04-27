@@ -201,6 +201,7 @@ public class KafkaSqlConnector implements SqlConnector {
                         :
                         KafkaProcessors.<Entry<Object, Object>, Object, Object>writeKafkaP(
                                 new DataConnectionRef(table.dataConnectionName()),
+                                table.kafkaProducerProperties(),
                                 table.topicName(),
                                 Entry::getKey,
                                 Entry::getValue,
