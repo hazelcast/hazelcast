@@ -310,7 +310,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         .loggingService(client.getLoggingService())
                         .metricsRegistry(client.getMetricsRegistry())
                         .threadNamePrefix(client.getName())
-                        .errorHandler(new ClientConnectionChannelErrorHandler())
+                        .errorHandler(new ClientChannelErrorHandler())
                         .inputThreadCount(inputThreads)
                         .inputThreadAffinity(newSystemThreadAffinity("hazelcast.client.io.input.thread.affinity"))
                         .outputThreadCount(outputThreads)
@@ -1017,7 +1017,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             List<Integer> tpcPorts = response.getTpcPorts();
             if (isTpcAwareClient && tpcPorts != null && !tpcPorts.isEmpty()) {
-                connectTpcPorts(connection, tpcPorts);
+                connectTpcPorts(connection, tpcPorts, response.getTpcToken());
             }
 
             boolean connectionsEmpty = activeConnections.isEmpty();
@@ -1277,10 +1277,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    private void connectTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts) {
-        TpcChannelConnector connector = new TpcChannelConnector(clientUuid,
+    private void connectTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts, byte[] tpcToken) {
+        TpcChannelConnector connector = new TpcChannelConnector(client,
+                authenticationTimeout,
+                clientUuid,
                 connection,
                 tpcPorts,
+                tpcToken,
                 executor,
                 connection.getChannelInitializer(),
                 this::createTpcChannel,
@@ -1288,7 +1291,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         connector.initiate();
     }
 
-    private class ClientConnectionChannelErrorHandler implements ChannelErrorHandler {
+    private class ClientChannelErrorHandler implements ChannelErrorHandler {
         @Override
         public void onError(Channel channel, Throwable cause) {
             if (channel == null) {
@@ -1298,7 +1301,21 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     logger.severe(cause);
                 }
 
-                ClientConnection connection = (ClientConnection) channel.attributeMap().get(TcpClientConnection.class);
+                ConcurrentMap attributeMap = channel.attributeMap();
+                boolean isTpcChannel = attributeMap.containsKey(TpcChannelClientConnectionAdapter.class);
+                ClientConnection connection = (ClientConnection) attributeMap.get(TcpClientConnection.class);
+                if (isTpcChannel && connection.getTpcChannels() == null) {
+                    // This means this is a TPC channel and the connection
+                    // that owns this TPC channel is not operating on the
+                    // TPC mode yet. However, we have faced with an issue
+                    // on the channel, so it must be closed & any possible
+                    // invocations made over it must be notified with an error.
+                    // If we were to just close the connection below, this channel
+                    // wouldn't be closed (because the 'tpcChannels' array
+                    // is not assigned yet).
+                    closeResource(channel);
+                }
+
                 if (cause instanceof EOFException) {
                     connection.close("Connection closed by the other side", cause);
                 } else {

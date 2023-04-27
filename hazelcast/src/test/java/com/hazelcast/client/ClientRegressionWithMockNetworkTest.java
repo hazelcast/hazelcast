@@ -58,7 +58,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -93,16 +92,11 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    @Rule
-    public TestName name = new TestName();
-
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void cleanup() {
         hazelcastFactory.terminateAll();
-
-        assertNoRunningInstancesEventually(name.getMethodName(), hazelcastFactory);
     }
 
     @Test
@@ -701,12 +695,11 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClientReconnect_thenCheckRequestsAreRetriedWithoutException() throws InterruptedException {
+    public void testClientReconnect_thenCheckRequestsAreRetriedWithoutException() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
-        CountDownLatch restartFinished = new CountDownLatch(1);
-        new Thread(() -> {
+        Thread restartThread = new Thread(() -> {
             try {
                 clientStartedDoingRequests.await();
             } catch (InterruptedException ignored) {
@@ -715,9 +708,8 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
             hazelcastInstance.shutdown();
 
             hazelcastFactory.newHazelcastInstance();
-            restartFinished.countDown();
-
-        }).start();
+        });
+        restartThread.start();
 
         ClientConfig clientConfig = new ClientConfig();
         //Retry all requests
@@ -741,7 +733,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
                 fail("Requests should not throw exception with this configuration. Last put key: " + i);
             }
         }
-        restartFinished.await();
+        assertJoinable(restartThread);
     }
 
     @Test

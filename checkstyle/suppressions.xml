@@ -166,6 +166,7 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]connection[\\/]nio[\\/]ClientConnection"/>
     <suppress checks="MethodCount|ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]ClientEngineImpl"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]ClientEndpointImpl"/>
     <suppress checks="CyclomaticComplexity" files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]YamlClientDomConfigProcessor"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]MemberImpl"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount"
