@@ -24,9 +24,8 @@ import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -34,8 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -44,8 +41,8 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -77,7 +74,7 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
         MapConfig mapConfig = new MapConfig(slowLoadingMapName);
         mapConfig.setMapStoreConfig(mapStoreConfig);
 
-        Config config = getConfig().addMapConfig(mapConfig);
+        Config config = smallInstanceConfigWithoutJetAndMetrics().addMapConfig(mapConfig);
 
         server = hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
@@ -94,9 +91,8 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
         // 1. Let's simulate some parallel tasks
         // contend on loading 1 item from a database.
         int count = 2 * Runtime.getRuntime().availableProcessors();
-        Collection<Future> tasks = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            tasks.add(commonPool.submit(() -> {
+            commonPool.submit(() -> {
                 // Before calling map#get and expand the pool
                 // we need to wait for all tasks to be submitted
                 // because if there is a delay between running
@@ -108,7 +104,7 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
                 // there is now no spare threads.
                 assertOpenEventually(tasksSubmitted);
                 clientMap.get(1);
-            }));
+            });
         }
 
         // Wait until all the initial FJP threads got a map#get task,
