@@ -33,6 +33,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -240,6 +241,20 @@ public class JdbcDataConnectionTest {
         assertThat(dataConnectionResources).contains(
                 new DataConnectionResource("TABLE", DB_NAME_SHARED, "PUBLIC", "MY_TABLE_VIEW")
         );
+    }
+
+    @Test
+    public void should_list_resource_types() {
+        // given
+        jdbcDataConnection = new JdbcDataConnection(SHARED_DATA_CONNECTION_CONFIG);
+
+        // when
+        Collection<String> resourcedTypes = jdbcDataConnection.resourceTypes();
+
+        //then
+        assertThat(resourcedTypes)
+                .map(r -> r.toLowerCase(Locale.ROOT))
+                .containsExactlyInAnyOrder("table");
     }
 
     public static void executeJdbc(String url, String sql) throws SQLException {

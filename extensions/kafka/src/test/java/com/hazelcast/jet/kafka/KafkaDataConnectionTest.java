@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 
 import static java.util.stream.Collectors.toList;
@@ -171,6 +172,20 @@ public class KafkaDataConnectionTest {
         assertThatThrownBy(() -> p1.partitionsFor("my-topic"))
                 .isInstanceOf(KafkaException.class)
                 .hasMessage("Requested metadata update after close");
+    }
+
+    @Test
+    public void should_list_resource_types() {
+        // given
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+
+        // when
+        Collection<String> resourcedTypes = kafkaDataConnection.resourceTypes();
+
+        //then
+        assertThat(resourcedTypes)
+                .map(r -> r.toLowerCase(Locale.ROOT))
+                .containsExactlyInAnyOrder("topic");
     }
 
     @Test

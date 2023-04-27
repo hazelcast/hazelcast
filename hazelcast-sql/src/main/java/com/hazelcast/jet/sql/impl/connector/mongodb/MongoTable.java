@@ -63,14 +63,14 @@ class MongoTable extends JetTable {
             @Nonnull SqlConnector sqlConnector,
             @Nonnull List<TableField> fields,
             @Nonnull TableStatistics statistics,
-            boolean streaming) {
-        super(sqlConnector, fields, schemaName, name, statistics);
+            @Nonnull String objectType) {
+        super(sqlConnector, fields, schemaName, name, statistics, objectType, isStreaming(objectType));
         this.databaseName = databaseName;
         this.collectionName = collectionName;
         this.options = options;
         this.connectionString = options.get(Options.CONNECTION_STRING_OPTION);
         this.dataConnectionName = dataConnectionName;
-        this.streaming = streaming;
+        this.streaming = isStreaming(objectType);
 
         this.externalNames = getFields().stream()
                                         .map(field -> ((MongoTableField) field).externalName)
@@ -83,6 +83,10 @@ class MongoTable extends JetTable {
                                              .toArray(BsonType[]::new);
 
        this.forceMongoParallelismOne = parseBoolean(options.getOrDefault(FORCE_PARALLELISM_ONE, "false"));
+    }
+
+    private static boolean isStreaming(String objectType) {
+        return "ChangeStream".equalsIgnoreCase(objectType);
     }
 
     public MongoTableField getField(String name) {

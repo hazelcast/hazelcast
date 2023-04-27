@@ -31,6 +31,8 @@ import com.mongodb.client.MongoDatabase;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
@@ -184,9 +186,16 @@ public class MongoDataConnection extends DataConnectionBase {
         return resources;
     }
 
+    @Nonnull
+    @Override
+    public Collection<String> resourceTypes() {
+        return Arrays.asList("Collection", "ChangeStream");
+    }
+
     private static void addResources(List<DataConnectionResource> resources, MongoDatabase database) {
         for (String collectionName : database.listCollectionNames()) {
-            resources.add(new DataConnectionResource("collection", database.getName() + "." + collectionName));
+            resources.add(new DataConnectionResource("Collection", database.getName() + "." + collectionName));
+            resources.add(new DataConnectionResource("ChangeStream", database.getName() + "." + collectionName));
         }
     }
 

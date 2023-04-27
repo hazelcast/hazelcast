@@ -37,6 +37,7 @@ public class View implements Versioned, SqlCatalogObject {
     private String query;
     private List<String> viewColumnNames;
     private List<QueryDataType> viewColumnTypes;
+    private boolean streaming;
 
     public View() {
     }
@@ -82,6 +83,7 @@ public class View implements Versioned, SqlCatalogObject {
         }
         SerializationUtil.writeList(viewColumnNames, out);
         SerializationUtil.writeList(viewColumnTypes, out);
+        out.writeBoolean(streaming);
     }
 
     @Override
@@ -93,6 +95,7 @@ public class View implements Versioned, SqlCatalogObject {
         }
         viewColumnNames = SerializationUtil.readList(in);
         viewColumnTypes = SerializationUtil.readList(in);
+        streaming = in.readBoolean();
     }
 
     @Override
@@ -112,12 +115,13 @@ public class View implements Versioned, SqlCatalogObject {
         return Objects.equals(name, view.name)
                 && Objects.equals(query, view.query)
                 && Objects.equals(viewColumnNames, view.viewColumnNames)
-                && Objects.equals(viewColumnTypes, view.viewColumnTypes);
+                && Objects.equals(viewColumnTypes, view.viewColumnTypes)
+                && streaming == view.streaming;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, query, viewColumnNames, viewColumnTypes);
+        return Objects.hash(name, query, viewColumnNames, viewColumnTypes, streaming);
     }
 
     @Override

@@ -18,13 +18,11 @@ package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -56,7 +54,7 @@ public abstract class AbstractMapTable extends Table {
         Object keyJetMetadata,
         Object valueJetMetadata
     ) {
-        super(schemaName, sqlName, fields, statistics);
+        super(schemaName, sqlName, fields, statistics, "IMap", false);
 
         this.mapName = requireNonNull(mapName);
         this.keyDescriptor = keyDescriptor;
@@ -65,18 +63,6 @@ public abstract class AbstractMapTable extends Table {
         this.valueJetMetadata = valueJetMetadata;
 
         exception = null;
-    }
-
-    protected AbstractMapTable(String schemaName, String name, QueryException exception) {
-        super(schemaName, name, Collections.emptyList(), new ConstantTableStatistics(0));
-
-        this.mapName = name;
-        this.keyDescriptor = null;
-        this.valueDescriptor = null;
-        this.keyJetMetadata = null;
-        this.valueJetMetadata = null;
-
-        this.exception = exception;
     }
 
     /**

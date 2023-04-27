@@ -92,7 +92,8 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "  \"id\" INTEGER," + LE +
                 "  \"name\" VARCHAR" + LE +
                 ")" + LE +
-                "DATA CONNECTION \"testDatabaseRef\"";
+                "DATA CONNECTION \"testDatabaseRef\"" + LE +
+                "OBJECT TYPE \"Table\"";
         assertRowsAnyOrder("SELECT GET_DDL('relation', '" + mappingName + "')",
                 ImmutableList.of(new Row(expectedMappingQuery)));
     }

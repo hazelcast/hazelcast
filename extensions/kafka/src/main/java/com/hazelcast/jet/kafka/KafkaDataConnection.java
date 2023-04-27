@@ -33,6 +33,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -86,6 +87,12 @@ public class KafkaDataConnection extends DataConnectionBase {
         } catch (ExecutionException | InterruptedException e) {
             throw new HazelcastException("Could not get list of topics for DataConnection " + getConfig().getName(), e);
         }
+    }
+
+    @Nonnull
+    @Override
+    public Collection<String> resourceTypes() {
+        return Collections.singleton("Topic");
     }
 
     /**
