@@ -454,10 +454,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 .isInstanceOfAny(
                         MySQLDatabaseProvider.class
                 );
-        HazelcastInstance instance = instance();
-        Config config = instance.getConfig();
 
-        // Create table on first DB
         createTable(tableName);
 
         // Create invalid mapping
