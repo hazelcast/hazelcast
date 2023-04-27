@@ -83,6 +83,7 @@ public class IMapSqlConnector implements SqlConnector {
     public static final IMapSqlConnector INSTANCE = new IMapSqlConnector();
 
     public static final String TYPE_NAME = "IMap";
+    public static final String OBJECT_TYPE_IMAP = "IMap";
     public static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     private static final KvMetadataResolvers METADATA_RESOLVERS_WITH_COMPACT = new KvMetadataResolvers(
@@ -100,7 +101,7 @@ public class IMapSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public String defaultObjectType() {
-        return "IMap";
+        return OBJECT_TYPE_IMAP;
     }
 
     @Nonnull

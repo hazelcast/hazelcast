@@ -40,21 +40,23 @@ public abstract class AbstractMapTable extends Table {
     private final QueryException exception;
 
     /**
-     * @param sqlName Name of the table as it appears in the SQL
-     * @param mapName Name of the underlying map
+     * @param sqlName    Name of the table as it appears in the SQL
+     * @param mapName    Name of the underlying map
+     * @param objectType Type of the map
      */
     protected AbstractMapTable(
-        String schemaName,
-        String sqlName,
-        String mapName,
-        List<TableField> fields,
-        TableStatistics statistics,
-        QueryTargetDescriptor keyDescriptor,
-        QueryTargetDescriptor valueDescriptor,
-        Object keyJetMetadata,
-        Object valueJetMetadata
+            String schemaName,
+            String sqlName,
+            String mapName,
+            String objectType,
+            List<TableField> fields,
+            TableStatistics statistics,
+            QueryTargetDescriptor keyDescriptor,
+            QueryTargetDescriptor valueDescriptor,
+            Object keyJetMetadata,
+            Object valueJetMetadata
     ) {
-        super(schemaName, sqlName, fields, statistics, "IMap", false);
+        super(schemaName, sqlName, fields, statistics, objectType, false);
 
         this.mapName = requireNonNull(mapName);
         this.keyDescriptor = keyDescriptor;

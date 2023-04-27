@@ -75,7 +75,7 @@ public class JdbcSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public String defaultObjectType() {
-        return "Table";
+        return JdbcDataConnection.OBJECT_TYPE_TABLE;
     }
 
     @Nonnull
