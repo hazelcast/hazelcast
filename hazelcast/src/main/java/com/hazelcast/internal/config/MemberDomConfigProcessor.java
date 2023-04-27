@@ -3264,6 +3264,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("statement-timeout-millis", nodeName)) {
                 sqlConfig.setStatementTimeoutMillis(Long.parseLong(getTextContent(child)));
             }
+            if (matches("catalog-persistence-enabled", nodeName)) {
+                sqlConfig.setCatalogPersistenceEnabled(Boolean.parseBoolean(getTextContent(child)));
+            }
         }
     }
 

@@ -1048,6 +1048,7 @@ public class ConfigXmlGenerator {
         SqlConfig sqlConfig = config.getSqlConfig();
         gen.open("sql")
                 .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
+                .node("catalog-persistence-enabled", sqlConfig.isCatalogPersistenceEnabled())
                 .close();
     }
 
