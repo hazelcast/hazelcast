@@ -239,7 +239,7 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
     }
 
     @Test
-    public void tesJsonResponseParse_withTpc_whenTpcIsDisable() throws IOException {
+    public void tesJsonResponseParse_withTpc_whenTpcIsDisabled() throws IOException {
         JsonValue jsonResponse = Json.parse(
                 "[{\"private-address\":\"10.96.5.1:30000\",\"public-address\":\"100.113.44.139:31115\",\"tpc-ports\":"
                         + "[{\"private-port\":40000,\"public-port\":32115}]}]");
