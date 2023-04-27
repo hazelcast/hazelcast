@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.TpcToken;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCodec;
 import com.hazelcast.cluster.Address;
@@ -54,12 +55,22 @@ public class ExperimentalAuthenticationMessageTask
     }
 
     @Override
+    protected void setTpcTokenToEndpoint() {
+        if (!nodeEngine.getTpcServerBootstrap().isEnabled()) {
+            return;
+        }
+
+        TpcToken token = new TpcToken();
+        endpoint.setTpcToken(token);
+    }
+
+    @Override
     @SuppressWarnings("checkstyle:ParameterNumber")
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte serializationVersion,
                                        String serverVersion, int partitionCount, UUID clusterId,
-                                       boolean clientFailoverSupported, List<Integer> tpcPorts) {
+                                       boolean clientFailoverSupported, List<Integer> tpcPorts, byte[] tpcToken) {
         return ExperimentalAuthenticationCodec.encodeResponse(status, thisAddress, uuid, serializationVersion,
-                serverVersion, partitionCount, clusterId, clientFailoverSupported, tpcPorts);
+                serverVersion, partitionCount, clusterId, clientFailoverSupported, tpcPorts, tpcToken);
     }
 
     @Override

@@ -16,8 +16,13 @@
 
 package com.hazelcast.client.tpc;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.ClientConnection;
+import com.hazelcast.client.impl.connection.tcp.TpcChannelClientConnectionAdapter;
 import com.hazelcast.client.impl.connection.tcp.TpcChannelConnector;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
+import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInitializer;
@@ -32,6 +37,7 @@ import org.junit.runner.RunWith;
 import org.mockito.stubbing.OngoingStubbing;
 
 import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -63,9 +69,12 @@ public class TpcChannelConnectorTest {
         mockConnection = setupMockConnection();
         mockTpcChannels = setupMockTpcChannels();
         mockChannelCreator = setupMockChannelCreator(mockTpcChannels);
-        connector = new TpcChannelConnector(UuidUtil.newUnsecureUUID(),
+        connector = new TpcChannelConnector(setupMockClient(),
+                10_000,
+                UuidUtil.newUnsecureUUID(),
                 mockConnection,
                 IntStream.range(0, CHANNEL_COUNT).boxed().collect(Collectors.toList()),
+                new byte[0],
                 setupMockExecutorService(),
                 mock(ChannelInitializer.class),
                 mockChannelCreator,
@@ -223,6 +232,19 @@ public class TpcChannelConnectorTest {
         }
     }
 
+    private HazelcastClientInstanceImpl setupMockClient() {
+        HazelcastClientInstanceImpl client = mock(HazelcastClientInstanceImpl.class);
+        ClientInvocationServiceImpl invocationService = mock(ClientInvocationServiceImpl.class, RETURNS_DEEP_STUBS);
+        doAnswer(i -> {
+            ClientInvocation invocation = i.getArgument(0, ClientInvocation.class);
+            ClientConnection connection = i.getArgument(1, ClientConnection.class);
+            invocation.getClientInvocationFuture().complete(null);
+            return connection.write(invocation.getClientMessage());
+        }).when(invocationService).invokeOnConnection(any(), any());
+        when(client.getInvocationService()).thenReturn(invocationService);
+        return client;
+    }
+
     private TcpClientConnection setupMockConnection() {
         TcpClientConnection connection = mock(TcpClientConnection.class);
         when(connection.isAlive()).thenReturn(true);
@@ -243,9 +265,12 @@ public class TpcChannelConnectorTest {
     private Channel[] setupMockTpcChannels() {
         Channel[] tpcChannels = new Channel[CHANNEL_COUNT];
         for (int i = 0; i < CHANNEL_COUNT; i++) {
-            Channel mockChannel = mock(Channel.class);
-            when(mockChannel.write(any())).thenReturn(true);
-            tpcChannels[i] = mockChannel;
+            Channel channel = mock(Channel.class);
+            ConcurrentHashMap attributeMap = new ConcurrentHashMap();
+            attributeMap.put(TpcChannelClientConnectionAdapter.class, new TpcChannelClientConnectionAdapter(channel));
+            when(channel.attributeMap()).thenReturn(attributeMap);
+            when(channel.write(any())).thenReturn(true);
+            tpcChannels[i] = channel;
         }
         return tpcChannels;
     }
