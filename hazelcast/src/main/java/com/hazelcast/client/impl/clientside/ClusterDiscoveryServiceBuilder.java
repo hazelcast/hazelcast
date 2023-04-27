@@ -145,7 +145,9 @@ class ClusterDiscoveryServiceBuilder {
             String cloudUrlBase = properties.getString(HazelcastCloudDiscovery.CLOUD_URL_BASE_PROPERTY);
             String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudUrlBase, discoveryToken);
             int connectionTimeoutMillis = getConnectionTimeoutMillis(networkConfig);
-            HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis);
+            boolean tpcEnabled = clientConfig.getTpcConfig().isEnabled();
+            HazelcastCloudDiscovery cloudDiscovery
+                    = new HazelcastCloudDiscovery(urlEndpoint, connectionTimeoutMillis, tpcEnabled);
             return new ViridianAddressProvider(cloudDiscovery);
         } else if (networkConfig.getAddresses().isEmpty() && discoveryService != null) {
             return new RemoteAddressProvider(() -> discoverAddresses(discoveryService), usePublicAddress(clientConfig));

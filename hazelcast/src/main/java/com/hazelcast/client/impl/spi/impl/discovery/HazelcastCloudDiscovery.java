@@ -64,10 +64,12 @@ public class HazelcastCloudDiscovery {
 
     private final String endpointUrl;
     private final int connectionTimeoutInMillis;
+    private final boolean tpcEnabled;
 
-    public HazelcastCloudDiscovery(String endpointUrl, int connectionTimeoutInMillis) {
+    public HazelcastCloudDiscovery(String endpointUrl, int connectionTimeoutInMillis, boolean tpcEnabled) {
         this.endpointUrl = endpointUrl;
         this.connectionTimeoutInMillis = connectionTimeoutInMillis;
+        this.tpcEnabled = tpcEnabled;
     }
 
     public DiscoveryResponse discoverNodes() {
@@ -89,7 +91,7 @@ public class HazelcastCloudDiscovery {
         checkCertificate(httpsConnection);
         checkError(httpsConnection);
         InputStream inputStream = httpsConnection.getInputStream();
-        return parseJsonResponse(Json.parse(readInputStream(inputStream)));
+        return parseJsonResponse(Json.parse(readInputStream(inputStream)), tpcEnabled);
     }
 
     private void checkCertificate(HttpURLConnection connection) throws IOException, CertificateException {
@@ -106,7 +108,7 @@ public class HazelcastCloudDiscovery {
         }
     }
 
-    static DiscoveryResponse parseJsonResponse(JsonValue jsonValue) throws IOException {
+    static DiscoveryResponse parseJsonResponse(JsonValue jsonValue, boolean tpcEnabled) throws IOException {
         List<JsonValue> response = jsonValue.asArray().values();
 
         Map<Address, Address> privateToPublic = new HashMap<>();
@@ -125,7 +127,7 @@ public class HazelcastCloudDiscovery {
             memberAddresses.add(privateAddr);
 
             JsonValue tpcPorts = object.get(TPC_PORTS_PROPERTY);
-            if (tpcPorts == null) {
+            if (!tpcEnabled || tpcPorts == null) {
                 continue;
             }
 
@@ -207,8 +209,8 @@ public class HazelcastCloudDiscovery {
         /**
          * Returns the list of private member addresses.
          * <p>
-         * In TPC enabled clusters, this list only contains the private
-         * addresses of the classic Hazelcast ports.
+         * This list contains only the private addresses of the classic
+         * Hazelcast ports regardless the TPC is enabled or not.
          */
         public List<Address> getPrivateMemberAddresses() {
             return privateMemberAddresses;

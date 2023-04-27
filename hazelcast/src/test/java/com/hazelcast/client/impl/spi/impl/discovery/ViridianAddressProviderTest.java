@@ -35,6 +35,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -55,9 +57,12 @@ public class ViridianAddressProviderTest {
     public void testLoadAddresses() throws Exception {
         setUp();
         ViridianAddressProvider provider = new ViridianAddressProvider(createDiscovery());
-        Collection<Address> addresses = provider.loadAddresses(createListenerRunner()).primary();
+
+        ClientConnectionProcessListenerRunner listener = createListenerRunner();
+        Collection<Address> addresses = provider.loadAddresses(listener).primary();
 
         assertThat(addresses).containsExactly(PRIVATE_MEMBER_ADDRESS);
+        verify(listener, times(1)).onPossibleAddressesCollected(Collections.singletonList(PRIVATE_MEMBER_ADDRESS));
     }
 
     @Test

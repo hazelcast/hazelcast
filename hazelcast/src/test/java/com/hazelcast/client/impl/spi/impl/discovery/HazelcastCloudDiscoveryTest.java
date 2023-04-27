@@ -119,7 +119,7 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
     public void testWithValidToken() throws UnknownHostException {
         String cloudBaseUrl = "http://127.0.0.1:" + httpsServer.getAddress().getPort();
         String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudBaseUrl, VALID_TOKEN);
-        HazelcastCloudDiscovery discovery = new HazelcastCloudDiscovery(urlEndpoint, Integer.MAX_VALUE);
+        HazelcastCloudDiscovery discovery = new HazelcastCloudDiscovery(urlEndpoint, Integer.MAX_VALUE, false);
         HazelcastCloudDiscovery.DiscoveryResponse response = discovery.discoverNodes();
         Map<Address, Address> privateToPublic = response.getPrivateToPublicAddresses();
         List<Address> members = response.getPrivateMemberAddresses();
@@ -146,7 +146,7 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
         String cloudBaseUrl = "http://127.0.0.1:" + httpsServer.getAddress().getPort();
         String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudBaseUrl, VALID_TPC_TOKEN);
 
-        HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, Integer.MAX_VALUE);
+        HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, Integer.MAX_VALUE, true);
         HazelcastCloudDiscovery.DiscoveryResponse response = cloudDiscovery.discoverNodes();
         Map<Address, Address> privateToPublic = response.getPrivateToPublicAddresses();
         List<Address> members = response.getPrivateMemberAddresses();
@@ -178,7 +178,7 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
     public void testWithInvalidToken() {
         String cloudBaseUrl = "http://127.0.0.1:" + httpsServer.getAddress().getPort();
         String urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(cloudBaseUrl, "invalid");
-        HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, Integer.MAX_VALUE);
+        HazelcastCloudDiscovery cloudDiscovery = new HazelcastCloudDiscovery(urlEndpoint, Integer.MAX_VALUE, false);
         cloudDiscovery.discoverNodes();
     }
 
@@ -187,7 +187,7 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
         JsonValue jsonResponse = Json.parse(
                 " [{\"private-address\":\"100.96.5.1:5701\",\"public-address\":\"10.113.44.139:31115\"},"
                         + "{\"private-address\":\"100.96.4.2:5701\",\"public-address\":\"10.113.44.130:31115\"} ]");
-        HazelcastCloudDiscovery.DiscoveryResponse response = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse);
+        HazelcastCloudDiscovery.DiscoveryResponse response = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse, false);
         Map<Address, Address> privateToPublic = response.getPrivateToPublicAddresses();
 
         assertEquals(2, privateToPublic.size());
@@ -206,7 +206,7 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
         JsonValue jsonResponse = Json.parse(
                 "[{\"private-address\":\"100.96.5.1\",\"public-address\":\"10.113.44.139:31115\"},"
                         + "{\"private-address\":\"100.96.4.2\",\"public-address\":\"10.113.44.130:31115\"} ]");
-        HazelcastCloudDiscovery.DiscoveryResponse response = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse);
+        HazelcastCloudDiscovery.DiscoveryResponse response = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse, false);
         Map<Address, Address> privateToPublic = response.getPrivateToPublicAddresses();
 
         assertEquals(2, privateToPublic.size());
@@ -225,12 +225,29 @@ public class HazelcastCloudDiscoveryTest extends ClientTestSupport {
         JsonValue jsonResponse = Json.parse(
                 "[{\"private-address\":\"10.96.5.1:30000\",\"public-address\":\"100.113.44.139:31115\",\"tpc-ports\":"
                         + "[{\"private-port\":40000,\"public-port\":32115}]}]");
-        HazelcastCloudDiscovery.DiscoveryResponse response = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse);
+        HazelcastCloudDiscovery.DiscoveryResponse response = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse, true);
         Map<Address, Address> privateToPublic = response.getPrivateToPublicAddresses();
 
         assertEquals(2, privateToPublic.size());
         assertEquals(new Address("100.113.44.139", 31115), privateToPublic.get(new Address("10.96.5.1", 30000)));
         assertEquals(new Address("100.113.44.139", 32115), privateToPublic.get(new Address("10.96.5.1", 40000)));
+
+        List<Address> members = response.getPrivateMemberAddresses();
+
+        assertEquals(1, members.size());
+        assertContains(members, new Address("10.96.5.1", 30000));
+    }
+
+    @Test
+    public void tesJsonResponseParse_withTpc_whenTpcIsDisable() throws IOException {
+        JsonValue jsonResponse = Json.parse(
+                "[{\"private-address\":\"10.96.5.1:30000\",\"public-address\":\"100.113.44.139:31115\",\"tpc-ports\":"
+                        + "[{\"private-port\":40000,\"public-port\":32115}]}]");
+        HazelcastCloudDiscovery.DiscoveryResponse response = HazelcastCloudDiscovery.parseJsonResponse(jsonResponse, false);
+        Map<Address, Address> privateToPublic = response.getPrivateToPublicAddresses();
+
+        assertEquals(1, privateToPublic.size());
+        assertEquals(new Address("100.113.44.139", 31115), privateToPublic.get(new Address("10.96.5.1", 30000)));
 
         List<Address> members = response.getPrivateMemberAddresses();
 
