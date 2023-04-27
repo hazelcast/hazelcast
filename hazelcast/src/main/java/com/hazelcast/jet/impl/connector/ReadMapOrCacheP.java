@@ -296,6 +296,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Override
         public abstract Permission getRequiredPermission();
+
+        @Override
+        public boolean isReusable() {
+            return true;
+        }
     }
 
     public static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier,

@@ -192,6 +192,11 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         public Permission getRequiredPermission() {
             return ConnectorPermission.file(directory, ACTION_READ);
         }
+
+        @Override
+        public boolean isReusable() {
+            return true;
+        }
     }
 
     private static final class LocalFileTraverser<T> implements FileTraverser<T> {

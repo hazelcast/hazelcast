@@ -83,8 +83,8 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
     }
 
     @Override
-    public boolean isStateful() {
-        return processorSupplier.isStateful();
+    public boolean isReusable() {
+        return true;
     }
 
     @Override

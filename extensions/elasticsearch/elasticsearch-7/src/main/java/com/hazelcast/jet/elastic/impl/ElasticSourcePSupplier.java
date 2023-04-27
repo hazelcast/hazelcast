@@ -71,8 +71,4 @@ class ElasticSourcePSupplier<T> implements ProcessorSupplier {
                         .collect(toList());
     }
 
-    @Override
-    public boolean isStateful() {
-        return true;
-    }
 }

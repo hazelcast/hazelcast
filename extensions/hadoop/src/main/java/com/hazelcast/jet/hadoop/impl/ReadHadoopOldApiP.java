@@ -147,11 +147,6 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
         public FileTraverser<R> traverser() throws Exception {
             return new HadoopFileTraverser<>(jobConf, asList(getSplits(jobConf, 1)), projectionFn);
         }
-
-        @Override
-        public boolean isStateful() {
-            return true;
-        }
     }
 
     private static final class Supplier<K, V, R> implements ProcessorSupplier {
@@ -185,11 +180,6 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
                     .values().stream()
                     .map(splits -> new ReadHadoopOldApiP<>(jobConf, splits, projectionFn))
                     .collect(toList());
-        }
-
-        @Override
-        public boolean isStateful() {
-            return true;
         }
     }
 

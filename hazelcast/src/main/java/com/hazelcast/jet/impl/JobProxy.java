@@ -129,7 +129,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
             if (jobDefinition instanceof DAG) {
                 DAG dag = (DAG) jobDefinition;
                 dag.lock();
-                serialize = dag.vertices().stream().anyMatch(v -> v.getMetaSupplier().isStateful());
+                serialize = dag.vertices().stream().anyMatch(v -> !v.getMetaSupplier().isReusable());
             }
             config.lock();
         }

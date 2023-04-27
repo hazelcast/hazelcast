@@ -96,8 +96,8 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     }
 
     @Override
-    public boolean isStateful() {
-        return wrapped.isStateful();
+    public boolean isReusable() {
+        return wrapped.isReusable();
     }
 
     @Override

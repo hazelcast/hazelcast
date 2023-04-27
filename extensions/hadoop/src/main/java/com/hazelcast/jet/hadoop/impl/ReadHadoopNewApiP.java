@@ -227,11 +227,6 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
         public Permission getRequiredPermission() {
             return permission;
         }
-
-        @Override
-        public boolean isStateful() {
-            return true;
-        }
     }
 
     private static final class Supplier<K, V, R> implements ProcessorSupplier {
@@ -269,11 +264,6 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
                     .values().stream()
                     .map(splits -> new ReadHadoopNewApiP<>(configuration, splits, projectionFn))
                     .collect(toList());
-        }
-
-        @Override
-        public boolean isStateful() {
-            return true;
         }
     }
 

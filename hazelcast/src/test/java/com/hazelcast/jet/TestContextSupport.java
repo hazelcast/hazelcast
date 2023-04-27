@@ -77,8 +77,8 @@ public final class TestContextSupport {
         }
 
         @Override
-        public boolean isStateful() {
-            return delegate.isStateful();
+        public boolean isReusable() {
+            return delegate.isReusable();
         }
     }
 

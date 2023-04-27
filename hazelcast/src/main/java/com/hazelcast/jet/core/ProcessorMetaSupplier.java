@@ -191,16 +191,16 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
-     * Returns {@code true} if this instance is stateful.
+     * Returns {@code true} if this instance is reusable, i.e. {@link #init}
+     * and {@link #close} can be called multiple times, possibly in parallel.
      * <p>
      * When a job is to be submitted, the job definition ({@link DAG} or
      * {@link Pipeline}) is serialized. This serialization can be avoided
-     * for light jobs if the DAG is stateless.
+     * for light jobs if the DAG is reusable.
      *
-     * @see ProcessorSupplier#isStateful()
      * @since 5.3
      */
-    default boolean isStateful() {
+    default boolean isReusable() {
         return false;
     }
 
@@ -304,6 +304,11 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull @Override
             public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return addressToSupplier;
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
             }
         };
     }
@@ -462,11 +467,6 @@ public interface ProcessorMetaSupplier extends Serializable {
             public Permission getRequiredPermission() {
                 return permission;
             }
-
-            @Override
-            public boolean isStateful() {
-                return supplier.isStateful();
-            }
         };
     }
 
@@ -557,8 +557,8 @@ public interface ProcessorMetaSupplier extends Serializable {
         }
 
         @Override
-        public boolean isStateful() {
-            return supplier.isStateful();
+        public boolean isReusable() {
+            return true;
         }
 
         @Override
@@ -605,6 +605,11 @@ public interface ProcessorMetaSupplier extends Serializable {
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             Address memberAddress = addresses.get(RandomPicker.getInt(addresses.size()));
             return addr -> addr.equals(memberAddress) ? supplier : new ExpectNothingProcessorSupplier();
+        }
+
+        @Override
+        public boolean isReusable() {
+            return true;
         }
 
         @Override

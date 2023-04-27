@@ -139,8 +139,4 @@ public class ElasticSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
         }
     }
 
-    @Override
-    public boolean isStateful() {
-        return true;
-    }
 }
