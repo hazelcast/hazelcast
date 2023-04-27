@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.client.SqlClientService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,6 +40,14 @@ public class IMapResolverTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
         initializeWithClient(1, null, null);
+    }
+
+    @Before
+    public void setup() {
+        warmUpPartitions(instances());
+        // ensure that client knows owners of all partitions before sending message.
+        // if the partition owner is not known, message would not be sent.
+        warmUpPartitions(client());
     }
 
     @Test

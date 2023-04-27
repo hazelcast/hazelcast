@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -37,7 +38,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -45,6 +45,8 @@ import java.util.Properties;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -237,7 +239,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         }
 
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING " + tableName
+                sqlService.executeUpdate("CREATE MAPPING " + tableName
                         + " ("
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME myName "
@@ -291,24 +293,146 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void when_mappingIsDeclaredWithDataConnection_then_itIsAvailable() throws Exception {
         // given
-        String dlName = randomName();
+        String dcName = randomName();
         String name = randomName();
         createTable(name);
         Map<String, String> options = new HashMap<>();
         options.put("jdbcUrl", dbConnectionUrl);
 
-        createDataConnection(instance(), dlName, "JDBC", false, options);
+        createDataConnection(instance(), dcName, "JDBC", false, options);
         InternalDataConnectionService dlService = getNodeEngineImpl(instance()).getDataConnectionService();
-        assertThat(dlService.existsSqlDataConnection(dlName)).isTrue();
+        assertThat(dlService.existsSqlDataConnection(dcName)).isTrue();
 
-        createJdbcMappingUsingDataConnection(name, dlName);
-        SqlResult mappings = sqlService.execute("SHOW MAPPINGS");
-        Iterator<SqlRow> resultIt = mappings.iterator();
-        assertThat(resultIt.hasNext()).isTrue();
+        createJdbcMappingUsingDataConnection(name, dcName);
+        try (SqlResult mappings = sqlService.execute("SHOW MAPPINGS")) {
+            Iterator<SqlRow> resultIt = mappings.iterator();
+            assertThat(resultIt.hasNext()).isTrue();
 
-        Object object = resultIt.next().getObject(0);
-        assertThat(resultIt.hasNext()).isFalse();
-        assertThat(object).isEqualTo(name);
+            Object object = resultIt.next().getObject(0);
+            assertThat(resultIt.hasNext()).isFalse();
+            assertThat(object).isEqualTo(name);
+        }
+
+        // cleanup
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
+    }
+
+    /**
+     * Source : <a href=https://github.com/hazelcast/hazelcast/issues/24337">issue #24337</a>.
+     */
+    @Test
+    public void given_mappingIsDeclaredWithDataConn_when_DataConnWasRemoved_then_success() throws Exception {
+        // given
+        String dcName = randomName();
+        String mappingName = randomName();
+        createTable(mappingName);
+        Map<String, String> options = new HashMap<>();
+        options.put("jdbcUrl", dbConnectionUrl);
+
+        // when
+        createDataConnection(instance(), dcName, "JDBC", false, options);
+        createJdbcMappingUsingDataConnection(mappingName, dcName);
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
+
+        // then
+        assertRowsAnyOrder("SHOW DATA CONNECTIONS ", singletonList(new Row(TEST_DATABASE_REF, singletonList("Table"))));
+
+        // Ensure that engine is not broken after Data Connection removal with some unrelated query.
+        assertRowsAnyOrder("SHOW MAPPINGS ", singletonList(new Row(mappingName)));
+
+        // Mapping shouldn't provide data, since data connection was removed.
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + mappingName))
+                .hasMessageContaining("com.hazelcast.core.HazelcastException: Data connection '"
+                        + dcName + "' not found");
+
+        // cleanup
+        sqlService.executeUpdate("DROP MAPPING " + mappingName);
+    }
+
+    @Test
+    public void when_dataConnectionIsAltered_then_mappingsConnectorTypesAreUpdated() throws Exception {
+        // given
+        String dcName = randomName();
+        String mappingName = randomName();
+        createTable(mappingName);
+
+        // when
+        createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
+        createJdbcMappingUsingDataConnection(mappingName, dcName);
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
+        createDataConnection(instance(), dcName, "Kafka", false, singletonMap("A", "B"));
+
+        // then
+        assertRowsAnyOrder("SELECT * FROM information_schema.mappings ", singletonList(
+                new Row(
+                        "hazelcast",
+                        "public",
+                        mappingName,
+                        '"' + mappingName + '"',
+                        "Kafka",
+                        "{}")));
+
+        // cleanup
+        sqlService.executeUpdate("DROP MAPPING " + mappingName);
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
+    }
+
+    @Test
+    public void when_dataConnectionIsDropped_then_cachedPlansAreInvalidated() throws Exception {
+        // given
+        String dcName = randomName();
+        String mappingName = randomName();
+        createTable(mappingName);
+
+        createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
+        createJdbcMappingUsingDataConnection(mappingName, dcName);
+        // cache plan
+        assertRowsAnyOrder("select count(*) from " + mappingName, new Row(0L));
+        assertThat(sqlServiceImpl(instance()).getPlanCache().size()).isOne();
+
+        // when
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
+
+        // then
+        assertThat(sqlServiceImpl(instance()).getPlanCache().size()).as("Plan should be invalidated").isZero();
+        assertThatThrownBy(() -> sqlService.execute("select count(*) from " + mappingName).iterator().hasNext())
+                .as("Cached plan is not used")
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Mapping '" + mappingName + "' is invalid");
+
+        // cleanup
+        sqlService.executeUpdate("DROP MAPPING " + mappingName);
+    }
+
+    @Test
+    public void when_dataConnectionIsAlteredToCorrect_then_usesNewConnectionType() throws Exception {
+        // given
+        String dcName = randomName();
+        String mappingName = randomName();
+        createTable(mappingName);
+
+        createDataConnection(instance(), dcName, "JDBC", false, singletonMap("jdbcUrl", dbConnectionUrl));
+        createJdbcMappingUsingDataConnection(mappingName, dcName);
+        // cache plan with JDBC
+        assertRowsAnyOrder("select count(*) from " + mappingName, new Row(0L));
+
+        // when
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
+        createDataConnection(instance(), dcName, "mongo", false,
+                // create data connection that is correct enough to parse the query
+                ImmutableMap.of("connectionString", "bad:12345", "database", "db",
+                        "idColumn", "id")
+        );
+
+        // then
+        assertThatThrownBy(() -> sqlService.execute("select count(*) from " + mappingName).iterator().hasNext())
+                .as("Should detect change of data connection type")
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Mongo connector allows only object types");
+
+        // cleanup
+        sqlService.executeUpdate("DROP MAPPING " + mappingName);
+        sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
     }
 
     @Test
@@ -355,7 +479,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT * FROM myMapping",
-                Collections.singletonList(new Row(0, "name-0"))
+                singletonList(new Row(0, "name-0"))
         );
     }
 

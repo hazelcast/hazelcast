@@ -25,6 +25,8 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
@@ -48,12 +50,14 @@ public class MappingsTable extends InfoSchemaTable {
 
     private final String mappingsSchema;
     private final Collection<Mapping> mappings;
+    private final Function<String, String> dataConnectionTypeResolver;
 
     public MappingsTable(
             String catalog,
             String schemaName,
             String mappingsSchema,
-            Collection<Mapping> mappings
+            Collection<Mapping> mappings,
+            Function<String, String> dataConnectionTypeResolver
     ) {
         super(
                 FIELDS,
@@ -65,6 +69,7 @@ public class MappingsTable extends InfoSchemaTable {
 
         this.mappingsSchema = mappingsSchema;
         this.mappings = mappings;
+        this.dataConnectionTypeResolver = dataConnectionTypeResolver;
     }
 
     @Override
@@ -76,7 +81,7 @@ public class MappingsTable extends InfoSchemaTable {
                     mappingsSchema,
                     mapping.name(),
                     quoteCompoundIdentifier(mapping.externalName()),
-                    mapping.connectorType(),
+                    Optional.ofNullable(mapping.dataConnection()).map(dataConnectionTypeResolver).orElse(mapping.connectorType()),
                     uncheckCall(() -> JsonUtil.toJson(mapping.options()))
             };
             rows.add(row);
