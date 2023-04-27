@@ -277,6 +277,47 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     }
 
     /**
+     * Use {@link KafkaProcessors#writeKafkaP(DataConnectionRef, Properties, FunctionEx, boolean)}
+     */
+    public static <T, K, V> ProcessorSupplier supplier(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull Properties properties,
+            @Nonnull Function<? super T, ? extends ProducerRecord<K, V>> toRecordFn,
+            boolean exactlyOnce
+    ) {
+        return new ProcessorSupplier() {
+
+            private transient KafkaDataConnection kafkaDataConnection;
+
+            @Override
+            public void init(@Nonnull Context context) {
+                kafkaDataConnection = context
+                        .dataConnectionService()
+                        .getAndRetainDataConnection(dataConnectionRef.getName(), KafkaDataConnection.class);
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return IntStream.range(0, count)
+                        .mapToObj(i -> new WriteKafkaP<T, K, V>(
+                                (txnId) -> kafkaDataConnection.getProducer(txnId, properties),
+                                toRecordFn,
+                                exactlyOnce
+                        ))
+                        .collect(Collectors.toList());
+            }
+
+            @Override
+            public void close(@Nullable Throwable error) {
+                if (kafkaDataConnection != null) {
+                    kafkaDataConnection.release();
+                }
+            }
+        };
+    }
+
+    /**
      * A simple class wrapping a KafkaProducer that ensures that
      * `producer.initTransactions` is called exactly once before first
      * `beginTransaction` call.

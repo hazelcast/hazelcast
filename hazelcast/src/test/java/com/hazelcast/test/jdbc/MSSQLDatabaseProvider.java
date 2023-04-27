@@ -29,8 +29,9 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String createDatabase(String dbName) {
         container = new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:" + TEST_MSSQLSERVER_VERSION);
-        container.withUrlParam("user", container.getUsername())
-                 .withUrlParam("password", container.getPassword());
+        container.acceptLicense()
+                .withUrlParam("user", container.getUsername())
+                .withUrlParam("password", container.getPassword());
         container.start();
         String jdbcUrl = container.getJdbcUrl();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);

@@ -448,7 +448,8 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         return callIdSequence;
     }
 
-    ClientInvocationFuture getClientInvocationFuture() {
+    // Used in tests
+    public ClientInvocationFuture getClientInvocationFuture() {
         return clientInvocationFuture;
     }
 }

@@ -50,6 +50,7 @@ public class GetDdlTest extends SqlTestSupport {
                         "  \"this\" INTEGER EXTERNAL NAME \"this\"" + LE +
                         ")" + LE +
                         "TYPE \"IMap\"" + LE +
+                        "OBJECT TYPE \"IMap\"" + LE +
                         "OPTIONS (" + LE +
                         "  'keyFormat'='java'," + LE +
                         "  'keyJavaClass'='int'," + LE +
@@ -167,6 +168,7 @@ public class GetDdlTest extends SqlTestSupport {
                                 "  \"this\" VARCHAR EXTERNAL NAME \"this\"" + LE +
                                 ")" + LE +
                                 "TYPE \"IMap\"" + LE +
+                                "OBJECT TYPE \"IMap\"" + LE +
                                 "OPTIONS (" + LE +
                                 "  'keyFormat'='java'," + LE +
                                 "  'keyJavaClass'='int'," + LE +

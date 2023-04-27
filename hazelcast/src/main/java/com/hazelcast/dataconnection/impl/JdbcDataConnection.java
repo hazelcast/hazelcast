@@ -33,6 +33,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -96,6 +98,12 @@ public class JdbcDataConnection extends DataConnectionBase {
                 throw new HazelcastException("Could not create a new connection: " + e, e);
             }
         };
+    }
+
+    @Nonnull
+    @Override
+    public Collection<String> resourceTypes() {
+        return Collections.singleton("Table");
     }
 
     @Nonnull

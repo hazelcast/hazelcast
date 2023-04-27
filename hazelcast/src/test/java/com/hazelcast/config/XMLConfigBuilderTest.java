@@ -4540,11 +4540,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "<sql>\n"
                 + "  <statement-timeout-millis>30</statement-timeout-millis>\n"
+                + "  <catalog-persistence-enabled>true</catalog-persistence-enabled>\n"
                 + "</sql>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+        assertTrue(sqlConfig.isCatalogPersistenceEnabled());
     }
 
     @Override

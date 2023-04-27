@@ -508,16 +508,15 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * java serialization for both key and value with the given classes.
      */
     public static void createMapping(HazelcastInstance instance, String name, Class<?> keyClass, Class<?> valueClass) {
-        try (SqlResult result = instance.getSql().execute("CREATE OR REPLACE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
+        long updateCount = instance.getSql().executeUpdate("CREATE OR REPLACE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
                 + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
                 + ", '" + OPTION_KEY_CLASS + "'='" + keyClass.getName() + "'\n"
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'\n"
                 + ", '" + OPTION_VALUE_CLASS + "'='" + valueClass.getName() + "'\n"
                 + ")"
-        )) {
-            assertThat(result.updateCount()).isEqualTo(0);
-        }
+        );
+        assertThat(updateCount).isEqualTo(0);
     }
 
     /**

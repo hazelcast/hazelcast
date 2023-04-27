@@ -101,7 +101,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     @Test
     public void createKafkaMappingWithDataConnection() {
         String dlName = randomName();
-        sqlService.execute("CREATE DATA CONNECTION " + dlName + " TYPE Kafka SHARED " + options());
+        sqlService.execute("CREATE DATA CONNECTION " + dlName + " TYPE Kafka NOT SHARED " + options());
 
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + ' '
