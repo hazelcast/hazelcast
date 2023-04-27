@@ -26,7 +26,6 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
@@ -56,7 +55,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private static final String LE = System.lineSeparator();
 
-    String tableName;
+    protected String tableName;
 
     @BeforeClass
     public static void beforeClass() {
@@ -445,28 +444,5 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         ))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Could not execute readDbFields for table");
-    }
-
-    // MySQL : Test that external name with 3 components is invalid
-    @Test
-    public void createMappingFails_invalid_externalNameFullName() throws SQLException {
-        assumeThat(databaseProvider)
-                .isInstanceOfAny(
-                        MySQLDatabaseProvider.class
-                );
-
-        createTable(tableName);
-
-        // Create invalid mapping
-        assertThatThrownBy(() -> execute(
-                "CREATE MAPPING " + tableName + " EXTERNAL NAME " + "foo.public.bar" + tableName + " ("
-                + " id INT, "
-                + " name VARCHAR "
-                + ") "
-                + "DATA CONNECTION " + TEST_DATABASE_REF
-        ))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasRootCauseInstanceOf(QueryException.class)
-                .hasStackTraceContaining("Invalid external name");
     }
 }

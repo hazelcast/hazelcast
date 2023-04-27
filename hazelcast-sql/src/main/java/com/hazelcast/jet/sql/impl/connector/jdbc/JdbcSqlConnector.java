@@ -52,7 +52,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
@@ -159,16 +158,16 @@ public class JdbcSqlConnector implements SqlConnector {
             throws SQLException {
         String table = externalTableName.table;
         if (isMySQL(databaseMetaData)) {
+            SqlDialect dialect = resolveDialect(databaseMetaData);
             //MySQL databaseMetaData.getTables requires quotes/backticks in case of fancy names (e.g. with dots)
             //To make it simple we wrap all table names
-            table = databaseMetaData.getIdentifierQuoteString() + externalTableName.table
-                    + databaseMetaData.getIdentifierQuoteString();
+            table = dialect.quoteIdentifier(table);
         }
 
         Connection connection = databaseMetaData.getConnection();
         // If catalog and schema are not specified as external name, use the catalog and schema of the connection
-        String catalog = Objects.toString(externalTableName.catalog, connection.getCatalog());
-        String schema = Objects.toString(externalTableName.schema, connection.getSchema());
+        String catalog = (externalTableName.catalog != null) ? externalTableName.catalog : connection.getCatalog();
+        String schema = (externalTableName.schema != null) ? externalTableName.schema : connection.getSchema();
 
         try (ResultSet tables = databaseMetaData.getTables(
                 catalog,
@@ -287,21 +286,22 @@ public class JdbcSqlConnector implements SqlConnector {
         JdbcDataConnection dataConnection = getAndRetainDataConnection(nodeEngine, dataConnectionName);
         try (Connection connection = dataConnection.getConnection()) {
             DatabaseMetaData databaseMetaData = connection.getMetaData();
-            SqlDialect dialect;
-            switch (databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim()) {
-                case "MYSQL":
-                    dialect = new HazelcastMySqlDialect(SqlDialects.createContext(databaseMetaData));
-                    break;
-
-                default:
-                    dialect = SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
-            }
             SupportedDatabases.logOnceIfDatabaseNotSupported(databaseMetaData);
-            return dialect;
+            return resolveDialect(databaseMetaData);
         } catch (Exception e) {
             throw new HazelcastException("Could not determine dialect for data connection: " + dataConnectionName, e);
         } finally {
             dataConnection.release();
+        }
+    }
+
+    private static SqlDialect resolveDialect(DatabaseMetaData databaseMetaData) throws SQLException {
+        switch (databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim()) {
+            case "MYSQL":
+                return new HazelcastMySqlDialect(SqlDialects.createContext(databaseMetaData));
+
+            default:
+                return SqlDialectFactoryImpl.INSTANCE.create(databaseMetaData);
         }
     }
 
@@ -529,37 +529,32 @@ public class JdbcSqlConnector implements SqlConnector {
         final String table;
 
         ExternalJdbcTableName(String[] externalName, DatabaseMetaData databaseMetaData) throws SQLException {
-            String tempCatalog;
-            String tempSchema;
-            String tempTable;
-
             if (externalName.length == 1) {
-                tempCatalog = null;
-                tempSchema = null;
-                tempTable = externalName[0];
+                catalog = null;
+                schema = null;
+                table = externalName[0];
             } else if (externalName.length == 2) {
-                tempCatalog = null;
-                tempSchema = externalName[0];
-                tempTable = externalName[1];
+                if (isMySQL(databaseMetaData)) {
+                    catalog = externalName[0];
+                    schema = null;
+                } else {
+                    catalog = null;
+                    schema = externalName[0];
+                }
+                table = externalName[1];
             } else if (externalName.length == 3) {
-                tempCatalog = externalName[0];
-                tempSchema = externalName[1];
-                tempTable = externalName[2];
+                if (isMySQL(databaseMetaData)) {
+                    throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+                            + ", external name for MySQL must have either 1 or 2 components "
+                            + "(catalog and relation)");
+                }
+                catalog = externalName[0];
+                schema = externalName[1];
+                table = externalName[2];
             } else {
                 // external name length was validated earlier, we should never get here
                 throw new IllegalStateException("Invalid external name length");
             }
-
-            if (isMySQL(databaseMetaData)) {
-                validateExternalNameForMySQL(externalName);
-
-                // MySQL has no schema concept. Schema is actually catalog. Swap names
-                tempCatalog = tempSchema;
-                tempSchema = null;
-            }
-            catalog = tempCatalog;
-            schema = tempSchema;
-            table = tempTable;
         }
 
         static void validateExternalName(String[] externalName) {
@@ -568,15 +563,6 @@ public class JdbcSqlConnector implements SqlConnector {
                 throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                                            + ", external name for Jdbc must have either 1, 2 or 3 components "
                                            + "(catalog, schema and relation)");
-            }
-        }
-
-        static void validateExternalNameForMySQL(String[] externalName) {
-            // External name for MySQL must have at least 1 and at most 2 components
-            if (externalName.length == 3) {
-                throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
-                                           + ", external name for MySQL must have either 1 or 2 components "
-                                           + "(catalog and relation)");
             }
         }
     }
