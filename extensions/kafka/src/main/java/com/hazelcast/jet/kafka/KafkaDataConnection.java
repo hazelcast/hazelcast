@@ -182,7 +182,7 @@ public class KafkaDataConnection extends DataConnectionBase {
     public <K, V> KafkaProducer<K, V> getProducer(
             @Nullable String transactionalId,
             @Nonnull Properties properties) {
-        if (getConfig().isShared()) {
+        if (getConfig().isShared() && !properties.isEmpty()) {
             throw new HazelcastException("Shared Kafka producer can be created only with data connection options");
         } else {
             Properties props = Util.mergeProps(getConfig().getProperties(), properties);
