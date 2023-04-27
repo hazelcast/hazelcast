@@ -89,10 +89,7 @@ public class JdbcSqlConnector implements SqlConnector {
         if (dataConnectionName == null) {
             throw QueryException.error("You must provide data connection when using the Jdbc connector");
         }
-        if (externalName.length == 0 || externalName.length > 3) {
-            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
-                    + ", external name for Jdbc must have either 1, 2 or 3 components (catalog, schema and relation)");
-        }
+        ExternalJdbcTableName.validateExternalName(externalName);
 
         Map<String, DbField> dbFields = readDbFields(nodeEngine, dataConnectionName, externalName);
 
@@ -554,16 +551,33 @@ public class JdbcSqlConnector implements SqlConnector {
             }
 
             if (isMySQL(databaseMetaData)) {
-                // MySQL has no schema concept. Schema is actually catalog. Swap names
-                String tempString = tempCatalog;
-                tempCatalog = tempSchema;
-                tempSchema = tempString;
-            }
+                validateExternalNameForMySQL(externalName);
 
+                // MySQL has no schema concept. Schema is actually catalog. Swap names
+                tempCatalog = tempSchema;
+                tempSchema = null;
+            }
             catalog = tempCatalog;
             schema = tempSchema;
             table = tempTable;
         }
 
+        static void validateExternalName(String[] externalName) {
+            // External name must have at least 1 and at most 3 components
+            if (externalName.length == 0 || externalName.length > 3) {
+                throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+                                           + ", external name for Jdbc must have either 1, 2 or 3 components "
+                                           + "(catalog, schema and relation)");
+            }
+        }
+
+        static void validateExternalNameForMySQL(String[] externalName) {
+            // External name for MySQL must have at least 1 and at most 2 components
+            if (externalName.length == 3) {
+                throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+                                           + ", external name for MySQL must have either 1 or 2 components "
+                                           + "(catalog and relation)");
+            }
+        }
     }
 }
