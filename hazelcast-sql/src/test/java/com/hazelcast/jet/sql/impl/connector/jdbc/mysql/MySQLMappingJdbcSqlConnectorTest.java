@@ -29,5 +29,4 @@ public class MySQLMappingJdbcSqlConnectorTest extends MappingJdbcSqlConnectorTes
     public static void beforeClass() {
         initialize(new MySQLDatabaseProvider());
     }
-
 }

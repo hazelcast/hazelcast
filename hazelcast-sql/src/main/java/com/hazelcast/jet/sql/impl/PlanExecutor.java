@@ -133,6 +133,7 @@ import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHaz
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.JSON;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
+import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
 import static java.util.Collections.singletonList;
@@ -444,7 +445,10 @@ public class PlanExecutor {
             rows = dataConnection.listResources().stream()
                                  .map(resource -> new JetSqlRow(
                                          serializationService,
-                                         new Object[]{resource.name(), resource.type()}
+                                         new Object[]{
+                                                 quoteCompoundIdentifier(resource.name()),
+                                                 resource.type()
+                                         }
                                  ))
                                  .collect(Collectors.toList());
         } finally {

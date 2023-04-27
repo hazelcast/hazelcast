@@ -77,6 +77,10 @@ public final class RetryUtils {
             if (exception.isAssignableFrom(e.getClass())) {
                 return true;
             }
+            if (e.getCause() != null && e.getCause() instanceof Exception && e.getCause() != e) {
+                Exception cause = (Exception) e.getCause();
+                return anyOf(cause, exceptions);
+            }
         }
         return false;
     }

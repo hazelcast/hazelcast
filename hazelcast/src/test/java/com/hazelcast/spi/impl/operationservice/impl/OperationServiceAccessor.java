@@ -35,4 +35,10 @@ public final class OperationServiceAccessor {
         OperationServiceImpl operationService = getOperationService(instance);
         return operationService.asyncOperations.size();
     }
+
+    // only used for testing
+    public static String toStringAsyncOperations(HazelcastInstance instance) {
+        OperationServiceImpl operationService = getOperationService(instance);
+        return operationService.asyncOperations.toString();
+    }
 }

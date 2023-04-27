@@ -45,7 +45,6 @@ import javax.annotation.Nullable;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -158,11 +157,17 @@ public class JdbcSqlConnector implements SqlConnector {
 
     private static void checkTableExists(ExternalJdbcTableName externalTableName, DatabaseMetaData databaseMetaData)
             throws SQLException {
-
+        String table = externalTableName.table;
+        if (databaseMetaData.getDatabaseProductName().toUpperCase(Locale.ROOT).trim().equals("MYSQL")) {
+            //MySQL databaseMetaData.getTables requires quotes/backticks in case of fancy names (e.g. with dots)
+            //To make it simple we wrap all table names
+            table = databaseMetaData.getIdentifierQuoteString() + externalTableName.table
+                    + databaseMetaData.getIdentifierQuoteString();
+        }
         try (ResultSet tables = databaseMetaData.getTables(
                 externalTableName.catalog,
                 externalTableName.schema,
-                externalTableName.table,
+                table,
                 new String[]{"TABLE", "VIEW"}
         )) {
             if (!tables.next()) {
@@ -415,13 +420,11 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     /**
-     * Using {@link ResultSetMetaData#getColumnTypeName(int)} seems more
-     * reliable than {@link ResultSetMetaData#getColumnClassName(int)},
-     * which doesn't allow to distinguish between timestamp and timestamp
-     * with time zone, or between tinyint/smallint and int for some JDBC drivers.
+     * Convert the column type received from database to QueryDataType. QueryDataType represents the data types that
+     * can be used in Hazelcast's distributed queries
      */
     @SuppressWarnings("ReturnCount")
-    private QueryDataType resolveType(String columnTypeName) {
+    private static QueryDataType resolveType(String columnTypeName) {
         switch (columnTypeName.toUpperCase()) {
             case "BOOLEAN":
             case "BOOL":
@@ -430,6 +433,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
             case "VARCHAR":
             case "CHARACTER VARYING":
+            case "TEXT":
                 return QueryDataType.VARCHAR;
 
             case "TINYINT":

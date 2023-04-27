@@ -24,7 +24,8 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
-import org.assertj.core.api.Condition;
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,21 +33,24 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.util.Lists.emptyList;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
 public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private static final String LE = System.lineSeparator();
 
-    private String tableName;
+    String tableName;
 
     @BeforeClass
     public static void beforeClass() {
@@ -173,16 +177,6 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
         );
-    }
-
-    private Condition<Throwable> hasMessage(String message) {
-        return new Condition<Throwable>() {
-            @Override
-            public boolean matches(Throwable value) {
-                return value.getMessage().contains(message) ||
-                        (value.getCause() != null && matches(value.getCause()));
-            }
-        };
     }
 
     @Test
@@ -327,5 +321,37 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                     .extracting(SqlColumnMetadata::getName)
                     .contains("id", "name");
         }
+    }
+
+    // TEXT is not a standard SQL column type. This test may not run on all DBs
+    @Test
+    public void createMappingWithTextColumnType() throws Exception {
+        assumeThat(databaseProvider)
+                .isInstanceOfAny(
+                        MySQLDatabaseProvider.class,
+                        PostgresDatabaseProvider.class,
+                        H2DatabaseProvider.class
+                );
+
+        executeJdbc("CREATE TABLE " + tableName + " (id INTEGER NOT NULL,name TEXT NOT NULL)");
+
+        insertItems(tableName, 1);
+
+        assertThatCode(() ->
+                execute("CREATE MAPPING myMapping "
+                        + " EXTERNAL NAME " + tableName
+                        + " ("
+                        + "id INTEGER,"
+                        + " name VARCHAR "
+                        + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
+                )
+        ).doesNotThrowAnyException();
+
+        assertRowsAnyOrder(
+                "SELECT * FROM myMapping",
+                Collections.singletonList(new Row(0, "name-0"))
+        );
+
     }
 }

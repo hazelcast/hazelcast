@@ -30,6 +30,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.SubmitJobParameters;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -318,8 +319,31 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         assertThrows(OperationTimeoutException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
     }
 
+    @Test
+    public void test_jarUpload_invalid_tempdir_whenResourceUploadIsEnabled() {
+        createClusterWithUploadDirectoryPath("directorynotexists");
+        JetClientInstanceImpl jetService = getClientJetService();
+
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
+                .setJarPath(getJarPath());
+
+        assertThatThrownBy(() -> jetService.submitJobFromJar(submitJobParameters))
+                .isInstanceOf(JetException.class)
+                .hasMessage("The upload directory path does not exist: directorynotexists");
+    }
+
+
     private void createCluster() {
         Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        createHazelcastInstance(config);
+    }
+
+    public void createClusterWithUploadDirectoryPath(String uploadDirectoryPath) {
+        Config config = smallInstanceConfig();
+        config.setProperty(ClusterProperty.JAR_UPLOAD_DIR_PATH.getName(), uploadDirectoryPath);
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
 

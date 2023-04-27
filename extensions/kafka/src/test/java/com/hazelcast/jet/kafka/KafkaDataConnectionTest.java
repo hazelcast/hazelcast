@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka;
 
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -32,6 +33,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -101,7 +103,7 @@ public class KafkaDataConnectionTest {
 
         Collection<DataConnectionResource> resources = kafkaDataConnection.listResources();
         List<DataConnectionResource> withoutConfluent =
-                resources.stream().filter(r -> !r.name().contains("__confluent")).collect(toList());
+                resources.stream().filter(r -> !Arrays.toString(r.name()).contains("__confluent")).collect(toList());
         assertThat(withoutConfluent).isEmpty();
     }
 
@@ -116,7 +118,7 @@ public class KafkaDataConnectionTest {
 
             Collection<DataConnectionResource> resources = kafkaDataConnection.listResources();
             List<DataConnectionResource> withoutConfluent =
-                    resources.stream().filter(r -> !r.name().contains("__confluent")).collect(toList());
+                    resources.stream().filter(r -> !Arrays.toString(r.name()).contains("__confluent")).collect(toList());
             assertThat(withoutConfluent)
                     .containsExactly(new DataConnectionResource("topic", "my-topic"));
         } finally {
@@ -184,6 +186,30 @@ public class KafkaDataConnectionTest {
         assertThat(resourcedTypes)
                 .map(r -> r.toLowerCase(Locale.ROOT))
                 .containsExactlyInAnyOrder("topic");
+    }
+
+    @Test
+    public void shared_producer_should_not_be_created_with_additional_props() {
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+        Properties properties = new Properties();
+        properties.put("A", "B");
+
+        assertThatThrownBy(() -> kafkaDataConnection.getProducer(null, properties))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Shared Kafka producer can be created only with data connection options");
+
+        kafkaDataConnection.release();
+    }
+
+    @Test
+    public void shared_producer_is_allowed_to_be_created_with_empty_props() {
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+
+        Producer<Object, Object> kafkaProducer = kafkaDataConnection.getProducer(null, new Properties());
+        assertThat(kafkaProducer).isNotNull();
+
+        kafkaProducer.close();
+        kafkaDataConnection.release();
     }
 
     private KafkaDataConnection createKafkaDataConnection(KafkaTestSupport kafkaTestSupport) {
