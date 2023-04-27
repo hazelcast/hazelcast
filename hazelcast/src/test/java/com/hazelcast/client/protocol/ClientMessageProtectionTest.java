@@ -150,8 +150,11 @@ public class ClientMessageProtectionTest {
             socket.setSoTimeout(5000);
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
                 os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
-                ClientTestUtil.writeClientMessage(os, clientMessage);
+                // The socket might be closed after we write the large string
+                // frame and before the frames next to that. So, even the
+                // write message call below could throw.
                 expected.expect(connectionClosedException());
+                ClientTestUtil.writeClientMessage(os, clientMessage);
                 ClientTestUtil.readResponse(is);
             }
         }

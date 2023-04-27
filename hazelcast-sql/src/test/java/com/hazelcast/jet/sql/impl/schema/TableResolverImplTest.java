@@ -63,7 +63,7 @@ public class TableResolverImplTest {
     private NodeEngine nodeEngine;
 
     @Mock
-    private TablesStorage tableStorage;
+    private RelationsStorage relationsStorage;
 
     @Mock
     private SqlConnectorCache connectorCache;
@@ -86,7 +86,7 @@ public class TableResolverImplTest {
 
         when(nodeEngine.getHazelcastInstance()).thenReturn(hazelcastInstance);
         when(hazelcastInstance.getLifecycleService()).thenReturn(lifecycleService);
-        catalog = new TableResolverImpl(nodeEngine, tableStorage, connectorCache);
+        catalog = new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
         catalog.registerListener(listener);
     }
 
@@ -97,16 +97,18 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
+        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connector.defaultObjectType()).willReturn("Dummy");
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
+                mapping.externalName(), mapping.dataConnection(), "Dummy"))
                 .willThrow(new RuntimeException("expected test exception"));
 
         // when
         // then
         assertThatThrownBy(() -> catalog.createMapping(mapping, true, true))
                 .hasMessageContaining("expected test exception");
-        verify(tableStorage, never()).putIfAbsent(anyString(), (Mapping) any());
-        verify(tableStorage, never()).put(anyString(), (Mapping) any());
+        verify(relationsStorage, never()).putIfAbsent(anyString(), (Mapping) any());
+        verify(relationsStorage, never()).put(anyString(), (Mapping) any());
         verifyNoInteractions(listener);
     }
 
@@ -115,10 +117,12 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
+        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
+                mapping.externalName(), mapping.dataConnection(), null))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
-        given(tableStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
+        given(connector.defaultObjectType()).willReturn("Dummy");
+        given(relationsStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
         // then
@@ -133,10 +137,12 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
+        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connector.defaultObjectType()).willReturn("Dummy");
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
+                mapping.externalName(), mapping.dataConnection(), null))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
-        given(tableStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
+        given(relationsStorage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
         // when
         catalog.createMapping(mapping, false, true);
@@ -150,15 +156,40 @@ public class TableResolverImplTest {
         // given
         Mapping mapping = mapping();
 
-        given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.externalName()))
+        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connector.defaultObjectType()).willReturn("Dummy");
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
+                mapping.externalName(), mapping.dataConnection(), null))
                 .willReturn(singletonList(new MappingField("field_name", INT)));
 
         // when
         catalog.createMapping(mapping, true, false);
 
         // then
-        verify(tableStorage).put(eq(mapping.name()), isA(Mapping.class));
+        verify(relationsStorage).put(eq(mapping.name()), isA(Mapping.class));
+        verify(listener).onTableChanged();
+    }
+
+    @Test
+    public void when_mappingWithNoObjectType_then_usesDefault() {
+        // given
+        Mapping mapping = mapping();
+
+        given(connectorCache.forType(mapping.connectorType())).willReturn(connector);
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
+                mapping.externalName(), mapping.dataConnection(), "MyDummyType"))
+                .willReturn(singletonList(new MappingField("field_name", INT)));
+        // in case of mistake, throw error:
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(),
+                mapping.externalName(), mapping.dataConnection(), null))
+                .willThrow(new AssertionError("Object type must not be null"));
+        given(connector.defaultObjectType()).willReturn("MyDummyType");
+
+        // when
+        catalog.createMapping(mapping, true, false);
+
+        // then
+        verify(relationsStorage).put(eq(mapping.name()), isA(Mapping.class));
         verify(listener).onTableChanged();
     }
 
@@ -167,7 +198,7 @@ public class TableResolverImplTest {
         // given
         String name = "name";
 
-        given(tableStorage.removeMapping(name)).willReturn(mapping());
+        given(relationsStorage.removeMapping(name)).willReturn(mapping());
 
         // when
         // then
@@ -180,7 +211,7 @@ public class TableResolverImplTest {
         // given
         String name = "name";
 
-        given(tableStorage.removeMapping(name)).willReturn(null);
+        given(relationsStorage.removeMapping(name)).willReturn(null);
 
         // when
         // then
@@ -195,7 +226,7 @@ public class TableResolverImplTest {
         // given
         String name = "name";
 
-        given(tableStorage.removeMapping(name)).willReturn(null);
+        given(relationsStorage.removeMapping(name)).willReturn(null);
 
         // when
         // then
@@ -211,26 +242,26 @@ public class TableResolverImplTest {
     public void when_createsView_then_succeeds() {
         // given
         View view = view();
-        given(tableStorage.putIfAbsent(view.name(), view)).willReturn(true);
+        given(relationsStorage.putIfAbsent(view.name(), view)).willReturn(true);
 
         // when
         catalog.createView(view, false, false);
 
         // then
-        verify(tableStorage).putIfAbsent(eq(view.name()), isA(View.class));
+        verify(relationsStorage).putIfAbsent(eq(view.name()), isA(View.class));
     }
 
     @Test
     public void when_createsViewIfNotExists_then_succeeds() {
         // given
         View view = view();
-        given(tableStorage.putIfAbsent(view.name(), view)).willReturn(true);
+        given(relationsStorage.putIfAbsent(view.name(), view)).willReturn(true);
 
         // when
         catalog.createView(view, false, true);
 
         // then
-        verify(tableStorage).putIfAbsent(eq(view.name()), isA(View.class));
+        verify(relationsStorage).putIfAbsent(eq(view.name()), isA(View.class));
     }
 
     @Test
@@ -242,7 +273,7 @@ public class TableResolverImplTest {
         catalog.createView(view, true, false);
 
         // then
-        verify(tableStorage).put(eq(view.name()), isA(View.class));
+        verify(relationsStorage).put(eq(view.name()), isA(View.class));
     }
 
     @Test
@@ -254,14 +285,14 @@ public class TableResolverImplTest {
         catalog.createView(view, true, true);
 
         // then
-        verify(tableStorage).putIfAbsent(eq(view.name()), isA(View.class));
+        verify(relationsStorage).putIfAbsent(eq(view.name()), isA(View.class));
     }
 
     @Test
     public void when_createsDuplicateViews_then_throws() {
         // given
         View view = view();
-        given(tableStorage.putIfAbsent(eq(view.name()), isA(View.class))).willReturn(false);
+        given(relationsStorage.putIfAbsent(eq(view.name()), isA(View.class))).willReturn(false);
 
         // when
         // then
@@ -276,7 +307,7 @@ public class TableResolverImplTest {
         // given
         String name = "name";
 
-        given(tableStorage.removeView(name)).willReturn(null);
+        given(relationsStorage.removeView(name)).willReturn(null);
 
         // when
         // then
@@ -291,7 +322,7 @@ public class TableResolverImplTest {
         // given
         String name = "name";
 
-        given(tableStorage.removeView(name)).willReturn(null);
+        given(relationsStorage.removeView(name)).willReturn(null);
 
         // when
         // then
@@ -302,7 +333,7 @@ public class TableResolverImplTest {
     // endregion
 
     private static Mapping mapping() {
-        return new Mapping("name", "external_name", "type", emptyList(), emptyMap());
+        return new Mapping("name", "external_name", null, "type", null, emptyList(), emptyMap());
     }
 
     private static View view() {

@@ -17,11 +17,13 @@
 package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Properties;
 
@@ -29,22 +31,45 @@ import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Category({SlowTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class KafkaConnectSourcesTest {
 
     @Test
     public void should_fail_when_no_name_property() {
         Properties properties = new Properties();
-        assertThatThrownBy(() -> connect(properties))
+        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'name' is required");
+    }
+
+    @Test
+    public void should_fail_when_no_projectionFn() {
+        Properties properties = new Properties();
+        properties.setProperty("name", "some-name");
+        properties.setProperty("connector.class", "some-name");
+        assertThatThrownBy(() -> connect(properties, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("projectionFn is required");
+    }
+
+
+    @Test
+    public void should_fail_when_tasks_max_property_set() {
+        Properties properties = new Properties();
+        properties.setProperty("name", "some-name");
+        properties.setProperty("connector.class", "some-name");
+        properties.setProperty("tasks.max", "1");
+        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Property 'tasks.max' not allowed. Use setLocalParallelism(1) in the pipeline instead");
     }
 
     @Test
     public void should_fail_when_no_connector_class_property() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
-        assertThatThrownBy(() -> connect(properties))
+        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'connector.class' is required");
     }
@@ -54,7 +79,7 @@ public class KafkaConnectSourcesTest {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
         properties.setProperty("connector.class", "some-name");
-        StreamSource<SourceRecord> source = connect(properties);
+        StreamSource<SourceRecord> source = connect(properties, rec -> rec);
         assertThat(source).isNotNull();
     }
 }

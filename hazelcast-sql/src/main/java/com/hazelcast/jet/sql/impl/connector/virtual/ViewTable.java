@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.isUnbounded;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 /**
@@ -42,7 +43,7 @@ public class ViewTable extends Table {
     private RelNode viewRel;
 
     public ViewTable(String schemaName, String viewName, String viewQuery, TableStatistics statistics) {
-        super(schemaName, viewName, null, statistics);
+        super(schemaName, viewName, null, statistics, "View", false);
         this.viewQuery = viewQuery;
     }
 
@@ -69,6 +70,7 @@ public class ViewTable extends Table {
             res.add(new TableField(f.getName(), toHazelcastType(f.getType()), false));
         }
         context.getUsedViews().add(getObjectKey());
+        streaming = isUnbounded(viewRel);
         return res;
     }
 

@@ -111,4 +111,11 @@
         <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
         <cpe>cpe:/a:google:gson</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - json version 20230227 have already fix for listed CVE.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.json/json@20230227.*$</packageUrl>
+        <cve>CVE-2022-45688</cve>
+    </suppress>
 </suppressions>

@@ -158,6 +158,7 @@ abstract class MapProxySupport<K, V>
     protected static final String NULL_BIFUNCTION_IS_NOT_ALLOWED = "Null BiFunction is not allowed!";
     protected static final String NULL_FUNCTION_IS_NOT_ALLOWED = "Null Function is not allowed!";
     protected static final String NULL_CONSUMER_IS_NOT_ALLOWED = "Null Consumer is not allowed!";
+    protected static final String NULL_ENTRYPROCESSOR_IS_NOT_ALLOWED = "Null EntryProcessor is not allowed!";
 
     private static final int INITIAL_WAIT_LOAD_SLEEP_MILLIS = 10;
     private static final int MAXIMAL_WAIT_LOAD_SLEEP_MILLIS = 1000;
@@ -234,7 +235,7 @@ abstract class MapProxySupport<K, V>
         this.mapServiceContext = service.getMapServiceContext();
         this.mapConfig = mapConfig;
         this.partitionStrategy = mapServiceContext.getPartitioningStrategy(mapConfig.getName(),
-                mapConfig.getPartitioningStrategyConfig());
+                mapConfig.getPartitioningStrategyConfig(), mapConfig.getPartitioningAttributeConfigs());
         this.localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
         this.lockSupport = new LockProxySupport(MapService.getObjectNamespace(name),

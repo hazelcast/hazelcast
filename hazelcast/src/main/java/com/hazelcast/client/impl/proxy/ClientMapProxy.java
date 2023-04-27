@@ -117,6 +117,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EventJournalMapEvent;
@@ -1396,10 +1397,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnAllKeysCodec.encodeRequest(name, toData(entryProcessor));
         ClientMessage response = invoke(request);
-        return prepareResult(MapExecuteOnAllKeysCodec.decodeResponse(response));
+        boolean shouldInvalidate = !(entryProcessor instanceof ReadOnly);
+        return prepareResult(MapExecuteOnAllKeysCodec.decodeResponse(response), shouldInvalidate);
     }
 
-    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entries) {
+    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entries, boolean shouldInvalidate) {
         if (CollectionUtil.isEmpty(entries)) {
             return emptyMap();
         }
@@ -1421,8 +1423,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
-
-        return prepareResult(MapExecuteWithPredicateCodec.decodeResponse(response));
+        boolean shouldInvalidate = !(entryProcessor instanceof ReadOnly);
+        return prepareResult(MapExecuteWithPredicateCodec.decodeResponse(response), shouldInvalidate);
     }
 
     @Override
@@ -1553,9 +1555,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                                                             @Nonnull EntryProcessor<K, V, R> entryProcessor) {
         ClientMessage request = MapExecuteOnKeysCodec.encodeRequest(name, toData(entryProcessor), dataKeys);
         ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName()).invoke();
+        boolean shouldInvalidate = !(entryProcessor instanceof ReadOnly);
+
         return new ClientDelegatingFuture<>(
                 future, getSerializationService(),
-                message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message)));
+                message -> prepareResult(MapExecuteOnKeysCodec.decodeResponse(message), shouldInvalidate));
     }
 
     @Override
@@ -1651,7 +1655,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue(), triggerMapLoader);
             new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke()
-                    .whenCompleteAsync(callback);
+                    .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
         // if executing in sync mode, block for the responses
         if (future == null) {

@@ -21,6 +21,8 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -65,7 +67,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
     private static final int ENTRIES = 50;
     private static final int ITERATIONS = 100;
-    private static final String MAP_NAME = "entryProcessorBouncingNodesTestMap";
+    protected static final String MAP_NAME = "entryProcessorBouncingNodesTestMap";
 
     @Parameters(name = "withPredicate={0}, withIndex={1}")
     public static Collection<Object[]> parameters() {
@@ -88,6 +90,8 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
             .driverType(BounceTestConfiguration.DriverType.ALWAYS_UP_MEMBER)
             .build();
 
+    private final ILogger logger = Logger.getLogger(getClass());
+
     @Before
     public void setUp() {
         HazelcastInstance instance = bounceMemberRule.getSteadyMember();
@@ -109,6 +113,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         HazelcastInstance steadyMember = bounceMemberRule.getSteadyMember();
         final IMap<Integer, ListHolder> map = steadyMember.getMap(MAP_NAME);
         while (iteration < ITERATIONS) {
+            logger.info(String.format("Iteration %d of %d", iteration + 1, ITERATIONS));
             IncrementProcessor processor = new IncrementProcessor(iteration);
             expected.add(iteration);
             for (int i = 0; i < ENTRIES; ++i) {

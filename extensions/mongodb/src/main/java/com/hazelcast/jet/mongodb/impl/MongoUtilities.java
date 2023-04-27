@@ -15,23 +15,35 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
+import com.hazelcast.jet.JetException;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
+import com.mongodb.connection.ClusterDescription;
 import org.bson.BsonArray;
+import org.bson.BsonDateTime;
 import org.bson.BsonString;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.mongodb.client.model.Aggregates.addFields;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.unset;
+import static java.time.ZoneId.systemDefault;
+import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-final class MongoUtilities {
+public final class MongoUtilities {
 
     private MongoUtilities() {
     }
@@ -51,9 +63,27 @@ final class MongoUtilities {
     static List<Bson> partitionAggregate(int totalParallelism, int processorIndex, boolean stream) {
         List<Bson> aggregateList = new ArrayList<>(3);
 
-        String code = "function(s) {\n"
-                + "    return s === null ? -1 : s.getTimestamp().getTime() %"
-                        + totalParallelism + " == " + processorIndex + ";\n"
+        String hashFunction = "function hash(s) { \n" +
+                "  var hash = 0, i, chr;\n" +
+                "  if (s.length === 0) return hash;\n" +
+                "  for (i = 0; i < s.length; i++) {\n" +
+                "    chr = s.charCodeAt(i);\n" +
+                "    hash = ((hash << 5) - hash) + chr;\n" +
+                "    hash |= 0;\n" +
+                "  }\n" +
+                "  return hash;\n" +
+                "}\n";
+
+        String moduloPart = " %" + totalParallelism + " == " + processorIndex + ";\n";
+        String code = "function(id) {\n"
+                + "if (id instanceof ObjectId)"
+                + "    return id === null ? -1 : id.getTimestamp().getTime() " + moduloPart
+                + "if (typeof(id) === 'number' || typeof(id) === 'bigint') return id " + moduloPart
+                + "if (typeof(id) === 'string') {\n"
+                + hashFunction
+                + "    return hash(id) " + moduloPart
+                + "}\n"
+                + "else return 0;\n"
                 + "}";
 
         String idRef = stream ? "$fullDocument._id" : "$_id";
@@ -68,4 +98,68 @@ final class MongoUtilities {
         return aggregateList;
     }
 
+    /**
+     * Converts given time in millisecond of unix epoch to BsonTimestamp.
+     */
+    public static BsonTimestamp bsonTimestampFromTimeMillis(long time) {
+        return new BsonTimestamp((int) MILLISECONDS.toSeconds(time), 0);
+    }
+
+    /**
+     * Converts given bson timest1amp to unix epoch.
+     */
+    @Nullable
+    public static BsonTimestamp localDateTimeToTimestamp(@Nullable LocalDateTime time) {
+        if (time == null) {
+            return null;
+        }
+
+        return new BsonTimestamp((int) time.atZone(systemDefault()).withZoneSameInstant(UTC).toEpochSecond(), 0);
+    }
+
+    /**
+     * Converts given bson timestamp to unix epoch.
+     */
+    @Nullable
+    public static LocalDateTime bsonDateTimeToLocalDateTime(@Nullable BsonDateTime time) {
+        if (time == null) {
+            return null;
+        }
+        Instant instant = Instant.ofEpochMilli(time.getValue());
+        return instant.atZone(UTC).withZoneSameInstant(systemDefault()).toLocalDateTime();
+    }
+
+    /**
+     * Converts given bson timestamp to unix epoch.
+     */
+    @Nullable
+    public static LocalDateTime bsonTimestampToLocalDateTime(@Nullable BsonTimestamp time) {
+        if (time == null) {
+            return null;
+        }
+        long v = time.getTime();
+        return LocalDateTime.ofEpochSecond(v, 0, UTC)
+                            .atZone(UTC)
+                            .withZoneSameInstant(systemDefault())
+                            .toLocalDateTime();
+    }
+
+    static void checkCollectionExists(MongoDatabase database, String collectionName) {
+        for (String name : database.listCollectionNames()) {
+            if (name.equals(collectionName)) {
+                return;
+            }
+        }
+        throw new JetException("Collection " + collectionName + " in database " + database.getName() + " does not exist");
+    }
+
+    static void checkDatabaseExists(MongoClient client, String databaseName) {
+        for (String name : client.listDatabaseNames()) {
+            if (name.equalsIgnoreCase(databaseName)) {
+                return;
+            }
+        }
+        ClusterDescription clusterDescription = client.getClusterDescription();
+        throw new JetException("Database " + databaseName + " does not exist in cluster " + clusterDescription);
+    }
 }

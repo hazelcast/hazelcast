@@ -131,7 +131,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     @Override
     public void destroyDistributedObject(String objectId, boolean local) {
         statsMap.remove(objectId);
-        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, objectId);
+        nodeEngine.getEventService().deregisterAllLocalListeners(SERVICE_NAME, objectId);
     }
 
     @Override

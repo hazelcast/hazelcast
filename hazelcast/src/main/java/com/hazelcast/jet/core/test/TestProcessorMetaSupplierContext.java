@@ -18,6 +18,7 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.JetInstance;
@@ -32,6 +33,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
+import java.security.AccessControlException;
+import java.security.Permission;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -256,9 +259,18 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return classLoader;
     }
 
+    @Override
+    public DataConnectionService dataConnectionService() {
+        return Util.getNodeEngine(instance).getDataConnectionService();
+    }
+
     @Nonnull
     public TestProcessorMetaSupplierContext setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
         return this;
+    }
+
+    @Override
+    public void checkPermission(Permission permission) throws AccessControlException {
     }
 }

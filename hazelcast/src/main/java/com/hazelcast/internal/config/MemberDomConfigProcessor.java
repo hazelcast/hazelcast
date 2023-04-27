@@ -29,6 +29,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -42,7 +43,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.DataLinkConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.config.HotRestartConfig;
@@ -79,6 +79,7 @@ import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
@@ -126,6 +127,8 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.tpc.TpcConfig;
+import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -169,6 +172,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.hazelcast.config.EndpointConfig.DEFAULT_SOCKET_KEEP_COUNT;
+import static com.hazelcast.config.EndpointConfig.DEFAULT_SOCKET_KEEP_IDLE_SECONDS;
+import static com.hazelcast.config.EndpointConfig.DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_CONNECT_TIMEOUT_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_LINGER_SECONDS;
 import static com.hazelcast.config.ServerSocketEndpointConfig.DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
@@ -177,16 +183,17 @@ import static com.hazelcast.config.security.LdapRoleMappingMode.getRoleMappingMo
 import static com.hazelcast.config.security.LdapSearchScope.getSearchScope;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.getConfigByTag;
 import static com.hazelcast.internal.config.ConfigSections.ADVANCED_NETWORK;
+import static com.hazelcast.internal.config.ConfigSections.TPC;
 import static com.hazelcast.internal.config.ConfigSections.AUDITLOG;
 import static com.hazelcast.internal.config.ConfigSections.CACHE;
 import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
+import static com.hazelcast.internal.config.ConfigSections.DATA_CONNECTION;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
-import static com.hazelcast.internal.config.ConfigSections.DATA_LINK;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.internal.config.ConfigSections.IMPORT;
@@ -380,8 +387,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDynamicConfiguration(node);
         } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
             handleIntegrityChecker(node);
-        } else if (matches(DATA_LINK.getName(), nodeName)) {
-            handleDataLinks(node);
+        } else if (matches(DATA_CONNECTION.getName(), nodeName)) {
+            handleDataConnections(node);
+        } else if (matches(TPC.getName(), nodeName)) {
+            handleTpc(node);
         } else {
             return true;
         }
@@ -936,6 +945,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
+    @SuppressWarnings("java:S3776")
     private void handleNetwork(Node node)
             throws Exception {
         for (Node child : childElements(node)) {
@@ -966,6 +976,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 handleRestApi(child);
             } else if (matches("memcache-protocol", nodeName)) {
                 handleMemcacheProtocol(child);
+            } else if (matches("tpc-socket", nodeName)) {
+                handleTpcSocketConfig(child, config.getNetworkConfig().getTpcSocketConfig());
             }
         }
     }
@@ -1134,6 +1146,23 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleSocketOptions(node, endpointConfig);
         } else if (matches("symmetric-encryption", nodeName)) {
             handleViaReflection(node, endpointConfig, new SymmetricEncryptionConfig());
+        } else if (matches("tpc-socket", nodeName)) {
+            handleTpcSocketConfig(node, endpointConfig.getTpcSocketConfig());
+        }
+    }
+
+    private void handleTpcSocketConfig(Node node, TpcSocketConfig tpcSocketConfig) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("port-range", nodeName)) {
+                tpcSocketConfig.setPortRange(getTextContent(child));
+            } else if (matches("receive-buffer-size-kb", nodeName)) {
+                tpcSocketConfig.setReceiveBufferSizeKB(
+                        getIntegerValue("receive-buffer-size-kb", getTextContent(child)));
+            } else if (matches("send-buffer-size-kb", nodeName)) {
+                tpcSocketConfig.setSendBufferSizeKB(
+                        getIntegerValue("send-buffer-size-kb", getTextContent(child)));
+            }
         }
     }
 
@@ -1158,6 +1187,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             } else if (matches("linger-seconds", nodeName)) {
                 endpointConfig.setSocketLingerSeconds(getIntegerValue("linger-seconds",
                         getTextContent(child), DEFAULT_SOCKET_LINGER_SECONDS));
+            } else if (matches("keep-idle-seconds", nodeName)) {
+                endpointConfig.setSocketKeepIdleSeconds(getIntegerValue("keep-idle-seconds",
+                        getTextContent(child), DEFAULT_SOCKET_KEEP_IDLE_SECONDS));
+            } else if (matches("keep-interval-seconds", nodeName)) {
+                endpointConfig.setSocketKeepIntervalSeconds(getIntegerValue("keep-interval-seconds",
+                        getTextContent(child), DEFAULT_SOCKET_KEEP_INTERVAL_SECONDS));
+            } else if (matches("keep-count", nodeName)) {
+                endpointConfig.setSocketKeepCount(getIntegerValue("keep-count",
+                        getTextContent(child), DEFAULT_SOCKET_KEEP_COUNT));
             }
         }
     }
@@ -1952,6 +1990,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapQueryCacheHandler(node, mapConfig);
             } else if (matches("tiered-store", nodeName)) {
                 mapConfig.setTieredStoreConfig(createTieredStoreConfig(node));
+            } else if (matches("partition-attributes", nodeName)) {
+                handlePartitionAttributes(node, mapConfig);
             }
         }
         config.addMapConfig(mapConfig);
@@ -3224,6 +3264,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("statement-timeout-millis", nodeName)) {
                 sqlConfig.setStatementTimeoutMillis(Long.parseLong(getTextContent(child)));
             }
+            if (matches("catalog-persistence-enabled", nodeName)) {
+                sqlConfig.setCatalogPersistenceEnabled(Boolean.parseBoolean(getTextContent(child)));
+            }
         }
     }
 
@@ -3431,26 +3474,52 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         config.getIntegrityCheckerConfig().setEnabled(enabled);
     }
 
-    protected void handleDataLinks(Node node) {
-        String name = getAttribute(node, "name");
-        DataLinkConfig dataLinkConfig = ConfigUtils.getByNameOrNew(config.getDataLinkConfigs(),
-                name, DataLinkConfig.class);
-        handleDataLink(node, dataLinkConfig);
-    }
+    private void handleTpc(Node node) {
+        Node attrEnabled = getNamedItemNode(node, "enabled");
+        boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
+        TpcConfig tpcConfig = config.getTpcConfig();
+        tpcConfig.setEnabled(enabled);
 
-    protected void handleDataLink(Node node, DataLinkConfig dataLinkConfig) {
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
-            if (matches("class-name", childName)) {
-                dataLinkConfig.setClassName(getTextContent(child));
-            } else if (matches("properties", childName)) {
-                fillProperties(child, dataLinkConfig.getProperties());
-            } else if (matches("shared", childName)) {
-                dataLinkConfig.setShared(getBooleanValue(getTextContent(child)));
+            if (matches("eventloop-count", childName)) {
+                tpcConfig.setEventloopCount(getIntegerValue("eventloop-count", getTextContent(child)));
             }
         }
     }
 
+    protected void handleDataConnections(Node node) {
+        String name = getAttribute(node, "name");
+        DataConnectionConfig dataConnectionConfig = ConfigUtils.getByNameOrNew(config.getDataConnectionConfigs(),
+                name, DataConnectionConfig.class);
+        handleDataConnection(node, dataConnectionConfig);
+    }
+
+    protected void handleDataConnection(Node node, DataConnectionConfig dataConnectionConfig) {
+        for (Node child : childElements(node)) {
+            String childName = cleanNodeName(child);
+            if (matches("type", childName)) {
+                dataConnectionConfig.setType(getTextContent(child));
+            } else if (matches("properties", childName)) {
+                fillProperties(child, dataConnectionConfig.getProperties());
+            } else if (matches("shared", childName)) {
+                dataConnectionConfig.setShared(getBooleanValue(getTextContent(child)));
+            }
+        }
+    }
+
+    protected void handlePartitionAttributes(Node node, MapConfig mapConfig) {
+        for (final Node childElement : childElements(node)) {
+            final PartitioningAttributeConfig attributeConfig = new PartitioningAttributeConfig();
+            handlePartitioningAttributeConfig(childElement, attributeConfig);
+
+            mapConfig.getPartitioningAttributeConfigs().add(attributeConfig);
+        }
+    }
+
+    protected void handlePartitioningAttributeConfig(Node node, PartitioningAttributeConfig config) {
+        config.setAttributeName(getTextContent(node));
+    }
 
     protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {
         for (Node child : childElements(node)) {

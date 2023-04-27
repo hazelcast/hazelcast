@@ -15,33 +15,43 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class ReadMongoParams<I> implements Serializable {
     final boolean stream;
     SupplierEx<? extends MongoClient> clientSupplier;
-    List<Bson> aggregates = new ArrayList<>();
+    DataConnectionRef dataConnectionRef;
     String databaseName;
     String collectionName;
     FunctionEx<Document, I> mapItemFn;
 
     Long startAtTimestamp;
     EventTimePolicy<? super I> eventTimePolicy;
-    FunctionEx<ChangeStreamDocument<Document>, I> mapStreamFn;
+    BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn;
+    boolean nonDistributed;
+    boolean throwOnNonExisting = true;
+    private List<Document> aggregates = new ArrayList<>();
 
     public ReadMongoParams(boolean stream) {
         this.stream = stream;
@@ -49,6 +59,14 @@ public class ReadMongoParams<I> implements Serializable {
 
     public boolean isStream() {
         return stream;
+    }
+
+    public void checkConnectivityOptionsValid() {
+        boolean hasDataConnection = dataConnectionRef != null;
+        boolean hasClientSupplier = clientSupplier != null;
+        checkState(hasDataConnection || hasClientSupplier, "Client supplier or data connection ref should be provided");
+        checkState(hasDataConnection != hasClientSupplier, "Only one of two should be provided: " +
+                "Client supplier or data connection ref");
     }
 
     @Nonnull
@@ -61,13 +79,34 @@ public class ReadMongoParams<I> implements Serializable {
         return this;
     }
 
+    public DataConnectionRef getDataConnectionRef() {
+        return dataConnectionRef;
+    }
+
+    public ReadMongoParams<I> setDataConnectionRef(DataConnectionRef dataConnectionRef) {
+        this.dataConnectionRef = dataConnectionRef;
+        return this;
+    }
+
     @Nonnull
-    public List<Bson> getAggregates() {
+    public ReadMongoParams<I> setDataConnectionRef(@Nullable String dataConnectionName) {
+        if (dataConnectionName != null) {
+            setDataConnectionRef(dataConnectionRef(dataConnectionName));
+        }
+        return this;
+    }
+
+    @Nonnull
+    public List<Document> getAggregates() {
         return aggregates;
     }
 
     public ReadMongoParams<I> setAggregates(@Nonnull List<Bson> aggregates) {
-        this.aggregates = aggregates;
+        List<Document> aggregateDocs = new ArrayList<>();
+        for (Bson aggregate : aggregates) {
+            aggregateDocs.add(bsonToDocument(aggregate));
+        }
+        this.aggregates = aggregateDocs;
         return this;
     }
 
@@ -102,12 +141,12 @@ public class ReadMongoParams<I> implements Serializable {
         return this;
     }
 
-    public Long getStartAtTimestamp() {
-        return startAtTimestamp;
+    public BsonTimestamp getStartAtTimestamp() {
+        return startAtTimestamp == null ? null : new BsonTimestamp(startAtTimestamp);
     }
 
-    public ReadMongoParams<I> setStartAtTimestamp(Long startAtTimestamp) {
-        this.startAtTimestamp = startAtTimestamp;
+    public ReadMongoParams<I> setStartAtTimestamp(BsonTimestamp startAtTimestamp) {
+        this.startAtTimestamp = startAtTimestamp == null ? null : startAtTimestamp.getValue();
         return this;
     }
 
@@ -120,18 +159,35 @@ public class ReadMongoParams<I> implements Serializable {
         return this;
     }
 
-    public FunctionEx<ChangeStreamDocument<Document>, I> getMapStreamFn() {
+    public BiFunctionEx<ChangeStreamDocument<Document>, Long, I> getMapStreamFn() {
         return mapStreamFn;
     }
 
-    public ReadMongoParams<I> setMapStreamFn(FunctionEx<ChangeStreamDocument<Document>, I> mapStreamFn) {
+    public ReadMongoParams<I> setMapStreamFn(BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn) {
         this.mapStreamFn = mapStreamFn;
         return this;
     }
 
     public ReadMongoParams<I> addAggregate(@Nonnull Bson doc) {
-        this.aggregates.add(doc);
+        this.aggregates.add(bsonToDocument(doc));
         return this;
     }
 
+    public boolean isThrowOnNonExisting() {
+        return throwOnNonExisting;
+    }
+
+    public ReadMongoParams<I> setThrowOnNonExisting(boolean throwOnNonExisting) {
+        this.throwOnNonExisting = throwOnNonExisting;
+        return this;
+    }
+
+    public ReadMongoParams<I> setNonDistributed(boolean nonDistributed) {
+        this.nonDistributed = nonDistributed;
+        return this;
+    }
+
+    public boolean isNonDistributed() {
+        return nonDistributed;
+    }
 }

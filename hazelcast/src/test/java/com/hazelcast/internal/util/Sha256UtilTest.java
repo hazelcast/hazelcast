@@ -26,6 +26,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 public class Sha256UtilTest {
+    @Test
+    public void testBytesToHex() {
+        byte[] data = {3, -61, -37, -66, 125, -120, 21, -109, 126, 53, 75, -115, 44, 76, -17, -53, 2, 6, 61, -45, 32,
+                -19, 35, -15, 109, -114, 92, -13, 109, -44, -7, 42};
+        String result = Sha256Util.bytesToHex(data);
+        assertEquals("The result must has even length", 0, result.length() % 2);
+        assertEquals("03c3dbbe7d8815937e354b8d2c4cefcb02063dd320ed23f16d8e5cf36dd4f92a", result);
+    }
 
     @Test
     public void testCalculateSha256Hex() throws Exception {

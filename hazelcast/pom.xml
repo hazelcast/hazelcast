@@ -177,6 +177,10 @@
                                     <shadedPattern>${relocation.root}.org.snakeyaml</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>org.jctools</pattern>
+                                    <shadedPattern>${relocation.root}.org.jctools</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>io.github.classgraph</pattern>
                                     <shadedPattern>${relocation.root}.io.github.classgraph</shadedPattern>
                                 </relocation>
@@ -205,9 +209,16 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
                             </transformers>
                             <filters>
+                                <filter>
+                                    <artifact>org.jctools:jctools-core</artifact>
+                                    <includes>
+                                        <include>org/jctools/queues/*</include>
+                                        <include>org/jctools/util/*</include>
+                                    </includes>
+                                </filter>
                                 <filter>
                                     <artifact>com.fasterxml.jackson.core:*</artifact>
                                     <excludes>
@@ -281,7 +292,6 @@
                                     org.apache.logging.log4j.spi;resolution:=optional,
                                     org.slf4j;resolution:=optional,
                                     org.codehaus.groovy.jsr223;resolution:=optional,
-                                    org.jruby.embed.jsr223;resolution:=optional,
                                     com.damnhandy.uri.template;resolution:=optional,
                                     org.apache.commons.validator.routines;resolution:=optional,
                                     com.google.re2j;resolution:=optional,
@@ -295,6 +305,7 @@
                                     org.hibernate.engine.jdbc.connections.spi;resolution:=optional,
                                     org.hibernate.service;resolution:=optional,
                                     org.hibernate.service.spi;resolution:=optional,
+                                    net.openhft.affinity;resolution:=optional,
                                     *
                                 </Import-Package>
                                 <Bundle-Name>Hazelcast(Core)</Bundle-Name>
@@ -447,14 +458,13 @@
     </build>
 
     <dependencies>
-        <!-- needed for thread affinity -->
+        <!-- Needed for TPC -->
         <dependency>
-            <groupId>net.openhft</groupId>
-            <artifactId>affinity</artifactId>
-            <version>3.23.3</version>
-            <scope>provided</scope>
-            <optional>true</optional>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-tpc-engine</artifactId>
+            <version>5.3.0-SNAPSHOT</version>
         </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -497,7 +507,7 @@
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.14.1</version>
+            <version>1.14.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
@@ -564,8 +574,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -624,13 +634,6 @@
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-all</artifactId>
             <version>2.4.21</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.jruby</groupId>
-            <artifactId>jruby-complete</artifactId>
-            <version>1.7.22</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -733,9 +736,33 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mssqlserver</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mariadb</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql.connector.version}</version>
             <scope>test</scope>
         </dependency>
 

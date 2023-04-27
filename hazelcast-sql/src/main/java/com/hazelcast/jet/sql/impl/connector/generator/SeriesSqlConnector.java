@@ -53,9 +53,10 @@ class SeriesSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return false;
+    public String defaultObjectType() {
+        return "Series";
     }
 
     @Nonnull
@@ -64,8 +65,9 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         throw new UnsupportedOperationException("Resolving fields not supported for " + typeName());
     }
 
@@ -74,11 +76,8 @@ class SeriesSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String name,
-            @Nonnull String externalName,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull SqlMappingContext ctx,
+            @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException("Creating table not supported for " + typeName());
     }
 
@@ -100,7 +99,7 @@ class SeriesSqlConnector implements SqlConnector {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        SeriesTable table = (SeriesTable) context.getTable();
+        SeriesTable table = context.getTable();
         BatchSource<JetSqlRow> source = table.items(context.convertFilter(predicate), context.convertProjection(projection));
         ProcessorMetaSupplier pms = ((BatchSourceTransform<JetSqlRow>) source).metaSupplier;
         return context.getDag().newUniqueVertex(table.toString(), pms);

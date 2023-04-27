@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.expression.math;
 
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.math.MinusFunction;
@@ -568,7 +568,7 @@ public class MinusOperatorIntegrationTest extends ArithmeticOperatorIntegrationT
     @Test
     public void testSerialization() {
         Expression<?> original = MinusFunction.create(ConstantExpression.create(3, INT), ConstantExpression.create(2, INT), INT);
-        Expression<?> restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_MINUS);
+        Expression<?> restored = serializeAndCheck(original, JetSqlSerializerHook.EXPRESSION_MINUS);
 
         checkEquals(original, restored, true);
     }

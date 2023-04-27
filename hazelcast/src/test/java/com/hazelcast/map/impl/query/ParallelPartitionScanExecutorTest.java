@@ -27,10 +27,12 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
@@ -55,14 +57,25 @@ import static org.mockito.Mockito.when;
 public class ParallelPartitionScanExecutorTest {
 
     @Rule
+    public TestName testName = new TestName();
+
+    @Rule
     public ExpectedException expected = ExpectedException.none();
 
+    private NamedThreadPoolExecutor threadPoolExecutor;
+
+    @After
+    public void tearDown() {
+        threadPoolExecutor.shutdownNow();
+    }
+
     private ParallelPartitionScanExecutor executor(PartitionScanRunner runner) {
-        PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(UUID.randomUUID().toString(),
-                currentThread().getContextClassLoader());
-        NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(UUID.randomUUID().toString(), 1, 1, 100, TimeUnit.SECONDS,
+        PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(testName.getMethodName()
+                + "-" + UUID.randomUUID(), currentThread().getContextClassLoader());
+        threadPoolExecutor = new NamedThreadPoolExecutor(testName.getMethodName()
+                + "-" + UUID.randomUUID(), 1, 1, 100, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(100), threadFactory);
-        return new ParallelPartitionScanExecutor(runner, pool, 60000);
+        return new ParallelPartitionScanExecutor(runner, threadPoolExecutor, 60000);
     }
 
     @Test

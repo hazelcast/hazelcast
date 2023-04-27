@@ -77,6 +77,33 @@ public class AddressCheckerImplTest extends HazelcastTestSupport {
         assertFalse(joinMessageTrustChecker.isTrusted(address));
     }
 
+    @Test
+    public void testAsteriskWildcard() throws UnknownHostException {
+        AddressCheckerImpl joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.0.*.*"), logger);
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.1.1")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.1.1.1")));
+
+        joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.*.1.*"), logger);
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.1.1")));
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.127.1.127")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.127.127.127")));
+    }
+
+    @Test
+    public void testIntervalRange() throws UnknownHostException {
+        AddressCheckerImpl joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.0.110-115.*"), logger);
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.110.1")));
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.112.1")));
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.115.255")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.0.116.255")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.0.1.1")));
+
+        joinMessageTrustChecker = new AddressCheckerImpl(singleton("127.0.110-115.1-2"), logger);
+        assertTrue(joinMessageTrustChecker.isTrusted(createAddress("127.0.110.2")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.0.110.3")));
+        assertFalse(joinMessageTrustChecker.isTrusted(createAddress("127.0.109.2")));
+    }
+
     private Address createAddress(String ip) throws UnknownHostException {
         InetAddress inetAddress = InetAddress.getByName(ip);
         return new Address(inetAddress, 5701);

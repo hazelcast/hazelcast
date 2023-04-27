@@ -19,26 +19,29 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
+import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
+import java.nio.file.Paths;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeList;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.readUUID;
 import static com.hazelcast.internal.util.UUIDSerializationUtil.writeUUID;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
+import static com.hazelcast.spi.properties.ClusterProperty.JAR_UPLOAD_DIR_PATH;
 
 /**
  * Uploads the metadata of a job to be executed by a jar
  */
 public class UploadJobMetaDataOperation extends Operation implements IdentifiedDataSerializable {
 
-    boolean response;
     JobMetaDataParameterObject jobMetaDataParameterObject;
 
     public UploadJobMetaDataOperation() {
@@ -48,6 +51,7 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
         // Save the parameters received from client
         jobMetaDataParameterObject = new JobMetaDataParameterObject();
         jobMetaDataParameterObject.setSessionId(parameters.sessionId);
+        jobMetaDataParameterObject.setJarOnMember(parameters.jarOnMember);
         jobMetaDataParameterObject.setSha256Hex(parameters.sha256Hex);
         jobMetaDataParameterObject.setFileName(parameters.fileName);
         jobMetaDataParameterObject.setSnapshotName(parameters.snapshotName);
@@ -56,16 +60,33 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
         jobMetaDataParameterObject.setJobParameters(parameters.jobParameters);
     }
 
-    @Override
-    public Object getResponse() {
-        return response;
-    }
 
     @Override
     public void run() {
+        if (jobMetaDataParameterObject.isJarOnMember()) {
+            runJarOnMember();
+        } else {
+            runJarOnClient();
+        }
+    }
+
+    private void runJarOnMember() {
+        // JarPath is not the temp directory. It is the given file name
+        jobMetaDataParameterObject.setJarPath(Paths.get(jobMetaDataParameterObject.getFileName()));
+
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
-        jetServiceBackend.storeJobMetaData(jobMetaDataParameterObject);
-        response = true;
+        jetServiceBackend.jarOnMember(jobMetaDataParameterObject);
+    }
+
+    private void runJarOnClient() {
+        // Assign the upload directory path
+        NodeEngine nodeEngine = getNodeEngine();
+        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
+        String uploadDirectoryPath = hazelcastProperties.getString(JAR_UPLOAD_DIR_PATH);
+        jobMetaDataParameterObject.setUploadDirectoryPath(uploadDirectoryPath);
+
+        JetServiceBackend jetServiceBackend = getJetServiceBackend();
+        jetServiceBackend.jarOnClient(jobMetaDataParameterObject);
     }
 
     protected JetServiceBackend getJetServiceBackend() {

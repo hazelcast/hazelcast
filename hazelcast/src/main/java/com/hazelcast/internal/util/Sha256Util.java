@@ -34,6 +34,10 @@ public final class Sha256Util {
     private Sha256Util() {
     }
 
+    public static String calculateSha256Hex(@Nonnull byte[] data) throws NoSuchAlgorithmException {
+        return calculateSha256Hex(data, data.length);
+    }
+
     /**
      * Calculate the SHA256 of given data
      *
@@ -72,9 +76,24 @@ public final class Sha256Util {
                 readCount = digestInputStream.read(buffer);
             } while (readCount >= 0);
         }
-        BigInteger bigInteger = new BigInteger(1, messageDigest.digest());
-        final int radix = 16;
-        return bigInteger.toString(radix);
+        byte[] digest = messageDigest.digest();
+        return bytesToHex(digest);
+    }
 
+    /**
+     * Convert byte[] to hexadecimal string
+     */
+    public static String bytesToHex(byte[] digest) {
+        StringBuilder hexString = new StringBuilder(2 * digest.length);
+        final int mask = 0xFF;
+        for (byte b : digest) {
+            // byte type in Java is signed. Mask away the sign bit
+            String hex = Integer.toHexString(mask & b);
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 }

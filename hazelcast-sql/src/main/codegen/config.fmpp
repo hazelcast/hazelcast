@@ -23,6 +23,7 @@ data: {
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateDataConnection"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
@@ -30,6 +31,7 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlCreateType"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropDataConnection"
       "com.hazelcast.jet.sql.impl.parse.SqlDropIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
       "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
@@ -52,6 +54,8 @@ data: {
     # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
     # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
+      "CONNECTOR"
+      "CONNECTIONS"
       "IF"
       "INDEX"
       "JOB"
@@ -60,10 +64,12 @@ data: {
       "MAPPINGS"
       "RESUME"
       "SINK"
+      "SHARED"
       "SNAPSHOT"
       "SUSPEND"
       "VIEWS"
       "TYPES"
+      "RESOURCES"
     ]
 
     # List of keywords from "keywords" section that are not reserved.
@@ -392,6 +398,7 @@ data: {
       "ZONE"
 
       # added by Hazelcast
+      "CONNECTOR"
       "EXTERNAL"
       "JOB"
       "JOBS"
@@ -400,9 +407,11 @@ data: {
       "RESUME"
       "SINK"
       "SNAPSHOT"
+      "SHARED"
       "SUSPEND"
       "VIEWS"
       "TYPES"
+      "RESOURCES"
     ]
 
     # List of non-reserved keywords to add;
@@ -459,6 +468,7 @@ data: {
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
     # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
+      "SqlCreateDataConnection"
       "SqlCreateIndex"
       "SqlCreateJob"
       "SqlCreateMapping"
@@ -471,6 +481,7 @@ data: {
     # Each must accept arguments "(SqlParserPos pos)".
     # Example: "SqlDropSchema".
     dropStatementParserMethods: [
+      "SqlDropDataConnection"
       "SqlDropIndex"
       "SqlDropJob"
       "SqlDropMapping"

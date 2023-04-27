@@ -1008,7 +1008,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         for (PartitionContainer partitionContainer : partitionContainers) {
             RecordStore rs = partitionContainer.getExistingRecordStore(MAP_NAME);
             if (rs != null) {
-                Record record = rs.getRecordOrNull(key);
+                Record record = rs.getRecordOrNull(key, false);
 
                 if (record != null) {
                     assertEquals(expectedTtl, rs.getExpirySystem().getExpiryMetadata(key).getTtl());
@@ -1106,8 +1106,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         Integer serialized = map.executeOnKey("key", new FetchSerializedCount());
         assertEquals(expectedSerializationCount, serialized.intValue());
-
-        instance.shutdown();
     }
 
     @Test
@@ -1122,8 +1120,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         Integer serialized = map.executeOnKey("key", new FetchDeSerializedCount());
         assertEquals(expectedDeserializationCount, serialized.intValue());
-
-        instance.shutdown();
     }
 
     @Test
@@ -1442,7 +1438,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
-        Config config = withoutNetworkJoin(smallInstanceConfig());
+        Config config = withoutNetworkJoin(getConfig());
         config.getMetricsConfig().setEnabled(false);
         config.getMapConfig(MAP_NAME)
                 .setTimeToLiveSeconds(60)

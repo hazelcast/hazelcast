@@ -190,17 +190,17 @@ public class FutureUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testAllDone_whenAllFuturesCompleted() {
-        Collection<Future> futures = Arrays.asList(InternalCompletableFuture.newCompletedFuture(null));
+        Collection<Future<?>> futures = Arrays.asList(InternalCompletableFuture.newCompletedFuture(null));
         assertTrue(FutureUtil.allDone(futures));
 
-        futures = Arrays.asList((Future) new UncancellableFuture());
+        futures = Arrays.asList(new UncancellableFuture<>());
         assertFalse(FutureUtil.allDone(futures));
     }
 
     @Test
     public void testGetAllDoneThrowsException_whenSomeFutureHasException() throws Exception {
         InterruptedException exception = new InterruptedException();
-        Collection<Future> futures = Arrays.asList(InternalCompletableFuture.completedExceptionally(exception));
+        Collection<Future<?>> futures = Arrays.asList(InternalCompletableFuture.completedExceptionally(exception));
         // the future is completedExceptionally with an InterruptedException (thread was not
         // interrupted during future.get()), so it is normal to expect
         // InterruptedException wrapped within an ExecutionException.
@@ -211,8 +211,9 @@ public class FutureUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testGetAllDone_whenSomeFuturesAreCompleted() {
-        Future completedFuture = InternalCompletableFuture.newCompletedFuture(null);
-        Collection<Future> futures = asList(new UncancellableFuture(), completedFuture, new UncancellableFuture());
+        Future<?> completedFuture = InternalCompletableFuture.newCompletedFuture(null);
+        Collection<Future<?>> futures =
+                asList(new UncancellableFuture<>(), completedFuture, new UncancellableFuture<>());
 
         assertEquals(1, FutureUtil.getAllDone(futures).size());
         assertEquals(completedFuture, FutureUtil.getAllDone(futures).get(0));

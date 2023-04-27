@@ -186,6 +186,19 @@
               }
             }
           }
+        },
+        "map-with-partition-strategy": {
+          "partition-strategy": "com.example.Strategy"
+        },
+        "map-with-partition-attributes": {
+          "partition-attributes": [
+            {
+              "name": "attributeName1"
+            },
+            {
+              "name": "attributeName2"
+            }
+          ]
         }
       }
     }

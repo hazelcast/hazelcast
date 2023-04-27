@@ -16,26 +16,33 @@
 
 package com.hazelcast.test.jdbc;
 
-import org.testcontainers.jdbc.ContainerDatabaseDriver;
+import org.testcontainers.containers.MSSQLServerContainer;
 
 public class MSSQLDatabaseProvider implements TestDatabaseProvider {
 
+    public static final String TEST_MSSQLSERVER_VERSION = System.getProperty("test.mssqlserver.version", "2017-CU12");
+
     private static final int LOGIN_TIMEOUT = 120;
 
-    private String jdbcUrl;
+    private MSSQLServerContainer<?> container;
 
     @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:tc:sqlserver:2017-CU12:///" + dbName;
+        container = new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:" + TEST_MSSQLSERVER_VERSION);
+        container.acceptLicense()
+                .withUrlParam("user", container.getUsername())
+                .withUrlParam("password", container.getPassword());
+        container.start();
+        String jdbcUrl = container.getJdbcUrl();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }
 
     @Override
     public void shutdown() {
-        if (jdbcUrl != null) {
-            ContainerDatabaseDriver.killContainer(jdbcUrl);
-            jdbcUrl = null;
+        if (container != null) {
+            container.stop();
+            container = null;
         }
     }
 }

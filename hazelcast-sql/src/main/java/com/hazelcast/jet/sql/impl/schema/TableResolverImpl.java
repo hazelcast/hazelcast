@@ -18,8 +18,10 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlMappingContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
@@ -30,11 +32,13 @@ import com.hazelcast.jet.sql.impl.connector.infoschema.ViewsTable;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.BadTable;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -46,7 +50,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -55,10 +62,6 @@ import static java.util.Collections.singletonList;
  * information_schema}.
  */
 public class TableResolverImpl implements TableResolver {
-
-    public static final String SCHEMA_NAME_PUBLIC = "public";
-    public static final String SCHEMA_NAME_INFORMATION_SCHEMA = "information_schema";
-
     private static final List<List<String>> SEARCH_PATHS = singletonList(
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
@@ -73,7 +76,7 @@ public class TableResolverImpl implements TableResolver {
     );
 
     private final NodeEngine nodeEngine;
-    private final TablesStorage tableStorage;
+    private final RelationsStorage relationsStorage;
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
 
@@ -87,11 +90,11 @@ public class TableResolverImpl implements TableResolver {
 
     public TableResolverImpl(
             NodeEngine nodeEngine,
-            TablesStorage tableStorage,
+            RelationsStorage relationsStorage,
             SqlConnectorCache connectorCache
     ) {
         this.nodeEngine = nodeEngine;
-        this.tableStorage = tableStorage;
+        this.relationsStorage = relationsStorage;
         this.connectorCache = connectorCache;
         this.listeners = new CopyOnWriteArrayList<>();
 
@@ -100,7 +103,7 @@ public class TableResolverImpl implements TableResolver {
         // we skip events originating from local member to avoid double processing
         nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(event -> {
             if (event.getState() == LifecycleEvent.LifecycleState.STARTED) {
-                this.tableStorage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
+                this.relationsStorage.initializeWithListener(new AbstractSchemaStorage.EntryListenerAdapter() {
                     @Override
                     public void entryUpdated(EntryEvent<String, Object> event) {
                         if (!event.getMember().localMember()) {
@@ -126,37 +129,60 @@ public class TableResolverImpl implements TableResolver {
 
         String name = resolved.name();
         if (ifNotExists) {
-            tableStorage.putIfAbsent(name, resolved);
+            relationsStorage.putIfAbsent(name, resolved);
         } else if (replace) {
-            tableStorage.put(name, resolved);
+            relationsStorage.put(name, resolved);
             listeners.forEach(TableListener::onTableChanged);
-        } else if (!tableStorage.putIfAbsent(name, resolved)) {
+        } else if (!relationsStorage.putIfAbsent(name, resolved)) {
             throw QueryException.error("Mapping or view already exists: " + name);
         }
     }
 
     private Mapping resolveMapping(Mapping mapping) {
-        String type = mapping.type();
         Map<String, String> options = mapping.options();
+        String type = mapping.connectorType();
+        String dataConnection = mapping.dataConnection();
+        List<MappingField> resolvedFields;
+        SqlConnector connector;
 
-        SqlConnector connector = connectorCache.forType(type);
-        List<MappingField> resolvedFields = connector.resolveAndValidateFields(
+        if (type == null) {
+            connector = extractConnector(dataConnection);
+        } else {
+            connector = connectorCache.forType(type);
+        }
+        String objectType = mapping.objectType() == null
+                ? connector.defaultObjectType()
+                : mapping.objectType();
+        checkNotNull(objectType, "objectType cannot be null");
+        resolvedFields = connector.resolveAndValidateFields(
                 nodeEngine,
                 options,
                 mapping.fields(),
-                mapping.externalName()
+                mapping.externalName(),
+                mapping.dataConnection(),
+                objectType
         );
+
         return new Mapping(
                 mapping.name(),
                 mapping.externalName(),
-                type,
+                mapping.dataConnection(), type,
+                objectType,
                 new ArrayList<>(resolvedFields),
                 new LinkedHashMap<>(options)
         );
     }
 
+    private SqlConnector extractConnector(@Nonnull String dataConnection) {
+        InternalDataConnectionService dataConnectionService = nodeEngine.getDataConnectionService();
+        // TODO atm data connection and connector types match, but that's
+        // not going to be universally true in the future
+        String type = dataConnectionService.typeForDataConnection(dataConnection);
+        return connectorCache.forType(type);
+    }
+
     public void removeMapping(String name, boolean ifExists) {
-        if (tableStorage.removeMapping(name) != null) {
+        if (relationsStorage.removeMapping(name) != null) {
             listeners.forEach(TableListener::onTableChanged);
         } else if (!ifExists) {
             throw QueryException.error("Mapping does not exist: " + name);
@@ -165,7 +191,7 @@ public class TableResolverImpl implements TableResolver {
 
     @Nonnull
     public Collection<String> getMappingNames() {
-        return tableStorage.mappingNames();
+        return relationsStorage.mappingNames();
     }
     // endregion
 
@@ -173,23 +199,23 @@ public class TableResolverImpl implements TableResolver {
 
     public void createView(View view, boolean replace, boolean ifNotExists) {
         if (ifNotExists) {
-            tableStorage.putIfAbsent(view.name(), view);
+            relationsStorage.putIfAbsent(view.name(), view);
         } else if (replace) {
-            tableStorage.put(view.name(), view);
-        } else if (!tableStorage.putIfAbsent(view.name(), view)) {
+            relationsStorage.put(view.name(), view);
+        } else if (!relationsStorage.putIfAbsent(view.name(), view)) {
             throw QueryException.error("Mapping or view already exists: " + view.name());
         }
     }
 
     public void removeView(String name, boolean ifExists) {
-        if (tableStorage.removeView(name) == null && !ifExists) {
+        if (relationsStorage.removeView(name) == null && !ifExists) {
             throw QueryException.error("View does not exist: " + name);
         }
     }
 
     @Nonnull
     public Collection<String> getViewNames() {
-        return tableStorage.viewNames();
+        return relationsStorage.viewNames();
     }
 
     // endregion
@@ -197,25 +223,25 @@ public class TableResolverImpl implements TableResolver {
     // region type
 
     public Collection<String> getTypeNames() {
-        return tableStorage.typeNames();
+        return relationsStorage.typeNames();
     }
 
     public Collection<Type> getTypes() {
-        return tableStorage.getAllTypes();
+        return relationsStorage.getAllTypes();
     }
 
     public void createType(Type type, boolean replace, boolean ifNotExists) {
         if (ifNotExists) {
-            tableStorage.putIfAbsent(type.getName(), type);
+            relationsStorage.putIfAbsent(type.getName(), type);
         } else if (replace) {
-            tableStorage.put(type.getName(), type);
-        } else if (!tableStorage.putIfAbsent(type.getName(), type)) {
+            relationsStorage.put(type.getName(), type);
+        } else if (!relationsStorage.putIfAbsent(type.getName(), type)) {
             throw QueryException.error("Type already exists: " + type.getName());
         }
     }
 
     public void removeType(String name, boolean ifExists) {
-        if (tableStorage.removeType(name) == null && !ifExists) {
+        if (relationsStorage.removeType(name) == null && !ifExists) {
             throw QueryException.error("Type does not exist: " + name);
         }
     }
@@ -231,7 +257,7 @@ public class TableResolverImpl implements TableResolver {
     @Nonnull
     @Override
     public List<Table> getTables() {
-        Collection<Object> objects = tableStorage.allObjects();
+        Collection<Object> objects = relationsStorage.allObjects();
         List<Table> tables = new ArrayList<>(objects.size() + ADDITIONAL_TABLE_PRODUCERS.size());
 
         int lastMappingsSize = this.lastMappingsSize;
@@ -252,6 +278,10 @@ public class TableResolverImpl implements TableResolver {
                 views.add((View) o);
             } else if (o instanceof Type) {
                 types.add((Type) o);
+            } else if (o instanceof DataConnectionCatalogEntry) {
+                // Note: data connection is not a 'table' or 'relation',
+                // It's stored in a separate namespace.
+                continue;
             } else {
                 throw new RuntimeException("Unexpected: " + o);
             }
@@ -268,15 +298,36 @@ public class TableResolverImpl implements TableResolver {
     }
 
     private Table toTable(Mapping mapping) {
-        SqlConnector connector = connectorCache.forType(mapping.type());
-        return connector.createTable(
-                nodeEngine,
-                SCHEMA_NAME_PUBLIC,
-                mapping.name(),
-                mapping.externalName(),
-                mapping.options(),
-                mapping.fields()
-        );
+        SqlConnector connector;
+        if (mapping.connectorType() == null) {
+            connector = extractConnector(mapping.dataConnection());
+        } else {
+            connector = connectorCache.forType((mapping.connectorType()));
+        }
+        assert connector != null;
+        try {
+            return connector.createTable(
+                    nodeEngine,
+                    SCHEMA_NAME_PUBLIC,
+                    sqlMappingContextFrom(mapping, connector),
+                    mapping.fields()
+            );
+        } catch (Throwable e) {
+            // will fail later if invalid table is actually used in a query
+            return new BadTable(SCHEMA_NAME_PUBLIC, mapping.name(),
+                    e instanceof QueryException ? e.getCause() : e);
+        }
+    }
+
+    private static SqlMappingContext sqlMappingContextFrom(Mapping internalMapping, SqlConnector connector) {
+        String internalObjType = internalMapping.objectType() == null
+                ? connector.defaultObjectType()
+                : internalMapping.objectType();
+        checkNotNull(internalObjType, "objectType cannot be null");
+        String connectorType = connector.typeName();
+        return new SqlMappingContext(internalMapping.name(), internalMapping.externalName(),
+                internalMapping.dataConnection(),
+                connectorType, internalObjType, internalMapping.options());
     }
 
     private Table toTable(View view) {

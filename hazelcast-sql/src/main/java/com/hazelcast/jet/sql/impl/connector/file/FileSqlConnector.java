@@ -60,9 +60,10 @@ public class FileSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return false;
+    public String defaultObjectType() {
+        return "File";
     }
 
     @Nonnull
@@ -71,8 +72,9 @@ public class FileSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    ) {
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         return resolveAndValidateFields(options, userFields);
     }
 
@@ -89,20 +91,18 @@ public class FileSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String mappingName,
-            @Nonnull String externalName,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
-        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, options);
+            @Nonnull SqlMappingContext ctx,
+            @Nonnull List<MappingField> resolvedFields) {
+        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, ctx.options());
 
         return new FileTable.SpecificFileTable(
                 INSTANCE,
                 schemaName,
-                mappingName,
+                ctx.name(),
                 metadata.fields(),
                 metadata.processorMetaSupplier(),
-                metadata.queryTargetSupplier()
+                metadata.queryTargetSupplier(),
+                ctx.objectType()
         );
     }
 
@@ -138,7 +138,7 @@ public class FileSqlConnector implements SqlConnector {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        FileTable table = (FileTable) context.getTable();
+        FileTable table = context.getTable();
 
         Vertex vStart = context.getDag().newUniqueVertex(table.toString(), table.processorMetaSupplier());
 

@@ -39,9 +39,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -162,5 +165,19 @@ public class ClientConfigTest {
 
         assertEquals("com.hazelcast.client.test.CustomLoadBalancer", clientConfig.getLoadBalancerClassName());
         assertNull(clientConfig.getLoadBalancer());
+    }
+
+    @Test
+    public void testTpcConfig() {
+        ClientConfig config = new ClientConfig();
+        ClientTpcConfig tpcConfig = new ClientTpcConfig();
+
+        assertFalse(tpcConfig.isEnabled());
+
+        tpcConfig.setEnabled(true);
+        config.setTpcConfig(tpcConfig);
+
+        assertTrue(config.getTpcConfig().isEnabled());
+        assertThrows(IllegalArgumentException.class, () -> config.setTpcConfig(null));
     }
 }

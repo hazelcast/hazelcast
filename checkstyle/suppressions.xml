@@ -25,6 +25,8 @@
     <!-- Suppress strict duplicate code checking -->
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
+    <suppress checks="IllegalImport" files="com[\\/]hazelcast[\\/]internal[\\/]tpcengine[\\/]"/>
+
     <!-- Suppress checking of copyright notice -->
     <suppress checks="Header" files="classloading[\\/]ThreadLocalLeakTestUtils"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]buildutils[\\/]ElementParser"/>
@@ -164,6 +166,7 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]connection[\\/]nio[\\/]ClientConnection"/>
     <suppress checks="MethodCount|ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]ClientEngineImpl"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]ClientEndpointImpl"/>
     <suppress checks="CyclomaticComplexity" files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]YamlClientDomConfigProcessor"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]MemberImpl"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount"
@@ -204,6 +207,9 @@
 
     <!-- Transaction -->
     <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]transaction[\\/]"/>
+
+    <!-- SQL -->
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]sql[\\/]impl[\\/]SqlPlanImpl"/>
 
     <!-- Security -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]security[\\/]"/>

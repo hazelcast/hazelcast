@@ -284,7 +284,11 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
                 if (op instanceof PartitionIteratingOperation) {
                     c = ((PartitionIteratingOperation) op).getOperationFactory().getClass();
                 }
-                LatencyDistribution distribution = opLatencyDistributions.computeIfAbsent(c, k -> new LatencyDistribution());
+                LatencyDistribution distribution = opLatencyDistributions.get(c);
+                // Note: we want to prevent lock here, if collision happened.
+                if (distribution == null) {
+                    distribution = opLatencyDistributions.computeIfAbsent(c, k -> new LatencyDistribution());
+                }
                 distribution.recordNanos(System.nanoTime() - startNanos);
             }
         }

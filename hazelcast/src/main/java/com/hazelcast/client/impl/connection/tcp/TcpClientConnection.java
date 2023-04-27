@@ -26,6 +26,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
@@ -54,6 +55,7 @@ import static com.hazelcast.internal.util.StringUtil.timeToStringFriendly;
  * Client implementation of {@link Connection}.
  * ClientConnection is a connection between a Hazelcast Client and a Hazelcast Member.
  */
+@SuppressWarnings("checkstyle:MethodCount")
 public class TcpClientConnection implements ClientConnection {
 
     @Probe(name = CLIENT_METRIC_CONNECTION_CONNECTIONID, level = DEBUG)
@@ -66,30 +68,35 @@ public class TcpClientConnection implements ClientConnection {
     private final long startTime = System.currentTimeMillis();
     private final Consumer<ClientMessage> responseHandler;
     private final ConcurrentMap attributeMap;
+    private final ChannelInitializer channelInitializer;
 
     @Probe(name = CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT, level = MANDATORY)
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap = new ConcurrentHashMap<>();
-
-    private volatile Address remoteAddress;
     @Probe(name = CLIENT_METRIC_CONNECTION_CLOSED_TIME, level = ProbeLevel.DEBUG)
     private final AtomicLong closedTime = new AtomicLong();
 
+    private volatile Address remoteAddress;
     private volatile Throwable closeCause;
     private volatile String closeReason;
-    private String connectedServerVersion;
     private volatile UUID remoteUuid;
     private volatile UUID clusterUuid;
+    private volatile Channel[] tpcChannels;
 
-    public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
+    public TcpClientConnection(HazelcastClientInstanceImpl client,
+                               int connectionId,
+                               Channel channel,
+                               ChannelInitializer channelInitializer) {
         this.client = client;
         this.responseHandler = client.getInvocationService().getResponseHandler();
         this.connectionManager = (TcpClientConnectionManager) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.channel = channel;
         this.attributeMap = channel.attributeMap();
-        attributeMap.put(TcpClientConnection.class, this);
         this.connectionId = connectionId;
         this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
+        this.channelInitializer = channelInitializer;
+
+        attributeMap.put(TcpClientConnection.class, this);
     }
 
     public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId) {
@@ -100,6 +107,7 @@ public class TcpClientConnection implements ClientConnection {
         this.connectionId = connectionId;
         this.channel = null;
         this.attributeMap = null;
+        this.channelInitializer = null;
         this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
     }
 
@@ -110,14 +118,19 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (channel.write(frame)) {
-            return true;
+        Channel[] tpcChannels = this.tpcChannels;
+        if (tpcChannels == null) {
+            return channel.write(frame);
         }
 
-        if (logger.isFinestEnabled()) {
-            logger.finest("Connection is closed, dropping frame -> " + frame);
+        ClientMessage clientMessage = (ClientMessage) frame;
+        int partitionId = clientMessage.getPartitionId();
+        if (partitionId < 0) {
+            return channel.write(frame);
         }
-        return false;
+
+        int channelIndex = partitionId % tpcChannels.length;
+        return tpcChannels[channelIndex].write(frame);
     }
 
     @Override
@@ -187,14 +200,14 @@ public class TcpClientConnection implements ClientConnection {
         try {
             innerClose();
         } catch (Exception e) {
-            logger.warning("Exception while closing connection" + e.getMessage());
+            logger.warning("Exception while closing connection " + e.getMessage());
         }
 
         connectionManager.onConnectionClose(this);
     }
 
     private void logClose() {
-        String message = toString() + " closed. Reason: ";
+        String message = this + " closed. Reason: ";
         if (closeReason != null) {
             message += closeReason;
         } else if (closeCause != null) {
@@ -218,7 +231,18 @@ public class TcpClientConnection implements ClientConnection {
         }
     }
 
+    @SuppressWarnings("java:S1135")
     protected void innerClose() throws IOException {
+        if (tpcChannels != null) {
+            for (Channel tpcChannel : tpcChannels) {
+                try {
+                    tpcChannel.close();
+                } catch (Exception e) {
+                    logger.warning("Exception while closing TPC channel " + e.getMessage());
+                }
+            }
+        }
+
         channel.close();
     }
 
@@ -280,12 +304,7 @@ public class TcpClientConnection implements ClientConnection {
                 + ", lastReadTime=" + timeToStringFriendly(lastReadTimeMillis())
                 + ", lastWriteTime=" + timeToStringFriendly(lastWriteTimeMillis())
                 + ", closedTime=" + timeToStringFriendly(closedTime.get())
-                + ", connected server version=" + connectedServerVersion
                 + '}';
-    }
-
-    public void setConnectedServerVersion(String connectedServerVersion) {
-        this.connectedServerVersion = connectedServerVersion;
     }
 
     @Override
@@ -317,5 +336,18 @@ public class TcpClientConnection implements ClientConnection {
     @Override
     public Map<Long, EventHandler> getEventHandlers() {
         return Collections.unmodifiableMap(eventHandlerMap);
+    }
+
+    public ChannelInitializer getChannelInitializer() {
+        return channelInitializer;
+    }
+
+    public void setTpcChannels(Channel[] tpcChannels) {
+        this.tpcChannels = tpcChannels;
+    }
+
+    @Override
+    public Channel[] getTpcChannels() {
+        return tpcChannels;
     }
 }

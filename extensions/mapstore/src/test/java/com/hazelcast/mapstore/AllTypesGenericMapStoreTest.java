@@ -44,7 +44,7 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static java.time.OffsetDateTime.of;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -135,15 +135,19 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
         tableName = randomTableName();
         createTable(tableName, "id INT PRIMARY KEY", "table_column " + type);
 
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
+        mapStoreConfig.setProperties(properties);
+
         MapConfig mapConfig = new MapConfig(tableName);
         mapConfig.setMapStoreConfig(mapStoreConfig);
 
         instance().getConfig().addMapConfig(mapConfig);
 
-        Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+
 
         mapStore = new GenericMapStore<>();
         mapStore.init(instance(), properties, tableName);

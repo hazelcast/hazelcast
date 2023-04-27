@@ -17,16 +17,14 @@
 package com.hazelcast.mapstore.postgres;
 
 import com.hazelcast.mapstore.GenericMapStoreIntegrationTest;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class PostgreSQLGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
+
+    public PostgreSQLGenericMapStoreIntegrationTest() {
+        setPrefix("postgre_");
+    }
 
     // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass

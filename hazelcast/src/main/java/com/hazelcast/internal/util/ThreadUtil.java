@@ -25,7 +25,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public final class ThreadUtil {
 
-    private static final ThreadLocal<Long> THREAD_LOCAL = new ThreadLocal<Long>();
+    private static final ThreadLocal<Long> THREAD_LOCAL = new ThreadLocal<>();
 
     private ThreadUtil() {
     }

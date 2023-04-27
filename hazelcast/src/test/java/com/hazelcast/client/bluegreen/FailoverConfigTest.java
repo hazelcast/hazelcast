@@ -64,7 +64,7 @@ public class FailoverConfigTest {
                 "getOrCreateQueryCacheConfig", "getOrNullQueryCacheConfig", "addLabel", "setLabels", "setUserContext",
                 "getUserContext", "setMetricsConfig", "load", "setBackupAckToClientEnabled", "isBackupAckToClientEnabled",
                 "getMetricsConfig", "getSqlConfig", "setSqlConfig", "equals", "hashCode", "toString", "setInstanceTrackingConfig",
-                "getInstanceTrackingConfig", "getSqlConfig");
+                "getInstanceTrackingConfig", "getTpcConfig", "setTpcConfig");
         Method[] declaredMethods = ClientConfig.class.getDeclaredMethods();
         for (Method method : declaredMethods) {
             if (Modifier.isPrivate(method.getModifiers())) {

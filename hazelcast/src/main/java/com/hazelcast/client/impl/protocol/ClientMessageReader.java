@@ -42,7 +42,7 @@ public final class ClientMessageReader {
     public boolean readFrom(ByteBuffer src, boolean trusted) {
         for (; ; ) {
             if (readFrame(src, trusted)) {
-                if (ClientMessage.isFlagSet(clientMessage.endFrame.flags, IS_FINAL_FLAG)) {
+                if (ClientMessage.isFlagSet(clientMessage.getEndFrame().flags, IS_FINAL_FLAG)) {
                     return true;
                 }
                 readOffset = -1;
@@ -84,7 +84,7 @@ public final class ClientMessageReader {
                 if (Integer.MAX_VALUE - frameLength < sumUntrustedMessageLength
                         || sumUntrustedMessageLength + frameLength > maxMessageLength) {
                     throw new MaxMessageSizeExceeded(
-                            format("The client message size (%d + %d) exceededs the maximum allowed length (%d)",
+                            format("The client message size (%d + %d) exceeded the maximum allowed length (%d)",
                                     sumUntrustedMessageLength, frameLength, maxMessageLength));
                 }
                 sumUntrustedMessageLength += frameLength;
@@ -108,7 +108,7 @@ public final class ClientMessageReader {
             }
         }
 
-        ClientMessage.Frame frame = clientMessage.endFrame;
+        ClientMessage.Frame frame = clientMessage.getEndFrame();
         return accumulate(src, frame.content, frame.content.length - readOffset);
     }
 

@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -80,6 +81,7 @@ import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -437,7 +439,7 @@ class MapServiceContextImpl implements MapServiceContext {
     public void destroyMap(String mapName) {
         // on LiteMembers we don't have a MapContainer, but we may have a Near Cache and listeners
         mapNearCacheManager.destroyNearCache(mapName);
-        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, mapName);
+        nodeEngine.getEventService().deregisterAllLocalListeners(SERVICE_NAME, mapName);
 
         MapContainer mapContainer = mapContainers.get(mapName);
         if (mapContainer == null) {
@@ -831,8 +833,13 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public PartitioningStrategy getPartitioningStrategy(String mapName, PartitioningStrategyConfig config) {
-        return partitioningStrategyFactory.getPartitioningStrategy(mapName, config);
+    @Nullable
+    public PartitioningStrategy getPartitioningStrategy(
+            String mapName,
+            PartitioningStrategyConfig config,
+            final List<PartitioningAttributeConfig> partitioningAttributeConfigs
+    ) {
+        return partitioningStrategyFactory.getPartitioningStrategy(mapName, config, partitioningAttributeConfigs);
     }
 
     @Override
