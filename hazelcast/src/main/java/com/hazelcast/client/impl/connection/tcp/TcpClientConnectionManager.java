@@ -1077,6 +1077,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         clientState = ClientState.INITIALIZED_ON_CLUSTER;
                         // This event should also be fired in the async task not to modify the behaviour.
                         // Some users may used this lifecyle event to wait for client's async initialization.
+                        fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
                     }
                 }
             }

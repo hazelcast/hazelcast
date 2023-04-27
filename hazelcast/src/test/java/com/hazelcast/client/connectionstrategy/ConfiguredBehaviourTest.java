@@ -143,6 +143,8 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
             }
         });
 
+        assertOpenEventually(connectedLatch);
+
         // The following logic verifies user code deployment works
         int keyCount = 100;
         IMap<Integer, Integer> map = client.getMap(randomName());
