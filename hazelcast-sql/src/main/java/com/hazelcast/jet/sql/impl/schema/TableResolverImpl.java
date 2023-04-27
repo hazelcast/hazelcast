@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
-import com.hazelcast.jet.function.TetraFunction;
+import com.hazelcast.jet.function.QuadFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
@@ -64,7 +64,7 @@ public class TableResolverImpl implements TableResolver {
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
 
-    private static final List<TetraFunction<List<Mapping>, List<View>, List<Type>, NodeEngine, Table>> ADDITIONAL_TABLE_PRODUCERS
+    private static final List<QuadFunction<List<Mapping>, List<View>, List<Type>, NodeEngine, Table>> ADDITIONAL_TABLE_PRODUCERS
             = asList(
                     (m, v, t, hz) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
                     (m, v, t, hz) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m,
