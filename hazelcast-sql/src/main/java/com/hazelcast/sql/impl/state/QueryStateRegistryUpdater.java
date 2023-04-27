@@ -150,7 +150,7 @@ public class QueryStateRegistryUpdater {
                 // propagate, will be handled higher up
                 throw i;
             } catch (Throwable t) {
-                logger.warning("Unexpected error when invoking query query state registry updater action", t);
+                logger.warning("Unexpected error when invoking query state registry updater action", t);
             }
         }
 
