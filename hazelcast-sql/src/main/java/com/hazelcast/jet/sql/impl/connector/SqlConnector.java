@@ -35,8 +35,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static java.util.Collections.emptyMap;
@@ -214,24 +216,16 @@ public interface SqlConnector {
      * the user can see it by listing the catalog. Jet will later pass it to
      * {@link #createTable}.
      *
-     * @param nodeEngine         an instance of {@link NodeEngine}
-     * @param options            user-provided options
-     * @param userFields         user-provided list of fields, possibly empty
-     * @param externalName       external name of the table
-     * @param dataConnectionName name of the data connection to use, may be null if the connector supports specifying
-     *                           connection details in options
-     * @param objectType         the type of object for which fields will be resolved. Default value is the value
-     *                           returned by {@link #defaultObjectType()}.
+     * @param nodeEngine          an instance of {@link NodeEngine}
+     * @param sqlExternalResource an object for which fields should be resolved
+     * @param userFields          user-provided list of fields, possibly empty
      * @return final field list, must not be empty
      */
     @Nonnull
     List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType
+            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull List<MappingField> userFields
     );
 
     /**
@@ -532,6 +526,29 @@ public interface SqlConnector {
         @Nonnull
         public Map<String, String> options() {
             return options == null ? emptyMap() : options;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            SqlExternalResource that = (SqlExternalResource) o;
+            return Arrays.equals(externalName, that.externalName)
+                    && Objects.equals(dataConnection, that.dataConnection)
+                    && Objects.equals(connectorType, that.connectorType)
+                    && Objects.equals(objectType, that.objectType)
+                    && Objects.equals(options, that.options);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(dataConnection, connectorType, objectType, options);
+            result = 31 * result + Arrays.hashCode(externalName);
+            return result;
         }
     }
 }

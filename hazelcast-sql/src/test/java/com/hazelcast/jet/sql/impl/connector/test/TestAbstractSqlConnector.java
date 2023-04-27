@@ -105,24 +105,21 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                 + ", '" + OPTION_STREAMING + "'='" + streamingActual + "'"
                 + ")";
         System.out.println(sql);
-        sqlService.execute(sql).updateCount();
+        sqlService.executeUpdate(sql);
     }
 
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
+            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull List<MappingField> userFields) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
 
-        String[] names = options.get(OPTION_NAMES).split(DELIMITER);
-        String[] types = options.get(OPTION_TYPES).split(DELIMITER);
+        String[] names = sqlExternalResource.options().get(OPTION_NAMES).split(DELIMITER);
+        String[] types = sqlExternalResource.options().get(OPTION_TYPES).split(DELIMITER);
 
         assert names.length == types.length;
 
@@ -187,7 +184,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        TestTable table = (TestTable) context.getTable();
+        TestTable table = context.getTable();
         List<Object[]> rows = table.rows;
         boolean streaming = table.streaming;
         Expression<Boolean> convertedPredicate = context.convertFilter(predicate);

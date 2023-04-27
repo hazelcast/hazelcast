@@ -45,7 +45,6 @@ import com.hazelcast.sql.impl.schema.TableField;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.core.Edge.between;
@@ -86,17 +85,14 @@ public class KafkaSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
-        if (externalName.length > 1) {
-            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull List<MappingField> userFields) {
+        if (sqlExternalResource.externalName().length > 1) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(sqlExternalResource.externalName())
                     + ", external name for Kafka is allowed to have only a single component referencing the topic " +
                     "name");
         }
-        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
+        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, sqlExternalResource.options(), nodeEngine);
     }
 
     @Nonnull

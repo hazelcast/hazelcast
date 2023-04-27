@@ -43,7 +43,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
@@ -75,21 +74,22 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
-        if (externalName.length > 2) {
-            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull List<MappingField> userFields) {
+        if (sqlExternalResource.externalName().length > 2) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(sqlExternalResource.externalName())
                     + ", external name for Mongo is allowed to have only one component (collection)"
                     + " or two components (database and collection)");
         }
-        if (!ALLOWED_OBJECT_TYPES.contains(objectType)) {
+        if (!ALLOWED_OBJECT_TYPES.contains(sqlExternalResource.objectType())) {
             throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
         }
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        return fieldResolver.resolveFields(externalName, dataConnectionName, options, userFields, isStream(objectType));
+        return fieldResolver.resolveFields(sqlExternalResource.externalName(),
+                sqlExternalResource.dataConnection(),
+                sqlExternalResource.options(),
+                userFields,
+                isStream(sqlExternalResource.objectType()));
     }
 
     private static boolean isStream(String objectType) {
@@ -118,9 +118,12 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         if (!ALLOWED_OBJECT_TYPES.contains(externalResource.objectType())) {
             throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
         }
-        String collectionName = externalResource.externalName().length == 2 ? externalResource.externalName()[1] : externalResource.externalName()[0];
+        String collectionName = externalResource.externalName().length == 2
+                ? externalResource.externalName()[1]
+                : externalResource.externalName()[0];
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        String databaseName = Options.getDatabaseName(nodeEngine, externalResource.externalName(), externalResource.dataConnection());
+        String databaseName = Options.getDatabaseName(nodeEngine, externalResource.externalName(),
+                externalResource.dataConnection());
         ConstantTableStatistics stats = new ConstantTableStatistics(0);
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());

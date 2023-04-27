@@ -156,11 +156,13 @@ public class TableResolverImpl implements TableResolver {
         checkNotNull(objectType, "objectType cannot be null");
         resolvedFields = connector.resolveAndValidateFields(
                 nodeEngine,
-                options,
-                mapping.fields(),
-                mapping.externalName(),
-                mapping.dataConnection(),
-                objectType
+                new SqlExternalResource(
+                        mapping.externalName(),
+                        mapping.dataConnection(),
+                        connector.typeName(),
+                        objectType,
+                        options),
+                mapping.fields()
         );
 
         return new Mapping(

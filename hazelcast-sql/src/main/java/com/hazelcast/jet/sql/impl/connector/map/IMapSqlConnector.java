@@ -60,7 +60,6 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
@@ -108,13 +107,10 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
-        checkImapName(externalName);
-        return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
+            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull List<MappingField> userFields) {
+        checkImapName(sqlExternalResource.externalName());
+        return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, sqlExternalResource.options(), nodeEngine);
     }
 
     @Nonnull
