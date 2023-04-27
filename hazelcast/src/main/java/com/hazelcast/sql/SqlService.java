@@ -90,14 +90,14 @@ public interface SqlService {
     }
 
     /**
-     * Convenience method to execute a distributed non-DQL statement with the given
-     * parameter values.
+     * Convenience method to execute a distributed non-DQL statement (that is
+     * a statement that does not return rows) with the given parameter values.
      * <p>
      * Converts passed SQL string and parameter values into an {@link
      * SqlStatement} object and invokes {@link #execute(SqlStatement)}.
      *
      * <p>
-     * This method is meant to be used for statements other than "SELECT" queries.
+     * This method can be used for statements other than "SELECT" queries.
      * The returned value is the {@link SqlResult#updateCount()} value.
      *
      * @param sql       SQL string
