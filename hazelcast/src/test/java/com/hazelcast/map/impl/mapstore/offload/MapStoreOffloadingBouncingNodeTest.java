@@ -24,11 +24,10 @@ import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,13 +45,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.map.IMapAccessors.getPendingOffloadedOpCount;
 import static com.hazelcast.spi.impl.operationservice.impl.OperationServiceAccessor.getAsyncOperationsCount;
+import static com.hazelcast.spi.impl.operationservice.impl.OperationServiceAccessor.toStringAsyncOperations;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class})
 public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "writeBehindEnabled: {0}")
@@ -67,52 +68,6 @@ public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
     public boolean writeBehindEnabled;
 
     private static final int TEST_RUN_SECONDS = 20;
-
-    protected Config getConfig(String mapName) {
-        Config config = smallInstanceConfigWithoutJetAndMetrics();
-        config.getMapConfig(mapName)
-                .setBackupCount(1)
-                .setAsyncBackupCount(0)
-                .setInMemoryFormat(getInMemoryFormat())
-                .getMapStoreConfig()
-                .setEnabled(true)
-                .setOffload(true)
-                .setWriteDelaySeconds(writeBehindEnabled ? 3 : 0)
-                .setImplementation(new MapStoreAdapter() {
-
-                    @Override
-                    public void store(Object key, Object value) {
-                        sleepRandomMillis();
-                        super.store(key, value);
-                    }
-
-                    @Override
-                    public void delete(Object key) {
-                        sleepRandomMillis();
-                        super.delete(key);
-                    }
-
-                    @Override
-                    public Object load(Object key) {
-                        sleepRandomMillis();
-                        return randomStringOrNull();
-                    }
-                });
-        return config;
-    }
-
-    protected InMemoryFormat getInMemoryFormat() {
-        return InMemoryFormat.BINARY;
-    }
-
-    private static Object randomStringOrNull() {
-        return RandomPicker.getInt(0, 10) < 2
-                ? null : randomString();
-    }
-
-    private static void sleepRandomMillis() {
-        sleepMillis(RandomPicker.getInt(0, 3));
-    }
 
     @Test(timeout = 5 * 60 * 1000)
     public void stress() throws InterruptedException {
@@ -160,10 +115,63 @@ public class MapStoreOffloadingBouncingNodeTest extends HazelcastTestSupport {
         assertTrueEventually(() -> {
             Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
             for (HazelcastInstance node : instances) {
-                assertEquals(0, getAsyncOperationsCount(node));
-                assertEquals(0, getPendingOffloadedOpCount(node.getMap(mapName)));
+                if (node.getLifecycleService().isRunning()) {
+                    int asyncOperationsCount = getAsyncOperationsCount(node);
+                    int pendingOffloadedOpCount = getPendingOffloadedOpCount(node.getMap(mapName));
+
+                    assertEquals(format("Found asyncOperationsCount=%d {%s}",
+                            asyncOperationsCount, toStringAsyncOperations(node)), 0, asyncOperationsCount);
+                    assertEquals(format("Found pendingOffloadedOpCount=%d", pendingOffloadedOpCount),
+                            0, pendingOffloadedOpCount);
+                }
             }
         });
+    }
+
+    protected Config getConfig(String mapName) {
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.getMapConfig(mapName)
+                .setBackupCount(1)
+                .setAsyncBackupCount(0)
+                .setInMemoryFormat(getInMemoryFormat())
+                .getMapStoreConfig()
+                .setEnabled(true)
+                .setOffload(true)
+                .setWriteDelaySeconds(writeBehindEnabled ? 3 : 0)
+                .setImplementation(new MapStoreAdapter() {
+
+                    @Override
+                    public void store(Object key, Object value) {
+                        sleepRandomMillis();
+                        super.store(key, value);
+                    }
+
+                    @Override
+                    public void delete(Object key) {
+                        sleepRandomMillis();
+                        super.delete(key);
+                    }
+
+                    @Override
+                    public Object load(Object key) {
+                        sleepRandomMillis();
+                        return randomStringOrNull();
+                    }
+                });
+        return config;
+    }
+
+    protected InMemoryFormat getInMemoryFormat() {
+        return InMemoryFormat.BINARY;
+    }
+
+    private static Object randomStringOrNull() {
+        return RandomPicker.getInt(0, 10) < 2
+                ? null : randomString();
+    }
+
+    private static void sleepRandomMillis() {
+        sleepMillis(RandomPicker.getInt(0, 3));
     }
 
     private enum OpType {

@@ -49,7 +49,7 @@ class SeriesTable extends JetTable {
             String name,
             List<Expression<?>> argumentExpressions
     ) {
-        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0));
+        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(0), null, false);
 
         this.argumentExpressions = argumentExpressions;
     }

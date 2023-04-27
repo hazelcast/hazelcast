@@ -21,6 +21,8 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
+import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.kafka.impl.NonClosingKafkaProducer;
 import com.hazelcast.spi.annotation.Beta;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -31,8 +33,10 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -59,7 +63,7 @@ import java.util.stream.Collectors;
 @Beta
 public class KafkaDataConnection extends DataConnectionBase {
 
-    private volatile NonClosingKafkaProducer<?, ?> producer;
+    private volatile ConcurrentMemoizingSupplier<NonClosingKafkaProducer<?, ?>> producerSupplier;
 
     /**
      * Create {@link KafkaDataConnection} based on given config
@@ -67,9 +71,8 @@ public class KafkaDataConnection extends DataConnectionBase {
     public KafkaDataConnection(@Nonnull DataConnectionConfig config) {
         super(config);
 
-        if (config.isShared()) {
-            producer = new NonClosingKafkaProducer<>(config.getProperties(), this::release);
-        }
+        producerSupplier = new ConcurrentMemoizingSupplier<>(() ->
+                new NonClosingKafkaProducer<>(config.getProperties(), this::release));
     }
 
     @Nonnull
@@ -77,13 +80,19 @@ public class KafkaDataConnection extends DataConnectionBase {
     public Collection<DataConnectionResource> listResources() {
         try (AdminClient client = AdminClient.create(getConfig().getProperties())) {
             return client.listTopics().names().get()
-                         .stream()
-                         .sorted()
-                         .map(n -> new DataConnectionResource("topic", n))
-                         .collect(Collectors.toList());
+                    .stream()
+                    .sorted()
+                    .map(n -> new DataConnectionResource("topic", n))
+                    .collect(Collectors.toList());
         } catch (ExecutionException | InterruptedException e) {
             throw new HazelcastException("Could not get list of topics for DataConnection " + getConfig().getName(), e);
         }
+    }
+
+    @Nonnull
+    @Override
+    public Collection<String> resourceTypes() {
+        return Collections.singleton("Topic");
     }
 
     /**
@@ -101,6 +110,21 @@ public class KafkaDataConnection extends DataConnectionBase {
     }
 
     /**
+     * Creates new instance of {@link KafkaConsumer} based on the DataConnection
+     * configuration and given properties parameter.
+     * Always creates a new instance of the consumer because
+     * {@link KafkaConsumer} is not thread-safe.
+     * The caller is responsible for closing the consumer instance.
+     *
+     * @param properties mapping properties to merge with data connection options.
+     * @return consumer instance
+     */
+    @Nonnull
+    public <K, V> Consumer<K, V> newConsumer(Properties properties) {
+        return new KafkaConsumer<>(Util.mergeProps(getConfig().getProperties(), properties));
+    }
+
+    /**
      * Returns an instance of {@link KafkaProducer} based on the DataConnection
      * configuration.
      * <p>
@@ -111,6 +135,7 @@ public class KafkaDataConnection extends DataConnectionBase {
      * close the returned instance and this DataConnection is released by
      * calling {@link #release()}
      * <p>
+     *
      * @param transactionalId transaction id to pass as 'transactional.id'
      *                        property to a new KafkaProducer instance,
      *                        must be null for shared producer
@@ -124,7 +149,7 @@ public class KafkaDataConnection extends DataConnectionBase {
             }
             retain();
             //noinspection unchecked
-            return (KafkaProducer<K, V>) producer;
+            return (KafkaProducer<K, V>) producerSupplier.get();
         } else {
             if (transactionalId != null) {
                 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -138,11 +163,48 @@ public class KafkaDataConnection extends DataConnectionBase {
         }
     }
 
+    /**
+     * Returns an instance of {@link KafkaProducer} based on the DataConnection
+     * configuration and given properties.
+     * <p>
+     * The caller is responsible for closing the producer instance.
+     * For non-shared producers the producer will be closed immediately
+     * upon calling close.
+     * For shared producers the producer will be closed when all users
+     * close the returned instance and this DataConnection is released by
+     * calling {@link #release()}
+     * <p>
+     *
+     * @param transactionalId transaction id to pass as 'transactional.id'
+     *                        property to a new KafkaProducer instance,
+     *                        must be null for shared producer
+     * @param properties      properties. E.g, SQL mappings provide separate
+     *                        options, and they should be merged with
+     *                        data connection's properties. These properties
+     *                        have higher priority than data connection properties.
+     *                        If {@link KafkaDataConnection} is shared, then
+     *                        {@link HazelcastException} would be thrown.
+     */
+    @Nonnull
+    public <K, V> KafkaProducer<K, V> getProducer(
+            @Nullable String transactionalId,
+            @Nonnull Properties properties) {
+        if (getConfig().isShared() && !properties.isEmpty()) {
+            throw new HazelcastException("Shared Kafka producer can be created only with data connection options");
+        } else {
+            Properties props = Util.mergeProps(getConfig().getProperties(), properties);
+            if (transactionalId != null) {
+                props.put("transactional.id", transactionalId);
+            }
+            return new KafkaProducer<>(props);
+        }
+    }
+
     @Override
-    public void destroy() {
-        if (producer != null) {
-            producer.doClose();
-            producer = null;
+    public synchronized void destroy() {
+        if ((producerSupplier != null) && (producerSupplier.remembered() != null)) {
+            producerSupplier.remembered().doClose();
+            producerSupplier = null;
         }
     }
 }

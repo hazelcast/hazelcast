@@ -32,10 +32,12 @@ import java.util.TreeMap;
  */
 public class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordBuilder {
 
-    private final TreeMap<String, Object> objects = new TreeMap<>();
+    private final TreeMap<String, Object> objects;
     private final Schema schema;
+    private boolean built;
 
     public DeserializedSchemaBoundGenericRecordBuilder(Schema schema) {
+        this.objects = new TreeMap<>();
         this.schema = schema;
     }
 
@@ -48,11 +50,15 @@ public class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGeneric
                         + ". All the fields must be set before build");
             }
         }
+        this.built = true;
         return new DeserializedGenericRecord(schema, objects);
     }
 
     @Override
     protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldKind) {
+        if (this.built) {
+            throw new UnsupportedOperationException("Cannot modify the GenericRecordBuilder after building");
+        }
         checkTypeWithSchema(schema, fieldName, fieldKind);
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");

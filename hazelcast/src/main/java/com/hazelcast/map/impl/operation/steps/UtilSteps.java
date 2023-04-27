@@ -41,8 +41,7 @@ public enum UtilSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            Step step = state.getRecordStore().getStorage().newInjectedStep();
-            return step == null ? UtilSteps.SEND_RESPONSE : step;
+            return UtilSteps.SEND_RESPONSE;
         }
     },
 

@@ -29,6 +29,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Locale;
 
 import static com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection.mongoDataConnectionConf;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -83,6 +85,20 @@ public class MongoDataConnectionTest extends AbstractMongoTest {
     }
 
     @Test
+    public void should_return_resource_types() {
+        // given
+        dataConnection = new MongoDataConnection(mongoDataConnectionConf("mongo", connectionString));
+
+        // when
+        Collection<String> resourcedTypes = dataConnection.resourceTypes();
+
+        //then
+        assertThat(resourcedTypes)
+                .map(r -> r.toLowerCase(Locale.ROOT))
+                .containsExactlyInAnyOrder("collection", "changestream");
+    }
+
+    @Test
     public void should_return_collections_when_listResources() {
         dataConnection = new MongoDataConnection(mongoDataConnectionConf("mongo", connectionString));
 
@@ -95,9 +111,9 @@ public class MongoDataConnectionTest extends AbstractMongoTest {
         db2.createCollection("col3");
 
         assertThat(dataConnection.listResources()).contains(
-                new DataConnectionResource("collection", "test.col1"),
-                new DataConnectionResource("collection", "test.col2"),
-                new DataConnectionResource("collection", "test2.col3")
+                new DataConnectionResource("Collection", "test.col1"),
+                new DataConnectionResource("Collection", "test.col2"),
+                new DataConnectionResource("Collection", "test2.col3")
         );
     }
 

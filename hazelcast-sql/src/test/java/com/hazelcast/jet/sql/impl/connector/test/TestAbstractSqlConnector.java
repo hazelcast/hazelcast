@@ -115,7 +115,8 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
@@ -137,11 +138,9 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String mappingName,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nonnull Map<String, String> options,
+            @Nonnull SqlMappingContext ctx,
             @Nonnull List<MappingField> resolvedFields) {
+        Map<String, String> options = ctx.options();
         String[] names = options.get(OPTION_NAMES).split(DELIMITER);
         String[] types = options.get(OPTION_TYPES).split(DELIMITER);
 
@@ -176,7 +175,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
         }
 
         boolean streaming = Boolean.parseBoolean(options.get(OPTION_STREAMING));
-        return new TestTable(this, schemaName, mappingName, fields, rows, streaming);
+        return new TestTable(this, schemaName, ctx.name(), fields, rows, streaming);
     }
 
     @Nonnull
@@ -225,7 +224,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                 @Nonnull List<Object[]> rows,
                 boolean streaming
         ) {
-            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(rows.size()));
+            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(rows.size()), null, streaming);
             this.rows = rows;
             this.streaming = streaming;
         }

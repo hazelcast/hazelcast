@@ -43,6 +43,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -3952,6 +3953,45 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIdleSeconds() {
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", -1);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
+
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 0);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
+
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIntervalSeconds() {
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", -1);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
+
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 0);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
+
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepCount() {
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-count", -1);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
+
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-count", 0);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
+
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-count", 128);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
     public void testAmbiguousNetworkConfig_throwsException() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -4201,10 +4241,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  sql:\n"
-                + "    statement-timeout-millis: 30\n";
+                + "    statement-timeout-millis: 30\n"
+                + "    catalog-persistence-enabled: true\n";
         Config config = buildConfig(yaml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+        assertTrue(sqlConfig.isCatalogPersistenceEnabled());
     }
 
     @Override
@@ -4693,5 +4735,16 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
             assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
             assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
         });
+    }
+
+    public String getAdvancedNetworkConfigWithSocketOption(String socketOption, int value) {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network:\n"
+                + "    enabled: true\n"
+                + "    member-server-socket-endpoint-config: \n"
+                + "      socket-options: \n"
+                + "        " + socketOption + ": " + value + "\n";
+        return yaml;
     }
 }

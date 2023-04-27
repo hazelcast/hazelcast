@@ -38,18 +38,13 @@ import static java.util.stream.Collectors.toList;
  * @see MongoSqlConnectorBase
  * @see FieldResolver
  */
-public class MongoBatchSqlConnector extends MongoSqlConnectorBase {
+public class MongoSqlConnector extends MongoSqlConnectorBase {
 
     public static final String TYPE_NAME = "Mongo";
 
     @Override
     public String typeName() {
         return TYPE_NAME;
-    }
-
-    @Override
-    public boolean isStream() {
-        return false;
     }
 
     @Nonnull

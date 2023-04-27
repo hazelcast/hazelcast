@@ -33,6 +33,8 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -73,6 +75,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private String clientName;
     private Set<String> labels;
     private volatile boolean destroyed;
+    private volatile TpcToken tpcToken;
 
     public ClientEndpointImpl(ClientEngine clientEngine, NodeEngineImpl nodeEngine, ServerConnection connection) {
         this.clientEngine = clientEngine;
@@ -332,5 +335,16 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public long getCreationTime() {
         return creationTime;
+    }
+
+    @Override
+    public void setTpcToken(@Nonnull TpcToken tpcToken) {
+        this.tpcToken = tpcToken;
+    }
+
+    @Nullable
+    @Override
+    public TpcToken getTpcToken() {
+        return tpcToken;
     }
 }

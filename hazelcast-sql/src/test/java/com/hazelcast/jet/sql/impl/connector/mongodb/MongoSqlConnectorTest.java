@@ -43,7 +43,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
-public class MongoBatchSqlConnectorTest extends MongoSqlTest {
+public class MongoSqlConnectorTest extends MongoSqlTest {
 
     @Test
     public void readsFromMongo_withId_withUnsupportedExpr() {

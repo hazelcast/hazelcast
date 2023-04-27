@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -43,6 +44,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
@@ -65,6 +67,8 @@ import static java.util.Collections.singletonList;
  */
 public abstract class MongoSqlConnectorBase implements SqlConnector {
 
+    protected static final Set<String> ALLOWED_OBJECT_TYPES = ImmutableSet.of("Collection", "ChangeStream");
+
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
@@ -72,14 +76,22 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         if (externalName.length > 2) {
             throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
                     + ", external name for Mongo is allowed to have only one component (collection)"
                     + " or two components (database and collection)");
         }
+        if (!ALLOWED_OBJECT_TYPES.contains(objectType)) {
+            throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
+        }
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        return fieldResolver.resolveFields(externalName, dataConnectionName, options, userFields, isStream());
+        return fieldResolver.resolveFields(externalName, dataConnectionName, options, userFields, isStream(objectType));
+    }
+
+    private static boolean isStream(String objectType) {
+        return "ChangeStream".equalsIgnoreCase(objectType);
     }
 
     @Nonnull
@@ -91,17 +103,25 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
     @Nonnull
     @Override
-    public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
-                             @Nonnull String[] externalName, @Nullable String dataConnectionName,
-                             @Nonnull Map<String, String> options, @Nonnull List<MappingField> resolvedFields) {
-        String collectionName = externalName.length == 2 ? externalName[1] : externalName[0];
+    public String defaultObjectType() {
+        return "Collection";
+    }
+
+    @Nonnull
+    @Override
+    public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull SqlMappingContext ctx,
+                             @Nonnull List<MappingField> resolvedFields) {
+        if (!ALLOWED_OBJECT_TYPES.contains(ctx.objectType())) {
+            throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
+        }
+        String collectionName = ctx.externalName().length == 2 ? ctx.externalName()[1] : ctx.externalName()[0];
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        String databaseName = Options.getDatabaseName(nodeEngine, externalName, dataConnectionName);
+        String databaseName = Options.getDatabaseName(nodeEngine, ctx.externalName(), ctx.dataConnection());
         ConstantTableStatistics stats = new ConstantTableStatistics(0);
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         boolean containsId = false;
-        boolean isStreaming = isStream();
+        boolean isStreaming = isStream(ctx.objectType());
         boolean hasPK = false;
         for (MappingField resolvedField : resolvedFields) {
             String externalNameFromName = (isStreaming ? "fullDocument." : "") + resolvedField.name();
@@ -129,8 +149,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                         "DOCUMENT", !hasPK));
             }
         }
-        return new MongoTable(schemaName, mappingName, databaseName, collectionName, dataConnectionName, options, this,
-                fields, stats, isStreaming);
+        return new MongoTable(schemaName, ctx.name(), databaseName, collectionName,
+                ctx.dataConnection(), ctx.options(), this,
+                fields, stats, ctx.objectType());
     }
 
     @Override
@@ -148,7 +169,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         List<ProjectionData> projections = translateProjections(projection, context, visitor);
 
         ProcessorMetaSupplier supplier;
-        if (isStream()) {
+        if (table.isStreaming()) {
             BsonTimestamp startAt = Options.startAt(table.getOptions());
             supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider));
         } else {

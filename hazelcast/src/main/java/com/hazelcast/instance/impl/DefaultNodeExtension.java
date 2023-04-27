@@ -166,6 +166,7 @@ public class DefaultNodeExtension implements NodeExtension {
         checkLosslessRestartAllowed();
         createAndSetPhoneHome();
         checkDynamicConfigurationPersistenceAllowed();
+        checkSqlCatalogPersistenceAllowed();
 
         if (node.getConfig().getJetConfig().isEnabled()) {
             jetServiceBackend = createService(JetServiceBackend.class);
@@ -233,6 +234,15 @@ public class DefaultNodeExtension implements NodeExtension {
                         "Dynamic Configuration Persistence is enabled but config file couldn't be found."
                                 + " This is probably because declarative configuration isn't used."
                 );
+            }
+        }
+    }
+
+    protected void checkSqlCatalogPersistenceAllowed() {
+        Config config = node.getConfig();
+        if (config.getSqlConfig().isCatalogPersistenceEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("SQL Catalog Persistence requires Hazelcast Enterprise Edition");
             }
         }
     }

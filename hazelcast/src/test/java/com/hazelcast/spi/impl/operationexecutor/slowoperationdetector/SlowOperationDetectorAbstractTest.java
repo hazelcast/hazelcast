@@ -100,8 +100,8 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     static JsonObject getOperationStats(HazelcastInstance instance) {
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
         LocalOperationStats operationStats = timedMemberStateFactory.createTimedMemberState()
-                                                                    .getMemberState()
-                                                                    .getOperationStats();
+                .getMemberState()
+                .getOperationStats();
         return ((JsonSerializable) operationStats).toJson();
     }
 

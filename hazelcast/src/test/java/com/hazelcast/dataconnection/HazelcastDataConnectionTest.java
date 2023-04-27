@@ -38,9 +38,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Locale;
 
 import static java.nio.file.Files.readAllBytes;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -167,6 +169,14 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         }
     }
 
+    @Test(timeout = 60_000)
+    public void shared_client_should_be_initialized_lazy() {
+        int invalidPort = 9999;
+        DataConnectionConfig dataConnectionConfig = sharedDataConnectionConfig(clusterName, invalidPort);
+        hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig);
+        assertThatNoException().isThrownBy(() -> new HazelcastDataConnection(dataConnectionConfig));
+    }
+
     @Test
     public void non_shared_client_should_return_new_client_instance() {
         DataConnectionConfig dataConnectionConfig = nonSharedDataConnectionConfig(clusterName);
@@ -182,6 +192,21 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void should_list_resource_types() {
+        // given
+        DataConnectionConfig dataConnectionConfig = nonSharedDataConnectionConfig(clusterName);
+        hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig);
+
+        // when
+        Collection<String> resourcedTypes = hazelcastDataConnection.resourceTypes();
+
+        //then
+        assertThat(resourcedTypes)
+                .map(r -> r.toLowerCase(Locale.ROOT))
+                .containsExactlyInAnyOrder("imap");
+    }
+
     private static DataConnectionConfig nonSharedDataConnectionConfig(String clusterName) {
         return sharedDataConnectionConfig(clusterName)
                 .setShared(false);
@@ -195,6 +220,23 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         try {
             byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
             String xmlString = new String(bytes, StandardCharsets.UTF_8).replace("$CLUSTER_NAME$", clusterName);
+            dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
+            return dataConnectionConfig;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Nonnull
+    private static DataConnectionConfig sharedDataConnectionConfig(String clusterName, int port) {
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig("data-connection-name")
+                .setType("HZ")
+                .setShared(true);
+        try {
+            byte[] bytes = readAllBytes(Paths.get("src", "test", "resources", "hazelcast-client-test-external.xml"));
+            String xmlString = new String(bytes, StandardCharsets.UTF_8)
+                    .replace("$CLUSTER_NAME$", clusterName)
+                    .replace("5701", Integer.toString(port));
             dataConnectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlString);
             return dataConnectionConfig;
         } catch (IOException e) {

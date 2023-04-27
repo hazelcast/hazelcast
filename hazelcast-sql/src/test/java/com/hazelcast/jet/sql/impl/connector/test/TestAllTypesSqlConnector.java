@@ -114,9 +114,10 @@ public class TestAllTypesSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return false;
+    public String defaultObjectType() {
+        return "Dummy";
     }
 
     @Nonnull @Override
@@ -125,7 +126,8 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
+            @Nullable String dataConnectionName,
+            @Nullable String objectType) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
@@ -136,12 +138,9 @@ public class TestAllTypesSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull String mappingName,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nonnull Map<String, String> options,
+            @Nonnull SqlMappingContext ctx,
             @Nonnull List<MappingField> resolvedFields) {
-        return new TestAllTypesTable(this, schemaName, mappingName);
+        return new TestAllTypesTable(this, schemaName, ctx.name());
     }
 
     @Nonnull @Override
@@ -178,7 +177,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
                 @Nonnull String schemaName,
                 @Nonnull String name
         ) {
-            super(sqlConnector, FIELD_LIST2, schemaName, name, new ConstantTableStatistics(1));
+            super(sqlConnector, FIELD_LIST2, schemaName, name, new ConstantTableStatistics(1), null, false);
         }
 
         @Override

@@ -50,7 +50,7 @@ public class ReferenceCounter {
      */
     public void retain() {
         referenceCount.updateAndGet(cnt -> {
-            if (cnt == 0) {
+            if (cnt <= 0) {
                 throw new IllegalStateException("Resurrected a dead object");
             }
             return cnt + 1;

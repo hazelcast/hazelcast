@@ -116,12 +116,7 @@ public final class HeartbeatManager {
                 return;
             }
 
-            long lastReadTime = tpcChannel.lastReadTimeMillis();
-            // TODO: remove the lastReadTime > 0 check while doing the
-            //  auth changes. Right now, it is needed because we are
-            //  not reading anything during the initial connection, hence
-            //  it is returning -1, which fails the check immediately
-            if (lastReadTime > 0 && now - lastReadTime > heartbeatTimeoutMillis) {
+            if (now - tpcChannel.lastReadTimeMillis() > heartbeatTimeoutMillis) {
                 String message = "Heartbeat failed over the TPC channel: " + tpcChannel + " for connection: " + connection;
                 logger.warning(message);
                 connection.close("Heartbeat timed out", new TargetDisconnectedException(message));
