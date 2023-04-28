@@ -181,6 +181,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
                 0, getNearCacheStats(map).getOwnedEntryMemoryCost());
         // this assert will work in all scenarios, since the default value should be 0 if no costs are calculated
         assertEquals("The Near Cache is empty, there should be no heap costs", 0, map.getLocalMapStats().getHeapCost());
+        executorService.shutdownNow();
     }
 
     protected NearCacheConfig newNearCacheConfigWithEntryCountEviction(EvictionPolicy evictionPolicy, int size) {
