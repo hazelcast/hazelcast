@@ -96,11 +96,6 @@ public class SerialOperationInvokerTest extends HazelcastTestSupport {
     @AfterClass
     public static void afterClass() throws Exception {
         InvokedMemberRecordingOperation.TEST_NAME_TO_INVOKED_MEMBER_UUIDS.clear();
-
-        // We need to reset these values for local loop testing, and there is no
-        // negative impact in doing this during single operations anyway
-        AwaitingAddMemberOperation.COUNT.set(0);
-        AwaitingRemoveMemberOperation.COUNT.set(0);
     }
 
     @Test
@@ -170,15 +165,19 @@ public class SerialOperationInvokerTest extends HazelcastTestSupport {
                 2
         );
 
-        // Wait for this operation's specific LATCH to count down (ensuring that our initial
+        // Wait for this operation's INITIAL_OPS_LATCH to count down (ensuring that our initial
         // offering has been accepted), otherwise we can encounter a race condition where the
         // invocation is restarted before the initial member UUIDs have been fully collected
-        assertOpenEventually(AwaitingAddMemberOperation.LATCH, 5);
+        assertOpenEventually(AwaitingAddMemberOperation.INITIAL_OPS_LATCH, 5);
 
         Collection<UUID> expectedUuids = new ArrayList<>(getMembersUuids(node));
 
         HazelcastInstance instance4 = factory.newHazelcastInstance(config);
         assertClusterSizeEventually(4, instance1, instance2, instance3, instance4);
+
+        // Count down on this operation's CLUSTER_SIZE_LATCH to allow progression now that
+        // the cluster size change has been successfully completed
+        AwaitingAddMemberOperation.CLUSTER_SIZE_LATCH.countDown();
 
         clusterSerial.join();
 
@@ -197,15 +196,19 @@ public class SerialOperationInvokerTest extends HazelcastTestSupport {
                 2
         );
 
-        // Wait for this operation's specific LATCH to count down (ensuring that our initial
+        // Wait for this operation's INITIAL_OPS_LATCH to count down (ensuring that our initial
         // offering has been accepted), otherwise we can encounter a race condition where the
         // invocation is restarted before the initial member UUIDs have been fully collected
-        assertOpenEventually(AwaitingRemoveMemberOperation.LATCH, 5);
+        assertOpenEventually(AwaitingRemoveMemberOperation.INITIAL_OPS_LATCH, 5);
 
         instance3.shutdown();
         assertClusterSizeEventually(2, instance1, instance2);
-        Collection<UUID> expectedUuids = new ArrayList<>(getMembersUuids(node));
 
+        // Count down on this operation's CLUSTER_SIZE_LATCH to allow progression now that
+        // the cluster size change has been successfully completed
+        AwaitingRemoveMemberOperation.CLUSTER_SIZE_LATCH.countDown();
+
+        Collection<UUID> expectedUuids = new ArrayList<>(getMembersUuids(node));
         clusterSerial.join();
 
         expectedUuids.addAll(getMembersUuids(node));
@@ -370,7 +373,8 @@ public class SerialOperationInvokerTest extends HazelcastTestSupport {
     private static class AwaitingAddMemberOperation extends InvokedMemberRecordingOperation {
 
         private static final AtomicInteger COUNT = new AtomicInteger(0);
-        private static final CountDownLatch LATCH = new CountDownLatch(3);
+        private static final CountDownLatch INITIAL_OPS_LATCH = new CountDownLatch(3);
+        private static final CountDownLatch CLUSTER_SIZE_LATCH = new CountDownLatch(1);
         private int membersCount;
         private int expectedMemberCount;
 
@@ -388,15 +392,13 @@ public class SerialOperationInvokerTest extends HazelcastTestSupport {
             // We use this latch to ensure that all initial operations have been
             // completed before we alter the cluster topology (which results in
             // this operation being restarted)
-            LATCH.countDown();
+            INITIAL_OPS_LATCH.countDown();
 
             if (COUNT.getAndIncrement() == (membersCount - 1)) {
                 // At this point we need the operation to wait until the topology
                 // is changed, so that it does not finish early (which would result
                 // in the operation not being restarted)
-                while (getNodeEngine().getClusterService().getMembers().size() != expectedMemberCount) {
-                    Thread.sleep(100);
-                }
+                CLUSTER_SIZE_LATCH.await();
             }
             super.run();
         }
@@ -419,7 +421,8 @@ public class SerialOperationInvokerTest extends HazelcastTestSupport {
     private static class AwaitingRemoveMemberOperation extends InvokedMemberRecordingOperation {
 
         private static final AtomicInteger COUNT = new AtomicInteger(0);
-        private static final CountDownLatch LATCH = new CountDownLatch(3);
+        private static final CountDownLatch INITIAL_OPS_LATCH = new CountDownLatch(3);
+        private static final CountDownLatch CLUSTER_SIZE_LATCH = new CountDownLatch(1);
         private int membersCount;
         private int expectedMemberCount;
 
@@ -437,15 +440,13 @@ public class SerialOperationInvokerTest extends HazelcastTestSupport {
             // We use this latch to ensure that all initial operations have been
             // completed before we alter the cluster topology (which results in
             // this operation being restarted)
-            LATCH.countDown();
+            INITIAL_OPS_LATCH.countDown();
 
             if (COUNT.getAndIncrement() == (membersCount - 1)) {
                 // At this point we need the operation to wait until the topology
                 // is changed, so that it does not finish early (which would result
                 // in the operation not being restarted)
-                while (getNodeEngine().getClusterService().getMembers().size() != expectedMemberCount) {
-                    Thread.sleep(100);
-                }
+                CLUSTER_SIZE_LATCH.await();
             }
             super.run();
         }
