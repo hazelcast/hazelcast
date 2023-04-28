@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi.impl.discovery;
 
+import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -59,9 +60,12 @@ public class ViridianAddressProviderTest {
         ViridianAddressProvider provider = new ViridianAddressProvider(createDiscovery());
 
         ClientConnectionProcessListenerRunner listener = createListenerRunner();
-        Collection<Address> addresses = provider.loadAddresses(listener).primary();
+        Addresses addresses = provider.loadAddresses(listener);
+        Collection<Address> primaries = addresses.primary();
+        Collection<Address> secondaries = addresses.secondary();
 
-        assertThat(addresses).containsExactly(PRIVATE_MEMBER_ADDRESS);
+        assertThat(primaries).containsExactly(PRIVATE_MEMBER_ADDRESS);
+        assertThat(secondaries).isEmpty();
         verify(listener, times(1)).onPossibleAddressesCollected(Collections.singletonList(PRIVATE_MEMBER_ADDRESS));
     }
 
@@ -69,10 +73,14 @@ public class ViridianAddressProviderTest {
     public void testLoadAddresses_withTpc() throws Exception {
         setUpWithTpc();
         ViridianAddressProvider provider = new ViridianAddressProvider(createDiscovery());
-        Collection<Address> addresses = provider.loadAddresses(createListenerRunner()).primary();
+        ClientConnectionProcessListenerRunner listener = createListenerRunner();
+        Addresses addresses = provider.loadAddresses(listener);
+        Collection<Address> primaries = addresses.primary();
+        Collection<Address> secondaries = addresses.secondary();
 
-        assertThat(addresses).containsExactly(PRIVATE_MEMBER_ADDRESS);
-    }
+        assertThat(primaries).containsExactly(PRIVATE_MEMBER_ADDRESS);
+        assertThat(secondaries).isEmpty();
+        verify(listener, times(1)).onPossibleAddressesCollected(Collections.singletonList(PRIVATE_MEMBER_ADDRESS));    }
 
     @Test(expected = IllegalStateException.class)
     public void testLoadAddresses_whenExceptionIsThrown() throws Exception {
