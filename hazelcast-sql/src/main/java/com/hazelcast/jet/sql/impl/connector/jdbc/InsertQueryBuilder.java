@@ -25,9 +25,7 @@ class InsertQueryBuilder {
 
     private final String query;
 
-    InsertQueryBuilder(JdbcTable jdbcTable) {
-        SqlDialect dialect = jdbcTable.sqlDialect();
-
+    InsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
         StringBuilder sb = new StringBuilder()
                 .append("INSERT INTO ");
         dialect.quoteIdentifier(sb, Arrays.asList(jdbcTable.getExternalName()));

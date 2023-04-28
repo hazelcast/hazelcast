@@ -31,7 +31,7 @@ public final class BadTable extends Table {
     private final Throwable cause;
 
     public BadTable(String schemaName, String sqlName, Throwable cause) {
-        super(schemaName, sqlName, Collections.emptyList(), new ConstantTableStatistics(0));
+        super(schemaName, sqlName, Collections.emptyList(), new ConstantTableStatistics(0), "Bad", false);
         this.cause = cause;
     }
 
@@ -43,11 +43,13 @@ public final class BadTable extends Table {
 
     @Override
     public PlanObjectKey getObjectKey() {
-        throw createException();
+        // BadTable will not be used in any reasonable plan.
+        // To not cause additional problems in PlanChecker return constant value instead of throwing.
+        return PlanObjectKey.NON_CACHEABLE_OBJECT_KEY;
     }
 
     private QueryException createException() {
-        return new QueryException(String.format("Mapping '%s' is invalid: %s", getSqlName(), cause),
+        return QueryException.error(String.format("Mapping '%s' is invalid: %s", getSqlName(), cause),
                 cause);
     }
 }

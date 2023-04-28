@@ -17,6 +17,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.LogListener;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClient;
@@ -36,6 +37,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
@@ -83,6 +85,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
             MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
             collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
+            long startAt = System.currentTimeMillis();
             execute("CREATE MAPPING " + tableName + " external name "  + databaseName + "." + collectionName
                     + " ("
                     + (includeIdInMapping ? " id VARCHAR external name \"fullDocument._id\", " : "")
@@ -91,10 +94,10 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                     + " jedi BOOLEAN, "
                     + " operation VARCHAR external name operationType"
                     + ") "
-                    + "TYPE MongoStream "
+                    + "TYPE Mongo OBJECT TYPE ChangeStream "
                     + "OPTIONS ("
                     + "    'connectionString' = '" + connectionString + "', "
-                    + "    'startAt' = 'now' "
+                    + "    'startAt' = '" + startAt + "' "
                     + ")");
 
             String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
@@ -113,7 +116,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                             new Row("Luke", "Skywalker", "insert"),
                             new Row("Anakin", "Skywalker", "insert")
                     ),
-                    TimeUnit.SECONDS.toMillis(10)
+                    TimeUnit.SECONDS.toMillis(30)
             );
 
             assertEquals(forceTwoSteps, projectAndFilterFound.get());
@@ -133,6 +136,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
         MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
+        long startAt = System.currentTimeMillis();
         execute("CREATE MAPPING " + tableName + " external name " + databaseName + "." + collectionName
                 + " ("
                 + " id VARCHAR external name \"fullDocument._id\", "
@@ -142,11 +146,11 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                 + " operation VARCHAR external name operationType, "
                 + " ts timestamp"
                 + ") "
-                + "TYPE MongoStream "
+                + "TYPE Mongo OBJECT TYPE ChangeStream "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" + databaseName + "', "
-                + "    'startAt' = 'now' "
+                + "    'startAt' = '" + startAt + "' "
                 + ")");
 
         spawn(() -> {
@@ -169,6 +173,25 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                         new Row("Anakin", "Skywalker", "insert")
                 )
         );
+    }
+
+    @Test
+    public void readsUsingDataConnection() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
+        collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Rey").append("jedi", true));
+
+        execute("CREATE MAPPING " + collectionName
+                + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
+                + " DATA CONNECTION testMongo"
+                + " OBJECT TYPE ChangeStream"
+                + " OPTIONS ('startAt' = 'now')");
+
+        try (SqlResult result = sqlService.execute("select firstName, lastName from " + collectionName)) {
+            assertTrue(result.isRowSet());
+        }
     }
 
     private void sleep(int howMuch) {

@@ -17,6 +17,7 @@
 package com.hazelcast.test.jdbc;
 
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.Network;
 
 import java.util.Arrays;
 
@@ -28,11 +29,14 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
     private static final int LOGIN_TIMEOUT = 120;
 
     private MySQLContainer<?> container;
+    private Network network = Network.newNetwork();
 
     @Override
     public String createDatabase(String dbName) {
         //noinspection resource
         container = new MySQLContainer<>("mysql:" + TEST_MYSQL_VERSION)
+                .withNetwork(network)
+                .withNetworkAliases("mysql")
                 .withDatabaseName(dbName)
                 .withUsername("root")
                 .withUrlParam("user", "root")
@@ -41,6 +45,14 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
         String jdbcUrl = container.getJdbcUrl();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
+    }
+
+    public MySQLContainer<?> container() {
+        return container;
+    }
+
+    public Network getNetwork() {
+        return network;
     }
 
     @Override

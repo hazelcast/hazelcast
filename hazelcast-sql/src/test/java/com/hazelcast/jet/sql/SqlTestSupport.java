@@ -435,10 +435,15 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     @Nonnull
     protected static List<Row> allRows(String statement, SqlService sqlService) {
-        List<Row> actualRows = new ArrayList<>();
         try (SqlResult result = sqlService.execute(statement)) {
-            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
+            return allRows(result);
         }
+    }
+
+    @Nonnull
+    protected static List<Row> allRows(SqlResult result) {
+        List<Row> actualRows = new ArrayList<>();
+        result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
         return actualRows;
     }
 
@@ -508,16 +513,15 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * java serialization for both key and value with the given classes.
      */
     public static void createMapping(HazelcastInstance instance, String name, Class<?> keyClass, Class<?> valueClass) {
-        try (SqlResult result = instance.getSql().execute("CREATE OR REPLACE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
+        long updateCount = instance.getSql().executeUpdate("CREATE OR REPLACE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
                 + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
                 + ", '" + OPTION_KEY_CLASS + "'='" + keyClass.getName() + "'\n"
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'\n"
                 + ", '" + OPTION_VALUE_CLASS + "'='" + valueClass.getName() + "'\n"
                 + ")"
-        )) {
-            assertThat(result.updateCount()).isEqualTo(0);
-        }
+        );
+        assertThat(updateCount).isEqualTo(0);
     }
 
     /**

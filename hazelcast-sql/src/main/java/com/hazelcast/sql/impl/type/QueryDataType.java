@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.type;
 
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import com.hazelcast.sql.impl.type.converter.BigIntegerConverter;
@@ -214,12 +214,12 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     @Override
     public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
+        return SqlDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return JetSqlSerializerHook.QUERY_DATA_TYPE;
+        return SqlDataSerializerHook.QUERY_DATA_TYPE;
     }
 
     @Override
@@ -401,12 +401,12 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
         @Override
         public int getFactoryId() {
-            return JetSqlSerializerHook.F_ID;
+            return SqlDataSerializerHook.F_ID;
         }
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.QUERY_DATA_TYPE_FIELD;
+            return SqlDataSerializerHook.QUERY_DATA_TYPE_FIELD;
         }
     }
 }

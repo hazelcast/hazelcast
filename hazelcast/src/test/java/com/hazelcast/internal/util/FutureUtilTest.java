@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionTimedOutException;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -58,10 +59,16 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    private ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+    @After
+    public void tearDown() throws Exception {
+        executorService.shutdownNow();
+    }
+
     @Test
     public void test_waitWithDeadline_first_wait_second_finished() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future> futures = new ArrayList<Future>();
         for (int i = 0; i < 2; i++) {
@@ -69,12 +76,12 @@ public class FutureUtilTest extends HazelcastTestSupport {
         }
 
         waitWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Level.WARNING));
+        executorService.shutdownNow();
     }
 
     @Test
     public void test_waitWithDeadline_first_finished_second_wait() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future> futures = new ArrayList<Future>();
         for (int i = 0; i < 2; i++) {
@@ -87,7 +94,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Test
     public void test_returnWithDeadline_first_wait_second_finished() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
@@ -105,7 +111,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Test
     public void test_returnWithDeadline_first_finished_second_wait() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
@@ -123,7 +128,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Test(expected = TimeoutException.class)
     public void test_returnWithDeadline_timeout_exception() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {
@@ -145,7 +149,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Test
     public void test_waitWithDeadline_failing_second() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future> futures = new ArrayList<Future>();
         for (int i = 0; i < 2; i++) {
@@ -164,7 +167,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
     @Test
     public void test_returnWithDeadline_failing_second() {
         AtomicBoolean waitLock = new AtomicBoolean(true);
-        ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         List<Future<Integer>> futures = new ArrayList<Future<Integer>>();
         for (int i = 0; i < 2; i++) {

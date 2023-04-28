@@ -35,8 +35,8 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.map.impl.operation.steps.IMapStepAwareOperation;
 import com.hazelcast.map.impl.operation.steps.engine.State;
-import com.hazelcast.map.impl.operation.steps.engine.StepAwareOperation;
 import com.hazelcast.map.impl.operation.steps.engine.StepRunner;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -71,7 +71,7 @@ import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
         implements IdentifiedDataSerializable, ServiceNamespaceAware,
-        StepAwareOperation<State> {
+        IMapStepAwareOperation {
 
     private static final boolean ASSERTION_ENABLED = MapOperation.class.desiredAssertionStatus();
 
@@ -83,10 +83,10 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     protected transient boolean createRecordStoreOnDemand = true;
     protected transient boolean disposeDeferredBlocks = true;
+    protected transient boolean tieredStoreAndPartitionCompactorEnabled;
+    protected transient boolean mapStoreOffloadEnabled;
 
-    private transient boolean mapStoreOffloadEnabled;
     private transient boolean canPublishWanEvent;
-    private transient boolean operationCreatedOnPartitionThread = ThreadUtil.isRunningOnPartitionThread();
 
     public MapOperation() {
     }
@@ -96,6 +96,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     @Override
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     public final void beforeRun() throws Exception {
         super.beforeRun();
 
@@ -125,14 +126,41 @@ public abstract class MapOperation extends AbstractNamedOperation
                 && recordStore != null
                 && recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE);
 
-        // check mapStoreOffloadEnabled is true for current operation
-        mapStoreOffloadEnabled = recordStore != null && hasUserConfiguredOffload
+        // check if mapStoreOffloadEnabled is true for this operation
+        mapStoreOffloadEnabled = recordStore != null
+                && hasUserConfiguredOffload
                 && getStartingStep() != null
                 && !mapConfig.getTieredStoreConfig().isEnabled();
 
+        // check if tieredStore and partitionCompactor
+        // are both enabled for this operation
+        tieredStoreAndPartitionCompactorEnabled = recordStore != null
+                && recordStore.getStorage().isPartitionCompactorEnabled()
+                && getStartingStep() != null
+                && mapConfig.getTieredStoreConfig().isEnabled();
+
+        assertOnlyOneOfMapStoreOrTieredStoreEnabled();
         assertNativeMapOnPartitionThread();
 
         innerBeforeRun();
+    }
+
+    // Currently we don't allow both map-store and
+    // tiered-store configured for the same map
+    private void assertOnlyOneOfMapStoreOrTieredStoreEnabled() {
+        if (!ASSERTION_ENABLED) {
+            return;
+        }
+
+        if (mapStoreOffloadEnabled) {
+            assert !tieredStoreAndPartitionCompactorEnabled;
+            return;
+        }
+
+        if (tieredStoreAndPartitionCompactorEnabled) {
+            assert !mapStoreOffloadEnabled;
+            return;
+        }
     }
 
     @Nullable
@@ -141,7 +169,10 @@ public abstract class MapOperation extends AbstractNamedOperation
     }
 
     protected void innerBeforeRun() throws Exception {
-        if (recordStore != null) {
+        // when tieredStoreAndPartitionCompactorEnabled is true,
+        // StepSupplier calls beforeOperation and afterOperation
+        if (recordStore != null
+                && !tieredStoreAndPartitionCompactorEnabled) {
             recordStore.beforeOperation();
         }
         // Concrete classes can override this method.
@@ -165,7 +196,7 @@ public abstract class MapOperation extends AbstractNamedOperation
             }
         }
 
-        if (isMapStoreOffloadEnabled()) {
+        if (isMapStoreOffloadEnabled() || tieredStoreAndPartitionCompactorEnabled) {
             assert recordStore != null;
             return offloadOperation();
         }
@@ -178,11 +209,22 @@ public abstract class MapOperation extends AbstractNamedOperation
         // This is for nested calls from partition thread. When we see
         // nested call we directly run the call without offloading.
         if (mapStoreOffloadEnabled
-                && operationCreatedOnPartitionThread
+                && ThreadUtil.isRunningOnPartitionThread()
                 && isStepRunnerCurrentlyExecutingOnPartitionThread()) {
             return false;
         }
         return mapStoreOffloadEnabled;
+    }
+
+    public final boolean isTieredStoreAndPartitionCompactorEnabled() {
+        // This is for nested calls from partition thread. When we see
+        // nested call we directly run the call without offloading.
+        if (tieredStoreAndPartitionCompactorEnabled
+                && ThreadUtil.isRunningOnPartitionThread()
+                && isStepRunnerCurrentlyExecutingOnPartitionThread()) {
+            return false;
+        }
+        return tieredStoreAndPartitionCompactorEnabled;
     }
 
     protected Offload offloadOperation() {
@@ -218,7 +260,8 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     @Override
     public final void afterRun() throws Exception {
-        if (mapStoreOffloadEnabled) {
+        if (mapStoreOffloadEnabled
+                || tieredStoreAndPartitionCompactorEnabled) {
             return;
         }
         afterRunInternal();
@@ -233,7 +276,10 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     @Override
     public void afterRunFinal() {
-        if (recordStore != null) {
+        // when tieredStoreAndPartitionCompactorEnabled is
+        // true, we handle afterOperation in StepSupplier
+        if (!tieredStoreAndPartitionCompactorEnabled
+                && recordStore != null) {
             recordStore.afterOperation();
         }
     }

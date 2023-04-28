@@ -38,7 +38,6 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <calcite.version>1.32.0</calcite.version>
         <confluent.version>6.2.2</confluent.version>
         <immutables.version>2.9.3</immutables.version>
     </properties>
@@ -632,6 +631,13 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mongodb</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>toxiproxy</artifactId>
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>

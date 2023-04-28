@@ -29,7 +29,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
@@ -309,7 +308,7 @@ public class JobCoordinationService {
             } finally {
                 res.complete(null);
             }
-            tryStartJob(masterContext);
+            masterContext.jobContext().tryStartJob();
         });
         return res;
     }
@@ -722,7 +721,7 @@ public class JobCoordinationService {
 
     public CompletableFuture<Void> resumeJob(long jobId) {
         return runWithJob(jobId,
-                masterContext -> masterContext.jobContext().resumeJob(jobRepository::newExecutionId),
+                masterContext -> masterContext.jobContext().resumeJob(),
                 jobResult -> {
                     throw new IllegalStateException("Job already completed");
                 },
@@ -1125,7 +1124,7 @@ public class JobCoordinationService {
             logger.severe("Master context for job " + idToString(jobId) + " not found to restart");
             return;
         }
-        tryStartJob(masterContext);
+        masterContext.jobContext().tryStartJob();
     }
 
     private void checkOperationalState() {
@@ -1266,7 +1265,7 @@ public class JobCoordinationService {
             logFinest(logger, "MasterContext for suspended %s is created", masterContext.jobIdString());
         } else {
             logger.info("Starting job " + idToString(jobId) + ": " + reason);
-            tryStartJob(masterContext);
+            masterContext.jobContext().tryStartJob();
         }
 
         return masterContext.jobContext().jobCompletionFuture();
@@ -1296,16 +1295,7 @@ public class JobCoordinationService {
         return false;
     }
 
-    private void tryStartJob(MasterContext masterContext) {
-        masterContext.jobContext().tryStartJob(jobRepository::newExecutionId);
-
-        if (masterContext.hasTimeout()) {
-            long remainingTime = masterContext.remainingTime(Clock.currentTimeMillis());
-            scheduleJobTimeout(masterContext.jobId(), Math.max(1, remainingTime));
-        }
-    }
-
-    private int getQuorumSize() {
+    int getQuorumSize() {
         return (getDataMemberCount() / 2) + 1;
     }
 
@@ -1488,7 +1478,7 @@ public class JobCoordinationService {
         }).toArray();
     }
 
-    private void scheduleJobTimeout(final long jobId, final long timeout) {
+    void scheduleJobTimeout(final long jobId, final long timeout) {
         if (timeout <= 0) {
             return;
         }

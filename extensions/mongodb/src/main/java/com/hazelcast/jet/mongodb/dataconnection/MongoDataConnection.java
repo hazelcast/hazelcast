@@ -16,8 +16,10 @@
 package com.hazelcast.jet.mongodb.dataconnection;
 
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionBase;
 import com.hazelcast.dataconnection.DataConnectionResource;
+import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoClientSettings.Builder;
@@ -29,6 +31,8 @@ import com.mongodb.client.MongoDatabase;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
@@ -75,7 +79,7 @@ public class MongoDataConnection extends DataConnectionBase {
      */
     public static final String AUTH_DB_PROPERTY = "authDb";
 
-    private volatile MongoClient mongoClient;
+    private volatile ConcurrentMemoizingSupplier<MongoClient> mongoClientSup;
     private final String databaseName;
     private final String username;
     private final String password;
@@ -97,7 +101,8 @@ public class MongoDataConnection extends DataConnectionBase {
         "You have to provide connectionString property or combination of username, password and host");
 
         if (config.isShared()) {
-            this.mongoClient = new CloseableMongoClient(createClient(config), this::release);
+            this.mongoClientSup = new ConcurrentMemoizingSupplier<>(
+                    () -> new CloseableMongoClient(createClient(config), this::release));
         }
     }
 
@@ -115,17 +120,22 @@ public class MongoDataConnection extends DataConnectionBase {
     }
 
     private MongoClient createClient(DataConnectionConfig config) {
-        String connectionString = config.getProperty(CONNECTION_STRING_PROPERTY);
-        if (connectionString != null) {
-            return MongoClients.create(connectionString);
+        try {
+            String connectionString = config.getProperty(CONNECTION_STRING_PROPERTY);
+            if (connectionString != null) {
+                return MongoClients.create(connectionString);
+            }
+            ServerAddress serverAddress = new ServerAddress(host);
+            MongoCredential credential = MongoCredential.createCredential(username, authDb, password.toCharArray());
+            Builder builder = MongoClientSettings.builder()
+                                                 .codecRegistry(defaultCodecRegistry())
+                                                 .applyToClusterSettings(s -> s.hosts(singletonList(serverAddress)))
+                                                 .credential(credential);
+            return MongoClients.create(builder.build());
+        } catch (Exception e) {
+            throw new HazelcastException("Unable to create Mongo client for data connection '" + config.getName() + "'",
+                    e);
         }
-        ServerAddress serverAddress = new ServerAddress(host);
-        MongoCredential credential = MongoCredential.createCredential(username, authDb, password.toCharArray());
-        Builder builder = MongoClientSettings.builder()
-                                             .codecRegistry(defaultCodecRegistry())
-                                             .applyToClusterSettings(s -> s.hosts(singletonList(serverAddress)))
-                                             .credential(credential);
-        return MongoClients.create(builder.build());
     }
 
     /**
@@ -138,8 +148,10 @@ public class MongoDataConnection extends DataConnectionBase {
     public MongoClient getClient() {
         if (getConfig().isShared()) {
             retain();
-            checkState(mongoClient != null, "Mongo client should not be closed at this point");
-            return mongoClient;
+            // local copy to protect from nullifying the value between two instructions
+            ConcurrentMemoizingSupplier<MongoClient> supplier = mongoClientSup;
+            checkState(supplier != null, "Mongo client should not be closed at this point");
+            return supplier.get();
         } else {
             MongoClient client = createClient(getConfig());
             return new CloseableMongoClient(client, client::close);
@@ -174,9 +186,16 @@ public class MongoDataConnection extends DataConnectionBase {
         return resources;
     }
 
+    @Nonnull
+    @Override
+    public Collection<String> resourceTypes() {
+        return Arrays.asList("Collection", "ChangeStream");
+    }
+
     private static void addResources(List<DataConnectionResource> resources, MongoDatabase database) {
         for (String collectionName : database.listCollectionNames()) {
-            resources.add(new DataConnectionResource("collection", database.getName() + "." + collectionName));
+            resources.add(new DataConnectionResource("Collection", database.getName() + "." + collectionName));
+            resources.add(new DataConnectionResource("ChangeStream", database.getName() + "." + collectionName));
         }
     }
 
@@ -185,9 +204,13 @@ public class MongoDataConnection extends DataConnectionBase {
      */
     @Override
     public void destroy() {
-        if (mongoClient != null) {
-            ((CloseableMongoClient) mongoClient).unwrap().close();
-            mongoClient = null;
+        ConcurrentMemoizingSupplier<MongoClient> supplier = mongoClientSup;
+        if (supplier != null) {
+            mongoClientSup = null;
+            MongoClient mongoClient = supplier.remembered();
+            if (mongoClient != null) {
+                ((CloseableMongoClient) mongoClient).unwrap().close();
+            }
         }
     }
 

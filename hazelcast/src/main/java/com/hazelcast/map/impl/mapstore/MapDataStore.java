@@ -143,4 +143,12 @@ public interface MapDataStore<K, V> {
     boolean isWithExpirationTime();
 
     TxnReservedCapacityCounter getTxnReservedCapacityCounter();
+
+    /**
+     * @return {@code true} if map-store is configured, {@code false}
+     * otherwise to indicate a null implementation
+     */
+    default boolean isNullImpl() {
+        return false;
+    }
 }

@@ -14,21 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.nearcache.impl;
+package com.hazelcast.it;
 
-import com.hazelcast.internal.eviction.EvictableStore;
-import com.hazelcast.internal.nearcache.NearCacheRecord;
+public class GenericMapStoreIT {
 
-import java.util.concurrent.ConcurrentMap;
 
-/**
- * Contract point for all record maps to be used for storage in Near Cache.
- *
- * @param <K> type of the key
- * @param <V> type of the {@link NearCacheRecord} to be stored
- * @see NearCacheRecord
- * @see com.hazelcast.internal.eviction.EvictableStore
- */
-public interface NearCacheRecordMap<K, V extends NearCacheRecord>
-        extends ConcurrentMap<K, V>, EvictableStore<K, V> {
 }

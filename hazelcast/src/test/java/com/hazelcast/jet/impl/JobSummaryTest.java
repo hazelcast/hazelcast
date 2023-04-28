@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -202,14 +203,19 @@ public class JobSummaryTest extends JetTestSupport {
         assertTrueEventually(() -> assertEquals(1, getJobSummaryList().size()));
 
         // when
-        Executors.newSingleThreadScheduledExecutor().schedule(job::cancel, 100, TimeUnit.MILLISECONDS);
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.schedule(job::cancel, 100, TimeUnit.MILLISECONDS);
 
-        assertThatThrownBy(() -> getJetClientInstanceImpl(client).getJob(job.getId()).join())
-                .isInstanceOf(CancellationException.class);
+        try {
+            assertThatThrownBy(() -> getJetClientInstanceImpl(client).getJob(job.getId()).join())
+                    .isInstanceOf(CancellationException.class);
 
-        // then
-        List<JobAndSqlSummary> list = getJobSummaryList();
-        assertThat(list).isEmpty();
+            // then
+            List<JobAndSqlSummary> list = getJobSummaryList();
+            assertThat(list).isEmpty();
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 
     @Test

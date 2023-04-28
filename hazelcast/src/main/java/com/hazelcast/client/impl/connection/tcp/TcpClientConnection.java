@@ -26,7 +26,6 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
@@ -68,7 +67,6 @@ public class TcpClientConnection implements ClientConnection {
     private final long startTime = System.currentTimeMillis();
     private final Consumer<ClientMessage> responseHandler;
     private final ConcurrentMap attributeMap;
-    private final ChannelInitializer channelInitializer;
 
     @Probe(name = CLIENT_METRIC_CONNECTION_EVENT_HANDLER_COUNT, level = MANDATORY)
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap = new ConcurrentHashMap<>();
@@ -82,10 +80,7 @@ public class TcpClientConnection implements ClientConnection {
     private volatile UUID clusterUuid;
     private volatile Channel[] tpcChannels;
 
-    public TcpClientConnection(HazelcastClientInstanceImpl client,
-                               int connectionId,
-                               Channel channel,
-                               ChannelInitializer channelInitializer) {
+    public TcpClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
         this.responseHandler = client.getInvocationService().getResponseHandler();
         this.connectionManager = (TcpClientConnectionManager) client.getConnectionManager();
@@ -94,7 +89,6 @@ public class TcpClientConnection implements ClientConnection {
         this.attributeMap = channel.attributeMap();
         this.connectionId = connectionId;
         this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
-        this.channelInitializer = channelInitializer;
 
         attributeMap.put(TcpClientConnection.class, this);
     }
@@ -107,7 +101,6 @@ public class TcpClientConnection implements ClientConnection {
         this.connectionId = connectionId;
         this.channel = null;
         this.attributeMap = null;
-        this.channelInitializer = null;
         this.logger = client.getLoggingService().getLogger(TcpClientConnection.class);
     }
 
@@ -336,10 +329,6 @@ public class TcpClientConnection implements ClientConnection {
     @Override
     public Map<Long, EventHandler> getEventHandlers() {
         return Collections.unmodifiableMap(eventHandlerMap);
-    }
-
-    public ChannelInitializer getChannelInitializer() {
-        return channelInitializer;
     }
 
     public void setTpcChannels(Channel[] tpcChannels) {

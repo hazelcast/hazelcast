@@ -19,8 +19,9 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
-import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.function.QuadFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlMappingContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PUBLIC;
@@ -64,14 +66,16 @@ public class TableResolverImpl implements TableResolver {
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
 
-    private static final List<TriFunction<List<Mapping>, List<View>, List<Type>, Table>> ADDITIONAL_TABLE_PRODUCERS = asList(
-            (m, v, t) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
-            (m, v, t) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m),
-            (m, v, t) -> new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
-            (m, v, t) -> new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, v),
-            (m, v, t) -> new UserDefinedTypesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t),
-            (m, v, t) -> new UDTAttributesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t)
-    );
+    private static final List<QuadFunction<List<Mapping>, List<View>, List<Type>, NodeEngine, Table>> ADDITIONAL_TABLE_PRODUCERS
+            = asList(
+                    (m, v, t, hz) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+                    (m, v, t, hz) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m,
+                            hz.getDataConnectionService()::typeForDataConnection),
+                    (m, v, t, hz) -> new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+                    (m, v, t, hz) -> new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, v),
+                    (m, v, t, hz) -> new UserDefinedTypesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t),
+                    (m, v, t, hz) -> new UDTAttributesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t)
+            );
 
     private final NodeEngine nodeEngine;
     private final RelationsStorage relationsStorage;
@@ -148,19 +152,24 @@ public class TableResolverImpl implements TableResolver {
         } else {
             connector = connectorCache.forType(type);
         }
+        String objectType = mapping.objectType() == null
+                ? connector.defaultObjectType()
+                : mapping.objectType();
+        checkNotNull(objectType, "objectType cannot be null");
         resolvedFields = connector.resolveAndValidateFields(
                 nodeEngine,
                 options,
                 mapping.fields(),
                 mapping.externalName(),
-                mapping.dataConnection()
+                mapping.dataConnection(),
+                objectType
         );
 
         return new Mapping(
                 mapping.name(),
                 mapping.externalName(),
                 mapping.dataConnection(), type,
-                mapping.objectType(),
+                objectType,
                 new ArrayList<>(resolvedFields),
                 new LinkedHashMap<>(options)
         );
@@ -281,7 +290,7 @@ public class TableResolverImpl implements TableResolver {
         }
 
         ADDITIONAL_TABLE_PRODUCERS.forEach(
-                producer -> tables.add(producer.apply(mappings, views, types)));
+                producer -> tables.add(producer.apply(mappings, views, types, nodeEngine)));
 
         this.lastViewsSize = views.size();
         this.lastMappingsSize = mappings.size();
@@ -291,27 +300,36 @@ public class TableResolverImpl implements TableResolver {
     }
 
     private Table toTable(Mapping mapping) {
-        SqlConnector connector;
-        if (mapping.connectorType() == null) {
-            connector = extractConnector(mapping.dataConnection());
-        } else {
-            connector = connectorCache.forType((mapping.connectorType()));
-        }
-        assert connector != null;
+
         try {
+            SqlConnector connector;
+            if (mapping.connectorType() == null) {
+                connector = extractConnector(mapping.dataConnection());
+            } else {
+                connector = connectorCache.forType((mapping.connectorType()));
+            }
+            assert connector != null;
             return connector.createTable(
                     nodeEngine,
                     SCHEMA_NAME_PUBLIC,
-                    mapping.name(),
-                    mapping.externalName(),
-                    mapping.dataConnection(), mapping.options(),
+                    sqlMappingContextFrom(mapping, connector),
                     mapping.fields()
             );
         } catch (Throwable e) {
             // will fail later if invalid table is actually used in a query
-            return new BadTable(SCHEMA_NAME_PUBLIC, mapping.name(),
-                    e instanceof QueryException ? e.getCause() : e);
+            return new BadTable(SCHEMA_NAME_PUBLIC, mapping.name(), e);
         }
+    }
+
+    private static SqlMappingContext sqlMappingContextFrom(Mapping internalMapping, SqlConnector connector) {
+        String internalObjType = internalMapping.objectType() == null
+                ? connector.defaultObjectType()
+                : internalMapping.objectType();
+        checkNotNull(internalObjType, "objectType cannot be null");
+        String connectorType = connector.typeName();
+        return new SqlMappingContext(internalMapping.name(), internalMapping.externalName(),
+                internalMapping.dataConnection(),
+                connectorType, internalObjType, internalMapping.options());
     }
 
     private Table toTable(View view) {
