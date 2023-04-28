@@ -613,8 +613,6 @@ FROM information_schema.data_connections;
 The list of data connections should also include links created in the config. In the
 `information_schema` there should be a flag for such data connections.
 
-`SHOW DATA CONNECTIONS` will show data connection name and a list of available object types.
-
 ## GET_DDL system function
 
 This is an alternative to the proposed DESCRIBE command. The DESCRIBE command is
