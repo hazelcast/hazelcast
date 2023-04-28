@@ -483,7 +483,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
-    // Postgres + MySQL : Test that table in another DB exist
+    // Postgres + MySQL : Test that table in another DB exists
     @Test
     public void createMappingFails_tableExistInAnotherDatabase_externalNameOnlyTableName() throws SQLException {
         assumeThat(databaseProvider)
