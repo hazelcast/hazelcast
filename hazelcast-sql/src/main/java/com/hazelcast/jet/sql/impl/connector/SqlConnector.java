@@ -488,6 +488,10 @@ public interface SqlConnector {
     }
 
     interface DagBuildContext {
+
+        @Nonnull
+        NodeEngine getNodeEngine();
+
         /**
          * Returns the {@link DAG} that's being created.
          */

@@ -120,7 +120,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         this.watermarkKeysAssigner = watermarkKeysAssigner;
         this.objectKeys.addAll(usedViews);
 
-        dagBuildContext = new DagBuildContextImpl(getDag(), parameterMetadata);
+        dagBuildContext = new DagBuildContextImpl(nodeEngine, getDag(), parameterMetadata);
     }
 
     @Override

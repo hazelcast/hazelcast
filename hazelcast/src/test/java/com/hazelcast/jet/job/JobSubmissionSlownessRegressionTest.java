@@ -123,6 +123,8 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
 
         assertTrue("Job submission rate should not decrease. First rate: " + measurementARate
                 + ", second rate: " + measurementBRate, measurementARate * 0.8 < measurementBRate);
+
+        executorService.shutdownNow();
     }
 
     private static DAG twoVertex() {

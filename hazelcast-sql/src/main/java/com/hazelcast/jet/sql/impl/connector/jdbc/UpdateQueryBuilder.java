@@ -36,9 +36,13 @@ class UpdateQueryBuilder {
     private final String query;
     private final List<Integer> parameterPositions = new ArrayList<>();
 
-    UpdateQueryBuilder(JdbcTable table, List<String> pkFields, List<String> fieldNames, List<RexNode> expressions) {
-        SqlDialect dialect = table.sqlDialect();
-
+    UpdateQueryBuilder(
+            JdbcTable table,
+            SqlDialect dialect,
+            List<String> pkFields,
+            List<String> fieldNames,
+            List<RexNode> expressions
+    ) {
         assert fieldNames.size() == expressions.size();
         String setSqlFragment = Pair.zip(fieldNames, expressions).stream()
                 .map(pair -> {

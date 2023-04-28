@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.state;
 
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.DataConnectionConsistencyChecker;
@@ -126,9 +127,9 @@ public class QueryStateRegistryUpdater {
                 try {
                     Thread.sleep(currentStateCheckFrequency);
 
-                    checkClientState();
-                    checkPlans();
-                    checkDataConnectionsConsistency();
+                    executeInterruptibly(this::checkClientState);
+                    executeInterruptibly(this::checkPlans);
+                    executeInterruptibly(this::checkDataConnectionsConsistency);
                 } catch (InterruptedException e) {
                     if (currentStateCheckFrequency != stateCheckFrequency) {
                         // Interrupted due to frequency change.
@@ -139,6 +140,17 @@ public class QueryStateRegistryUpdater {
 
                     break;
                 }
+            }
+        }
+
+        private void executeInterruptibly(RunnableEx callback) throws InterruptedException {
+            try {
+                callback.runEx();
+            } catch (InterruptedException i) {
+                // propagate, will be handled higher up
+                throw i;
+            } catch (Throwable t) {
+                logger.warning("Unexpected error when invoking query state registry updater action", t);
             }
         }
 
