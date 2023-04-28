@@ -80,7 +80,7 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig);
         Collection<DataConnectionResource> resources = hazelcastDataConnection.listResources();
 
-        assertThat(resources).contains(new DataConnectionResource("IMap", "my_map"));
+        assertThat(resources).contains(new DataConnectionResource("IMapJournal", "my_map"));
     }
 
     @Test
@@ -204,7 +204,7 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         //then
         assertThat(resourcedTypes)
                 .map(r -> r.toLowerCase(Locale.ROOT))
-                .containsExactlyInAnyOrder("imap");
+                .containsExactlyInAnyOrder("imapjournal");
     }
 
     private static DataConnectionConfig nonSharedDataConnectionConfig(String clusterName) {
