@@ -210,6 +210,8 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
             assertThat(jobNames).containsAll(submittedJobNames);
         });
+
+        executorService.shutdownNow();
     }
 
     @Test
