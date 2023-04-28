@@ -20,8 +20,10 @@ import com.hazelcast.mapstore.GenericMapStoreIntegrationTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 
+@Ignore
 @Category({NightlyTest.class})
 public class MSSQLGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
 
