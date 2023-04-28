@@ -66,7 +66,7 @@ final class InfoSchemaConnector implements SqlConnector {
     @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields) {
         throw new UnsupportedOperationException();
     }

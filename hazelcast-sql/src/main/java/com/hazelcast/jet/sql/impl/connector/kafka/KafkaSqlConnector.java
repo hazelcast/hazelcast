@@ -85,14 +85,14 @@ public class KafkaSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields) {
-        if (sqlExternalResource.externalName().length > 1) {
-            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(sqlExternalResource.externalName())
+        if (externalResource.externalName().length > 1) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalResource.externalName())
                     + ", external name for Kafka is allowed to have only a single component referencing the topic " +
                     "name");
         }
-        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, sqlExternalResource.options(), nodeEngine);
+        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, externalResource.options(), nodeEngine);
     }
 
     @Nonnull

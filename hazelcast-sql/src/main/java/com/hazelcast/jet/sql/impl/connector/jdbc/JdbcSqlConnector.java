@@ -83,15 +83,15 @@ public class JdbcSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields) {
-        if (sqlExternalResource.dataConnection() == null) {
+        if (externalResource.dataConnection() == null) {
             throw QueryException.error("You must provide data connection when using the Jdbc connector");
         }
-        ExternalJdbcTableName.validateExternalName(sqlExternalResource.externalName());
+        ExternalJdbcTableName.validateExternalName(externalResource.externalName());
 
         Map<String, DbField> dbFields = readDbFields(nodeEngine.getDataConnectionService(),
-                sqlExternalResource.dataConnection(), sqlExternalResource.externalName());
+                externalResource.dataConnection(), externalResource.externalName());
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {

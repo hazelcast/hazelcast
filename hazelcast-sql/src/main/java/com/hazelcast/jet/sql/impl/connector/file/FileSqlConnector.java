@@ -70,9 +70,9 @@ public class FileSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields) {
-        return resolveAndValidateFields(sqlExternalResource.options(), userFields);
+        return resolveAndValidateFields(externalResource.options(), userFields);
     }
 
     @Nonnull

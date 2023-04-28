@@ -216,15 +216,15 @@ public interface SqlConnector {
      * the user can see it by listing the catalog. Jet will later pass it to
      * {@link #createTable}.
      *
-     * @param nodeEngine          an instance of {@link NodeEngine}
-     * @param sqlExternalResource an object for which fields should be resolved
-     * @param userFields          user-provided list of fields, possibly empty
+     * @param nodeEngine       an instance of {@link NodeEngine}
+     * @param externalResource an object for which fields should be resolved
+     * @param userFields       user-provided list of fields, possibly empty
      * @return final field list, must not be empty
      */
     @Nonnull
     List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields
     );
 

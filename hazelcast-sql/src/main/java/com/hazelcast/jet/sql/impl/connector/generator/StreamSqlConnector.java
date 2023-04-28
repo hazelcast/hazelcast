@@ -62,7 +62,7 @@ public class StreamSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields) {
         throw new UnsupportedOperationException("Resolving fields not supported for " + typeName());
     }

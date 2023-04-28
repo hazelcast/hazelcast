@@ -122,7 +122,7 @@ public class TestAllTypesSqlConnector implements SqlConnector {
     @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");

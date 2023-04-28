@@ -112,14 +112,14 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
 
-        String[] names = sqlExternalResource.options().get(OPTION_NAMES).split(DELIMITER);
-        String[] types = sqlExternalResource.options().get(OPTION_TYPES).split(DELIMITER);
+        String[] names = externalResource.options().get(OPTION_NAMES).split(DELIMITER);
+        String[] types = externalResource.options().get(OPTION_TYPES).split(DELIMITER);
 
         assert names.length == types.length;
 

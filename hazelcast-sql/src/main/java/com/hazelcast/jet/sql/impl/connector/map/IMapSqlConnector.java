@@ -107,10 +107,10 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields) {
-        checkImapName(sqlExternalResource.externalName());
-        return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, sqlExternalResource.options(), nodeEngine);
+        checkImapName(externalResource.externalName());
+        return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, externalResource.options(), nodeEngine);
     }
 
     @Nonnull

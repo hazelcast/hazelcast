@@ -74,22 +74,22 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull SqlExternalResource sqlExternalResource,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> userFields) {
-        if (sqlExternalResource.externalName().length > 2) {
-            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(sqlExternalResource.externalName())
+        if (externalResource.externalName().length > 2) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalResource.externalName())
                     + ", external name for Mongo is allowed to have only one component (collection)"
                     + " or two components (database and collection)");
         }
-        if (!ALLOWED_OBJECT_TYPES.contains(sqlExternalResource.objectType())) {
+        if (!ALLOWED_OBJECT_TYPES.contains(externalResource.objectType())) {
             throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
         }
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        return fieldResolver.resolveFields(sqlExternalResource.externalName(),
-                sqlExternalResource.dataConnection(),
-                sqlExternalResource.options(),
+        return fieldResolver.resolveFields(externalResource.externalName(),
+                externalResource.dataConnection(),
+                externalResource.options(),
                 userFields,
-                isStream(sqlExternalResource.objectType()));
+                isStream(externalResource.objectType()));
     }
 
     private static boolean isStream(String objectType) {
