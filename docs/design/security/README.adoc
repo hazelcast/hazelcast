@@ -53,8 +53,15 @@ and access decisions are made based on permissions granted to client's roles
 * Auditlog - allows gathering cluster events and storing them in an external system (file, syslog, …)
 * Confidentiality - sensitive data protection on the communication level (TLS) and storage level (persistence encryption)
 
-[[tls-encryption]]
-== TLS encryption
+== Encryption
+
+Encryption is used to protect sensitive information and maintain privacy,
+ensuring that data remains confidential and secure during transmission or storage.
+By making data unreadable to unauthorized users, encryption helps prevent
+data breaches, identity theft, cyberattacks, and unauthorized access
+to personal or corporate information.
+
+=== TLS
 
 Transport Layer Security (TLS) is a cryptographic protocol that provides
 secure communication over the internet. It is the successor to the
@@ -82,7 +89,7 @@ hazelcast:
         trustStorePassword: ACorrectPasswordGoesHere
 ----
 
-Example how to generate the keystore and truststore:
+Example how to generate the keystore and truststore for the TLS communication:
 
 [source,bash]
 ----
@@ -102,8 +109,7 @@ keytool -import -keystore hazelcast-truststore.p12 -storetype PKCS12 \
   -file hazelcast.crt
 ----
 
-[[data-at-rest-encryption]]
-== Data-at-rest encryption
+=== Persistence encryption
 
 Hazelcast Persistence feature supports data encryption. It safeguards
 sensitive data stored on disk by encrypting it using industry-standard
@@ -128,13 +134,23 @@ hazelcast:
       salt: NewYorkThymes
       secure-store:
         keystore:
-          path: /path/to/keystore.file
+          path: /path/to/keystore.p12
           type: PKCS12
-          password: password
+          password: YourSecretGoesHere
 ----
 
-[[authentication-basics]]
-== Authentication
+Example how to generate the keystore for the `encryption-at-rest`:
+
+[source,bash]
+----
+# Generate a keystore with a secret key
+keytool -genseckey -alias masterkey -storetype PKCS12 \
+  -keyalg AES -keysize 128 \
+  -storepass YourSecretGoesHere -keypass YourSecretGoesHere \
+  -keystore keystore.p12
+----
+
+== Authentication and authorization
 
 Hazelcast supports authentication on Member protocol, Client protocol,
 and a subset of REST endpoints.
@@ -148,6 +164,10 @@ configuration
 * LDAP
 * Kerberos
 * JAAS
+
+Authorization is supported on Client protocol. During the authentication
+clients get roles assigned. Access is then controlled by
+permissions assigned to the roles.
 
 [[member-to-member-authn]]
 === Member-to-Member authentication
@@ -208,11 +228,9 @@ hazelcast:
         principal: admin
 ----
 
-[[client-access-control-basics]]
-== Client access control
+== Client Permissions
 
-When the security is enabled, permission checks are done on client
-requests. You have to grant permissions to named roles to allow clients
+You have to grant permissions to named roles to allow clients
 to execute actions on a member.
 
 NOTE: Operations executed directly on members (in embedded mode) or the ones executed
@@ -255,7 +273,7 @@ hazelcast:
             - lock
 ----
 
-=== Client permissions
+==== Permission objects
 
 Permission has:
 
@@ -267,12 +285,12 @@ granted (e.g. `192.168.\*.*`)
 
 Wildcards (`*`) are supported in names and endpoint definitions.
 
-== Security realms
+=== Security realms
 
 The security realm is a named security configuration. It's intended mainly
 for member configuration but with limited support on Java clients too.
-Security realms in current Hazelcast versions allow defining identity
-and authentication configurations.
+Security realms in Hazelcast allow defining identity, and authentication
+configurations.
 
 == Advanced security topics
 
