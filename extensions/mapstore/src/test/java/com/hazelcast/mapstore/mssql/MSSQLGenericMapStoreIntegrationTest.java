@@ -17,9 +17,12 @@
 package com.hazelcast.mapstore.mssql;
 
 import com.hazelcast.mapstore.GenericMapStoreIntegrationTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
 import org.junit.BeforeClass;
+import org.junit.experimental.categories.Category;
 
+@Category({NightlyTest.class})
 public class MSSQLGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
 
     public MSSQLGenericMapStoreIntegrationTest() {

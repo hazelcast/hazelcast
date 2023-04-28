@@ -27,9 +27,9 @@ public class AbstractQueryBuilder {
     protected final SqlDialect dialect;
     protected String query;
 
-    public AbstractQueryBuilder(JdbcTable jdbcTable) {
+    public AbstractQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
         this.jdbcTable = jdbcTable;
-        this.dialect = jdbcTable.sqlDialect();
+        this.dialect = dialect;
     }
 
     protected void appendFieldNames(StringBuilder sb, List<String> fieldNames) {

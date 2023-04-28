@@ -17,12 +17,15 @@
 package com.hazelcast.mapstore.postgres;
 
 import com.hazelcast.mapstore.GenericMapStoreIntegrationTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
+import org.junit.experimental.categories.Category;
 
-public class PostgreSQLGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
+@Category({NightlyTest.class})
+public class PostgreGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
 
-    public PostgreSQLGenericMapStoreIntegrationTest() {
+    public PostgreGenericMapStoreIntegrationTest() {
         setPrefix("postgre_");
     }
 

@@ -31,6 +31,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
@@ -52,6 +53,7 @@ public class DataConnectionResolver implements TableResolver {
 
     private final DataConnectionStorage dataConnectionStorage;
     private final DataConnectionServiceImpl dataConnectionService;
+    private final CopyOnWriteArrayList<TableListener> listeners;
 
     public DataConnectionResolver(
             InternalDataConnectionService dataConnectionService,
@@ -60,6 +62,13 @@ public class DataConnectionResolver implements TableResolver {
         Preconditions.checkInstanceOf(DataConnectionServiceImpl.class, dataConnectionService);
         this.dataConnectionService = (DataConnectionServiceImpl) dataConnectionService;
         this.dataConnectionStorage = dataConnectionStorage;
+
+        // See comment in TableResolverImpl regarding local events processing.
+        // We rely on the fact that both are data connections and tables
+        // are in the same IMap and can share (in fact they must) listener logic.
+        // Currently, onTableChanged event is used also for data connections
+        // (they affect mappings) but separate event may be created if needed.
+        this.listeners = new CopyOnWriteArrayList<>();
     }
 
     /**
@@ -68,19 +77,28 @@ public class DataConnectionResolver implements TableResolver {
     public boolean createDataConnection(DataConnectionCatalogEntry dl, boolean replace, boolean ifNotExists) {
         if (replace) {
             dataConnectionStorage.put(dl.name(), dl);
+            listeners.forEach(TableListener::onTableChanged);
             return true;
         } else {
             boolean added = dataConnectionStorage.putIfAbsent(dl.name(), dl);
             if (!added && !ifNotExists) {
                 throw QueryException.error("Data connection already exists: " + dl.name());
             }
+            if (!added) {
+                // report only updates to listener
+                listeners.forEach(TableListener::onTableChanged);
+            }
             return added;
         }
     }
 
     public void removeDataConnection(String name, boolean ifExists) {
-        if (!dataConnectionStorage.removeDataConnection(name) && !ifExists) {
-            throw QueryException.error("Data connection does not exist: " + name);
+        if (!dataConnectionStorage.removeDataConnection(name)) {
+            if (!ifExists) {
+                throw QueryException.error("Data connection does not exist: " + name);
+            }
+        } else {
+            listeners.forEach(TableListener::onTableChanged);
         }
     }
 
@@ -135,5 +153,6 @@ public class DataConnectionResolver implements TableResolver {
 
     @Override
     public void registerListener(TableListener listener) {
+        listeners.add(listener);
     }
 }
