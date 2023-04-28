@@ -46,6 +46,7 @@ public class GetDdlFunction extends TriExpression<String> {
         super(operand1, operand2, operand3);
     }
 
+    @SuppressWarnings("checkstyle:NPathComplexity")
     @Override
     public String eval(Row row, ExpressionEvalContext context) {
         CooperativeThread.checkNonCooperative();
