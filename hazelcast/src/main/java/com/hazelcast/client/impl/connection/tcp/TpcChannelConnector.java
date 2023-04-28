@@ -16,14 +16,16 @@
 
 package com.hazelcast.client.impl.connection.tcp;
 
+import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExperimentalTpcAuthenticationCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
@@ -35,6 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 
@@ -53,8 +56,7 @@ public final class TpcChannelConnector {
     private final List<Integer> tpcPorts;
     private final byte[] tpcToken;
     private final ExecutorService executor;
-    private final ChannelInitializer channelInitializer;
-    private final ChannelCreator channelCreator;
+    private final BiFunction<Address, TcpClientConnection, Channel> channelCreator;
     private final ILogger logger;
     private final Channel[] tpcChannels;
     private final AtomicInteger remaining;
@@ -67,8 +69,7 @@ public final class TpcChannelConnector {
                                List<Integer> tpcPorts,
                                byte[] tpcToken,
                                ExecutorService executor,
-                               ChannelInitializer channelInitializer,
-                               ChannelCreator channelCreator,
+                               BiFunction<Address, TcpClientConnection, Channel> channelCreator,
                                LoggingService loggingService) {
         this.client = client;
         this.authenticationTimeoutMillis = authenticationTimeoutMillis;
@@ -77,7 +78,6 @@ public final class TpcChannelConnector {
         this.tpcPorts = tpcPorts;
         this.tpcToken = tpcToken;
         this.executor = executor;
-        this.channelInitializer = channelInitializer;
         this.channelCreator = channelCreator;
         this.logger = loggingService.getLogger(TpcChannelConnector.class);
         this.tpcChannels = new Channel[tpcPorts.size()];
@@ -114,8 +114,8 @@ public final class TpcChannelConnector {
 
         Channel channel = null;
         try {
-            Address address = new Address(host, port);
-            channel = channelCreator.create(address, connection, channelInitializer);
+            Address address = translate(new Address(host, port));
+            channel = channelCreator.apply(address, connection);
             authenticate(channel);
             onSuccessfulChannelConnection(channel, index);
         } catch (Exception e) {
@@ -209,11 +209,15 @@ public final class TpcChannelConnector {
         }
     }
 
-    /**
-     * Creates a Channel with the given parameters.
-     */
-    @FunctionalInterface
-    public interface ChannelCreator {
-        Channel create(Address address, TcpClientConnection connection, ChannelInitializer channelInitializer);
+    private Address translate(Address address) throws Exception {
+        ConcurrentMap attributeMap = connection.attributeMap();
+        CandidateClusterContext context = (CandidateClusterContext) attributeMap.get(CandidateClusterContext.class);
+        AddressProvider provider = context.getAddressProvider();
+        Address translated = provider.translate(address);
+        if (translated == null) {
+            throw new HazelcastException("Failed to translate " + address + " with " + provider);
+        }
+
+        return translated;
     }
 }
