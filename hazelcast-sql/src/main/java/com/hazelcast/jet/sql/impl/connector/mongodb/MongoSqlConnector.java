@@ -17,13 +17,19 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.mongodb.WriteMode;
+import com.hazelcast.jet.mongodb.impl.Mappers;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
+import com.mongodb.client.model.Filters;
 import org.apache.calcite.rex.RexNode;
+import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
 
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.UPDATE_ALL_PREDICATE;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -53,11 +59,15 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
 
     @Nonnull
     @Override
-    public Vertex updateProcessor(@Nonnull DagBuildContext context,
-                                  @Nonnull List<String> fieldNames,
-                                  @Nonnull List<HazelcastRexNode> expressions) {
+    public Vertex updateProcessor(
+            @Nonnull DagBuildContext context,
+            @Nonnull List<String> fieldNames,
+            @Nonnull List<HazelcastRexNode> expressions,
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
+    ) {
         MongoTable table = context.getTable();
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table.externalNames());
+        RexToMongoVisitor visitor = new RexToMongoVisitor();
         List<? extends Serializable> updates = expressions.stream()
                                                           .map(e -> e.unwrap(RexNode.class).accept(visitor))
                                                           .map(doc -> {
@@ -66,10 +76,26 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
                                                           })
                                                           .collect(toList());
 
-        return context.getDag().newUniqueVertex(
-                "Update(" + table.getSqlName() + ")",
-                new UpdateProcessorSupplier(table, fieldNames, updates)
-        );
+        if (hasInput) {
+            return context.getDag().newUniqueVertex(
+                    "Update(" + table.getSqlName() + ")",
+                    new UpdateProcessorSupplier(table, fieldNames, updates, null, hasInput)
+            );
+        } else {
+            Object predicateRaw = predicate == null
+                    ? Filters.empty()
+                    : predicate.unwrap(RexNode.class).accept(visitor);
+            Serializable translated = predicateRaw instanceof Bson
+                    ? Mappers.bsonToDocument((Bson) predicateRaw)
+                    : (Serializable) predicateRaw;
+
+            return context.getDag().newUniqueVertex(
+                    "Update(" + table.getSqlName() + ")",
+                    forceTotalParallelismOne(
+                        new UpdateProcessorSupplier(table, fieldNames, updates, translated, hasInput)
+                    )
+            );
+        }
     }
 
     @Nonnull
@@ -85,12 +111,34 @@ public class MongoSqlConnector extends MongoSqlConnectorBase {
 
     @Nonnull
     @Override
-    public Vertex deleteProcessor(@Nonnull DagBuildContext context) {
+    public Vertex deleteProcessor(
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
+    ) {
         MongoTable table = context.getTable();
 
-        return context.getDag().newUniqueVertex(
-                "Delete(" + table.getSqlName() + ")",
-                new DeleteProcessorSupplier(table)
-        );
+        if (hasInput) {
+            return context.getDag().newUniqueVertex(
+                    "Delete(" + table.getSqlName() + ")",
+                    new DeleteProcessorSupplier(table, null, hasInput)
+            );
+        } else {
+            Object predicateTranslated = predicate == null
+                    ? UPDATE_ALL_PREDICATE
+                    : predicate.unwrap(RexNode.class).accept(new RexToMongoVisitor());
+            Serializable predicateToSend;
+            if (predicateTranslated instanceof Bson) {
+                predicateToSend = Mappers.bsonToDocument((Bson) predicateTranslated);
+            } else {
+                assert predicateTranslated instanceof Serializable;
+                predicateToSend = (Serializable) predicateTranslated;
+            }
+
+            return context.getDag().newUniqueVertex(
+                    "Delete(" + table.getSqlName() + ")",
+                    forceTotalParallelismOne(new DeleteProcessorSupplier(table, predicateToSend, hasInput))
+            );
+        }
     }
 }

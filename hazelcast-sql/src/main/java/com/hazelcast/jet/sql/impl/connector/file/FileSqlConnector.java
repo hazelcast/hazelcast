@@ -156,4 +156,9 @@ public class FileSqlConnector implements SqlConnector {
         context.getDag().edge(between(vStart, vEnd).isolated());
         return vEnd;
     }
+
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
+    }
 }

@@ -170,6 +170,11 @@ public class KafkaSqlConnector implements SqlConnector {
         return writeProcessor(context);
     }
 
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
+    }
+
     @Nonnull
     private Vertex writeProcessor(@Nonnull DagBuildContext context) {
         KafkaTable table = context.getTable();

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
+import com.hazelcast.jet.sql.impl.opt.ExtractUpdateExpressionsRule;
 import com.hazelcast.jet.sql.impl.opt.logical.CalcMergeRule;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
@@ -163,6 +164,9 @@ public class QueryConverter {
         // Union optimization rules
         hepProgramBuilder.addRuleInstance(CoreRules.UNION_MERGE);
         hepProgramBuilder.addRuleInstance(CoreRules.UNION_TO_DISTINCT);
+
+        // Other rules
+        hepProgramBuilder.addRuleInstance(ExtractUpdateExpressionsRule.INSTANCE);
 
         HepPlanner planner = new HepPlanner(
                 hepProgramBuilder.build(),

@@ -204,6 +204,11 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
         return context.getDag().newUniqueVertex(table.toString(), pms);
     }
 
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
+    }
+
     protected abstract ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn);
 
     public static final class TestTable extends JetTable {

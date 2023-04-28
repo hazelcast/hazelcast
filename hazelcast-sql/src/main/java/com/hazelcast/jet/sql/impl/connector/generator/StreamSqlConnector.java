@@ -95,7 +95,7 @@ public class StreamSqlConnector implements SqlConnector {
             @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        StreamTable table = (StreamTable) context.getTable();
+        StreamTable table = context.getTable();
         StreamSourceTransform<JetSqlRow> source = (StreamSourceTransform<JetSqlRow>) table.items(
                 context.convertFilter(predicate), context.convertProjection(projection));
         ProcessorMetaSupplier pms = source.metaSupplierFn.apply(EventTimePolicy.noEventTime());
@@ -108,5 +108,10 @@ public class StreamSqlConnector implements SqlConnector {
             vertex = addWm;
         }
         return vertex;
+    }
+
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
     }
 }

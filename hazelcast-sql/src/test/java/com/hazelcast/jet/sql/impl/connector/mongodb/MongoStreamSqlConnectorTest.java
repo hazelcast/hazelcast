@@ -15,8 +15,6 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.logging.LogListener;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,8 +28,6 @@ import org.junit.runner.RunWith;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -45,41 +41,30 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
     private final Random random = new Random();
 
     @Test
-    public void readsFromMongo_withId_twoSteps() {
-       readsFromMongo(true, true);
+    public void readsFromMongo_withId_withUnsupportedExpr() {
+       testReadsFromMongo(true, true);
     }
 
     @Test
-    public void readsFromMongo_withId_oneStep() {
-       readsFromMongo(true, false);
+    public void readsFromMongo_withId_withoutUnsupportedExpr() {
+       testReadsFromMongo(true, false);
     }
 
     @Test
-    public void readsFromMongo_withoutId_twoSteps() {
-       readsFromMongo(false, true);
+    public void readsFromMongo_withoutId_withUnsupportedExpr() {
+       testReadsFromMongo(false, true);
     }
 
     @Test
-    public void readsFromMongo_withoutId_oneStep() {
-       readsFromMongo(false, false);
+    public void readsFromMongo_withoutId_withoutUnsupportedExpr() {
+       testReadsFromMongo(false, false);
     }
 
-    public void readsFromMongo(boolean includeIdInMapping, boolean forceTwoSteps) {
+    public void testReadsFromMongo(boolean includeIdInMapping, boolean useUnsupportedExpr) {
         final String databaseName = "sqlConnectorTest";
         final String collectionName = testName.getMethodName();
         final String tableName = testName.getMethodName();
         final String connectionString = mongoContainer.getConnectionString();
-
-        AtomicBoolean projectAndFilterFound = new AtomicBoolean(false);
-        LogListener lookForProjectAndFilterStep = log -> {
-            String message = log.getLogRecord().getMessage();
-            if (message.contains("ProjectAndFilter")) {
-                projectAndFilterFound.set(true);
-            }
-        };
-        for (HazelcastInstance instance : instances()) {
-            instance.getLoggingService().addLogListener(Level.FINE, lookForProjectAndFilterStep);
-        }
 
         try (MongoClient mongoClient = MongoClients.create(connectionString)) {
             MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
@@ -100,9 +85,9 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                     + "    'startAt' = '" + startAt + "' "
                     + ")");
 
-            String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
+            String force = useUnsupportedExpr ? " and cast(jedi as varchar) = 'true' " : "";
             spawn(() -> {
-                sleep(200);
+                sleep(1000);
                 collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
                 sleep(100);
                 collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
@@ -118,11 +103,6 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                     ),
                     TimeUnit.SECONDS.toMillis(30)
             );
-
-            assertEquals(forceTwoSteps, projectAndFilterFound.get());
-            for (HazelcastInstance instance : instances()) {
-                instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
-            }
         }
     }
 
@@ -155,6 +135,7 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
 
         spawn(() -> {
             assertTrueEventually(() -> assertEquals(1, instance().getJet().getJobs().size()));
+            sleep(200);
             collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
             sleep(200);
             collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));

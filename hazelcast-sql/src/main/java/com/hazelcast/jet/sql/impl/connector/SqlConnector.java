@@ -29,7 +29,10 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -366,27 +369,107 @@ public interface SqlConnector {
     }
 
     /**
-     * Returns the supplier for the update processor that will update given
-     * {@code table}. The input to the processor will be the fields
-     * returned by {@link #getPrimaryKey(Table)}.
+     * Returns the supplier for the update processor that will update the given
+     * {@code table}.
+     * <p>
+     * The processor is expected to work in a different mode, depending on the
+     * `hasInput` argument:<ol>
+     *
+     *     <li><b>hasInput == false:</b> There will be no input to the
+     *     processor. The processor is supposed to update all rows matching the
+     *     given `predicate`. If the `predicate` is null, it's supposed to
+     *     update all rows. The `expressions` have no input references.
+     *
+     *     <li><b>hasInput == true:</b> The processor is supposed to update all
+     *     rows with primary keys it receives on the input. In this mode the
+     *     `predicate` is always null. The primary key fields are specified by
+     *     the {@link #getPrimaryKey(Table)} method. If {@link
+     *     #dmlSupportsPredicates()} returned false, or if {@link
+     *     #supportsExpression} always returns false, `hasInput` is always true.
+     *     The `expressions` might contain input references. The input's first
+     *     columns are the primary key values, the rest are values that might be
+     *     referenced by expressions.
+     *
+     * </ol>
+     *
+     * @param fieldNames The names of fields to update
+     * @param expressions The expressions to assign to each field. Has the same
+     *     length as {@code fieldNames}.
      */
     @Nonnull
     default Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<HazelcastRexNode> expressions
+            @Nonnull List<HazelcastRexNode> expressions,
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
     }
 
     /**
      * Returns the supplier for the delete processor that will delete from the
-     * given {@code table}. The input to the processor will be the fields
-     * returned by {@link #getPrimaryKey(Table)}.
+     * given {@code table}.
+     * <p>
+     * The processor is expected to work in a different mode, depending on the
+     * `hasInput` argument:<ol>
+     *
+     *     <li><b>hasInput == false:</b> There will be no input to the
+     *     processor. The processor is supposed to update all rows matching the
+     *     given `predicate`. If the `predicate` is null, it's supposed to
+     *     update all rows.
+     *
+     *     <li><b>hasInput == true:</b> The processor is supposed to delete all
+     *     rows with primary keys it receives on the input. In this mode the
+     *     `predicate` is always null. The primary key fields are specified by
+     *     the {@link #getPrimaryKey(Table)} method. If {@link
+     *     #dmlSupportsPredicates()} returned false, or if {@link
+     *     #supportsExpression} always returns false, `hasInput` is always true.
+     *
+     * </ol>
      */
     @Nonnull
-    default Vertex deleteProcessor(@Nonnull DagBuildContext context) {
+    default Vertex deleteProcessor(
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
+    ) {
         throw new UnsupportedOperationException("DELETE not supported for " + typeName());
+    }
+
+    /**
+     * Returns whether this processor's {@link #deleteProcessor} and {@link
+     * #updateProcessor} methods can use a predicate.
+     */
+    default boolean dmlSupportsPredicates() {
+        return true;
+    }
+
+    /**
+     * Returns whether the given `expression` is supported by the processors
+     * this connector returns. If it returns true, then this expression will be
+     * passed as a projection or predicate to the other vertex-generating
+     * methods.
+     * <p>
+     * The connector must be able to handle {@link RexInputRef} expressions,
+     * such expressions will never be passed to this method. It is also
+     * recommended to support {@link RexDynamicParam} and {@link RexLiteral} for
+     * simpler execution plans.
+     * <p>
+     * If an expression is unsupported, for scans a projection will be added
+     * after the scan vertex. For DML, it will disable the use no-input mode.
+     * Instead, a scan and filtering will be generated.
+     * <p>
+     * The default implementation returns true for {@link RexDynamicParam}.
+     *
+     * @param expression expression to be analysed. Entire expression must be
+     *     checked, not only the root node.
+     * @return true, iff the given expression can be evaluated remotely
+     */
+    default boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        // support only simple RexDynamicParam ref. If RexDynamicParam is inside larger expression,
+        // entire expression will have to be analysed.
+        return expression.unwrap(RexNode.class) instanceof RexDynamicParam;
     }
 
     /**

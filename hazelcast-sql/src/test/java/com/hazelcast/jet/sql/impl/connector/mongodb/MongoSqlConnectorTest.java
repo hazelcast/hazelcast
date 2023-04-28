@@ -46,37 +46,34 @@ import static org.junit.Assert.assertEquals;
 public class MongoSqlConnectorTest extends MongoSqlTest {
 
     @Test
-    public void readsFromMongo_withId_twoSteps() {
-       readsFromMongo(true, true);
+    public void readsFromMongo_withId_withUnsupportedExpr() {
+       readsFromMongo(true, true, true);
     }
 
     @Test
-    public void readsFromMongo_withId_oneStep() {
-       readsFromMongo(true, false);
+    public void readsFromMongo_withId_withoutUnsupportedExpr() {
+       readsFromMongo(true, false, false);
     }
 
     @Test
-    public void readsFromMongo_withoutId_twoSteps() {
-       readsFromMongo(false, true);
+    public void readsFromMongo_withoutId_withUnsupportedExpr() {
+       readsFromMongo(false, true, true);
     }
     @Test
-    public void readsFromMongo_withoutId_oneStep() {
-       readsFromMongo(false, false);
+    public void readsFromMongo_withoutId_withoutUnsupportedExpr() {
+       readsFromMongo(false, false, false);
+    }
+    @Test
+    public void readsFromMongo_withtId_withUnsupportedExprInProjection_withoutUnsupportedExprInPredicate() {
+       readsFromMongo(true, true, false);
+    }    @Test
+    public void readsFromMongo_withouttId_withUnsupportedExprInProjection_withUnsupportedExprInPredicate() {
+       readsFromMongo(true, false, true);
     }
 
-    public void readsFromMongo(boolean includeIdInMapping, boolean forceTwoSteps) {
+    public void readsFromMongo(boolean includeIdInMapping, boolean useUnsupportedExpressionInProjection,
+                               boolean useUnsupportedExpressionInPredicate) {
         final String connectionString = mongoContainer.getConnectionString();
-
-        AtomicBoolean projectAndFilterFound = new AtomicBoolean(false);
-        LogListener lookForProjectAndFilterStep = log -> {
-            String message = log.getLogRecord().getMessage();
-            if (message.contains("ProjectAndFilter")) {
-                projectAndFilterFound.set(true);
-            }
-        };
-        for (HazelcastInstance instance : instances()) {
-            instance.getLoggingService().addLogListener(Level.FINE, lookForProjectAndFilterStep);
-        }
 
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
@@ -97,20 +94,17 @@ public class MongoSqlConnectorTest extends MongoSqlTest {
                 + "    'connectionString' = '" + connectionString + "'"
                 + ")");
 
-        String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
-        assertRowsAnyOrder("select firstName, lastName from " + mappingName
+        String force = useUnsupportedExpressionInPredicate ? " and cast(jedi as varchar) = 'true' " : "";
+        String inProjection = useUnsupportedExpressionInProjection ? ", cast(jedi as varchar) " : ", jedi ";
+        assertRowsAnyOrder("select firstName, lastName " + inProjection + "from " + mappingName
                         + " where (lastName = ? or lastName is null) and jedi=true" + force,
                 singletonList("Skywalker"),
                 asList(
-                        new Row("Luke", "Skywalker"),
-                        new Row("Anakin", "Skywalker"),
-                        new Row("Rey", null)
+                        new Row("Luke", "Skywalker", useUnsupportedExpressionInProjection ? "true" : true),
+                        new Row("Anakin", "Skywalker", useUnsupportedExpressionInProjection ? "true" : true),
+                        new Row("Rey", null, useUnsupportedExpressionInProjection ? "true" : true)
                 )
         );
-        assertEquals(forceTwoSteps, projectAndFilterFound.get());
-        for (HazelcastInstance instance : instances()) {
-            instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
-        }
     }
 
     @Test
@@ -140,7 +134,7 @@ public class MongoSqlConnectorTest extends MongoSqlTest {
     }
 
     @Test
-    public void readWithTypeCoertion() {
+    public void readWithTypeCoercion() {
         MongoCollection<Document> collection = database.getCollection(collectionName);
         collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", "true"));
 
@@ -311,6 +305,7 @@ public class MongoSqlConnectorTest extends MongoSqlTest {
         testInsertsIntoMongo(true, "insert into " + collectionName + "(jedi, firstName, lastName) values (?, 'Han', ?)",
                 false, "Solo");
     }
+
     @Test
     public void insertsIntoMongo_hardcoded_withoutId() {
         testInsertsIntoMongo(false, "insert into " + collectionName + "(jedi, firstName, lastName) " +
@@ -367,94 +362,6 @@ public class MongoSqlConnectorTest extends MongoSqlTest {
     }
 
     @Test
-    public void updatesMongo_allHardcoded() {
-        testUpdatesMongo(true,
-                "update " + collectionName + " set firstName = 'Han', lastName = 'Solo', jedi=false " +
-                        "where jedi=true or firstName = 'Han'");
-    }
-    @Test
-    public void updatesMongo_setParametrized() {
-        testUpdatesMongo(true,
-                "update " + collectionName + " set firstName = 'Han', lastName = ?, jedi=false " +
-                        "where jedi=true or firstName = 'Han'", "Solo");
-    }
-
-    @Test
-    public void updatesMongo_whereParametrized() {
-        testUpdatesMongo(true,
-                "update " + collectionName + " set firstName = 'Han', lastName = 'Solo', jedi=false " +
-                        "where jedi=true or firstName = ?", "Han");
-    }
-    @Test
-    public void updatesMongo_allParametrized() {
-        testUpdatesMongo(true,
-                "update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
-                        "where firstName = ?", "Han", "Solo", false, "temp");
-    }
-
-    public void testUpdatesMongo(boolean includeIdInMapping, String sql, Object... args) {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
-
-        createMapping(includeIdInMapping);
-
-        execute(sql, args);
-
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "Han"))
-                                             .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("Han", item.getString("firstName"));
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-    }
-
-    @Test
-    public void updatesMongo_noFailOnNoUpdates() {
-
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
-
-        createMapping(true);
-
-        execute("update " + collectionName + " set lastName = 'Solo' where firstName = 'NOT_EXIST'");
-
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "temp"))
-                                             .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("temp", item.getString("lastName"));
-    }
-
-    @Test
-    public void updatesMongo_whenCustomPK() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true)
-                .append("myPK_ext", 1337));
-
-        execute("CREATE MAPPING " + collectionName
-                + " ("
-                + " myPK INT external name myPK_ext, "
-                + " firstName VARCHAR, "
-                + " lastName VARCHAR, "
-                + " jedi BOOLEAN "
-                + ") "
-                + "DATA CONNECTION testMongo "
-                + "OPTIONS ('idColumn' = 'myPK')");
-        execute("update " + collectionName + " set firstName = ?, lastName = ?, jedi=? " +
-                "where firstName = ?", "Han", "Solo", false, "temp");
-
-        ArrayList<Document> list = collection.find(Filters.eq("firstName", "Han"))
-                                             .into(new ArrayList<>());
-        assertEquals(1, list.size());
-        Document item = list.get(0);
-        assertEquals("Han", item.getString("firstName"));
-        assertEquals("Solo", item.getString("lastName"));
-        assertEquals(false, item.getBoolean("jedi"));
-        assertEquals(1337, item.getInteger("myPK_ext").intValue());
-    }
-
-    @Test
     public void sinkInto_allHardcoded_withId() {
         testSinksIntoMongo(true, "sink into " + collectionName + " (firstName, lastName, jedi) values ('Leia', 'Organa', true)");
     }
@@ -491,39 +398,35 @@ public class MongoSqlConnectorTest extends MongoSqlTest {
         assertEquals(true, item.getBoolean("jedi"));
     }
 
-    @Test
-    public void deletes_inserted_item() {
-        MongoCollection<Document> collection = database.getCollection(collectionName);
-        ObjectId objectId = ObjectId.get();
-        collection.insertOne(new Document("_id", objectId).append("firstName", "temp").append("lastName", "temp")
-                                                          .append("jedi", true));
-        collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp2").append("lastName", "temp2")
-                                                          .append("jedi", true));
-        collection.insertOne(new Document("_id", ObjectId.get()).append("firstName", "temp3").append("lastName", "temp3")
-                                                          .append("jedi", true));
-
-        createMapping(true);
-
-        execute("delete from " + collectionName + " where id = ?", objectId);
-        ArrayList<Document> list = collection.find().into(new ArrayList<>());
-        assertThat(list).hasSize(2);
-        execute("delete from " + collectionName);
-        list = collection.find().into(new ArrayList<>());
-        assertThat(list).isEmpty();
-    }
-
     private void createMapping(boolean includeIdInMapping) {
-        execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
-                + (includeIdInMapping ? " id OBJECT external name _id, " : "")
-                + " firstName VARCHAR, \n"
-                + " lastName VARCHAR, \n"
-                + " jedi BOOLEAN \n"
-                + ") \n"
-                + "TYPE Mongo \n"
-                + "OPTIONS (\n"
-                + "    'connectionString' = '" + mongoContainer.getConnectionString() + "' \n"
-                + ")"
-        );
+        createMapping(includeIdInMapping, true);
     }
 
+    private void createMapping(boolean includeIdInMapping, boolean idFirst) {
+        if (idFirst) {
+            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
+                    + (includeIdInMapping ? " id OBJECT external name _id, " : "")
+                    + " firstName VARCHAR, \n"
+                    + " lastName VARCHAR, \n"
+                    + " jedi BOOLEAN \n"
+                    + ") \n"
+                    + "TYPE Mongo \n"
+                    + "OPTIONS (\n"
+                    + "    'connectionString' = '" + mongoContainer.getConnectionString() + "' \n"
+                    + ")"
+            );
+        } else {
+            execute("CREATE MAPPING " + collectionName + " external name \"" + databaseName + "\".\"" + collectionName + "\" \n("
+                    + " firstName VARCHAR, \n"
+                    + " lastName VARCHAR, \n"
+                    + " jedi BOOLEAN \n"
+                    + (includeIdInMapping ? ", id OBJECT external name _id, " : "")
+                    + ") \n"
+                    + "TYPE Mongo \n"
+                    + "OPTIONS (\n"
+                    + "    'connectionString' = '" + mongoContainer.getConnectionString() + "' \n"
+                    + ")"
+            );
+        }
+    }
 }

@@ -190,7 +190,7 @@ public class IMapSqlConnector implements SqlConnector {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        PartitionedMapTable table = (PartitionedMapTable) context.getTable();
+        PartitionedMapTable table = context.getTable();
 
         Vertex vStart = context.getDag().newUniqueVertex(
                 toString(table),
@@ -225,7 +225,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nullable ComparatorEx<JetSqlRow> comparator,
             boolean descending
     ) {
-        PartitionedMapTable table = (PartitionedMapTable) context.getTable();
+        PartitionedMapTable table = context.getTable();
         MapIndexScanMetadata indexScanMetadata = new MapIndexScanMetadata(
                 table.getMapName(),
                 tableIndex.getName(),
@@ -276,7 +276,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull List<HazelcastRexNode> projections,
             @Nonnull JetJoinInfo joinInfo
     ) {
-        PartitionedMapTable table = (PartitionedMapTable) context.getTable();
+        PartitionedMapTable table = context.getTable();
 
         KvRowProjector.Supplier rightRowProjectorSupplier = KvRowProjector.supplier(
                 table.paths(),
@@ -293,7 +293,7 @@ public class IMapSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public VertexWithInputConfig insertProcessor(@Nonnull DagBuildContext context) {
-        PartitionedMapTable table = (PartitionedMapTable) context.getTable();
+        PartitionedMapTable table = context.getTable();
 
         Vertex vertex = context.getDag().newUniqueVertex(
                 toString(table),
@@ -314,7 +314,7 @@ public class IMapSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public Vertex sinkProcessor(@Nonnull DagBuildContext context) {
-        PartitionedMapTable table = (PartitionedMapTable) context.getTable();
+        PartitionedMapTable table = context.getTable();
 
         Vertex vStart = context.getDag().newUniqueVertex(
                 "Project(" + toString(table) + ")",
@@ -341,9 +341,13 @@ public class IMapSqlConnector implements SqlConnector {
     public Vertex updateProcessor(
             @Nonnull DagBuildContext context,
             @Nonnull List<String> fieldNames,
-            @Nonnull List<HazelcastRexNode> expressions
+            @Nonnull List<HazelcastRexNode> expressions,
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
     ) {
-        PartitionedMapTable table = (PartitionedMapTable) context.getTable();
+        assert predicate == null;
+        assert hasInput;
+        PartitionedMapTable table = context.getTable();
 
         return context.getDag().newUniqueVertex(
                 "Update(" + toString(table) + ")",
@@ -356,8 +360,10 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex deleteProcessor(@Nonnull DagBuildContext context) {
-        PartitionedMapTable table = (PartitionedMapTable) context.getTable();
+    public Vertex deleteProcessor(@Nonnull DagBuildContext context, @Nullable HazelcastRexNode predicate, boolean hasInput) {
+        assert predicate == null;
+        assert hasInput;
+        PartitionedMapTable table = context.getTable();
 
         return context.getDag().newUniqueVertex(
                 toString(table),
@@ -366,6 +372,16 @@ public class IMapSqlConnector implements SqlConnector {
                     assert row.getFieldCount() == 1;
                     return row.get(0);
                 }, (v, t) -> null));
+    }
+
+    @Override
+    public boolean dmlSupportsPredicates() {
+        return false;
+    }
+
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
     }
 
     @Nonnull
