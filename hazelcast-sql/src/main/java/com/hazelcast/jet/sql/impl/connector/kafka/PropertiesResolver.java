@@ -37,6 +37,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_PREFERRED_LOCAL_PARALLELISM;
 
 final class PropertiesResolver {
     static final String KEY_SERIALIZER = "key.serializer";
@@ -48,7 +49,8 @@ final class PropertiesResolver {
             OPTION_KEY_FORMAT,
             OPTION_KEY_CLASS,
             OPTION_VALUE_FORMAT,
-            OPTION_VALUE_CLASS
+            OPTION_VALUE_CLASS,
+            OPTION_PREFERRED_LOCAL_PARALLELISM
     );
 
     // using strings instead of canonical names to not fail without Kafka on the classpath

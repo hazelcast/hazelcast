@@ -181,6 +181,11 @@ public interface SqlConnector {
     String OPTION_TYPE_AVRO_SCHEMA = "avroSchema";
 
     /**
+     * The preferred local parallelism for connectors that support configuring it.
+     */
+    String OPTION_PREFERRED_LOCAL_PARALLELISM = "preferredLocalParallelism";
+
+    /**
      * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
      * for Java serialization.
      */

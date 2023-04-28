@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.jet.kafka.impl.StreamKafkaP;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
@@ -113,6 +114,13 @@ class KafkaTable extends JetTable {
 
     QueryDataType[] types() {
         return getFields().stream().map(TableField::getType).toArray(QueryDataType[]::new);
+    }
+
+    int preferredLocalParallelism() {
+        if (options.containsKey(SqlConnector.OPTION_PREFERRED_LOCAL_PARALLELISM)) {
+            return Integer.parseInt(options.get(SqlConnector.OPTION_PREFERRED_LOCAL_PARALLELISM));
+        }
+        return StreamKafkaP.PREFERRED_LOCAL_PARALLELISM;
     }
 
     @Override
