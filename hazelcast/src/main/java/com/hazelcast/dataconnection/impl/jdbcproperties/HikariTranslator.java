@@ -16,6 +16,7 @@
 
 package com.hazelcast.dataconnection.impl.jdbcproperties;
 
+import com.hazelcast.core.HazelcastException;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.util.PropertyElf;
 
@@ -32,6 +33,7 @@ public class HikariTranslator {
     private final AtomicInteger counter;
     private final String name;
 
+    // The translation from HZ to Hikari properties
     static {
         PROPERTY_MAP.put(DataConnectionProperties.JDBC_URL, "jdbcUrl");
         PROPERTY_MAP.put(DataConnectionProperties.USER, "username");
@@ -55,7 +57,9 @@ public class HikariTranslator {
         Set<String> propertyNames = PropertyElf.getPropertyNames(HikariConfig.class);
         // Iterate over source Properties and translate from HZ to Hikari
         source.forEach((key, value) -> {
-
+            if (!(key instanceof String)) {
+                throw new HazelcastException("The key: " + key + " should be a String object");
+            }
             String translatedProperty = PROPERTY_MAP.get(key);
             if (translatedProperty != null) {
                 // We can translate

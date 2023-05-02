@@ -16,6 +16,7 @@
 
 package com.hazelcast.dataconnection.impl.jdbcproperties;
 
+import com.hazelcast.core.HazelcastException;
 import com.zaxxer.hikari.HikariConfig;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +25,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class HikariTranslatorTest {
 
@@ -32,6 +34,14 @@ public class HikariTranslatorTest {
     @Before
     public void setUp() {
         hikariTranslator = new HikariTranslator(new AtomicInteger(), "foo");
+    }
+
+    @Test
+    public void testInvalidProperties() {
+        Properties hzProperties = new Properties();
+        hzProperties.put(1, "1");
+        assertThatThrownBy(() -> hikariTranslator.translate(hzProperties))
+                .isInstanceOf(HazelcastException.class);
     }
 
     @Test
@@ -82,7 +92,6 @@ public class HikariTranslatorTest {
         HikariConfig hikariConfig = new HikariConfig(hikariProperties);
 
         assertThat(hikariConfig.getConnectionInitSql()).isEqualTo(connectionInitSql);
-
     }
 
     @Test
@@ -97,7 +106,7 @@ public class HikariTranslatorTest {
     }
 
     @Test
-    public void testTranslateUnknownProperty() {
+    public void testUnknownProperty() {
         // Unknown Hikari property is considered as DataSource property
         String unknownProperty = "unknownProperty";
         Properties hzProperties = new Properties();

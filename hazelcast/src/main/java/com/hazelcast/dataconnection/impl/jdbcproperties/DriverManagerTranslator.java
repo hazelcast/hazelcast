@@ -16,6 +16,8 @@
 
 package com.hazelcast.dataconnection.impl.jdbcproperties;
 
+import com.hazelcast.core.HazelcastException;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -24,6 +26,7 @@ public class DriverManagerTranslator {
 
     private static final Map<String, String> PROPERTY_MAP = new HashMap<>();
 
+    // The translation from HZ to DriverManager properties
     static {
         PROPERTY_MAP.put(DataConnectionProperties.USER, "user");
         PROPERTY_MAP.put(DataConnectionProperties.PASSWORD, "password");
@@ -34,7 +37,9 @@ public class DriverManagerTranslator {
 
         // Iterate over source Properties and translate from HZ to DriverManager
         source.forEach((key, value) -> {
-
+            if (!(key instanceof String)) {
+                throw new HazelcastException("The key: " + key + " should be a String object");
+            }
             String translatedProperty = PROPERTY_MAP.get(key);
             if (translatedProperty != null) {
                 // We can translate

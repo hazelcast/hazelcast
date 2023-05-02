@@ -16,13 +16,26 @@
 
 package com.hazelcast.dataconnection.impl.jdbcproperties;
 
+import com.hazelcast.core.HazelcastException;
 import org.junit.Test;
 
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class DriverManagerTranslatorTest {
+
+    @Test
+    public void testInvalidProperties() {
+        Properties hzProperties = new Properties();
+        hzProperties.put(1, "1");
+
+        DriverManagerTranslator driverManagerTranslator = new DriverManagerTranslator();
+        assertThatThrownBy(() -> driverManagerTranslator.translate(hzProperties))
+                .isInstanceOf(HazelcastException.class);
+    }
+
     @Test
     public void testTranslatableProperties() {
         DriverManagerTranslator driverManagerTranslator = new DriverManagerTranslator();
