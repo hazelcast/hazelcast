@@ -32,15 +32,15 @@ public class DriverManagerTranslator {
     public Properties translate(Properties source) {
         Properties driverManagerProperties = new Properties();
 
-        // Iterate over source Properties and translate to Hikari
+        // Iterate over source Properties and translate from HZ to DriverManager
         source.forEach((key, value) -> {
 
             String translatedProperty = PROPERTY_MAP.get(key);
             if (translatedProperty != null) {
-                // We can translate from HZ to DriverManager
+                // We can translate
                 driverManagerProperties.put(translatedProperty, value);
             } else {
-                // Otherwise pass as is
+                // // We can not translate. Pass as is
                 driverManagerProperties.put(key, value);
             }
         });

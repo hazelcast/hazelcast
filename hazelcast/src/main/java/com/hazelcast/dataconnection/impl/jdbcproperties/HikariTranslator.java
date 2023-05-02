@@ -53,15 +53,15 @@ public class HikariTranslator {
         Properties hikariProperties = new Properties();
 
         Set<String> propertyNames = PropertyElf.getPropertyNames(HikariConfig.class);
-        // Iterate over source Properties and translate to Hikari
+        // Iterate over source Properties and translate from HZ to Hikari
         source.forEach((key, value) -> {
 
             String translatedProperty = PROPERTY_MAP.get(key);
             if (translatedProperty != null) {
-                // We can translate from HZ to hikari
+                // We can translate
                 hikariProperties.put(translatedProperty, value);
             } else {
-                // We can not translate from HZ to hikari
+                // We can not translate
                 if (propertyNames.contains(key)) {
                     // If HikariConfig provides a setter, then use it
                     hikariProperties.put(key, value);
