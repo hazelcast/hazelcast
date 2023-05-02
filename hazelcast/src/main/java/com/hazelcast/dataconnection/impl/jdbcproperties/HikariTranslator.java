@@ -34,7 +34,7 @@ public class HikariTranslator {
 
     static {
         PROPERTY_MAP.put(DataConnectionProperties.JDBC_URL, "jdbcUrl");
-        PROPERTY_MAP.put(DataConnectionProperties.USERNAME, "username");
+        PROPERTY_MAP.put(DataConnectionProperties.USER, "username");
         PROPERTY_MAP.put(DataConnectionProperties.PASSWORD, "password");
         PROPERTY_MAP.put(DataConnectionProperties.CONNECTION_TIMEOUT, "connectionTimeout");
         PROPERTY_MAP.put(DataConnectionProperties.IDLE_TIMEOUT, "idleTimeout");

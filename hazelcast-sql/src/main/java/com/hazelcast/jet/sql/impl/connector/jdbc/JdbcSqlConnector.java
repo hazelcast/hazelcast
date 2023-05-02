@@ -157,9 +157,7 @@ public class JdbcSqlConnector implements SqlConnector {
             return readColumns(externalTableName, databaseMetaData, pkColumns);
         } catch (Exception exception) {
             throw new HazelcastException("Could not execute readDbFields for table "
-                                         + quoteCompoundIdentifier(externalName)
-                                         + " Cause : "
-                                         + exception.getMessage(), exception);
+                                         + quoteCompoundIdentifier(externalName), exception);
         } finally {
             dataConnection.release();
         }

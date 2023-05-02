@@ -25,7 +25,7 @@ public class DriverManagerTranslator {
     private static final Map<String, String> PROPERTY_MAP = new HashMap<>();
 
     static {
-        PROPERTY_MAP.put(DataConnectionProperties.USERNAME, "user");
+        PROPERTY_MAP.put(DataConnectionProperties.USER, "user");
         PROPERTY_MAP.put(DataConnectionProperties.PASSWORD, "password");
     }
 

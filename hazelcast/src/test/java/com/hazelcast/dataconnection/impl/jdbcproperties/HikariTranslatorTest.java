@@ -48,7 +48,7 @@ public class HikariTranslatorTest {
         String maximumPoolSize = "10";
 
         hzProperties.put(DataConnectionProperties.JDBC_URL, jdbcUrl);
-        hzProperties.put(DataConnectionProperties.USERNAME, userName);
+        hzProperties.put(DataConnectionProperties.USER, userName);
         hzProperties.put(DataConnectionProperties.PASSWORD, password);
         hzProperties.put(DataConnectionProperties.CONNECTION_TIMEOUT, connectionTimeout);
         hzProperties.put(DataConnectionProperties.IDLE_TIMEOUT, idleTimeout);

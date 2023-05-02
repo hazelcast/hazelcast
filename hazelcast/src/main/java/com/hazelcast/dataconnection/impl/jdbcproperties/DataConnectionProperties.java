@@ -23,7 +23,7 @@ package com.hazelcast.dataconnection.impl.jdbcproperties;
 public final class DataConnectionProperties {
 
     public static final String JDBC_URL = "jdbcUrl";
-    public static final String USERNAME = "username";
+    public static final String USER = "user";
     public static final String PASSWORD = "password";
     public static final String CONNECTION_TIMEOUT = "connectionTimeout";
     public static final String IDLE_TIMEOUT = "idleTimeout";

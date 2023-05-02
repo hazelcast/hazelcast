@@ -44,6 +44,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static com.hazelcast.dataconnection.impl.jdbcproperties.DataConnectionProperties.JDBC_URL;
+
 /**
  * {@link DataConnection} implementation for JDBC.
  * <p>
@@ -57,7 +59,6 @@ import java.util.stream.Stream;
 public class JdbcDataConnection extends DataConnectionBase {
 
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
-    private static final String JDBC_URL = "jdbcUrl";
     private volatile ConcurrentMemoizingSupplier<HikariDataSource> pooledDataSourceSup;
     private volatile Supplier<Connection> singleUseConnectionSup;
 
@@ -78,7 +79,7 @@ public class JdbcDataConnection extends DataConnectionBase {
         }
     }
 
-    // Called when Mapping is created
+    // Called when Mapping is accessed
     protected HikariDataSource createHikariDataSource() {
         try {
             Properties properties = getConfig().getProperties();
@@ -94,7 +95,7 @@ public class JdbcDataConnection extends DataConnectionBase {
         }
     }
 
-    // Called when Mapping is created
+    // Called when Mapping is accessed
     private Supplier<Connection> createSingleConnectionSup() {
         Properties properties = getConfig().getProperties();
 

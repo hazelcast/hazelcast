@@ -29,13 +29,13 @@ public class DriverManagerTranslatorTest {
 
         Properties hzProperties = new Properties();
         String jdbcUrl = "jdbcUrl";
-        String userName = "userName";
+        String user = "user";
         String password = "password";
         String myProperty = "5000";
 
 
         hzProperties.put(DataConnectionProperties.JDBC_URL, jdbcUrl);
-        hzProperties.put(DataConnectionProperties.USERNAME, userName);
+        hzProperties.put(DataConnectionProperties.USER, user);
         hzProperties.put(DataConnectionProperties.PASSWORD, password);
         hzProperties.put("myProperty", myProperty);
 
@@ -43,7 +43,7 @@ public class DriverManagerTranslatorTest {
         Properties driverManagerProperties = driverManagerTranslator.translate(hzProperties);
 
         assertThat(driverManagerProperties.getProperty(jdbcUrl)).isNull();
-        assertThat(driverManagerProperties.getProperty("user")).isEqualTo(userName);
+        assertThat(driverManagerProperties.getProperty("user")).isEqualTo(user);
         assertThat(driverManagerProperties.getProperty("password")).isEqualTo(password);
         assertThat(driverManagerProperties.getProperty("myProperty")).isEqualTo(myProperty);
     }
