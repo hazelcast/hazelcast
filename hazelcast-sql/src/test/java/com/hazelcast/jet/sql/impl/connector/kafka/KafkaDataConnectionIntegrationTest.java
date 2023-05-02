@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -100,5 +102,22 @@ public class KafkaDataConnectionIntegrationTest extends KafkaSqlTestSupport {
                 .hasRootCauseInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Shared Kafka producer can be created only with data connection options");
 
+    }
+
+    /**
+     * <a href="https://github.com/hazelcast/hazelcast/issues/24283">Issue 24283</a>
+     */
+    @Test
+    public void when_creatingDataConnectionAndMapping_then_serdeDeterminesAutomatically() {
+        String dlName = randomName();
+        String name = createRandomTopic(PARTITION_COUNT);
+        createSqlKafkaDataConnection(dlName, true);
+        createKafkaMappingUsingDataConnection(name, dlName, constructMappingOptions("int", "varchar"));
+
+        try (SqlResult r = sqlService.execute("CREATE JOB job AS SINK INTO " + name + " VALUES (0, 'value-0')")) {
+            assertEquals(0, r.updateCount());
+        }
+
+        sqlService.execute("SELECT * FROM " + name).close();
     }
 }
