@@ -19,6 +19,8 @@ package com.hazelcast.map;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryExpiredListener;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,6 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +40,7 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -184,4 +189,36 @@ public class AsyncTest extends HazelcastTestSupport {
         Future<String> f1 = map.removeAsync(key).toCompletableFuture();
         assertNull(f1.get());
     }
+
+    @Test
+    public void testValueAsync() throws Exception {
+        IMap<String, String> map = instance.getMap(randomString());
+        map.put(key, value1);
+        CompletableFuture<Collection<String>> futureString = map.valuesAsync().toCompletableFuture();
+        assertEquals(futureString.get().size(), 1);
+        assertTrue(futureString.get().iterator().hasNext());
+    }
+
+    @Test
+    public void testValueAsyncWithPredicate() throws Exception {
+        IMap<String, String> map = instance.getMap(randomString());
+        map.put(key, value1);
+        CompletableFuture<Collection<String>> futureString = map.valuesAsync(Predicates.alwaysFalse()).toCompletableFuture();
+        assertEquals(futureString.get().size(), 0);
+        assertFalse(futureString.get().iterator().hasNext());
+    }
+
+
+    @Test
+    public void testValueAsyncWithPredicateWithCustomPredicate() throws Exception {
+        IMap<String, Integer> map = instance.getMap(randomString());
+        for (int i = 0; i < 10; i++) {
+            map.put(String.valueOf(i), i);
+        }
+        Predicate predicate = Predicates.newPredicateBuilder().getEntryObject().key().in("1", "2", "5", "8");
+        CompletableFuture<Collection<Integer>> futureString = map.valuesAsync(predicate).toCompletableFuture();
+        assertEquals(futureString.get().size(), 4);
+        assertTrue(futureString.get().iterator().hasNext());
+    }
+
 }

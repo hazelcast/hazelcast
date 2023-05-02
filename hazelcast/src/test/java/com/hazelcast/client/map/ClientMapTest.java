@@ -695,6 +695,26 @@ public class ClientMapTest extends HazelcastTestSupport {
         assertEquals("value1", set1.iterator().next().getValue());
     }
 
+    @Test
+    public void testAsyncValuesWithPredicate() throws Exception {
+        IMap<String, String> map = createMap();
+        fillMap(map);
+
+        Future<Collection<String>> futureValues = map.valuesAsync(Predicates.sql("this == value1")).toCompletableFuture();
+        assertEquals(1, futureValues.get().size());
+        assertEquals("value1", futureValues.get().iterator().next());
+    }
+
+
+    @Test
+    public void testAsyncValues() throws Exception {
+        IMap<String, String> map = createMap();
+        fillMap(map);
+
+        Future<Collection<String>> futureValues = map.valuesAsync().toCompletableFuture();
+        assertEquals(10, futureValues.get().size());
+    }
+
     /**
      * Issue #923
      */

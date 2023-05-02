@@ -25,6 +25,7 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
@@ -78,13 +79,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
@@ -97,7 +101,6 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.map.impl.record.Record.UNSET;
-import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newDelegatingFuture;
 import static java.util.Collections.emptyMap;
@@ -398,7 +401,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     public InternalCompletableFuture<V> putIfAbsentAsync(@Nonnull K key, @Nonnull V value,
-                                                    long ttl, @Nonnull TimeUnit timeunit) {
+                                                         long ttl, @Nonnull TimeUnit timeunit) {
         return putIfAbsentAsync(key, value, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
     }
 
@@ -769,13 +772,33 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Nonnull
     @Override
     public Collection<V> values() {
-        return values(Predicates.alwaysTrue());
+        try {
+            return valuesAsync().join();
+        } catch (CompletionException ex) {
+            throw peel(ex.getCause());
+        }
+    }
+
+    @Nonnull
+    @Override
+    public CompletableFuture<Collection<V>> valuesAsync() {
+        return valuesAsync(Predicates.alwaysTrue());
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values(@Nonnull Predicate predicate) {
-        return executePredicate(predicate, IterationType.VALUE, false, Target.ALL_NODES);
+        try {
+            return valuesAsync(predicate).join();
+        } catch (CompletionException ex) {
+            throw peel(ex.getCause());
+        }
+    }
+
+    @Override
+    public CompletableFuture<Collection<V>> valuesAsync(@Nonnull Predicate predicate) {
+        return executePredicateAsync(predicate, IterationType.VALUE, false, Target.ALL_NODES)
+                .thenApplyAsync(completionSet -> (Collection<V>) completionSet, ConcurrencyUtil.CALLER_RUNS);
     }
 
     /**
@@ -792,14 +815,31 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      */
     @SuppressWarnings("unchecked")
     public Collection<V> values(@Nonnull Predicate predicate, PartitionIdSet partitions) {
-        return executePredicate(predicate, IterationType.VALUE, false, Target.createPartitionTarget(partitions));
+        try {
+            return executePredicateAsync(predicate, IterationType.VALUE, false,
+                    Target.createPartitionTarget(partitions)).join();
+        } catch (CompletionException ex) {
+             throw peel(ex.getCause());
+        }
     }
 
-    private Set executePredicate(Predicate predicate, IterationType iterationType, boolean uniqueResult, Target target) {
+    private Set executePredicate(Predicate predicate, IterationType iterationType,
+                                 boolean uniqueResult, Target target) {
+        try {
+            return executePredicateAsync(predicate, iterationType, uniqueResult, target).join();
+        } catch (CompletionException ex) {
+            throw peel(ex.getCause());
+        }
+    }
+
+    private CompletableFuture<Set> executePredicateAsync(Predicate predicate, IterationType iterationType,
+                                                         boolean uniqueResult, Target target) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        QueryResult result = executeQueryInternal(predicate, iterationType, target);
-        incrementOtherOperationsStat();
-        return transformToSet(serializationService, result, predicate, iterationType, uniqueResult, false);
+        CompletableFuture<QueryResult> result = executeQueryInternalAsync(predicate, iterationType, target);
+        return result.thenApplyAsync(queryResult -> {
+            incrementOtherOperationsStat();
+            return transformToSet(serializationService, queryResult, predicate, iterationType, uniqueResult, false);
+        }, ConcurrencyUtil.CALLER_RUNS);
     }
 
     @Override

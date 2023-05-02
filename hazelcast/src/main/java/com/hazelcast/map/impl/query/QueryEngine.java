@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.query;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Responsible for executing queries on the IMap.
  */
@@ -30,4 +32,15 @@ public interface QueryEngine {
      * @return Result of the specific type
      */
     <T extends Result> T execute(Query query, Target target);
+
+
+    /**
+     * Executes the given query on the given target in Asynchronous Manner.
+     *
+     * @param query  query to execute
+     * @param target target where to execute the query
+     * @param <T>    Type of the result
+     * @return CompletableFuture of a Result of the specific type
+     */
+    <T extends Result> CompletableFuture<T> executeAsync(Query query, Target target);
 }

@@ -109,6 +109,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1402,11 +1403,32 @@ abstract class MapProxySupport<K, V>
     }
 
     protected <T extends Result> T executeQueryInternal(Predicate predicate, IterationType iterationType, Target target) {
-        return executeQueryInternal(predicate, null, null, iterationType, target);
+        try {
+            return (T) executeQueryInternalAsync(predicate, null, null, iterationType, target).join();
+        } catch (CompletionException ex) {
+            throw rethrow(ex.getCause());
+        }
+    }
+    protected <T extends Result> CompletableFuture<T> executeQueryInternalAsync(Predicate predicate,
+                                                                                IterationType iterationType,
+                                                                                Target target) {
+        return executeQueryInternalAsync(predicate, null, null, iterationType, target);
+    }
+    protected <T extends Result> T executeQueryInternal(Predicate predicate, Aggregator aggregator,
+                                                        Projection projection, IterationType iterationType,
+                                                        Target target) {
+        try {
+            return (T) executeQueryInternalAsync(predicate, aggregator, projection, iterationType, target).join();
+        } catch (CompletionException ex) {
+            throw rethrow(ex.getCause());
+        }
     }
 
-    protected <T extends Result> T executeQueryInternal(Predicate predicate, Aggregator aggregator, Projection projection,
-                                                        IterationType iterationType, Target target) {
+    protected <T extends Result> CompletableFuture<T> executeQueryInternalAsync(Predicate predicate,
+                                                                                Aggregator aggregator,
+                                                                                Projection projection,
+                                                                                IterationType iterationType,
+                                                                                Target target) {
         QueryEngine queryEngine = getMapQueryEngine();
         final Predicate userPredicate;
 
@@ -1438,7 +1460,7 @@ abstract class MapProxySupport<K, V>
                 .aggregator(aggregator)
                 .projection(projection)
                 .build();
-        return queryEngine.execute(query, target);
+        return queryEngine.executeAsync(query, target);
     }
 
     protected void handleHazelcastInstanceAwareParams(Object... objects) {

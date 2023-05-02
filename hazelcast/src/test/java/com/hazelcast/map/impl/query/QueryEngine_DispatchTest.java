@@ -36,8 +36,10 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
@@ -93,9 +95,12 @@ public class QueryEngine_DispatchTest extends HazelcastTestSupport {
         Query query = Query.of().mapName(map.getName()).predicate(Predicates.equal("this", value))
                 .partitionIdSet(queryEngine.getAllPartitionIds())
                 .iterationType(IterationType.ENTRY).build();
-        List<Future<Result>> futures = queryEngine
+        List<CompletableFuture<Result>> futures = queryEngine
                 .dispatchFullQueryOnQueryThread(query, target);
-        Collection<Result> results = returnWithDeadline(futures, 1, TimeUnit.MINUTES);
+        List<Future<Result>> futureList = futures.stream()
+                .map(CompletableFuture::toCompletableFuture)
+                .collect(Collectors.toList());
+        Collection<Result> results = returnWithDeadline(futureList, 1, TimeUnit.MINUTES);
         QueryResult result = (QueryResult) results.iterator().next();
 
         assertEquals(1, results.size());
@@ -107,7 +112,7 @@ public class QueryEngine_DispatchTest extends HazelcastTestSupport {
     public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_singlePartition() {
         Query query = Query.of().mapName(map.getName()).predicate(Predicates.equal("this", value))
                 .iterationType(IterationType.ENTRY).build();
-        Future<Result> future = queryEngine
+        CompletableFuture<Result> future = queryEngine
                 .dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(query, partitionId);
         Collection<Result> results = returnWithDeadline(Collections.singletonList(future), 1, TimeUnit.MINUTES);
         QueryResult result = (QueryResult) results.iterator().next();
