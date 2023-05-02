@@ -45,7 +45,7 @@ public class DriverManagerTranslator {
                 // We can translate
                 driverManagerProperties.put(translatedProperty, value);
             } else {
-                // // We can not translate. Pass as is
+                // We can not translate. Pass as is
                 driverManagerProperties.put(key, value);
             }
         });
