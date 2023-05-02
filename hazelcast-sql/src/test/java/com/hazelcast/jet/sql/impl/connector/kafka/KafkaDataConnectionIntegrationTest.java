@@ -26,6 +26,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
@@ -98,7 +99,7 @@ public class KafkaDataConnectionIntegrationTest extends KafkaSqlTestSupport {
 
         // TODO: move this error to mapping creation level.
         assertThatThrownBy(() -> sqlService.execute(
-                        "INSERT INTO " + name1 + " VALUES" + "(0, 'value-0')"))
+                "INSERT INTO " + name1 + " VALUES" + "(0, 'value-0')"))
                 .hasRootCauseInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Shared Kafka producer can be created only with data connection options");
 
@@ -111,13 +112,13 @@ public class KafkaDataConnectionIntegrationTest extends KafkaSqlTestSupport {
     public void when_creatingDataConnectionAndMapping_then_serdeDeterminesAutomatically() {
         String dlName = randomName();
         String name = createRandomTopic(PARTITION_COUNT);
-        createSqlKafkaDataConnection(dlName, true);
+        createSqlKafkaDataConnection(dlName, false); // connection is not shared
         createKafkaMappingUsingDataConnection(name, dlName, constructMappingOptions("int", "varchar"));
 
-        try (SqlResult r = sqlService.execute("CREATE JOB job AS SINK INTO " + name + " VALUES (0, 'value-0')")) {
+        try (SqlResult r = sqlService.execute("INSERT INTO " + name + " VALUES (0, 'value-0')")) {
             assertEquals(0, r.updateCount());
         }
 
-        sqlService.execute("SELECT * FROM " + name).close();
+        assertTipOfStream("SELECT * FROM " + name, singletonList(new Row(0, "value-0")));
     }
 }
