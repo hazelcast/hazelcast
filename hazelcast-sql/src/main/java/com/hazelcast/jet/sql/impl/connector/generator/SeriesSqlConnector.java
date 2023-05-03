@@ -37,7 +37,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 
 import static java.util.Collections.singletonList;
 
@@ -63,11 +62,8 @@ class SeriesSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
         throw new UnsupportedOperationException("Resolving fields not supported for " + typeName());
     }
 
@@ -76,7 +72,8 @@ class SeriesSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException("Creating table not supported for " + typeName());
     }

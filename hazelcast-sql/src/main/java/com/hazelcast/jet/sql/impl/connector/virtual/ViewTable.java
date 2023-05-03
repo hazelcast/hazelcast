@@ -43,6 +43,7 @@ public class ViewTable extends Table {
     private RelNode viewRel;
 
     public ViewTable(String schemaName, String viewName, String viewQuery, TableStatistics statistics) {
+        // will determine if the view is streaming later, when it is used
         super(schemaName, viewName, null, statistics, "View", false);
         this.viewQuery = viewQuery;
     }
@@ -78,6 +79,12 @@ public class ViewTable extends Table {
         getFields(); // called for the side effect of calling initFields()
         assert viewRel != null;
         return viewRel;
+    }
+
+    @Override
+    public boolean isStreaming() {
+        getFields(); // called for the side effect of calling initFields()
+        return super.isStreaming();
     }
 
     static class ViewPlanObjectKey implements PlanObjectKey {

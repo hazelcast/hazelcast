@@ -50,7 +50,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -123,11 +122,8 @@ public class TestAllTypesSqlConnector implements SqlConnector {
     @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
@@ -138,9 +134,10 @@ public class TestAllTypesSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        return new TestAllTypesTable(this, schemaName, ctx.name());
+        return new TestAllTypesTable(this, schemaName, mappingName);
     }
 
     @Nonnull @Override

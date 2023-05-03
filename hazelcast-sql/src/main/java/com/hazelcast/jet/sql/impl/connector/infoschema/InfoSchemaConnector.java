@@ -37,7 +37,6 @@ import com.hazelcast.sql.impl.schema.Table;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 
@@ -67,11 +66,8 @@ final class InfoSchemaConnector implements SqlConnector {
     @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
         throw new UnsupportedOperationException();
     }
 
@@ -79,7 +75,8 @@ final class InfoSchemaConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
         throw new UnsupportedOperationException();
     }

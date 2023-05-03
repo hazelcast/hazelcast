@@ -54,6 +54,7 @@ import java.util.stream.Stream;
 @Beta
 public class JdbcDataConnection extends DataConnectionBase {
 
+    public static final String OBJECT_TYPE_TABLE = "Table";
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
     private volatile ConcurrentMemoizingSupplier<HikariDataSource> pooledDataSourceSup;
@@ -103,7 +104,7 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Nonnull
     @Override
     public Collection<String> resourceTypes() {
-        return Collections.singleton("Table");
+        return Collections.singleton(OBJECT_TYPE_TABLE);
     }
 
     @Nonnull
@@ -121,7 +122,7 @@ public class JdbcDataConnection extends DataConnectionBase {
                                       .filter(Objects::nonNull)
                                       .toArray(String[]::new);
 
-                result.add(new DataConnectionResource("TABLE", name));
+                result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, name));
             }
             return result;
         } catch (Exception e) {

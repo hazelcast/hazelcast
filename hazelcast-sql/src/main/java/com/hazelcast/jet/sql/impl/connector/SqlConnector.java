@@ -38,8 +38,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static java.util.Collections.emptyMap;
@@ -217,24 +219,16 @@ public interface SqlConnector {
      * the user can see it by listing the catalog. Jet will later pass it to
      * {@link #createTable}.
      *
-     * @param nodeEngine         an instance of {@link NodeEngine}
-     * @param options            user-provided options
-     * @param userFields         user-provided list of fields, possibly empty
-     * @param externalName       external name of the table
-     * @param dataConnectionName name of the data connection to use, may be null if the connector supports specifying
-     *                           connection details in options
-     * @param objectType         the type of object for which fields will be resolved. Default value is the value
-     *                           returned by {@link #defaultObjectType()}.
+     * @param nodeEngine       an instance of {@link NodeEngine}
+     * @param externalResource an object for which fields should be resolved
+     * @param userFields       user-provided list of fields, possibly empty
      * @return final field list, must not be empty
      */
     @Nonnull
     List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields
     );
 
     /**
@@ -244,16 +238,17 @@ public interface SqlConnector {
      * <p>
      * Jet calls this method for each statement execution and for each mapping.
      *
-     * @param nodeEngine         an instance of {@link NodeEngine}
-     * @param mappingContext     an object with the metadata of mapping from which this table is created
-     * @param resolvedFields     list of fields as returned from {@link
-     *                           #resolveAndValidateFields}
+     * @param nodeEngine       an instance of {@link NodeEngine}
+     * @param externalResource an object for which this table is created
+     * @param resolvedFields   list of fields as returned from {@link
+     *                         #resolveAndValidateFields}
      */
     @Nonnull
     Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext mappingContext,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields);
 
     /**
@@ -560,34 +555,24 @@ public interface SqlConnector {
     }
 
     /**
-     * Mapping specific metadata.
+     * Data describing external resource (table, topic, stream, IMap etc)
      *
      * @since 5.3
      */
-    class SqlMappingContext implements Serializable {
-        private final String name;
+    class SqlExternalResource implements Serializable {
         private final String[] externalName;
         private final String dataConnection;
         private final String connectorType;
         private final String objectType;
         private final Map<String, String> options;
 
-        public SqlMappingContext(String name, String[] externalName, String dataConnection, String connectorType,
-                                 String objectType, Map<String, String> options) {
-            this.name = requireNonNull(name, "name cannot be null");
+        public SqlExternalResource(@Nonnull String[] externalName, String dataConnection, @Nonnull String connectorType,
+                                   String objectType, Map<String, String> options) {
             this.externalName = requireNonNull(externalName, "externalName cannot be null");
             this.dataConnection = dataConnection;
             this.connectorType = requireNonNull(connectorType, "connectorType cannot be null");
             this.objectType = objectType;
             this.options = options;
-        }
-
-        /**
-         * Name of this mapping.
-         */
-        @Nonnull
-        public String name() {
-            return name;
         }
 
         /**
@@ -628,6 +613,29 @@ public interface SqlConnector {
         @Nonnull
         public Map<String, String> options() {
             return options == null ? emptyMap() : options;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            SqlExternalResource that = (SqlExternalResource) o;
+            return Arrays.equals(externalName, that.externalName)
+                    && Objects.equals(dataConnection, that.dataConnection)
+                    && Objects.equals(connectorType, that.connectorType)
+                    && Objects.equals(objectType, that.objectType)
+                    && Objects.equals(options, that.options);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(dataConnection, connectorType, objectType, options);
+            result = 31 * result + Arrays.hashCode(externalName);
+            return result;
         }
     }
 }

@@ -70,12 +70,9 @@ public class FileSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
-        return resolveAndValidateFields(options, userFields);
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
+        return resolveAndValidateFields(externalResource.options(), userFields);
     }
 
     @Nonnull
@@ -91,18 +88,19 @@ public class FileSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, ctx.options());
+        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, externalResource.options());
 
         return new FileTable.SpecificFileTable(
                 INSTANCE,
                 schemaName,
-                ctx.name(),
+                mappingName,
                 metadata.fields(),
                 metadata.processorMetaSupplier(),
                 metadata.queryTargetSupplier(),
-                ctx.objectType()
+                externalResource.objectType()
         );
     }
 

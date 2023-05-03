@@ -37,7 +37,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -66,11 +65,8 @@ public class TestFailingSqlConnector implements SqlConnector {
     @Nonnull @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
@@ -81,12 +77,13 @@ public class TestFailingSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
         return new TestFailingTable(
                 this,
                 schemaName,
-                ctx.name(),
+                mappingName,
                 toList(resolvedFields, field -> new TableField(field.name(), field.type(), false))
         );
     }

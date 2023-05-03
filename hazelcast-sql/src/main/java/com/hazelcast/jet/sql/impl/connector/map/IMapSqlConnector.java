@@ -60,7 +60,6 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
@@ -83,6 +82,7 @@ public class IMapSqlConnector implements SqlConnector {
     public static final IMapSqlConnector INSTANCE = new IMapSqlConnector();
 
     public static final String TYPE_NAME = "IMap";
+    public static final String OBJECT_TYPE_IMAP = "IMap";
     public static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     private static final KvMetadataResolvers METADATA_RESOLVERS_WITH_COMPACT = new KvMetadataResolvers(
@@ -100,20 +100,17 @@ public class IMapSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public String defaultObjectType() {
-        return "IMap";
+        return OBJECT_TYPE_IMAP;
     }
 
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
-        checkImapName(externalName);
-        return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
+        checkImapName(externalResource.externalName());
+        return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, externalResource.options(), nodeEngine);
     }
 
     @Nonnull
@@ -121,21 +118,22 @@ public class IMapSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        checkImapName(ctx.externalName());
+        checkImapName(externalResource.externalName());
 
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
         KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
                 true,
                 resolvedFields,
-                ctx.options(), ss
+                externalResource.options(), ss
         );
         KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
                 false,
                 resolvedFields,
-                ctx.options(),
+                externalResource.options(),
                 ss
         );
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
@@ -143,7 +141,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
-        String mapName = ctx.externalName()[0];
+        String mapName = externalResource.externalName()[0];
         MapContainer container = context.getExistingMapContainer(mapName);
 
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, mapName);
@@ -154,7 +152,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         return new PartitionedMapTable(
                 schemaName,
-                ctx.name(),
+                mappingName,
                 mapName,
                 fields,
                 new ConstantTableStatistics(estimatedRowCount),

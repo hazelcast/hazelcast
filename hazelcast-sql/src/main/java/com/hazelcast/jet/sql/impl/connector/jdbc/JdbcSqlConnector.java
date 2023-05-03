@@ -76,27 +76,22 @@ public class JdbcSqlConnector implements SqlConnector {
     @Nonnull
     @Override
     public String defaultObjectType() {
-        return "Table";
+        return JdbcDataConnection.OBJECT_TYPE_TABLE;
     }
 
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
-        if (dataConnectionName == null) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
+        if (externalResource.dataConnection() == null) {
             throw QueryException.error("You must provide data connection when using the Jdbc connector");
         }
-        ExternalJdbcTableName.validateExternalName(externalName);
-        Map<String, DbField> dbFields = readDbFields(
-                nodeEngine.getDataConnectionService(),
-                dataConnectionName,
-                externalName
-        );
+        ExternalJdbcTableName.validateExternalName(externalResource.externalName());
+
+        Map<String, DbField> dbFields = readDbFields(nodeEngine.getDataConnectionService(),
+                externalResource.dataConnection(), externalResource.externalName());
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -250,9 +245,10 @@ public class JdbcSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        String dataConnectionName = ctx.dataConnection();
+        String dataConnectionName = externalResource.dataConnection();
         assert dataConnectionName != null;
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
@@ -272,9 +268,10 @@ public class JdbcSqlConnector implements SqlConnector {
                 this,
                 fields,
                 schemaName,
-                ctx,
+                mappingName,
+                externalResource,
                 new ConstantTableStatistics(0),
-                parseInt(ctx.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE))
+                parseInt(externalResource.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE))
         );
     }
 

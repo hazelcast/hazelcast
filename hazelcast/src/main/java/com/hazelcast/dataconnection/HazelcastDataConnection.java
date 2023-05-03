@@ -64,6 +64,11 @@ public class HazelcastDataConnection extends DataConnectionBase {
      */
     public static final String CLIENT_YML_PATH = "client_yml_path";
 
+    /**
+     * IMap Journal resource type name
+     */
+    public static final String OBJECT_TYPE_IMAP_JOURNAL = "IMapJournal";
+
     private final ClientConfig clientConfig;
 
     /**
@@ -109,7 +114,7 @@ public class HazelcastDataConnection extends DataConnectionBase {
     @Nonnull
     @Override
     public Collection<String> resourceTypes() {
-        return Collections.singleton("IMap");
+        return Collections.singleton(OBJECT_TYPE_IMAP_JOURNAL);
     }
 
     @Nonnull
@@ -120,7 +125,7 @@ public class HazelcastDataConnection extends DataConnectionBase {
             return instance.getDistributedObjects()
                     .stream()
                     .filter(IMap.class::isInstance)
-                    .map(o -> new DataConnectionResource("IMap", o.getName()))
+                    .map(o -> new DataConnectionResource(OBJECT_TYPE_IMAP_JOURNAL, o.getName()))
                     .collect(Collectors.toList());
         } finally {
             instance.shutdown();

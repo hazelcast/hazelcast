@@ -45,7 +45,6 @@ import com.hazelcast.sql.impl.schema.TableField;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.core.Edge.between;
@@ -86,17 +85,14 @@ public class KafkaSqlConnector implements SqlConnector {
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nullable String objectType) {
-        if (externalName.length > 1) {
-            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
+        if (externalResource.externalName().length > 1) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalResource.externalName())
                     + ", external name for Kafka is allowed to have only a single component referencing the topic " +
                     "name");
         }
-        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
+        return METADATA_RESOLVERS.resolveAndValidateFields(userFields, externalResource.options(), nodeEngine);
     }
 
     @Nonnull
@@ -104,27 +100,28 @@ public class KafkaSqlConnector implements SqlConnector {
     public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
-            @Nonnull SqlMappingContext ctx,
+            @Nonnull String mappingName,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, ctx.options(), null);
-        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, ctx.options(), null);
+        KvMetadata keyMetadata = METADATA_RESOLVERS.resolveMetadata(true, resolvedFields, externalResource.options(), null);
+        KvMetadata valueMetadata = METADATA_RESOLVERS.resolveMetadata(false, resolvedFields, externalResource.options(), null);
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 
         return new KafkaTable(
                 this,
                 schemaName,
-                ctx.name(),
+                mappingName,
                 fields,
                 new ConstantTableStatistics(0),
-                ctx.externalName()[0],
-                ctx.dataConnection(),
-                ctx.options(),
+                externalResource.externalName()[0],
+                externalResource.dataConnection(),
+                externalResource.options(),
                 keyMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getQueryTargetDescriptor(),
                 valueMetadata.getUpsertTargetDescriptor(),
-                ctx.objectType()
+                externalResource.objectType()
         );
     }
 
