@@ -63,8 +63,8 @@ public class ConfigMismatchOp extends AbstractClusterOperation {
         // Ignore shutdown requests if we are already in a cluster, as being
         // part of a cluster means our config was already verified & accepted
         if (node.getClusterService().isJoined()) {
-            logger.warning("Received ConfigMismatchOp when already joined with a cluster. " +
-                    "This node will not shutdown. Configuration mismatch: " + msg);
+            logger.warning("Received ConfigMismatchOp when already joined with a cluster. "
+                    + "This node will not shutdown. Configuration mismatch: " + msg);
             return;
         }
 
