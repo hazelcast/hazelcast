@@ -113,7 +113,7 @@ keytool -import -keystore hazelcast-truststore.p12 -storetype PKCS12 \
 
 Hazelcast Persistence feature supports data encryption. It safeguards
 sensitive data stored on disk by encrypting it using industry-standard
-encryption algorithms. This feature helps protect data at rest from
+encryption algorithms. This feature helps protect persisted data from
 unauthorized access and enhances overall data security within the
 Hazelcast cluster.
 
