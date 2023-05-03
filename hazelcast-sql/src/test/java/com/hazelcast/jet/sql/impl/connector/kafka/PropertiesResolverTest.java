@@ -53,6 +53,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_PREFERRED_LOCAL_PARALLELISM;
 import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.KEY_DESERIALIZER;
 import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.KEY_SERIALIZER;
 import static com.hazelcast.jet.sql.impl.connector.kafka.PropertiesResolver.VALUE_DESERIALIZER;
@@ -445,5 +446,17 @@ public class PropertiesResolverTest {
 
     private static Properties resolveProducerProperties(Map<String, String> options) {
         return PropertiesResolver.resolveProducerProperties(options, null, null);
+    }
+
+    @Test
+    public void when_consumerProperties_preferredLocalParallelismPropertyIsDefined_then_itIsIgnored() {
+        assertThat(resolveConsumerProperties(Map.of(OPTION_PREFERRED_LOCAL_PARALLELISM, "-1")))
+                .containsExactlyEntriesOf(Map.of(KEY_DESERIALIZER, ByteArrayDeserializer.class.getCanonicalName()));
+    }
+
+    @Test
+    public void when_producerProperties_preferredLocalParallelismPropertyIsDefined_then_itIsIgnored() {
+        assertThat(resolveProducerProperties(Map.of(OPTION_PREFERRED_LOCAL_PARALLELISM, "-1")))
+                .containsExactlyEntriesOf(Map.of(KEY_SERIALIZER, ByteArraySerializer.class.getCanonicalName()));
     }
 }
