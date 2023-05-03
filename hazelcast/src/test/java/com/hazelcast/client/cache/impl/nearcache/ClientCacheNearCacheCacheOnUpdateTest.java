@@ -103,15 +103,16 @@ public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSu
         Runnable getter = () -> {
             int i = 0;
             while (!stop.get()) {
-                icacheOnClient.get(i++ % NUM_OF_KEYS);
+                icacheOnClient.get(i);
+                i = ++i % NUM_OF_KEYS;
             }
         };
 
         Runnable putter = () -> {
             int i = 0;
             while (!stop.get()) {
-                i = i++ % NUM_OF_KEYS;
                 icacheOnClient.put(i, i);
+                i = ++i % NUM_OF_KEYS;
             }
         };
 

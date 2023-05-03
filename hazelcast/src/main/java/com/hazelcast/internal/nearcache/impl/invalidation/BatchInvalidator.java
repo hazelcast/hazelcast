@@ -108,11 +108,20 @@ public class BatchInvalidator extends Invalidator {
         List<Invalidation> invalidations;
         try {
             invalidations = pollInvalidations(invalidationQueue);
+
+            // Send invalidations while we are still the only one polling the
+            // queue. Under some scenarios, we might poll the queue with
+            // BatchInvalidationEventSender in the invalidation executor,
+            // but that thread might be suspended just before sending the
+            // invalidations. Then, we can poll the queue again in the
+            // partition thread and send the later invalidations. That might
+            // cause the receiver to miss some invalidation sequences
+            // and mark some keys as stale due to us not sending the
+            // invalidations in order here.
+            sendInvalidations(dataStructureName, invalidations);
         } finally {
             invalidationQueue.release();
         }
-
-        sendInvalidations(dataStructureName, invalidations);
     }
 
     private List<Invalidation> pollInvalidations(InvalidationQueue<Invalidation> invalidationQueue) {
