@@ -19,7 +19,7 @@ Hazelcast Security is a set of features in Hazelcast Enterprise with configurati
 Hazelcast also has other security-related areas available to open-source users too:
 
 * network and advanced-network configuration allows specifying bind interfaces
-* advanced-network allows separating configuration for different protocols footnote:[Members are expected to run in a trusted environment.]
+* advanced-network allows separating configuration for different protocols footnote:[Members are recommended to run in a trusted environment.]
 * secure defaults are used across the configuration (Jet, SQL, Scripting in Management Center, User code deployments) footnote:[The secure defaults differ depending on the distribution packaging used.]
 * management operations can be limited to specific IP addresses where Management Center is allowed to run
 * untrusted deserialization protection allows control of which types are allowed in Java native deserialization
@@ -157,15 +157,15 @@ and a subset of REST endpoints.
 
 Users can choose from a set of authentication mechanisms:
 
-* default (compares credentials against preconfigured member identity)
-* Simple - users and roles configured directly in the member
+* https://docs.hazelcast.com/hazelcast/latest/security/default-authentication[Default] - compares credentials against preconfigured member identity
+* https://docs.hazelcast.com/hazelcast/latest/security/simple-authentication[Simple] - users and roles configured directly in the member
 configuration
-* TLS - available when mutual authentication is enabled
-* LDAP
-* Kerberos
-* JAAS
+* https://docs.hazelcast.com/hazelcast/latest/security/security-realms#tls-authentication-type[TLS] - available when mutual authentication is enabled
+* https://docs.hazelcast.com/hazelcast/latest/security/security-realms#ldap-authentication-type[LDAP]
+* https://docs.hazelcast.com/hazelcast/latest/security/security-realms#kerberos-authentication[Kerberos]
+* https://docs.hazelcast.com/hazelcast/latest/security/jaas-authentication[JAAS]
 
-Authorization is supported on Client protocol. During the authentication
+Authorization is supported by Client protocol. During the authentication,
 clients get roles assigned. Access is then controlled by
 permissions assigned to the roles.
 
@@ -228,6 +228,22 @@ hazelcast:
         principal: admin
 ----
 
+==== Sample Java client configuration
+
+Security configuration on clients depends on the client type.
+
+For instance, Java clients can use the following `YAML` configuration to connect
+with `admin` role rights to the cluster with the above configuration.
+
+[source,yaml]
+----
+hazelcast-client:
+  security:
+    username-password:
+      username: root
+      password: 7931verySecret
+----
+
 == Client Permissions
 
 You have to grant permissions to named roles to allow clients
@@ -285,10 +301,16 @@ granted (e.g. `192.168.\*.*`)
 
 Wildcards (`*`) are supported in names and endpoint definitions.
 
+The `name` and `actions` values depend on the permission `type`. Some types
+have these fields hardcoded. Then users don't specify them
+in the permission configuration - for instance, in the `all`
+permission type in the above configuration example.
+
 === Security realms
 
 The security realm is a named security configuration. It's intended mainly
-for member configuration but with limited support on Java clients too.
+for member configuration. Java clients may need to use security realms
+when configuring Kerberos authentication.
 Security realms in Hazelcast allow defining identity, and authentication
 configurations.
 
@@ -300,6 +322,19 @@ Hazelcast Auditlog is a security feature that records and logs
 security-related events and operations within the Hazelcast cluster,
 providing increased visibility and traceability for monitoring and
 compliance purposes.
+
+The default Auditlog implementation uses Hazelcast logging configuration
+and writes the events as log entries with the category name
+`"hazelcast.auditlog"`.
+
+Enabling Auditlog:
+
+[source,yaml]
+----
+hazelcast:
+  auditlog:
+    enabled: true
+----
 
 [[secret-strength-policy]]
 === Validating Secrets Using Strength Policy
