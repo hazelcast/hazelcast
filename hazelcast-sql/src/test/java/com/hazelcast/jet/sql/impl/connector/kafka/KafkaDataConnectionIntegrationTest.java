@@ -118,7 +118,7 @@ public class KafkaDataConnectionIntegrationTest extends KafkaSqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(
                 "INSERT INTO " + name + " VALUES" + "(0, 'value-0')"))
                 .hasRootCauseInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Shared Kafka producer can be created only with data connection options");
+                .hasMessageContaining("For shared Kafka producer, please provide all serialization options");
 
     }
 

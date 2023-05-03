@@ -193,7 +193,10 @@ public class KafkaDataConnection extends DataConnectionBase {
 
         boolean inputPropsAreSubsetOfConfigProps = inputPropsAreSubsetOfConfigProps(properties);
         if (getConfig().isShared() && !properties.isEmpty() && !inputPropsAreSubsetOfConfigProps) {
-            throw new HazelcastException("Shared Kafka producer can be created only with data connection options");
+            throw new HazelcastException("For shared Kafka producer, please provide all serialization options" +
+                    "at the DATA CONNECTION level (i.e. 'key.serializer')." +
+                    " Only 'keyFormat' and 'valueFormat' are required at the mapping level," +
+                    " however these options are ignored currently.");
         }
 
         Properties props = configProperties;
