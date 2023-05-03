@@ -100,6 +100,21 @@ public class AbstractNearCacheRecordStoreTest {
         assertEquals(1, store.getNearCacheStats().getOwnedEntryCount());
     }
 
+    @Test
+    public void testInvalidate() {
+        // cannot invalidate the key when an update is happening
+        long reservationId = store.tryReserveForUpdate(KEY, serializationService.toData(KEY), READ_UPDATE);
+        store.invalidate(KEY);
+        assertRecordState(reservationId);
+
+        store.tryPublishReserved(KEY, VALUE1, reservationId, true);
+
+        // can invalidate the key when no update is happening
+        assertRecordState(READ_PERMITTED);
+        store.invalidate(KEY);
+        assertNull(store.getRecord(KEY));
+    }
+
     @SuppressWarnings("unchecked")
     private void assertRecordState(long recordState) {
         assertEquals(recordState, store.getRecord(KEY).getReservationId());

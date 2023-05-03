@@ -206,8 +206,14 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
                 nearCacheStats.decrementOwnedEntryCount();
                 nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
                 nearCacheStats.incrementInvalidations();
+
+                // Invalidate the record only if there is no update
+                // happening on it, i.e. the reservation id is equal
+                // to READ_PERMITTED.
+                return null;
             }
-            return null;
+
+            return record;
         };
     }
 
