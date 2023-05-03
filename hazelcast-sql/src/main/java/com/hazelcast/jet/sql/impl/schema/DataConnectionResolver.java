@@ -16,6 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl.DataConnectionSource;
@@ -29,7 +33,6 @@ import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
@@ -42,6 +45,8 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 public class DataConnectionResolver implements TableResolver {
+    private static final ObjectMapper SERIALIZER = new ObjectMapper();
+
     // It will be in a separate schema, so separate resolver is implemented.
     private static final List<List<String>> SEARCH_PATHS = singletonList(
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
@@ -147,8 +152,16 @@ public class DataConnectionResolver implements TableResolver {
         conn.addAll(dataConnectionService.getSqlCreatedDataConnections());
 
         return conn.stream()
-                   .map(dc -> Arrays.asList(dc.getName(), new ArrayList<>(dc.resourceTypes())))
+                   .map(dc -> asList(dc.getName(), json(dc.resourceTypes())))
                    .collect(toList());
+    }
+
+    private static HazelcastJsonValue json(Object value) {
+        try {
+            return new HazelcastJsonValue(SERIALIZER.writeValueAsString(value));
+        } catch (JsonProcessingException e) {
+            throw new HazelcastException("Unable to serialize value: ", e);
+        }
     }
 
     @Override

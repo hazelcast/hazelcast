@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.jet.sql.SqlJsonTestSupport.jsonArray;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -335,7 +336,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
 
         // then
-        assertRowsAnyOrder("SHOW DATA CONNECTIONS ", singletonList(new Row(TEST_DATABASE_REF, singletonList("Table"))));
+        assertRowsAnyOrder("SHOW DATA CONNECTIONS ", singletonList(new Row(TEST_DATABASE_REF, jsonArray("Table"))));
 
         // Ensure that engine is not broken after Data Connection removal with some unrelated query.
         assertRowsAnyOrder("SHOW MAPPINGS ", singletonList(new Row(mappingName)));

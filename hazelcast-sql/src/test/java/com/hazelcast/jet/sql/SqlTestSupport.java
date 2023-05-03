@@ -455,7 +455,19 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * @param expectedRows Expected rows
      */
     public static void assertRowsOrdered(String sql, List<Row> expectedRows) {
-        SqlService sqlService = instance().getSql();
+        assertRowsOrdered(instance(), sql, expectedRows);
+    }
+
+    /**
+     * Execute a query and wait until it completes. Assert that the returned
+     * rows contain the expected rows, in the given order.
+     *
+     * @param instance     Hazelcast Instance to be used
+     * @param sql          The query
+     * @param expectedRows Expected rows
+     */
+    public static void assertRowsOrdered(HazelcastInstance instance, String sql, List<Row> expectedRows) {
+        SqlService sqlService = instance.getSql();
         List<Row> actualRows = new ArrayList<>();
         try (SqlResult result = sqlService.execute(sql)) {
             result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));

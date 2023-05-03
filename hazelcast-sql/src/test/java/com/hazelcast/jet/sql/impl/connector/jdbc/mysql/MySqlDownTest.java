@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.jet.sql.SqlJsonTestSupport.jsonArray;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Category(NightlyTest.class)
@@ -90,7 +91,9 @@ public class MySqlDownTest extends JdbcSqlTestSupport {
                                    .get(5, TimeUnit.SECONDS);
 
 
-        assertThat(allRows(result)).containsExactly(new Row("mysql"), new Row("testDatabaseRef"));
+        assertThat(allRows(result)).containsExactly(
+                new Row("mysql", jsonArray("Table")),
+                new Row("testDatabaseRef", jsonArray("Table")));
 
         result = executor.submit(() -> sqlService.execute("SHOW MAPPINGS"))
                                    .get(5, TimeUnit.SECONDS);
