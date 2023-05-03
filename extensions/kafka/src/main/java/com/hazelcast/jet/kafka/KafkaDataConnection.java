@@ -189,15 +189,26 @@ public class KafkaDataConnection extends DataConnectionBase {
     public <K, V> KafkaProducer<K, V> getProducer(
             @Nullable String transactionalId,
             @Nonnull Properties properties) {
-        if (getConfig().isShared() && !properties.isEmpty()) {
-            throw new HazelcastException("Shared Kafka producer can be created only with data connection options");
-        } else {
-            Properties props = Util.mergeProps(getConfig().getProperties(), properties);
-            if (transactionalId != null) {
-                props.put("transactional.id", transactionalId);
-            }
-            return new KafkaProducer<>(props);
+        Properties configProperties = getConfig().getProperties();
+
+        boolean inputPropsAreSubsetOfConfigProps = inputPropsAreSubsetOfConfigProps(properties);
+        if (getConfig().isShared() && !properties.isEmpty() && !inputPropsAreSubsetOfConfigProps) {
+            throw new HazelcastException("For shared Kafka producer, please provide all serialization options" +
+                    "at the DATA CONNECTION level (i.e. 'key.serializer')." +
+                    " Only 'keyFormat' and 'valueFormat' are required at the mapping level," +
+                    " however these options are ignored currently.");
         }
+
+        Properties props = configProperties;
+        // If argument properties map is a subset of data connection properties map, just skip that merge.
+        if (!getConfig().isShared() || inputPropsAreSubsetOfConfigProps) {
+            props = Util.mergeProps(configProperties, properties);
+        }
+
+        if (transactionalId != null) {
+            props.put("transactional.id", transactionalId);
+        }
+        return new KafkaProducer<>(props);
     }
 
     @Override
@@ -206,5 +217,15 @@ public class KafkaDataConnection extends DataConnectionBase {
             producerSupplier.remembered().doClose();
             producerSupplier = null;
         }
+    }
+
+    private boolean inputPropsAreSubsetOfConfigProps(Properties inputProps) {
+        Properties configProperties = getConfig().getProperties();
+        for (Object key : inputProps.keySet()) {
+            if (!configProperties.containsKey(key) || !configProperties.get(key).equals(inputProps.get(key))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

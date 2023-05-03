@@ -25,10 +25,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -37,7 +39,7 @@ public class KafkaDataConnectionIntegrationTest extends KafkaSqlTestSupport {
     private static final int PARTITION_COUNT = 1;
 
     @Test
-    public void test_nonShared() {
+    public void when_createNonSharedProducer_then_success() {
         String dlName = randomName();
         String name1 = createRandomTopic(PARTITION_COUNT);
         String name2 = createRandomTopic(PARTITION_COUNT);
@@ -89,19 +91,34 @@ public class KafkaDataConnectionIntegrationTest extends KafkaSqlTestSupport {
     }
 
     @Test
-    public void test_shared() {
+    public void when_createSharedProducer_then_success() {
+        String dcName = randomName();
+        String name = createRandomTopic(PARTITION_COUNT);
+        createSqlKafkaDataConnection(dcName, true);
+        createKafkaMappingUsingDataConnection(name, dcName, constructMappingOptions("int", "varchar"));
+
+        try (SqlResult r = sqlService.execute("INSERT INTO " + name + " VALUES (0, 'value-0')")) {
+            assertThat(r.updateCount()).isZero();
+        }
+
+        assertTipOfStream("SELECT * FROM " + name, singletonList(new Row(0, "value-0")));
+    }
+
+    @Test
+    public void when_createSharedProducerWithOverriddenProperty_then_success() {
         String dlName = randomName();
-        String name1 = createRandomTopic(PARTITION_COUNT);
-        String name2 = createRandomTopic(PARTITION_COUNT);
+        String name = createRandomTopic(PARTITION_COUNT);
         createSqlKafkaDataConnection(dlName, true);
-        createKafkaMappingUsingDataConnection(name1, dlName, constructMappingOptions("int", "varchar"));
-        createKafkaMappingUsingDataConnection(name2, dlName, constructMappingOptions("varchar", "int"));
+        // not created
+        createKafkaMappingUsingDataConnection(name, dlName,
+                "OPTIONS ('" + OPTION_KEY_FORMAT + "'='int', '" + OPTION_VALUE_FORMAT + "'='varchar', "
+                        + "'auto.offset.reset' = 'latest')"); // changed option
 
         // TODO: move this error to mapping creation level.
         assertThatThrownBy(() -> sqlService.execute(
-                "INSERT INTO " + name1 + " VALUES" + "(0, 'value-0')"))
+                "INSERT INTO " + name + " VALUES" + "(0, 'value-0')"))
                 .hasRootCauseInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Shared Kafka producer can be created only with data connection options");
+                .hasMessageContaining("For shared Kafka producer, please provide all serialization options");
 
     }
 
@@ -116,7 +133,7 @@ public class KafkaDataConnectionIntegrationTest extends KafkaSqlTestSupport {
         createKafkaMappingUsingDataConnection(name, dlName, constructMappingOptions("int", "varchar"));
 
         try (SqlResult r = sqlService.execute("INSERT INTO " + name + " VALUES (0, 'value-0')")) {
-            assertEquals(0, r.updateCount());
+            assertThat(r.updateCount()).isZero();
         }
 
         assertTipOfStream("SELECT * FROM " + name, singletonList(new Row(0, "value-0")));

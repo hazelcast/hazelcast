@@ -196,7 +196,7 @@ public class KafkaDataConnectionTest {
 
         assertThatThrownBy(() -> kafkaDataConnection.getProducer(null, properties))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Shared Kafka producer can be created only with data connection options");
+                .hasMessageContaining("For shared Kafka producer, please provide all serialization options");
 
         kafkaDataConnection.release();
     }
