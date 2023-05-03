@@ -56,5 +56,8 @@ public class CreateDataConnectionJdbcSqlConnectorTest extends JdbcSqlTestSupport
 
         assertThatCode(() -> execute(sql))
                 .doesNotThrowAnyException();
+
+        assertThatCode(() -> execute("SHOW RESOURCES FOR " + connectionName))
+                .doesNotThrowAnyException();
     }
 }
