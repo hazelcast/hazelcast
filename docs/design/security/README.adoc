@@ -401,6 +401,14 @@ Subject during the authentication in login modules:
 * `ClusterRolePrincipal` - assigned role name
 * `ClusterEndpointPrincipal` - remote IP address
 
+Usually, a username and password are used for authentication.
+Hazelcast also supports token-based authentication - see
+https://github.com/hazelcast/hazelcast-code-samples/tree/master/enterprise/client-token-credentials[the code sample].
+
+Custom login modules can use
+https://docs.hazelcast.com/hazelcast/latest/security/jaas-authentication#callbacks-supported-in-login-modules[JAAS callbacks]
+to access authenticated credentials or member configuration data.
+
 === AuditLog SPI
 
 Auditlog SPI allows users to provide their `AuditlogService` interface
