@@ -58,13 +58,16 @@ public class ConfigMismatchOp extends AbstractClusterOperation {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Node node = nodeEngine.getNode();
 
+        ILogger logger = nodeEngine.getLogger("com.hazelcast.cluster");
+
         // Ignore shutdown requests if we are already in a cluster, as being
         // part of a cluster means our config was already verified & accepted
         if (node.getClusterService().isJoined()) {
+            logger.warning("Received ConfigMismatchOp when already joined with a cluster. " +
+                    "This node will not shutdown. Configuration mismatch: " + msg);
             return;
         }
 
-        ILogger logger = nodeEngine.getLogger("com.hazelcast.cluster");
         logger.severe("Node could not join cluster. A Configuration mismatch was detected: "
                 + msg + " Node is going to shutdown now!");
         node.shutdown(true);
