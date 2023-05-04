@@ -137,7 +137,7 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         assertTrueAllTheTime(() -> {
             // Client state stays as INITIAL and since we are using async start, client will keep throwing this error
             assertThatThrownBy(() -> client.getMap(mapName)).isInstanceOf(HazelcastClientOfflineException.class);
-        }, 60);
+        }, 10);
     }
 
     @Test(expected = ClassNotFoundException.class)

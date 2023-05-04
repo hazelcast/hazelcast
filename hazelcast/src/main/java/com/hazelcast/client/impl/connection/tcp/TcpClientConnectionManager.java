@@ -1066,6 +1066,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         // state to be sent. The state should be INITIALIZED_ON_CLUSTER after we send the client state.
                         // Also the CLIENT_CONNECTED event should be fired after the state is sent. initializeClientOnCluster
                         // will handle all of that.
+                        clientState = ClientState.CONNECTED_TO_CLUSTER;
                         executor.execute(() -> initializeClientOnCluster(clusterId));
                     }
                 }
