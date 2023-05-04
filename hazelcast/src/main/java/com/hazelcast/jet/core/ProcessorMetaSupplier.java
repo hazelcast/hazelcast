@@ -62,16 +62,18 @@ import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static java.util.Collections.singletonList;
 
 /**
- * Factory of {@link ProcessorSupplier} instances. The starting point of
- * the chain leading to the eventual creation of {@code Processor} instances
- * on each cluster member:
+ * Factory of {@link ProcessorSupplier} instances. The starting point of the
+ * chain leading to the eventual creation of {@link Processor} instances on
+ * each cluster member:
  * <ol><li>
- * client creates {@code ProcessorMetaSupplier} as a part of the DAG;
+ * client or member creates {@code ProcessorMetaSupplier} as a part of the DAG;
  * </li><li>
- * serializes it and sends to a cluster member;
+ * serializes it and sends to the job coordinator (if it is the job coordinator
+ * and the DAG consists of {@linkplain #isReusable reusable} {@code
+ * ProcessorMetaSupplier}s, the serialization is skipped);
  * </li><li>
- * the member deserializes and uses it to create one {@code ProcessorSupplier}
- * for each cluster member;
+ * the job coordinator deserializes and uses it to create one {@code
+ * ProcessorSupplier} for each cluster member;
  * </li><li>
  * serializes each {@code ProcessorSupplier} and sends it to its target member;
  * </li><li>
@@ -79,11 +81,11 @@ import static java.util.Collections.singletonList;
  * of {@code Processor} as requested by the <em>parallelism</em> property on
  * the corresponding {@code Vertex}.
  * </li></ol>
- * Before being asked to create {@code ProcessorSupplier}s this meta-supplier will
- * be given access to the Hazelcast instance and, in particular, its cluster topology
- * and partitioning services. It can use the information from these services to
- * precisely parameterize each {@code Processor} instance that will be created on
- * each member.
+ * Before being asked to create {@code ProcessorSupplier}s this meta-supplier
+ * will be given access to the Hazelcast instance and, in particular, its
+ * cluster topology and partitioning services. It can use the information from
+ * these services to precisely parameterize each {@code Processor} instance
+ * that will be created on each member.
  *
  * @since Jet 3.0
  */
@@ -125,6 +127,8 @@ public interface ProcessorMetaSupplier extends Serializable {
      * deserializing the meta-supplier instance. Gives access to the Hazelcast
      * instance's services and provides the parallelism parameters determined
      * from the cluster size.
+     *
+     * @see #isReusable()
      */
     default void init(@Nonnull Context context) throws Exception {
     }
@@ -150,6 +154,8 @@ public interface ProcessorMetaSupplier extends Serializable {
      * The method will be called once per job execution on the job's
      * <em>coordinator</em> member. {@code init()} will have already
      * been called.
+     *
+     * @see #isReusable()
      */
     @Nonnull
     Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
@@ -186,17 +192,24 @@ public interface ProcessorMetaSupplier extends Serializable {
      *              Note that it might not be the actual error that caused the job
      *              to fail - it can be several other exceptions. We only guarantee
      *              that it's non-null if the job didn't complete successfully.
+     * @see #isReusable()
      */
     default void close(@Nullable Throwable error) throws Exception {
     }
 
     /**
-     * Returns {@code true} if this instance is reusable, i.e. {@link #init}
-     * and {@link #close} can be called multiple times, possibly in parallel.
+     * Returns {@code true} if this instance can be used in different vertices
+     * or in different job executions. In that case, {@link #init}, {@link #get}
+     * and {@link #close} methods must be idempotent and thread-safe.
      * <p>
-     * When a job is to be submitted, the job definition ({@link DAG} or
-     * {@link Pipeline}) is serialized. This serialization can be avoided
-     * for light jobs if the DAG is reusable.
+     * When a job is submitted from a client, the job definition is serialized,
+     * so the job coordinator will receive a different copy of processor
+     * meta-suppliers even if they are used multiple times within the same DAG,
+     * or across different DAGs, or submitted through different jobs. While this
+     * serialization mechanism ensures that processor meta-suppliers do not have
+     * any internal state, it is unnecessary —and avoided— for jobs consisting
+     * of reusable meta-suppliers and submitted from the job coordinator —which
+     * is always the case for light jobs.
      *
      * @since 5.3
      */
