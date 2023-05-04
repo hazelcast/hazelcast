@@ -423,21 +423,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         }
 
                         submitConnectToClusterTask(initialConnection);
+                    } else if (initialConnection) {
+                        // Send state to cluster for async clients in async way.
+                        executor.execute(() -> initializeClientOnCluster(clusterId));
                     }
-                }
-                if (initialConnection && !activeConnections.isEmpty()) {
-                    // Send state to cluster for async clients in async way.
-                    executor.submit(() -> {
-                        try {
-                            client.sendStateToCluster();
-                            clientState = ClientState.INITIALIZED_ON_CLUSTER;
-                            fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
-                        } catch (Throwable e) {
-                            logger.severe("Could not send state to cluster during async start. "
-                                    + "Client will shutdown because it cannot operate with state not sent to cluster.", e);
-                            client.shutdown();
-                        }
-                    });
                 }
             } catch (Throwable e) {
                 logger.warning("Could not connect to any cluster, shutting down the client: " + e.getMessage());

@@ -125,6 +125,7 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         config.setClassLoader(filteringCL);
         config.getUserCodeDeploymentConfig().setEnabled(true);
         hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(-1);
