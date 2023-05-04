@@ -135,7 +135,7 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
 
         String mapName = randomMapName();
         assertTrueAllTheTime(() -> {
-            // Client state stays as INITIAL and since we are using async start, client will keep throwing this error
+            // Client state stays as CONNECTED_TO_CLUSTER and since we are using async start, client will keep throwing this error
             assertThatThrownBy(() -> client.getMap(mapName)).isInstanceOf(HazelcastClientOfflineException.class);
         }, 10);
     }
