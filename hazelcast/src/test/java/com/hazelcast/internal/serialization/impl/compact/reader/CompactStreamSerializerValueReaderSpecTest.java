@@ -129,7 +129,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
         // it makes debugging easier since all scenarios are generated
         printlnScenarioDescription(resultToMatch);
 
-        InternalSerializationService ss = (InternalSerializationService) createSerializationService();
+        InternalSerializationService ss = createSerializationService();
 
         Data data = ss.toData(inputObject);
         GenericRecordQueryReader reader = new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
