@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
@@ -36,16 +52,17 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
 
-
 /**
  * A {@link AsyncSocket} that is Nio based (so uses a selector) and provides
  * TLS.
  * <p>
- * https://docs.oracle.com/javase/10/security/sample-code-illustrating-use-sslengine.htm#JSSEC-GUID-EDE915F0-427B-48C7-918F-23C44384B862
+ * https://docs.oracle.com/javase/10/security/sample-code-illustrating-use-sslengine.htm
  * <p>
  * https://github.com/alkarn/sslengine.example/blob/master/src/main/java/alkarn/github/io/sslengine/example/NioSslServer.java
  */
 public class TlsNioAsyncSocket extends AsyncSocket {
+
+    private static final int BUF_SIZE = 32 * 1024;
 
     private final NioAsyncSocketOptions options;
     private final AtomicReference<Thread> flushThread = new AtomicReference<>();
@@ -322,7 +339,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
         super.close0();
     }
 
-    private class TLsHandler implements NioHandler, Runnable {
+    private final class TLsHandler implements NioHandler, Runnable {
         private final ByteBuffer receiveBuffer;
         private final ByteBuffer sendBuffer;
         private final SSLEngine sslEngine;
@@ -338,7 +355,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
             //todo: we need to pass the correct address.
             this.sslEngine = builder.sslEngineFactory.create(clientSide, null);
 
-            int bufSize = 32 * 1024;
+            int bufSize = BUF_SIZE;
 //            int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
 //            if(receiveBufferSize<bufSize){
 //                receiveBufferSize = bufSize;
@@ -424,6 +441,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
 
             int read = socketChannel.read(receiveBuffer);
             //System.out.println(TLSNioAsyncSocket.this + " bytes read: " + read);
+
             if (read == -1) {
                 throw new EOFException("Remote socket closed!");
             }
@@ -463,7 +481,8 @@ public class TlsNioAsyncSocket extends AsyncSocket {
                 // Do not try to perform this task because you see the comment here. Only perform this task
                 // if you know what you are doing and are able to benchmark the before and after situation.
                 SSLEngineResult unwrapResult = sslEngine.unwrap(receiveBuffer, appBuffer);
-                //System.out.println(TLSNioAsyncSocket.this + " handleRead: unwrapResult " + unwrapResult.toString().replace("\n", " "));
+                //System.out.println(TlsNioAsyncSocket.this + " handleRead: unwrapResult " +
+                //    unwrapResult.toString().replace("\n", " "));
                 switch (unwrapResult.getStatus()) {
                     case OK:
                         if (!receiveBuffer.hasRemaining()) {
@@ -483,11 +502,14 @@ public class TlsNioAsyncSocket extends AsyncSocket {
                             //todo: we need to grow the appBuffer and try again
                             throw new RuntimeException();
                         }
+                        break;
                     case BUFFER_UNDERFLOW:
                         // not enough data available to decode, so wait for more data.
                         //compactOrClear(appBuffer);
-                        //System.out.println(TLSNioAsyncSocket.this + " receiveBuffer " + BufferUtil.toDebugString(receiveBuffer));
-                        //System.out.println(TLSNioAsyncSocket.this + " appBuffer " + BufferUtil.toDebugString(appBuffer));
+                        //System.out.println(TLSNioAsyncSocket.this + " receiveBuffer " +
+                        //    BufferUtil.toDebugString(receiveBuffer));
+                        //System.out.println(TLSNioAsyncSocket.this + " appBuffer " +
+                        //    BufferUtil.toDebugString(appBuffer));
                         unwrapMore = false;
                         break;
                     default:
@@ -502,7 +524,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
 
         private void readHandlerOnRead() {
             // the appBuffer was in writing mode, we first need to set to reading mode
-            appBuffer.flip();
+            upcast(appBuffer).flip();
             // offer the appBuffer to the readHandler
             reader.onRead(appBuffer);
             // and set the appBuffer back into writing mode for more rounds of unwrapping
@@ -555,7 +577,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
 
             // The sendbuffer has received some data, so lets put it into reading mode
             // So it can be written to the socket
-            sendBuffer.flip();
+            upcast(sendBuffer).flip();
             long written = socketChannel.write(sendBuffer);
             metrics.incBytesWritten(written);
 
@@ -581,6 +603,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
             }
         }
 
+        @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength"})
         private boolean completeHandshake() throws IOException {
             while (true) {
                 SSLEngineResult.HandshakeStatus handshakeStatus = sslEngine.getHandshakeStatus();
@@ -604,7 +627,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
                             case CLOSED:
                                 throw new EOFException("Socket closed!");
                             case OK:
-                                sendBuffer.flip();
+                                upcast(sendBuffer).flip();
                                 long written = socketChannel.write(sendBuffer);
 
                                 metrics.incBytesWritten(written);
@@ -632,7 +655,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
                             throw new EOFException("Remote socket closed!");
                         }
 
-                        receiveBuffer.flip();
+                        upcast(receiveBuffer).flip();
                         SSLEngineResult unwrapResult = sslEngine.unwrap(receiveBuffer, emptyBuffer);
 
                         compactOrClear(receiveBuffer);
