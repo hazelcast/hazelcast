@@ -399,13 +399,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         clusterDiscoveryService.current().start();
 
         if (asyncStart) {
-            submitConnectToClusterTask(true);
+            submitConnectToClusterTask();
         } else {
             doConnectToCluster();
         }
     }
 
-    private void submitConnectToClusterTask(boolean initialConnection) {
+    private void submitConnectToClusterTask() {
         // called in synchronized(clusterStateMutex)
 
         if (connectToClusterTaskSubmitted) {
@@ -422,10 +422,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                             logger.warning("No connection to cluster: " + clusterId);
                         }
 
-                        submitConnectToClusterTask(initialConnection);
-                    } else if (initialConnection) {
-                        // Send state to cluster for async clients in async way.
-                        executor.execute(() -> initializeClientOnCluster(clusterId));
+                        submitConnectToClusterTask();
                     }
                 }
             } catch (Throwable e) {
@@ -878,7 +875,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         if (client.getLifecycleService().isRunning()) {
             try {
-                submitConnectToClusterTask(false);
+                submitConnectToClusterTask();
             } catch (RejectedExecutionException r) {
                 shutdownWithExternalThread();
             }
@@ -1060,13 +1057,16 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 } else {
                     establishedInitialClusterConnection = true;
                     if (!asyncStart) {
-                        // For async clients, we send the client state in an async way. The state should be
-                        // INITIALIZED_ON_CLUSTER after we send the client state. Therefore, switching client state
-                        // responsibility is left to the async task.
+                        // For a sync start client, we will send the client state as the last statement of Client instance
+                        // construction. Therefore, we can change client state and send the event here.
                         clientState = ClientState.INITIALIZED_ON_CLUSTER;
-                        // This event should also be fired in the async task not to modify the behaviour.
-                        // Some users may used this lifecyle event to wait for client's async initialization.
                         fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
+                    } else {
+                        // For async clients, we return the client instance to the user without waiting for the client
+                        // state to be sent. The state should be INITIALIZED_ON_CLUSTER after we send the client state.
+                        // Also the CLIENT_CONNECTED event should be fired after the state is sent. initializeClientOnCluster
+                        // will handle all of that.
+                        executor.execute(() -> initializeClientOnCluster(clusterId));
                     }
                 }
             }

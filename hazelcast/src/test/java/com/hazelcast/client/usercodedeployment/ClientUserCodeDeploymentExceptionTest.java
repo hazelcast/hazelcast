@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.usercodedeployment;
 
+import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -39,8 +40,8 @@ import java.io.FileNotFoundException;
 
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.fail;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -123,7 +124,7 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testClientWithAsyncStart_ClientShutdowns_WhenUserCodeDeploymentFails() {
+    public void testClientWithAsyncStart_ClientRetriesIndefinitely_WhenUserCodeDeploymentFails() {
         ClientConfig clientConfig = createClientConfig();
         clientConfig.getUserCodeDeploymentConfig().setEnabled(true);
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
@@ -132,9 +133,11 @@ public class ClientUserCodeDeploymentExceptionTest extends HazelcastTestSupport 
         factory.newHazelcastInstance(config);
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
-        assertTrueEventually(() -> {
-            assertFalse(client.getLifecycleService().isRunning());
-        });
+        String mapName = randomMapName();
+        assertTrueAllTheTime(() -> {
+            // Client state stays as INITIAL and since we are using async start, client will keep throwing this error
+            assertThatThrownBy(() -> client.getMap(mapName)).isInstanceOf(HazelcastClientOfflineException.class);
+        }, 60);
     }
 
     @Test(expected = ClassNotFoundException.class)
