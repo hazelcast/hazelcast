@@ -70,8 +70,8 @@ import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -630,6 +630,11 @@ class RaftGroupMembershipManager {
                     maxLeaderships = avgGroupsPerMember;
                 }
                 BiTuple<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, maxLeaderships);
+
+                if (to.element1 == null) {
+                    to = getEndpointWithMinLeaderships(groups, leaderships, from.element2 - 2);
+                }
+
                 if (to.element1 == null) {
                     logger.info("No candidate could be found to get leadership from " + from.element1 + ". Skipping to next...");
                     // could not found target member to transfer membership
