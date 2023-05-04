@@ -310,6 +310,16 @@ public interface ProcessorMetaSupplier extends Serializable {
             public boolean isReusable() {
                 return true;
             }
+
+            @Override
+            public boolean initIsCooperative() {
+                return true;
+            }
+
+            @Override
+            public boolean closeIsCooperative() {
+                return true;
+            }
         };
     }
 
@@ -467,6 +477,16 @@ public interface ProcessorMetaSupplier extends Serializable {
             public Permission getRequiredPermission() {
                 return permission;
             }
+
+            @Override
+            public boolean initIsCooperative() {
+                return true;
+            }
+
+            @Override
+            public boolean closeIsCooperative() {
+                return true;
+            }
         };
     }
 
@@ -562,6 +582,16 @@ public interface ProcessorMetaSupplier extends Serializable {
         }
 
         @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
+
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(supplier);
             out.writeObject(memberAddress);
@@ -609,6 +639,16 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         @Override
         public boolean isReusable() {
+            return true;
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
             return true;
         }
 

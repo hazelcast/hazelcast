@@ -285,11 +285,6 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         @Override
-        public boolean closeIsCooperative() {
-            return true;
-        }
-
-        @Override
         public int preferredLocalParallelism() {
             return 1;
         }
@@ -299,6 +294,16 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Override
         public boolean isReusable() {
+            return true;
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
             return true;
         }
     }

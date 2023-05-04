@@ -113,4 +113,14 @@ public class KinesisSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
         }
         return addressRanges;
     }
+
+    @Override
+    public boolean initIsCooperative() {
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
 }

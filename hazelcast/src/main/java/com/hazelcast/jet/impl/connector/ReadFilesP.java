@@ -197,6 +197,16 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         public boolean isReusable() {
             return true;
         }
+
+        @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
     }
 
     private static final class LocalFileTraverser<T> implements FileTraverser<T> {
