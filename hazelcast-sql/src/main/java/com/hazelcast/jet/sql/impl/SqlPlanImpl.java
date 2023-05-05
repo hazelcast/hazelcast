@@ -136,6 +136,9 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
+            if (mapping.dataConnection() != null) {
+                context.checkPermission(new SqlPermission(mapping.dataConnection(), ACTION_VIEW_DATACONNECTION));
+            }
             context.checkPermission(new SqlPermission(mapping.name(), ACTION_CREATE));
         }
 
@@ -842,6 +845,79 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
     }
 
+    static class CreateTypePlan extends SqlPlanImpl {
+        private final String name;
+        private final boolean replace;
+        private final boolean ifNotExists;
+        private final List<TypeDefinitionColumn> columns;
+        private final Map<String, String> options;
+        private final PlanExecutor planExecutor;
+
+        CreateTypePlan(
+                final PlanKey planKey,
+                final String name,
+                final boolean replace,
+                final boolean ifNotExists,
+                final List<TypeDefinitionColumn> columns,
+                final Map<String, String> options,
+                final PlanExecutor planExecutor
+        ) {
+            super(planKey);
+            this.name = name;
+            this.replace = replace;
+            this.ifNotExists = ifNotExists;
+            this.columns = columns;
+            this.options = options;
+            this.planExecutor = planExecutor;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public Map<String, String> options() {
+            return options;
+        }
+
+        public String option(String name) {
+            return options.get(name);
+        }
+
+        public boolean replace() {
+            return replace;
+        }
+
+        public boolean ifNotExists() {
+            return ifNotExists;
+        }
+
+        public List<TypeDefinitionColumn> columns() {
+            return columns;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_CREATE_TYPE));
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("CREATE TYPE", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE TYPE", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
     static class DropTypePlan extends SqlPlanImpl {
         private final String typeName;
         private final boolean ifExists;
@@ -1512,79 +1588,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             return planExecutor.execute(this, arguments, timeout);
-        }
-    }
-
-    static class CreateTypePlan extends SqlPlanImpl {
-        private final String name;
-        private final boolean replace;
-        private final boolean ifNotExists;
-        private final List<TypeDefinitionColumn> columns;
-        private final Map<String, String> options;
-        private final PlanExecutor planExecutor;
-
-        CreateTypePlan(
-                final PlanKey planKey,
-                final String name,
-                final boolean replace,
-                final boolean ifNotExists,
-                final List<TypeDefinitionColumn> columns,
-                final Map<String, String> options,
-                final PlanExecutor planExecutor
-        ) {
-            super(planKey);
-            this.name = name;
-            this.replace = replace;
-            this.ifNotExists = ifNotExists;
-            this.columns = columns;
-            this.options = options;
-            this.planExecutor = planExecutor;
-        }
-
-        public String name() {
-            return name;
-        }
-
-        public Map<String, String> options() {
-            return options;
-        }
-
-        public String option(String name) {
-            return options.get(name);
-        }
-
-        public boolean replace() {
-            return replace;
-        }
-
-        public boolean ifNotExists() {
-            return ifNotExists;
-        }
-
-        public List<TypeDefinitionColumn> columns() {
-            return columns;
-        }
-
-        @Override
-        public boolean isCacheable() {
-            return false;
-        }
-
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(name, ACTION_CREATE_TYPE));
-        }
-
-        @Override
-        public boolean producesRows() {
-            return false;
-        }
-
-        @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoArguments("CREATE TYPE", arguments);
-            SqlPlanImpl.ensureNoTimeout("CREATE TYPE", timeout);
-            return planExecutor.execute(this);
         }
     }
 
