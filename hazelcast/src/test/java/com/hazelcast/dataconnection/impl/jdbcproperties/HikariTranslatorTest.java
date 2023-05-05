@@ -37,7 +37,7 @@ public class HikariTranslatorTest {
     }
 
     @Test
-    public void testInvalidProperties() {
+    public void testInvalidKey() {
         Properties hzProperties = new Properties();
         hzProperties.put(1, "1");
         assertThatThrownBy(() -> hikariTranslator.translate(hzProperties))
@@ -118,5 +118,20 @@ public class HikariTranslatorTest {
         // Get DataSource for verification
         Properties dataSourceProperties = hikariConfig.getDataSourceProperties();
         assertThat(dataSourceProperties.getProperty(unknownProperty)).isEqualTo(unknownProperty);
+    }
+
+    @Test
+    public void testUnknownPropertyWithPrefix() {
+        // Unknown Hikari property is considered as DataSource property
+        String unknownProperty = "dataSource.unknownProperty";
+        Properties hzProperties = new Properties();
+        hzProperties.put(unknownProperty, unknownProperty);
+
+        Properties hikariProperties = hikariTranslator.translate(hzProperties);
+        HikariConfig hikariConfig = new HikariConfig(hikariProperties);
+
+        // Get DataSource for verification
+        Properties dataSourceProperties = hikariConfig.getDataSourceProperties();
+        assertThat(dataSourceProperties.getProperty("unknownProperty")).isEqualTo(unknownProperty);
     }
 }

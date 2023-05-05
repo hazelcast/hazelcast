@@ -60,18 +60,24 @@ public class HikariTranslator {
             if (!(key instanceof String)) {
                 throw new HazelcastException("The key: " + key + " should be a String object");
             }
-            String translatedProperty = PROPERTY_MAP.get(key);
-            if (translatedProperty != null) {
+            String keyString = (String) key;
+            String translatedKey = PROPERTY_MAP.get(keyString);
+            if (translatedKey != null) {
                 // We can translate
-                hikariProperties.put(translatedProperty, value);
+                hikariProperties.put(translatedKey, value);
             } else {
                 // We can not translate
-                if (propertyNames.contains(key)) {
+                if (propertyNames.contains(keyString)) {
                     // If HikariConfig provides a setter, then use it
                     hikariProperties.put(key, value);
                 } else {
-                    // Otherwise pass it as a DataSource property to HikariConfig
-                    hikariProperties.put("dataSource." + key, value);
+                    // Pass it as a DataSource property to HikariConfig
+                    // Concat with prefix if necessary
+                    if (!(keyString.startsWith("dataSource."))) {
+                        hikariProperties.put("dataSource." + keyString, value);
+                    } else {
+                        hikariProperties.put(keyString, value);
+                    }
                 }
             }
         });
