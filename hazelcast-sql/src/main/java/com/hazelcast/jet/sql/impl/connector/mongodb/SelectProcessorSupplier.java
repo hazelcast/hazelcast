@@ -32,6 +32,8 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -181,7 +183,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         }
         addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
         addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);
-        addIfInProjection(ts, "ts", row);
+        addIfInProjection(Instant.ofEpochMilli(ts), "ts", row);
         addIfInProjection(bsonDateTimeToLocalDateTime(changeStreamDocument.getWallTime()), "wallTime", row);
         addIfInProjection(bsonTimestampToLocalDateTime(changeStreamDocument.getClusterTime()), "clusterTime", row);
 
