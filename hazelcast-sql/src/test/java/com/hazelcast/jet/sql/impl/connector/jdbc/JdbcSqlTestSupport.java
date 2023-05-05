@@ -191,8 +191,12 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
 
     @Nonnull
     protected static List<Row> jdbcRows(String query) {
+        return jdbcRows(query, dbConnectionUrl);
+    }
+
+    public static List<Row> jdbcRows(String query, String connectionUrl) {
         List<Row> rows = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
+        try (Connection conn = DriverManager.getConnection(connectionUrl);
              Statement stmt = conn.createStatement()
         ) {
             stmt.execute(query);
@@ -209,5 +213,4 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
             throw new RuntimeException(e);
         }
     }
-
 }
