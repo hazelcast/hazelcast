@@ -43,7 +43,7 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
         assertThat(dataConnection).isNotNull();
         assertThat(dataConnection.getConfig().getType()).isEqualTo("Mongo");
 
-        try (SqlResult result = instance().getSql().execute("SHOW RESOURCES FOR " + dlName)){
+        try (SqlResult result = instance().getSql().execute("SHOW RESOURCES FOR " + dlName)) {
             boolean hasCollectionWeWanted = false;
             for (SqlRow row : result) {
                 if (row.getObject("name").equals("\"test1\".\"test2\"")) {
