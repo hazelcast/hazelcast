@@ -37,7 +37,6 @@ import org.junit.runner.RunWith;
 import usercodedeployment.IncrementingEntryProcessor;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.fail;
