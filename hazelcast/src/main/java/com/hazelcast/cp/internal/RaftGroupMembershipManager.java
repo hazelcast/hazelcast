@@ -588,7 +588,6 @@ class RaftGroupMembershipManager {
                                                 Collection<CPGroupSummary> cpGroupSummaries,
                                                 Collection<CPMember> allMembers) {
             final int avgGroupsPerMember = cpGroupSummaries.size() / priorityMembers.size();
-            final boolean overAvgAllowed = cpGroupSummaries.size() % priorityMembers.size() != 0;
 
             logger.fine("Searching for leadership imbalance in " + cpGroupSummaries.size() + " CPGroups, "
                     + "average groups per member is " + avgGroupsPerMember);
@@ -615,25 +614,8 @@ class RaftGroupMembershipManager {
                 Collection<CPGroupSummary> groups
                         = getLeaderGroupsOf(from.element1, leaderships.get(from.element1), cpGroupSummaries);
 
-                int maxLeaderships;
-                if (overAvgAllowed) {
-                    // - When from-member has more than (avg + 1), then leadership can be transferred to any member
-                    // which has leaderships equal to or less than avg.
-                    // - When from-member has equal to (avg + 1), then leadership can be transferred to only members
-                    // which have leaderships less than avg.
-                    if (from.element2 > avgGroupsPerMember + 1) {
-                        maxLeaderships = avgGroupsPerMember;
-                    } else {
-                        maxLeaderships = avgGroupsPerMember - 1;
-                    }
-                } else {
-                    maxLeaderships = avgGroupsPerMember;
-                }
-                BiTuple<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, maxLeaderships);
-
-                if (to.element1 == null) {
-                    to = getEndpointWithMinLeaderships(groups, leaderships, from.element2 - 2);
-                }
+                // if there is at least 2 leadership difference, this transfer will make overall state more even
+                BiTuple<CPMember, CPGroupId> to = getEndpointWithMinLeaderships(groups, leaderships, from.element2 - 2);
 
                 if (to.element1 == null) {
                     logger.info("No candidate could be found to get leadership from " + from.element1 + ". Skipping to next...");
