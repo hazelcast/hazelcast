@@ -42,10 +42,12 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.google.common.primitives.Ints.asList;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -55,6 +57,8 @@ public class MapProjectionTest extends HazelcastTestSupport {
     public ExpectedException expected = ExpectedException.none();
 
     protected HazelcastInstance instance0;
+
+    private AtomicBoolean isProjectionContextInjected = new AtomicBoolean(false);
 
     @Test(expected = NullPointerException.class)
     public void null_projection() {
@@ -119,6 +123,15 @@ public class MapProjectionTest extends HazelcastTestSupport {
 
         assertThat(result, containsInAnyOrder((Double) null, null, null));
     }
+
+    @Test
+    public void testProjectionContextInjection() {
+        IMap<String, Double> map = getMapWithNodeCount(1);
+        populateMap(map);
+        Collection<Double> result = map.project(new ProjectionWithContext());
+        assertTrue("Projection must be injected with ManagedContext ", isProjectionContextInjected.get());
+    }
+
 
     @Test
     public void projection_1Node_objectValue() {
@@ -207,6 +220,12 @@ public class MapProjectionTest extends HazelcastTestSupport {
         mapConfig.setName("aggr");
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         config.addMapConfig(mapConfig);
+        config.setManagedContext(obj -> {
+           if (obj instanceof ProjectionWithContext) {
+               isProjectionContextInjected.set(true);
+           }
+            return obj;
+        });
 
         doWithConfig(config);
 
@@ -286,6 +305,13 @@ public class MapProjectionTest extends HazelcastTestSupport {
         @Override
         public Double transform(Map.Entry<String, Person> input) {
             return input.getValue().age + 1.0d;
+        }
+    }
+
+    public static class ProjectionWithContext implements Projection {
+        @Override
+        public Object transform(Object input) {
+            return input;
         }
     }
 }
