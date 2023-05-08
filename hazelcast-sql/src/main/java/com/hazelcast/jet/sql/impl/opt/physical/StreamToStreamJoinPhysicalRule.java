@@ -147,8 +147,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             call.transformTo(
                     fail(join, String.format(
                             "A stream-to-stream join must have a join condition constraining the maximum " +
-                            "difference between time values of the joined tables in both directions. " +
-                            "Time columns on the left side: %s, time columns on the right side: %s",
+                                    "difference between time values of the joined tables in both directions. " +
+                                    "Time columns on the left side: %s, time columns on the right side: %s",
                             // note that the join can be transposed and sides may not match original query
                             leftWatermarkedColumnNames, rightWatermarkedColumnNames)));
             return;
@@ -304,9 +304,17 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             return true;
         }
 
+        if (expr instanceof RexCall) {
+            RexCall call = (RexCall) expr;
+            if (call.isA(SqlKind.CAST)) {
+                RexNode inputRef = call.getOperands().get(0);
+                return addAddends(inputRef, positiveField, negativeField, constantsSum, inverse);
+            }
+        }
+
         if (expr.getKind() == SqlKind.PLUS || expr.getKind() == SqlKind.MINUS) {
             // if this is a subtraction, inverse the 2nd operand
-            boolean secondOperandInverse = expr.getKind() == SqlKind.MINUS ? !inverse : inverse;
+            boolean secondOperandInverse = (expr.getKind() == SqlKind.MINUS) != inverse;
 
             List<RexNode> operands = ((RexCall) expr).getOperands();
             return addAddends(operands.get(0), positiveField, negativeField, constantsSum, inverse)
