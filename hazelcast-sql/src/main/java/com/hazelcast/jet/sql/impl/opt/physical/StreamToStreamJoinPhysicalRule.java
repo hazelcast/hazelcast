@@ -314,7 +314,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
 
         if (expr.getKind() == SqlKind.PLUS || expr.getKind() == SqlKind.MINUS) {
             // if this is a subtraction, inverse the 2nd operand
-            boolean secondOperandInverse = (expr.getKind() == SqlKind.MINUS) != inverse;
+            boolean secondOperandInverse = expr.getKind() == SqlKind.MINUS ? !inverse : inverse;
 
             List<RexNode> operands = ((RexCall) expr).getOperands();
             return addAddends(operands.get(0), positiveField, negativeField, constantsSum, inverse)
