@@ -20,6 +20,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.jet.pipeline.BatchSource;
@@ -223,6 +224,7 @@ public final class MongoSourceBuilder {
      *
      * @param <T> type of the emitted objects
      */
+    @SuppressWarnings("UnusedReturnValue")
     public static final class Batch<T> extends Base<T> {
 
         @SuppressWarnings("unchecked")
@@ -606,8 +608,8 @@ public final class MongoSourceBuilder {
             final ReadMongoParams<T> localParams = params;
 
             return Sources.streamFromProcessorWithWatermarks(name, true,
-                    eventTimePolicy -> ProcessorMetaSupplier.of(
-                        () -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy))));
+                    eventTimePolicy -> ProcessorMetaSupplier.of(params.buildPermissions(),
+                        ProcessorSupplier.of(() -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy)))));
         }
     }
 
