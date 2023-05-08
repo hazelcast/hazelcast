@@ -56,7 +56,7 @@ public class ShowDataConnectionsSqlTest extends SqlJsonTestSupport {
         // create data connections via CONFIG
         getNodeEngineImpl(instance()).getDataConnectionService().createConfigDataConnection(
                 new DataConnectionConfig("dl")
-                        .setType("dummy")
+                        .setType("DUMMY")
         );
 
         // create data connections via SQL
@@ -70,7 +70,7 @@ public class ShowDataConnectionsSqlTest extends SqlJsonTestSupport {
 
         // when & then
         List<Row> expectedRows = dlNames.stream()
-                .map(name -> new Row(name, jsonArray("testType1", "testType2")))
+                .map(name -> new Row(name, "DUMMY", jsonArray("testType1", "testType2")))
                 .collect(toList());
         assertRowsOrdered(instance(), "show data connections", expectedRows);
         assertRowsOrdered(client(), "show data connections", expectedRows);

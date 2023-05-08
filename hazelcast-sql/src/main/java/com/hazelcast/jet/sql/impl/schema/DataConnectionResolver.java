@@ -149,7 +149,7 @@ public class DataConnectionResolver implements TableResolver {
         conn.addAll(dataConnectionService.getSqlCreatedDataConnections());
 
         return conn.stream()
-                   .map(dc -> asList(dc.getName(), jsonArray(dc.resourceTypes())))
+                   .map(dc -> asList(dc.getName(), dc.getConfig().getType(), jsonArray(dc.resourceTypes())))
                    .collect(toList());
     }
 
