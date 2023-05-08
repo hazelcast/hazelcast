@@ -2896,6 +2896,13 @@
                         <xs:enumeration value="instance"/>
                         <xs:enumeration value="member"/>
                         <xs:enumeration value="migration"/>
+                        <xs:enumeration value="create-view"/>
+                        <xs:enumeration value="drop-view"/>
+                        <xs:enumeration value="create-type"/>
+                        <xs:enumeration value="drop-type"/>
+                        <xs:enumeration value="view-dataconnection"/>
+                        <xs:enumeration value="create-dataconnection"/>
+                        <xs:enumeration value="drop-dataconnection"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
