@@ -35,6 +35,8 @@ import org.bson.conversions.Bson;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.security.Permission;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -47,6 +49,7 @@ import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Projections.excludeId;
 import static com.mongodb.client.model.Projections.fields;
+import static java.time.ZoneId.systemDefault;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -193,7 +196,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
         }
         addIfInProjection(changeStreamDocument.getOperationType().getValue(), "operationType", row);
         addIfInProjection(changeStreamDocument.getResumeToken().toString(), "resumeToken", row);
-        addIfInProjection(ts, "ts", row);
+        addIfInProjection(LocalDateTime.ofInstant(Instant.ofEpochMilli(ts), systemDefault()), "ts", row);
         addIfInProjection(bsonDateTimeToLocalDateTime(changeStreamDocument.getWallTime()), "wallTime", row);
         addIfInProjection(bsonTimestampToLocalDateTime(changeStreamDocument.getClusterTime()), "clusterTime", row);
 
