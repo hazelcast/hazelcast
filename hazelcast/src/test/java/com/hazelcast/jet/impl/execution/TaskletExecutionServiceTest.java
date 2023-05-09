@@ -61,6 +61,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -142,16 +143,16 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         t.assertDone();
     }
 
-    @Test(expected = CompletionException.class)
+    @Test
     public void when_nonBlockingAndInitFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().initFails();
 
-        // When
-        executeAndJoin(singletonList(t));
-
-        // Then
-        t.assertDone();
+        // When - Then
+        assertThatThrownBy(() -> executeAndJoin(singletonList(t)))
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(TaskletExecutionException.class)
+                .hasMessageContaining("mock init failure");
     }
 
     @Test
@@ -176,31 +177,41 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         tasklets.forEach(MockTasklet::assertInitDone);
     }
 
-    @Test(expected = CompletionException.class)
+    @Test
     public void when_blockingAndInitFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().blocking().initFails();
 
         // When - Then
-        executeAndJoin(singletonList(t));
+        assertThatThrownBy(() -> executeAndJoin(singletonList(t)))
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(TaskletExecutionException.class)
+                .hasMessageContaining("mock init failure");
+
     }
 
-    @Test(expected = CompletionException.class)
+    @Test
     public void when_nonBlockingAndCallFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().callFails();
 
         // When - Then
-        executeAndJoin(singletonList(t));
+        assertThatThrownBy(() -> executeAndJoin(singletonList(t)))
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(TaskletExecutionException.class)
+                .hasMessageContaining("mock call failure");
     }
 
-    @Test(expected = CompletionException.class)
+    @Test
     public void when_blockingAndCallFails_then_futureFails() {
         // Given
         final MockTasklet t = new MockTasklet().blocking().callFails();
 
         // When - Then
-        executeAndJoin(singletonList(t));
+        assertThatThrownBy(() -> executeAndJoin(singletonList(t)))
+                .isInstanceOf(CompletionException.class)
+                .hasCauseInstanceOf(TaskletExecutionException.class)
+                .hasMessageContaining("mock call failure");
     }
 
     @Test
