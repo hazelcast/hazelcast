@@ -203,8 +203,7 @@ public abstract class AsyncServerSocketTest {
                 })
                 .build();
 
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-        serverSocket.bind(serverAddress);
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
@@ -212,7 +211,7 @@ public abstract class AsyncServerSocketTest {
                 .build();
         clientSocket.start();
 
-        CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
+        CompletableFuture<Void> connect = clientSocket.connect(serverSocket.getLocalAddress());
         assertCompletesEventually(connect);
         assertTrueEventually(() -> assertTrue(clientSocket.isClosed()));
     }
@@ -225,9 +224,9 @@ public abstract class AsyncServerSocketTest {
                 .setAcceptConsumer(CloseUtil::closeQuietly)
                 .build()) {
 
-            serverAddress = new InetSocketAddress("127.0.0.1", 5000);
-            serverSocket.bind(serverAddress);
+            serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
             serverSocket.start();
+            serverAddress = serverSocket.getLocalAddress();
         }
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
@@ -242,7 +241,7 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_createCloseLoop_withSameReactor() {
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
+        SocketAddress local = new InetSocketAddress("127.0.0.1", 5001);
         Reactor reactor = newReactor();
         for (int k = 0; k < 1000; k++) {
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
@@ -261,7 +260,7 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_createCloseLoop_withNewReactor() {
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
+        SocketAddress local = new InetSocketAddress("127.0.0.1", 5001);
         for (int k = 0; k < 1000; k++) {
             Reactor reactor = newReactor();
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
