@@ -26,7 +26,7 @@ import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,8 +40,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -81,9 +81,13 @@ public class ListResourcesTest {
     @Parameter(1)
     public DataConnectionResource[] expectedResources;
 
-    @BeforeClass
-    public static void beforeClass() {
-        assumeDockerEnabled();
+    @Before
+    public void setUp() {
+        assumeThat(provider)
+                .isInstanceOfAny(
+                        MySQLDatabaseProvider.class,
+                        PostgresDatabaseProvider.class
+                );
     }
 
     @Test
