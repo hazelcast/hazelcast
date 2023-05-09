@@ -18,6 +18,7 @@ package com.hazelcast.dataconnection.impl;
 
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.dataconnection.DataConnectionResource;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -83,11 +84,12 @@ public class ListResourcesTest {
 
     @Before
     public void setUp() {
-        assumeThat(provider)
-                .isInstanceOfAny(
-                        MySQLDatabaseProvider.class,
-                        PostgresDatabaseProvider.class
-                );
+        if (OsHelper.isWindows()) {
+            assumeThat(provider)
+                    .isInstanceOfAny(
+                            H2DatabaseProvider.class
+                    );
+        }
     }
 
     @Test
