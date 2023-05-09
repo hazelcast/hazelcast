@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
 public class CreateDataConnectionJdbcSqlConnectorTest extends JdbcSqlTestSupport {
@@ -38,7 +39,7 @@ public class CreateDataConnectionJdbcSqlConnectorTest extends JdbcSqlTestSupport
     public static List<Object[]> data() {
         return Arrays.asList(new Object[][]{
                 {"NOT SHARED"},
-                {" SHARED"}
+                {"SHARED"}
         });
     }
 
@@ -53,6 +54,27 @@ public class CreateDataConnectionJdbcSqlConnectorTest extends JdbcSqlTestSupport
         String connectionName = randomName();
         String sql = String.format("CREATE DATA CONNECTION %s TYPE JDBC %s OPTIONS('jdbcUrl'='%s')",
                 connectionName, value, dbConnectionUrl);
+
+        assertThatCode(() -> execute(sql))
+                .doesNotThrowAnyException();
+
+        assertThatCode(() -> execute("SHOW RESOURCES FOR " + connectionName))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    public void createDataConnectionWithPasswordInProperties() {
+        assumeThat(databaseProvider).isNotInstanceOfAny(
+                H2DatabaseProvider.class // H2 doesn't allow passing user and password in properties
+        );
+
+        String connectionName = randomName();
+        String sql = String.format(
+                "CREATE DATA CONNECTION %s TYPE JDBC %s "
+                        + "OPTIONS('jdbcUrl'='%s', 'user'='%s', 'password'='%s')",
+                connectionName, value,
+                databaseProvider.noAuthJdbcUrl(), databaseProvider.user(), databaseProvider.password()
+        );
 
         assertThatCode(() -> execute(sql))
                 .doesNotThrowAnyException();

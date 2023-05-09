@@ -64,7 +64,6 @@ public class JdbcDataConnection extends DataConnectionBase {
 
     public JdbcDataConnection(DataConnectionConfig config) {
         super(config);
-        validate(config);
         if (config.isShared()) {
             this.pooledDataSourceSup = new ConcurrentMemoizingSupplier<>(this::createHikariDataSource);
         } else {
@@ -72,16 +71,9 @@ public class JdbcDataConnection extends DataConnectionBase {
         }
     }
 
-    private void validate(DataConnectionConfig config) {
-        Properties properties = config.getProperties();
-        if (properties.get(JDBC_URL) == null) {
-            throw new HazelcastException(JDBC_URL + " property is not defined for data connection '" + getName() + "'");
-        }
-    }
-
-    // Called when Mapping is accessed
     protected HikariDataSource createHikariDataSource() {
         try {
+            validate(getConfig());
             Properties properties = getConfig().getProperties();
 
             HikariTranslator translator = new HikariTranslator(DATA_SOURCE_COUNTER, getName());
@@ -95,8 +87,8 @@ public class JdbcDataConnection extends DataConnectionBase {
         }
     }
 
-    // Called when Mapping is accessed
     private Supplier<Connection> createSingleConnectionSup() {
+        validate(getConfig());
         Properties properties = getConfig().getProperties();
 
         DriverManagerTranslator translator = new DriverManagerTranslator();
@@ -110,6 +102,13 @@ public class JdbcDataConnection extends DataConnectionBase {
                 throw new HazelcastException("Could not create a new connection: " + e, e);
             }
         };
+    }
+
+    private void validate(DataConnectionConfig config) {
+        Properties properties = config.getProperties();
+        if (properties.get(JDBC_URL) == null) {
+            throw new HazelcastException(JDBC_URL + " property is not defined for data connection '" + getName() + "'");
+        }
     }
 
     @Nonnull
@@ -137,7 +136,7 @@ public class JdbcDataConnection extends DataConnectionBase {
             }
             return result;
         } catch (Exception e) {
-            throw new HazelcastException("Could not read resources for DataConnection " + getName());
+            throw new HazelcastException("Could not read resources for DataConnection " + getName(), e);
         }
     }
 

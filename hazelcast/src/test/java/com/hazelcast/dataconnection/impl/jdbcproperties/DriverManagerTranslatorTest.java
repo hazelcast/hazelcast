@@ -16,25 +16,16 @@
 
 package com.hazelcast.dataconnection.impl.jdbcproperties;
 
-import com.hazelcast.core.HazelcastException;
 import org.junit.Test;
 
 import java.util.Properties;
 
+import static com.hazelcast.dataconnection.impl.jdbcproperties.DataConnectionProperties.JDBC_URL;
+import static com.hazelcast.dataconnection.impl.jdbcproperties.DataConnectionProperties.PASSWORD;
+import static com.hazelcast.dataconnection.impl.jdbcproperties.DataConnectionProperties.USER;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class DriverManagerTranslatorTest {
-
-    @Test
-    public void testInvalidProperties() {
-        Properties hzProperties = new Properties();
-        hzProperties.put(1, "1");
-
-        DriverManagerTranslator driverManagerTranslator = new DriverManagerTranslator();
-        assertThatThrownBy(() -> driverManagerTranslator.translate(hzProperties))
-                .isInstanceOf(HazelcastException.class);
-    }
 
     @Test
     public void testTranslatableProperties() {
@@ -47,15 +38,15 @@ public class DriverManagerTranslatorTest {
         String myProperty = "5000";
 
 
-        hzProperties.put(DataConnectionProperties.JDBC_URL, jdbcUrl);
-        hzProperties.put(DataConnectionProperties.USER, user);
-        hzProperties.put(DataConnectionProperties.PASSWORD, password);
+        hzProperties.put(JDBC_URL, jdbcUrl);
+        hzProperties.put(USER, user);
+        hzProperties.put(PASSWORD, password);
         hzProperties.put("myProperty", myProperty);
 
 
         Properties driverManagerProperties = driverManagerTranslator.translate(hzProperties);
 
-        assertThat(driverManagerProperties.getProperty(jdbcUrl)).isNull();
+        assertThat(driverManagerProperties).doesNotContainKey(JDBC_URL);
         assertThat(driverManagerProperties.getProperty("user")).isEqualTo(user);
         assertThat(driverManagerProperties.getProperty("password")).isEqualTo(password);
         assertThat(driverManagerProperties.getProperty("myProperty")).isEqualTo(myProperty);

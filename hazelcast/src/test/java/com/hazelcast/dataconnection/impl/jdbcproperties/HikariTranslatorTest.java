@@ -16,7 +16,6 @@
 
 package com.hazelcast.dataconnection.impl.jdbcproperties;
 
-import com.hazelcast.core.HazelcastException;
 import com.zaxxer.hikari.HikariConfig;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +24,6 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class HikariTranslatorTest {
 
@@ -37,19 +35,9 @@ public class HikariTranslatorTest {
     }
 
     @Test
-    public void testInvalidKey() {
-        Properties hzProperties = new Properties();
-        hzProperties.put(1, "1");
-        assertThatThrownBy(() -> hikariTranslator.translate(hzProperties))
-                .isInstanceOf(HazelcastException.class);
-    }
-
-    @Test
     public void testTranslatableProperties() {
         Properties hzProperties = new Properties();
         String jdbcUrl = "jdbcUrl";
-        String userName = "userName";
-        String password = "password";
         String connectionTimeout = "5000";
         String idleTimeout = "6000";
         String keepAliveTime = "7000";
@@ -58,8 +46,6 @@ public class HikariTranslatorTest {
         String maximumPoolSize = "10";
 
         hzProperties.put(DataConnectionProperties.JDBC_URL, jdbcUrl);
-        hzProperties.put(DataConnectionProperties.USER, userName);
-        hzProperties.put(DataConnectionProperties.PASSWORD, password);
         hzProperties.put(DataConnectionProperties.CONNECTION_TIMEOUT, connectionTimeout);
         hzProperties.put(DataConnectionProperties.IDLE_TIMEOUT, idleTimeout);
         hzProperties.put(DataConnectionProperties.KEEP_ALIVE_TIME, keepAliveTime);
@@ -71,8 +57,6 @@ public class HikariTranslatorTest {
         HikariConfig hikariConfig = new HikariConfig(hikariProperties);
 
         assertThat(hikariConfig.getJdbcUrl()).isEqualTo(jdbcUrl);
-        assertThat(hikariConfig.getUsername()).isEqualTo(userName);
-        assertThat(hikariConfig.getPassword()).isEqualTo(password);
         assertThat(hikariConfig.getConnectionTimeout()).isEqualTo(Long.parseLong(connectionTimeout));
         assertThat(hikariConfig.getIdleTimeout()).isEqualTo(Long.parseLong(idleTimeout));
         assertThat(hikariConfig.getKeepaliveTime()).isEqualTo(Long.parseLong(keepAliveTime));
@@ -86,7 +70,7 @@ public class HikariTranslatorTest {
         Properties hzProperties = new Properties();
         String connectionInitSql = "foo";
 
-        hzProperties.put("connectionInitSql", connectionInitSql);
+        hzProperties.put("hikari.connectionInitSql", connectionInitSql);
 
         Properties hikariProperties = hikariTranslator.translate(hzProperties);
         HikariConfig hikariConfig = new HikariConfig(hikariProperties);
@@ -110,28 +94,27 @@ public class HikariTranslatorTest {
         // Unknown Hikari property is considered as DataSource property
         String unknownProperty = "unknownProperty";
         Properties hzProperties = new Properties();
-        hzProperties.put(unknownProperty, unknownProperty);
+        hzProperties.put(unknownProperty, "value");
 
         Properties hikariProperties = hikariTranslator.translate(hzProperties);
+        assertThat(hikariProperties).containsEntry("dataSource.unknownProperty", "value");
         HikariConfig hikariConfig = new HikariConfig(hikariProperties);
 
         // Get DataSource for verification
         Properties dataSourceProperties = hikariConfig.getDataSourceProperties();
-        assertThat(dataSourceProperties.getProperty(unknownProperty)).isEqualTo(unknownProperty);
+        assertThat(dataSourceProperties.getProperty(unknownProperty)).isEqualTo("value");
     }
 
     @Test
-    public void testUnknownPropertyWithPrefix() {
+    public void testUserAndPassword() {
         // Unknown Hikari property is considered as DataSource property
-        String unknownProperty = "dataSource.unknownProperty";
         Properties hzProperties = new Properties();
-        hzProperties.put(unknownProperty, unknownProperty);
+        hzProperties.put("user", "testUser");
+        hzProperties.put("password", "testPassword");
 
         Properties hikariProperties = hikariTranslator.translate(hzProperties);
-        HikariConfig hikariConfig = new HikariConfig(hikariProperties);
-
-        // Get DataSource for verification
-        Properties dataSourceProperties = hikariConfig.getDataSourceProperties();
-        assertThat(dataSourceProperties.getProperty("unknownProperty")).isEqualTo(unknownProperty);
+        assertThat(hikariProperties).containsEntry("dataSource.user", "testUser");
+        assertThat(hikariProperties).containsEntry("dataSource.password", "testPassword");
     }
+
 }
