@@ -40,7 +40,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-import static com.hazelcast.test.DockerTestUtil.assumeProviderCanLaunch;
+import static com.hazelcast.test.DockerTestUtil.assumeTestDatabaseProviderCanLaunch;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -83,7 +83,7 @@ public class ListResourcesTest {
 
     @Before
     public void setUp() {
-        assumeProviderCanLaunch(provider);
+        assumeTestDatabaseProviderCanLaunch(provider);
     }
 
     @Test

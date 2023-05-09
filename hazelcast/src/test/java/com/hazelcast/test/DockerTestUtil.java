@@ -30,7 +30,7 @@ public class DockerTestUtil {
         assumeTrue(DockerTestUtil.dockerEnabled());
     }
 
-    public static void assumeProviderCanLaunch(TestDatabaseProvider provider) {
+    public static void assumeTestDatabaseProviderCanLaunch(TestDatabaseProvider provider) {
         // If docker is not enabled
         if (!dockerEnabled()) {
             // Only in-memory providers can run
