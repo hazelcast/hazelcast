@@ -55,6 +55,16 @@ public final class DataConnectionTestUtil {
         config.getDataConnectionConfigs().put(name, dataConnectionConfig);
     }
 
+    public static void configureMongoDataConnection(String name, String connectionString, Config config) {
+        Properties properties = new Properties();
+        properties.put("connectionString", connectionString);
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+                .setName(name)
+                .setType("mongo")
+                .setProperties(properties);
+        config.getDataConnectionConfigs().put(name, dataConnectionConfig);
+    }
+
     public static void configureDummyDataConnection(String name, Config config) {
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName(name)

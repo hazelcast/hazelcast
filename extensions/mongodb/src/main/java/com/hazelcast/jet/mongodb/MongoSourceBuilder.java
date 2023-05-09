@@ -413,8 +413,9 @@ public final class MongoSourceBuilder {
 
             final ReadMongoParams<T> localParams = params;
 
-            return Sources.batchFromProcessor(name, ProcessorMetaSupplier.of(
-                    () -> new ReadMongoP<>(localParams)));
+            ConnectorPermission permission = params.buildPermissions();
+            return Sources.batchFromProcessor(name, ProcessorMetaSupplier.of(permission,
+                    ProcessorSupplier.of(() -> new ReadMongoP<>(localParams))));
         }
     }
 
