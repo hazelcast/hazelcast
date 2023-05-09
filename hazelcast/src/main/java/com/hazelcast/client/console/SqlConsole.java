@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -76,7 +77,7 @@ public final class SqlConsole {
 
     private SqlConsole() { }
 
-    public static void run(HazelcastInstance hzClient) {
+    public static void run(HazelcastInstance hzClient, boolean verbose) {
         LineReader reader = LineReaderBuilder.builder().parser(new MultilineParser())
                 .variable(LineReader.SECONDARY_PROMPT_PATTERN, new AttributedStringBuilder()
                         .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR)).append("%M%P > ").toAnsi())
@@ -165,7 +166,7 @@ public final class SqlConsole {
                 writer.flush();
                 break;
             }
-            executeSqlCmd(hzClient, command, reader.getTerminal(), activeSqlResult);
+            executeSqlCmd(hzClient, command, reader.getTerminal(), activeSqlResult, verbose);
         }
     }
 
@@ -173,8 +174,8 @@ public final class SqlConsole {
             HazelcastInstance hz,
             String command,
             Terminal terminal,
-            AtomicReference<SqlResult> activeSqlResult
-    ) {
+            AtomicReference<SqlResult> activeSqlResult,
+            boolean verbose) {
         PrintWriter out = terminal.writer();
         try (SqlResult sqlResult = hz.getSql().execute(command)) {
             activeSqlResult.set(sqlResult);
@@ -219,7 +220,7 @@ public final class SqlConsole {
             // the query failed to execute with HazelcastSqlException
             String errorPrompt = new AttributedStringBuilder()
                     .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
-                    .append(e.getMessage())
+                    .append(exceptionDetails(e, verbose))
                     .toAnsi();
             out.println(errorPrompt);
         } catch (Exception e) {
@@ -227,11 +228,21 @@ public final class SqlConsole {
             String unexpectedErrorPrompt = new AttributedStringBuilder()
                     .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
                     .append("Encountered an unexpected exception while executing the query:\n")
-                    .append(e.getMessage())
+                    .append(exceptionDetails(e, verbose))
                     .toAnsi();
             out.println(unexpectedErrorPrompt);
             e.printStackTrace(out);
         }
+    }
+
+    private static String exceptionDetails(Exception e, boolean verbose) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(e.getMessage());
+        if (verbose) {
+            sb.append("\n");
+            sb.append(ExceptionUtil.toString(e));
+        }
+        return sb.toString();
     }
 
     private static int printExplain(

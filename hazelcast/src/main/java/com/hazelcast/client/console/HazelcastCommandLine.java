@@ -33,6 +33,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
@@ -443,11 +444,16 @@ public class HazelcastCommandLine implements Runnable {
 
     private void runWithHazelcast(GlobalMixin global, boolean retryClusterConnectForever,
                                   ConsumerEx<HazelcastInstance> consumer) {
+        runWithHazelcast(global, retryClusterConnectForever, (hz, verbose) -> consumer.accept(hz));
+    }
+
+    private void runWithHazelcast(GlobalMixin global, boolean retryClusterConnectForever,
+                                  BiConsumerEx<HazelcastInstance, Boolean> consumer) {
         this.global.merge(global);
         configureLogging();
         HazelcastInstance hz = getHazelcastClient(retryClusterConnectForever);
         try {
-            consumer.accept(hz);
+            consumer.accept(hz, this.global.isVerbose);
         } finally {
             hz.shutdown();
         }
