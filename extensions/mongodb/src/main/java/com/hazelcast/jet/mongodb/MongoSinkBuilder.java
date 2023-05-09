@@ -30,6 +30,7 @@ import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
+import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
@@ -256,7 +257,8 @@ public final class MongoSinkBuilder<T> {
         params.checkValid();
         final WriteMongoParams<T> localParams = this.params;
 
-        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism, params.buildPermission(),
+        ConnectorPermission permission = params.buildPermission();
+        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism, permission,
                 ProcessorSupplier.of(() -> new WriteMongoP<>(localParams))));
     }
 

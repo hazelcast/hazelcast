@@ -27,6 +27,7 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.Aggregates;
@@ -607,8 +608,9 @@ public final class MongoSourceBuilder {
 
             final ReadMongoParams<T> localParams = params;
 
+            ConnectorPermission permission = params.buildPermissions();
             return Sources.streamFromProcessorWithWatermarks(name, true,
-                    eventTimePolicy -> ProcessorMetaSupplier.of(params.buildPermissions(),
+                    eventTimePolicy -> ProcessorMetaSupplier.of(permission,
                         ProcessorSupplier.of(() -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy)))));
         }
     }
