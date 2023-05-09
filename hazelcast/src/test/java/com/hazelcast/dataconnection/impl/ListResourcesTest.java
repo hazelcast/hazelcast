@@ -18,7 +18,6 @@ package com.hazelcast.dataconnection.impl;
 
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.dataconnection.DataConnectionResource;
-import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,8 +40,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import static com.hazelcast.test.DockerTestUtil.assumeProviderCanLaunch;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assumptions.assumeThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -84,12 +83,7 @@ public class ListResourcesTest {
 
     @Before
     public void setUp() {
-        if (OsHelper.isWindows()) {
-            assumeThat(provider)
-                    .isInstanceOfAny(
-                            H2DatabaseProvider.class
-                    );
-        }
+        assumeProviderCanLaunch(provider);
     }
 
     @Test
