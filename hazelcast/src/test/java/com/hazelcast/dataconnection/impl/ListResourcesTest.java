@@ -83,6 +83,7 @@ public class ListResourcesTest {
 
     @Before
     public void setUp() {
+        // Currently, Windows can not launch some providers
         assumeTestDatabaseProviderCanLaunch(provider);
     }
 

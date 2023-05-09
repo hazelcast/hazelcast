@@ -30,6 +30,7 @@ public class DockerTestUtil {
         assumeTrue(DockerTestUtil.dockerEnabled());
     }
 
+    // Currently, Windows can not launch some providers
     public static void assumeTestDatabaseProviderCanLaunch(TestDatabaseProvider provider) {
         // If docker is not enabled
         if (!dockerEnabled()) {
