@@ -2455,6 +2455,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      */
     Collection<V> values(@Nonnull Predicate<K, V> predicate);
 
+    Collection<V> localValues();
+
+    Collection<V> localValues(@Nonnull Predicate<K, V> predicate);
+
     /**
      * Returns the locally owned immutable set of keys.
      * <p>
