@@ -31,6 +31,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNotNull;
@@ -69,6 +71,18 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
             assertThat(dataConnection.getConfig().isShared()).isFalse();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
+    }
+
+    @Test
+    public void when_createDataConnectionWithWrongType_then_fail() {
+        String dlName = randomName();
+        assertThatThrownBy(() -> instance().getSql().execute("CREATE DATA CONNECTION " + dlName
+                + " TYPE DUMMIES " // <-- DUMMIES is wrong type
+                + " NOT SHARED "
+                + " OPTIONS ('b' = 'c')"))
+                .hasMessageContaining("Data connection type 'DUMMIES' is not known");
+
+        assertRowsAnyOrder("SELECT * FROM information_schema.dataconnections", Collections.emptyList());
     }
 
     @Test
@@ -198,7 +212,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     public void when_createDataConnectionWithoutOptions_then_success() {
         String dlName = randomName();
 
-        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName  + " TYPE DUMMY SHARED");
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName + " TYPE DUMMY SHARED");
 
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);

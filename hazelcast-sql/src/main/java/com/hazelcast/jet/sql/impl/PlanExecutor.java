@@ -124,6 +124,7 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataConnectionPlan;
@@ -187,6 +188,14 @@ public class PlanExecutor {
         if (dlService.existsConfigDataConnection(plan.name())) {
             throw new HazelcastException("Cannot replace a data connection created from configuration");
         }
+
+        try {
+            // checks if type is correct
+            dlService.classForDataConnectionType(plan.type());
+        } catch (Exception e) {
+            sneakyThrow(e);
+        }
+
         boolean added = dataConnectionCatalog.createDataConnection(
                 new DataConnectionCatalogEntry(
                         plan.name(),
@@ -408,19 +417,19 @@ public class PlanExecutor {
         }
         SqlRowMetadata metadata =
                 plan.getShowTarget() == ShowStatementTarget.DATACONNECTIONS
-                ?  new SqlRowMetadata(asList(
+                        ? new SqlRowMetadata(asList(
                         new SqlColumnMetadata("name", VARCHAR, false),
                         new SqlColumnMetadata("types", JSON, false)
                 ))
-                 : new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
+                        : new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
 
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(
                         rows.sorted(comparing(r -> (Comparable) r.get(0)))
-                            .map(row -> new JetSqlRow(serializationService, ((List<?>) row).toArray(new Object[0])))
-                            .iterator()),
+                                .map(row -> new JetSqlRow(serializationService, ((List<?>) row).toArray(new Object[0])))
+                                .iterator()),
                 metadata,
                 false
         );
@@ -443,14 +452,14 @@ public class PlanExecutor {
                 dataConnectionName, DataConnection.class);
         try {
             rows = dataConnection.listResources().stream()
-                                 .map(resource -> new JetSqlRow(
-                                         serializationService,
-                                         new Object[]{
-                                                 quoteCompoundIdentifier(resource.name()),
-                                                 resource.type()
-                                         }
-                                 ))
-                                 .collect(Collectors.toList());
+                    .map(resource -> new JetSqlRow(
+                            serializationService,
+                            new Object[]{
+                                    quoteCompoundIdentifier(resource.name()),
+                                    resource.type()
+                            }
+                    ))
+                    .collect(Collectors.toList());
         } finally {
             dataConnection.release();
         }
