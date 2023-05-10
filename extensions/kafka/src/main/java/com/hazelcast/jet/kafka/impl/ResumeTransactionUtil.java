@@ -53,7 +53,7 @@ final class ResumeTransactionUtil {
         Object transactionManager = getTransactionManager(producer);
         synchronized (transactionManager) {
             Object topicPartitionBookkeeper =
-                    getField(transactionManager, "topicPartitionBookkeeper");
+                    getField(transactionManager, "txnPartitionMap");
 
             transitionTransactionManagerStateTo(transactionManager, "INITIALIZING");
             invoke(topicPartitionBookkeeper, "reset");
