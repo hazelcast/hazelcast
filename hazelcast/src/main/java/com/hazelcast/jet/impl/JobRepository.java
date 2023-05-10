@@ -428,6 +428,18 @@ public class JobRepository {
      * Cleans up stale maps related to jobs
      */
     void cleanup(NodeEngine nodeEngine) {
+        if (!jobRecordsMapExists()) {
+            // It is possible that master node does not see IMap when other members
+            // are going through after-hot-restart tasks. To avoid possible snapshot
+            // deletion we cannot perform cleanup in such case.
+            //
+            // The only drawback is that after job records IMap is somehow deleted,
+            // old snapshots will not be cleared until new a job is submitted.
+            // But that should usually not happen.
+            logger.fine("Skipping job cleanup because job records IMap does not exist");
+            return;
+        }
+
         long start = System.nanoTime();
 
         cleanupMaps(nodeEngine);
