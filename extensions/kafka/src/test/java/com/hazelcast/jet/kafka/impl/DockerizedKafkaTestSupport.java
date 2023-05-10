@@ -28,7 +28,7 @@ import java.util.Properties;
 
 class DockerizedKafkaTestSupport extends KafkaTestSupport {
 
-    private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.1.1");
+    private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.4.0");
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerizedKafkaTestSupport.class);
 
     private KafkaContainer kafkaContainer;
