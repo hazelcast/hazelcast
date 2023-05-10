@@ -20,7 +20,6 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 
 import java.time.Duration;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 public class NonClosingKafkaProducer<K, V> extends KafkaProducer<K, V> {
 
