@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class HikariTranslator {
 
-    private static final String HIKARI_PREFIX = "hikari";
+    private static final String HIKARI_PREFIX = "hikari.";
     private static final Map<String, String> PROPERTY_MAP = new HashMap<>();
 
     private final AtomicInteger poolCounter;
@@ -54,7 +54,7 @@ public class HikariTranslator {
             if (PROPERTY_MAP.containsKey(keyString)) {
                 hikariProperties.put(keyString, value);
             } else if (keyString.startsWith(HIKARI_PREFIX)) {
-                String keyNoPrefix = keyString.substring(HIKARI_PREFIX.length() + 1);
+                String keyNoPrefix = keyString.substring(HIKARI_PREFIX.length());
                 hikariProperties.put(keyNoPrefix, source.get(keyString));
             } else {
                 hikariProperties.put("dataSource." + keyString, value);

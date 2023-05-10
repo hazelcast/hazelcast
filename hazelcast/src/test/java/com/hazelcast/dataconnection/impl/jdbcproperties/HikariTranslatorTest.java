@@ -71,8 +71,10 @@ public class HikariTranslatorTest {
         String connectionInitSql = "foo";
 
         hzProperties.put("hikari.connectionInitSql", connectionInitSql);
+        hzProperties.put("hikariabc", "value");
 
         Properties hikariProperties = hikariTranslator.translate(hzProperties);
+        assertThat(hikariProperties).containsEntry("dataSource.hikariabc", "value");
         HikariConfig hikariConfig = new HikariConfig(hikariProperties);
 
         assertThat(hikariConfig.getConnectionInitSql()).isEqualTo(connectionInitSql);
