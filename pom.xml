@@ -114,7 +114,7 @@
         <mysql.connector.version>8.0.20</mysql.connector.version>
         <netty.version>4.1.86.Final</netty.version>
         <osgi.version>4.2.0</osgi.version>
-        <parquet.version>1.12.3</parquet.version>
+        <parquet.version>1.13.0</parquet.version>
         <picocli.version>4.4.0</picocli.version>
         <postgresql.version>42.4.2</postgresql.version>
         <prometheus.version>0.18.0</prometheus.version>
