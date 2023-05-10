@@ -456,7 +456,7 @@ public class JobRepository {
             // deletion we cannot perform cleanup in such case.
             //
             // The only drawback is that after job records IMap is somehow deleted,
-            // old snapshots will not be cleared until new a job is submitted.
+            // old snapshots and resources will not be cleared until new a job is submitted.
             // But that should usually not happen.
             logger.fine("Skipping job cleanup because job records IMap does not exist");
             return;
