@@ -47,6 +47,23 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
         return jdbcUrl;
     }
 
+    @Override
+    public String noAuthJdbcUrl() {
+        return container.getJdbcUrl()
+                        .replaceAll("&?user=root", "")
+                        .replaceAll("&?password=test", "");
+    }
+
+    @Override
+    public String user() {
+        return "root";
+    }
+
+    @Override
+    public String password() {
+        return "test";
+    }
+
     public MySQLContainer<?> container() {
         return container;
     }

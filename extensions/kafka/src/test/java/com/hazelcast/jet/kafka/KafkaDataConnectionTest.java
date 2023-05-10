@@ -69,12 +69,27 @@ public class KafkaDataConnectionTest {
 
     @Test
     public void should_create_new_consumer_for_each_call() {
-        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+        kafkaDataConnection = createNonSharedKafkaDataConnection();
 
         try (Consumer<Object, Object> c1 = kafkaDataConnection.newConsumer();
              Consumer<Object, Object> c2 = kafkaDataConnection.newConsumer()) {
             assertThat(c1).isNotSameAs(c2);
         }
+    }
+
+    @Test
+    public void newConsumer_should_fail_with_shared_data_connection() {
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+
+        assertThatThrownBy(() -> kafkaDataConnection.newConsumer())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("KafkaConsumer is not thread-safe and can't be used"
+                        + " with shared DataConnection 'kafka-data-connection'");
+
+        assertThatThrownBy(() -> kafkaDataConnection.newConsumer(new Properties()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("KafkaConsumer is not thread-safe and can't be used"
+                        + " with shared DataConnection 'kafka-data-connection'");
     }
 
     @Test

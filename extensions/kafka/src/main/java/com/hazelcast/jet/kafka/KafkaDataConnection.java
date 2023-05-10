@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 @Beta
 public class KafkaDataConnection extends DataConnectionBase {
 
+    private static final Properties EMPTY_PROPERTIES = new Properties();
     private volatile ConcurrentMemoizingSupplier<NonClosingKafkaProducer<?, ?>> producerSupplier;
 
     /**
@@ -106,7 +107,7 @@ public class KafkaDataConnection extends DataConnectionBase {
      */
     @Nonnull
     public <K, V> Consumer<K, V> newConsumer() {
-        return new KafkaConsumer<>(getConfig().getProperties());
+        return newConsumer(EMPTY_PROPERTIES);
     }
 
     /**
@@ -121,6 +122,10 @@ public class KafkaDataConnection extends DataConnectionBase {
      */
     @Nonnull
     public <K, V> Consumer<K, V> newConsumer(Properties properties) {
+        if (getConfig().isShared()) {
+            throw new IllegalArgumentException("KafkaConsumer is not thread-safe and can't be used "
+                    + "with shared DataConnection '" + getConfig().getName() + "'");
+        }
         return new KafkaConsumer<>(Util.mergeProps(getConfig().getProperties(), properties));
     }
 
@@ -192,18 +197,21 @@ public class KafkaDataConnection extends DataConnectionBase {
         Properties configProperties = getConfig().getProperties();
 
         boolean inputPropsAreSubsetOfConfigProps = inputPropsAreSubsetOfConfigProps(properties);
-        if (getConfig().isShared() && !properties.isEmpty() && !inputPropsAreSubsetOfConfigProps) {
-            throw new HazelcastException("For shared Kafka producer, please provide all serialization options" +
-                    "at the DATA CONNECTION level (i.e. 'key.serializer')." +
-                    " Only 'keyFormat' and 'valueFormat' are required at the mapping level," +
-                    " however these options are ignored currently.");
+        if (getConfig().isShared()) {
+            if (!properties.isEmpty() && !inputPropsAreSubsetOfConfigProps) {
+                throw new HazelcastException("For shared Kafka producer, please provide all serialization options" +
+                        "at the DATA CONNECTION level (i.e. 'key.serializer')." +
+                        " Only 'keyFormat' and 'valueFormat' are required at the mapping level," +
+                        " however these options are ignored currently.");
+            } else {
+                retain();
+                //noinspection unchecked
+                return (KafkaProducer<K, V>) producerSupplier.get();
+            }
         }
 
-        Properties props = configProperties;
-        // If argument properties map is a subset of data connection properties map, just skip that merge.
-        if (!getConfig().isShared() || inputPropsAreSubsetOfConfigProps) {
-            props = Util.mergeProps(configProperties, properties);
-        }
+        // Next, we have only non-shared producer creation process.
+        Properties props = Util.mergeProps(configProperties, properties);
 
         if (transactionalId != null) {
             props.put("transactional.id", transactionalId);

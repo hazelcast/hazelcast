@@ -40,6 +40,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -336,11 +337,13 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         sqlService.executeUpdate("DROP DATA CONNECTION " + dcName);
 
         // then
-        assertRowsAnyOrder("SHOW DATA CONNECTIONS ", singletonList(new Row(TEST_DATABASE_REF, "jdbc",
-                jsonArray("Table"))));
+        List<Row> showDataConnections = allRows("SHOW DATA CONNECTIONS ", sqlService);
+        Row expectedConnection = new Row(TEST_DATABASE_REF, "jdbc", jsonArray("Table"));
+        assertThat(showDataConnections).contains(expectedConnection);
 
         // Ensure that engine is not broken after Data Connection removal with some unrelated query.
-        assertRowsAnyOrder("SHOW MAPPINGS ", singletonList(new Row(mappingName)));
+        List<Row> showMappings = allRows("SHOW MAPPINGS ", sqlService);
+        assertThat(showMappings).contains(new Row(mappingName));
 
         // Mapping shouldn't provide data, since data connection was removed.
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + mappingName))
@@ -485,7 +488,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
-    // Postgres + MySQL : Test that table in another DB exist
+    // Postgres + MySQL : Test that table in another DB exists
     @Test
     public void createMappingFails_tableExistInAnotherDatabase_externalNameOnlyTableName() throws SQLException {
         assumeThat(databaseProvider)

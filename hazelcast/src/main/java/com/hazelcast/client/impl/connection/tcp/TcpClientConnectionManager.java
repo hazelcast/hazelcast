@@ -1067,8 +1067,18 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     });
                 } else {
                     establishedInitialClusterConnection = true;
-                    clientState = ClientState.INITIALIZED_ON_CLUSTER;
-                    fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
+                    if (!asyncStart) {
+                        // For a sync start client, we will send the client state as the last statement of Client instance
+                        // construction. Therefore, we can change client state and send the event here.
+                        clientState = ClientState.INITIALIZED_ON_CLUSTER;
+                        fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
+                    } else {
+                        // For async clients, we return the client instance to the user without waiting for the client
+                        // state to be sent. The state should be INITIALIZED_ON_CLUSTER after we send the client state.
+                        // Also the CLIENT_CONNECTED event should be fired after the state is sent. initializeClientOnCluster
+                        // will handle all of that.
+                        executor.execute(() -> initializeClientOnCluster(clusterId));
+                    }
                 }
             }
 

@@ -19,6 +19,10 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,14 +32,26 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
     @Test
     public void createsConnection() {
         String dlName = randomName();
-        instance().getSql().execute("CREATE DATA CONNECTION " + dlName + " TYPE Mongo SHARED " + options()).close();
-
+        try (MongoClient client = MongoClients.create(connectionString)) {
+            client.getDatabase("test1").createCollection("test2");
+        }
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName + " TYPE Mongo SHARED " + options());
 
         DataConnection dataConnection = getNodeEngineImpl(
                 instance()).getDataConnectionService().getAndRetainDataConnection(dlName, MongoDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
         assertThat(dataConnection.getConfig().getType()).isEqualTo("Mongo");
+
+        try (SqlResult result = instance().getSql().execute("SHOW RESOURCES FOR " + dlName)) {
+            boolean hasCollectionWeWanted = false;
+            for (SqlRow row : result) {
+                if (row.getObject("name").equals("\"test1\".\"test2\"")) {
+                    hasCollectionWeWanted = true;
+                }
+            }
+            assertThat(hasCollectionWeWanted).isTrue();
+        }
     }
 
     @Test
@@ -55,7 +71,6 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
         String sharedString = shared ? " SHARED " : " ";
         instance().getSql().execute("CREATE DATA CONNECTION " + dataConnName + " TYPE Mongo " + sharedString + options)
                 .close();
-
 
         DataConnection dataConnection = getNodeEngineImpl(
                 instance()).getDataConnectionService().getAndRetainDataConnection(dataConnName, MongoDataConnection.class);

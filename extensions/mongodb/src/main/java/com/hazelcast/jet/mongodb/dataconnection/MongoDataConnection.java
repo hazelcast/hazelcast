@@ -194,8 +194,8 @@ public class MongoDataConnection extends DataConnectionBase {
 
     private static void addResources(List<DataConnectionResource> resources, MongoDatabase database) {
         for (String collectionName : database.listCollectionNames()) {
-            resources.add(new DataConnectionResource("Collection", database.getName() + "." + collectionName));
-            resources.add(new DataConnectionResource("ChangeStream", database.getName() + "." + collectionName));
+            resources.add(new DataConnectionResource("Collection", database.getName(), collectionName));
+            resources.add(new DataConnectionResource("ChangeStream", database.getName(), collectionName));
         }
     }
 

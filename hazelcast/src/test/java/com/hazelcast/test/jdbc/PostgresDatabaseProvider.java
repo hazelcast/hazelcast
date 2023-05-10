@@ -39,6 +39,23 @@ public class PostgresDatabaseProvider implements TestDatabaseProvider {
     }
 
     @Override
+    public String noAuthJdbcUrl() {
+        return container.getJdbcUrl()
+                        .replaceAll("&?user=test", "")
+                        .replaceAll("&?password=test", "");
+    }
+
+    @Override
+    public String user() {
+        return "test";
+    }
+
+    @Override
+    public String password() {
+        return "test";
+    }
+
+    @Override
     public void shutdown() {
         if (container != null) {
             container.stop();
