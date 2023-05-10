@@ -938,6 +938,24 @@ public class JobCoordinationService {
         return true;
     }
 
+    boolean shouldScanJobs() {
+        if (!jobRepository.jobRecordsMapExists()) {
+            // It does not make sense to scan for jobs when the IMap does not exist.
+            //
+            // It is possible that master node does not see IMap when other members
+            // are going through after-hot-restart tasks. To avoid possible snapshot
+            // deletion we cannot scan for jobs in such case.
+            //
+            // The only drawback is that after job records IMap is somehow deleted,
+            // old snapshots will not be cleared until new a job is submitted.
+            // But that should usually not happen.
+            logger.fine("Not scanning jobs because job records IMap does not exist.");
+            return false;
+        }
+
+        return true;
+    }
+
     private CompletableFuture<Void> runWithJob(
             long jobId,
             @Nonnull Consumer<MasterContext> masterContextHandler,
@@ -1354,7 +1372,7 @@ public class JobCoordinationService {
             // explicit check for master because we don't want to use shorter delay on non-master nodes
             // it will be checked again in shouldStartJobs()
             if (isMaster()) {
-                if (shouldStartJobs()) {
+                if (shouldStartJobs() && shouldScanJobs()) {
                     doScanJobs();
                 } else {
                     // use a smaller delay when cluster is not in ready state

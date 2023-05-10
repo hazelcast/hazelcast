@@ -576,9 +576,12 @@ public class JobRepository {
         return jobRecordsMap().values();
     }
 
+    public boolean jobRecordsMapExists() {
+        return ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME);
+    }
+
     private Map<Long, JobRecord> jobRecordsMap() {
-        if (jobRecords.remembered() != null ||
-                ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME)) {
+        if (jobRecords.remembered() != null || jobRecordsMapExists()) {
             return jobRecords.get();
         }
         return Collections.emptyMap();
