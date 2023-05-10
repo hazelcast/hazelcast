@@ -50,7 +50,6 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.EmptyStatement;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.jet.impl.execution.TaskletExecutionException;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -190,7 +189,6 @@ import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.STALE_
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TARGET_DISCONNECTED;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TARGET_NOT_MEMBER;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TARGET_NOT_REPLICA_EXCEPTION;
-import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TASKLET_EXECUTION_ERROR;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TIMEOUT;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TOPIC_OVERLOAD;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.TRANSACTION;
@@ -325,7 +323,6 @@ public class ClientExceptionFactory {
         register(NO_SUCH_FIELD_ERROR, NoSuchFieldError.class, ((message, cause) -> new NoSuchFieldError(message)));
         register(NO_SUCH_FIELD_EXCEPTION, NoSuchFieldException.class, ((message, cause) -> new NoSuchFieldException(message)));
         register(NO_CLASS_DEF_FOUND_ERROR, NoClassDefFoundError.class, ((message, cause) -> new NoClassDefFoundError(message)));
-        register(TASKLET_EXECUTION_ERROR, TaskletExecutionException.class, ((message, cause) -> new TaskletExecutionException(message)));
     }
 
     public Throwable createException(ClientMessage clientMessage) {
