@@ -46,7 +46,7 @@ public final class DataConnectionTestUtil {
     public static void configureJdbcDataConnection(String name, String jdbcUrl, String username, String password, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
-        properties.put("username", username);
+        properties.put("user", username);
         properties.put("password", password);
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName(name)
