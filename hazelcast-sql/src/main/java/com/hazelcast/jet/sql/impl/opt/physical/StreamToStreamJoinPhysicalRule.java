@@ -25,6 +25,7 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
@@ -45,6 +46,9 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.metadataQuery;
 import static com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRule.Config.DEFAULT;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.hasSameTypeFamily;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNumericIntegerType;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isTemporalType;
 
 @Value.Enclosing
 public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config> {
@@ -308,7 +312,11 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             RexCall call = (RexCall) expr;
             if (call.isA(SqlKind.CAST)) {
                 RexNode inputRef = call.getOperands().get(0);
-                return addAddends(inputRef, positiveField, negativeField, constantsSum, inverse);
+                RelDataType type = inputRef.getType();
+                // Only integer and temporal types are supported for watermarking for S2S JOIN.
+                if (hasSameTypeFamily(type, call.getType()) && (isNumericIntegerType(type) || isTemporalType(type))) {
+                    return addAddends(inputRef, positiveField, negativeField, constantsSum, inverse);
+                }
             }
         }
 

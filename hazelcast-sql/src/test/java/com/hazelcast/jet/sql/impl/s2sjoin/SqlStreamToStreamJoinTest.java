@@ -633,7 +633,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_joinWithImplicitCasts() {
+    public void test_joinWithImplicitCastsInJoinCondition() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -656,5 +656,32 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         assertTipOfStream(
                 "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + 1",
                 singletonList(new Row(0, 0)));
+    }
+
+    @Test
+    public void test_joinWithUnsupportedCastsInJoinCondition() {
+        String stream = "stream1";
+        TestStreamSqlConnector.create(
+                sqlService,
+                stream,
+                singletonList("a"),
+                singletonList(INTEGER),
+                row(0));
+
+        String stream2 = "stream2";
+        TestStreamSqlConnector.create(
+                sqlService,
+                stream2,
+                singletonList("b"),
+                singletonList(INTEGER),
+                row(0));
+
+        sqlService.execute("CREATE VIEW s1 AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), 1))");
+        sqlService.execute("CREATE VIEW s2 AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), 1))");
+
+        assertThatThrownBy(() ->
+                sqlService.execute("SELECT * FROM s1 JOIN s2 ON s2.b " +
+                        "BETWEEN s1.a AND CAST(CAST(s1.a as VARCHAR) AS TIMESTAMP) + INTERVAL '10' SECONDS"))
+                .hasMessageContaining("A stream-to-stream join must have a join condition constraining");
     }
 }
