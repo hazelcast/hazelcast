@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
@@ -226,11 +227,13 @@ public class TaskletExecutionService {
             }
         }
         if (firstFailure != null) {
-            throw new TaskletExecutionException(String.format(
+            String message = String.format(
                     "%,d of %,d tasklets failed to initialize." +
                             " One of the failures is attached as the cause and its summary is %s",
                     failureCount, futures.size(), firstFailure
-            ), firstFailure);
+            );
+            TaskletExecutionException silencingException = new TaskletExecutionException(message, firstFailure);
+            throw new JetException(message, silencingException);
         }
     }
 
@@ -282,7 +285,9 @@ public class TaskletExecutionService {
             t.executionTracker.exception(e);
         } else {
             logger.info("Exception in " + t.tasklet, e);
-            t.executionTracker.exception(new TaskletExecutionException("Exception in " + t.tasklet + ": " + e, e));
+            String message = "Exception in " + t.tasklet + ": " + e;
+            Exception silencingException = new TaskletExecutionException(message, e);
+            t.executionTracker.exception(new JetException(message, silencingException));
         }
     }
 

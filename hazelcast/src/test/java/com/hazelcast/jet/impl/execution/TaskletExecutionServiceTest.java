@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
@@ -151,7 +152,7 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         // When - Then
         assertThatThrownBy(() -> executeAndJoin(singletonList(t)))
                 .isInstanceOf(CompletionException.class)
-                .hasCauseInstanceOf(TaskletExecutionException.class)
+                .hasCauseInstanceOf(JetException.class)
                 .hasMessageContaining("mock init failure");
     }
 
@@ -185,7 +186,7 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         // When - Then
         assertThatThrownBy(() -> executeAndJoin(singletonList(t)))
                 .isInstanceOf(CompletionException.class)
-                .hasCauseInstanceOf(TaskletExecutionException.class)
+                .hasCauseInstanceOf(JetException.class)
                 .hasMessageContaining("mock init failure");
 
     }
@@ -198,7 +199,7 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         // When - Then
         assertThatThrownBy(() -> executeAndJoin(singletonList(t)))
                 .isInstanceOf(CompletionException.class)
-                .hasCauseInstanceOf(TaskletExecutionException.class)
+                .hasCauseInstanceOf(JetException.class)
                 .hasMessageContaining("mock call failure");
     }
 
@@ -210,7 +211,7 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         // When - Then
         assertThatThrownBy(() -> executeAndJoin(singletonList(t)))
                 .isInstanceOf(CompletionException.class)
-                .hasCauseInstanceOf(TaskletExecutionException.class)
+                .hasCauseInstanceOf(JetException.class)
                 .hasMessageContaining("mock call failure");
     }
 
