@@ -47,7 +47,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.google.common.primitives.Ints.asList;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
