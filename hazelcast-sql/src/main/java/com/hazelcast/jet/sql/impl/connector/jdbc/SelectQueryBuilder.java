@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
+import org.apache.calcite.rel.rel2sql.SqlImplementor;
+import org.apache.calcite.rel.rel2sql.SqlImplementor.Context;
 import org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
@@ -28,14 +31,14 @@ import java.util.List;
 
 class SelectQueryBuilder extends AbstractQueryBuilder {
 
-    private final SimpleContext simpleContext;
+    private final Context context;
     private final ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
 
     @SuppressWarnings("ExecutableStatementCount")
     SelectQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect, RexNode filter, List<RexNode> projects) {
         super(jdbcTable, dialect);
 
-        simpleContext = new SimpleContext(this.dialect, value -> {
+        context = new CustomContext(this.dialect, value -> {
             JdbcTableField field = jdbcTable.getField(value);
             return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
         });
@@ -50,7 +53,7 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
         sb.append(" FROM ");
         this.dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
         if (filter != null) {
-            SqlNode sqlNode = simpleContext.toSql(null, filter);
+            SqlNode sqlNode = context.toSql(null, filter);
             sqlNode.accept(paramCollectingVisitor);
             String predicateFragment = sqlNode.toSqlString(this.dialect).toString();
 
@@ -64,7 +67,7 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
         Iterator<RexNode> it = projects.iterator();
         while (it.hasNext()) {
             RexNode node = it.next();
-            sb.append(simpleContext.toSql(null, node).toSqlString(dialect).toString());
+            sb.append(context.toSql(null, node).toSqlString(dialect).toString());
             if (it.hasNext()) {
                 sb.append(',');
             }

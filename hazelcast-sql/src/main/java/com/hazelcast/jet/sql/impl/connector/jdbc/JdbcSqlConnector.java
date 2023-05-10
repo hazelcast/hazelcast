@@ -19,11 +19,17 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.connector.ConvenientSourceP;
+import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSide;
+import com.hazelcast.jet.impl.pipeline.SourceBufferImpl.Plain;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mysql.HazelcastMySqlDialect;
@@ -356,14 +362,10 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Override
     public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
-        // TODO return true for supported expressions
-        return false;
-    }
-
-    @Override
-    public boolean dmlSupportsPredicates() {
-        // TODO remove this method
-        return false;
+        RexNode rexNode = expression.unwrap(RexNode.class);
+        SupportsRexVisitor visitor = new SupportsRexVisitor();
+        Boolean supports = rexNode.accept(visitor);
+        return supports;
     }
 
     @Nonnull
