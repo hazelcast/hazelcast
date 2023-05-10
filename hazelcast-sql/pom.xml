@@ -39,9 +39,10 @@
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
         <calcite.version>1.28.0</calcite.version>
-        <confluent.version>4.1.4</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
         <avatica-core.version>1.22.0</avatica-core.version>
+        <confluent.version>7.4.0</confluent.version>
+        <immutables.version>2.9.3</immutables.version>
     </properties>
 
     <build>
