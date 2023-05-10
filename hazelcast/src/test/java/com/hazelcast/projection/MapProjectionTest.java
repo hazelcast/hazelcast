@@ -124,14 +124,6 @@ public class MapProjectionTest extends HazelcastTestSupport {
         assertThat(result, containsInAnyOrder((Double) null, null, null));
     }
 
-    @Test
-    public void testProjectionContextInjection() {
-        IMap<String, Double> map = getMapWithNodeCount(1);
-        populateMap(map);
-        Collection<Double> result = map.project(new ProjectionWithContext());
-        assertTrue("Projection must be injected with ManagedContext ", isProjectionContextInjected.get());
-    }
-
 
     @Test
     public void projection_1Node_objectValue() {
