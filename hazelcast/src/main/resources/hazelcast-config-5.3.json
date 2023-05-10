@@ -3006,7 +3006,14 @@
         "write",
         "instance",
         "member",
-        "migration"
+        "migration",
+        "create-view",
+        "drop-view",
+        "create-type",
+        "drop-type",
+        "view-dataconnection",
+        "create-dataconnection",
+        "drop-dataconnection"
       ]
     },
     "Capacity": {
