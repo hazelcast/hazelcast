@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 @Beta
 public class KafkaDataConnection extends DataConnectionBase {
 
+    private static final Properties EMPTY_PROPERTIES = new Properties();
     private volatile ConcurrentMemoizingSupplier<NonClosingKafkaProducer<?, ?>> producerSupplier;
 
     /**
@@ -106,7 +107,7 @@ public class KafkaDataConnection extends DataConnectionBase {
      */
     @Nonnull
     public <K, V> Consumer<K, V> newConsumer() {
-        return new KafkaConsumer<>(getConfig().getProperties());
+        return newConsumer(EMPTY_PROPERTIES);
     }
 
     /**
@@ -121,6 +122,10 @@ public class KafkaDataConnection extends DataConnectionBase {
      */
     @Nonnull
     public <K, V> Consumer<K, V> newConsumer(Properties properties) {
+        if (getConfig().isShared()) {
+            throw new IllegalArgumentException("KafkaConsumer is not thread-safe and can't be used "
+                    + "with shared DataConnection '" + getConfig().getName() + "'");
+        }
         return new KafkaConsumer<>(Util.mergeProps(getConfig().getProperties(), properties));
     }
 
