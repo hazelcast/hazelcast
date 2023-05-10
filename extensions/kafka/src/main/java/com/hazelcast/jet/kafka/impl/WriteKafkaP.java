@@ -181,8 +181,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         properties2.put("transactional.id", txnId.getKafkaId());
         try (KafkaProducer<?, ?> p  = new KafkaProducer<>(properties2)) {
             if (commit) {
-                ResumeTransactionUtil.resumeTransaction(p, txnId.producerId(), txnId.epoch(),
-                        txnId.getKafkaId());
+                ResumeTransactionUtil.resumeTransaction(p, txnId.producerId(), txnId.epoch());
                 try {
                     p.commitTransaction();
                 } catch (InvalidTxnStateException e) {
