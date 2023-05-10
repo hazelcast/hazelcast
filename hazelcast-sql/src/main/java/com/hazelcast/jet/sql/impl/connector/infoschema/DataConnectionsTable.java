@@ -33,13 +33,13 @@ public class DataConnectionsTable extends InfoSchemaTable {
     private static final String NAME = "dataconnections";
 
     private static final List<TableField> FIELDS = asList(
-            new TableField("dataconnection_catalog", QueryDataType.VARCHAR, false),
-            new TableField("dataconnection_schema", QueryDataType.VARCHAR, false),
-            new TableField("dataconnection_name", QueryDataType.VARCHAR, false),
-            new TableField("dataconnection_type", QueryDataType.VARCHAR, false),
-            new TableField("dataconnection_shared", QueryDataType.BOOLEAN, false),
-            new TableField("dataconnection_options", QueryDataType.VARCHAR, false),
-            new TableField("dataconnection_source", QueryDataType.VARCHAR, false)
+            new TableField("catalog", QueryDataType.VARCHAR, false),
+            new TableField("schema", QueryDataType.VARCHAR, false),
+            new TableField("name", QueryDataType.VARCHAR, false),
+            new TableField("type", QueryDataType.VARCHAR, false),
+            new TableField("shared", QueryDataType.BOOLEAN, false),
+            new TableField("options", QueryDataType.VARCHAR, false),
+            new TableField("source", QueryDataType.VARCHAR, false)
     );
 
     private final String dataConnectionSchema;

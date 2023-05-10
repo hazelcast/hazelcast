@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl.DataConnectionSource;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.sql.impl.connector.infoschema.DataConnectionsTable;
 import com.hazelcast.sql.impl.QueryException;
@@ -29,7 +31,7 @@ import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
@@ -147,8 +149,12 @@ public class DataConnectionResolver implements TableResolver {
         conn.addAll(dataConnectionService.getSqlCreatedDataConnections());
 
         return conn.stream()
-                   .map(dc -> Arrays.asList(dc.getName(), new ArrayList<>(dc.resourceTypes())))
+                   .map(dc -> asList(dc.getName(), dc.getConfig().getType(), jsonArray(dc.resourceTypes())))
                    .collect(toList());
+    }
+
+    private static HazelcastJsonValue jsonArray(Collection<String> values) {
+        return new HazelcastJsonValue(Json.array(values.toArray(new String[0])).toString());
     }
 
     @Override

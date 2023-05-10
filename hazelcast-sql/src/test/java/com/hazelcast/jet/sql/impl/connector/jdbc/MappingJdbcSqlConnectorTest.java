@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.jet.sql.SqlJsonTestSupport.jsonArray;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -337,7 +338,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         // then
         List<Row> showDataConnections = allRows("SHOW DATA CONNECTIONS ", sqlService);
-        Row expectedConnection = (new Row(TEST_DATABASE_REF, singletonList("Table")));
+        Row expectedConnection = new Row(TEST_DATABASE_REF, "jdbc", jsonArray("Table"));
         assertThat(showDataConnections).contains(expectedConnection);
 
         // Ensure that engine is not broken after Data Connection removal with some unrelated query.
