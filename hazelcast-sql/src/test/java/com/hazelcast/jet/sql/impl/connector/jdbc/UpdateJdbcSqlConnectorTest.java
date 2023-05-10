@@ -176,6 +176,30 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void updateTableSetUsingExpressionWithTableColumnNoPushDown() throws Exception {
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)", "data VARCHAR(100)");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', '{\"value\":0}')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', '{\"value\":1}')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(2, 'name-2', '{\"value\":2}')");
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id INT, "
+                        + " name VARCHAR, "
+                        + " data VARCHAR"
+                        + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        execute("UPDATE " + tableName + " SET name = 'updated-'||id WHERE JSON_QUERY(data, '$.value') = '2'");
+
+        assertJdbcQueryRowsAnyOrder("SELECT id, name FROM " + tableName,
+                new Row(0, "name-0"),
+                new Row(1, "name-1"),
+                new Row(2, "updated-2")
+        );
+    }
+
+    @Test
     public void updateTableSetUsingQueryParameter() throws Exception {
         createTable(tableName);
         insertItems(tableName, 1);

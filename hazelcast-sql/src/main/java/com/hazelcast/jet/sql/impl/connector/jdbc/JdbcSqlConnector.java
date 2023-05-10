@@ -370,9 +370,9 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Override
     public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
-        RexNode rexNode = expression.unwrap(RexNode.class);
+        RexNode rexExpression = expression.unwrap(RexNode.class);
         SupportsRexVisitor visitor = new SupportsRexVisitor();
-        Boolean supports = rexNode.accept(visitor);
+        Boolean supports = rexExpression.accept(visitor);
         return supports != null ? supports : false;
     }
 
@@ -395,7 +395,6 @@ public class JdbcSqlConnector implements SqlConnector {
 
         UpdateQueryBuilder builder = new UpdateQueryBuilder(table,
                 resolveDialect(table, context),
-                table.getPrimaryKeyList(),
                 fieldNames,
                 rexExpressions,
                 rexPredicate,
@@ -405,7 +404,8 @@ public class JdbcSqlConnector implements SqlConnector {
         DMLProcessorSupplier updatePS = new DMLProcessorSupplier(
                 table.getDataConnectionName(),
                 builder.query(),
-                builder.parameterPositions(),
+                builder.dynamicParams(),
+                builder.inputRefs(),
                 table.getBatchLimit()
         );
 
@@ -435,7 +435,8 @@ public class JdbcSqlConnector implements SqlConnector {
         DMLProcessorSupplier deletePS = new DMLProcessorSupplier(
                 table.getDataConnectionName(),
                 builder.query(),
-                builder.parameterPositions(),
+                builder.dynamicParams(),
+                builder.inputRefs(),
                 table.getBatchLimit()
         );
 

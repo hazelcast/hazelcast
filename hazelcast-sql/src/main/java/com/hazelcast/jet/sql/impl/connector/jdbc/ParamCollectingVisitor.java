@@ -20,7 +20,6 @@ import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,7 +27,11 @@ import java.util.List;
  */
 class ParamCollectingVisitor extends SqlBasicVisitor<SqlNode> {
 
-    private final List<Integer> parameterPositions = new ArrayList<>();
+    private final List<Integer> parameterPositions;
+
+    ParamCollectingVisitor(List<Integer> parameterPositions) {
+        this.parameterPositions = parameterPositions;
+    }
 
     @Override
     public SqlNode visit(SqlDynamicParam param) {

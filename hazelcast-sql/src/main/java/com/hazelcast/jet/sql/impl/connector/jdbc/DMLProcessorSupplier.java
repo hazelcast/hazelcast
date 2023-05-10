@@ -45,7 +45,8 @@ public class DMLProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
     private String query;
-    private int[] parameterPositions;
+    private int[] dynamicParams;
+    private int[] inputRefs;
     private int batchLimit;
 
     private transient ExpressionEvalContext evalContext;
@@ -55,19 +56,22 @@ public class DMLProcessorSupplier
     }
 
     /**
-     * @param parameterPositions An array specifying what to bind as i-th
-     *     parameter value. Positive value is input reference, negative value
-     *     ({@code -i - 1}) is dynamic argument reference.
+     * @param dynamicParams An array specifying what argument to bind as i-th
+     *                      parameter value.
+     * @param inputRefs     An array specifying what input reference to bind as
+     *                      j-th parameter value, starting at i-th index equal to dynamicParams size
      */
     public DMLProcessorSupplier(
             @Nonnull String dataConnectionName,
             @Nonnull String query,
-            @Nonnull int[] parameterPositions,
+            @Nonnull int[] dynamicParams,
+            @Nonnull int[] inputRefs,
             int batchLimit
     ) {
         super(dataConnectionName);
         this.query = requireNonNull(query, "query must not be null");
-        this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
+        this.dynamicParams = requireNonNull(dynamicParams, "dynamicParams must not be null");
+        this.inputRefs = requireNonNull(inputRefs, "inputRefs must not be null");
         this.batchLimit = batchLimit;
     }
 
@@ -88,12 +92,14 @@ public class DMLProcessorSupplier
                     (PreparedStatement ps, JetSqlRow row) -> {
                         List<Object> arguments = evalContext.getArguments();
 
-                        for (int j = 0; j < parameterPositions.length; j++) {
-                            int pos = parameterPositions[j];
-                            Object v = pos >= 0
-                                    ? arguments.get(pos)
-                                    : row.get(-pos - 1);
+                        for (int j = 0; j < dynamicParams.length; j++) {
+                            Object v = arguments.get(dynamicParams[j]);
                             ps.setObject(j + 1, v);
+                        }
+
+                        for (int j = 0; j < inputRefs.length; j++) {
+                            Object v = row.get(inputRefs[j]);
+                            ps.setObject(dynamicParams.length + j + 1, v);
                         }
 
                     },
@@ -115,7 +121,8 @@ public class DMLProcessorSupplier
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(dataConnectionName);
         out.writeString(query);
-        out.writeIntArray(parameterPositions);
+        out.writeIntArray(dynamicParams);
+        out.writeIntArray(inputRefs);
         out.writeInt(batchLimit);
     }
 
@@ -123,7 +130,8 @@ public class DMLProcessorSupplier
     public void readData(ObjectDataInput in) throws IOException {
         dataConnectionName = in.readString();
         query = in.readString();
-        parameterPositions = in.readIntArray();
+        dynamicParams = in.readIntArray();
+        inputRefs = in.readIntArray();
         batchLimit = in.readInt();
     }
 }
