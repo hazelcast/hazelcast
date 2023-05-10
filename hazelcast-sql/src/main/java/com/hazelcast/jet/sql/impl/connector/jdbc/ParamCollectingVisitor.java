@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.google.common.primitives.Ints;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
@@ -40,7 +39,7 @@ class ParamCollectingVisitor extends SqlBasicVisitor<SqlNode> {
     /**
      * Mapping of parameters in the built query to actual query parameters
      */
-    public int[] parameterPositions() {
-        return Ints.toArray(parameterPositions);
+    public List<Integer> parameterPositions() {
+        return parameterPositions;
     }
 }

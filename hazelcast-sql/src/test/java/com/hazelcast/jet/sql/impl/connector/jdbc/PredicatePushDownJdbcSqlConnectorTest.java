@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,12 +29,11 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -81,8 +79,8 @@ public class PredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "SELECT name FROM people WHERE name NOT IN ('Jane Doe', 'something')",
 
                 // IS Operator
-                "SELECT name FROM people WHERE nullableColumn IS NULL",
-                "SELECT name FROM people WHERE nullableColumnReverse IS NOT NULL",
+                "SELECT name FROM people WHERE nullable_column IS NULL",
+                "SELECT name FROM people WHERE nullable_column_reverse IS NOT NULL",
                 "SELECT name FROM people WHERE a IS TRUE",
                 "SELECT name FROM people WHERE c IS FALSE",
                 "SELECT name FROM people WHERE c IS NOT TRUE",
@@ -98,7 +96,7 @@ public class PredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "SELECT name FROM people WHERE CASE age WHEN 30 THEN TRUE ELSE FALSE END",
                 "SELECT name FROM people WHERE CASE WHEN age = 30 THEN TRUE ELSE FALSE END",
                 "SELECT name FROM people WHERE NULLIF(age, 30) IS NULL",
-                "SELECT name FROM people WHERE COALESCE(nullableColumn, nullableColumnReverse) = 'not null reverse'",
+                "SELECT name FROM people WHERE COALESCE(nullable_column, nullable_column_reverse) = 'not null reverse'",
 
                 // Conversions
                 "SELECT name FROM people WHERE CAST(age AS VARCHAR) = '30'",
@@ -118,18 +116,22 @@ public class PredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        initialize(new H2DatabaseProvider());
+        initializePredicatePushDownTest(new H2DatabaseProvider());
+    }
+
+    protected static void initializePredicatePushDownTest(TestDatabaseProvider provider) throws SQLException {
+        initialize(provider);
 
         tableName = "people";
 
         createTable(tableName,
                 "id INT PRIMARY KEY",
-                "name VARCHAR",
+                "name VARCHAR(100)",
                 "age INT",
-                "data VARCHAR",
+                "data VARCHAR(100)",
                 "a BOOLEAN", "b BOOLEAN", "c BOOLEAN", "d BOOLEAN",
-                "nullableColumn VARCHAR",
-                "nullableColumnReverse VARCHAR"
+                "nullable_column VARCHAR(100)",
+                "nullable_column_reverse VARCHAR(100)"
         );
 
         executeJdbc("INSERT INTO " + tableName + " VALUES (1, 'John Doe', 30, '{\"value\":42}', true, true, false, " +

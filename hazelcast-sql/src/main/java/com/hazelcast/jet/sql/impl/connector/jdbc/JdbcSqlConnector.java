@@ -21,13 +21,13 @@ import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP;
-import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSide;
-import com.hazelcast.jet.impl.pipeline.SourceBufferImpl.Plain;
+import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
@@ -61,10 +61,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
+import static com.hazelcast.jet.core.ProcessorSupplier.of;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 
 public class JdbcSqlConnector implements SqlConnector {
 
@@ -73,6 +74,8 @@ public class JdbcSqlConnector implements SqlConnector {
     public static final String OPTION_JDBC_BATCH_LIMIT = "jdbc.batch-limit";
 
     public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
+
+    private static final JetSqlRow FAKE_INPUT_ROW = new JetSqlRow(null, new Object[]{});
 
     @Override
     public String typeName() {
@@ -158,7 +161,7 @@ public class JdbcSqlConnector implements SqlConnector {
             return readColumns(externalTableName, databaseMetaData, pkColumns);
         } catch (Exception exception) {
             throw new HazelcastException("Could not execute readDbFields for table "
-                                         + quoteCompoundIdentifier(externalName), exception);
+                    + quoteCompoundIdentifier(externalName), exception);
         } finally {
             dataConnection.release();
         }
@@ -270,6 +273,9 @@ public class JdbcSqlConnector implements SqlConnector {
             ));
         }
 
+        int batchLimit = parseInt(
+                externalResource.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)
+        );
         return new JdbcTable(
                 this,
                 fields,
@@ -277,7 +283,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 mappingName,
                 externalResource,
                 new ConstantTableStatistics(0),
-                parseInt(externalResource.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE))
+                batchLimit
         );
     }
 
@@ -323,9 +329,11 @@ public class JdbcSqlConnector implements SqlConnector {
         JdbcTable table = context.getTable();
         SqlDialect dialect = resolveDialect(table, context);
 
-        List<RexNode> projections = Util.toList(projection, n -> n.unwrap(RexNode.class));
-        RexNode filter = predicate == null ? null : predicate.unwrap(RexNode.class);
-        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), dialect, filter, projections);
+        RexNode rexPredicate = predicate == null ? null : predicate.unwrap(RexNode.class);
+        List<RexNode> rexProjection = Util.toList(projection, n -> n.unwrap(RexNode.class));
+
+        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), dialect, rexPredicate, rexProjection);
+
         return context.getDag().newUniqueVertex(
                 "Select(" + table.getExternalNameList() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
@@ -365,7 +373,7 @@ public class JdbcSqlConnector implements SqlConnector {
         RexNode rexNode = expression.unwrap(RexNode.class);
         SupportsRexVisitor visitor = new SupportsRexVisitor();
         Boolean supports = rexNode.accept(visitor);
-        return supports;
+        return supports != null ? supports : false;
     }
 
     @Nonnull
@@ -377,56 +385,116 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nullable HazelcastRexNode predicate,
             boolean hasInput
     ) {
-        assert predicate == null;
-        assert hasInput;
+        // We don't allow both predicate and input at the same time
+        assert !(predicate != null && hasInput);
+
         JdbcTable table = context.getTable();
 
-        List<String> pkFields = getPrimaryKey(context.getTable())
-                .stream()
-                .map(f -> table.getField(f).externalName())
-                .collect(toList());
+        List<RexNode> rexExpressions = Util.toList(expressions, n -> n.unwrap(RexNode.class));
+        RexNode rexPredicate = predicate == null ? null : predicate.unwrap(RexNode.class);
 
-        List<RexNode> projections = Util.toList(expressions, n -> n.unwrap(RexNode.class));
-        UpdateQueryBuilder builder = new UpdateQueryBuilder(
-                table,
+        UpdateQueryBuilder builder = new UpdateQueryBuilder(table,
                 resolveDialect(table, context),
-                pkFields,
+                table.getPrimaryKeyList(),
                 fieldNames,
-                projections
+                rexExpressions,
+                rexPredicate,
+                hasInput
         );
 
-        return context.getDag().newUniqueVertex(
-                "Update(" + table.getExternalNameList() + ")",
-                new UpdateProcessorSupplier(
-                        table.getDataConnectionName(),
-                        builder.query(),
-                        builder.parameterPositions(),
-                        table.getBatchLimit()
-                )
+        DMLProcessorSupplier updatePS = new DMLProcessorSupplier(
+                table.getDataConnectionName(),
+                builder.query(),
+                builder.parameterPositions(),
+                table.getBatchLimit()
         );
+
+        return dmlVertex(context, hasInput, table, updatePS, "Update");
     }
 
     @Nonnull
     @Override
-    public Vertex deleteProcessor(@Nonnull DagBuildContext context, @Nullable HazelcastRexNode predicate, boolean hasInput) {
-        // TODO use the predicate
-        assert predicate == null;
+    public Vertex deleteProcessor(
+            @Nonnull DagBuildContext context,
+            @Nullable HazelcastRexNode predicate,
+            boolean hasInput
+    ) {
+        // We don't allow both predicate and input at the same time
+        assert !(predicate != null && hasInput);
+
         JdbcTable table = context.getTable();
 
-        List<String> pkFields = getPrimaryKey(context.getTable())
-                .stream()
-                .map(f -> table.getField(f).externalName())
-                .collect(toList());
+        RexNode rexPredicate = predicate == null ? null : predicate.unwrap(RexNode.class);
 
-        DeleteQueryBuilder builder = new DeleteQueryBuilder(table, pkFields, resolveDialect(table, context));
-        return context.getDag().newUniqueVertex(
-                "Delete(" + table.getExternalNameList() + ")",
-                new DeleteProcessorSupplier(
-                        table.getDataConnectionName(),
-                        builder.query(),
-                        table.getBatchLimit()
+        DeleteQueryBuilder builder = new DeleteQueryBuilder(table,
+                resolveDialect(table, context),
+                rexPredicate,
+                hasInput
+        );
+
+        DMLProcessorSupplier deletePS = new DMLProcessorSupplier(
+                table.getDataConnectionName(),
+                builder.query(),
+                builder.parameterPositions(),
+                table.getBatchLimit()
+        );
+
+        return dmlVertex(context, hasInput, table, deletePS, "Delete");
+    }
+
+    private static Vertex dmlVertex(
+            DagBuildContext context,
+            boolean hasInput,
+            JdbcTable table,
+            DMLProcessorSupplier processorSupplier,
+            String statement
+    ) {
+
+        if (!hasInput) {
+            // There is no input, we push the whole update query to the database, but we need single fake item
+            // to execute the update in WriteJdbcP
+            // We can consider refactoring the WriteJdbcP, so it doesn't need the fake item in the future.
+
+            // Create random partition key so the fake source and processor run on the same member
+            String partitionKey = UuidUtil.newUnsecureUuidString();
+
+            Vertex v = fakeSourceVertex(context, "FakeSourceFor" + statement, partitionKey);
+            Vertex updateVertex = context.getDag().newUniqueVertex(
+                    statement + "(" + table.getExternalNameList() + ")",
+                    forceTotalParallelismOne(processorSupplier, partitionKey)
+            );
+
+            context.getDag().edge(Edge.between(v, updateVertex));
+            return updateVertex;
+        } else {
+            Vertex updateVertex = context.getDag().newUniqueVertex(
+                    statement + "(" + table.getExternalNameList() + ")",
+                    processorSupplier
+            ).localParallelism(1);
+            return updateVertex;
+        }
+    }
+
+    private static Vertex fakeSourceVertex(DagBuildContext context, String name, String partitionKey) {
+        Vertex v = context.getDag().newUniqueVertex(name,
+                forceTotalParallelismOne(
+                        of(() -> new ConvenientSourceP<>(
+                                ExpressionEvalContext::from,
+                                (evalContext, buf) -> {
+                                    SourceBuffer<Object> buffer = (SourceBuffer<Object>) buf;
+                                    buffer.add(FAKE_INPUT_ROW);
+                                    buffer.close();
+                                },
+                                ctx -> null,
+                                (ctx, states) -> {
+                                },
+                                ConsumerEx.noop(),
+                                new SourceBufferImpl.Plain<>(true),
+                                null)),
+                        partitionKey
                 )
         );
+        return v;
     }
 
     @Nonnull
@@ -587,8 +655,8 @@ public class JdbcSqlConnector implements SqlConnector {
             // External name must have at least 1 and at most 3 components
             if (externalName.length == 0 || externalName.length > 3) {
                 throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
-                                           + ", external name for Jdbc must have either 1, 2 or 3 components "
-                                           + "(catalog, schema and relation)");
+                        + ", external name for Jdbc must have either 1, 2 or 3 components "
+                        + "(catalog, schema and relation)");
             }
         }
     }

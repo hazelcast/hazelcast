@@ -16,10 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import org.apache.calcite.rel.rel2sql.RelToSqlConverter;
-import org.apache.calcite.rel.rel2sql.SqlImplementor;
+import com.google.common.primitives.Ints;
 import org.apache.calcite.rel.rel2sql.SqlImplementor.Context;
-import org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -35,11 +33,11 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
     private final ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
 
     @SuppressWarnings("ExecutableStatementCount")
-    SelectQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect, RexNode filter, List<RexNode> projects) {
-        super(jdbcTable, dialect);
+    SelectQueryBuilder(JdbcTable table, SqlDialect dialect, RexNode filter, List<RexNode> projects) {
+        super(table, dialect);
 
         context = new CustomContext(this.dialect, value -> {
-            JdbcTableField field = jdbcTable.getField(value);
+            JdbcTableField field = table.getField(value);
             return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
         });
 
@@ -51,7 +49,7 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
             sb.append("*");
         }
         sb.append(" FROM ");
-        this.dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
+        this.dialect.quoteIdentifier(sb, table.getExternalNameList());
         if (filter != null) {
             SqlNode sqlNode = context.toSql(null, filter);
             sqlNode.accept(paramCollectingVisitor);
@@ -75,6 +73,6 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
     }
 
     int[] parameterPositions() {
-        return paramCollectingVisitor.parameterPositions();
+        return Ints.toArray(paramCollectingVisitor.parameterPositions());
     }
 }

@@ -40,7 +40,7 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
-public class UpdateProcessorSupplier
+public class DMLProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
@@ -51,7 +51,7 @@ public class UpdateProcessorSupplier
     private transient ExpressionEvalContext evalContext;
 
     @SuppressWarnings("unused")
-    public UpdateProcessorSupplier() {
+    public DMLProcessorSupplier() {
     }
 
     /**
@@ -59,7 +59,7 @@ public class UpdateProcessorSupplier
      *     parameter value. Positive value is input reference, negative value
      *     ({@code -i - 1}) is dynamic argument reference.
      */
-    public UpdateProcessorSupplier(
+    public DMLProcessorSupplier(
             @Nonnull String dataConnectionName,
             @Nonnull String query,
             @Nonnull int[] parameterPositions,
@@ -90,11 +90,12 @@ public class UpdateProcessorSupplier
 
                         for (int j = 0; j < parameterPositions.length; j++) {
                             int pos = parameterPositions[j];
-                            Object v = pos < 0
-                                    ? arguments.get(-pos - 1)
-                                    : row.get(pos);
+                            Object v = pos >= 0
+                                    ? arguments.get(pos)
+                                    : row.get(-pos - 1);
                             ps.setObject(j + 1, v);
                         }
+
                     },
                     false,
                     batchLimit
