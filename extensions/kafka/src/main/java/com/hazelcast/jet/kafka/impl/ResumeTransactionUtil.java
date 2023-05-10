@@ -44,23 +44,26 @@ final class ResumeTransactionUtil {
         Preconditions.checkState(producerId >= 0 && epoch >= 0,
                 "Incorrect values for producerId " + producerId + " and epoch " + epoch);
 
-        Object transactionManager = getValue(producer, "transactionManager");
-        Object nextSequence = getValue(transactionManager, "nextSequence");
+        Object transactionManager = getTransactionManager(producer);
+        synchronized (transactionManager) {
+            Object topicPartitionBookkeeper =
+                    getField(transactionManager, "txnPartitionMap");
 
-        invoke(transactionManager, "transitionTo",
-                getEnum("org.apache.kafka.clients.producer.internals.TransactionManager$State.INITIALIZING"));
-        invoke(nextSequence, "clear");
+            invoke(transactionManager, "transitionTo",
+                    getEnum("org.apache.kafka.clients.producer.internals.TransactionManager$State.INITIALIZING"));
+            invoke(nextSequence, "clear");
 
-        Object producerIdAndEpoch = getValue(transactionManager, "producerIdAndEpoch");
-        setValue(producerIdAndEpoch, "producerId", producerId);
-        setValue(producerIdAndEpoch, "epoch", epoch);
+            Object producerIdAndEpoch = getValue(transactionManager, "producerIdAndEpoch");
+            setValue(producerIdAndEpoch, "producerId", producerId);
+            setValue(producerIdAndEpoch, "epoch", epoch);
 
-        invoke(transactionManager, "transitionTo",
-                getEnum("org.apache.kafka.clients.producer.internals.TransactionManager$State.READY"));
+            invoke(transactionManager, "transitionTo",
+                    getEnum("org.apache.kafka.clients.producer.internals.TransactionManager$State.READY"));
 
-        invoke(transactionManager, "transitionTo",
-                getEnum("org.apache.kafka.clients.producer.internals.TransactionManager$State.IN_TRANSACTION"));
-        setValue(transactionManager, "transactionStarted", true);
+            invoke(transactionManager, "transitionTo",
+                    getEnum("org.apache.kafka.clients.producer.internals.TransactionManager$State.IN_TRANSACTION"));
+            setValue(transactionManager, "transactionStarted", true);
+        }
     }
 
     static long getProducerId(KafkaProducer kafkaProducer) {
