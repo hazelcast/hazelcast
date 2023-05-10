@@ -1051,7 +1051,7 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         JobConfig config = new JobConfig().setSuspendOnFailure(true).setMaxProcessorAccumulatedRecords(2);
         Job job = instance.getJet().newJob(pipeline, config);
-        assertJobStatusEventually(job, SUSPENDED);
+        assertJobSuspendedEventually(job);
         assertThat(job.getSuspensionCause().errorCause())
                 .contains("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
 
