@@ -144,7 +144,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         assertThat(job.getSuspensionCause().errorCause())
                 .isNotNull()
                 .matches(error -> error.matches("(?s)Execution failure:\n" +
-                        "com.hazelcast.jet.JetException: Exception in ProcessorTasklet" +
+                        "com.hazelcast.jet.impl.execution.TaskletExecutionException: Exception in ProcessorTasklet" +
                         "\\{faultyJob/faulty#[0-9]+}: " +
                         "java.lang.AssertionError: mock error.*"));
 
