@@ -46,8 +46,4 @@ public class NonClosingKafkaProducer<K, V> extends KafkaProducer<K, V> {
         onClose.run();
     }
 
-    @Override
-    public void close(long timeout, TimeUnit unit) {
-        onClose.run();
-    }
 }
