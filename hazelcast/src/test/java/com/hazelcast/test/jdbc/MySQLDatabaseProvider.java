@@ -50,8 +50,8 @@ public class MySQLDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String noAuthJdbcUrl() {
         return container.getJdbcUrl()
-                        .replace("&user=root", "")
-                        .replace("&password=test", "");
+                        .replaceAll("&?user=root", "")
+                        .replaceAll("&?password=test", "");
     }
 
     @Override

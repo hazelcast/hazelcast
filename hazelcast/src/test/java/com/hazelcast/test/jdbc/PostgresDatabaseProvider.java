@@ -41,8 +41,8 @@ public class PostgresDatabaseProvider implements TestDatabaseProvider {
     @Override
     public String noAuthJdbcUrl() {
         return container.getJdbcUrl()
-                        .replace("&user=test", "")
-                        .replace("&password=test", "");
+                        .replaceAll("&?user=test", "")
+                        .replaceAll("&?password=test", "");
     }
 
     @Override
