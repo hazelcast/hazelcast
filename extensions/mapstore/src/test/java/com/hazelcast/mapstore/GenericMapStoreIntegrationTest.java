@@ -400,9 +400,19 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         ExceptionRecorder recorder = new ExceptionRecorder(hz3, Level.WARNING);
         // fill the map with some values so each member gets some items
-        for (int i = 1; i < 1000; i++) {
+        Integer itemSize = 1000;
+        for (int i = 1; i < itemSize; i++) {
             map.put(i, new Person(i, "name-" + i));
         }
+        // Ensure that all put operations are inserted into the DB. Otherwise, we may get
+        // HazelcastSqlException: Hazelcast instance is not active! from the SqlService
+        // when we shut down the hz3 instance
+        assertEqualsEventually(() -> {
+                    List<Row> rows = jdbcRows("SELECT COUNT(*) FROM " + tableName);
+                    Object[] values = rows.get(0).getValues();
+                    return (Long) values[0];
+                }, itemSize.longValue()
+        );
 
         // shutdown the member - this will call destroy on the MapStore on this member,
         // which should not drop the mapping in this case
@@ -414,9 +424,9 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         // The new item should still be loadable via the mapping
         executeJdbc("INSERT INTO " + tableName + " VALUES(1000, 'name-1000')");
-        Person p = map.get(1000);
-        assertThat(p.getId()).isEqualTo(1000);
-        assertThat(p.getName()).isEqualTo("name-1000");
+        Person p = map.get(itemSize);
+        assertThat(p.getId()).isEqualTo(itemSize);
+        assertThat(p.getName()).isEqualTo("name-" + itemSize);
 
         for (Throwable throwable : recorder.exceptionsLogged()) {
             assertThat(throwable).hasMessageNotContaining("is not active!");
