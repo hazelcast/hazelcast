@@ -457,7 +457,7 @@ public class JdbcSqlConnector implements SqlConnector {
             // We can consider refactoring the WriteJdbcP, so it doesn't need the dummy item in the future.
 
             // Use local member address to run the dummy source and processor on the same member
-            Address localAddress = context.getNodeEngine().getLocalMember().getAddress();
+            Address localAddress = context.getNodeEngine().getThisAddress();
 
             Vertex v = dummySourceVertex(context, "DummySourceFor" + statement, localAddress);
             Vertex updateVertex = context.getDag().newUniqueVertex(
