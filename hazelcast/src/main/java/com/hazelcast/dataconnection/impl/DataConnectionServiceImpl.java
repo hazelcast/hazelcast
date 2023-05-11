@@ -166,7 +166,8 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
 
     @Override
     public Class<? extends DataConnection> classForDataConnectionType(String type) {
-        Class<? extends DataConnection> dataConnectionClass = typeToDataConnectionClass.get(type);
+        String caseInsensitiveType = type.toLowerCase(Locale.ROOT);
+        Class<? extends DataConnection> dataConnectionClass = typeToDataConnectionClass.get(caseInsensitiveType);
         if (dataConnectionClass == null) {
             throw new HazelcastException("Data connection type '" + type + "' is not known");
         }
@@ -205,18 +206,18 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
 
     public List<DataConnection> getConfigCreatedDataConnections() {
         return dataConnections.values()
-                              .stream()
-                              .filter(dl -> dl.source == CONFIG)
-                              .map(dl -> dl.instance)
-                              .collect(Collectors.toList());
+                .stream()
+                .filter(dl -> dl.source == CONFIG)
+                .map(dl -> dl.instance)
+                .collect(Collectors.toList());
     }
 
     public List<DataConnection> getSqlCreatedDataConnections() {
         return dataConnections.values()
-                              .stream()
-                              .filter(dl -> dl.source == SQL)
-                              .map(dl -> dl.instance)
-                              .collect(Collectors.toList());
+                .stream()
+                .filter(dl -> dl.source == SQL)
+                .map(dl -> dl.instance)
+                .collect(Collectors.toList());
     }
 
     @Override

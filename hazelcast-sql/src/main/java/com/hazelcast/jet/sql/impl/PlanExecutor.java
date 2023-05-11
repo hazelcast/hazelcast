@@ -105,6 +105,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -124,7 +125,6 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataConnectionPlan;
@@ -189,17 +189,13 @@ public class PlanExecutor {
             throw new HazelcastException("Cannot replace a data connection created from configuration");
         }
 
-        try {
-            // checks if type is correct
-            dlService.classForDataConnectionType(plan.type());
-        } catch (Exception e) {
-            sneakyThrow(e);
-        }
+        // checks if type is correct
+        dlService.classForDataConnectionType(plan.type());
 
         boolean added = dataConnectionCatalog.createDataConnection(
                 new DataConnectionCatalogEntry(
                         plan.name(),
-                        plan.type(),
+                        plan.type().toLowerCase(Locale.ROOT),
                         plan.shared(),
                         plan.options()),
                 plan.isReplace(),
