@@ -30,7 +30,9 @@ class CustomContext extends Context {
     private final RelToSqlConverter converter;
 
     CustomContext(SqlDialect dialect, IntFunction<SqlNode> field) {
-        super(dialect, 0, true);
+        // TODO: do not generate redundant casts when DB has implicit cast.
+        //  This may be dialect specific and affect index usage.
+        super(dialect, 0, false);
         this.field = field;
         converter = new RelToSqlConverter(dialect);
     }

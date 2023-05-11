@@ -84,6 +84,24 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     }
 
     @Test
+    public void parameterInWhereClausePredicateCanPushDownCastColumn() throws Exception {
+        execute("DELETE FROM " + tableName + " WHERE CAST(age as VARCHAR) = ?", "0");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(1, "name-1", 1, JSON)
+        );
+    }
+
+    @Test
+    public void parameterInWhereClausePredicateCanPushDownCastParameter() throws Exception {
+        execute("DELETE FROM " + tableName + " WHERE age = CAST(? as INTEGER)", "0");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(1, "name-1", 1, JSON)
+        );
+    }
+
+    @Test
     public void parameterInWhereClausePredicateCanNotPushDown() throws Exception {
         execute(
                 "DELETE FROM " + tableName + " WHERE age = ? AND JSON_QUERY(data, '$.value') = '42'",

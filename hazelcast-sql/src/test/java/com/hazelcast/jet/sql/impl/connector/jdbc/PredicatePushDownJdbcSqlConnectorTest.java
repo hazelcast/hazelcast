@@ -100,6 +100,7 @@ public class PredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
                 // Conversions
                 "SELECT name FROM people WHERE CAST(age AS VARCHAR) = '30'",
+                "SELECT name FROM people WHERE CAST(age AS VARCHAR) = 'not a number' or age = 30",
 
                 // String functions
                 "SELECT name FROM people WHERE 'Hello '||name = 'Hello John Doe'",

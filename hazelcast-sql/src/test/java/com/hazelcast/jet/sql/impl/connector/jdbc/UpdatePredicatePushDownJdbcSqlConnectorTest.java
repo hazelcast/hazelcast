@@ -146,6 +146,26 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     }
 
     @Test
+    public void parameterInSetAndWhereClausePredicateCanPushDownWithCastParameter() throws Exception {
+        execute("UPDATE " + tableName + " SET name = ? WHERE age = cast(? as integer)", "updated", "0");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "updated", 0, JSON),
+                new Row(1, "name-1", 1, JSON)
+        );
+    }
+
+    @Test
+    public void parameterInSetAndWhereClausePredicateCanPushDownWithCastColumn() throws Exception {
+        execute("UPDATE " + tableName + " SET name = ? WHERE cast(age as varchar) in (?, ?)", "updated", "not a number", "0");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "updated", 0, JSON),
+                new Row(1, "name-1", 1, JSON)
+        );
+    }
+
+    @Test
     public void parameterInSetAndWhereClausePredicateCanNotPushDown() throws Exception {
         execute(
                 "UPDATE " + tableName + " SET name = ? WHERE age = ? AND JSON_QUERY(data, '$.value') = '42'",
