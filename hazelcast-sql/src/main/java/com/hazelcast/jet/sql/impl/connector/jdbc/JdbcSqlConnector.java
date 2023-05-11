@@ -387,7 +387,7 @@ public class JdbcSqlConnector implements SqlConnector {
             boolean hasInput
     ) {
         // We don't allow both predicate and input at the same time
-        assert !(predicate != null && hasInput);
+        assert predicate == null || !hasInput;
 
         JdbcTable table = context.getTable();
 
@@ -421,7 +421,7 @@ public class JdbcSqlConnector implements SqlConnector {
             boolean hasInput
     ) {
         // We don't allow both predicate and input at the same time
-        assert !(predicate != null && hasInput);
+        assert predicate == null || !hasInput;
 
         JdbcTable table = context.getTable();
 
