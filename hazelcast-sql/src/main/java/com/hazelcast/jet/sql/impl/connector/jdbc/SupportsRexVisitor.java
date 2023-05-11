@@ -62,7 +62,7 @@ public class SupportsRexVisitor extends RexVisitorImpl<Boolean> {
         SqlOperator operator = call.getOperator();
         SqlKind kind = operator.getKind();
 
-        return operatorSupported(operator, kind) && isOperandsSupported(call);
+        return operatorSupported(operator, kind) && operandsSupported(call);
     }
 
     private static boolean operatorSupported(SqlOperator operator, SqlKind kind) {
@@ -100,11 +100,12 @@ public class SupportsRexVisitor extends RexVisitorImpl<Boolean> {
         }
     }
 
-    private boolean isOperandsSupported(RexCall call) {
-        boolean operandsSupported = true;
+    private boolean operandsSupported(RexCall call) {
         for (RexNode operand : call.operands) {
-            operandsSupported = operandsSupported && operand.accept(this);
+            if (!operand.accept(this)) {
+                return false;
+            }
         }
-        return operandsSupported;
+        return true;
     }
 }
