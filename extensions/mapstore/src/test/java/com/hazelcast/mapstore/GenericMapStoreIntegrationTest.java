@@ -32,6 +32,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.ExceptionRecorder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
@@ -89,7 +90,8 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         databaseProvider = testDatabaseProvider;
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
-        memberConfig = smallInstanceConfig()
+        // Do not use small config to run with more threads and partitions
+        memberConfig = new Config()
                 // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
                 .addDataConnectionConfig(
@@ -97,6 +99,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                                 .setType("jdbc")
                                 .setProperty("jdbcUrl", dbConnectionUrl)
                 );
+        memberConfig.getJetConfig().setEnabled(true);
 
         ClientConfig clientConfig = new ClientConfig();
 
@@ -387,6 +390,28 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         Row row = new Row("__map-store." + tableName);
         List<Row> rows = Collections.singletonList(row);
         assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 30);
+    }
+
+    /**
+     * Regression test for https://github.com/hazelcast/hazelcast/issues/22567
+     */
+    @Test(timeout = 30_000L)
+    @Category(NightlyTest.class)
+    public void testClear() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+
+        for (int i = 0; i < 10; i++) {
+            logger.info("Iteration " + i);
+            Map<Integer, Person> toInsert = new HashMap<>();
+            for (int j = 0; j < 10_000; j++) {
+                toInsert.put(j, new Person(j, "name-" + j));
+            }
+            map.putAll(toInsert);
+            logger.info("Inserted 10k items");
+            map.clear();
+            logger.info("Cleared map");
+        }
     }
 
     @Test

@@ -354,7 +354,7 @@ public class JdbcSqlConnector implements SqlConnector {
                         builder.query(),
                         table.getBatchLimit()
                 )
-        ));
+        ).localParallelism(1));
     }
 
     @Nonnull
@@ -501,7 +501,7 @@ public class JdbcSqlConnector implements SqlConnector {
                             upsertStatement,
                             jdbcTable.getBatchLimit()
                     )
-            );
+            ).localParallelism(1);
         }
         // Unsupported dialect. Create Vertex with the INSERT statement
         VertexWithInputConfig vertexWithInputConfig = insertProcessor(context);
