@@ -40,7 +40,7 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
-public class DMLProcessorSupplier
+public class DmlProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
@@ -52,7 +52,7 @@ public class DMLProcessorSupplier
     private transient ExpressionEvalContext evalContext;
 
     @SuppressWarnings("unused")
-    public DMLProcessorSupplier() {
+    public DmlProcessorSupplier() {
     }
 
     /**
@@ -61,7 +61,7 @@ public class DMLProcessorSupplier
      * @param inputRefs     An array specifying what input reference to bind as
      *                      j-th parameter value, starting at i-th index equal to dynamicParams size
      */
-    public DMLProcessorSupplier(
+    public DmlProcessorSupplier(
             @Nonnull String dataConnectionName,
             @Nonnull String query,
             @Nonnull int[] dynamicParams,

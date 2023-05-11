@@ -401,7 +401,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 hasInput
         );
 
-        DMLProcessorSupplier updatePS = new DMLProcessorSupplier(
+        DmlProcessorSupplier updatePS = new DmlProcessorSupplier(
                 table.getDataConnectionName(),
                 builder.query(),
                 builder.dynamicParams(),
@@ -432,7 +432,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 hasInput
         );
 
-        DMLProcessorSupplier deletePS = new DMLProcessorSupplier(
+        DmlProcessorSupplier deletePS = new DmlProcessorSupplier(
                 table.getDataConnectionName(),
                 builder.query(),
                 builder.dynamicParams(),
@@ -447,7 +447,7 @@ public class JdbcSqlConnector implements SqlConnector {
             DagBuildContext context,
             boolean hasInput,
             JdbcTable table,
-            DMLProcessorSupplier processorSupplier,
+            DmlProcessorSupplier processorSupplier,
             String statement
     ) {
 
