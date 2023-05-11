@@ -38,11 +38,4 @@ class ParamCollectingVisitor extends SqlBasicVisitor<SqlNode> {
         parameterPositions.add(param.getIndex());
         return param;
     }
-
-    /**
-     * Mapping of parameters in the built query to actual query parameters
-     */
-    public List<Integer> parameterPositions() {
-        return parameterPositions;
-    }
 }

@@ -47,11 +47,12 @@ class UpdateQueryBuilder extends AbstractQueryBuilder {
         dialect.quoteIdentifier(sb, Arrays.asList(table.getExternalName()));
 
         sb.append(" SET ");
+        ParamCollectingVisitor dynamicParamVisitor = new ParamCollectingVisitor(dynamicParams);
         for (int i = 0; i < fieldNames.size(); i++) {
             RexNode rexNode = expressions.get(i);
 
             SqlNode sqlNode = context.toSql(null, rexNode);
-            sqlNode.accept(new ParamCollectingVisitor(dynamicParams));
+            sqlNode.accept(dynamicParamVisitor);
 
             String externalFieldName = table.getField(fieldNames.get(i)).externalName();
             dialect.quoteIdentifier(sb, externalFieldName);
