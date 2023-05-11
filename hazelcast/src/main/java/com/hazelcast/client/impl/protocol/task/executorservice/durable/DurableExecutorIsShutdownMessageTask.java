@@ -22,6 +22,8 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.DurableExecutorServicePermission;
 
 import java.security.Permission;
 
@@ -57,7 +59,7 @@ public class DurableExecutorIsShutdownMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new DurableExecutorServicePermission(parameters, ActionConstants.ACTION_READ);
     }
 
     @Override
