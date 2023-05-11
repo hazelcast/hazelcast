@@ -102,7 +102,8 @@ public class SupportsRexVisitor extends RexVisitorImpl<Boolean> {
 
     private boolean operandsSupported(RexCall call) {
         for (RexNode operand : call.operands) {
-            if (!operand.accept(this)) {
+            Boolean supports = operand.accept(this);
+            if (supports == null || !supports) {
                 return false;
             }
         }
