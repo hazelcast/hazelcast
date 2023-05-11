@@ -67,7 +67,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
                     classLoader
             ).forEachRemaining(registration -> {
                 typeToDataConnectionClass.put(registration.type().toLowerCase(Locale.ROOT), registration.clazz());
-                dataConnectionClassToType.put(registration.clazz(), registration.type());
+                dataConnectionClassToType.put(registration.clazz(), registration.type().toLowerCase(Locale.ROOT));
             });
         } catch (Exception e) {
             throw new HazelcastException("Could not register data connections", e);
