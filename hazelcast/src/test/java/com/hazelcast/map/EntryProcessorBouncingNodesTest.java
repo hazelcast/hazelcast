@@ -84,7 +84,7 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule
-            .with(getConfig())
+            .with(this::getConfig)
             .clusterSize(3)
             .driverCount(1)
             .driverType(BounceTestConfiguration.DriverType.ALWAYS_UP_MEMBER)
