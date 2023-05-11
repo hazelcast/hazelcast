@@ -70,7 +70,8 @@ public class TableResolverImpl implements TableResolver {
             = asList(
                     (m, v, t, hz) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
                     (m, v, t, hz) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m,
-                            hz.getDataConnectionService()::typeForDataConnection),
+                            hz.getDataConnectionService()::typeForDataConnection,
+                            hz.getConfig().getSecurityConfig().isEnabled()),
                     (m, v, t, hz) -> new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
                     (m, v, t, hz) -> new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, v),
                     (m, v, t, hz) -> new UserDefinedTypesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t),
