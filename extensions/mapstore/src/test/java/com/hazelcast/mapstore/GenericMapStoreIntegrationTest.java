@@ -400,7 +400,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         ExceptionRecorder recorder = new ExceptionRecorder(hz3, Level.WARNING);
         // fill the map with some values so each member gets some items
-        long itemSize = 1000;
+        Integer itemSize = 1000;
         for (int i = 1; i < itemSize; i++) {
             map.put(i, new Person(i, "name-" + i));
         }
@@ -410,8 +410,8 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertEqualsEventually(() -> {
                     List<Row> rows = jdbcRows("SELECT COUNT(*) FROM " + tableName);
                     Object[] values = rows.get(0).getValues();
-                    return (long) values[0];
-                }, itemSize
+                    return (Long) values[0];
+                }, itemSize.longValue()
         );
 
         // shutdown the member - this will call destroy on the MapStore on this member,
