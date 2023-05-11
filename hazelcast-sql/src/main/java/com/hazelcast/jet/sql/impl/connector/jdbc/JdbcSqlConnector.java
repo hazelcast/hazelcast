@@ -20,16 +20,12 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
-import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.impl.connector.ConvenientSourceP;
-import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mysql.HazelcastMySqlDialect;
@@ -479,19 +475,7 @@ public class JdbcSqlConnector implements SqlConnector {
     private static Vertex dummySourceVertex(DagBuildContext context, String name, Address localAddress) {
         Vertex v = context.getDag().newUniqueVertex(name,
                 forceTotalParallelismOne(
-                        of(() -> new ConvenientSourceP<>(
-                                ExpressionEvalContext::from,
-                                (evalContext, buf) -> {
-                                    SourceBuffer<Object> buffer = (SourceBuffer<Object>) buf;
-                                    buffer.add(DUMMY_INPUT_ROW);
-                                    buffer.close();
-                                },
-                                ctx -> null,
-                                (ctx, states) -> {
-                                },
-                                ConsumerEx.noop(),
-                                new SourceBufferImpl.Plain<>(true),
-                                null)),
+                        of(() -> new SingleItemSourceP<>(DUMMY_INPUT_ROW)),
                         localAddress
                 )
         );
