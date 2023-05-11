@@ -34,7 +34,7 @@ import static java.util.Collections.unmodifiableMap;
 /**
  * Contains the configuration for all Kafka topics that will be consumed by the
  * {@linkplain KafkaProcessors#streamKafkaP Kafka source processor}.
- * 
+ *
  * @since 5.3
  */
 public class TopicsConfig implements Serializable {
