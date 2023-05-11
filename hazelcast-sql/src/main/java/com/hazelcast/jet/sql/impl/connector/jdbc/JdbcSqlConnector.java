@@ -22,7 +22,6 @@ import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -76,7 +75,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
     public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
 
-    private static final JetSqlRow FAKE_INPUT_ROW = new JetSqlRow(null, new Object[]{});
+    private static final JetSqlRow DUMMY_INPUT_ROW = new JetSqlRow(null, new Object[]{});
 
     @Override
     public String typeName() {
@@ -453,14 +452,14 @@ public class JdbcSqlConnector implements SqlConnector {
     ) {
 
         if (!hasInput) {
-            // There is no input, we push the whole update query to the database, but we need single fake item
+            // There is no input, we push the whole update query to the database, but we need single dummy item
             // to execute the update in WriteJdbcP
-            // We can consider refactoring the WriteJdbcP, so it doesn't need the fake item in the future.
+            // We can consider refactoring the WriteJdbcP, so it doesn't need the dummy item in the future.
 
-            // Use local member address to run the fake source and processor on the same member
+            // Use local member address to run the dummy source and processor on the same member
             Address localAddress = context.getNodeEngine().getLocalMember().getAddress();
 
-            Vertex v = fakeSourceVertex(context, "FakeSourceFor" + statement, localAddress);
+            Vertex v = dummySourceVertex(context, "DummySourceFor" + statement, localAddress);
             Vertex updateVertex = context.getDag().newUniqueVertex(
                     statement + "(" + table.getExternalNameList() + ")",
                     forceTotalParallelismOne(processorSupplier, localAddress)
@@ -477,14 +476,14 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
-    private static Vertex fakeSourceVertex(DagBuildContext context, String name, Address localAddress) {
+    private static Vertex dummySourceVertex(DagBuildContext context, String name, Address localAddress) {
         Vertex v = context.getDag().newUniqueVertex(name,
                 forceTotalParallelismOne(
                         of(() -> new ConvenientSourceP<>(
                                 ExpressionEvalContext::from,
                                 (evalContext, buf) -> {
                                     SourceBuffer<Object> buffer = (SourceBuffer<Object>) buf;
-                                    buffer.add(FAKE_INPUT_ROW);
+                                    buffer.add(DUMMY_INPUT_ROW);
                                     buffer.close();
                                 },
                                 ctx -> null,
