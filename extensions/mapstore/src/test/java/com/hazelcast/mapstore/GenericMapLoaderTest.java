@@ -357,6 +357,20 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void givenRowAndIdColumn_whenLoadAllMultipleItems_thenReturnGenericRecords() throws Exception {
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 2);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
+        mapLoader = createMapLoader(properties, hz);
+        Map<Integer, GenericRecord> records = mapLoader.loadAll(newArrayList(0, 1));
+
+        assertThat(records).hasSize(2);
+    }
+
+    @Test
     public void givenRowDoesNotExist_whenLoadAll_thenReturnEmptyMap() throws Exception {
         createTable(mapName);
         mapLoader = createMapLoader();
