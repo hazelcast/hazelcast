@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
@@ -456,13 +457,13 @@ public class JdbcSqlConnector implements SqlConnector {
             // to execute the update in WriteJdbcP
             // We can consider refactoring the WriteJdbcP, so it doesn't need the fake item in the future.
 
-            // Create random partition key so the fake source and processor run on the same member
-            String partitionKey = UuidUtil.newUnsecureUuidString();
+            // Use local member address to run the fake source and processor on the same member
+            Address localAddress = context.getNodeEngine().getLocalMember().getAddress();
 
-            Vertex v = fakeSourceVertex(context, "FakeSourceFor" + statement, partitionKey);
+            Vertex v = fakeSourceVertex(context, "FakeSourceFor" + statement, localAddress);
             Vertex updateVertex = context.getDag().newUniqueVertex(
                     statement + "(" + table.getExternalNameList() + ")",
-                    forceTotalParallelismOne(processorSupplier, partitionKey)
+                    forceTotalParallelismOne(processorSupplier, localAddress)
             );
 
             context.getDag().edge(Edge.between(v, updateVertex));
@@ -476,7 +477,7 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
-    private static Vertex fakeSourceVertex(DagBuildContext context, String name, String partitionKey) {
+    private static Vertex fakeSourceVertex(DagBuildContext context, String name, Address localAddress) {
         Vertex v = context.getDag().newUniqueVertex(name,
                 forceTotalParallelismOne(
                         of(() -> new ConvenientSourceP<>(
@@ -492,7 +493,7 @@ public class JdbcSqlConnector implements SqlConnector {
                                 ConsumerEx.noop(),
                                 new SourceBufferImpl.Plain<>(true),
                                 null)),
-                        partitionKey
+                        localAddress
                 )
         );
         return v;
