@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 import static java.util.Collections.emptyList;
@@ -70,7 +71,11 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             UrgentPartitionRunnable<Collection<Operation>> runnable = new UrgentPartitionRunnable<>(
                     event.getPartitionId(), () -> createReplicationOperations(event, true));
             getNodeEngine().getOperationService().execute(runnable);
-            return runnable.future.joinInternal();
+            try {
+                return runnable.future.get();
+            } catch (Exception e) {
+                throw sneakyThrow(e);
+            }
         }
     }
 
