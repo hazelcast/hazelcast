@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
@@ -49,21 +49,30 @@ public class DataConnectionResolver implements TableResolver {
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
 
-    private static final List<Function<List<DataConnectionCatalogEntry>, Table>> ADDITIONAL_TABLE_PRODUCERS = singletonList(
-            dl -> new DataConnectionsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, dl)
-    );
+    @SuppressWarnings("checkstyle:LineLength")
+    private static final List<BiFunction<List<DataConnectionCatalogEntry>, Boolean, Table>> ADDITIONAL_TABLE_PRODUCERS = singletonList(
+            (dl, securityEnabled) -> new DataConnectionsTable(
+                    CATALOG,
+                    SCHEMA_NAME_INFORMATION_SCHEMA,
+                    SCHEMA_NAME_PUBLIC,
+                    dl,
+                    securityEnabled
+            ));
 
     private final DataConnectionStorage dataConnectionStorage;
     private final DataConnectionServiceImpl dataConnectionService;
+    private final boolean isSecurityEnabled;
     private final CopyOnWriteArrayList<TableListener> listeners;
 
     public DataConnectionResolver(
             InternalDataConnectionService dataConnectionService,
-            DataConnectionStorage dataConnectionStorage
+            DataConnectionStorage dataConnectionStorage,
+            boolean isSecurityEnabled
     ) {
         Preconditions.checkInstanceOf(DataConnectionServiceImpl.class, dataConnectionService);
         this.dataConnectionService = (DataConnectionServiceImpl) dataConnectionService;
         this.dataConnectionStorage = dataConnectionStorage;
+        this.isSecurityEnabled = isSecurityEnabled;
 
         // See comment in TableResolverImpl regarding local events processing.
         // We rely on the fact that both are data connections and tables
@@ -116,7 +125,7 @@ public class DataConnectionResolver implements TableResolver {
         List<Table> tables = new ArrayList<>();
 
         ADDITIONAL_TABLE_PRODUCERS.forEach(producer -> tables.add(
-                producer.apply(getAllDataConnectionEntries(dataConnectionService, dataConnectionStorage))
+                producer.apply(getAllDataConnectionEntries(dataConnectionService, dataConnectionStorage), isSecurityEnabled)
         ));
         return tables;
     }
@@ -127,14 +136,14 @@ public class DataConnectionResolver implements TableResolver {
         // Collect config-originated data connections
         List<DataConnectionCatalogEntry> dataConnections =
                 dataConnectionService.getConfigCreatedDataConnections()
-                                     .stream()
-                                     .map(dc -> new DataConnectionCatalogEntry(
-                                             dc.getName(),
-                                             dataConnectionService.typeForDataConnection(dc.getName()),
-                                             dc.getConfig().isShared(),
-                                             dc.options(),
-                                             DataConnectionSource.CONFIG))
-                                     .collect(toList());
+                        .stream()
+                        .map(dc -> new DataConnectionCatalogEntry(
+                                dc.getName(),
+                                dataConnectionService.typeForDataConnection(dc.getName()),
+                                dc.getConfig().isShared(),
+                                dc.options(),
+                                DataConnectionSource.CONFIG))
+                        .collect(toList());
 
         // And supplement them with data connections from sql catalog.
         // Note: __sql.catalog is the only source of truth for SQL-originated data connections.
@@ -149,8 +158,8 @@ public class DataConnectionResolver implements TableResolver {
         conn.addAll(dataConnectionService.getSqlCreatedDataConnections());
 
         return conn.stream()
-                   .map(dc -> asList(dc.getName(), dc.getConfig().getType(), jsonArray(dc.resourceTypes())))
-                   .collect(toList());
+                .map(dc -> asList(dc.getName(), dc.getConfig().getType(), jsonArray(dc.resourceTypes())))
+                .collect(toList());
     }
 
     private static HazelcastJsonValue jsonArray(Collection<String> values) {

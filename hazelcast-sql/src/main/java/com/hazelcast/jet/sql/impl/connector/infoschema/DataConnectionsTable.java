@@ -44,14 +44,17 @@ public class DataConnectionsTable extends InfoSchemaTable {
 
     private final String dataConnectionSchema;
     private final Collection<DataConnectionCatalogEntry> dataConnectionCatalogEntries;
+    private final boolean securityEnabled;
 
     public DataConnectionsTable(String catalog,
                                 String schemaName,
                                 String dataConnectionSchema,
-                                Collection<DataConnectionCatalogEntry> dataConnectionCatalogEntries) {
+                                Collection<DataConnectionCatalogEntry> dataConnectionCatalogEntries,
+                                boolean securityEnabled) {
         super(FIELDS, catalog, schemaName, NAME, new ConstantTableStatistics(0));
         this.dataConnectionSchema = dataConnectionSchema;
         this.dataConnectionCatalogEntries = dataConnectionCatalogEntries;
+        this.securityEnabled = securityEnabled;
     }
 
     @Override
@@ -64,7 +67,7 @@ public class DataConnectionsTable extends InfoSchemaTable {
                     dl.name(),
                     dl.type(),
                     dl.isShared(),
-                    uncheckCall(() -> JsonUtil.toJson(dl.options())),
+                    securityEnabled ? null : uncheckCall(() -> JsonUtil.toJson(dl.options())),
                     dl.source().name()
             };
             rows.add(row);
