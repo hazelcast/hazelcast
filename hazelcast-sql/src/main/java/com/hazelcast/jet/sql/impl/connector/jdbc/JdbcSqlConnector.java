@@ -373,7 +373,7 @@ public class JdbcSqlConnector implements SqlConnector {
         RexNode rexExpression = expression.unwrap(RexNode.class);
         SupportsRexVisitor visitor = new SupportsRexVisitor();
         Boolean supports = rexExpression.accept(visitor);
-        return supports != null ? supports : false;
+        return supports != null && supports;
     }
 
     @Nonnull
