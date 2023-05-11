@@ -21,15 +21,22 @@ import org.apache.calcite.rel.rel2sql.SqlImplementor;
 import org.apache.calcite.rel.rel2sql.SqlImplementor.Context;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 
 import java.util.function.IntFunction;
 
-class CustomContext extends Context {
+/**
+ * Custom variant of
+ * {@code org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext}
+ * that also provides {@link #implementor()} which is required to
+ * translate some more complex expressions, such as {@link SqlStdOperatorTable#SEARCH}.
+ */
+class NodeToSqlTranslationContext extends Context {
 
     private final IntFunction<SqlNode> field;
     private final RelToSqlConverter converter;
 
-    CustomContext(SqlDialect dialect, IntFunction<SqlNode> field) {
+    NodeToSqlTranslationContext(SqlDialect dialect, IntFunction<SqlNode> field) {
         // TODO: do not generate redundant casts when DB has implicit cast.
         //  This may be dialect specific and affect index usage.
         super(dialect, 0, false);

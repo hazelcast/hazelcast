@@ -29,17 +29,16 @@ public class AbstractQueryBuilder {
 
     protected final JdbcTable jdbcTable;
     protected final SqlDialect dialect;
-    protected final CustomContext context;
+    protected final NodeToSqlTranslationContext context;
     protected String query;
 
     public AbstractQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
         this.jdbcTable = jdbcTable;
         this.dialect = dialect;
-        context = new CustomContext(dialect, value -> {
+        context = new NodeToSqlTranslationContext(dialect, value -> {
             JdbcTableField field = jdbcTable.getField(value);
             return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
         });
-
     }
 
     protected void appendFieldNames(StringBuilder sb, List<String> fieldNames) {

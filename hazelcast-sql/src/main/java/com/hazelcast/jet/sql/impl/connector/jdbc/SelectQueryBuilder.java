@@ -17,11 +17,8 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.primitives.Ints;
-import org.apache.calcite.rel.rel2sql.SqlImplementor.Context;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.parser.SqlParserPos;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -29,17 +26,11 @@ import java.util.List;
 
 class SelectQueryBuilder extends AbstractQueryBuilder {
 
-    private final Context context;
     private final List<Integer> dynamicParams = new ArrayList<>();
 
     @SuppressWarnings("ExecutableStatementCount")
     SelectQueryBuilder(JdbcTable table, SqlDialect dialect, RexNode predicate, List<RexNode> projection) {
         super(table, dialect);
-
-        context = new CustomContext(dialect, value -> {
-            JdbcTableField field = table.getField(value);
-            return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
-        });
 
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT ");

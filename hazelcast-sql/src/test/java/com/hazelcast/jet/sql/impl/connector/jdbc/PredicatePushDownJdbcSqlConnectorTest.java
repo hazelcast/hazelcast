@@ -169,6 +169,7 @@ public class PredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 rows.add(row.substring(0, row.indexOf('(')));
             }
             assertThat(rows).containsExactly(rels);
+            assertThat(rows).hasSameSizeAs(rels);
         }
     }
 
