@@ -70,7 +70,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     }
 
     @Test
-    public void noParameterPredicateCanNotPushDown() throws Exception {
+    public void noParameterPartOfPredicateCanNotPushDown() throws Exception {
         execute("UPDATE " + tableName + " SET name = 'updated' WHERE age = 0 AND JSON_QUERY(data, '$.value') = '42'");
 
         assertJdbcRowsAnyOrder(tableName,
@@ -100,7 +100,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     }
 
     @Test
-    public void parameterInSetClausePredicateCanNotPushDown() throws Exception {
+    public void parameterInSetClausePartOfPredicateCanNotPushDown() throws Exception {
         execute(
                 "UPDATE " + tableName + " SET name = ? WHERE age = 0 AND JSON_QUERY(data, '$.value') = '42'",
                 "updated"
@@ -123,7 +123,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     }
 
     @Test
-    public void parameterInWhereClausePredicateCanNotPushDown() throws Exception {
+    public void parameterInWhereClausePartOfPredicateCanNotPushDown() throws Exception {
         execute(
                 "UPDATE " + tableName + " SET name = 'updated' WHERE age = ? AND JSON_QUERY(data, '$.value') = '42'",
                 0
@@ -166,7 +166,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     }
 
     @Test
-    public void parameterInSetAndWhereClausePredicateCanNotPushDown() throws Exception {
+    public void parameterInSetAndWhereClausePartOfPredicateCanNotPushDown() throws Exception {
         execute(
                 "UPDATE " + tableName + " SET name = ? WHERE age = ? AND JSON_QUERY(data, '$.value') = '42'",
                 "updated", 0
@@ -179,7 +179,7 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     }
 
     @Test
-    public void parameterInSetAndWhereClauseAndPredicatePredicateCanNotPushDown() throws Exception {
+    public void parameterInSetAndWhereClauseBothPartsPartOfPredicateCanNotPushDown() throws Exception {
         execute(
                 "UPDATE " + tableName + " SET name = ? WHERE age = ? AND JSON_QUERY(data, '$.value') = ?",
                 "updated", 0, "42"
