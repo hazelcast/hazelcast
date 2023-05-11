@@ -18,7 +18,15 @@ package com.hazelcast.security.permission;
 
 public class ExecutorServicePermission extends InstancePermission {
 
-    private static final int ALL = CREATE | DESTROY;
+    /**
+     * The name of the executor used when no such executor
+     * is found for the client invocations.
+     */
+    public static final String EMPTY_EXECUTOR_NAME = "<EMPTY>";
+
+    private static final int READ = 4;
+    private static final int MODIFY = 8;
+    private static final int ALL = CREATE | DESTROY | READ | MODIFY;
 
     public ExecutorServicePermission(String name, String... actions) {
         super(name, actions);
@@ -36,6 +44,10 @@ public class ExecutorServicePermission extends InstancePermission {
                 mask |= CREATE;
             } else if (ActionConstants.ACTION_DESTROY.equals(action)) {
                 mask |= DESTROY;
+            } else if (ActionConstants.ACTION_READ.equals(action)) {
+                mask |= READ;
+            } else if (ActionConstants.ACTION_MODIFY.equals(action)) {
+                mask |= MODIFY;
             }
         }
         return mask;
