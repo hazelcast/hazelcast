@@ -191,4 +191,17 @@ public class UpdatePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
         );
     }
 
+    @Test
+    public void parameterInSetAndWhereClauseBothPartsReversePartOfPredicateCanNotPushDown() throws Exception {
+        execute(
+                "UPDATE " + tableName + " SET name = ? WHERE JSON_QUERY(data, '$.value') = ? AND age = ?",
+                "updated", "42", 0
+        );
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "updated", 0, JSON),
+                new Row(1, "name-1", 1, JSON)
+        );
+    }
+
 }
