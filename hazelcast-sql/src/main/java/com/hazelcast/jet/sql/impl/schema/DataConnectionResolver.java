@@ -113,6 +113,13 @@ public class DataConnectionResolver implements TableResolver {
         }
     }
 
+    /**
+     * Invoke all registerer change listeners
+     */
+    public void invokeChangeListeners() {
+        listeners.forEach(TableListener::onTableChanged);
+    }
+
     @Nonnull
     @Override
     public List<List<String>> getDefaultSearchPaths() {
