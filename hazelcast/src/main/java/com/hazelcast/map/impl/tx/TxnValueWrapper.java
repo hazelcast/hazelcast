@@ -22,12 +22,12 @@ import javax.annotation.Nullable;
 /**
  * Wrapper for value objects with type information.
  */
-class TxnValueWrapper {
+class TxnValueWrapper<T> {
 
-    Object value;
+    T value;
     Type type;
 
-    TxnValueWrapper(@Nullable Object value, @Nonnull Type type) {
+    TxnValueWrapper(@Nullable T value, @Nonnull Type type) {
         assert type != null;
 
         this.value = value;

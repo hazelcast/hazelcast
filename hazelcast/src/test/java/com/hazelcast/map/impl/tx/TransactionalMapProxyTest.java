@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -100,7 +101,7 @@ public class TransactionalMapProxyTest extends HazelcastTestSupport {
     }
 
     private void assertNoMapContainersExist(TransactionalMapProxy map) {
-        MapServiceContext mapServiceContext = map.getService().getMapServiceContext();
+        MapServiceContext mapServiceContext = ((MapService) map.getService()).getMapServiceContext();
         assertEquals(0, mapServiceContext.getMapContainers().size());
     }
 }

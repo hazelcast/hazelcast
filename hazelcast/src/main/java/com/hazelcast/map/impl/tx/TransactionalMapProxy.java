@@ -53,10 +53,10 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * Proxy implementation of {@link TransactionalMap} interface.
  */
-public class TransactionalMapProxy
-        extends TransactionalMapProxySupport implements TransactionalMap {
+public class TransactionalMapProxy<K, V>
+        extends TransactionalMapProxySupport implements TransactionalMap<K, V> {
 
-    private final Map<Data, TxnValueWrapper> txMap = new HashMap<>();
+    private final Map<Data, TxnValueWrapper<V>> txMap = new HashMap<>();
 
     public TransactionalMapProxy(String name, MapService mapService,
                                  NodeEngine nodeEngine, Transaction transaction) {
@@ -73,7 +73,7 @@ public class TransactionalMapProxy
         checkNotNull(key, "key can't be null");
 
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
-        TxnValueWrapper valueWrapper = txMap.get(keyData);
+        TxnValueWrapper<V> valueWrapper = txMap.get(keyData);
         if (valueWrapper != null) {
             return (valueWrapper.type != Type.REMOVED);
         }
@@ -84,8 +84,8 @@ public class TransactionalMapProxy
     public int size() {
         checkTransactionState();
         int currentSize = sizeInternal();
-        for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
-            TxnValueWrapper wrapper = entry.getValue();
+        for (Map.Entry<Data, TxnValueWrapper<V>> entry : txMap.entrySet()) {
+            TxnValueWrapper<V> wrapper = entry.getValue();
             if (wrapper.type == Type.NEW) {
                 currentSize++;
             } else if (wrapper.type == Type.REMOVED) {
@@ -105,47 +105,47 @@ public class TransactionalMapProxy
     }
 
     @Override
-    public Object get(Object key) {
+    public V get(Object key) {
         return get(key, false);
     }
 
-    public Object get(Object key, boolean skipNearCacheLookup) {
+    public V get(Object key, boolean skipNearCacheLookup) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
         long startNanos = statisticsEnabled ? Timer.nanos() : -1;
         Object nearCacheKey = toNearCacheKeyWithStrategy(key);
         Data keyData = mapServiceContext.toData(nearCacheKey, partitionStrategy);
-        TxnValueWrapper currentValue = txMap.get(keyData);
+        TxnValueWrapper<V> currentValue = txMap.get(keyData);
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
-        return toObjectIfNeeded(getInternal(nearCacheKey, keyData,
+        return (V) toObjectIfNeeded(getInternal(nearCacheKey, keyData,
                 skipNearCacheLookup, startNanos));
     }
 
     @Override
-    public Object getForUpdate(Object key) {
+    public V getForUpdate(Object key) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
 
-        TxnValueWrapper currentValue = txMap.get(keyData);
+        TxnValueWrapper<V> currentValue = txMap.get(keyData);
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
 
-        return toObjectIfNeeded(getForUpdateInternal(keyData));
+        return (V) toObjectIfNeeded(getForUpdateInternal(keyData));
     }
 
     @Override
-    public Object put(Object key, Object value) {
+    public V put(Object key, Object value) {
         return put(key, value, -1, MILLISECONDS);
     }
 
     @Override
-    public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
+    public V put(Object key, Object value, long ttl, TimeUnit timeUnit) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
@@ -156,11 +156,11 @@ public class TransactionalMapProxy
         RemoteCallHook remoteCallHook = newRemoteCallHook();
         remoteCallHook.beforeRemoteCall(key, keyData, value, valueData);
 
-        Object valueBeforeTxn = toObjectIfNeeded(putInternal(keyData, valueData,
+        V valueBeforeTxn = (V) toObjectIfNeeded(putInternal(keyData, valueData,
                 ttl, timeUnit, remoteCallHook));
-        TxnValueWrapper currentValue = txMap.get(keyData);
+        TxnValueWrapper<V> currentValue = txMap.get(keyData);
         Type type = valueBeforeTxn == null ? Type.NEW : Type.UPDATED;
-        TxnValueWrapper wrapper = new TxnValueWrapper(value, type);
+        TxnValueWrapper<V> wrapper = new TxnValueWrapper<>((V) value, type);
         txMap.put(keyData, wrapper);
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
     }
@@ -179,12 +179,12 @@ public class TransactionalMapProxy
 
         Data dataBeforeTxn = putInternal(keyData, valueData, UNSET, MILLISECONDS, remoteCallHook);
         Type type = dataBeforeTxn == null ? Type.NEW : Type.UPDATED;
-        TxnValueWrapper wrapper = new TxnValueWrapper(value, type);
+        TxnValueWrapper<V> wrapper = new TxnValueWrapper<>((V) value, type);
         txMap.put(keyData, wrapper);
     }
 
     @Override
-    public Object putIfAbsent(Object key, Object value) {
+    public V putIfAbsent(Object key, Object value) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
@@ -195,26 +195,26 @@ public class TransactionalMapProxy
         RemoteCallHook remoteCallHook = newRemoteCallHook();
         remoteCallHook.beforeRemoteCall(key, keyData, value, valueData);
 
-        TxnValueWrapper wrapper = txMap.get(keyData);
+        TxnValueWrapper<V> wrapper = txMap.get(keyData);
         boolean haveTxnPast = wrapper != null;
         if (haveTxnPast) {
             if (wrapper.type != Type.REMOVED) {
                 return wrapper.value;
             }
             putInternal(keyData, valueData, UNSET, MILLISECONDS, remoteCallHook);
-            txMap.put(keyData, new TxnValueWrapper(value, Type.NEW));
+            txMap.put(keyData, new TxnValueWrapper<>((V) value, Type.NEW));
             return null;
         } else {
             Data oldValue = putIfAbsentInternal(keyData, valueData, remoteCallHook);
             if (oldValue == null) {
-                txMap.put(keyData, new TxnValueWrapper(value, Type.NEW));
+                txMap.put(keyData, new TxnValueWrapper<>((V) value, Type.NEW));
             }
-            return toObjectIfNeeded(oldValue);
+            return (V) toObjectIfNeeded(oldValue);
         }
     }
 
     @Override
-    public Object replace(Object key, Object value) {
+    public V replace(Object key, Object value) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
@@ -225,21 +225,21 @@ public class TransactionalMapProxy
         RemoteCallHook remoteCallHook = newRemoteCallHook();
         remoteCallHook.beforeRemoteCall(key, keyData, value, valueData);
 
-        TxnValueWrapper wrapper = txMap.get(keyData);
+        TxnValueWrapper<V> wrapper = txMap.get(keyData);
         boolean haveTxnPast = wrapper != null;
         if (haveTxnPast) {
             if (wrapper.type == Type.REMOVED) {
                 return null;
             }
             putInternal(keyData, valueData, UNSET, MILLISECONDS, remoteCallHook);
-            txMap.put(keyData, new TxnValueWrapper(value, Type.UPDATED));
+            txMap.put(keyData, new TxnValueWrapper<>((V) value, Type.UPDATED));
             return wrapper.value;
         } else {
             Data oldValue = replaceInternal(keyData, valueData, remoteCallHook);
             if (oldValue != null) {
-                txMap.put(keyData, new TxnValueWrapper(value, Type.UPDATED));
+                txMap.put(keyData, new TxnValueWrapper<>((V) value, Type.UPDATED));
             }
-            return toObjectIfNeeded(oldValue);
+            return (V) toObjectIfNeeded(oldValue);
         }
     }
 
@@ -256,20 +256,20 @@ public class TransactionalMapProxy
         RemoteCallHook remoteCallHook = newRemoteCallHook();
         remoteCallHook.beforeRemoteCall(key, keyData, newValue, newValueData);
 
-        TxnValueWrapper wrapper = txMap.get(keyData);
+        TxnValueWrapper<V> wrapper = txMap.get(keyData);
         boolean haveTxnPast = wrapper != null;
         if (haveTxnPast) {
             if (!wrapper.value.equals(oldValue)) {
                 return false;
             }
             putInternal(keyData, newValueData, UNSET, MILLISECONDS, remoteCallHook);
-            txMap.put(keyData, new TxnValueWrapper(wrapper.value, Type.UPDATED));
+            txMap.put(keyData, new TxnValueWrapper<>(wrapper.value, Type.UPDATED));
             return true;
         } else {
             boolean success = replaceIfSameInternal(keyData, mapServiceContext.toData(oldValue),
                     newValueData, remoteCallHook);
             if (success) {
-                txMap.put(keyData, new TxnValueWrapper(newValue, Type.UPDATED));
+                txMap.put(keyData, new TxnValueWrapper<>((V) newValue, Type.UPDATED));
             }
             return success;
         }
@@ -283,7 +283,7 @@ public class TransactionalMapProxy
 
         Data keyData = mapServiceContext.toData(key, partitionStrategy);
 
-        TxnValueWrapper wrapper = txMap.get(keyData);
+        TxnValueWrapper<V> wrapper = txMap.get(keyData);
         // wrapper is null which means this entry is not touched by transaction
         if (wrapper == null) {
             RemoteCallHook remoteCallHook = newRemoteCallHook();
@@ -291,7 +291,7 @@ public class TransactionalMapProxy
 
             boolean removed = removeIfSameInternal(keyData, value, remoteCallHook);
             if (removed) {
-                txMap.put(keyData, new TxnValueWrapper(value, Type.REMOVED));
+                txMap.put(keyData, new TxnValueWrapper<>((V) value, Type.REMOVED));
             }
             return removed;
         }
@@ -308,13 +308,13 @@ public class TransactionalMapProxy
         remoteCallHook.beforeRemoteCall(key, keyData, null, null);
         // wrapper value is equal to passed value, we call removeInternal just to add delete log
         removeInternal(keyData, remoteCallHook);
-        txMap.put(keyData, new TxnValueWrapper(value, Type.REMOVED));
+        txMap.put(keyData, new TxnValueWrapper<>((V) value, Type.REMOVED));
 
         return true;
     }
 
     @Override
-    public Object remove(Object key) {
+    public V remove(Object key) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
 
@@ -323,11 +323,11 @@ public class TransactionalMapProxy
         RemoteCallHook remoteCallHook = newRemoteCallHook();
         remoteCallHook.beforeRemoteCall(key, keyData, null, null);
 
-        Object valueBeforeTxn = toObjectIfNeeded(removeInternal(keyData, remoteCallHook));
+        V valueBeforeTxn = (V) toObjectIfNeeded(removeInternal(keyData, remoteCallHook));
 
-        TxnValueWrapper wrapper = null;
+        TxnValueWrapper<V> wrapper = null;
         if (valueBeforeTxn != null || txMap.containsKey(keyData)) {
-            wrapper = txMap.put(keyData, new TxnValueWrapper(valueBeforeTxn, Type.REMOVED));
+            wrapper = txMap.put(keyData, new TxnValueWrapper<>(valueBeforeTxn, Type.REMOVED));
         }
         return wrapper == null ? valueBeforeTxn : checkIfRemoved(wrapper);
     }
@@ -344,19 +344,19 @@ public class TransactionalMapProxy
 
         Data data = removeInternal(keyData, remoteCallHook);
         if (data != null || txMap.containsKey(keyData)) {
-            txMap.put(keyData, new TxnValueWrapper(toObjectIfNeeded(data), Type.REMOVED));
+            txMap.put(keyData, new TxnValueWrapper<>((V) toObjectIfNeeded(data), Type.REMOVED));
         }
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<Object> keySet() {
+    public Set<K> keySet() {
         return keySet(Predicates.alwaysTrue());
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set keySet(Predicate predicate) {
+    public Set<K> keySet(Predicate predicate) {
         checkTransactionState();
         checkNotNull(predicate, "Predicate should not be null!");
         checkNotInstanceOf(PagingPredicate.class, predicate,
@@ -370,9 +370,9 @@ public class TransactionalMapProxy
                 predicate, IterationType.KEY, true, tx.isOriginatedFromClient());
 
         Extractors extractors = mapServiceContext.getExtractors(name);
-        Set<Object> returningKeySet = new HashSet<Object>(queryResultSet);
+        Set<K> returningKeySet = new HashSet<K>(queryResultSet);
         CachedQueryEntry cachedQueryEntry = new CachedQueryEntry();
-        for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
+        for (Map.Entry<Data, TxnValueWrapper<V>> entry : txMap.entrySet()) {
             if (entry.getValue().type == Type.REMOVED) {
                 // meanwhile remove keys which are not in txMap
                 returningKeySet.remove(toObjectIfNeeded(entry.getKey()));
@@ -380,12 +380,12 @@ public class TransactionalMapProxy
                 Data keyData = entry.getKey();
 
                 if (predicate == Predicates.alwaysTrue()) {
-                    returningKeySet.add(toObjectIfNeeded(keyData));
+                    returningKeySet.add((K) toObjectIfNeeded(keyData));
                 } else {
                     cachedQueryEntry.init(ss, keyData, entry.getValue().value, extractors);
                     // apply predicate on txMap
                     if (predicate.apply(cachedQueryEntry)) {
-                        returningKeySet.add(toObjectIfNeeded(keyData));
+                        returningKeySet.add((K) toObjectIfNeeded(keyData));
                     }
                 }
             }
@@ -397,13 +397,13 @@ public class TransactionalMapProxy
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<Object> values() {
+    public Collection<V> values() {
         return values(Predicates.alwaysTrue());
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection values(Predicate predicate) {
+    public Collection<V> values(Predicate predicate) {
         checkTransactionState();
         checkNotNull(predicate, "Predicate can not be null!");
         checkNotInstanceOf(PagingPredicate.class, predicate,
@@ -417,13 +417,13 @@ public class TransactionalMapProxy
                 predicate, IterationType.ENTRY, true, true);
 
         // TODO: can't we just use the original set?
-        List<Object> valueSet = new ArrayList<>();
+        List<V> valueSet = new ArrayList<>();
         Set<Data> keyWontBeIncluded = new HashSet<>();
 
         Extractors extractors = mapServiceContext.getExtractors(name);
         CachedQueryEntry cachedQueryEntry = new CachedQueryEntry();
         // iterate over the txMap and see if the values are updated or removed
-        for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
+        for (Map.Entry<Data, TxnValueWrapper<V>> entry : txMap.entrySet()) {
             boolean isRemoved = Type.REMOVED.equals(entry.getValue().type);
             boolean isUpdated = Type.UPDATED.equals(entry.getValue().type);
 
@@ -436,7 +436,7 @@ public class TransactionalMapProxy
                 Object entryValue = entry.getValue().value;
                 cachedQueryEntry.init(ss, entry.getKey(), entryValue, extractors);
                 if (predicate.apply(cachedQueryEntry)) {
-                    valueSet.add(toObjectIfNeeded(cachedQueryEntry.getValueData()));
+                    valueSet.add((V) toObjectIfNeeded(cachedQueryEntry.getValueData()));
                 }
             }
         }
@@ -450,18 +450,18 @@ public class TransactionalMapProxy
         return "TransactionalMap" + "{name='" + name + '\'' + '}';
     }
 
-    private Object checkIfRemoved(TxnValueWrapper wrapper) {
+    private V checkIfRemoved(TxnValueWrapper<V> wrapper) {
         checkTransactionState();
         return wrapper == null || wrapper.type == Type.REMOVED ? null : wrapper.value;
     }
 
-    private void removeFromResultSet(Set<Map.Entry> queryResultSet, List<Object> valueSet,
+    private void removeFromResultSet(Set<Map.Entry> queryResultSet, List<V> valueSet,
                                      Set<Data> keyWontBeIncluded) {
         for (Map.Entry entry : queryResultSet) {
             if (keyWontBeIncluded.contains(entry.getKey())) {
                 continue;
             }
-            valueSet.add(toObjectIfNeeded(entry.getValue()));
+            valueSet.add((V) toObjectIfNeeded(entry.getValue()));
         }
     }
 }
