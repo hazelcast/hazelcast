@@ -214,8 +214,12 @@ class DefaultAddressPicker
         }
 
         if (interfacesConfig.isEnabled()) {
+            String configSource = config.getConfigurationFile() != null && config.getConfigurationFile().getName() != null
+                    && config.getConfigurationFile().exists() && config.getConfigurationFile().isFile() ?
+                    "the " + config.getConfigurationFile().getName() + " config file." : "the member configurations.";
+
             String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
-                    + "Interface matching must be either disabled or updated in the hazelcast.xml config file.";
+                    + "Interface matching must be either disabled or updated in " + configSource;
             logger.severe(msg);
             throw new RuntimeException(msg);
         }
