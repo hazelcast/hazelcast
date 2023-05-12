@@ -79,10 +79,10 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
                         (r, s) -> assertThat(r.getBoolean(s)).isTrue(),
                         (BiConsumer<GenericRecordBuilder, String>) (rb, s) -> rb.setBoolean(s, true)},
                 {"TINYINT", "1", (BiConsumer<GenericRecord, String>)
-                        (r, s) -> assertThat(r.getInt32(s)).isEqualTo(1),
+                        (r, s) -> assertThat(r.getInt8(s)).isEqualTo((byte) 1),
                         (BiConsumer<GenericRecordBuilder, String>) (rb, s) -> rb.setInt8(s, (byte) 1)},
                 {"SMALLINT", "2", (BiConsumer<GenericRecord, String>)
-                        (r, s) -> assertThat(r.getInt32(s)).isEqualTo(2),
+                        (r, s) -> assertThat(r.getInt16(s)).isEqualTo((short) 2),
                         (BiConsumer<GenericRecordBuilder, String>) (rb, s) -> rb.setInt16(s, (short) 2)},
                 {"INTEGER", "3", (BiConsumer<GenericRecord, String>)
                         (r, s) -> assertThat(r.getInt32(s)).isEqualTo(3),
