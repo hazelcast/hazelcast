@@ -167,7 +167,7 @@ public class JdbcTable extends JetTable {
 
         @Override
         public int hashCode() {
-            int result = Objects.hash(schemaName, tableName, fields, options);
+            int result = Objects.hash(schemaName, tableName, dataConnectionName, fields, options);
             result = 31 * result + Arrays.hashCode(externalName);
             return result;
         }
