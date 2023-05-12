@@ -39,7 +39,7 @@ public class RegistrationOperation extends AbstractRegistrationOperation {
     @Override
     protected void runInternal() {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
-        eventService.handleLocalRegistration(registration);
+        eventService.handleRegistration(registration);
     }
 
     @Override

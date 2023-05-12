@@ -38,6 +38,7 @@ import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
+import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -363,14 +364,6 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
                 .thenApplyAsync(result -> reg, CALLER_RUNS);
     }
 
-    public boolean handleRegistration(Registration reg) {
-        if (nodeEngine.getThisAddress().equals(reg.getSubscriber())) {
-            return false;
-        }
-        EventServiceSegment segment = getSegment(reg.getServiceName(), true);
-        return segment.addRegistration(reg.getTopic(), reg);
-    }
-
     @Override
     public boolean deregisterListener(@Nonnull String serviceName,
                                       @Nonnull String topic,
@@ -436,12 +429,31 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         listenerCache.put(registration.getId(), registration.getListener());
     }
 
-    public void handleLocalRegistration(Registration registration) {
-        Object listener = listenerCache.remove(registration.getId());
-        if (isLocal(registration) && listener == null) {
-            throw new IllegalStateException("Listener cannot be null for local registration");
+    /**
+     * Adds a {@link Registration} to the corresponding {@link EventServiceSegment} by
+     * avoiding duplicate local registrations.
+     * @implNote There are three code paths for this method: <ol>
+     * <li> {@link #registerListener0} → invokeOnAllMembers({@link RegistrationOperation}).
+     *      In this case, the local registration is already done in {@code registerListener0}
+     *      and thus need to be ignored.
+     * <li> {@code JobProxy.addStatusListener} → {@code AddJobStatusListenerOperation} →
+     *      {@code MasterContext} → {@link #handleAllRegistrations} →
+     *      invokeOnAllMembers({@link RegistrationOperation}). In this case, the local
+     *      registration is new and thus need to be performed.
+     * <li> {@link OnJoinRegistrationOperation}. In this case, no local registration is
+     *      expected. </ol>
+     * The distinction between cases 1 and 2 is made by checking the {@link #listenerCache}
+     * and the local registration is made only if there is an entry in the cache. This,
+     * however, makes it impossible to diagnose {@linkplain #cacheListener caching} failures.
+     */
+    public void handleRegistration(Registration registration) {
+        if (isLocal(registration)) {
+            Object listener = listenerCache.remove(registration.getId());
+            if (listener == null) {
+                return;
+            }
+            registration.setListener(listener);
         }
-        registration.setListener(listener);
         EventServiceSegment segment = getSegment(registration.getServiceName(), true);
         segment.addRegistration(registration.getTopic(), registration);
     }
