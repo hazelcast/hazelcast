@@ -41,7 +41,7 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
                 instance()).getDataConnectionService().getAndRetainDataConnection(dlName, MongoDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
-        assertThat(dataConnection.getConfig().getType()).isEqualTo("Mongo");
+        assertThat(dataConnection.getConfig().getType()).isEqualTo("mongo");
 
         try (SqlResult result = instance().getSql().execute("SHOW RESOURCES FOR " + dlName)) {
             boolean hasCollectionWeWanted = false;
@@ -58,6 +58,7 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
     public void createsConnectionEvenWhenUnreachable_shared() {
         testCreatesConnectionEvenWhenUnreachable(true);
     }
+
     @Test
     public void createsConnectionEvenWhenUnreachable_unshared() {
         testCreatesConnectionEvenWhenUnreachable(false);
@@ -76,11 +77,11 @@ public class MongoCreateDataConnectionSqlTest extends MongoSqlTest {
                 instance()).getDataConnectionService().getAndRetainDataConnection(dataConnName, MongoDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
-        assertThat(dataConnection.getConfig().getType()).isEqualTo("Mongo");
+        assertThat(dataConnection.getConfig().getType()).isEqualTo("mongo");
 
         Exception e = assertThrows(HazelcastSqlException.class, () -> {
             instance().getSql().execute("CREATE MAPPING test_" + shared + " data connection " + dataConnName)
-                      .close();
+                    .close();
         });
         assertThat(e.getMessage()).contains("exception={com.mongodb.MongoSocketException: non-existing");
     }

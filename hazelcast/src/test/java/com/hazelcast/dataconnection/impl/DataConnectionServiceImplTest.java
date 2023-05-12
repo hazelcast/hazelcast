@@ -122,8 +122,8 @@ public class DataConnectionServiceImplTest extends HazelcastTestSupport {
         );
 
         assertTrueEventually(() -> assertThat(dataConnectionViaService.isClosed())
-                    .describedAs("DataConnection should have been closed when replaced by DataConnection from dynamic config")
-                    .isTrue());
+                .describedAs("DataConnection should have been closed when replaced by DataConnection from dynamic config")
+                .isTrue());
 
         DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(TEST_VIA_SERVICE_CONFIG, DummyDataConnection.class);
 
@@ -256,7 +256,7 @@ public class DataConnectionServiceImplTest extends HazelcastTestSupport {
                 false,
                 createMap("customProperty", "value")
         )).isInstanceOf(HazelcastException.class)
-          .hasMessage("Cannot replace a data connection created from configuration");
+                .hasMessage("Cannot replace a data connection created from configuration");
     }
 
     @Test
@@ -403,7 +403,7 @@ public class DataConnectionServiceImplTest extends HazelcastTestSupport {
     @Test
     public void should_return_data_connection_type() {
         String type = dataConnectionService.typeForDataConnection(TEST_CONFIG);
-        assertThat(type).isEqualTo("DUMMY");
+        assertThat(type).isEqualTo("dummy");
     }
 
     @Test

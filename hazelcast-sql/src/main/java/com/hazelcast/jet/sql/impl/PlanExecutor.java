@@ -105,6 +105,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -187,10 +188,14 @@ public class PlanExecutor {
         if (dlService.existsConfigDataConnection(plan.name())) {
             throw new HazelcastException("Cannot replace a data connection created from configuration");
         }
+
+        // checks if type is correct
+        dlService.classForDataConnectionType(plan.type());
+
         boolean added = dataConnectionCatalog.createDataConnection(
                 new DataConnectionCatalogEntry(
                         plan.name(),
-                        plan.type(),
+                        plan.type().toLowerCase(Locale.ROOT),
                         plan.shared(),
                         plan.options()),
                 plan.isReplace(),
@@ -414,20 +419,20 @@ public class PlanExecutor {
         }
         SqlRowMetadata metadata =
                 plan.getShowTarget() == ShowStatementTarget.DATACONNECTIONS
-                ?  new SqlRowMetadata(asList(
+                        ? new SqlRowMetadata(asList(
                         new SqlColumnMetadata("name", VARCHAR, false),
                         new SqlColumnMetadata("connection_type", VARCHAR, false),
                         new SqlColumnMetadata("resource_types", JSON, false)
                 ))
-                 : new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
+                        : new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
 
         return new SqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(
                         rows.sorted(comparing(r -> (Comparable) r.get(0)))
-                            .map(row -> new JetSqlRow(serializationService, ((List<?>) row).toArray(new Object[0])))
-                            .iterator()),
+                                .map(row -> new JetSqlRow(serializationService, ((List<?>) row).toArray(new Object[0])))
+                                .iterator()),
                 metadata,
                 false
         );
@@ -450,14 +455,14 @@ public class PlanExecutor {
                 dataConnectionName, DataConnection.class);
         try {
             rows = dataConnection.listResources().stream()
-                                 .map(resource -> new JetSqlRow(
-                                         serializationService,
-                                         new Object[]{
-                                                 quoteCompoundIdentifier(resource.name()),
-                                                 resource.type()
-                                         }
-                                 ))
-                                 .collect(Collectors.toList());
+                    .map(resource -> new JetSqlRow(
+                            serializationService,
+                            new Object[]{
+                                    quoteCompoundIdentifier(resource.name()),
+                                    resource.type()
+                            }
+                    ))
+                    .collect(Collectors.toList());
         } finally {
             dataConnection.release();
         }
