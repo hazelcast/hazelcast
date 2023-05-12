@@ -350,7 +350,7 @@ public class JdbcSqlConnector implements SqlConnector {
                         builder.query(),
                         table.getBatchLimit()
                 )
-        ));
+        ).localParallelism(1));
     }
 
     @Nonnull
@@ -444,27 +444,27 @@ public class JdbcSqlConnector implements SqlConnector {
     ) {
 
         if (!hasInput) {
-            // There is no input, we push the whole update query to the database, but we need single dummy item
-            // to execute the update in WriteJdbcP
+            // There is no input, we push the whole update/delete query to the database, but we need single dummy item
+            // to execute the update/delete in WriteJdbcP
             // We can consider refactoring the WriteJdbcP, so it doesn't need the dummy item in the future.
 
             // Use local member address to run the dummy source and processor on the same member
             Address localAddress = context.getNodeEngine().getThisAddress();
 
             Vertex v = dummySourceVertex(context, "DummySourceFor" + statement, localAddress);
-            Vertex updateVertex = context.getDag().newUniqueVertex(
+            Vertex dmlVertex = context.getDag().newUniqueVertex(
                     statement + "(" + table.getExternalNameList() + ")",
                     forceTotalParallelismOne(processorSupplier, localAddress)
             );
 
-            context.getDag().edge(Edge.between(v, updateVertex));
-            return updateVertex;
+            context.getDag().edge(Edge.between(v, dmlVertex));
+            return dmlVertex;
         } else {
-            Vertex updateVertex = context.getDag().newUniqueVertex(
+            Vertex dmlVertex = context.getDag().newUniqueVertex(
                     statement + "(" + table.getExternalNameList() + ")",
                     processorSupplier
             ).localParallelism(1);
-            return updateVertex;
+            return dmlVertex;
         }
     }
 
@@ -497,7 +497,7 @@ public class JdbcSqlConnector implements SqlConnector {
                             upsertStatement,
                             jdbcTable.getBatchLimit()
                     )
-            );
+            ).localParallelism(1);
         }
         // Unsupported dialect. Create Vertex with the INSERT statement
         VertexWithInputConfig vertexWithInputConfig = insertProcessor(context);
