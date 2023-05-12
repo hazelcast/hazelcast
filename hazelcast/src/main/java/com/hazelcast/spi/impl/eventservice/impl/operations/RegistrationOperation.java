@@ -16,68 +16,41 @@
 
 package com.hazelcast.spi.impl.eventservice.impl.operations;
 
-import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.Versions.V5_3;
-
-public class RegistrationOperation extends AbstractRegistrationOperation implements Versioned {
+public class RegistrationOperation extends AbstractRegistrationOperation {
 
     private Registration registration;
-    private int orderKey = -1;
 
     public RegistrationOperation() {
     }
 
     public RegistrationOperation(Registration registration, int orderKey, int memberListVersion) {
-        super(memberListVersion);
+        super(memberListVersion, orderKey);
         this.registration = registration;
-        this.orderKey = orderKey;
     }
 
     @Override
     protected void runInternal() {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
-        eventService.executeEventCallback(new StripedRunnable() {
-            @Override
-            public void run() {
-                eventService.handleLocalRegistration(registration);
-            }
-
-            @Override
-            public int getKey() {
-                return orderKey;
-            }
-        });
-    }
-
-    @Override
-    public Object getResponse() {
-        return true;
+        eventService.handleLocalRegistration(registration);
     }
 
     @Override
     protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         registration.writeData(out);
-        if (out.getVersion().isGreaterOrEqual(V5_3)) {
-            out.writeInt(orderKey);
-        }
     }
 
     @Override
     protected void readInternalImpl(ObjectDataInput in) throws IOException {
         registration = new Registration();
         registration.readData(in);
-        if (in.getVersion().isGreaterOrEqual(V5_3)) {
-            orderKey = in.readInt();
-        }
     }
 
     @Override
