@@ -115,6 +115,7 @@ public class DataConnectionResolver implements TableResolver {
 
     /**
      * Invoke all registerer change listeners
+     * TODO this method should be removed when the TODOs at calling sites are resolved
      */
     public void invokeChangeListeners() {
         listeners.forEach(TableListener::onTableChanged);
