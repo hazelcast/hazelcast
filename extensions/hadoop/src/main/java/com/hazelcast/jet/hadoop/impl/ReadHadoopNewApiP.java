@@ -227,6 +227,11 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
         public Permission getRequiredPermission() {
             return permission;
         }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
     }
 
     private static final class Supplier<K, V, R> implements ProcessorSupplier {

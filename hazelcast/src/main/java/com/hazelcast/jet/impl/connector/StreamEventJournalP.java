@@ -427,6 +427,16 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             }
             return permissionFn.get();
         }
+
+        @Override
+        public boolean initIsCooperative() {
+            return clientXml == null;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
     }
 
     private static class ClusterProcessorSupplier<E, T> implements ProcessorSupplier {
