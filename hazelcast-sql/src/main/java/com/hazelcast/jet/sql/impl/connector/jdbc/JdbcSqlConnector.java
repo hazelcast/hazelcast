@@ -60,16 +60,11 @@ import java.util.Set;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.core.ProcessorSupplier.of;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
-import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 
 public class JdbcSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "JDBC";
-
-    public static final String OPTION_JDBC_BATCH_LIMIT = "jdbc.batch-limit";
-
-    public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
 
     private static final JetSqlRow DUMMY_INPUT_ROW = new JetSqlRow(null, new Object[]{});
 
@@ -265,17 +260,13 @@ public class JdbcSqlConnector implements SqlConnector {
             ));
         }
 
-        int batchLimit = parseInt(
-                externalResource.options().getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)
-        );
         return new JdbcTable(
                 this,
                 fields,
                 schemaName,
                 mappingName,
                 externalResource,
-                new ConstantTableStatistics(0),
-                batchLimit
+                new ConstantTableStatistics(0)
         );
     }
 

@@ -197,6 +197,9 @@ public class PlanExecutor {
                 plan.ifNotExists());
         if (added) {
             broadcastUpdateDataConnectionOperations(plan.name());
+            // TODO invoke the listeners so plans can be invalidated after the
+            //  change was propagated to InternalDataConnectionService
+            dataConnectionCatalog.invokeChangeListeners();
         }
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
@@ -208,6 +211,9 @@ public class PlanExecutor {
         }
         dataConnectionCatalog.removeDataConnection(plan.name(), plan.ifExists());
         broadcastUpdateDataConnectionOperations(plan.name());
+        // TODO invoke the listeners so plans can be invalidated after the
+        //  change was propagated to InternalDataConnectionService
+        dataConnectionCatalog.invokeChangeListeners();
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
