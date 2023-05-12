@@ -28,16 +28,17 @@ import org.junit.runners.Parameterized;
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerEquiJoinFaultToleranceStressTest {
-    static {
-        SINK_COUNT = 200;
-        EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_COUNT;
+
+    public SqlSTSInnerNonEquiJoinFaultToleranceStressTest() {
+        super();
+        this.sinkCount = 200;
     }
 
     @Override
     protected String setupFetchingQuery() {
-        expectedEventsCount = EVENTS_TO_PROCESS - 1; // we do expected fewer items for query below
+        expectedEventsCount = eventsToProcess - 1; // we do expected fewer items for query below
         firstItemId = 2;                              // we do expect first item to be [1, value-2]
-        lastItemId = EVENTS_TO_PROCESS;
+        lastItemId = eventsToProcess;
         return "CREATE JOB " + JOB_NAME +
                 " OPTIONS (" +
                 " 'processingGuarantee'='" + processingGuarantee + "', 'snapshotIntervalMillis' = '1000') " +
