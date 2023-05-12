@@ -20,7 +20,6 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -126,12 +125,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
-    /**
-     * H2 throws org.h2.jdbc.JdbcBatchUpdateException, after which the insert is retried, we can either handle
-     * java.sql.BatchUpdateException as non-transient exception, or something else, not sure
-     */
     @Test
-    @Ignore
     public void insertIntoTableSameValues() throws Exception {
         createTable(tableName);
         createMapping(tableName);

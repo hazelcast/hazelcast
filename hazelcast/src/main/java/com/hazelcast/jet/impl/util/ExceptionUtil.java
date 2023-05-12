@@ -22,13 +22,13 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
@@ -76,9 +76,9 @@ public final class ExceptionUtil {
     @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
     public static boolean isRestartableException(Throwable t) {
         return isTopologyException(t)
-                || t instanceof RestartableException
-                || t instanceof JetException && t.getCause() instanceof RestartableException
-                || t instanceof CompletionException && t.getCause() instanceof RestartableException
+                || (t instanceof RestartableException)
+                || (t instanceof JetException && isOrHasCause(t, RestartableException.class))
+                || (t instanceof CompletionException && isOrHasCause(t, RestartableException.class))
                 ;
     }
 

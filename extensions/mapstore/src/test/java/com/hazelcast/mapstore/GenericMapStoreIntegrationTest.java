@@ -32,6 +32,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.ExceptionRecorder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
@@ -89,7 +90,8 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         databaseProvider = testDatabaseProvider;
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
-        memberConfig = smallInstanceConfig()
+        // Do not use small config to run with more threads and partitions
+        memberConfig = new Config()
                 // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
                 .addDataConnectionConfig(
@@ -97,6 +99,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                                 .setType("jdbc")
                                 .setProperty("jdbcUrl", dbConnectionUrl)
                 );
+        memberConfig.getJetConfig().setEnabled(true);
 
         ClientConfig clientConfig = new ClientConfig();
 
@@ -389,6 +392,28 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 30);
     }
 
+    /**
+     * Regression test for https://github.com/hazelcast/hazelcast/issues/22567
+     */
+    @Test(timeout = 30_000L)
+    @Category(NightlyTest.class)
+    public void testClear() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+
+        for (int i = 0; i < 10; i++) {
+            logger.info("Iteration " + i);
+            Map<Integer, Person> toInsert = new HashMap<>();
+            for (int j = 0; j < 10_000; j++) {
+                toInsert.put(j, new Person(j, "name-" + j));
+            }
+            map.putAll(toInsert);
+            logger.info("Inserted 10k items");
+            map.clear();
+            logger.info("Cleared map");
+        }
+    }
+
     @Test
     public void testInstanceShutdown() throws Exception {
         HazelcastInstance client = client();
@@ -400,9 +425,19 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         ExceptionRecorder recorder = new ExceptionRecorder(hz3, Level.WARNING);
         // fill the map with some values so each member gets some items
-        for (int i = 1; i < 1000; i++) {
+        Integer itemSize = 1000;
+        for (int i = 1; i < itemSize; i++) {
             map.put(i, new Person(i, "name-" + i));
         }
+        // Ensure that all put operations are inserted into the DB. Otherwise, we may get
+        // HazelcastSqlException: Hazelcast instance is not active! from the SqlService
+        // when we shut down the hz3 instance
+        assertEqualsEventually(() -> {
+                    List<Row> rows = jdbcRows("SELECT COUNT(*) FROM " + tableName);
+                    Object[] values = rows.get(0).getValues();
+                    return (Long) values[0];
+                }, itemSize.longValue()
+        );
 
         // shutdown the member - this will call destroy on the MapStore on this member,
         // which should not drop the mapping in this case
@@ -414,9 +449,9 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         // The new item should still be loadable via the mapping
         executeJdbc("INSERT INTO " + tableName + " VALUES(1000, 'name-1000')");
-        Person p = map.get(1000);
-        assertThat(p.getId()).isEqualTo(1000);
-        assertThat(p.getName()).isEqualTo("name-1000");
+        Person p = map.get(itemSize);
+        assertThat(p.getId()).isEqualTo(itemSize);
+        assertThat(p.getName()).isEqualTo("name-" + itemSize);
 
         for (Throwable throwable : recorder.exceptionsLogged()) {
             assertThat(throwable).hasMessageNotContaining("is not active!");

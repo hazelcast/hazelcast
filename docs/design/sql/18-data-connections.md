@@ -5,7 +5,7 @@
 | Related Github issues          | TODO                       |
 | Document Status / Completeness | Approved                   |
 | Author(s)                      | Viliam Durina              |
-| Developer(s)                   | Sasha Syrotenko, Burak Gok |
+| Developer(s)                   | Sasha Syrotenko, Burak Gök |
 | Technical Reviewers            | Frantisek Hartman          |
 
 # Name of the feature
@@ -602,16 +602,32 @@ INSERT commands, the engine connects and disconnects to Kafka 10 times.
 ## SHOW commands
 
 ```sql
-SHOW RESOURCES FOR <data connection name>;
-
 SHOW DATA CONNECTIONS;
++-----------+-----------------+-------------------------------+
+|name       |connection_type  |resource_types                 |
++-----------+-----------------+-------------------------------+
+|testMongo  |Mongo            |["Collection","ChangeStream"]  |
++-----------+-----------------+-------------------------------+
 
-SELECT *
-FROM information_schema.data_connections;
+SELECT * FROM information_schema.dataconnections;
++-----------+--------+-----------+-------+--------+-------------------------------------------------------------------+--------+
+|catalog    |schema  |name       |type   |shared  |options                                                            |source  |
++-----------+--------+-----------+-------+--------+-------------------------------------------------------------------+--------+
+|hazelcast  |public  |testMongo  |Mongo  |true    |{"connectionString":"mongodb://localhost:55899","database":"db1"}  |CONFIG  |
++-----------+--------+-----------+-------+--------+-------------------------------------------------------------------+--------+
+
+SHOW RESOURCES FOR testMongo;
++-----------------+--------------+
+|name             |type          |
++-----------------+--------------+
+|"test1"."test2"  |Collection    |
+|"test1"."test2"  |ChangeStream  |
++-----------------+--------------+
 ```
 
-The list of data connections should also include links created in the config. In the
-`information_schema` there should be a flag for such data connections.
+The list of data connections should also include connections created in the config. In the
+`information_schema`, there should be a flag for such data connections: `CONFIG`/`SQL`. The
+`resource_types` field should contain an array of possible object types for a data connection.
 
 ## GET_DDL system function
 

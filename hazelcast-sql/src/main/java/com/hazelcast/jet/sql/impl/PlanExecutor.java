@@ -415,7 +415,8 @@ public class PlanExecutor {
                 plan.getShowTarget() == ShowStatementTarget.DATACONNECTIONS
                         ? new SqlRowMetadata(asList(
                         new SqlColumnMetadata("name", VARCHAR, false),
-                        new SqlColumnMetadata("types", JSON, false)
+                        new SqlColumnMetadata("connection_type", VARCHAR, false),
+                        new SqlColumnMetadata("resource_types", JSON, false)
                 ))
                         : new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);

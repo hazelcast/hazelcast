@@ -134,8 +134,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Before
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
-        Config config = getConfig();
-        instances = factory.newInstances(config);
+        instances = factory.newInstances(getConfig());
     }
 
     @Override

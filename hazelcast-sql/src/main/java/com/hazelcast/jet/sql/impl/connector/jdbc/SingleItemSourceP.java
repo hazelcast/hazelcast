@@ -16,26 +16,25 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import org.apache.calcite.sql.SqlDynamicParam;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.util.SqlBasicVisitor;
-
-import java.util.List;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.core.AbstractProcessor;
 
 /**
- * Visitor for {@link SqlNode} that collects indexes of query input parameters used in the SqlNode
+ * Processor producing a single item and then completing.
+ * @param <T> type of the item
  */
-class ParamCollectingVisitor extends SqlBasicVisitor<SqlNode> {
+class SingleItemSourceP<T> extends AbstractProcessor {
 
-    private final List<Integer> parameterPositions;
+    private final Traverser<T> traverser;
 
-    ParamCollectingVisitor(List<Integer> parameterPositions) {
-        this.parameterPositions = parameterPositions;
+    SingleItemSourceP(T item) {
+        traverser = Traversers.singleton(item);
     }
 
     @Override
-    public SqlNode visit(SqlDynamicParam param) {
-        parameterPositions.add(param.getIndex());
-        return param;
+    public boolean complete() {
+        return emitFromTraverser(traverser);
     }
+
 }
