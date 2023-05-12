@@ -1235,7 +1235,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
-        dataConnectionConfig.checkValidity();
+        dataConnectionConfig.validate();
         boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getDataConnectionConfigs(),
                 dataConnectionConfig.getName(), dataConnectionConfig);
         if (staticConfigDoesNotExist) {

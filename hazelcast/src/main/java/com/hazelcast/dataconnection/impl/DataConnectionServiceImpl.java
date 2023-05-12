@@ -80,7 +80,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     }
 
     private void put(DataConnectionConfig config, DataConnectionSource source) {
-        config.checkValidity();
+        config.validate();
         dataConnections.compute(config.getName(),
                 (key, current) -> {
                     if (current != null) {

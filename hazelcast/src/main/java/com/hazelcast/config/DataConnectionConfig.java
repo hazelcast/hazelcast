@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -186,7 +187,8 @@ public class DataConnectionConfig implements IdentifiedDataSerializable, NamedCo
     /**
      * Checks if this configuration object is in coherent state - has all required properties set.
      */
-    public void checkValidity() {
+    @PrivateApi
+    public void validate() {
         List<String> errors = new ArrayList<>();
         if (name == null || name.isEmpty()) {
             errors.add("Data connection name must be non-null and contain text");
