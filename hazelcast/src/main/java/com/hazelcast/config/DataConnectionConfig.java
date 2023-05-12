@@ -29,6 +29,8 @@ import com.hazelcast.spi.annotation.Beta;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -179,6 +181,22 @@ public class DataConnectionConfig implements IdentifiedDataSerializable, NamedCo
     public DataConnectionConfig setProperties(Properties properties) {
         this.properties = checkNotNull(properties, "Data connection properties cannot be null, they can be empty");
         return this;
+    }
+
+    public void checkValidity() {
+        List<String> errors = new ArrayList<>();
+        if (name == null || name.isEmpty()) {
+            errors.add("Data connection name must be non-null and contain text");
+        }
+        if (type == null || type.isEmpty()) {
+            errors.add("Data connection type must be non-null and contain text");
+        }
+        if (properties == null) {
+            errors.add("Data connection properties cannot be null, they can be empty");
+        }
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join(", ", errors));
+        }
     }
 
     @Override

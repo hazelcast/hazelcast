@@ -1131,6 +1131,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
+        dataConnectionConfig.checkValidity();
         ClientMessage request = DynamicConfigAddDataConnectionConfigCodec.encodeRequest(
                 dataConnectionConfig.getName(), dataConnectionConfig.getType(),
                 dataConnectionConfig.isShared(), toMap(dataConnectionConfig.getProperties()));

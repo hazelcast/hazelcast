@@ -3152,6 +3152,7 @@ public class Config {
      */
     @Beta
     public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
+        dataConnectionConfig.checkValidity();
         dataConnectionConfigs.put(dataConnectionConfig.getName(), dataConnectionConfig);
         return this;
     }
