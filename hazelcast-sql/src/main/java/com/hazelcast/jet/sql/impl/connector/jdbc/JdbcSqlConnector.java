@@ -101,23 +101,19 @@ public class JdbcSqlConnector implements SqlConnector {
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
             for (DbField dbField : dbFields.values()) {
-                try {
-                    MappingField mappingField = new MappingField(
-                            dbField.columnName,
-                            resolveType(dbField.columnTypeName)
-                    );
-                    mappingField.setPrimaryKey(dbField.primaryKey);
-                    resolvedFields.add(mappingField);
-                } catch (IllegalArgumentException e) {
-                    throw new IllegalStateException("Could not load column class " + dbField.columnTypeName, e);
-                }
+                MappingField mappingField = new MappingField(
+                        dbField.columnName,
+                        resolveType(dbField.columnTypeName)
+                );
+                mappingField.setPrimaryKey(dbField.primaryKey);
+                resolvedFields.add(mappingField);
             }
         } else {
             for (MappingField f : userFields) {
                 if (f.externalName() != null) {
                     DbField dbField = dbFields.get(f.externalName());
                     if (dbField == null) {
-                        throw new IllegalStateException("Could not resolve field with external name " + f.externalName());
+                        throw QueryException.error("Could not resolve field with external name " + f.externalName());
                     }
                     validateType(f, dbField);
                     MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName(),
@@ -127,7 +123,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 } else {
                     DbField dbField = dbFields.get(f.name());
                     if (dbField == null) {
-                        throw new IllegalStateException("Could not resolve field with name " + f.name());
+                        throw QueryException.error("Could not resolve field with name " + f.name());
                     }
                     validateType(f, dbField);
                     MappingField mappingField = new MappingField(f.name(), f.type());
@@ -568,7 +564,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
 
             default:
-                throw new IllegalArgumentException("Unknown column type: " + columnTypeName);
+                throw new IllegalArgumentException("Unsupported column type: " + columnTypeName);
         }
     }
 
@@ -632,7 +628,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 table = externalName[2];
             } else {
                 // external name length was validated earlier, we should never get here
-                throw new IllegalStateException("Invalid external name length");
+                throw QueryException.error("Invalid external name length");
             }
         }
 
