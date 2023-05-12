@@ -19,14 +19,19 @@ package com.hazelcast.jet.sql_nightly;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(NightlyTest.class)
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlSTSInnerNonEquiJoinFaultToleranceStressTest extends SqlSTSInnerEquiJoinFaultToleranceStressTest {
+    static {
+        SINK_COUNT = 200;
+        EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_COUNT;
+    }
 
     @Override
     protected String setupFetchingQuery() {

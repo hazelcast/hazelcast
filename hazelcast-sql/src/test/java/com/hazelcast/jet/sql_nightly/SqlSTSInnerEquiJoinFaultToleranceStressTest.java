@@ -30,6 +30,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -60,11 +61,11 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(NightlyTest.class)
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
-    private static final int EVENTS_PER_SINK = 500;
-    private static final int SINK_COUNT = 400;
-    protected static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_COUNT;
+    protected static final int EVENTS_PER_SINK = 500;
+    protected static int SINK_COUNT = 400;
+    protected static int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_COUNT;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
 
     protected static final String JOB_NAME = "s2s_join";
@@ -168,7 +169,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         }
     }
 
-    @Test
+    @Test(timeout = 1_200_000L)
     public void stressTest() throws Exception {
         sqlService.execute(setupFetchingQuery());
 
