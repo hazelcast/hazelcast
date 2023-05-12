@@ -92,14 +92,15 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
 
     @Test
     public void when_createDataConnectionWithWrongType_then_throws() {
-        String dlName = randomName();
+        String dlName = randomName() + "_shouldNotExist";
         assertThatThrownBy(() -> instance().getSql().execute("CREATE DATA CONNECTION " + dlName
                 + " TYPE DUMMIES " // <-- DUMMIES is wrong type
                 + " NOT SHARED "
                 + " OPTIONS ('b' = 'c')"))
                 .hasMessageContaining("Data connection type 'DUMMIES' is not known");
 
-        assertRowsAnyOrder("SELECT * FROM information_schema.dataconnections", Collections.emptyList());
+        assertRowsAnyOrder("SELECT * FROM information_schema.dataconnections " +
+                "WHERE name = '" + dlName + "'", Collections.emptyList());
     }
 
     @Test
