@@ -285,17 +285,27 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         @Override
-        public boolean closeIsCooperative() {
-            return true;
-        }
-
-        @Override
         public int preferredLocalParallelism() {
             return 1;
         }
 
         @Override
         public abstract Permission getRequiredPermission();
+
+        @Override
+        public boolean isReusable() {
+            return true;
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
     }
 
     public static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier,
