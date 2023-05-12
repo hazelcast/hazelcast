@@ -187,7 +187,12 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         UrgentPartitionRunnable<ChunkSupplier> partitionThreadRunnable = new UrgentPartitionRunnable<>(
                 event.getPartitionId(), () -> service.newChunkSupplier(event, singleton(ns)));
         getNodeEngine().getOperationService().execute(partitionThreadRunnable);
-        ChunkSupplier supplier = partitionThreadRunnable.future.joinInternal();
+        ChunkSupplier supplier;
+        try {
+            supplier = partitionThreadRunnable.future.get();
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
         return appendNewElement(chunkSuppliers, supplier);
     }
 
@@ -291,7 +296,12 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
                 event.getPartitionId(),
                 () -> prepareReplicationOperation(event, ns, service, serviceName));
         getNodeEngine().getOperationService().execute(partitionThreadRunnable);
-        Operation op = partitionThreadRunnable.future.joinInternal();
+        Operation op;
+        try {
+            op = partitionThreadRunnable.future.get();
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
         return appendNewElement(operations, op);
     }
 

@@ -48,6 +48,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCo
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 
 /**
@@ -158,7 +159,11 @@ public final class PartitionReplicaSyncRequestOffloadable
                     }
                 });
         operationService.execute(gatherReplicaVersionsRunnable);
-        gatherReplicaVersionsRunnable.future.joinInternal();
+        try {
+            gatherReplicaVersionsRunnable.future.get();
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
     }
 
     @Override
@@ -175,7 +180,11 @@ public final class PartitionReplicaSyncRequestOffloadable
             UrgentPartitionRunnable partitionRunnable = new UrgentPartitionRunnable(partitionId(),
                     () -> sendOperations(operations, chunkSuppliers, ns));
             getNodeEngine().getOperationService().execute(partitionRunnable);
-            partitionRunnable.future.joinInternal();
+            try {
+                partitionRunnable.future.get();
+            } catch (Exception e) {
+                throw sneakyThrow(e);
+            }
         }
     }
 
@@ -269,7 +278,11 @@ public final class PartitionReplicaSyncRequestOffloadable
         UrgentPartitionRunnable<Boolean> trySetMigrating = new UrgentPartitionRunnable<>(partitionId(),
                 () -> partitionStateManager.trySetMigratingFlag(partitionId()));
         getNodeEngine().getOperationService().execute(trySetMigrating);
-        return trySetMigrating.future.joinInternal();
+        try {
+            return trySetMigrating.future.get();
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
     }
 
     private void clearMigratingFlag() {
@@ -278,6 +291,10 @@ public final class PartitionReplicaSyncRequestOffloadable
         UrgentPartitionRunnable<Void> trySetMigrating = new UrgentPartitionRunnable<>(partitionId(),
                 () -> partitionStateManager.clearMigratingFlag(partitionId()));
         getNodeEngine().getOperationService().execute(trySetMigrating);
-        trySetMigrating.future.joinInternal();
+        try {
+            trySetMigrating.future.get();
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
     }
 }
