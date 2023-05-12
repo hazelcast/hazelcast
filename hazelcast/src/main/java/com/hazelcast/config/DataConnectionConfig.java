@@ -183,6 +183,9 @@ public class DataConnectionConfig implements IdentifiedDataSerializable, NamedCo
         return this;
     }
 
+    /**
+     * Checks if this configuration object is in coherent state - has all required properties set.
+     */
     public void checkValidity() {
         List<String> errors = new ArrayList<>();
         if (name == null || name.isEmpty()) {
