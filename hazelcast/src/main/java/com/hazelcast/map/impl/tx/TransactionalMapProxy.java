@@ -140,12 +140,12 @@ public class TransactionalMapProxy<K, V>
     }
 
     @Override
-    public V put(Object key, Object value) {
+    public V put(K key, V value) {
         return put(key, value, -1, MILLISECONDS);
     }
 
     @Override
-    public V put(Object key, Object value, long ttl, TimeUnit timeUnit) {
+    public V put(K key, V value, long ttl, TimeUnit timeUnit) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
@@ -160,13 +160,13 @@ public class TransactionalMapProxy<K, V>
                 ttl, timeUnit, remoteCallHook));
         TxnValueWrapper<V> currentValue = txMap.get(keyData);
         Type type = valueBeforeTxn == null ? Type.NEW : Type.UPDATED;
-        TxnValueWrapper<V> wrapper = new TxnValueWrapper<>((V) value, type);
+        TxnValueWrapper<V> wrapper = new TxnValueWrapper<>(value, type);
         txMap.put(keyData, wrapper);
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
     }
 
     @Override
-    public void set(Object key, Object value) {
+    public void set(K key, V value) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
@@ -179,12 +179,12 @@ public class TransactionalMapProxy<K, V>
 
         Data dataBeforeTxn = putInternal(keyData, valueData, UNSET, MILLISECONDS, remoteCallHook);
         Type type = dataBeforeTxn == null ? Type.NEW : Type.UPDATED;
-        TxnValueWrapper<V> wrapper = new TxnValueWrapper<>((V) value, type);
+        TxnValueWrapper<V> wrapper = new TxnValueWrapper<>(value, type);
         txMap.put(keyData, wrapper);
     }
 
     @Override
-    public V putIfAbsent(Object key, Object value) {
+    public V putIfAbsent(K key, V value) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
@@ -202,7 +202,7 @@ public class TransactionalMapProxy<K, V>
                 return wrapper.value;
             }
             putInternal(keyData, valueData, UNSET, MILLISECONDS, remoteCallHook);
-            txMap.put(keyData, new TxnValueWrapper<>((V) value, Type.NEW));
+            txMap.put(keyData, new TxnValueWrapper<>(value, Type.NEW));
             return null;
         } else {
             Data oldValue = putIfAbsentInternal(keyData, valueData, remoteCallHook);
@@ -214,7 +214,7 @@ public class TransactionalMapProxy<K, V>
     }
 
     @Override
-    public V replace(Object key, Object value) {
+    public V replace(K key, V value) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
@@ -232,19 +232,19 @@ public class TransactionalMapProxy<K, V>
                 return null;
             }
             putInternal(keyData, valueData, UNSET, MILLISECONDS, remoteCallHook);
-            txMap.put(keyData, new TxnValueWrapper<>((V) value, Type.UPDATED));
+            txMap.put(keyData, new TxnValueWrapper<>(value, Type.UPDATED));
             return wrapper.value;
         } else {
             Data oldValue = replaceInternal(keyData, valueData, remoteCallHook);
             if (oldValue != null) {
-                txMap.put(keyData, new TxnValueWrapper<>((V) value, Type.UPDATED));
+                txMap.put(keyData, new TxnValueWrapper<>(value, Type.UPDATED));
             }
             return (V) toObjectIfNeeded(oldValue);
         }
     }
 
     @Override
-    public boolean replace(Object key, Object oldValue, Object newValue) {
+    public boolean replace(K key, V oldValue, V newValue) {
         checkTransactionState();
         checkNotNull(key, "key can't be null");
         checkNotNull(oldValue, "oldValue can't be null");
@@ -269,7 +269,7 @@ public class TransactionalMapProxy<K, V>
             boolean success = replaceIfSameInternal(keyData, mapServiceContext.toData(oldValue),
                     newValueData, remoteCallHook);
             if (success) {
-                txMap.put(keyData, new TxnValueWrapper<>((V) newValue, Type.UPDATED));
+                txMap.put(keyData, new TxnValueWrapper<>(newValue, Type.UPDATED));
             }
             return success;
         }
@@ -356,7 +356,7 @@ public class TransactionalMapProxy<K, V>
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<K> keySet(Predicate predicate) {
+    public Set<K> keySet(Predicate<K,V> predicate) {
         checkTransactionState();
         checkNotNull(predicate, "Predicate should not be null!");
         checkNotInstanceOf(PagingPredicate.class, predicate,
@@ -403,7 +403,7 @@ public class TransactionalMapProxy<K, V>
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<V> values(Predicate predicate) {
+    public Collection<V> values(Predicate<K,V> predicate) {
         checkTransactionState();
         checkNotNull(predicate, "Predicate can not be null!");
         checkNotInstanceOf(PagingPredicate.class, predicate,
