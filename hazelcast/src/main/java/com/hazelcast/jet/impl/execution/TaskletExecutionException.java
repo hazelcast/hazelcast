@@ -19,10 +19,10 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.spi.exception.SilentException;
 
-class TaskletExecutionException extends JetException implements SilentException {
+public class TaskletExecutionException extends JetException implements SilentException {
     private static final long serialVersionUID = 1L;
 
-    TaskletExecutionException(String message, Throwable cause) {
+    public TaskletExecutionException(String message, Throwable cause) {
         super(message, cause);
     }
 }
