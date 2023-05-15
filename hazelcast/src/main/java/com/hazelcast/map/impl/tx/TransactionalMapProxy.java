@@ -356,7 +356,7 @@ public class TransactionalMapProxy<K, V>
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<K> keySet(Predicate<K,V> predicate) {
+    public Set<K> keySet(Predicate<K, V> predicate) {
         checkTransactionState();
         checkNotNull(predicate, "Predicate should not be null!");
         checkNotInstanceOf(PagingPredicate.class, predicate,
@@ -403,7 +403,7 @@ public class TransactionalMapProxy<K, V>
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<V> values(Predicate<K,V> predicate) {
+    public Collection<V> values(Predicate<K, V> predicate) {
         checkTransactionState();
         checkNotNull(predicate, "Predicate can not be null!");
         checkNotInstanceOf(PagingPredicate.class, predicate,
