@@ -71,7 +71,7 @@ public class MySqlDownTest extends JdbcSqlTestSupport {
         createTable("my_table");
 
         final ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxiproxy.getHost(), toxiproxy.getControlPort());
-        final Proxy proxy = toxiproxyClient.createProxy("mysql", "0.0.0.0:8666",  "mysql:3306");
+        final Proxy proxy = toxiproxyClient.createProxy("mysql", "0.0.0.0:8666", "mysql:3306");
 
         String host = toxiproxy.getHost();
         Integer port = toxiproxy.getMappedPort(8666);
@@ -88,15 +88,15 @@ public class MySqlDownTest extends JdbcSqlTestSupport {
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
         SqlResult result = executor.submit(() -> sqlService.execute("SHOW DATA CONNECTIONS"))
-                                   .get(5, TimeUnit.SECONDS);
+                .get(5, TimeUnit.SECONDS);
 
 
         assertThat(allRows(result)).containsExactly(
-                new Row("mysql", "Jdbc", jsonArray("Table")),
+                new Row("mysql", "jdbc", jsonArray("Table")),
                 new Row("testDatabaseRef", "jdbc", jsonArray("Table")));
 
         result = executor.submit(() -> sqlService.execute("SHOW MAPPINGS"))
-                                   .get(5, TimeUnit.SECONDS);
+                .get(5, TimeUnit.SECONDS);
 
         assertThat(allRows(result)).containsExactly(new Row("my_table"));
     }
