@@ -46,12 +46,9 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     private final Map<Class<? extends DataConnection>, String> dataConnectionClassToType = new HashMap<>();
 
     private final Map<String, DataConnectionEntry> dataConnections = new ConcurrentHashMap<>();
-
-    private final ClassLoader classLoader;
     private final ILogger logger;
 
     public DataConnectionServiceImpl(Node node, ClassLoader classLoader) {
-        this.classLoader = classLoader;
         this.logger = node.getLogger(getClass());
         processDataConnectionRegistrations(classLoader);
 
