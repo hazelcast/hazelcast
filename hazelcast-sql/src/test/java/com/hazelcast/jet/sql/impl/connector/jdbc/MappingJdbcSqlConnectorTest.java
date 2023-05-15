@@ -121,7 +121,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
+         .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
     }
 
     @Test
@@ -138,7 +138,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
+         .hasMessageContaining("Invalid external name \"aaaa\".\"bbbb\".\"cccc\".\"dddd\"");
     }
 
     @Test
@@ -155,7 +155,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("You must provide data connection when using the Jdbc connector");
+         .hasMessageContaining("You must provide data connection when using the Jdbc connector");
     }
 
     @Test
@@ -224,7 +224,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Could not resolve field with name fullName");
+         .hasMessageContaining("Could not resolve field with name fullName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -249,7 +249,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Could not resolve field with external name myName");
+         .hasMessageContaining("Could not resolve field with external name myName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -269,7 +269,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "DATA CONNECTION " + TEST_DATABASE_REF
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
+         .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -374,7 +374,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         "public",
                         mappingName,
                         '"' + mappingName + '"',
-                        "kafka",
+                        "Kafka",
                         "{}")));
 
         // cleanup
@@ -523,10 +523,10 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // Create mapping to new DB. Table does not exist on new DB, and we should get an exception
         assertThatThrownBy(() -> execute(
                 "CREATE MAPPING " + tableName + " EXTERNAL NAME " + tableName + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + NEW_TEST_DATABASE_REF
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + NEW_TEST_DATABASE_REF
         ))
                 .isInstanceOf(HazelcastSqlException.class)
                 .isInstanceOf(HazelcastSqlException.class)
@@ -567,10 +567,10 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         // Create mapping to new DB. Table does not exist on new DB, and we should get an exception
         assertThatThrownBy(() -> execute(
                 "CREATE MAPPING " + tableName + " EXTERNAL NAME " + newDBName + ".public." + tableName + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + NEW_TEST_DATABASE_REF
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + NEW_TEST_DATABASE_REF
         ))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Could not execute readDbFields for table");

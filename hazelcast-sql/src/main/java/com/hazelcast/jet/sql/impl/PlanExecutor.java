@@ -105,7 +105,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -190,12 +189,14 @@ public class PlanExecutor {
         }
 
         // checks if type is correct
-        dlService.classForDataConnectionType(plan.type());
+        if (!dlService.typeIsRegistered(plan.type())) {
+            throw new HazelcastException("Data connection type '" + plan.type() + "' is not known");
+        }
 
         boolean added = dataConnectionCatalog.createDataConnection(
                 new DataConnectionCatalogEntry(
                         plan.name(),
-                        plan.type().toLowerCase(Locale.ROOT),
+                        plan.type(),
                         plan.shared(),
                         plan.options()),
                 plan.isReplace(),

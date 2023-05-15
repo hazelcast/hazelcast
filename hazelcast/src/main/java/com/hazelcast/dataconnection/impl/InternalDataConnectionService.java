@@ -91,11 +91,10 @@ public interface InternalDataConnectionService extends DataConnectionService {
     String typeForDataConnection(String name);
 
     /**
-     * Return class implementing DataConnection of given type.
+     * Returns true, if data connection type is registered.
      * @param type type of the DataConnection
-     * @return DataConnection implementation class
      */
-    Class<? extends DataConnection> classForDataConnectionType(String type);
+    boolean typeIsRegistered(String type);
 
     /**
      * Close this DataConnectionService, should be called only on member shutdown.

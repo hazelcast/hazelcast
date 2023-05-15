@@ -67,7 +67,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo("DUMMY");
             assertThat(dataConnection.getConfig().isShared()).isFalse();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -84,7 +84,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo("DuMMy");
             assertThat(dataConnection.getConfig().isShared()).isFalse();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -114,7 +114,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo("DUMMY");
             assertThat(dataConnection.getConfig().isShared()).isTrue();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -130,7 +130,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo("DUMMY");
             assertThat(dataConnection.getConfig().isShared()).isTrue();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -145,7 +145,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo("DUMMY");
             assertThat(dataConnection.getConfig().getProperties().get("b")).isEqualTo("c");
         }
     }

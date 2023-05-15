@@ -39,7 +39,7 @@ public class KafkaDataConnectionSqlTest extends KafkaSqlTestSupport {
                 instance()).getDataConnectionService().getAndRetainDataConnection(dlName, KafkaDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
-        assertThat(dataConnection.getConfig().getType()).isEqualTo("kafka");
+        assertThat(dataConnection.getConfig().getType()).isEqualTo("Kafka");
         assertThat(dataConnection.getConfig().isShared()).isTrue();
     }
 
@@ -52,7 +52,7 @@ public class KafkaDataConnectionSqlTest extends KafkaSqlTestSupport {
                 instance()).getDataConnectionService().getAndRetainDataConnection(dlName, KafkaDataConnection.class);
 
         assertThat(dataConnection).isNotNull();
-        assertThat(dataConnection.getConfig().getType()).isEqualTo("kafka");
+        assertThat(dataConnection.getConfig().getType()).isEqualTo("Kafka");
         assertThat(dataConnection.getConfig().isShared()).isFalse();
     }
 }

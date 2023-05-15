@@ -67,7 +67,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
                     classLoader
             ).forEachRemaining(registration -> {
                 typeToDataConnectionClass.put(registration.type().toLowerCase(Locale.ROOT), registration.clazz());
-                dataConnectionClassToType.put(registration.clazz(), registration.type().toLowerCase(Locale.ROOT));
+                dataConnectionClassToType.put(registration.clazz(), registration.type());
             });
         } catch (Exception e) {
             throw new HazelcastException("Could not register data connections", e);
@@ -165,13 +165,9 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     }
 
     @Override
-    public Class<? extends DataConnection> classForDataConnectionType(String type) {
-        String caseInsensitiveType = type.toLowerCase(Locale.ROOT);
-        Class<? extends DataConnection> dataConnectionClass = typeToDataConnectionClass.get(caseInsensitiveType);
-        if (dataConnectionClass == null) {
-            throw new HazelcastException("Data connection type '" + type + "' is not known");
-        }
-        return dataConnectionClass;
+    public boolean typeIsRegistered(String type) {
+        String lowerCaseType = type.toLowerCase(Locale.ROOT);
+        return typeToDataConnectionClass.containsKey(lowerCaseType);
     }
 
     @Override
@@ -206,18 +202,18 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
 
     public List<DataConnection> getConfigCreatedDataConnections() {
         return dataConnections.values()
-                .stream()
-                .filter(dl -> dl.source == CONFIG)
-                .map(dl -> dl.instance)
-                .collect(Collectors.toList());
+                              .stream()
+                              .filter(dl -> dl.source == CONFIG)
+                              .map(dl -> dl.instance)
+                              .collect(Collectors.toList());
     }
 
     public List<DataConnection> getSqlCreatedDataConnections() {
         return dataConnections.values()
-                .stream()
-                .filter(dl -> dl.source == SQL)
-                .map(dl -> dl.instance)
-                .collect(Collectors.toList());
+                              .stream()
+                              .filter(dl -> dl.source == SQL)
+                              .map(dl -> dl.instance)
+                              .collect(Collectors.toList());
     }
 
     @Override

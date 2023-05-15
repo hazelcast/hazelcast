@@ -92,7 +92,7 @@ public class GetDdlTest extends SqlTestSupport {
     @Test
     public void when_queryDataConnectionFromDataConnectionNamespace_then_success() {
         String createDataConnectionQuery = "CREATE OR REPLACE DATA CONNECTION \"hazelcast\".\"public\".\"dl\"" + LE
-                + "TYPE \"dummy\"" + LE + "SHARED";
+                + "TYPE \"DUMMY\"" + LE + "SHARED";
 
         instance().getSql().execute(createDataConnectionQuery);
         assertRowsAnyOrder("SELECT GET_DDL('dataconnection', 'dl')", ImmutableList.of(new Row(createDataConnectionQuery)));
