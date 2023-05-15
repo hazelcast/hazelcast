@@ -134,16 +134,15 @@ public class ConfiguredBehaviourTest extends ClientTestSupport {
         clientUserCodeDeploymentConfig.setEnabled(true);
         clientConfig.setUserCodeDeploymentConfig(clientUserCodeDeploymentConfig);
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         CountDownLatch connectedLatch = new CountDownLatch(1);
-
-        client.getLifecycleService().addLifecycleListener(event -> {
+        clientConfig.addListenerConfig(new ListenerConfig((LifecycleListener) event -> {
             if (event.getState().equals(CLIENT_CONNECTED)) {
                 connectedLatch.countDown();
             }
-        });
+        }));
 
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         assertOpenEventually(connectedLatch);
 
         // The following logic verifies user code deployment works
