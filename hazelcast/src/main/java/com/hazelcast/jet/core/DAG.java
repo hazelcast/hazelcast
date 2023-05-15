@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -291,6 +292,16 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     @Nullable
     public Vertex getVertex(@Nonnull String vertexName) {
         return nameToVertex.get(vertexName);
+    }
+
+    /**
+     * Returns a copy of the DAG's vertices. Adding a vertex to or removing a
+     * vertex from the returned {@link Set} will not be reflected in the DAG,
+     * and vice-versa.
+     */
+    @Nonnull
+    public Set<Vertex> vertices() {
+        return new HashSet<>(verticesByIdentity);
     }
 
     /**

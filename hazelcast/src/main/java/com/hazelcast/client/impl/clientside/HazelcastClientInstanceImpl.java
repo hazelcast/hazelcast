@@ -426,7 +426,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clientExtension.afterStart(this);
             cpSubsystem.init(clientContext);
             addClientConfigAddedListeners(configuredListeners);
-            sendStateToCluster();
+            if (!asyncStart) {
+                sendStateToCluster();
+            }
         } catch (Throwable e) {
             try {
                 lifecycleService.terminate();

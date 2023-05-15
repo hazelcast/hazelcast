@@ -49,7 +49,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
@@ -178,8 +177,13 @@ public class MasterContext {
             if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {
                 throw new IllegalStateException("Job not suspended, but " + jobStatus);
             }
+            boolean wasSplitBrainProtectionEnabled = jobConfig().isSplitBrainProtectionEnabled();
             deltaConfig.applyTo(jobConfig());
             jobRepository.updateJobRecord(jobRecord);
+            if (jobConfig().isSplitBrainProtectionEnabled() != wasSplitBrainProtectionEnabled) {
+                updateQuorumSize(jobConfig().isSplitBrainProtectionEnabled()
+                        ? coordinationService.getQuorumSize() : 0);
+            }
             return jobConfig();
         } finally {
             unlock();
@@ -270,12 +274,12 @@ public class MasterContext {
         coordinationService().assertOnCoordinatorThread();
         // This method can be called in parallel if multiple members are added. We don't synchronize here,
         // but the worst that can happen is that we write the JobRecord out unnecessarily.
-        if (jobExecutionRecord.getQuorumSize() < newQuorumSize) {
-            jobExecutionRecord.setLargerQuorumSize(newQuorumSize);
-            writeJobExecutionRecord(false);
-            logger.info("Current quorum size: " + jobExecutionRecord.getQuorumSize() + " of job "
-                    + idToString(jobRecord.getJobId()) + " is updated to: " + newQuorumSize);
-        }
+        int quorumSize = newQuorumSize > 0
+            ? jobExecutionRecord.setLargerQuorumSize(newQuorumSize)
+            : jobExecutionRecord.resetQuorumSize();
+        writeJobExecutionRecord(false);
+        logger.info("Quorum size of job " + jobIdString() + " is updated from " + quorumSize
+                + " to " + (newQuorumSize > 0 ? Math.max(quorumSize, newQuorumSize) : 0));
     }
 
     void writeJobExecutionRecord(boolean canCreate) {

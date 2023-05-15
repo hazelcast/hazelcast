@@ -16,36 +16,44 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.google.common.primitives.Ints;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 
-class DeleteQueryBuilder {
+class DeleteQueryBuilder extends AbstractQueryBuilder {
 
-    private final String query;
+    private final List<Integer> dynamicParams = new ArrayList<>();
+    private final List<Integer> inputRefs = new ArrayList<>();
 
-    DeleteQueryBuilder(JdbcTable table, List<String> pkFields) {
-        SqlDialect dialect = table.sqlDialect();
+    DeleteQueryBuilder(
+            JdbcTable table,
+            SqlDialect dialect,
+            RexNode predicate,
+            boolean hasInput
+    ) {
+        super(table, dialect);
 
-        StringBuilder sb = new StringBuilder()
-                .append("DELETE FROM ");
+        StringBuilder sb = new StringBuilder();
+        sb.append("DELETE FROM ");
         dialect.quoteIdentifier(sb, table.getExternalNameList());
-        sb.append(" WHERE ");
-        Iterator<String> it = pkFields.iterator();
-        while (it.hasNext()) {
-            String pkField = it.next();
-            dialect.quoteIdentifier(sb, pkField);
-            sb.append("=?");
-            if (it.hasNext()) {
-                sb.append(" AND ");
-            }
+
+        if (predicate != null) {
+            appendPredicate(sb, predicate, dynamicParams);
+        } else if (hasInput) {
+            appendPrimaryKeyPredicate(sb, inputRefs);
         }
 
         query = sb.toString();
     }
 
-    String query() {
-        return query;
+    int[] dynamicParams() {
+        return Ints.toArray(dynamicParams);
+    }
+
+    int[] inputRefs() {
+        return Ints.toArray(inputRefs);
     }
 }

@@ -27,23 +27,29 @@ import java.util.Set;
  */
 public abstract class Table {
 
+    protected boolean streaming;
     private final String schemaName;
     private final String sqlName;
     private List<TableField> fields;
     private final TableStatistics statistics;
 
     private Set<String> conflictingSchemas;
+    private final String objectType;
 
     protected Table(
             String schemaName,
             String sqlName,
             List<TableField> fields,
-            TableStatistics statistics
+            TableStatistics statistics,
+            String objectType,
+            boolean isStreaming
     ) {
         this.schemaName = schemaName;
         this.sqlName = sqlName;
         this.fields = fields;
         this.statistics = statistics;
+        this.objectType = objectType;
+        this.streaming = isStreaming;
     }
 
     public String getSchemaName() {
@@ -55,6 +61,10 @@ public abstract class Table {
      */
     public String getSqlName() {
         return sqlName;
+    }
+
+    public boolean isStreaming() {
+        return streaming;
     }
 
     public List<TableField> getFields() {
@@ -98,5 +108,9 @@ public abstract class Table {
 
     public void setConflictingSchemas(Set<String> conflictingSchemas) {
         this.conflictingSchemas = conflictingSchemas;
+    }
+
+    public String getObjectType() {
+        return objectType;
     }
 }

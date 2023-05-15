@@ -20,18 +20,18 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.config.DataConnectionConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionClientConfigBuilder;
+import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionConfigLoader;
+import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionConfigValidator;
+import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.stream.Collectors;
-
-import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
-import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfigFromYaml;
 
 /**
  * Creates a HazelcastInstance that is shared to connect to a remote cluster.
@@ -45,57 +45,76 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfigFromYaml;
 public class HazelcastDataConnection extends DataConnectionBase {
 
     /**
-     * The constant to be used as property key for XML
+     * The constant to be used as property key for XML string for connecting to remote cluster
      */
     public static final String CLIENT_XML = "client_xml";
 
     /**
-     * The constant to be used as property key for YAML
+     * The constant to be used as property key for YAML string for connecting to remote cluster
      */
     public static final String CLIENT_YML = "client_yml";
+
+    /**
+     * The constant to be used as property key for XML file path for connecting to remote cluster
+     */
+    public static final String CLIENT_XML_PATH = "client_xml_path";
+
+    /**
+     * The constant to be used as property key for YAML file path for connecting to remote cluster
+     */
+    public static final String CLIENT_YML_PATH = "client_yml_path";
+
+    /**
+     * IMap Journal resource type name
+     */
+    public static final String OBJECT_TYPE_IMAP_JOURNAL = "IMapJournal";
 
     private final ClientConfig clientConfig;
 
     /**
      * The cached client instance
      */
-    private volatile HazelcastClientProxy proxy;
+    private ConcurrentMemoizingSupplier<HazelcastClientProxy> proxy;
 
     public HazelcastDataConnection(@Nonnull DataConnectionConfig dataConnectionConfig) {
         super(dataConnectionConfig);
         this.clientConfig = buildClientConfig();
 
         if (dataConnectionConfig.isShared()) {
-            HazelcastClientProxy proxy = (HazelcastClientProxy) HazelcastClient.newHazelcastClient(clientConfig);
-            this.proxy = new HazelcastClientProxy(proxy.client) {
-                @Override
-                public void shutdown() {
-                    release();
-                }
-            };
+
+            this.proxy = new ConcurrentMemoizingSupplier<>(() -> {
+                HazelcastClientProxy hazelcastClientProxy = (HazelcastClientProxy) HazelcastClient
+                        .newHazelcastClient(clientConfig);
+                return new HazelcastClientProxy(hazelcastClientProxy.client) {
+                    @Override
+                    public void shutdown() {
+                        release();
+                    }
+                };
+            });
         }
     }
 
     private ClientConfig buildClientConfig() {
-        ClientConfig clientConfig = null;
-        String clientXml = getConfig().getProperty(CLIENT_XML);
-        if (!StringUtil.isNullOrEmpty(clientXml)) {
-            // Read ClientConfig from XML
-            clientConfig = asClientConfig(clientXml);
-        }
+        validateConfiguration();
 
-        String clientYaml = getConfig().getProperty(CLIENT_YML);
-        if (!StringUtil.isNullOrEmpty(clientYaml)) {
-            // Read ClientConfig from Yaml
-            clientConfig = asClientConfigFromYaml(clientYaml);
-        }
+        HazelcastDataConnectionConfigLoader configLoader = new HazelcastDataConnectionConfigLoader();
+        DataConnectionConfig dataConnectionConfig = configLoader.load(getConfig());
 
-        if (clientConfig == null) {
-            throw new HazelcastException("HazelcastDataConnection with name '" + getConfig().getName()
-                    + "' could not be created, provide either client_xml or client_yml property "
-                    + "with the client configuration.");
-        }
-        return clientConfig;
+        HazelcastDataConnectionClientConfigBuilder configBuilder = new HazelcastDataConnectionClientConfigBuilder();
+        return configBuilder.buildClientConfig(dataConnectionConfig);
+    }
+
+    private void validateConfiguration() {
+        HazelcastDataConnectionConfigValidator validator = new HazelcastDataConnectionConfigValidator();
+        DataConnectionConfig dataConnectionConfig = getConfig();
+        validator.validate(dataConnectionConfig);
+    }
+
+    @Nonnull
+    @Override
+    public Collection<String> resourceTypes() {
+        return Collections.singleton(OBJECT_TYPE_IMAP_JOURNAL);
     }
 
     @Nonnull
@@ -104,10 +123,10 @@ public class HazelcastDataConnection extends DataConnectionBase {
         HazelcastInstance instance = getClient();
         try {
             return instance.getDistributedObjects()
-                           .stream()
-                           .filter(o -> o instanceof IMap)
-                           .map(o -> new DataConnectionResource("IMap", o.getName()))
-                           .collect(Collectors.toList());
+                    .stream()
+                    .filter(IMap.class::isInstance)
+                    .map(o -> new DataConnectionResource(OBJECT_TYPE_IMAP_JOURNAL, o.getName()))
+                    .collect(Collectors.toList());
         } finally {
             instance.shutdown();
         }
@@ -130,7 +149,7 @@ public class HazelcastDataConnection extends DataConnectionBase {
     public HazelcastInstance getClient() {
         if (getConfig().isShared()) {
             retain();
-            return proxy;
+            return proxy.get();
         } else {
             return HazelcastClient.newHazelcastClient(clientConfig);
         }
@@ -139,8 +158,11 @@ public class HazelcastDataConnection extends DataConnectionBase {
     @Override
     public synchronized void destroy() {
         if (proxy != null) {
-            // the proxy has overridden shutdown method, need to close real client
-            proxy.client.shutdown();
+            HazelcastClientProxy rememberedProxy = proxy.remembered();
+            if (rememberedProxy != null) {
+                // the proxy has overridden shutdown method, need to close real client
+                rememberedProxy.client.shutdown();
+            }
             proxy = null;
         }
     }

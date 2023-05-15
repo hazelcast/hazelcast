@@ -872,7 +872,8 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            return c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
+            return c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis()
+                    && c1.isCatalogPersistenceEnabled() == c2.isCatalogPersistenceEnabled();
         }
 
         @Override

@@ -16,21 +16,25 @@
 
 package com.hazelcast.jet.kafka.connect;
 
+import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
+import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.apache.kafka.connect.data.Values;
+import org.assertj.core.api.Assertions;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -50,7 +54,7 @@ import java.sql.Statement;
 import java.util.Properties;
 import java.util.concurrent.CompletionException;
 
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
@@ -105,13 +109,13 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("table.whitelist", "items1");
         randomProperties.setProperty("table.poll.interval.ms", "5000");
 
-        createTable(connectionUrl, "items1");
+        createTableAndFill(connectionUrl, "items1");
 
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
-                .withoutTimestamps()
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
+                .withoutTimestamps();
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -149,15 +153,15 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("table.whitelist", "parallel_items_1,parallel_items_2");
         randomProperties.setProperty("table.poll.interval.ms", "5000");
 
-        createTable(connectionUrl, "parallel_items_1");
-        createTable(connectionUrl, "parallel_items_2");
+        createTableAndFill(connectionUrl, "parallel_items_1");
+        createTableAndFill(connectionUrl, "parallel_items_2");
 
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
                 .withoutTimestamps()
-                .setLocalParallelism(localParallelism)
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+                .setLocalParallelism(localParallelism);
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -192,14 +196,15 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         randomProperties.setProperty("connection.password", PASSWORD);
         randomProperties.setProperty("incrementing.column.name", "id");
         randomProperties.setProperty("table.whitelist", "dynamic_test_items1,dynamic_test_items2,dynamic_test_items3");
-        randomProperties.setProperty("table.poll.interval.ms", "5000");
+        randomProperties.setProperty("table.poll.interval.ms", "1000");
 
-        createTable(connectionUrl, "dynamic_test_items1");
+        createTableAndFill(connectionUrl, "dynamic_test_items1");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
                 .withoutTimestamps()
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+                .setLocalParallelism(1);
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
@@ -212,10 +217,9 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
-        assertJobStatusEventually(job, RUNNING);
 
-        createTable(connectionUrl, "dynamic_test_items2");
-        createTable(connectionUrl, "dynamic_test_items3");
+        createTableAndFill(connectionUrl, "dynamic_test_items2");
+        createTableAndFill(connectionUrl, "dynamic_test_items3");
 
         try {
             job.join();
@@ -227,16 +231,72 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         }
     }
 
-    private void createTable(String connectionUrl, String tableName) throws SQLException {
+    private void createTableAndFill(String connectionUrl, String tableName) throws SQLException {
+        createTable(connectionUrl, tableName);
+        insertItems(connectionUrl, tableName);
+    }
+
+    private static void insertItems(String connectionUrl, String tableName) throws SQLException {
         try (Connection conn = DriverManager.getConnection(connectionUrl, USERNAME, PASSWORD);
              Statement stmt = conn.createStatement()
         ) {
-            stmt.execute("CREATE TABLE " + tableName + " (id INT PRIMARY KEY, name VARCHAR(128))");
             for (int i = 0; i < ITEM_COUNT; i++) {
                 stmt.execute(String.format("INSERT INTO " + tableName + " VALUES(%d, '" + tableName + "-%d')", i, i));
             }
         }
     }
 
+    private static void createTable(String connectionUrl, String tableName) throws SQLException {
+        try (Connection conn = DriverManager.getConnection(connectionUrl, USERNAME, PASSWORD);
+             Statement stmt = conn.createStatement()
+        ) {
+            stmt.execute("CREATE TABLE " + tableName + " (id INT PRIMARY KEY, name VARCHAR(128))");
+        }
+    }
+
+    @Test
+    public void windowing_withIngestionTimestamps_should_work() throws Exception {
+        Properties randomProperties = new Properties();
+        randomProperties.setProperty("name", "confluentinc-kafka-connect-jdbc");
+        randomProperties.setProperty("connector.class", "io.confluent.connect.jdbc.JdbcSourceConnector");
+        randomProperties.setProperty("mode", "incrementing");
+        String connectionUrl = mysql.getJdbcUrl();
+        randomProperties.setProperty("connection.url", connectionUrl);
+        randomProperties.setProperty("connection.user", USERNAME);
+        randomProperties.setProperty("connection.password", PASSWORD);
+        randomProperties.setProperty("incrementing.column.name", "id");
+        randomProperties.setProperty("table.whitelist", "windowing_test");
+        randomProperties.setProperty("table.poll.interval.ms", "1000");
+
+        createTable(connectionUrl, "windowing_test");
+
+        final Pipeline pipeline = Pipeline.create();
+        StreamStage<Long> streamStage = pipeline.readFrom(KafkaConnectSources.connect(randomProperties,
+                        SourceRecordUtil::convertToString))
+                .withIngestionTimestamps()
+                .setLocalParallelism(1)
+                .window(WindowDefinition.tumbling(10))
+                .distinct()
+                .rollingAggregate(AggregateOperations.counting());
+        streamStage.writeTo(Sinks.logger());
+        streamStage.writeTo(Sinks.list("windowing_test_results"));
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addJarsInZip(new URL(CONNECTOR_URL));
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        insertItems(connectionUrl, "windowing_test");
+
+        IList<Long> list = hazelcastInstance.getList("windowing_test_results");
+        assertTrueEventually(() -> Assertions.assertThat(list)
+                .isNotEmpty()
+                .last().isEqualTo((long) ITEM_COUNT));
+
+        job.cancel();
+        assertJobStatusEventually(job, FAILED);
+    }
 
 }

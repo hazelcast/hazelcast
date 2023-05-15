@@ -57,9 +57,10 @@ class KafkaTable extends JetTable {
             QueryTargetDescriptor keyQueryDescriptor,
             UpsertTargetDescriptor keyUpsertDescriptor,
             QueryTargetDescriptor valueQueryDescriptor,
-            UpsertTargetDescriptor valueUpsertDescriptor
+            UpsertTargetDescriptor valueUpsertDescriptor,
+            String objectType
     ) {
-        super(sqlConnector, fields, schemaName, name, statistics);
+        super(sqlConnector, fields, schemaName, name, statistics, objectType, true);
 
         this.keyQueryDescriptor = keyQueryDescriptor;
         this.keyUpsertDescriptor = keyUpsertDescriptor;

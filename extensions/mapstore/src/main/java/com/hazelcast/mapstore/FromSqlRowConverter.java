@@ -54,7 +54,13 @@ final class FromSqlRowConverter {
                     break;
 
                 case TINYINT:
+                    builder.setInt8(columnName, sqlRow.getObject(i));
+                    break;
+
                 case SMALLINT:
+                    builder.setInt16(columnName, sqlRow.getObject(i));
+                    break;
+
                 case INTEGER:
                     builder.setInt32(columnName, sqlRow.getObject(i));
                     break;

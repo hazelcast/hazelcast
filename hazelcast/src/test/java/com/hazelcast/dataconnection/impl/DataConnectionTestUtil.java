@@ -46,7 +46,7 @@ public final class DataConnectionTestUtil {
     public static void configureJdbcDataConnection(String name, String jdbcUrl, String username, String password, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
-        properties.put("username", username);
+        properties.put("user", username);
         properties.put("password", password);
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName(name)
@@ -75,8 +75,14 @@ public final class DataConnectionTestUtil {
         public Collection<DataConnectionResource> listResources() {
             return Arrays.asList(
                     new DataConnectionResource("testType1", "testName1"),
-                    new DataConnectionResource("testType2", "testName2")
+                    new DataConnectionResource("testType2", "testPrefix1", "testName2")
             );
+        }
+
+        @Nonnull
+        @Override
+        public Collection<String> resourceTypes() {
+            return Arrays.asList("testType1", "testType2");
         }
 
         @Override

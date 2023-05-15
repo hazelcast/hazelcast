@@ -5,7 +5,7 @@
 | Related Github issues          | TODO                       |
 | Document Status / Completeness | Approved                   |
 | Author(s)                      | Viliam Durina              |
-| Developer(s)                   | Sasha Syrotenko, Burak Gok |
+| Developer(s)                   | Sasha Syrotenko, Burak Gök |
 | Technical Reviewers            | Frantisek Hartman          |
 
 # Name of the feature
@@ -602,16 +602,32 @@ INSERT commands, the engine connects and disconnects to Kafka 10 times.
 ## SHOW commands
 
 ```sql
-SHOW RESOURCES FOR <data connection name>;
-
 SHOW DATA CONNECTIONS;
++-----------+-----------------+-------------------------------+
+|name       |connection_type  |resource_types                 |
++-----------+-----------------+-------------------------------+
+|testMongo  |Mongo            |["Collection","ChangeStream"]  |
++-----------+-----------------+-------------------------------+
 
-SELECT *
-FROM information_schema.data_connections;
+SELECT * FROM information_schema.dataconnections;
++-----------+--------+-----------+-------+--------+-------------------------------------------------------------------+--------+
+|catalog    |schema  |name       |type   |shared  |options                                                            |source  |
++-----------+--------+-----------+-------+--------+-------------------------------------------------------------------+--------+
+|hazelcast  |public  |testMongo  |Mongo  |true    |{"connectionString":"mongodb://localhost:55899","database":"db1"}  |CONFIG  |
++-----------+--------+-----------+-------+--------+-------------------------------------------------------------------+--------+
+
+SHOW RESOURCES FOR testMongo;
++-----------------+--------------+
+|name             |type          |
++-----------------+--------------+
+|"test1"."test2"  |Collection    |
+|"test1"."test2"  |ChangeStream  |
++-----------------+--------------+
 ```
 
-The list of data connections should also include links created in the config. In the
-`information_schema` there should be a flag for such data connections.
+The list of data connections should also include connections created in the config. In the
+`information_schema`, there should be a flag for such data connections: `CONFIG`/`SQL`. The
+`resource_types` field should contain an array of possible object types for a data connection.
 
 ## GET_DDL system function
 
@@ -680,48 +696,15 @@ But the user has to have access to the target resource, which is already covered
 by the [connector
 permissions](https://docs.hazelcast.com/hazelcast/5.2/security/native-client-security#connector-permission).
 
-# Tasks and optimistic estimates
-
-**Platform tasks**
-
-1. Add/refactor of basic APIs, adapt JDBC data connection to this TDD (prereq. for all other tasks)  
-   [https://hazelcast.atlassian.net/browse/HZ-2013](https://hazelcast.atlassian.net/browse/HZ-2013) - **6MD**
-2. Implement a data connection for Kafka - [https://hazelcast.atlassian.net/browse/HZ-1985](https://hazelcast.atlassian.net/browse/HZ-1985)  **3 MD**
-3. Implement a data connection for MongoDB - [https://hazelcast.atlassian.net/browse/HZ-1633](https://hazelcast.atlassian.net/browse/HZ-1633)  **1 MD**
-4. Implement a data connection for remote IMap - [https://hazelcast.atlassian.net/browse/HZ-1433](https://hazelcast.atlassian.net/browse/HZ-1433)  **1 MD**
-5. Implement missing connections privileges for kafka, mongoDB  **(Optional, out of scope)**
-
-**SQL tasks**
-
-6. Implement CREATE, DROP commands https://hazelcast.atlassian.net/browse/HZ-1955  **3MD**
-7. Implement background checker https://hazelcast.atlassian.net/browse/HZ-2041 **2MD**
-8. Implement CREATE MAPPING with a dataconnection https://hazelcast.atlassian.net/browse/HZ-2040 **2MD**
-9. Implement SHOW RESOURCES https://hazelcast.atlassian.net/browse/HZ-2039 **1MD**
-10. Implement GET_DDL - https://hazelcast.atlassian.net/browse/HZ-2024 **5MD**
-11. Implement information_schema  **2MD**
-12. Implement SQL privileges  **1MD**
-
-All tasks can be done in parallel after task 1 is done.
-
 <!-- Footnotes -->
 
-## Notes
-
-[^1]:
-
-Future work for this kind of jobs is to avoid running them on all members. It
+[^1]: Future work for this kind of jobs is to avoid running them on all members. It
 does not make sense to launch a distributed job to insert one row. This is not
 part of this TDD.
 
-[^2]:
+[^2]: E.g. rolled back
 
-E.g. rolled back
-
-[^3]:
-
-Adding support for user-created schemas was discussed, but it’s not on the
+[^3]: Adding support for user-created schemas was discussed, but it’s not on the
 roadmap yet.
 
-[^4]:
-
-It should also validate the external name to avoid SQL injection.
+[^4]: It should also validate the external name to avoid SQL injection.

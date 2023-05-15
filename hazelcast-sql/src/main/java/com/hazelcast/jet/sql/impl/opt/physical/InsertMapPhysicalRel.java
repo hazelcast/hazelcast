@@ -60,7 +60,7 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
 
         this.table = table;
         this.values = values;
-        this.keyParamIndex = values.getDynamicParamIndex(OptUtils.findKeyIndex(table()));
+        this.keyParamIndex = values.getDynamicParamIndex(OptUtils.findPrimaryKeyIndex(table()));
     }
 
     public String mapName() {

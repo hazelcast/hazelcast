@@ -19,8 +19,10 @@ package com.hazelcast.test.jdbc;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Arrays;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Database provider allows changing database used in a test by providing
@@ -34,6 +36,27 @@ public interface TestDatabaseProvider {
      * be used to connect to the database
      */
     String createDatabase(String dbName);
+
+    /**
+     * Return jdbc url without authentication parameters, so they need to be provided separately in properties
+     */
+    default String noAuthJdbcUrl() {
+        throw new RuntimeException("Not supported");
+    }
+
+    /**
+     * A username to authenticate
+     */
+    default String user() {
+        throw new RuntimeException("Not supported");
+    }
+
+    /**
+     * Password to authenticate
+     */
+    default String password() {
+        throw new RuntimeException("Not supported");
+    }
 
     /**
      * Waits for a connection to the database.
@@ -53,4 +76,13 @@ public interface TestDatabaseProvider {
      * Stops the database
      */
     void shutdown();
+
+    /**
+     * Quote individual parts of a compound identifier and concat with `.` delimiter
+     */
+    default String quote(String[] parts) {
+        return Arrays.stream(parts)
+                     .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
+                     .collect(joining("."));
+    };
 }

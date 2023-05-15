@@ -53,7 +53,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
-    static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
+    /**
+     * Version of MongoDB Container that will be used in the tests.
+     */
+    public static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
 
     static MongoClient mongo;
     static BsonTimestamp startAtOperationTime;
@@ -83,7 +86,7 @@ public abstract class AbstractMongoTest extends SimpleTestInClusterSupport {
         Config config = new Config();
         config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
         config.addDataConnectionConfig(new DataConnectionConfig("mongoDB")
-                .setType("MongoDB")
+                .setType("Mongo")
                 .setName("mongoDB")
                 .setShared(true)
                 .setProperty("connectionString", mongoContainer.getConnectionString())

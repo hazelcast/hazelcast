@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.apache.kafka.connect.data.Values;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -105,10 +104,10 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
         insertNodes("items-1");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties))
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
+                        SourceRecordUtil::convertToString))
                 .withoutTimestamps()
-                .setLocalParallelism(2)
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+                .setLocalParallelism(2);
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,

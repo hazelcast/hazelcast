@@ -19,6 +19,8 @@ package com.hazelcast.dataconnection;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
+import java.util.Locale;
 
 import static java.util.Objects.requireNonNull;
 
@@ -34,12 +36,20 @@ import static java.util.Objects.requireNonNull;
 public class DataConnectionResource {
 
     private final String type;
-    private final String name;
+    private final String[] name;
 
     /**
      * Create a Resource with given type and name
      */
     public DataConnectionResource(@Nonnull String type, @Nonnull String name) {
+        this.type = requireNonNull(type);
+        this.name = new String[] {requireNonNull(name)};
+    }
+
+    /**
+     * Create a Resource with given type and name
+     */
+    public DataConnectionResource(@Nonnull String type, @Nonnull String... name) {
         this.type = requireNonNull(type);
         this.name = requireNonNull(name);
     }
@@ -54,11 +64,9 @@ public class DataConnectionResource {
 
     /**
      * Name of the resource, e.g. name of the JDBC table, including any namespace prefix such as schema.
-     * <p>
-     * TODO Should we use String[]?
      */
     @Nonnull
-    public String name() {
+    public String[] name() {
         return name;
     }
 
@@ -66,7 +74,7 @@ public class DataConnectionResource {
     public String toString() {
         return "Resource{"
                 + "type='" + type + '\''
-                + ", name='" + name + '\''
+                + ", name='" + Arrays.toString(name) + '\''
                 + '}';
     }
 
@@ -81,16 +89,16 @@ public class DataConnectionResource {
 
         DataConnectionResource dataConnectionResource = (DataConnectionResource) o;
 
-        if (!type.equals(dataConnectionResource.type)) {
+        if (!type.equalsIgnoreCase(dataConnectionResource.type)) {
             return false;
         }
-        return name.equals(dataConnectionResource.name);
+        return Arrays.equals(name, dataConnectionResource.name);
     }
 
     @Override
     public int hashCode() {
-        int result = type.hashCode();
-        result = 31 * result + name.hashCode();
+        int result = type.toLowerCase(Locale.ROOT).hashCode();
+        result = 31 * result + Arrays.hashCode(name);
         return result;
     }
 }

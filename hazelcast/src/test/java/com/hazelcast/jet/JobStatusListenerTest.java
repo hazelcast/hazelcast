@@ -57,7 +57,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
 import static java.util.Arrays.asList;
@@ -114,11 +113,11 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     public void testListener_suspend_resume_restart_cancelJob() {
         testListener(streamSource(),
                 (job, listener) -> {
-                    assertJobStatusEventually(job, RUNNING);
+                    assertEqualsEventually(listener::runCount, 1);
                     job.suspend();
                     assertJobStatusEventually(job, SUSPENDED);
                     job.resume();
-                    assertJobStatusEventually(job, RUNNING);
+                    assertEqualsEventually(listener::runCount, 2);
                     job.restart();
                     assertEqualsEventually(listener::runCount, 3);
                     cancelAndJoin(job);
@@ -182,15 +181,13 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                     throw new JetException("mock error");
                 }),
                 (job, listener) -> {
-                    assertJobStatusEventually(job, SUSPENDED);
-                    String[] failure = new String[1];
-                    assertTrueEventually(() ->
-                            failure[0] = job.getSuspensionCause().errorCause().split("\n", 3)[1]);
+                    assertJobSuspendedEventually(job);
+                    String failure = job.getSuspensionCause().errorCause().split("\n", 3)[1];
                     cancelAndJoin(job);
                     assertTailEqualsEventually(listener.log,
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
-                            "Jet: RUNNING -> SUSPENDED (" + failure[0] + ")",
+                            "Jet: RUNNING -> SUSPENDED (" + failure + ")",
                             "User: SUSPENDED -> FAILED (Cancel)");
                 });
     }
@@ -199,7 +196,9 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     public void testListenerDeregistration() {
         testListener(streamSource(),
                 (job, listener) -> {
-                    assertJobStatusEventually(job, RUNNING);
+                    assertTailEqualsEventually(listener.log,
+                            "Jet: NOT_RUNNING -> STARTING",
+                            "Jet: STARTING -> RUNNING");
                     listener.deregister();
                     cancelAndJoin(job);
                     assertHasNoListenerEventually(job.getIdString(), listener.registrationId);

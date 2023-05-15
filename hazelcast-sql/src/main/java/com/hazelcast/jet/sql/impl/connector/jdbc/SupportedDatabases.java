@@ -54,7 +54,8 @@ final class SupportedDatabases {
 
         boolean newDatabaseName = isNewDatabase(uppercaseProductName);
         if (newDatabaseName) {
-            LOGGER.warning("Database " + uppercaseProductName + " is not officially supported");
+            LOGGER.warning("Database " + uppercaseProductName + " is not supported, it may or may not work. "
+                    + "If you come across any issues please report them on Github.");
         }
     }
 
@@ -70,8 +71,7 @@ final class SupportedDatabases {
         return DETECTED_DATABASE_NAMES.add(uppercaseProductName);
     }
 
-    static boolean isDialectSupported(JdbcTable jdbcTable) {
-        SqlDialect dialect = jdbcTable.sqlDialect();
+    static boolean isDialectSupported(SqlDialect dialect) {
         return dialect instanceof MysqlSqlDialect ||
                dialect instanceof PostgresqlSqlDialect ||
                dialect instanceof H2SqlDialect;
