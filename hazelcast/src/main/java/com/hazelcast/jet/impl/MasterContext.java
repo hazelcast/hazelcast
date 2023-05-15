@@ -28,6 +28,7 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
@@ -35,6 +36,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -50,6 +52,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
+import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
@@ -182,6 +185,18 @@ public class MasterContext {
                         ? coordinationService.getQuorumSize() : 0);
             }
             return jobConfig();
+        } finally {
+            unlock();
+        }
+    }
+
+    public UUID addStatusListener(Registration registration) {
+        lock();
+        try {
+            if (jobStatus.isTerminal()) {
+                throw cannotAddStatusListener(jobStatus);
+            }
+            return jobEventService.handleAllRegistrations(jobId, registration).getId();
         } finally {
             unlock();
         }

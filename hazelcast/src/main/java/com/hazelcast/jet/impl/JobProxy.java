@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
+import com.hazelcast.jet.impl.operation.AddJobStatusListenerOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
@@ -43,6 +44,7 @@ import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
@@ -204,7 +206,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    protected JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig) {
+    protected JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig) {
         try {
             return this.<JobConfig>invokeOp(new UpdateJobConfigOperation(getId(), deltaConfig)).get();
         } catch (Throwable t) {
@@ -244,10 +246,15 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    public UUID addStatusListener(@Nonnull JobStatusListener listener) {
+    protected UUID doAddStatusListener(@Nonnull JobStatusListener listener) {
         checkJobStatusListenerSupported(container());
-        JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
-        return jobEventService.addEventListener(getId(), listener);
+        try {
+            JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
+            Registration registration = jobEventService.prepareRegistration(getId(), listener, false);
+            return this.<UUID>invokeOp(new AddJobStatusListenerOperation(getId(), isLightJob(), registration)).get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
     }
 
     @Override

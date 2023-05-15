@@ -37,14 +37,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a JobStatusListener to the specified job.
  */
-@Generated("cc493370802f788c8333a1e7c81a676c")
+@Generated("b54281a30cabeb2b34dfee722257fd03")
 public final class JetAddJobStatusListenerCodec {
     //hex: 0xFE1300
     public static final int REQUEST_MESSAGE_TYPE = 16651008;
     //hex: 0xFE1301
     public static final int RESPONSE_MESSAGE_TYPE = 16651009;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
@@ -68,12 +69,17 @@ public final class JetAddJobStatusListenerCodec {
         public long jobId;
 
         /**
+         * Address of the job coordinator for light jobs, null otherwise.
+         */
+        public @Nullable java.util.UUID lightJobCoordinator;
+
+        /**
          * If true fires events that originated from this node only, otherwise fires all events.
          */
         public boolean localOnly;
     }
 
-    public static ClientMessage encodeRequest(long jobId, boolean localOnly) {
+    public static ClientMessage encodeRequest(long jobId, @Nullable java.util.UUID lightJobCoordinator, boolean localOnly) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Jet.AddJobStatusListener");
@@ -81,6 +87,7 @@ public final class JetAddJobStatusListenerCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
+        encodeUUID(initialFrame.content, REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET, lightJobCoordinator);
         encodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET, localOnly);
         clientMessage.add(initialFrame);
         return clientMessage;
@@ -91,6 +98,7 @@ public final class JetAddJobStatusListenerCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.jobId = decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
+        request.lightJobCoordinator = decodeUUID(initialFrame.content, REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET);
         request.localOnly = decodeBoolean(initialFrame.content, REQUEST_LOCAL_ONLY_FIELD_OFFSET);
         return request;
     }
