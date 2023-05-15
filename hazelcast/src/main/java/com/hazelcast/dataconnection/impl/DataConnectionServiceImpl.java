@@ -17,6 +17,7 @@
 package com.hazelcast.dataconnection.impl;
 
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionRegistration;
@@ -80,7 +81,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     }
 
     private void put(DataConnectionConfig config, DataConnectionSource source) {
-        config.validate();
+        DataConnectionConfigValidator.validate(config);
         dataConnections.compute(config.getName(),
                 (key, current) -> {
                     if (current != null) {

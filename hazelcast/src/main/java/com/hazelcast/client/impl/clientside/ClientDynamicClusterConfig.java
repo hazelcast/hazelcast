@@ -51,6 +51,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
@@ -1131,7 +1132,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
-        dataConnectionConfig.validate();
+        DataConnectionConfigValidator.validate(dataConnectionConfig);
         ClientMessage request = DynamicConfigAddDataConnectionConfigCodec.encodeRequest(
                 dataConnectionConfig.getName(), dataConnectionConfig.getType(),
                 dataConnectionConfig.isShared(), toMap(dataConnectionConfig.getProperties()));

@@ -184,26 +184,6 @@ public class DataConnectionConfig implements IdentifiedDataSerializable, NamedCo
         return this;
     }
 
-    /**
-     * Checks if this configuration object is in coherent state - has all required properties set.
-     */
-    @PrivateApi
-    public void validate() {
-        List<String> errors = new ArrayList<>();
-        if (name == null || name.isEmpty()) {
-            errors.add("Data connection name must be non-null and contain text");
-        }
-        if (type == null || type.isEmpty()) {
-            errors.add("Data connection type must be non-null and contain text");
-        }
-        if (properties == null) {
-            errors.add("Data connection properties cannot be null, they can be empty");
-        }
-        if (!errors.isEmpty()) {
-            throw new IllegalArgumentException(String.join(", ", errors));
-        }
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
