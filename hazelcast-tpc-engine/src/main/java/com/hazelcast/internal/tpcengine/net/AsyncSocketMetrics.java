@@ -64,7 +64,7 @@ public class AsyncSocketMetrics {
      * @param delta the amount to increase.
      */
     public void incBytesRead(long delta) {
-        BYTES_READ.setOpaque(this, (long) BYTES_READ.getOpaque(this) + 1);
+        BYTES_READ.setOpaque(this, (long) BYTES_READ.getOpaque(this) + delta);
     }
 
     /**

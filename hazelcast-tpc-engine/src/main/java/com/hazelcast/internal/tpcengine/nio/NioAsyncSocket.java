@@ -139,6 +139,11 @@ public final class NioAsyncSocket extends AsyncSocket {
             // we will not get further events.
             key.interestOpsAnd(~OP_READ);
         }
+
+        // We are not running on the eventloop thread. We need to notify the
+        // reactor because a change in the interest set isn't picked up while
+        // the reactor is waiting on the selectionKey
+        reactor.wakeup();
     }
 
     @Override
