@@ -55,8 +55,13 @@ public final class Versions {
      */
     public static final Version V5_3 = Version.of(5, 3);
 
-    public static final Version PREVIOUS_CLUSTER_VERSION = V5_2;
-    public static final Version CURRENT_CLUSTER_VERSION = V5_3;
+    /**
+     * Cluster version 5.4
+     */
+    public static final Version V5_4 = Version.of(5, 4);
+
+    public static final Version PREVIOUS_CLUSTER_VERSION = V5_3;
+    public static final Version CURRENT_CLUSTER_VERSION = V5_4;
 
     private Versions() {
     }
