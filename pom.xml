@@ -186,6 +186,33 @@
 
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
+
+        <!--
+        Allow access to Operating system metrics:
+           open jdk.management/com.sun.management.internal
+           export jdk.management/com.ibm.lang.management.internal
+
+        Avoid warnings caused by reflection in
+        SelectorOptimizer:
+           open java.base/sun.nio.ch
+        FilteringClassLoader:
+           open java.base/java.lang
+        TimedMemberStateFactoryHelper:
+           open java.management/sun.management
+
+        Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
+           export java.xml/jdk.xml.internal
+        -->
+        <javaModuleArgs>
+            --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
+            --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
+            --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
+            --add-opens java.base/java.lang=${hazelcast.module.name}
+            --add-opens java.management/sun.management=${hazelcast.module.name}
+            --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
+            --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
+            --illegal-access=deny
+        </javaModuleArgs>
     </properties>
     <licenses>
         <license>
@@ -1312,41 +1339,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <id>jdk-9</id>
-            <activation>
-                <jdk>[9,)</jdk>
-            </activation>
-            <properties>
-                <!--
-                Allow access to Operating system metrics:
-                   open jdk.management/com.sun.management.internal
-                   export jdk.management/com.ibm.lang.management.internal
-
-                Avoid warnings caused by reflection in
-                SelectorOptimizer:
-                   open java.base/sun.nio.ch
-                FilteringClassLoader:
-                   open java.base/java.lang
-                TimedMemberStateFactoryHelper:
-                   open java.management/sun.management
-
-                Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
-                   export java.xml/jdk.xml.internal
-                -->
-                <javaModuleArgs>
-                    --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
-                    --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
-                    --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
-                    --add-opens java.base/java.lang=${hazelcast.module.name}
-                    --add-opens java.management/sun.management=${hazelcast.module.name}
-                    --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
-                    --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
-                    --illegal-access=deny
-                </javaModuleArgs>
-            </properties>
         </profile>
 
         <profile>
