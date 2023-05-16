@@ -31,12 +31,14 @@ import org.junit.runner.RunWith;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
 import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
 import static classloading.ThreadLeakTestUtils.getAndLogThreads;
 import static classloading.ThreadLeakTestUtils.getThreads;
 import static com.hazelcast.instance.impl.TestUtil.getNode;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
 import static org.junit.Assert.assertEquals;
@@ -119,8 +121,8 @@ public class ThreadLeakTest {
                     node.getNodeEngine().getOperationService().execute(task);
                     try {
                         future.get();
-                    } catch (Exception  e) {
-                        throw sneakyThrow(e);
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw sneakyThrow(peel(e));
                     }
                 });
 

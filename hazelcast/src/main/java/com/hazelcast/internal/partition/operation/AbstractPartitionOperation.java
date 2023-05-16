@@ -40,8 +40,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
@@ -73,8 +75,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
             getNodeEngine().getOperationService().execute(runnable);
             try {
                 return runnable.future.get();
-            } catch (Exception e) {
-                throw sneakyThrow(e);
+            } catch (InterruptedException | ExecutionException e) {
+                throw sneakyThrow(peel(e));
             }
         }
     }
@@ -190,8 +192,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         ChunkSupplier supplier;
         try {
             supplier = partitionThreadRunnable.future.get();
-        } catch (Exception e) {
-            throw sneakyThrow(e);
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
         }
         return appendNewElement(chunkSuppliers, supplier);
     }
@@ -299,8 +301,8 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         Operation op;
         try {
             op = partitionThreadRunnable.future.get();
-        } catch (Exception e) {
-            throw sneakyThrow(e);
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
         }
         return appendNewElement(operations, op);
     }

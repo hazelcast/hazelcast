@@ -42,12 +42,14 @@ import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 import static com.hazelcast.internal.util.CollectionUtil.isEmpty;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 
@@ -161,8 +163,8 @@ public final class PartitionReplicaSyncRequestOffloadable
         operationService.execute(gatherReplicaVersionsRunnable);
         try {
             gatherReplicaVersionsRunnable.future.get();
-        } catch (Exception e) {
-            throw sneakyThrow(e);
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
         }
     }
 
@@ -182,8 +184,8 @@ public final class PartitionReplicaSyncRequestOffloadable
             getNodeEngine().getOperationService().execute(partitionRunnable);
             try {
                 partitionRunnable.future.get();
-            } catch (Exception e) {
-                throw sneakyThrow(e);
+            } catch (InterruptedException | ExecutionException e) {
+                throw sneakyThrow(peel(e));
             }
         }
     }
@@ -280,8 +282,8 @@ public final class PartitionReplicaSyncRequestOffloadable
         getNodeEngine().getOperationService().execute(trySetMigrating);
         try {
             return trySetMigrating.future.get();
-        } catch (Exception e) {
-            throw sneakyThrow(e);
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
         }
     }
 
@@ -293,8 +295,8 @@ public final class PartitionReplicaSyncRequestOffloadable
         getNodeEngine().getOperationService().execute(trySetMigrating);
         try {
             trySetMigrating.future.get();
-        } catch (Exception e) {
-            throw sneakyThrow(e);
+        } catch (InterruptedException | ExecutionException e) {
+            throw sneakyThrow(peel(e));
         }
     }
 }
