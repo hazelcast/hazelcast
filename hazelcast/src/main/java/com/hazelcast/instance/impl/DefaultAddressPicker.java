@@ -215,7 +215,7 @@ class DefaultAddressPicker
         }
 
         if (interfacesConfig.isEnabled()) {
-            String msg = errorMsgForMatchNetworkInterface();
+            String msg = errorMsgForNoMatchingInterface();
             logger.severe(msg);
             throw new RuntimeException(msg);
         }
@@ -225,7 +225,7 @@ class DefaultAddressPicker
         return pickMatchingAddress(null);
     }
 
-    private String errorMsgForMatchNetworkInterface() {
+    private String errorMsgForNoMatchingInterface() {
         File file = config.getConfigurationFile();
         String configSource = file != null && file.exists() && file.isFile()
                 ? "the " + file.getName() + " config file." : "the member configurations.";
