@@ -21,20 +21,25 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.exception.CancellationByUserException;
+import com.hazelcast.jet.impl.operation.AddJobStatusListenerOperation;
 import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
+import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -43,6 +48,9 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -190,10 +198,9 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         if (isLightJob()) {
             CompletableFuture<Void> f = getFuture();
             if (!f.isDone()) {
-                return JobStatus.RUNNING;
+                return RUNNING;
             }
-            return f.isCompletedExceptionally()
-                    ? JobStatus.FAILED : JobStatus.COMPLETED;
+            return f.isCompletedExceptionally() ? FAILED : COMPLETED;
         } else {
             return getStatus0();
         }
@@ -295,6 +302,16 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     }
 
     @Override
+    public UUID addStatusListener(@Nonnull JobStatusListener listener) {
+        try {
+            return doAddStatusListener(listener);
+        } catch (JobNotFoundException ignored) {
+            throw cannotAddStatusListener(
+                    future.isCompletedExceptionally() ? FAILED : COMPLETED);
+        }
+    }
+
+    @Override
     public String toString() {
         return "Job{id=" + getIdString()
                 + ", name=" + getName()
@@ -329,12 +346,43 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     protected abstract JobConfig doGetJobConfig();
 
     /**
-     * Sends an {@link UpdateJobConfigOperation} to the master member. On the master member,
-     * if the job is SUSPENDED, the job record is updated both locally and {@linkplain
-     * JobRepository#JOB_RECORDS_MAP_NAME globally} (in order for {@link #getConfig()} to
-     * reflect the changes); otherwise, the operation fails.
+     * Applies the specified delta configuration to this job and returns the updated
+     * configuration. Synchronization with {@link #getConfig()} is handled by {@link
+     * #updateConfig}.
+     * @implNote
+     * Sends an {@link UpdateJobConfigOperation} to the master member. On the master
+     * member, if the job is SUSPENDED, the job record is updated both locally and
+     * {@linkplain JobRepository#JOB_RECORDS_MAP_NAME globally} (in order for {@link
+     * #getConfig()} to reflect the changes); otherwise, the operation fails.
      */
-    protected abstract JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig);
+    protected abstract JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig);
+
+    /**
+     * Associates the specified listener to this job.
+     * @throws JobNotFoundException if the job's master context is cleaned up after job
+     *         completion/failure. This is translated to {@link IllegalStateException} by
+     *         {@link #addStatusListener}.
+     * @implNote
+     * Listeners added to a job after it completes will not be removed automatically since
+     * the job has already produced a terminal event. In order to make auto-deregistration
+     * race-free, it is not allowed to add listeners to completed jobs. Checking the job
+     * status before the listener registration will not work since they are not atomic. The
+     * registration should be delegated to the job coordinator, but the {@code listener}
+     * is local. To overcome this, the following algorithm is used: <ol>
+     * <li> A {@link Registration} object is created with a unique registration id. The
+     *      {@code listener} is cached locally by the registration id.
+     * <li> The {@link Registration} object is delivered to the job coordinator via an
+     *      {@link AddJobStatusListenerOperation}. If the job is not completed/failed, the
+     *      coordinator invokes a {@link RegistrationOperation} on the subscriber member
+     *      —or all members if the registration is global. The registration operation is
+     *      guaranteed to be executed earlier than a possible terminal event since the
+     *      operation is executed as an event callback with the same {@code orderKey} as
+     *      job events.
+     * <li> When the subscriber member receives the {@link RegistrationOperation}, the
+     *      {@link Registration}'s {@code listener} is restored from the cache and the
+     *      registration is completed. </ol>
+     */
+    protected abstract UUID doAddStatusListener(@Nonnull JobStatusListener listener);
 
     /**
      * Return the ID of the coordinator - the master member for normal jobs and
@@ -395,6 +443,10 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         if (isLightJob()) {
             throw new UnsupportedOperationException("not supported for light jobs: " + msg);
         }
+    }
+
+    public static IllegalStateException cannotAddStatusListener(JobStatus status) {
+        return new IllegalStateException("Cannot add status listener to a " + status + " job");
     }
 
     private abstract class CallbackBase implements BiConsumer<Void, Throwable> {

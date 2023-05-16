@@ -113,7 +113,9 @@ public class SqlPojoTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + badName))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessage("Mapping '%s' is invalid: java.lang.ClassNotFoundException: com.hazelcast.NoSuchClass", badName);
+                .hasMessage("Mapping '%s' is invalid: " +
+                        "com.hazelcast.sql.impl.QueryException: Unable to load class: 'com.hazelcast.NoSuchClass'",
+                        badName);
     }
 
     @Test

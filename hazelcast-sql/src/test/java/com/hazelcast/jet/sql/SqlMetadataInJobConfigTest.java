@@ -136,7 +136,7 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
         assertEquals(1, runningJobs.size());
         JobConfig config = runningJobs.get(0).getConfig();
         assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
-        assertEquals(Boolean.FALSE, config.getArgument(KEY_SQL_UNBOUNDED));
+        assertEquals(Boolean.TRUE, config.getArgument(KEY_SQL_UNBOUNDED));
     }
 
     private void waitForJobRunning() {

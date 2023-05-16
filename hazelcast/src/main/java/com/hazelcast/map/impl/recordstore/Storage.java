@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -35,6 +36,23 @@ import java.util.Map;
  * @param <R> the value type to be put in this storage.
  */
 public interface Storage<K, R> {
+
+    /**
+     * @return true if compaction for tiered
+     * store is enabled, false otherwise.
+     */
+    default boolean isPartitionCompactorEnabled() {
+        return false;
+    }
+
+    /**
+     * Injects extra step for an operation which
+     * is modeled as a sequence of {@link Step}
+     * @return new step to be injected before an operation is finalized.
+     */
+    default Step newInjectedStep() {
+        return null;
+    }
 
     void put(K key, R record);
 

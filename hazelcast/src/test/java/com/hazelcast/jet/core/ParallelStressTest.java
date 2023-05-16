@@ -59,8 +59,12 @@ public class ParallelStressTest extends JetTestSupport {
         for (int i = 0; i < 100; i++) {
             futures.add(executor.submit(() -> instance.getJet().newJob(dag)));
         }
-        for (Future<Job> future : futures) {
-            future.get().join();
+        try {
+            for (Future<Job> future : futures) {
+                future.get().join();
+            }
+        } finally {
+            executor.shutdownNow();
         }
     }
 

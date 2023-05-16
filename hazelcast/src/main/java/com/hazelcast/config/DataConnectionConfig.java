@@ -146,6 +146,17 @@ public class DataConnectionConfig implements IdentifiedDataSerializable, NamedCo
     }
 
     /**
+     * Returns a single property of a data connection
+     *
+     * @param key the property key of a data connection
+     * @return property value or default value if the given key doesn't exist
+     */
+    @Nullable
+    public String getProperty(String key, String defaultValue) {
+        return properties.getProperty(key, defaultValue);
+    }
+
+    /**
      * Sets a single property. See {@link DataConnectionConfig#setProperties(Properties)}
      *
      * @param key   the property key

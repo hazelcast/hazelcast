@@ -28,7 +28,7 @@ public class SqlMappingTest extends MongoSqlTest {
         String query = "CREATE MAPPING col EXTERNAL NAME \"" + databaseName + "\".\"collection\".\"aa\" ("
                 + "__key INT,"
                 + "this VARCHAR"
-                + ") TYPE " + MongoBatchSqlConnector.TYPE_NAME + ' '
+                + ") TYPE " + MongoSqlConnector.TYPE_NAME + ' '
                 + options();
 
         assertThatThrownBy(() -> sqlService.execute(query))

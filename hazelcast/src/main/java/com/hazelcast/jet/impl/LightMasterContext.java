@@ -36,6 +36,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.version.Version;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,6 +59,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -67,6 +70,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -83,6 +87,8 @@ public final class LightMasterContext {
             return "NULL_OBJECT";
         }
     };
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     private final NodeEngine nodeEngine;
     private final JobEventService jobEventService;
@@ -193,29 +199,47 @@ public final class LightMasterContext {
         CompletableFuture<Void> combined = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
 
         combined.whenComplete((ignored, e) -> {
-            Throwable fail = failure;
-            if (fail == null) {
-                jobCompletionFuture.complete(null);
-                jobEventService.publishEvent(jobId, RUNNING, COMPLETED, null, false);
-            } else {
-                TerminationMode requestedTerminationMode = fail instanceof JobTerminateRequestedException
-                        ? ((JobTerminateRequestedException) fail).mode() : null;
-                // translate JobTerminateRequestedException(CANCEL_FORCEFUL)
-                // to CancellationException or CancellationByUserException
-                if (requestedTerminationMode == CANCEL_FORCEFUL) {
-                    Throwable newFailure = userInitiatedTermination
-                            ? new CancellationByUserException()
-                            : new CancellationException();
-                    newFailure.initCause(failure);
-                    fail = newFailure;
+            lock.lock();
+            try {
+                Throwable fail = failure;
+                if (fail == null) {
+                    jobCompletionFuture.complete(null);
+                    jobEventService.publishEvent(jobId, RUNNING, COMPLETED, null, false);
+                } else {
+                    TerminationMode requestedTerminationMode = fail instanceof JobTerminateRequestedException
+                            ? ((JobTerminateRequestedException) fail).mode() : null;
+                    // translate JobTerminateRequestedException(CANCEL_FORCEFUL)
+                    // to CancellationException or CancellationByUserException
+                    if (requestedTerminationMode == CANCEL_FORCEFUL) {
+                        Throwable newFailure = userInitiatedTermination
+                                ? new CancellationByUserException()
+                                : new CancellationException();
+                        newFailure.initCause(failure);
+                        fail = newFailure;
+                    }
+                    jobCompletionFuture.completeExceptionally(fail);
+                    jobEventService.publishEvent(jobId, RUNNING, FAILED, requestedTerminationMode != null
+                                ? requestedTerminationMode.actionAfterTerminate().description() : fail.toString(),
+                            userInitiatedTermination);
                 }
-                jobCompletionFuture.completeExceptionally(fail);
-                jobEventService.publishEvent(jobId, RUNNING, FAILED, requestedTerminationMode != null
-                            ? requestedTerminationMode.actionAfterTerminate().description() : fail.toString(),
-                        userInitiatedTermination);
+                jobEventService.removeAllEventListeners(jobId);
+            } finally {
+                lock.unlock();
             }
-            jobEventService.removeAllEventListeners(jobId);
         });
+    }
+
+    public UUID addStatusListener(Registration registration) {
+        lock.lock();
+        try {
+            if (jobCompletionFuture.isDone()) {
+                throw cannotAddStatusListener(
+                        jobCompletionFuture.isCompletedExceptionally() ? FAILED : COMPLETED);
+            }
+            return jobEventService.handleAllRegistrations(jobId, registration).getId();
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void invokeClose(@Nullable Throwable failure, ProcessorMetaSupplier metaSupplier) {

@@ -16,25 +16,50 @@
 
 package com.hazelcast.test.jdbc;
 
-import org.testcontainers.jdbc.ContainerDatabaseDriver;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 public class PostgresDatabaseProvider implements TestDatabaseProvider {
 
+    public static final String TEST_POSTGRES_VERSION = System.getProperty("test.postgres.version", "11.19-bullseye");
     private static final int LOGIN_TIMEOUT = 120;
-    private String jdbcUrl;
+
+    private PostgreSQLContainer<?> container;
 
     @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:tc:postgresql:10.21:///" + dbName + "?TC_DAEMON=true";
+        //noinspection resource
+        container = new PostgreSQLContainer<>("postgres:" + TEST_POSTGRES_VERSION)
+                .withDatabaseName(dbName)
+                .withUrlParam("user", "test")
+                .withUrlParam("password", "test");
+        container.start();
+        String jdbcUrl = container.getJdbcUrl();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }
 
     @Override
+    public String noAuthJdbcUrl() {
+        return container.getJdbcUrl()
+                        .replaceAll("&?user=test", "")
+                        .replaceAll("&?password=test", "");
+    }
+
+    @Override
+    public String user() {
+        return "test";
+    }
+
+    @Override
+    public String password() {
+        return "test";
+    }
+
+    @Override
     public void shutdown() {
-        if (jdbcUrl != null) {
-            ContainerDatabaseDriver.killContainer(jdbcUrl);
-            jdbcUrl = null;
+        if (container != null) {
+            container.stop();
+            container = null;
         }
     }
 }

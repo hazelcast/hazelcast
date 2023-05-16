@@ -52,7 +52,7 @@ public class QueryBounceTest {
 
     @Rule
     public BounceMemberRule bounceMemberRule =
-            BounceMemberRule.with(getConfig())
+            BounceMemberRule.with(this::getConfig)
                     .clusterSize(4)
                     .driverCount(4)
                     .driverType(getDriverType())

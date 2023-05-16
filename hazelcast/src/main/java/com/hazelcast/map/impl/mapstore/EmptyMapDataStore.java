@@ -112,4 +112,9 @@ class EmptyMapDataStore implements MapDataStore {
     public boolean isPostProcessingMapStore() {
         return false;
     }
+
+    @Override
+    public boolean isNullImpl() {
+        return true;
+    }
 }

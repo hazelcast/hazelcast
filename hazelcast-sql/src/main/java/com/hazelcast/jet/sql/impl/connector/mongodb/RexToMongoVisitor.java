@@ -43,16 +43,10 @@ final class RexToMongoVisitor implements RexVisitor<Object> {
 
     private static final Object[] EMPTY_EXPRESSION_OPERANDS = new Object[0];
 
-    private final String[] fields;
-
-    RexToMongoVisitor(String[] fields) {
-        this.fields = fields;
-    }
-
     @Override
     public Object visitInputRef(RexInputRef inputRef) {
         int index = inputRef.getIndex();
-        return fields[index];
+        return new InputRef(index).asString();
     }
 
     @Override
@@ -103,7 +97,7 @@ final class RexToMongoVisitor implements RexVisitor<Object> {
     @Override
     public Object visitDynamicParam(RexDynamicParam dynamicParam) {
         int index = dynamicParam.getIndex();
-        return new DynamicParameter(index);
+        return new DynamicParameter(index).asString();
     }
 
     @Override

@@ -38,10 +38,21 @@ public class KafkaConnectSourcesTest {
     @Test
     public void should_fail_when_no_name_property() {
         Properties properties = new Properties();
-        assertThatThrownBy(() -> connect(properties))
+        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'name' is required");
     }
+
+    @Test
+    public void should_fail_when_no_projectionFn() {
+        Properties properties = new Properties();
+        properties.setProperty("name", "some-name");
+        properties.setProperty("connector.class", "some-name");
+        assertThatThrownBy(() -> connect(properties, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("projectionFn is required");
+    }
+
 
     @Test
     public void should_fail_when_tasks_max_property_set() {
@@ -49,7 +60,7 @@ public class KafkaConnectSourcesTest {
         properties.setProperty("name", "some-name");
         properties.setProperty("connector.class", "some-name");
         properties.setProperty("tasks.max", "1");
-        assertThatThrownBy(() -> connect(properties))
+        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'tasks.max' not allowed. Use setLocalParallelism(1) in the pipeline instead");
     }
@@ -58,7 +69,7 @@ public class KafkaConnectSourcesTest {
     public void should_fail_when_no_connector_class_property() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
-        assertThatThrownBy(() -> connect(properties))
+        assertThatThrownBy(() -> connect(properties, SourceRecordUtil::convertToString))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'connector.class' is required");
     }
@@ -68,7 +79,7 @@ public class KafkaConnectSourcesTest {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
         properties.setProperty("connector.class", "some-name");
-        StreamSource<SourceRecord> source = connect(properties);
+        StreamSource<SourceRecord> source = connect(properties, rec -> rec);
         assertThat(source).isNotNull();
     }
 }

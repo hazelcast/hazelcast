@@ -34,9 +34,12 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.kafka.KafkaSources;
+import com.hazelcast.jet.kafka.TopicsConfig;
+import com.hazelcast.jet.kafka.TopicsConfig.TopicConfig;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -60,6 +63,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -72,14 +76,20 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.IntStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -137,12 +147,12 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_projectionFunctionProvided_thenAppliedToReadRecords() {
+    public void when_projectionFunctionProvided_then_appliedToReadRecords() {
         int messageCount = 20;
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.<Integer, String, String>kafka(properties(), rec -> rec.value() + "-x", topic1Name))
-         .withoutTimestamps()
-         .writeTo(Sinks.list("sink"));
+                .withoutTimestamps()
+                .writeTo(Sinks.list("sink"));
 
         instance().getJet().newJob(p);
         sleepAtLeastSeconds(3);
@@ -157,6 +167,184 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 assertTrue("missing entry: " + value, list.contains(value));
             }
         }, 5);
+    }
+
+    @Test
+    public void when_processingGuaranteeNone_then_ignorePartitionsInitialOffsets() {
+        testWithPartitionsInitialOffsets(NONE, 100, 100);
+    }
+
+    @Test
+    public void when_processingGuaranteeAtLeastOnce_then_readFromPartitionsInitialOffsets() {
+        testWithPartitionsInitialOffsets(AT_LEAST_ONCE, 80, 90);
+    }
+
+    @Test
+    public void when_processingGuaranteeExactlyOnce_then_readFromPartitionsInitialOffsets() {
+        testWithPartitionsInitialOffsets(EXACTLY_ONCE, 80, 90);
+    }
+
+    private void testWithPartitionsInitialOffsets(
+            ProcessingGuarantee guarantee, int expectedRecordsReadFromTopic1, int expectedRecordsReadFromTopic2
+    ) {
+        for (int i = 0; i < 100; i++) {
+            kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
+            kafkaTestSupport.produce(topic2Name, i, String.valueOf(i));
+        }
+        sleepAtLeastSeconds(3);
+
+        TopicsConfig topicsConfig = new TopicsConfig()
+                .addTopicConfig(new TopicConfig(topic1Name)
+                        // 20 total records will be skipped from topic1
+                        .addPartitionInitialOffset(0, 5L)
+                        .addPartitionInitialOffset(1, 5L)
+                        .addPartitionInitialOffset(2, 5L)
+                        .addPartitionInitialOffset(3, 5L))
+                .addTopicConfig(new TopicConfig(topic2Name)
+                        // 10 total records will be skipped from topic2
+                        .addPartitionInitialOffset(0, 5L)
+                        .addPartitionInitialOffset(2, 5L));
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(KafkaSources.<Integer, String, Tuple2<String, String>>kafka(
+                        properties(), r -> Tuple2.tuple2(r.value(), r.topic()), topicsConfig
+                ))
+                .withoutTimestamps()
+                .writeTo(Sinks.list("sink"));
+
+        instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(guarantee));
+        sleepAtLeastSeconds(3);
+
+        IList<Tuple2<String, String>> list = instance().getList("sink");
+        int totalRecordsRead = expectedRecordsReadFromTopic1 + expectedRecordsReadFromTopic2;
+        assertTrueEventually(() -> assertEquals(totalRecordsRead, list.size()), 5);
+
+        // group retrieved records by topic and check if expected number of records were skipped
+        Map<String, List<String>> recordsByTopic = list.stream()
+                .collect(groupingBy(Tuple2::f1, mapping(Tuple2::f0, toList())));
+
+        assertThat(recordsByTopic.get(topic1Name).size())
+                .isEqualTo(expectedRecordsReadFromTopic1);
+        assertThat(recordsByTopic.get(topic2Name).size())
+                .isEqualTo(expectedRecordsReadFromTopic2);
+    }
+
+    @Test
+    public void when_processingGuaranteeNone_then_continueFromBeginningAfterJobRestart() {
+        TopicsConfig topicsConfig = new TopicsConfig().addTopicConfig(new TopicConfig(topic1Name));
+
+        // 100 messages will be produced before the job is restarted and then another batch of 100 will be produced
+        // after the job is restarted (so there will be 200 messages in total)
+        int messageCount = 100;
+
+        // all messages produced before the job is restarted should be read
+        int expectedCountBeforeRestart = 100;
+
+        // for processing guarantee equal to NONE, when the job is restarted, the initial 100 messages will be
+        // read twice, so total expected number of messages should be: 100 + 200 = 300
+        int expectedCountAfterRestart = 300;
+
+        testWithJobRestart(messageCount, topicsConfig, NONE,
+                expectedCountBeforeRestart, expectedCountAfterRestart);
+    }
+
+    @Test
+    public void when_processingGuaranteeNoneWithConsumerGroup_then_continueFromLastReadMessageAfterJobRestart() {
+        TopicsConfig topicsConfig = new TopicsConfig().addTopicConfig(new TopicConfig(topic1Name));
+        Properties kafkaProperties = properties();
+        kafkaProperties.setProperty("group.id", randomString());
+        int messageCount = 100;
+
+        // all messages produced before the job is restarted should be read
+        int expectedCountBeforeRestart = 100;
+
+        // after restarting the job, records consumption should be resumed from the last committed offsets
+        // for given consumer group
+        int expectedCountAfterRestart = 200;
+
+        testWithJobRestart(messageCount, topicsConfig, NONE,
+                expectedCountBeforeRestart, expectedCountAfterRestart, kafkaProperties);
+    }
+
+    @Test
+    public void when_atLeastOnce_then_continueFromLastReadMessageAfterJobRestart() {
+        TopicsConfig topicsConfig = new TopicsConfig().addTopicConfig(new TopicConfig(topic1Name));
+        int messageCount = 100;
+        int expectedCountBeforeRestart = 100;
+
+        // for processing guarantee different from NONE, when the job is restarted, consumption should be resumed
+        // from the last successfully consumed message
+        int expectedCountAfterRestart = 200;
+
+        testWithJobRestart(messageCount, topicsConfig, AT_LEAST_ONCE,
+                expectedCountBeforeRestart, expectedCountAfterRestart);
+    }
+
+    @Test
+    public void when_atLeastOnceWithInitialOffsets_then_continueFromLastReadMessageAfterJobRestart() {
+        TopicsConfig topicsConfig = new TopicsConfig()
+                .addTopicConfig(new TopicConfig(topic1Name)
+                        .addPartitionInitialOffset(0, 5L)
+                        .addPartitionInitialOffset(1, 5L)
+                        .addPartitionInitialOffset(2, 5L)
+                        .addPartitionInitialOffset(3, 5L)
+                );
+        int messageCount = 100;
+
+        // 20 messages will be skipped, because of initial offsets' configuration
+        int expectedCountBeforeRestart = 80;
+
+        // for processing guarantee different from NONE, when the job is restarted, consumption should be resumed
+        // from the last successfully consumed message (i.e. initial offsets' configuration should be ignored while
+        // restoring the job from snapshot)
+        int expectedCountAfterRestart = 180;
+
+        testWithJobRestart(messageCount, topicsConfig, AT_LEAST_ONCE,
+                expectedCountBeforeRestart, expectedCountAfterRestart);
+    }
+
+    private void testWithJobRestart(
+            int messageCount,
+            TopicsConfig topicsConfig,
+            ProcessingGuarantee processingGuarantee,
+            int expectedCountBeforeRestart,
+            int expectedCountAfterRestart
+    ) {
+        testWithJobRestart(messageCount, topicsConfig, processingGuarantee,
+                expectedCountBeforeRestart, expectedCountAfterRestart, properties());
+    }
+
+    private void testWithJobRestart(
+            int messageCount,
+            TopicsConfig topicsConfig,
+            ProcessingGuarantee processingGuarantee,
+            int expectedCountBeforeRestart,
+            int expectedCountAfterRestart,
+            Properties kafkaProperties
+    ) {
+        for (int i = 0; i < messageCount; i++) {
+            kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
+        }
+        sleepAtLeastSeconds(3);
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(KafkaSources.<Integer, String, String>kafka(kafkaProperties, ConsumerRecord::value, topicsConfig))
+                .withoutTimestamps()
+                .writeTo(Sinks.list("sink"));
+
+        Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(processingGuarantee));
+        sleepAtLeastSeconds(3);
+
+        assertTrueEventually(() -> assertEquals(expectedCountBeforeRestart, instance().getList("sink").size()), 5);
+
+        job.restart();
+
+        for (int i = messageCount; i < messageCount * 2; i++) {
+            kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
+        }
+        sleepAtLeastSeconds(3);
+
+        assertTrueEventually(() -> assertEquals(expectedCountAfterRestart, instance().getList("sink").size()), 5);
     }
 
     @Test
@@ -176,8 +364,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.kafka(properties(), topic1Name, topic2Name))
-         .withoutTimestamps()
-         .writeTo(Sinks.list("sink"));
+                .withoutTimestamps()
+                .writeTo(Sinks.list("sink"));
 
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(guarantee);
@@ -346,9 +534,9 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         // Pass the same topic twice
         p.readFrom(KafkaSources.kafka(properties(), topic, topic))
-         .withoutTimestamps()
-         .setLocalParallelism(1)
-         .writeTo(Sinks.list("sink"));
+                .withoutTimestamps()
+                .setLocalParallelism(1)
+                .writeTo(Sinks.list("sink"));
 
         JobConfig config = new JobConfig();
         Job job = instances[0].getJet().newJob(p, config);
@@ -378,17 +566,26 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             long idleTimeoutMillis
     ) {
         assert numTopics == 1 || numTopics == 2;
+        List<String> topics = numTopics == 1
+                ? singletonList(topic1Name)
+                : asList(topic1Name, topic2Name);
+        TopicsConfig topicsConfig = new TopicsConfig().addTopics(topics);
+        return createProcessor(properties, topicsConfig, projectionFn, idleTimeoutMillis);
+    }
+
+    private <T> StreamKafkaP<Integer, String, T> createProcessor(
+            Properties properties,
+            TopicsConfig topicsConfig,
+            @Nonnull FunctionEx<ConsumerRecord<Integer, String>, T> projectionFn,
+            long idleTimeoutMillis
+    ) {
         ToLongFunctionEx<T> timestampFn = e ->
                 e instanceof Entry
                         ? (int) ((Entry) e).getKey()
                         : System.currentTimeMillis();
         EventTimePolicy<T> eventTimePolicy = eventTimePolicy(
                 timestampFn, limitingLag(LAG), 1, 0, idleTimeoutMillis);
-        List<String> topics = numTopics == 1 ?
-                singletonList(topic1Name)
-                :
-                asList(topic1Name, topic2Name);
-        return new StreamKafkaP<>((c) -> new KafkaConsumer<>(properties), topics, projectionFn, eventTimePolicy);
+        return new StreamKafkaP<>((c) -> new KafkaConsumer<>(properties), topicsConfig, projectionFn, eventTimePolicy);
     }
 
     @Test
@@ -425,14 +622,63 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void when_partitionAddedWhilePartitionsInitialOffsetsProvided_then_consumedFromBeginning() throws Exception {
+        Properties properties = properties();
+        properties.setProperty("metadata.max.age.ms", "100");
+        TopicsConfig topicsConfig = new TopicsConfig()
+                .addTopic(topic2Name)
+                .addTopicConfig(new TopicConfig(topic1Name)
+                        .addPartitionInitialOffset(0, 1L)
+                        .addPartitionInitialOffset(1, 1L)
+                        .addPartitionInitialOffset(2, 1L)
+                        .addPartitionInitialOffset(3, 1L)
+                        // specify initial offset for non-existing partitions as well
+                        .addPartitionInitialOffset(4, 1L)
+                        .addPartitionInitialOffset(5, 1L)
+                );
+
+        StreamKafkaP<Integer, String, Entry<Integer, String>> processor = createProcessor(
+                properties, topicsConfig, r -> entry(r.key(), r.value()), 10_000);
+        TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
+        TestProcessorContext context = new TestProcessorContext();
+        context.setProcessingGuarantee(AT_LEAST_ONCE);
+        processor.init(outbox, context);
+
+        kafkaTestSupport.produce(topic1Name, 0, "0"); // first record will be skipped due to topics config
+        kafkaTestSupport.produce(topic1Name, 1, "1");
+        assertEquals(entry(1, "1"), consumeEventually(processor, outbox));
+
+        kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 2);
+        kafkaTestSupport.resetProducer(); // this allows production to the added partition
+
+        boolean somethingInPartition1 = false;
+        for (int i = 2; i < 12; i++) {
+            Future<RecordMetadata> future = kafkaTestSupport.produce(topic1Name, i, Integer.toString(i));
+            RecordMetadata recordMetadata = future.get();
+            System.out.println("## Entry " + i + " produced to partition " + recordMetadata.partition());
+            somethingInPartition1 |= recordMetadata.partition() == 1;
+        }
+        assertTrue("nothing was produced to partition-1", somethingInPartition1);
+        Set<Object> receivedEvents = new HashSet<>();
+        for (int i = 2; i < 12; i++) {
+            try {
+                receivedEvents.add(consumeEventually(processor, outbox));
+            } catch (AssertionError e) {
+                throw new AssertionError("Unable to receive 10 items, events so far: " + receivedEvents);
+            }
+        }
+        assertEquals(range(2, 12).mapToObj(i -> entry(i, Integer.toString(i))).collect(toSet()), receivedEvents);
+    }
+
+    @Test
     public void when_partitionAddedWhileJobDown_then_consumedFromBeginning() throws Exception {
         IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
         Pipeline p = Pipeline.create();
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "latest");
         p.readFrom(KafkaSources.<Integer, String>kafka(properties, topic1Name))
-         .withoutTimestamps()
-         .writeTo(Sinks.list(sinkList));
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
 
         Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
         assertTrueEventually(() -> {
@@ -465,8 +711,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "latest");
         p.readFrom(KafkaSources.<Integer, String>kafka(properties, topic1Name))
-         .withoutTimestamps()
-         .writeTo(Sinks.list(sinkList));
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
 
         kafkaTestSupport.produce(topic1Name, 0, "0").get();
         instance().getJet().newJob(p);
@@ -474,7 +720,52 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_noAssignedPartitions_thenEmitIdleMsgImmediately() throws Exception {
+    public void when_autoOffsetResetEarliest_then_startsFromEarliestAfterRestart() throws Exception {
+        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        Pipeline p = Pipeline.create();
+        Properties properties = properties();
+        properties.setProperty("auto.offset.reset", "earliest");
+        p.readFrom(KafkaSources.<Integer, String>kafka(properties, topic1Name))
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
+
+        kafkaTestSupport.produce(topic1Name, 0, "0").get();
+        Job job = instance().getJet().newJob(p);
+        assertTrueEventually(() -> assertEquals(singletonList(entry(0, "0")), sinkList));
+        job.suspend();
+        assertJobStatusEventually(job, SUSPENDED);
+        kafkaTestSupport.produce(topic1Name, 0, "1").get();
+        sinkList.clear();
+        job.resume();
+        assertTrueEventually(() ->
+                assertEquals(asList(entry(0, "0"), entry(0, "1")), new ArrayList<>(sinkList)));
+    }
+
+    @Test
+    public void when_autoOffsetResetEarliestAndGroupIdSet_then_startsFromCommittedOffsetAfterRestart() throws Exception {
+        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        Pipeline p = Pipeline.create();
+        Properties properties = properties();
+        properties.setProperty("auto.offset.reset", "earliest");
+        properties.setProperty("group.id", randomString());
+        p.readFrom(KafkaSources.<Integer, String>kafka(properties, topic1Name))
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
+
+        kafkaTestSupport.produce(topic1Name, 0, "0").get();
+        Job job = instance().getJet().newJob(p);
+        assertTrueEventually(() -> assertEquals(singletonList(entry(0, "0")), sinkList));
+        job.suspend();
+        assertJobStatusEventually(job, SUSPENDED);
+        kafkaTestSupport.produce(topic1Name, 0, "1").get();
+        sinkList.clear();
+        job.resume();
+        assertTrueEventually(() ->
+                assertEquals(singletonList(entry(0, "1")), new ArrayList<>(sinkList)));
+    }
+
+    @Test
+    public void when_noAssignedPartitions_then_emitIdleMsgImmediately() throws Exception {
         StreamKafkaP processor = createProcessor(properties(), 2, r -> entry(r.key(), r.value()), 100_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         TestProcessorContext context = new TestProcessorContext()
@@ -560,6 +851,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "latest");
+
         p.readFrom(KafkaSources.<Integer, String>kafka(new DataConnectionRef("kafka-config"), topic1Name))
          .withoutTimestamps()
          .writeTo(Sinks.list(sinkList));

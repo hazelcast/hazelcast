@@ -29,20 +29,19 @@ final class UpsertBuilder {
     private UpsertBuilder() {
     }
 
-    static String getUpsertStatement(JdbcTable jdbcTable) {
-        SqlDialect sqlDialect = jdbcTable.sqlDialect();
+    static String getUpsertStatement(JdbcTable jdbcTable, SqlDialect dialect) {
 
         String query = null;
-        if (sqlDialect instanceof MysqlSqlDialect) {
-            MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        if (dialect instanceof MysqlSqlDialect) {
+            MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
             query = builder.query();
 
-        } else if (sqlDialect instanceof PostgresqlSqlDialect) {
-            PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable);
+        } else if (dialect instanceof PostgresqlSqlDialect) {
+            PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect);
             query = builder.query();
 
-        } else if (sqlDialect instanceof H2SqlDialect) {
-            H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
+        } else if (dialect instanceof H2SqlDialect) {
+            H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable, dialect);
             query = builder.query();
         }
         return query;

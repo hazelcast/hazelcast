@@ -24,7 +24,6 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
-import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
@@ -33,6 +32,7 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.ExceptionRecorder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
@@ -45,6 +45,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -53,6 +54,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 
+import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -61,14 +64,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({QuickTest.class})
 public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     private static Config memberConfig;
+
     @Rule
     public TestName testName = new TestName();
 
+    private String prefix = "generic_";
+
     private String tableName;
+
+    protected void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
 
     @BeforeClass
     public static void beforeClass() {
@@ -80,7 +90,8 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         databaseProvider = testDatabaseProvider;
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
-        memberConfig = smallInstanceConfig()
+        // Do not use small config to run with more threads and partitions
+        memberConfig = new Config()
                 // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
                 .addDataConnectionConfig(
@@ -88,6 +99,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                                 .setType("jdbc")
                                 .setProperty("jdbcUrl", dbConnectionUrl)
                 );
+        memberConfig.getJetConfig().setEnabled(true);
 
         ClientConfig clientConfig = new ClientConfig();
 
@@ -97,7 +109,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        tableName = testName.getMethodName().toLowerCase(Locale.ROOT);
+        tableName = prefix + testName.getMethodName().toLowerCase(Locale.ROOT);
         createTable(tableName);
         insertItems(tableName, 1);
 
@@ -108,6 +120,31 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         mapStoreConfig.setProperty(TYPE_NAME_PROPERTY, "org.example.Person");
         mapConfig.setMapStoreConfig(mapStoreConfig);
         instance().getConfig().addMapConfig(mapConfig);
+    }
+
+    @Test
+    public void testLoadAllKeys() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setClassName(GenericMapStore.class.getName());
+        mapStoreConfig.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        mapStoreConfig.setProperty(EXTERNAL_NAME_PROPERTY, tableName);
+        mapStoreConfig.setProperty(TYPE_NAME_PROPERTY, "org.example.Person");
+        mapStoreConfig.setProperty(LOAD_ALL_KEYS_PROPERTY, "false");
+
+        String mapName = tableName + "_disabled";
+        MapConfig mapConfig = new MapConfig(mapName);
+
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        instance().getConfig().addMapConfig(mapConfig);
+
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(mapName);
+        assertThat(map.size()).isZero();
+
+        // LOAD_ALL_KEYS_PROPERTY is disabled, but we still can load
+        Person p = map.get(0);
+        assertThat(p.getId()).isZero();
+        assertThat(p.getName()).isEqualTo("name-0");
     }
 
     @Test
@@ -179,7 +216,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setClassName(GenericMapStore.class.getName())
                 .setProperty(DATA_CONNECTION_REF_PROPERTY, "dynamically-added-data-connection")
-                .setProperty("table-name", randomTableName);
+                .setProperty(EXTERNAL_NAME_PROPERTY, randomTableName);
         MapConfig mapConfig = new MapConfig(randomTableName).setMapStoreConfig(mapStoreConfig);
         client.getConfig().addMapConfig(mapConfig);
 
@@ -311,10 +348,17 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void testExceptionIsConstructable() {
+    public void testExceptionIsConstructable() throws SQLException {
         HazelcastInstance client = client();
+        // Add some more items for all members
+        insertItems(tableName, 2, 5);
+
         IMap<Integer, Person> map = client.getMap(tableName);
+        // Method call to create the lazy mapping in GenericMapStore
         map.loadAll(false);
+
+        // This should ensure that all members have created the mapping
+        assertTrueEventually(() -> assertThat(map.size()).isEqualTo(6));
 
         String mappingName = "__map-store." + tableName;
         execute("DROP MAPPING \"" + mappingName + "\"");
@@ -332,7 +376,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
                 .hasCauseInstanceOf(QueryException.class)
                 .hasStackTraceContaining(message);
 
-        assertThat(map.size()).isEqualTo(1);
+        assertThat(map.size()).isEqualTo(6);
     }
 
     @Test
@@ -345,7 +389,29 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         Row row = new Row("__map-store." + tableName);
         List<Row> rows = Collections.singletonList(row);
-        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 5);
+        assertTrueEventually(() -> assertDoesNotContainRow(client, "SHOW MAPPINGS", rows), 30);
+    }
+
+    /**
+     * Regression test for https://github.com/hazelcast/hazelcast/issues/22567
+     */
+    @Test(timeout = 90_000L)
+    @Category(NightlyTest.class)
+    public void testClear() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+
+        for (int i = 0; i < 10; i++) {
+            logger.info("Iteration " + i);
+            Map<Integer, Person> toInsert = new HashMap<>();
+            for (int j = 0; j < 10_000; j++) {
+                toInsert.put(j, new Person(j, "name-" + j));
+            }
+            map.putAll(toInsert);
+            logger.info("Inserted 10k items");
+            map.clear();
+            logger.info("Cleared map");
+        }
     }
 
     @Test
@@ -359,9 +425,19 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         ExceptionRecorder recorder = new ExceptionRecorder(hz3, Level.WARNING);
         // fill the map with some values so each member gets some items
-        for (int i = 1; i < 1000; i++) {
+        Integer itemSize = 1000;
+        for (int i = 1; i < itemSize; i++) {
             map.put(i, new Person(i, "name-" + i));
         }
+        // Ensure that all put operations are inserted into the DB. Otherwise, we may get
+        // HazelcastSqlException: Hazelcast instance is not active! from the SqlService
+        // when we shut down the hz3 instance
+        assertEqualsEventually(() -> {
+                    List<Row> rows = jdbcRows("SELECT COUNT(*) FROM " + tableName);
+                    Object[] values = rows.get(0).getValues();
+                    return (Long) values[0];
+                }, itemSize.longValue()
+        );
 
         // shutdown the member - this will call destroy on the MapStore on this member,
         // which should not drop the mapping in this case
@@ -373,9 +449,9 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         // The new item should still be loadable via the mapping
         executeJdbc("INSERT INTO " + tableName + " VALUES(1000, 'name-1000')");
-        Person p = map.get(1000);
-        assertThat(p.getId()).isEqualTo(1000);
-        assertThat(p.getName()).isEqualTo("name-1000");
+        Person p = map.get(itemSize);
+        assertThat(p.getId()).isEqualTo(itemSize);
+        assertThat(p.getName()).isEqualTo("name-" + itemSize);
 
         for (Throwable throwable : recorder.exceptionsLogged()) {
             assertThat(throwable).hasMessageNotContaining("is not active!");

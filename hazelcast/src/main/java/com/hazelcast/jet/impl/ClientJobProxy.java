@@ -220,7 +220,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     @Override
-    protected JobConfig doUpdateJobConfig(DeltaJobConfig deltaConfig) {
+    protected JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig) {
         return callAndRetryIfTargetNotFound(() -> {
             Data deltaConfigData = serializationService().toData(deltaConfig);
             ClientMessage request = JetUpdateJobConfigCodec.encodeRequest(getId(), deltaConfigData);
@@ -256,12 +256,16 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
 
     @Nonnull
     @Override
-    public UUID addStatusListener(@Nonnull JobStatusListener listener) {
+    protected UUID doAddStatusListener(@Nonnull JobStatusListener listener) {
         requireNonNull(listener, "Listener cannot be null");
-        ClientJobStatusEventHandler handler = new ClientJobStatusEventHandler(listener);
-        handler.registrationId = container().getListenerService().registerListener(
-                createJobStatusListenerCodec(getId()), handler);
-        return handler.registrationId;
+        try {
+            ClientJobStatusEventHandler handler = new ClientJobStatusEventHandler(listener);
+            handler.registrationId = container().getListenerService()
+                    .registerListener(createJobStatusListenerCodec(getId()), handler);
+            return handler.registrationId;
+        } catch (Throwable t) {
+            throw rethrow(t.getCause());
+        }
     }
 
     @Override
@@ -273,7 +277,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         return new ListenerMessageCodec() {
             @Override
             public ClientMessage encodeAddRequest(boolean localOnly) {
-                return JetAddJobStatusListenerCodec.encodeRequest(jobId, localOnly);
+                return JetAddJobStatusListenerCodec.encodeRequest(jobId, lightJobCoordinator, localOnly);
             }
 
             @Override

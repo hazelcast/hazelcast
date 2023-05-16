@@ -50,10 +50,11 @@ public class DelegatingScheduledFutureStripperTest {
 
     private ScheduledExecutorService scheduler;
     private DelegatingTaskScheduler taskScheduler;
+    private ExecutorService executor;
 
     @Before
     public void setup() {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor = Executors.newSingleThreadExecutor();
         scheduler = Executors.newSingleThreadScheduledExecutor();
         taskScheduler = new DelegatingTaskScheduler(scheduler, executor);
     }
@@ -62,6 +63,7 @@ public class DelegatingScheduledFutureStripperTest {
     public void teardown() throws Exception {
         scheduler.shutdownNow();
         scheduler.awaitTermination(10, TimeUnit.SECONDS);
+        executor.shutdownNow();
     }
 
     @Test(expected = NullPointerException.class)

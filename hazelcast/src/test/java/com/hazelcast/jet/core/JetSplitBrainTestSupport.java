@@ -129,7 +129,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         }
     }
 
-    private HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
+    protected HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
         HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
         for (int i = 0; i < clusterSize; i++) {
             instances[i] = createHazelcastInstance(config);

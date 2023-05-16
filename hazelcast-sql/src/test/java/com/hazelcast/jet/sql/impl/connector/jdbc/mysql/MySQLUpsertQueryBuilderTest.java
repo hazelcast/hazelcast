@@ -35,7 +35,7 @@ public class MySQLUpsertQueryBuilderTest {
     @Mock
     JdbcTable jdbcTable;
 
-    SqlDialect sqlDialect = MysqlSqlDialect.DEFAULT;
+    SqlDialect dialect = MysqlSqlDialect.DEFAULT;
 
     @Before
     public void setUp() {
@@ -44,12 +44,11 @@ public class MySQLUpsertQueryBuilderTest {
         when(jdbcTable.getExternalName()).thenReturn(new String[]{"table1"});
         when(jdbcTable.getExternalNameList()).thenReturn(singletonList("table1"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
-        when(jdbcTable.sqlDialect()).thenReturn(sqlDialect);
     }
 
     @Test
     public void appendInsertClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendInsertClause(sb);
 
@@ -59,7 +58,7 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void appendValuesClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendValuesClause(sb);
 
@@ -69,7 +68,7 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void appendOnDuplicateClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendOnDuplicateClause(sb);
 
@@ -82,7 +81,7 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void query() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
         String result = builder.query();
         assertThat(result).isEqualTo(
                 "INSERT INTO `table1` (`field1`,`field2`) VALUES (?,?)" +

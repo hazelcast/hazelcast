@@ -361,9 +361,9 @@ public abstract class AbstractCacheService implements ICacheService,
 
         WanReplicationService wanService = nodeEngine.getWanReplicationService();
         wanService.removeWanEventCounters(ICacheService.SERVICE_NAME, cacheNameWithPrefix);
-        cacheContexts.remove(cacheNameWithPrefix);
         operationProviderCache.remove(cacheNameWithPrefix);
         deregisterAllListener(cacheNameWithPrefix);
+        cacheContexts.remove(cacheNameWithPrefix);
         setStatisticsEnabled(config, cacheNameWithPrefix, false);
         setManagementEnabled(config, cacheNameWithPrefix, false);
         deleteCacheStat(cacheNameWithPrefix);

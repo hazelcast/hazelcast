@@ -15,8 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.logging.LogListener;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClient;
@@ -29,13 +28,11 @@ import org.junit.runner.RunWith;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
@@ -43,47 +40,37 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
     private final Random random = new Random();
 
     @Test
-    public void readsFromMongo_withId_twoSteps() {
-       readsFromMongo(true, true);
+    public void readsFromMongo_withId_withUnsupportedExpr() {
+       testReadsFromMongo(true, true);
     }
 
     @Test
-    public void readsFromMongo_withId_oneStep() {
-       readsFromMongo(true, false);
+    public void readsFromMongo_withId_withoutUnsupportedExpr() {
+       testReadsFromMongo(true, false);
     }
 
     @Test
-    public void readsFromMongo_withoutId_twoSteps() {
-       readsFromMongo(false, true);
+    public void readsFromMongo_withoutId_withUnsupportedExpr() {
+       testReadsFromMongo(false, true);
     }
 
     @Test
-    public void readsFromMongo_withoutId_oneStep() {
-       readsFromMongo(false, false);
+    public void readsFromMongo_withoutId_withoutUnsupportedExpr() {
+       testReadsFromMongo(false, false);
     }
 
-    public void readsFromMongo(boolean includeIdInMapping, boolean forceTwoSteps) {
+    public void testReadsFromMongo(boolean includeIdInMapping, boolean useUnsupportedExpr) {
         final String databaseName = "sqlConnectorTest";
         final String collectionName = testName.getMethodName();
         final String tableName = testName.getMethodName();
         final String connectionString = mongoContainer.getConnectionString();
 
-        AtomicBoolean projectAndFilterFound = new AtomicBoolean(false);
-        LogListener lookForProjectAndFilterStep = log -> {
-            String message = log.getLogRecord().getMessage();
-            if (message.contains("ProjectAndFilter")) {
-                projectAndFilterFound.set(true);
-            }
-        };
-        for (HazelcastInstance instance : instances()) {
-            instance.getLoggingService().addLogListener(Level.FINE, lookForProjectAndFilterStep);
-        }
-
         try (MongoClient mongoClient = MongoClients.create(connectionString)) {
             MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
             collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
-            execute("CREATE MAPPING " + tableName
+            long startAt = System.currentTimeMillis();
+            execute("CREATE MAPPING " + tableName + " external name "  + databaseName + "." + collectionName
                     + " ("
                     + (includeIdInMapping ? " id VARCHAR external name \"fullDocument._id\", " : "")
                     + " firstName VARCHAR, "
@@ -91,17 +78,15 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                     + " jedi BOOLEAN, "
                     + " operation VARCHAR external name operationType"
                     + ") "
-                    + "TYPE MongoDBStream "
+                    + "TYPE Mongo OBJECT TYPE ChangeStream "
                     + "OPTIONS ("
                     + "    'connectionString' = '" + connectionString + "', "
-                    + "    'database' = '" + databaseName + "', "
-                    + "    'collection' = '" + collectionName + "', "
-                    + "    'startAt' = 'now' "
+                    + "    'startAt' = '" + startAt + "' "
                     + ")");
 
-            String force = forceTwoSteps ? " and cast(jedi as varchar) = 'true' " : "";
+            String force = useUnsupportedExpr ? " and cast(jedi as varchar) = 'true' " : "";
             spawn(() -> {
-                sleep(200);
+                sleep(1000);
                 collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
                 sleep(100);
                 collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
@@ -115,13 +100,8 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                             new Row("Luke", "Skywalker", "insert"),
                             new Row("Anakin", "Skywalker", "insert")
                     ),
-                    TimeUnit.SECONDS.toMillis(10)
+                    TimeUnit.SECONDS.toMillis(30)
             );
-
-            assertEquals(forceTwoSteps, projectAndFilterFound.get());
-            for (HazelcastInstance instance : instances()) {
-                instance.getLoggingService().removeLogListener(lookForProjectAndFilterStep);
-            }
         }
     }
 
@@ -135,7 +115,8 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
         MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
         collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
 
-        execute("CREATE MAPPING " + tableName
+        long startAt = System.currentTimeMillis();
+        execute("CREATE MAPPING " + tableName + " external name " + databaseName + "." + collectionName
                 + " ("
                 + " id VARCHAR external name \"fullDocument._id\", "
                 + " firstName VARCHAR, "
@@ -144,33 +125,95 @@ public class MongoStreamSqlConnectorTest extends MongoSqlTest  {
                 + " operation VARCHAR external name operationType, "
                 + " ts timestamp"
                 + ") "
-                + "TYPE MongoDBStream "
+                + "TYPE Mongo OBJECT TYPE ChangeStream "
                 + "OPTIONS ("
                 + "    'connectionString' = '" + connectionString + "', "
                 + "    'database' = '" + databaseName + "', "
-                + "    'startAt' = 'now' "
+                + "    'startAt' = '" + startAt + "' "
                 + ")");
 
         spawn(() -> {
-            assertTrueEventually(() -> assertEquals(1, instance().getJet().getJobs().size()));
             collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
             sleep(200);
             collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
             sleep(100);
             collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
         });
+
         assertRowsEventuallyInAnyOrder("select firstName, lastName, operation from table(impose_order("
                         + "    table " + tableName + ", "
                         + "    descriptor(ts), "
-                        + "    interval '0.002' second "
+                        + "    interval '1' second "
                         + "))"
-                        + "where lastName = 'Skywalker' limit 2",
+                        + "where lastName = 'Skywalker'",
                 emptyList(),
                 asList(
                         new Row("Luke", "Skywalker", "insert"),
                         new Row("Anakin", "Skywalker", "insert")
                 )
         );
+    }
+
+    @Test
+    public void readsStreamWithTimestamps_inferredFields() {
+        final String collectionName = randomName();
+        final String tableName = collectionName;
+        final String connectionString = mongoContainer.getConnectionString();
+
+        MongoClient mongoClient = MongoClients.create(connectionString);
+        MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "temp").append("lastName", "temp").append("jedi", true));
+
+        long startAt = System.currentTimeMillis();
+        execute("CREATE MAPPING " + tableName + " external name " + databaseName + "." + collectionName
+                + " TYPE Mongo OBJECT TYPE ChangeStream "
+                + " OPTIONS ("
+                + "    'connectionString' = '" + connectionString + "', "
+                + "    'database' = '" + databaseName + "', "
+                + "    'startAt' = '" + startAt + "' "
+                + ")");
+
+
+        spawn(() -> {
+            collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
+            sleep(200);
+            collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
+            sleep(100);
+            collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
+        });
+
+        assertRowsEventuallyInAnyOrder("select \"fullDocument.firstName\", \"fullDocument.lastName\", operationType " +
+                        "from table(impose_order("
+                        + "    table " + tableName + ", "
+                        + "    descriptor(ts), "
+                        + "    interval '1' second "
+                        + "))"
+                        + "where \"fullDocument.lastName\" = 'Skywalker' limit 2",
+                emptyList(),
+                asList(
+                        new Row("Luke", "Skywalker", "insert"),
+                        new Row("Anakin", "Skywalker", "insert")
+                )
+        );
+    }
+
+    @Test
+    public void readsUsingDataConnection() {
+        MongoCollection<Document> collection = database.getCollection(collectionName);
+        collection.insertOne(new Document("firstName", "Luke").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Han").append("lastName", "Solo").append("jedi", false));
+        collection.insertOne(new Document("firstName", "Anakin").append("lastName", "Skywalker").append("jedi", true));
+        collection.insertOne(new Document("firstName", "Rey").append("jedi", true));
+
+        execute("CREATE MAPPING " + collectionName
+                + " (firstName VARCHAR, lastName VARCHAR, jedi BOOLEAN) "
+                + " DATA CONNECTION testMongo"
+                + " OBJECT TYPE ChangeStream"
+                + " OPTIONS ('startAt' = 'now')");
+
+        try (SqlResult result = sqlService.execute("select firstName, lastName from " + collectionName)) {
+            assertTrue(result.isRowSet());
+        }
     }
 
     private void sleep(int howMuch) {

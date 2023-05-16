@@ -176,6 +176,30 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void updateTableSetUsingExpressionWithTableColumnNoPushDown() throws Exception {
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)", "data VARCHAR(100)");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', '{\"value\":0}')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', '{\"value\":1}')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(2, 'name-2', '{\"value\":2}')");
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id INT, "
+                        + " name VARCHAR, "
+                        + " data VARCHAR"
+                        + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        execute("UPDATE " + tableName + " SET name = 'updated-'||id WHERE JSON_QUERY(data, '$.value') = '2'");
+
+        assertJdbcQueryRowsAnyOrder("SELECT id, name FROM " + tableName,
+                new Row(0, "name-0"),
+                new Row(1, "name-1"),
+                new Row(2, "updated-2")
+        );
+    }
+
+    @Test
     public void updateTableSetUsingQueryParameter() throws Exception {
         createTable(tableName);
         insertItems(tableName, 1);
@@ -321,6 +345,31 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void updateTableWithMultiplePKColumnsNoPredicatePushDown() throws Exception {
+        createTable(tableName, "id INT", "id2 INT", "name VARCHAR(10)", "PRIMARY KEY(id, id2)", "data VARCHAR(100)");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 0, 'name-0', '{\"value\":0}')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 0, 'name-1', '{\"value\":1}')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 1, 'name-2', '{\"value\":2}')");
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id INT, "
+                        + " id2 INT, "
+                        + " name VARCHAR, "
+                        + " data VARCHAR"
+                        + ") "
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        execute("UPDATE " + tableName + " SET name = 'updated' WHERE JSON_QUERY(data, '$.value') = '2'");
+
+        assertJdbcQueryRowsAnyOrder("SELECT name FROM " + tableName,
+                new Row("name-0"),
+                new Row("name-1"),
+                new Row("updated")
+        );
+    }
+
+    @Test
     public void updateTableWithReverseColumnOrder() throws Exception {
         createTable(tableName, "name VARCHAR(10)", "id INT PRIMARY KEY");
         executeJdbc("INSERT INTO " + tableName + " VALUES('name-0', 0)");
@@ -356,7 +405,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateMappingWithQuotedColumnInWhere() throws Exception {
-        createTable(tableName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(tableName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(tableName, 1);
 
         execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);
@@ -369,7 +418,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void updateMappingWithQuotedColumnInSet() throws Exception {
-        createTable(tableName, "id INT PRIMARY KEY", "\"full-name\" VARCHAR(100)");
+        createTable(tableName, "id INT PRIMARY KEY", quote("full-name") + " VARCHAR(100)");
         insertItems(tableName, 1);
 
         execute("CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF);

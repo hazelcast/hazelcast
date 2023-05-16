@@ -25,6 +25,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
+import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.impl.clientside.CandidateClusterContext;
 import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.impl.clientside.ClusterDiscoveryService;
@@ -119,6 +120,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CL
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -310,7 +312,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         .loggingService(client.getLoggingService())
                         .metricsRegistry(client.getMetricsRegistry())
                         .threadNamePrefix(client.getName())
-                        .errorHandler(new ClientConnectionChannelErrorHandler())
+                        .errorHandler(new ClientChannelErrorHandler())
                         .inputThreadCount(inputThreads)
                         .inputThreadAffinity(newSystemThreadAffinity("hazelcast.client.io.input.thread.affinity"))
                         .outputThreadCount(outputThreads)
@@ -492,17 +494,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
         } catch (InvalidConfigurationException e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e, e);
+            logger.warning("Exception during initial connection to " + target + ": " + e);
             throw rethrow(e);
         } catch (ClientNotAllowedInClusterException e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e, e);
+            logger.warning("Exception during initial connection to " + target + ": " + e);
             throw e;
         } catch (TargetDisconnectedException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             connectionProcessListenerRunner.onRemoteClosedConnection(addressTranslator, target);
             return null;
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e, e);
+            logger.warning("Exception during initial connection to " + target + ": " + e);
             connectionProcessListenerRunner.onConnectionAttemptFailed(addressTranslator, target);
             return null;
         }
@@ -760,10 +762,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             InetSocketAddress inetSocketAddress = new InetSocketAddress(target.getInetAddress(), target.getPort());
             channel.connect(inetSocketAddress, connectionTimeoutMillis);
 
-            TcpClientConnection connection = new TcpClientConnection(client,
-                    connectionIdGen.incrementAndGet(),
-                    channel,
-                    channelInitializer);
+            TcpClientConnection connection = new TcpClientConnection(client, connectionIdGen.incrementAndGet(), channel);
+            if (isTpcAwareClient) {
+                connection.attributeMap().put(CandidateClusterContext.class, currentClusterContext);
+            }
 
             socketChannel.configureBlocking(true);
             SocketInterceptor socketInterceptor = currentClusterContext.getSocketInterceptor();
@@ -780,7 +782,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    private Channel createTpcChannel(Address address, TcpClientConnection connection, ChannelInitializer channelInitializer) {
+    private Channel createTpcChannel(Address address, TcpClientConnection connection) {
         SocketChannel socketChannel = null;
         try {
             socketChannel = SocketChannel.open();
@@ -788,6 +790,15 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             // TODO: Outbound ports for TPC?
             bindSocketToPort(socket);
+
+            // TODO: use the same channel initializer with the legacy connection, when
+            //  we implement TLS support for TPC.
+            HazelcastProperties properties = client.getProperties();
+            SocketOptions socketOptions = client.getClientConfig().getNetworkConfig().getSocketOptions();
+            boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
+            ClientPlainChannelInitializer channelInitializer
+                    = new ClientPlainChannelInitializer(socketOptions, directBuffer);
+
             Channel channel = networking.register(channelInitializer, socketChannel, true);
 
             channel.addCloseListener(new TpcChannelCloseListener(client));
@@ -1017,7 +1028,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             List<Integer> tpcPorts = response.getTpcPorts();
             if (isTpcAwareClient && tpcPorts != null && !tpcPorts.isEmpty()) {
-                connectTpcPorts(connection, tpcPorts);
+                connectTpcPorts(connection, tpcPorts, response.getTpcToken());
             }
 
             boolean connectionsEmpty = activeConnections.isEmpty();
@@ -1056,8 +1067,18 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     });
                 } else {
                     establishedInitialClusterConnection = true;
-                    clientState = ClientState.INITIALIZED_ON_CLUSTER;
-                    fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
+                    if (!asyncStart) {
+                        // For a sync start client, we will send the client state as the last statement of Client instance
+                        // construction. Therefore, we can change client state and send the event here.
+                        clientState = ClientState.INITIALIZED_ON_CLUSTER;
+                        fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
+                    } else {
+                        // For async clients, we return the client instance to the user without waiting for the client
+                        // state to be sent. The state should be INITIALIZED_ON_CLUSTER after we send the client state.
+                        // Also the CLIENT_CONNECTED event should be fired after the state is sent. initializeClientOnCluster
+                        // will handle all of that.
+                        executor.execute(() -> initializeClientOnCluster(clusterId));
+                    }
                 }
             }
 
@@ -1277,18 +1298,20 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    private void connectTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts) {
-        TpcChannelConnector connector = new TpcChannelConnector(clientUuid,
+    private void connectTpcPorts(TcpClientConnection connection, List<Integer> tpcPorts, byte[] tpcToken) {
+        TpcChannelConnector connector = new TpcChannelConnector(client,
+                authenticationTimeout,
+                clientUuid,
                 connection,
                 tpcPorts,
+                tpcToken,
                 executor,
-                connection.getChannelInitializer(),
                 this::createTpcChannel,
                 client.getLoggingService());
         connector.initiate();
     }
 
-    private class ClientConnectionChannelErrorHandler implements ChannelErrorHandler {
+    private class ClientChannelErrorHandler implements ChannelErrorHandler {
         @Override
         public void onError(Channel channel, Throwable cause) {
             if (channel == null) {
@@ -1298,7 +1321,21 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     logger.severe(cause);
                 }
 
-                ClientConnection connection = (ClientConnection) channel.attributeMap().get(TcpClientConnection.class);
+                ConcurrentMap attributeMap = channel.attributeMap();
+                boolean isTpcChannel = attributeMap.containsKey(TpcChannelClientConnectionAdapter.class);
+                ClientConnection connection = (ClientConnection) attributeMap.get(TcpClientConnection.class);
+                if (isTpcChannel && connection.getTpcChannels() == null) {
+                    // This means this is a TPC channel and the connection
+                    // that owns this TPC channel is not operating on the
+                    // TPC mode yet. However, we have faced with an issue
+                    // on the channel, so it must be closed & any possible
+                    // invocations made over it must be notified with an error.
+                    // If we were to just close the connection below, this channel
+                    // wouldn't be closed (because the 'tpcChannels' array
+                    // is not assigned yet).
+                    closeResource(channel);
+                }
+
                 if (cause instanceof EOFException) {
                     connection.close("Connection closed by the other side", cause);
                 } else {

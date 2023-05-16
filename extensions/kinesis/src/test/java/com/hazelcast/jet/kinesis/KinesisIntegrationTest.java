@@ -59,6 +59,7 @@ import static com.amazonaws.services.kinesis.model.ShardIteratorType.AT_TIMESTAM
 import static com.amazonaws.services.kinesis.model.ShardIteratorType.LATEST;
 import static com.amazonaws.services.kinesis.model.ShardIteratorType.TRIM_HORIZON;
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -153,7 +154,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         } catch (CompletionException ce) {
             Throwable cause = peel(ce);
             assertInstanceOf(JetException.class, cause);
-            assertInstanceOf(AssertionCompletedException.class, cause.getCause());
+            assertTrue(isOrHasCause(cause, AssertionCompletedException.class));
         }
     }
 
@@ -188,7 +189,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         } catch (CompletionException ce) {
             Throwable cause = peel(ce);
             assertTrue(cause instanceof JetException);
-            assertTrue(cause.getCause() instanceof AssertionCompletedException);
+            assertTrue(isOrHasCause(cause, AssertionCompletedException.class));
         }
     }
 
@@ -224,7 +225,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         } catch (CompletionException ce) {
             Throwable cause = peel(ce);
             assertTrue(cause instanceof JetException);
-            assertTrue(cause.getCause() instanceof AssertionCompletedException);
+            assertTrue(isOrHasCause(cause, AssertionCompletedException.class));
         }
     }
 

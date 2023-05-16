@@ -37,6 +37,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.sql.impl.InternalSqlService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -83,9 +84,9 @@ public final class ActionConstants {
     public static final String ACTION_DROP_VIEW = "drop-view";
     public static final String ACTION_CREATE_TYPE = "create-type";
     public static final String ACTION_DROP_TYPE = "drop-type";
-    public static final String ACTION_VIEW_LINK = "view-link";
-    public static final String ACTION_CREATE_LINK = "create-link";
-    public static final String ACTION_DROP_LINK = "drop-link";
+    public static final String ACTION_VIEW_DATACONNECTION = "view-dataconnection";
+    public static final String ACTION_CREATE_DATACONNECTION = "create-dataconnection";
+    public static final String ACTION_DROP_DATACONNECTION = "drop-dataconnection";
 
     private static final Map<String, PermissionFactory> PERMISSION_FACTORY_MAP = new HashMap<>();
 
@@ -115,6 +116,7 @@ public final class ActionConstants {
         PERMISSION_FACTORY_MAP.put(ReliableTopicService.SERVICE_NAME, ReliableTopicPermission::new);
         PERMISSION_FACTORY_MAP.put(JetServiceBackend.SERVICE_NAME, (name, actions) -> new JobPermission(actions));
         PERMISSION_FACTORY_MAP.put(InternalSqlService.SERVICE_NAME, SqlPermission::new);
+        PERMISSION_FACTORY_MAP.put(DistributedScheduledExecutorService.SERVICE_NAME, ScheduledExecutorPermission::new);
     }
 
     private ActionConstants() {

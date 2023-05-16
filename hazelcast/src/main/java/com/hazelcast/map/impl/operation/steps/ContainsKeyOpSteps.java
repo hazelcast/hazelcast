@@ -28,7 +28,7 @@ public enum ContainsKeyOpSteps implements IMapOpStep {
         @Override
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
-            Record record = recordStore.getRecordOrNull(state.getKey());
+            Record record = recordStore.getRecordOrNull(state.getKey(), false);
 
             if (record != null) {
                 state.setOldValue(record.getValue());
@@ -39,7 +39,7 @@ public enum ContainsKeyOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.getOldValue() == null
-                    ? ContainsKeyOpSteps.LOAD : UtilSteps.SEND_RESPONSE;
+                    ? ContainsKeyOpSteps.LOAD : UtilSteps.FINAL_STEP;
         }
     },
 
@@ -57,7 +57,7 @@ public enum ContainsKeyOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             return state.getOldValue() == null
-                    ? UtilSteps.SEND_RESPONSE : ContainsKeyOpSteps.ON_LOAD;
+                    ? UtilSteps.FINAL_STEP : ContainsKeyOpSteps.ON_LOAD;
         }
     },
 
@@ -77,7 +77,7 @@ public enum ContainsKeyOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

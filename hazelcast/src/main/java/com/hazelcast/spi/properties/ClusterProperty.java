@@ -1872,6 +1872,18 @@ public final class ClusterProperty {
     public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY = new HazelcastProperty(
             "hazelcast.persistence.auto.cluster.state.strategy", ClusterState.NO_MIGRATION);
 
+    /**
+     * The directory path to be used for jar uploading. The path must exist and must have
+     * read + write + execute permissions for the Hazelcast process
+     * <p>
+     * A different path can be specified for each member
+     * <p>
+     * The path can be absolute or relative to current working directory of Hazelcast process
+     * @since 5.3
+     */
+    public static final HazelcastProperty JAR_UPLOAD_DIR_PATH
+            = new HazelcastProperty("hazelcast.cluster.jarupload.dirpath");
+
     private ClusterProperty() {
     }
 }
