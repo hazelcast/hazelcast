@@ -1386,7 +1386,6 @@
                 <property>
                     <name>!quick</name>
                 </property>
-                <jdk>[9,)</jdk>
             </activation>
             <modules>
                 <module>modulepath-tests</module>
