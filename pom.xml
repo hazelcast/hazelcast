@@ -436,7 +436,7 @@
                                     <version>[11,)</version>
                                 </requireJavaVersion>
                                 <enforceBytecodeVersion>
-                                    <maxJdkVersion>1</maxJdkVersion>
+                                    <maxJdkVersion>11</maxJdkVersion>
                                     <excludes>
                                         <!--
                                         The archunit library containse several classes to process JDK9 modules.
