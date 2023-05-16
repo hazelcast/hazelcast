@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 @SuppressWarnings({"checkstyle:ParameterNumber"})
 public class MainDTO {
@@ -41,6 +42,7 @@ public class MainDTO {
     public LocalDate localDate;
     public LocalDateTime localDateTime;
     public OffsetDateTime offsetDateTime;
+    public UUID uuid;
     public Byte nullableB;
     public Boolean nullableBool;
     public Character nullableC;
@@ -55,7 +57,7 @@ public class MainDTO {
 
     public MainDTO(byte b, boolean bool, char c, short s, int i, long l, float f, double d, String str, InnerDTO p,
                    BigDecimal bigDecimal, LocalTime localTime, LocalDate localDate, LocalDateTime localDateTime,
-                   OffsetDateTime offsetDateTime,
+                   OffsetDateTime offsetDateTime, UUID uuid,
                    Byte nullableB, Boolean nullableBool, Character nullableC, Short nullableS, Integer nullableI,
                    Long nullableL, Float nullableF, Double nullableD) {
         this.b = b;
@@ -73,6 +75,7 @@ public class MainDTO {
         this.localDate = localDate;
         this.localDateTime = localDateTime;
         this.offsetDateTime = offsetDateTime;
+        this.uuid = uuid;
         this.nullableB = nullableB;
         this.nullableBool = nullableBool;
         this.nullableC = nullableC;
@@ -140,6 +143,9 @@ public class MainDTO {
         if (!Objects.equals(offsetDateTime, mainDTO.offsetDateTime)) {
             return false;
         }
+        if (!Objects.equals(uuid, mainDTO.uuid)) {
+            return false;
+        }
         if (!Objects.equals(nullableB, mainDTO.nullableB)) {
             return false;
         }
@@ -187,6 +193,7 @@ public class MainDTO {
         result = 31 * result + (localDate != null ? localDate.hashCode() : 0);
         result = 31 * result + (localDateTime != null ? localDateTime.hashCode() : 0);
         result = 31 * result + (offsetDateTime != null ? offsetDateTime.hashCode() : 0);
+        result = 31 * result + (uuid != null ? uuid.hashCode() : 0);
         result = 31 * result + (nullableB != null ? nullableB.hashCode() : 0);
         result = 31 * result + (nullableBool != null ? nullableBool.hashCode() : 0);
         result = 31 * result + (nullableC != null ? nullableC.hashCode() : 0);
@@ -216,6 +223,7 @@ public class MainDTO {
                 + ", + localDate=" + localDate
                 + ", + localDateTime=" + localDateTime
                 + ", + offsetDateTime=" + offsetDateTime
+                + ", + uuid=" + uuid
                 + ", + nullableB=" + nullableB
                 + ", + nullableBool=" + nullableBool
                 + ", + nullableC=" + nullableC

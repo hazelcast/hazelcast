@@ -38,6 +38,7 @@ import example.serialization.MainDTOSerializer;
 import example.serialization.SameClassEmployeeDTOSerializer;
 import example.serialization.SameTypeNameEmployeeDTOSerializer;
 import example.serialization.SerializableEmployeeDTO;
+import java.util.Currency;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -56,7 +57,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalDouble;
 import java.util.Set;
-import java.util.UUID;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -371,21 +371,21 @@ public class CompactSerializationTest {
         assertThatThrownBy(() -> {
             service.toData(new ClassWithUnsupportedArrayListField());
         }).isInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("UUID")
+                .hasStackTraceContaining("Currency")
                 .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
                 .hasStackTraceContaining("which uses this class in its fields");
 
         assertThatThrownBy(() -> {
             service.toData(new ClassWithUnsupportedHashSetField());
         }).isInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("UUID")
+                .hasStackTraceContaining("Currency")
                 .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
                 .hasStackTraceContaining("which uses this class in its fields");
 
         assertThatThrownBy(() -> {
             service.toData(new ClassWithUnsupportedHashMapField());
         }).isInstanceOf(HazelcastSerializationException.class)
-                .hasStackTraceContaining("UUID")
+                .hasStackTraceContaining("Currency")
                 .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
                 .hasStackTraceContaining("which uses this class in its fields");
     }
@@ -691,15 +691,15 @@ public class CompactSerializationTest {
     }
 
     private static class ClassWithUnsupportedArrayListField {
-        private ArrayList<UUID> list;
+        private ArrayList<Currency> list;
     }
 
     private static class ClassWithUnsupportedHashSetField {
-        private HashSet<UUID> set;
+        private HashSet<Currency> set;
     }
 
     private static class ClassWithUnsupportedHashMapField {
-        private HashMap<UUID, Long> map;
+        private HashMap<Currency, Long> map;
     }
 
     private static class Foo {

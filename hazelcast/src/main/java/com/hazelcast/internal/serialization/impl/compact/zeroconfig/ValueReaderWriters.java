@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.charArrayAsShortArray;
@@ -50,6 +51,10 @@ import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.enum
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.enumArrayFromStringNameArray;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.enumAsStringName;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.enumFromStringName;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.uuidArrayAsStringArray;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.uuidArrayFromStringArray;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.uuidAsString;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.uuidFromString;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.isFieldExist;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.verifyFieldClassIsCompactSerializable;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.verifyFieldClassShouldBeSerializedAsCompact;
@@ -123,6 +128,9 @@ public final class ValueReaderWriters {
 
         CONSTRUCTORS.put(OffsetDateTime.class, OffsetDateTimeReaderWriter::new);
         ARRAY_CONSTRUCTORS.put(OffsetDateTime.class, OffsetDateTimeArrayReaderWriter::new);
+
+        CONSTRUCTORS.put(UUID.class, UuidReaderWriter::new);
+        ARRAY_CONSTRUCTORS.put(UUID.class, UuidArrayReaderWriter::new);
 
         CONSTRUCTORS.put(Boolean.class, NullableBooleanReaderWriter::new);
         CONSTRUCTORS.put(Boolean.TYPE, BooleanReaderWriter::new);
@@ -542,6 +550,46 @@ public final class ValueReaderWriters {
         @Override
         public void write(CompactWriter writer, OffsetDateTime[] value) {
             writer.writeArrayOfTimestampWithTimezone(fieldName, value);
+        }
+    }
+
+    private static final class UuidReaderWriter extends ValueReaderWriter<UUID> {
+
+        private UuidReaderWriter(String fieldName) {
+            super(fieldName);
+        }
+
+        @Override
+        public UUID read(CompactReader reader, Schema schema) {
+            if (!isFieldExist(schema, fieldName, STRING)) {
+                return null;
+            }
+            return uuidFromString(reader.readString(fieldName));
+        }
+
+        @Override
+        public void write(CompactWriter writer, UUID value) {
+            writer.writeString(fieldName, uuidAsString(value));
+        }
+    }
+
+    private static final class UuidArrayReaderWriter extends ValueReaderWriter<UUID[]> {
+
+        private UuidArrayReaderWriter(String fieldName) {
+            super(fieldName);
+        }
+
+        @Override
+        public UUID[] read(CompactReader reader, Schema schema) {
+            if (!isFieldExist(schema, fieldName, ARRAY_OF_STRING)) {
+                return null;
+            }
+            return uuidArrayFromStringArray(reader.readArrayOfString(fieldName));
+        }
+
+        @Override
+        public void write(CompactWriter writer, UUID[] value) {
+            writer.writeArrayOfString(fieldName, uuidArrayAsStringArray(value));
         }
     }
 

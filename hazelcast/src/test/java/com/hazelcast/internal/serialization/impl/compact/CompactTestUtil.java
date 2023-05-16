@@ -34,6 +34,7 @@ import example.serialization.NamedDTO;
 import example.serialization.AllFieldsDTO;
 import example.serialization.SerializableEmployeeDTO;
 
+import java.util.UUID;
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -134,6 +135,7 @@ public final class CompactTestUtil {
                 new LocalDate[]{LocalDate.of(2022, 12, 23), null, LocalDate.of(999_999_999, 1, 2)},
                 new LocalDateTime[]{LocalDateTime.of(2022, 12, 23, 22, 13, 15, 123123), null},
                 new OffsetDateTime[]{OffsetDateTime.of(2022, 12, 23, 22, 13, 15, 123123, ZoneOffset.MAX)},
+                new UUID[]{UUID.fromString("11111111-1111-1111-1111-111111111111")},
                 new Boolean[]{true, false, null},
                 new Byte[]{0, 1, 2, null}, new Character[]{'i', null, '9'},
                 new Short[]{3, 4, 5, null}, new Integer[]{9, 8, 7, 6, null}, new Long[]{0L, 1L, 5L, 7L, 9L, 11L},
@@ -146,8 +148,8 @@ public final class CompactTestUtil {
         return new MainDTO((byte) 113, true, '\u1256', (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d, "this is main object created for testing!", inner,
                 new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now(),
-                (byte) 113, true, '\u4567', (short) -500, 56789, -50992225L, 900.5678f,
-                -897543.3678909d);
+                UUID.fromString("11111111-1111-1111-1111-111111111111"), (byte) 113, true, '\u4567', (short) -500, 56789,
+                -50992225L, 900.5678f, -897543.3678909d);
     }
 
     @Nonnull

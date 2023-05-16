@@ -21,6 +21,7 @@ import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
+import java.util.UUID;
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -93,6 +94,10 @@ public class MainDTOSerializer implements CompactSerializer<MainDTO> {
                 ? reader.readTimestampWithTimezone("offsetDateTime")
                 : OffsetDateTime.of(1, 1, 1, 1, 1, 1, 1, ZoneOffset.ofHours(1));
 
+        UUID uuid = reader.getFieldKind("uuid") == FieldKind.STRING
+                ? UUID.fromString(reader.readString("uuid"))
+                : UUID.fromString("11111111-1111-1111-1111-111111111111");
+
         Byte nullableB = reader.getFieldKind("nullableB") == FieldKind.NULLABLE_INT8
                 ? reader.readNullableInt8("nullableB")
                 : Byte.valueOf((byte) 1);
@@ -126,7 +131,7 @@ public class MainDTOSerializer implements CompactSerializer<MainDTO> {
                 : Double.valueOf(1.0);
 
         return new MainDTO(b, bool, c, s, i, l, f, d, str, p, bigDecimal, localTime, localDate, localDateTime,
-                offsetDateTime, nullableB, nullableBool, nullableC, nullableS, nullableI, nullableL, nullableF, nullableD);
+                offsetDateTime, uuid, nullableB, nullableBool, nullableC, nullableS, nullableI, nullableL, nullableF, nullableD);
     }
 
     @Override
@@ -146,6 +151,7 @@ public class MainDTOSerializer implements CompactSerializer<MainDTO> {
         writer.writeDate("localDate", object.localDate);
         writer.writeTimestamp("localDateTime", object.localDateTime);
         writer.writeTimestampWithTimezone("offsetDateTime", object.offsetDateTime);
+        writer.writeString("uuid", object.uuid.toString());
         writer.writeNullableInt8("nullableB", object.nullableB);
         writer.writeNullableBoolean("nullableBool", object.nullableBool);
         writer.writeNullableInt16("nullableC", CompactUtil.characterAsShort(object.nullableC));

@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
+import java.util.UUID;
 import javax.annotation.Nonnull;
 import java.lang.reflect.Array;
 
@@ -173,6 +174,46 @@ public final class CompactUtil {
         }
         return shortArray;
     }
+
+
+    public static UUID uuidFromString(String uuidString) {
+        if (uuidString == null) {
+            return null;
+        }
+        return UUID.fromString(uuidString);
+    }
+
+    public static String uuidAsString(UUID uuid) {
+        if (uuid == null) {
+            return null;
+        }
+        return uuid.toString();
+    }
+
+    public static String[] uuidArrayAsStringArray(UUID[] uuidArray) {
+        if (uuidArray == null) {
+            return null;
+        }
+
+        String[] stringArray = new String[uuidArray.length];
+        for (int i = 0; i < uuidArray.length; i++) {
+            stringArray[i] = uuidAsString(uuidArray[i]);
+        }
+        return stringArray;
+    }
+
+    public static UUID[] uuidArrayFromStringArray(String[] stringArray) {
+        if (stringArray == null) {
+            return null;
+        }
+
+        UUID[] uuidArray = new UUID[stringArray.length];
+        for (int i = 0; i < stringArray.length; i++) {
+            uuidArray[i] = uuidFromString(stringArray[i]);
+        }
+        return uuidArray;
+    }
+
 
     public static void verifyClassIsCompactSerializable(Class<?> clazz) {
         if (canBeSerializedAsCompact(clazz)) {

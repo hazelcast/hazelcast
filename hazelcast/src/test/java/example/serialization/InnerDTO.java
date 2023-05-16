@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.UUID;
 
 public class InnerDTO {
 
@@ -40,6 +41,7 @@ public class InnerDTO {
     public LocalDate[] localDates;
     public LocalDateTime[] localDateTimes;
     public OffsetDateTime[] offsetDateTimes;
+    public UUID[] uuids;
     public Boolean[] nullableBools;
     public Byte[] nullableBytes;
     public Character[] nullableCharacters;
@@ -56,7 +58,7 @@ public class InnerDTO {
     public InnerDTO(boolean[] bools, byte[] bb, char[] cc, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd,
                     String[] strings, NamedDTO[] nn,
                     BigDecimal[] bigDecimals, LocalTime[] localTimes, LocalDate[] localDates,
-                    LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes,
+                    LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes, UUID[] uuids,
                     Boolean[] nullableBools, Byte[] nullableBytes, Character[] nullableCharacters, Short[] nullableShorts,
                     Integer[] nullableIntegers, Long[] nullableLongs, Float[] nullableFloats, Double[] nullableDoubles) {
         this.bools = bools;
@@ -74,6 +76,7 @@ public class InnerDTO {
         this.localDates = localDates;
         this.localDateTimes = localDateTimes;
         this.offsetDateTimes = offsetDateTimes;
+        this.uuids = uuids;
         this.nullableBools = nullableBools;
         this.nullableBytes = nullableBytes;
         this.nullableCharacters = nullableCharacters;
@@ -108,6 +111,7 @@ public class InnerDTO {
                 && Arrays.equals(localDates, that.localDates)
                 && Arrays.equals(localDateTimes, that.localDateTimes)
                 && Arrays.equals(offsetDateTimes, that.offsetDateTimes)
+                && Arrays.equals(uuids, that.uuids)
                 && Arrays.equals(nullableBools, that.nullableBools)
                 && Arrays.equals(nullableCharacters, that.nullableCharacters)
                 && Arrays.equals(nullableShorts, that.nullableShorts)
@@ -134,6 +138,7 @@ public class InnerDTO {
         result = 31 * result + Arrays.hashCode(localDates);
         result = 31 * result + Arrays.hashCode(localDateTimes);
         result = 31 * result + Arrays.hashCode(offsetDateTimes);
+        result = 31 * result + Arrays.hashCode(uuids);
         result = 31 * result + Arrays.hashCode(nullableBools);
         result = 31 * result + Arrays.hashCode(nullableBytes);
         result = 31 * result + Arrays.hashCode(nullableCharacters);
@@ -163,6 +168,7 @@ public class InnerDTO {
                 + ", + localDates=" + Arrays.toString(localDates)
                 + ", + localDateTimes=" + Arrays.toString(localDateTimes)
                 + ", + offsetDateTimes=" + Arrays.toString(offsetDateTimes)
+                + ", + uuids=" + Arrays.toString(uuids)
                 + ", + nullableBools=" + Arrays.toString(nullableBools)
                 + ", + nullableBytes=" + Arrays.toString(nullableBytes)
                 + ", + nullableCharacters=" + Arrays.toString(nullableCharacters)

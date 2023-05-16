@@ -43,6 +43,7 @@ import example.serialization.MainDTO;
 import example.serialization.MainDTOSerializer;
 import example.serialization.NamedDTO;
 import example.serialization.NodeDTO;
+import java.util.UUID;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -181,6 +182,7 @@ public class CompactStreamSerializerTest {
         assertEquals(LocalDate.of(1, 1, 1), actual.localDate);
         assertEquals(LocalDateTime.of(1, 1, 1, 1, 1, 1), actual.localDateTime);
         assertEquals(OffsetDateTime.of(1, 1, 1, 1, 1, 1, 1, ZoneOffset.ofHours(1)), actual.offsetDateTime);
+        assertEquals(UUID.fromString("11111111-1111-1111-1111-111111111111"), actual.uuid);
         assertEquals(Byte.valueOf((byte) 1), actual.nullableB);
         assertEquals(Boolean.FALSE, actual.nullableBool);
         assertEquals(Short.valueOf((short) 1), actual.nullableS);
@@ -206,6 +208,7 @@ public class CompactStreamSerializerTest {
         assertArrayEquals(new LocalDate[0], innerDTO.localDates);
         assertArrayEquals(new LocalDateTime[0], innerDTO.localDateTimes);
         assertArrayEquals(new OffsetDateTime[0], innerDTO.offsetDateTimes);
+        assertArrayEquals(new UUID[0], innerDTO.uuids);
         assertArrayEquals(new Boolean[0], innerDTO.nullableBools);
         assertArrayEquals(new Byte[0], innerDTO.nullableBytes);
         assertArrayEquals(new Short[0], innerDTO.nullableShorts);

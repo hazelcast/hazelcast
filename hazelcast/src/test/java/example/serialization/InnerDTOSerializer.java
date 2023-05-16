@@ -21,6 +21,8 @@ import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
+import java.util.Arrays;
+import java.util.UUID;
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -92,6 +94,10 @@ public class InnerDTOSerializer implements CompactSerializer<InnerDTO> {
                 ? reader.readArrayOfTimestampWithTimezone("offsetDateTimes")
                 : new OffsetDateTime[0];
 
+        UUID[] uuids = reader.getFieldKind("uuids") == FieldKind.ARRAY_OF_STRING
+                ? Arrays.stream(reader.readArrayOfString("uuids")).map(UUID::fromString).toArray(UUID[]::new)
+                : new UUID[0];
+
         Boolean[] nullableBools = reader.getFieldKind("nullableBools") == FieldKind.ARRAY_OF_NULLABLE_BOOLEAN
                 ? reader.readArrayOfNullableBoolean("nullableBools")
                 : new Boolean[0];
@@ -125,7 +131,7 @@ public class InnerDTOSerializer implements CompactSerializer<InnerDTO> {
                 : new Double[0];
 
         return new InnerDTO(bools, bytes, chars, shorts, ints, longs, floats, doubles, strings, namedDTOS,
-                bigDecimals, localTimes, localDates, localDateTimes, offsetDateTimes, nullableBools, nullableBytes,
+                bigDecimals, localTimes, localDates, localDateTimes, offsetDateTimes, uuids, nullableBools, nullableBytes,
                 nullableCharacters, nullableShorts, nullableIntegers, nullableLongs, nullableFloats, nullableDoubles);
     }
 
@@ -146,6 +152,7 @@ public class InnerDTOSerializer implements CompactSerializer<InnerDTO> {
         writer.writeArrayOfDate("localDates", object.localDates);
         writer.writeArrayOfTimestamp("localDateTimes", object.localDateTimes);
         writer.writeArrayOfTimestampWithTimezone("offsetDateTimes", object.offsetDateTimes);
+        writer.writeArrayOfString("uuids", Arrays.stream(object.uuids).map(UUID::toString).toArray(String[]::new));
         writer.writeArrayOfNullableBoolean("nullableBools", object.nullableBools);
         writer.writeArrayOfNullableInt8("nullableBytes", object.nullableBytes);
         writer.writeArrayOfNullableInt16("nullableCharacters", CompactUtil.characterArrayAsShortArray(object.nullableCharacters));
