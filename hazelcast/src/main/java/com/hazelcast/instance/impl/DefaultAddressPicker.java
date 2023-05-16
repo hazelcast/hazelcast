@@ -31,6 +31,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -214,12 +215,7 @@ class DefaultAddressPicker
         }
 
         if (interfacesConfig.isEnabled()) {
-            String configSource = config.getConfigurationFile() != null && config.getConfigurationFile().getName() != null
-                    && config.getConfigurationFile().exists() && config.getConfigurationFile().isFile() ?
-                    "the " + config.getConfigurationFile().getName() + " config file." : "the member configurations.";
-
-            String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
-                    + "Interface matching must be either disabled or updated in " + configSource;
+            String msg = errorMsgForMatchNetworkInterface();
             logger.severe(msg);
             throw new RuntimeException(msg);
         }
@@ -227,6 +223,15 @@ class DefaultAddressPicker
             logger.warning("Could not find a matching address to start with! Picking one of non-loopback addresses.");
         }
         return pickMatchingAddress(null);
+    }
+
+    private String errorMsgForMatchNetworkInterface() {
+        File file = config.getConfigurationFile();
+        String configSource = file != null && file.exists() && file.isFile()
+                ? "the " + file.getName() + " config file." : "the member configurations.";
+        String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
+                + "Interface matching must be either disabled or updated in " + configSource;
+        return msg;
     }
 
     private List<InterfaceDefinition> getInterfaces() {
