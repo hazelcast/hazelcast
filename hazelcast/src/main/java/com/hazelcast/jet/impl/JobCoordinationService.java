@@ -1271,6 +1271,11 @@ public class JobCoordinationService {
         jobRepository.cleanup(nodeEngine);
         if (!jobsScanned) {
             synchronized (lock) {
+                // Note that setting jobsScanned is required for Jet to accept submitted jobs.
+                // When a new cluster is started, job records IMap does not exist until first job is submitted.
+                // This causes slight possibility of accepting duplicated job in case of HotRestart,
+                // but that is acceptable risk.
+                // See comment in JobRepository.cleanup().
                 jobsScanned = true;
             }
         }
