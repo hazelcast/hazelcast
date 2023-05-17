@@ -196,9 +196,4 @@ public final class IOUringAsyncFile extends AsyncFile {
     public Promise<Integer> close() {
         return scheduler.submit(this, IORING_OP_CLOSE, 0, 0, 0, 0, 0);
     }
-
-    @Override
-    public String toString() {
-        return path;
-    }
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.file;
 
+import java.io.File;
+
 /**
  * Represents some storage device.
  * <p/>
@@ -28,29 +30,31 @@ public class StorageDevice {
     private final int maxWaiting;
 
     /**
-     *
-     * @param path
+     * @param path          the path of the storage device.
      * @param maxConcurrent the number of concurrent requests on the dev.
-     * @param maxWaiting the maximum number of waiting in case of no space for waiting requests.
+     * @param maxWaiting    the maximum number of waiting in case of no space for waiting requests.
      */
     public StorageDevice(String path,
                          int maxConcurrent,
                          int maxWaiting) {
         this.path = path;
+        File file = new File(path);
+        if (!file.isDirectory()) {
+            throw new IllegalArgumentException("Path [" + path + "] is not a valid directory.");
+        }
         this.maxConcurrent = maxConcurrent;
         this.maxWaiting = maxWaiting;
     }
 
-    public int getMaxConcurrent() {
+    public int maxConcurrent() {
         return maxConcurrent;
     }
 
-    public String getPath() {
+    public String path() {
         return path;
     }
 
-    public int getMaxWaiting() {
+    public int maxWaiting() {
         return maxWaiting;
     }
-
 }

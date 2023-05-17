@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * A server socket that is asynchronous. So accepting incoming connections does not block,
  * but are executed on a {@link Reactor}.
  */
-public abstract class AsyncServerSocket extends AbstractAsyncFile {
+public abstract class AsyncServerSocket extends AbstractAsyncSocket {
 
     protected final AsyncServerSocketMetrics metrics = new AsyncServerSocketMetrics();
 

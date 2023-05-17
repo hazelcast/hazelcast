@@ -44,10 +44,10 @@ public class StorageDeviceScheduler {
 
     public StorageDeviceScheduler(StorageDevice dev, IOUringEventloop eventloop) {
         this.dev = dev;
-        this.path = dev.getPath();
-        this.maxConcurrent = dev.getMaxConcurrent();
-        this.waitQueue = new CircularQueue<>(dev.getMaxWaiting());
-        this.opAllocator = new SlabAllocator<>(dev.getMaxWaiting(), IoOp::new);
+        this.path = dev.path();
+        this.maxConcurrent = dev.maxConcurrent();
+        this.waitQueue = new CircularQueue<>(dev.maxWaiting());
+        this.opAllocator = new SlabAllocator<>(dev.maxWaiting(), IoOp::new);
         this.eventloop = eventloop;
         this.handlers = eventloop.handlers;
         this.sq = eventloop.sq;
@@ -94,7 +94,7 @@ public class StorageDeviceScheduler {
             opAllocator.free(op);
             // todo: better approach needed
             promise.completeWithIOException(
-                    "Overload. Max concurrent operations " + maxConcurrent + " dev: [" + dev.getPath() + "]", null);
+                    "Overload. Max concurrent operations " + maxConcurrent + " dev: [" + dev.path() + "]", null);
         }
 
         // System.out.println("Request scheduled");

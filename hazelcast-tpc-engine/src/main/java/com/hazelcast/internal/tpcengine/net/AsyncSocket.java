@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
  * a blocking read.
  */
 @SuppressWarnings({"checkstyle:MethodCount", "checkstyle:VisibilityModifier"})
-public abstract class AsyncSocket extends AbstractAsyncFile {
+public abstract class AsyncSocket extends AbstractAsyncSocket {
 
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
@@ -201,6 +201,8 @@ public abstract class AsyncSocket extends AbstractAsyncFile {
      * This method is not thread-safe.
      * <p/>
      * This method should be called after {@link #start()}.
+     *
+     * todo: Instead of returning a CompletableFuture, a promise should be returned.
      *
      * @param address the address to connect to.
      * @return a {@link CompletableFuture}

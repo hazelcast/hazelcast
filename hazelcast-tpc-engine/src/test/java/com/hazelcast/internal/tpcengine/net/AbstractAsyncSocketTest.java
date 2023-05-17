@@ -45,11 +45,11 @@ public class AbstractAsyncSocketTest {
     @Test
     public void test_setCloseListener_whenAlreadySet() {
         MockAbstractSyncSocket channel = new MockAbstractSyncSocket();
-        AbstractAsyncFile.CloseListener oldCloseListener = mock(AbstractAsyncFile.CloseListener.class);
+        AbstractAsyncSocket.CloseListener oldCloseListener = mock(AbstractAsyncSocket.CloseListener.class);
         Executor oldExecutor = mock(Executor.class);
         channel.setCloseListener(oldCloseListener, oldExecutor);
 
-        assertThrows(IllegalStateException.class, () -> channel.setCloseListener(mock(AbstractAsyncFile.CloseListener.class), mock(Executor.class)));
+        assertThrows(IllegalStateException.class, () -> channel.setCloseListener(mock(AbstractAsyncSocket.CloseListener.class), mock(Executor.class)));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class AbstractAsyncSocketTest {
     public void test_setCloseListener_whenExecutorNull() {
         MockAbstractSyncSocket channel = new MockAbstractSyncSocket();
 
-        assertThrows(NullPointerException.class, () -> channel.setCloseListener(mock(AbstractAsyncFile.CloseListener.class), null));
+        assertThrows(NullPointerException.class, () -> channel.setCloseListener(mock(AbstractAsyncSocket.CloseListener.class), null));
     }
 
     @Test
@@ -72,7 +72,7 @@ public class AbstractAsyncSocketTest {
         Executor executor = command -> {
             command.run();
         };
-        AbstractAsyncFile.CloseListener listener = mock(AbstractAsyncFile.CloseListener.class);
+        AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
         channel.setCloseListener(listener, executor);
 
         channel.close();
@@ -88,7 +88,7 @@ public class AbstractAsyncSocketTest {
         Executor executor = command -> {
             command.run();
         };
-        AbstractAsyncFile.CloseListener listener = mock(AbstractAsyncFile.CloseListener.class);
+        AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
         channel.setCloseListener(listener, executor);
 
         verify(listener).onClose(channel);
@@ -100,7 +100,7 @@ public class AbstractAsyncSocketTest {
         Executor executor = command -> {
             command.run();
         };
-        AbstractAsyncFile.CloseListener listener = mock(AbstractAsyncFile.CloseListener.class);
+        AbstractAsyncSocket.CloseListener listener = mock(AbstractAsyncSocket.CloseListener.class);
         channel.setCloseListener(listener, executor);
 
         doThrow(new RuntimeException()).when(listener).onClose(channel);
@@ -185,7 +185,7 @@ public class AbstractAsyncSocketTest {
     }
 
 
-    public static class MockAbstractSyncSocket extends AbstractAsyncFile {
+    public static class MockAbstractSyncSocket extends AbstractAsyncSocket {
         int closeCalls;
         IOException exceptionToThrow;
 

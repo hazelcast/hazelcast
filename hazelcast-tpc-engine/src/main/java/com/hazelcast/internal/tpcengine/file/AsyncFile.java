@@ -25,10 +25,9 @@ import com.hazelcast.internal.tpcengine.Promise;
  * This class isn't thread-safe. It should only be processed by the owning {@link Eventloop}.
  * <p/>
  *  If in the future we want to support Virtual Threads, we do not need to introduce a new
- * 'SyncFile'. It would be sufficient to rename this class to e.g. File and offer
- *  blocking operations which acts like scheduling points. This way you can use the API
- *  from virtual threads and from platform threads. The platform threads should probably
- *  run into an exception when they call a blocking method.
+ * 'SyncFile'. It would be sufficient to offer blocking operations which acts like scheduling points.
+ *  This way you can use the API from virtual threads and from platform threads. The platform threads
+ *  should probably run into an exception when they call a blocking method.
  */
 public abstract class AsyncFile {
 
@@ -160,4 +159,9 @@ public abstract class AsyncFile {
     public abstract Promise<Integer> pwrite(long offset, int length, long srcAddr);
 
     public abstract Promise<Integer> pwrite(long offset, int length, long srcAddr, int flags, int rwFlags);
+
+    @Override
+    public String toString() {
+        return path();
+    }
 }

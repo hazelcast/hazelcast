@@ -32,7 +32,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * The socket for TPC engine that captures common functionality for the
  * {@link AsyncSocket} and {@link AsyncServerSocket}.
  */
-public abstract class AbstractAsyncFile implements Closeable {
+public abstract class AbstractAsyncSocket implements Closeable {
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
 
@@ -45,7 +45,7 @@ public abstract class AbstractAsyncFile implements Closeable {
     private boolean closeListenerChecked;
 
     /**
-     * Allows for objects to be bound to this {@link AbstractAsyncFile}. Useful for the lookup
+     * Allows for objects to be bound to this {@link AbstractAsyncSocket}. Useful for the lookup
      * of services and other dependencies.
      * <p/>
      * This method is thread-safe.
@@ -185,7 +185,7 @@ public abstract class AbstractAsyncFile implements Closeable {
     private void notifyCloseListener(CloseListener closeListener, Executor closeExecutor) {
         closeExecutor.execute(() -> {
             try {
-                closeListener.onClose(AbstractAsyncFile.this);
+                closeListener.onClose(AbstractAsyncSocket.this);
             } catch (Exception e) {
                 logger.warning(e);
             }
@@ -244,6 +244,6 @@ public abstract class AbstractAsyncFile implements Closeable {
      * A Listener that allows you to listen to the socket closing.
      */
     public interface CloseListener {
-        void onClose(AbstractAsyncFile socket);
+        void onClose(AbstractAsyncSocket socket);
     }
 }

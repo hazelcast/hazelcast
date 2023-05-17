@@ -39,7 +39,7 @@ public class StorageDeviceRegistry {
         checkNotNull(path, "path");
 
         for (StorageDevice dev : devs) {
-            if (path.startsWith(dev.getPath())) {
+            if (path.startsWith(dev.path())) {
                 return dev;
             }
         }
