@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.StaticMemberNodeContext;
@@ -798,23 +799,20 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         CountDownLatch latch = new CountDownLatch(1);
         Config config = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
 
+        EntryListenerConfig listenerConfig = new EntryListenerConfig();
         CountDownLatch entryAddedLatch = new CountDownLatch(2);
+        listenerConfig.setImplementation((EntryAddedListener) event -> entryAddedLatch.countDown());
+        config.getMapConfig("test").addEntryListenerConfig(listenerConfig);
+
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-
-        // register a listener on the first member
-        hz1.getMap("test").addEntryListener((EntryAddedListener) event -> entryAddedLatch.countDown(), true);
-
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
 
         assertClusterSizeEventually(2, hz1, hz2);
 
-        IMap<Object, Object> map1 = hz1.getMap("test");
-        IMap<Object, Object> map2 = hz2.getMap("test");
-
-        String keyForHz1 = generateKeyOwnedBy(hz1);
-        String keyForHz2 = generateKeyOwnedBy(hz2);
-        map1.put(keyForHz1, 1);
-        map2.put(keyForHz2, 2);
+        IMap<Object, Object> map = hz1.getMap("test");
+        // give a time to initialize ListenerAdapters on members
+        sleepSeconds(2);
+        map.put(1, 1);
 
         //Let post join continue only after put happened
         latch.countDown();
