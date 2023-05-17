@@ -74,7 +74,8 @@ public class ConnectorPermission extends InstancePermission {
         String db = databaseName == null ? "$ANY$" : databaseName;
         String col = collectionName == null ? "$ANY$" : collectionName;
         String dbCol = db + "/" + col;
-        return new ConnectorPermission(MONGO_PREFIX + connectionDescription + ":" + dbCol, action);
+        String connectionDescNonNull = connectionDescription == null ? "$ANY$" : connectionDescription;
+        return new ConnectorPermission(MONGO_PREFIX + connectionDescNonNull + ":" + dbCol, action);
     }
 
     @Override
