@@ -52,7 +52,7 @@ public final class NioReactor extends Reactor {
     }
 
     @Override
-    public NioAsyncServerSocketBuilder newAsyncServerBuilder() {
+    public NioAsyncServerSocketBuilder newAsyncServerSocketBuilder() {
         verifyRunning();
 
         return new NioAsyncServerSocketBuilder(this);

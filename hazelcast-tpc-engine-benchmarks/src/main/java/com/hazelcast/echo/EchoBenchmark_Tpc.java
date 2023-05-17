@@ -160,7 +160,7 @@ public class EchoBenchmark_Tpc {
     }
 
     private static AsyncServerSocket newServer(Reactor serverReactor, SocketAddress serverAddress) {
-        AsyncServerSocket serverSocket = serverReactor.newAsyncServerBuilder()
+        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, socketBufferSize)
                 .set(SO_REUSEPORT, true)
                 .setAcceptConsumer(acceptRequest -> {

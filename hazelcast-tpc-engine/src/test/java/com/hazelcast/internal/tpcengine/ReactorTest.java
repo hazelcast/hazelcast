@@ -194,7 +194,7 @@ public abstract class ReactorTest {
     public void test_shutdown_thenAsyncServerSocketsClosed() {
         Reactor reactor = newReactor();
         reactor.start();
-        AsyncServerSocket serverSocket = reactor.newAsyncServerBuilder()
+        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                 .setAcceptConsumer(acceptRequest -> {
                 })
                 .build();
@@ -210,7 +210,7 @@ public abstract class ReactorTest {
     public void test_shutdown_thenAsyncSocketClosed() {
         Reactor serverReactor = newReactor();
         serverReactor.start();
-        AsyncServerSocket serverSocket = serverReactor.newAsyncServerBuilder()
+        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .setAcceptConsumer(acceptRequest -> {
                 })
                 .build();

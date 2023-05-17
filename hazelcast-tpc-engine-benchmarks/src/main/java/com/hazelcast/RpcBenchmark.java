@@ -154,7 +154,7 @@ public class RpcBenchmark {
         serverReactor.start();
 
         AsyncServerSocket serverSocket = serverReactor
-                .newAsyncServerBuilder()
+                .newAsyncServerSocketBuilder()
                 .setAcceptConsumer(acceptRequest -> {
                     AsyncSocket socket = serverReactor.newAsyncSocketBuilder(acceptRequest)
                             .setReader(new ServerSocketReader())

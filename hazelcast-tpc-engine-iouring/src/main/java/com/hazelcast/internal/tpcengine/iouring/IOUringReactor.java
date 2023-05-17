@@ -127,7 +127,7 @@ public class IOUringReactor extends Reactor {
     }
 
     @Override
-    public AsyncServerSocketBuilder newAsyncServerBuilder() {
+    public AsyncServerSocketBuilder newAsyncServerSocketBuilder() {
         verifyRunning();
 
         return new IOUringAsyncServerSocketBuilder(this);

@@ -250,7 +250,7 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private AsyncServerSocket newServer() {
-        AsyncServerSocket serverSocket = serverReactor.newAsyncServerBuilder()
+        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setAcceptConsumer(acceptRequest -> {
                     serverReactor.newAsyncSocketBuilder(acceptRequest)
