@@ -50,10 +50,7 @@ public class BeforeJoinCheckFailureOp extends AbstractClusterOperation {
     public void run() {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
-        if (node.getClusterService().isJoined()) {
-            throw new IllegalStateException("Node is already joined but received a termination message! "
-                + "Reason: " + failReasonMsg);
-        }
+        JoinOperation.verifyCanShutdown(node, failReasonMsg);
 
         final ILogger logger = nodeEngine.getLogger("com.hazelcast.security");
         logger.severe("Node could not join cluster. Before join check failed node is going to shutdown now!");
