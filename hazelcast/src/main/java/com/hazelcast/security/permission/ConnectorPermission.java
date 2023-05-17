@@ -71,8 +71,8 @@ public class ConnectorPermission extends InstancePermission {
     public static ConnectorPermission mongo(@Nullable String connectionDescription,
                                             @Nullable String databaseName, @Nullable String collectionName,
                                             String action) {
-        String db = databaseName == null ? "*" : databaseName;
-        String col = collectionName == null ? "*" : collectionName;
+        String db = databaseName == null ? "$ANY$" : databaseName;
+        String col = collectionName == null ? "$ANY$" : collectionName;
         String dbCol = db + "/" + col;
         return new ConnectorPermission(MONGO_PREFIX + connectionDescription + ":" + dbCol, action);
     }
