@@ -231,6 +231,23 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         assertRowsAnyOrder(sql, arguments, Arrays.asList(rows));
     }
 
+    public static void assertRowsEventuallyInAnyOrder(
+            String sql,
+            List<Object> arguments,
+            Collection<Row> expectedRows,
+            long timeoutForNextMs
+    ) {
+        assertRowsEventuallyInAnyOrder(instance(), sql, arguments, expectedRows, timeoutForNextMs);
+    }
+
+    public static void assertRowsEventuallyInAnyOrder(
+            HazelcastInstance instance,
+            String sql,
+            Collection<Row> expectedRows
+    ) {
+        assertRowsEventuallyInAnyOrder(instance, sql, emptyList(), expectedRows, 50);
+    }
+
     /**
      * Execute a query and wait for the results to contain all the {@code
      * expectedRows}. Suitable for streaming queries that don't terminate, but
@@ -239,6 +256,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * After all expected rows are received, the method further waits a little
      * more if any extra rows are received, and fails, if they are.
      *
+     * @param instance     The HZ instance
      * @param sql          The query
      * @param arguments    The query arguments
      * @param expectedRows Expected rows
@@ -246,12 +264,13 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      *                         expected rows were received
      */
     public static void assertRowsEventuallyInAnyOrder(
+            HazelcastInstance instance,
             String sql,
             List<Object> arguments,
             Collection<Row> expectedRows,
             long timeoutForNextMs
     ) {
-        SqlService sqlService = instance().getSql();
+        SqlService sqlService = instance.getSql();
         CompletableFuture<Void> future = new CompletableFuture<>();
         Deque<Row> rows = new ArrayDeque<>();
 
@@ -455,7 +474,19 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * @param expectedRows Expected rows
      */
     public static void assertRowsOrdered(String sql, List<Row> expectedRows) {
-        SqlService sqlService = instance().getSql();
+        assertRowsOrdered(instance(), sql, expectedRows);
+    }
+
+    /**
+     * Execute a query and wait until it completes. Assert that the returned
+     * rows contain the expected rows, in the given order.
+     *
+     * @param instance     Hazelcast Instance to be used
+     * @param sql          The query
+     * @param expectedRows Expected rows
+     */
+    public static void assertRowsOrdered(HazelcastInstance instance, String sql, List<Row> expectedRows) {
+        SqlService sqlService = instance.getSql();
         List<Row> actualRows = new ArrayList<>();
         try (SqlResult result = sqlService.execute(sql)) {
             result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
@@ -513,15 +544,17 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * java serialization for both key and value with the given classes.
      */
     public static void createMapping(HazelcastInstance instance, String name, Class<?> keyClass, Class<?> valueClass) {
-        long updateCount = instance.getSql().executeUpdate("CREATE OR REPLACE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
+        try (SqlResult result = instance.getSql().execute("CREATE OR REPLACE MAPPING " + name
+                + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
                 + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
                 + ", '" + OPTION_KEY_CLASS + "'='" + keyClass.getName() + "'\n"
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'\n"
                 + ", '" + OPTION_VALUE_CLASS + "'='" + valueClass.getName() + "'\n"
                 + ")"
-        );
-        assertThat(updateCount).isEqualTo(0);
+        )) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
     }
 
     /**

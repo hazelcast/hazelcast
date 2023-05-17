@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
@@ -87,8 +87,8 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropType;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
-import com.hazelcast.jet.sql.impl.schema.DataConnectionStorage;
 import com.hazelcast.jet.sql.impl.schema.DataConnectionResolver;
+import com.hazelcast.jet.sql.impl.schema.DataConnectionStorage;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
@@ -237,7 +237,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, this.connectorCache);
         DataConnectionResolver dataConnectionResolver = dataConnectionCatalog(
                 nodeEngine.getDataConnectionService(),
-                this.dataConnectionStorage
+                this.dataConnectionStorage,
+                nodeEngine.getHazelcastInstance().getConfig().getSecurityConfig().isEnabled()
         );
         this.tableResolvers = Arrays.asList(tableResolverImpl, dataConnectionResolver);
         this.planExecutor = new PlanExecutor(
@@ -259,9 +260,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private static DataConnectionResolver dataConnectionCatalog(
             InternalDataConnectionService dataConnectionService,
-            DataConnectionStorage storage
+            DataConnectionStorage storage,
+            boolean isSecurityEnabled
     ) {
-        return new DataConnectionResolver(dataConnectionService, storage);
+        return new DataConnectionResolver(dataConnectionService, storage, isSecurityEnabled);
     }
 
     @Nullable

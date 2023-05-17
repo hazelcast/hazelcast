@@ -17,68 +17,66 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.primitives.Ints;
-import org.apache.calcite.rex.RexDynamicParam;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.util.Pair;
+import org.apache.calcite.sql.SqlNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.IntStream;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
+class UpdateQueryBuilder extends AbstractQueryBuilder {
 
-class UpdateQueryBuilder {
-
-    private final String query;
-    private final List<Integer> parameterPositions = new ArrayList<>();
+    private final List<Integer> dynamicParams = new ArrayList<>();
+    private final List<Integer> inputRefs = new ArrayList<>();
 
     UpdateQueryBuilder(
             JdbcTable table,
             SqlDialect dialect,
-            List<String> pkFields,
             List<String> fieldNames,
-            List<RexNode> expressions
+            List<RexNode> expressions,
+            RexNode predicate,
+            boolean hasInput
     ) {
+        super(table, dialect);
+
         assert fieldNames.size() == expressions.size();
-        String setSqlFragment = Pair.zip(fieldNames, expressions).stream()
-                .map(pair -> {
-                    int pos;
-                    if (pair.right instanceof RexInputRef) {
-                        // a positive value is input reference
-                        pos = ((RexInputRef) pair.right).getIndex();
-                    } else if (pair.right instanceof RexDynamicParam) {
-                        // a negative value minus one is dynamic param reference
-                        pos = -((RexDynamicParam) pair.right).getIndex() - 1;
-                    } else {
-                        throw new UnsupportedOperationException(requireNonNull(pair.right).toString());
-                    }
-                    parameterPositions.add(pos);
-                    String externalFieldName = table.getField(pair.left).externalName();
-                    return dialect.quoteIdentifier(externalFieldName) + "=?";
-                })
-                .collect(joining(", "));
 
-        String whereClause = IntStream.range(0, pkFields.size())
-                .mapToObj(i -> {
-                    parameterPositions.add(i);
-                    return dialect.quoteIdentifier(pkFields.get(i)) + "=?";
-                })
-                .collect(joining(" AND "));
+        StringBuilder sb = new StringBuilder();
+        sb.append("UPDATE ");
+        dialect.quoteIdentifier(sb, Arrays.asList(table.getExternalName()));
 
-        query = "UPDATE " + dialect.quoteIdentifier(new StringBuilder(), Arrays.asList(table.getExternalName())) +
-                " SET " + setSqlFragment +
-                " WHERE " + whereClause;
+        sb.append(" SET ");
+        ParamCollectingVisitor dynamicParamVisitor = new ParamCollectingVisitor(dynamicParams);
+        for (int i = 0; i < fieldNames.size(); i++) {
+            RexNode rexNode = expressions.get(i);
+
+            SqlNode sqlNode = context.toSql(null, rexNode);
+            sqlNode.accept(dynamicParamVisitor);
+
+            String externalFieldName = table.getField(fieldNames.get(i)).externalName();
+            dialect.quoteIdentifier(sb, externalFieldName);
+            sb.append('=');
+            sb.append(sqlNode.toSqlString(dialect).toString());
+            if (i < fieldNames.size() - 1) {
+                sb.append(", ");
+            }
+        }
+
+        if (predicate != null) {
+            appendPredicate(sb, predicate, dynamicParams);
+        } else if (hasInput) {
+            appendPrimaryKeyPredicate(sb, inputRefs);
+        }
+
+        query = sb.toString();
     }
 
-    String query() {
-        return query;
+    int[] dynamicParams() {
+        return Ints.toArray(dynamicParams);
     }
 
-    int[] parameterPositions() {
-        return Ints.toArray(parameterPositions);
+    int[] inputRefs() {
+        return Ints.toArray(inputRefs);
     }
 }

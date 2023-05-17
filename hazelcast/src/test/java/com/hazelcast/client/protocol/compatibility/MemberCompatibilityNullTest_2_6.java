@@ -8080,6 +8080,7 @@ public class MemberCompatibilityNullTest_2_6 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetAddJobStatusListenerCodec.RequestParameters parameters = JetAddJobStatusListenerCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(null, parameters.lightJobCoordinator));
         assertTrue(isEqual(aBoolean, parameters.localOnly));
     }
 

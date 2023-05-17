@@ -110,6 +110,9 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Test
     public void when_onlyJobResourcesExist_then_jobResourcesClearedAfterExpiration() {
+        // ensure that job records IMap exists - prerequisite for cleanup
+        assertNotNull(instance.getMap(JobRepository.JOB_RECORDS_MAP_NAME));
+
         long jobId = uploadResourcesForNewJob();
 
         sleepUntilJobExpires();

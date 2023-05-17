@@ -31,6 +31,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertNotNull;
@@ -65,10 +67,40 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("DUMMY");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
             assertThat(dataConnection.getConfig().isShared()).isFalse();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
+    }
+
+    @Test
+    public void when_createDataConnectionWithCaseInsensitiveName_then_success() {
+        String dlName = randomName();
+        instance().getSql().execute("CREATE DATA CONNECTION " + dlName
+                + " TYPE DuMMy "
+                + " NOT SHARED "
+                + " OPTIONS ('b' = 'c')");
+
+        for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
+            DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
+            assertThat(dataConnection).isNotNull();
+            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
+            assertThat(dataConnection.getConfig().isShared()).isFalse();
+            assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
+        }
+    }
+
+    @Test
+    public void when_createDataConnectionWithWrongType_then_throws() {
+        String dlName = randomName() + "_shouldNotExist";
+        assertThatThrownBy(() -> instance().getSql().execute("CREATE DATA CONNECTION " + dlName
+                + " TYPE DUMMIES " // <-- DUMMIES is wrong type
+                + " NOT SHARED "
+                + " OPTIONS ('b' = 'c')"))
+                .hasMessageContaining("Data connection type 'DUMMIES' is not known");
+
+        assertRowsAnyOrder("SELECT * FROM information_schema.dataconnections " +
+                "WHERE name = '" + dlName + "'", Collections.emptyList());
     }
 
     @Test
@@ -82,7 +114,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("DUMMY");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
             assertThat(dataConnection.getConfig().isShared()).isTrue();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -98,7 +130,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("DUMMY");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
             assertThat(dataConnection.getConfig().isShared()).isTrue();
             assertThat(dataConnection.getConfig().getProperties()).containsEntry("b", "c");
         }
@@ -113,7 +145,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);
             assertThat(dataConnection).isNotNull();
-            assertThat(dataConnection.getConfig().getType()).isEqualTo("DUMMY");
+            assertThat(dataConnection.getConfig().getType()).isEqualTo("dummy");
             assertThat(dataConnection.getConfig().getProperties().get("b")).isEqualTo("c");
         }
     }
@@ -198,7 +230,7 @@ public class SqlDataConnectionStatementTest extends SqlTestSupport {
     public void when_createDataConnectionWithoutOptions_then_success() {
         String dlName = randomName();
 
-        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName  + " TYPE DUMMY SHARED");
+        instance().getSql().executeUpdate("CREATE DATA CONNECTION " + dlName + " TYPE DUMMY SHARED");
 
         for (InternalDataConnectionService dataConnectionService : dataConnectionServices) {
             DataConnection dataConnection = dataConnectionService.getAndRetainDataConnection(dlName, DummyDataConnection.class);

@@ -20,7 +20,6 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 
 import java.time.Duration;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 public class NonClosingKafkaProducer<K, V> extends KafkaProducer<K, V> {
 
@@ -46,8 +45,4 @@ public class NonClosingKafkaProducer<K, V> extends KafkaProducer<K, V> {
         onClose.run();
     }
 
-    @Override
-    public void close(long timeout, TimeUnit unit) {
-        onClose.run();
-    }
 }

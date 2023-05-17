@@ -25,7 +25,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.3.0-SNAPSHOT</version>
+        <version>5.4.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -33,7 +33,7 @@
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
-        <maven-artifact.version>3.9.0</maven-artifact.version>
+        <maven-artifact.version>3.9.2</maven-artifact.version>
         <hazelcast-hibernate5.version>2.0.0</hazelcast-hibernate5.version>
     </properties>
 

@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl.DataConnectionSource;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.sql.impl.connector.infoschema.DataConnectionsTable;
 import com.hazelcast.sql.impl.QueryException;
@@ -29,10 +31,10 @@ import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_INFORMATION_SCHEMA;
@@ -47,21 +49,30 @@ public class DataConnectionResolver implements TableResolver {
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
 
-    private static final List<Function<List<DataConnectionCatalogEntry>, Table>> ADDITIONAL_TABLE_PRODUCERS = singletonList(
-            dl -> new DataConnectionsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, dl)
-    );
+    @SuppressWarnings("checkstyle:LineLength")
+    private static final List<BiFunction<List<DataConnectionCatalogEntry>, Boolean, Table>> ADDITIONAL_TABLE_PRODUCERS = singletonList(
+            (dl, securityEnabled) -> new DataConnectionsTable(
+                    CATALOG,
+                    SCHEMA_NAME_INFORMATION_SCHEMA,
+                    SCHEMA_NAME_PUBLIC,
+                    dl,
+                    securityEnabled
+            ));
 
     private final DataConnectionStorage dataConnectionStorage;
     private final DataConnectionServiceImpl dataConnectionService;
+    private final boolean isSecurityEnabled;
     private final CopyOnWriteArrayList<TableListener> listeners;
 
     public DataConnectionResolver(
             InternalDataConnectionService dataConnectionService,
-            DataConnectionStorage dataConnectionStorage
+            DataConnectionStorage dataConnectionStorage,
+            boolean isSecurityEnabled
     ) {
         Preconditions.checkInstanceOf(DataConnectionServiceImpl.class, dataConnectionService);
         this.dataConnectionService = (DataConnectionServiceImpl) dataConnectionService;
         this.dataConnectionStorage = dataConnectionStorage;
+        this.isSecurityEnabled = isSecurityEnabled;
 
         // See comment in TableResolverImpl regarding local events processing.
         // We rely on the fact that both are data connections and tables
@@ -102,6 +113,14 @@ public class DataConnectionResolver implements TableResolver {
         }
     }
 
+    /**
+     * Invoke all registerer change listeners
+     * TODO this method should be removed when the TODOs at calling sites are resolved
+     */
+    public void invokeChangeListeners() {
+        listeners.forEach(TableListener::onTableChanged);
+    }
+
     @Nonnull
     @Override
     public List<List<String>> getDefaultSearchPaths() {
@@ -114,7 +133,7 @@ public class DataConnectionResolver implements TableResolver {
         List<Table> tables = new ArrayList<>();
 
         ADDITIONAL_TABLE_PRODUCERS.forEach(producer -> tables.add(
-                producer.apply(getAllDataConnectionEntries(dataConnectionService, dataConnectionStorage))
+                producer.apply(getAllDataConnectionEntries(dataConnectionService, dataConnectionStorage), isSecurityEnabled)
         ));
         return tables;
     }
@@ -125,14 +144,14 @@ public class DataConnectionResolver implements TableResolver {
         // Collect config-originated data connections
         List<DataConnectionCatalogEntry> dataConnections =
                 dataConnectionService.getConfigCreatedDataConnections()
-                                     .stream()
-                                     .map(dc -> new DataConnectionCatalogEntry(
-                                             dc.getName(),
-                                             dataConnectionService.typeForDataConnection(dc.getName()),
-                                             dc.getConfig().isShared(),
-                                             dc.options(),
-                                             DataConnectionSource.CONFIG))
-                                     .collect(toList());
+                        .stream()
+                        .map(dc -> new DataConnectionCatalogEntry(
+                                dc.getName(),
+                                dataConnectionService.typeForDataConnection(dc.getName()),
+                                dc.getConfig().isShared(),
+                                dc.options(),
+                                DataConnectionSource.CONFIG))
+                        .collect(toList());
 
         // And supplement them with data connections from sql catalog.
         // Note: __sql.catalog is the only source of truth for SQL-originated data connections.
@@ -147,8 +166,12 @@ public class DataConnectionResolver implements TableResolver {
         conn.addAll(dataConnectionService.getSqlCreatedDataConnections());
 
         return conn.stream()
-                   .map(dc -> Arrays.asList(dc.getName(), new ArrayList<>(dc.resourceTypes())))
-                   .collect(toList());
+                .map(dc -> asList(dc.getName(), dc.getConfig().getType(), jsonArray(dc.resourceTypes())))
+                .collect(toList());
+    }
+
+    private static HazelcastJsonValue jsonArray(Collection<String> values) {
+        return new HazelcastJsonValue(Json.array(values.toArray(new String[0])).toString());
     }
 
     @Override

@@ -26,6 +26,7 @@ import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,6 +40,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import static com.hazelcast.test.DockerTestUtil.assumeTestDatabaseProviderCanLaunch;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -79,6 +81,12 @@ public class ListResourcesTest {
     @Parameter(1)
     public DataConnectionResource[] expectedResources;
 
+    @Before
+    public void setUp() {
+        // Currently, Windows can not launch some providers
+        assumeTestDatabaseProviderCanLaunch(provider);
+    }
+
     @Test
     public void shouldListResourcesDefaultAndNonDefaultSchema() throws Exception {
         String jdbcUrl = provider.createDatabase("testdb");
@@ -103,5 +111,4 @@ public class ListResourcesTest {
             stmt.execute(sql);
         }
     }
-
 }
