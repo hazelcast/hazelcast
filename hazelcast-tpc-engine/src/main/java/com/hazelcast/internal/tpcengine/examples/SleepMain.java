@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.mains;
+package com.hazelcast.internal.tpcengine.examples;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.nio.NioReactor;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 
 import static java.util.concurrent.TimeUnit.SECONDS;

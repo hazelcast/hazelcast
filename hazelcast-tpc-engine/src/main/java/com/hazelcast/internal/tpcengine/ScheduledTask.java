@@ -65,7 +65,6 @@ final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
         return this.deadlineNanos > that.deadlineNanos ? 1 : -1;
     }
 
-
     @Override
     public String toString() {
         return "ScheduledTask{"

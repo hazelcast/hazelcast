@@ -59,7 +59,7 @@ public abstract class AsyncFile {
      *
      * @return the metrics.
      */
-    public AsyncFileMetrics getMetrics(){
+    public AsyncFileMetrics metrics(){
         return metrics;
     }
 

@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
@@ -602,7 +601,7 @@ public class StorageBenchmark {
 
                     for (int k = 0; k < metricsArray.length; k++) {
                         AsyncFile file = asyncFiles.get(k);
-                        AsyncFileMetrics metrics = file.getMetrics();
+                        AsyncFileMetrics metrics = file.metrics();
                         LastAsyncFileMetrics lastMetrics = metricsArray[k];
 
                         long reads = metrics.reads();

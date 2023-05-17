@@ -1,4 +1,4 @@
-package com.hazelcast.internal.tpcengine.mains;
+package com.hazelcast.internal.tpcengine.examples;
 
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
