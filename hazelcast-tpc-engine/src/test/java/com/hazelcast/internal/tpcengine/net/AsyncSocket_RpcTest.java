@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.PrintAtomicLongThread;
+import com.hazelcast.internal.tpcengine.util.PrintAtomicLongThread;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;

@@ -69,7 +69,7 @@ public class TpcClientPlane {
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                     .setAcceptConsumer(acceptRequest -> reactor.newAsyncSocketBuilder(acceptRequest)
-                            .setReader(new ClientMessageDecoder(node.clientEngine))
+                            .setReader(new ClientMessageDecoder(node.clientEngine, node.getProperties()))
                             .set(SO_SNDBUF, clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE)
                             .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                             .set(TCP_NODELAY, true)

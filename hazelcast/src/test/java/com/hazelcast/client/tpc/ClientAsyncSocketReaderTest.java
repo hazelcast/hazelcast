@@ -225,7 +225,7 @@ public class ClientAsyncSocketReaderTest {
 
     private Socket newClientSocket(HazelcastInstance server) throws IOException {
         String host = server.getCluster().getLocalMember().getAddress().getHost();
-        int port = getNode(server).nodeEngine.getTpcServerBootstrap().getClientPorts().iterator().next();
+        int port = getNode(server).getTpcRuntime().getClientPlaneServerPorts().iterator().next();
         return new Socket(host, port);
     }
 

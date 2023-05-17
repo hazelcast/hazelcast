@@ -214,7 +214,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         byte[] tpcToken = endpoint.getTpcToken() != null ? endpoint.getTpcToken().getContent() : null;
         return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(), serverVersion,
                 clientEngine.getPartitionService().getPartitionCount(), clusterId, failoverSupported,
-                nodeEngine.getTpcServerBootstrap().getClientPorts(), tpcToken);
+                nodeEngine.getNode().getTpcRuntime().getClientPlaneServerPorts(), tpcToken);
     }
 
     private void setConnectionType() {

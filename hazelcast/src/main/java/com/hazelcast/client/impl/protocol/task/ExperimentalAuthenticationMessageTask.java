@@ -56,12 +56,15 @@ public class ExperimentalAuthenticationMessageTask
 
     @Override
     protected void setTpcTokenToEndpoint() {
-        if (!nodeEngine.getTpcServerBootstrap().isEnabled()) {
-            return;
+        if(true){
+            throw new RuntimeException("not implemented");
         }
-
-        TpcToken token = new TpcToken();
-        endpoint.setTpcToken(token);
+//        if (!nodeEngine.getTpcServerBootstrap().isEnabled()) {
+//            return;
+//        }
+//
+//        TpcToken token = new TpcToken();
+//        endpoint.setTpcToken(token);
     }
 
     @Override

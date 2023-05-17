@@ -136,8 +136,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
     private final InternalDataConnectionService dataConnectionService;
-    private final TpcServerBootstrap tpcServerBootstrap;
-
+  
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
         this.node = node;

@@ -57,9 +57,9 @@ public class ExperimentalAuthenticationCustomCredentialsMessageTask
 
     @Override
     protected void setTpcTokenToEndpoint() {
-        if (!nodeEngine.getTpcServerBootstrap().isEnabled()) {
-            return;
-        }
+//        if (!nodeEngine.getTpcServerBootstrap().isEnabled()) {
+//            return;
+//        }
 
         TpcToken token = new TpcToken();
         endpoint.setTpcToken(token);
