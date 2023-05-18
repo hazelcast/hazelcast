@@ -283,7 +283,11 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     // todo: boolean return
     private void sq_addRead() {
+        System.out.println("addRead");
+
         int pos = rcvBuff.position();
+
+        // todo: why is this done every time
         long address = addressOf(rcvBuff) + pos;
         int length = rcvBuff.remaining();
         if (length == 0) {
@@ -394,12 +398,11 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
-                if (res < 0) {
+                if (res<  0) {
                     throw new UncheckedIOException(new IOException("Socket writev failed. " + Linux.strerror(-res)));
                 }
 
                 //System.out.println(IOUringAsyncSocket.this + " written " + res);
-
                 ioVector.compact(res);
                 resetFlushed();
             } catch (Exception e) {
@@ -429,31 +432,35 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
-                if (res < 0) {
+                if (res > 0) {
+                    int read = res;
+                    metrics.incReadEvents();
+                    metrics.incBytesRead(read);
+
+                    // io_uring has written the new data into the byteBuffer, but the position we
+                    // need to manually update.
+                    rcvBuff.position(rcvBuff.position() + read);
+
+                    // prepare buffer for reading
+                    rcvBuff.flip();
+
+                    // offer the read data for processing
+                    reader.onRead(rcvBuff);
+
+                    // prepare buffer for writing.
+                    compactOrClear(rcvBuff);
+
+                    // signal that we want to read more data.
+                    sq_addRead();
+                } else if (res == 0) {
+                    // 0 indicates end of stream.
+                    // https://man7.org/linux/man-pages/man2/recv.2.html
+                    close("Socket closed by peer", null);
+                } else {
                     throw new UncheckedIOException(new IOException("Socket read failed. " + Linux.strerror(-res)));
                 }
 
                 //System.out.println("Bytes read:" + res);
-
-                int read = res;
-                metrics.incReadEvents();
-                metrics.incBytesRead(read);
-
-                // io_uring has written the new data into the byteBuffer, but the position we
-                // need to manually update.
-                rcvBuff.position(rcvBuff.position() + read);
-
-                // prepare buffer for reading
-                rcvBuff.flip();
-
-                // offer the read data for processing
-                reader.onRead(rcvBuff);
-
-                // prepare buffer for writing.
-                compactOrClear(rcvBuff);
-
-                // signal that we want to read more data.
-                sq_addRead();
             } catch (Exception e) {
                 close("Closing IOUringAsyncSocket due to exception", e);
             }

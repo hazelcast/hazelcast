@@ -34,6 +34,7 @@ import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_CLOEXEC;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_NONBLOCK;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.LinuxSocket.AF_INET;
+import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
@@ -49,7 +50,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     private final AcceptMemory acceptMemory = new AcceptMemory();
     private final IOUringEventloop eventloop;
     private final SubmissionQueue sq;
-    private final Consumer<AcceptRequest> acceptRequestConsumer;
+    private final Consumer<AcceptRequest> acceptConsumer;
     private final IOUringAsyncServerSocketOptions options;
     private final Thread eventloopThread;
 
@@ -63,7 +64,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         this.options = builder.options;
         this.nativeSocket = builder.nativeSocket;
         this.eventloopThread = reactor.eventloopThread();
-        this.acceptRequestConsumer = builder.acceptConsumer;
+        this.acceptConsumer = builder.acceptConsumer;
         this.sq = eventloop.sq;
         if (!reactor.registerCloseable(this)) {
             close();
@@ -209,20 +210,21 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
                 LinuxSocket socket = new LinuxSocket(res, AF_INET);
                 AcceptRequest acceptRequest = new IOUringAcceptRequest(socket);
                 try {
-                    acceptRequestConsumer.accept(acceptRequest);
+                    acceptConsumer.accept(acceptRequest);
                 } catch (Throwable t) {
                     // If for whatever reason the socket isn't consumed, we need
                     // to properly close the socket. Otherwise the socket remains
                     // under a CLOSE_WAIT state and the port doesn't get released.
-                    CloseUtil.closeQuietly(acceptRequest);
+                    closeQuietly(acceptRequest);
                     throw ExceptionUtil.sneakyThrow(t);
                 }
 
-                // we need to re-register for more accepts.
-                sq_offer_OP_ACCEPT();
                 //todo: return value
             } catch (Exception e) {
                 close(null, e);
+            } finally {
+                // we need to re-register for more accepts.
+                sq_offer_OP_ACCEPT();
             }
         }
     }

@@ -58,9 +58,7 @@ public class LinuxSocketTest {
         assertNotNull(socket);
         assertTrue("socket.fd=" + socket.fd(), socket.fd() >= 0);
 
-        Assert.assertEquals(LinuxSocket.AF_INET, socket.getAddressFamily());
-        assertTrue(socket.isOpen());
-        assertFalse(socket.isClosed());
+        assertEquals(LinuxSocket.AF_INET, socket.getAddressFamily());
     }
 
     // ============= connect ==============
@@ -122,7 +120,7 @@ public class LinuxSocketTest {
     public void test_connect_whenClosed() throws IOException {
         socket = LinuxSocket.openTcpIpv4Socket();
         socket.close();
-        assertTrue(socket.isClosed());
+
         socket.connect(new InetSocketAddress("127.0.0.1", 10000));
     }
 
@@ -134,7 +132,6 @@ public class LinuxSocketTest {
 
         socket.close();
         socket.close();
-        assertTrue(socket.isClosed());
     }
 
     // ============= bind ==============
@@ -333,10 +330,10 @@ public class LinuxSocketTest {
     public void test_soLinger() throws IOException {
         socket = LinuxSocket.openTcpIpv4Socket();
         socket.setSoLinger(10);
-        Assert.assertEquals(10, socket.getSoLinger());
+        assertEquals(10, socket.getSoLinger());
 
         socket.setSoLinger(-10);
-        Assert.assertEquals(-1, socket.getSoLinger());
+        assertEquals(-1, socket.getSoLinger());
     }
 
 

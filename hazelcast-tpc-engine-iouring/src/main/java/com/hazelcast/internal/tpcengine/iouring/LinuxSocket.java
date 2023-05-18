@@ -294,14 +294,6 @@ public final class LinuxSocket implements AutoCloseable {
         listen(fd, backlog);
     }
 
-    public boolean isOpen() {
-        return !closed;
-    }
-
-    public boolean isClosed() {
-        return closed;
-    }
-
     public void close() {
         if (closed) {
             return;
