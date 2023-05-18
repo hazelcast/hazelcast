@@ -17,6 +17,7 @@
 package com.hazelcast.dataconnection.impl;
 
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionRegistration;
@@ -45,12 +46,9 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     private final Map<Class<? extends DataConnection>, String> dataConnectionClassToType = new HashMap<>();
 
     private final Map<String, DataConnectionEntry> dataConnections = new ConcurrentHashMap<>();
-
-    private final ClassLoader classLoader;
     private final ILogger logger;
 
     public DataConnectionServiceImpl(Node node, ClassLoader classLoader) {
-        this.classLoader = classLoader;
         this.logger = node.getLogger(getClass());
         processDataConnectionRegistrations(classLoader);
 
@@ -80,6 +78,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     }
 
     private void put(DataConnectionConfig config, DataConnectionSource source) {
+        DataConnectionConfigValidator.validate(config);
         dataConnections.compute(config.getName(),
                 (key, current) -> {
                     if (current != null) {
