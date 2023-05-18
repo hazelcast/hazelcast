@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -50,6 +49,8 @@ import java.util.Collections;
 import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.instance.impl.TestUtil.toData;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfigWithoutJetAndMetrics;
 import static org.jgroups.util.Util.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -57,7 +58,7 @@ import static org.jgroups.util.Util.assertTrue;
 // Quick test -> NightlyTest before merge.
 // We don't need this test in PR builder IMO.
 @Category(QuickTest.class)
-public class JoinShutdownTest extends HazelcastTestSupport {
+public class JoinShutdownTest {
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
     private HazelcastInstance hz;
