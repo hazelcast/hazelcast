@@ -50,4 +50,9 @@ public class DataConnectionConfigReadOnly extends DataConnectionConfig {
     public DataConnectionConfig setProperties(Properties properties) {
         throw readOnly();
     }
+
+    @Override
+    public DataConnectionConfig setProperty(String key, String value) {
+        throw readOnly();
+    }
 }

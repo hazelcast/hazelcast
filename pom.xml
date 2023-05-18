@@ -56,7 +56,7 @@
         <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>3.5.0</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
             *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:
             com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
@@ -79,7 +79,7 @@
         <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>3.0.0</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
-        <maven.enforcer.plugin.version>3.2.1</maven.enforcer.plugin.version>
+        <maven.enforcer.plugin.version>3.3.0</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.3.0</maven.resources.plugin.version>
@@ -116,7 +116,7 @@
         <reload4j.version>1.2.24</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
-        <netty.version>4.1.91.Final</netty.version>
+        <netty.version>4.1.92.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.0</parquet.version>
@@ -129,7 +129,7 @@
         See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
         -->
         <protobuf.version>22.0</protobuf.version>
-        <java.protobuf.version>3.22.1</java.protobuf.version>
+        <java.protobuf.version>3.23.0</java.protobuf.version>
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
         <scala.version>2.13</scala.version>
