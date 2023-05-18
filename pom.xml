@@ -42,7 +42,7 @@
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <jdk.version>8</jdk.version>
+        <jdk.version>11</jdk.version>
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -432,11 +432,11 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <!-- JDK 1.8+ is required for compilation. -->
-                                    <version>[1.8.0,)</version>
+                                    <!-- JDK 1.11+ is required for compilation. -->
+                                    <version>[1.11.0,)</version>
                                 </requireJavaVersion>
                                 <enforceBytecodeVersion>
-                                    <maxJdkVersion>1.8</maxJdkVersion>
+                                    <maxJdkVersion>11</maxJdkVersion>
                                     <excludes>
                                         <!--
                                         The archunit library containse several classes to process JDK9 modules.
@@ -445,11 +445,6 @@
                                         <exclude>com.tngtech.archunit:archunit</exclude>
                                     </excludes>
                                     <ignoreClasses>
-                                        <!--
-                                        Some dependencies contain JDK9 specific classes with JDK9 in the name
-                                        e.g. wiremock.org.eclipse.jetty.alpn.java.server.JDK9ServerALPNProcessor
-                                        -->
-                                        <ignoreClass>*JDK9*</ignoreClass>
                                         <!--
                                         Classes from org:mongodb:bson-record-codec to map record to bson.
                                         Ignoring whole package, because we shade the module into hazelcast-jet-mongodb.
@@ -654,7 +649,7 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>source-java8-check</id>
+                        <id>source-java11-check</id>
                         <phase>test-compile</phase>
                         <goals>
                             <goal>check</goal>

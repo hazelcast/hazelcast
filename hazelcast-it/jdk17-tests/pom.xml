@@ -22,7 +22,7 @@
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>source-java8-check</id>
+                        <id>source-java11-check</id>
                         <phase>none</phase>
                     </execution>
                 </executions>
