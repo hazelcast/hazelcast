@@ -152,6 +152,25 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test
+    public void test_bind_randomPort() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
+                .setAcceptConsumer(acceptRequest -> {
+                })
+                .build();
+
+        socket.bind(new InetSocketAddress("127.0.0.1", 0));
+
+        SocketAddress localAddress = socket.getLocalAddress();
+        assertNotNull(localAddress);
+        assertTrue("localPort:" + socket.getLocalPort(), socket.getLocalPort() > 0);
+
+        // we need to close the socket manually only when accept is called, the AsyncSocket is part
+        // of the reactor
+        socket.close();
+    }
+
+    @Test
     public void test_bind_whenAlreadyBound() {
         Reactor reactor = newReactor();
         AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
@@ -204,6 +223,7 @@ public abstract class AsyncServerSocketTest {
                 .build();
 
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+        SocketAddress serverAddress = serverSocket.getLocalAddress();
         serverSocket.start();
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
@@ -211,9 +231,12 @@ public abstract class AsyncServerSocketTest {
                 .build();
         clientSocket.start();
 
-        CompletableFuture<Void> connect = clientSocket.connect(serverSocket.getLocalAddress());
+        CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
         assertCompletesEventually(connect);
-        assertTrueEventually(() -> assertTrue(clientSocket.isClosed()));
+        assertTrueEventually(() -> {
+            System.out.println("clientSocket.isClosed:"+clientSocket.isClosed());
+            assertTrue(clientSocket.isClosed());
+        });
     }
 
     @Test

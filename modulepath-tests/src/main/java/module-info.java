@@ -15,5 +15,5 @@
  */
 
 open module com.hazelcast.tests {
-    requires com.hazelcastm.core;
+    requires com.hazelcast.core;
 }
