@@ -74,7 +74,7 @@ public class DataConnectionConfig implements IdentifiedDataSerializable, NamedCo
      */
     @Override
     public DataConnectionConfig setName(String name) {
-        this.name = checkNotNull(name, "Name must not be null");
+        this.name = checkHasText(name, "Data connection name must contain text");
         return this;
     }
 
