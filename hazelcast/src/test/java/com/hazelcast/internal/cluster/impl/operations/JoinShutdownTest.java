@@ -178,9 +178,4 @@ public class JoinShutdownTest extends HazelcastTestSupport {
         packetIOHelper.writeTo(packet, buffer);
         return buffer;
     }
-
-    @Override
-    protected Config getConfig() {
-        return smallInstanceConfigWithoutJetAndMetrics();
-    }
 }
