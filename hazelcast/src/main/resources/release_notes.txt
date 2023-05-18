@@ -9,6 +9,8 @@ This document lists the new features, enhancements, fixed issues and, removed or
 ## Breaking Changes
 
 * Renamed the `DataLinkFactory` interface as `DataConnection`. [#24224]
+* Removed the `TO_ROW` function as it is obsolete, you can use `CAST (udtObj AS JSON)` instead. [#23808]
+* SQL mappings for internal maps (`__sql.catalog` and `__jet.*`) cannot be created anymore. [#24282]
 * Changed the default cloud coordinator URL from `coordinator.hazelcast.cloud` to `api.viridian.hazelcast.com`.
 The default configuration now connects to https://viridian.hazelcast.com/sign-in?next=/ instead of Hazelcast Cloud.
 If you want to continue accessing your Hazelcast Cloud clusters, you need to set the `hazelcast.client.cloud.url` property to `https://coordinator.hazelcast.cloud` in your configuration. [#23290]
@@ -26,7 +28,10 @@ for each member's pod. The discovery plugin now matches only the private IP per 
 
 ### Storage
 
+* Added support of generating suggested Data Definition Language (DDL) for a map with High-Density Memory Store and having no indexes. [#24054]
 * Disk tier option of Tiered Storage is now disabled by default. [#23747]
+
+NOTE: Tiered Storage feature is still in BETA stage.
 
 ### Distribution
 
@@ -43,20 +48,24 @@ See Configuring TCP Keep-Alive. [#24050]
 ### SQL Engine
 
 * The `CREATE MAPPING` statement for Compact Serialization now supports nullable primitives. [#24300]
+* Added support of tolerance for stream-to-stream equi, non-equi, and outer JOINs. [#22979], [#23462]
 * Implemented the `GET_DDL` function. [#23595]
-* Implemented the `SHOW DATA CONNECTIONS` statement to show the connections created by the `CREATE CONNECTIONS` statement. [#24028]
+* Implemented the `SHOW DATA CONNECTIONS` and `SHOW RESOURCES` statements to show the connections and resources created by the `CREATE CONNECTIONS` statement. [#24028], [#23844]
 * Added support of providing declarative partitioning strategies based on attributes. These attributes represent specific partition keys for a map.
 You can also configure this strategy dynamically. [#23535], [#23954]
-* Improved the nested loop joins algorithm by making the `CreateDagVisitor` interface generic. [#23368]
+* Added `attributes` and `user_defined_types` tables to `information_schema`. [#23267]
+* Added support of suspending all streamingg jobs on failure by default.[#23178]
 * Implemented the `TO_CHAR` function which is capable of formatting dates, timestamps, and numbers. [#22529]
 * Implemented `JSON=VARCHAR` comparison. [#22746]
 
 ### Jet Engine
 
+* Added support of configuring SQL Catalog persistence. [#24383]
+* Added support of modifying the job configuration of suspended jobs so that jobs can run without overflow failures by adding more resources. [#23862]
 * Each Jet engine job was creating a client for connecting to the remote cluster, resulting in an excessive number of clients.
 This has been fixed by introducing a single data connection which can be reused for all job instances. [#23472], [#23849]
 * Added MongoDB read (source) and write (sink) processors. [#23348]
-* Introduced `JobStatusListener` as an alternative to retrieve a job status via the `Job.getStatus()` method. [#23193]
+* Introduced `JobStatusListener` as an alternative to repeatedly retrieve a job status via the `Job.getStatus()` method. [#23193]
 * Updated the https://docs.hazelcast.org/docs/{page-latest-supported-java-client}/javadoc/com/hazelcast/jet/Job.html#isUserCancelled-- to add the ability
 to distinguish the user-cancelled jobs from the failed ones. [#22924]
 * Added `flock` to guard all the concurrent `pip` executions (upgrading `pip` and `protobuf` versions) in the Jet-to-Python script. [#22829]
@@ -89,6 +98,7 @@ The newly introduced checks get the JDBC URL from existing connection metadata a
 to all JDBC URLs, you may use wildcards, e.g., `jdbc:*`. [#23716]
 * Added `DataConnection` for Kafka consumers and producers, and for MongoDB [#23886], [#23837]
 * Jet engine's connector for MongoDB is now a part of the Hazelcast Platform distribution. [#22565]
+* Introduced a way to control the initial partitions offsets when consuming records from Kafka via the Jet engine: by passing an additional topics configuration object that contains definitions of initial offsets for specific partitions. [#21546]
 
 ### Metrics
 
@@ -107,14 +117,14 @@ to all JDBC URLs, you may use wildcards, e.g., `jdbc:*`. [#23716]
 
 * Fixed an issue where `map.clear()` was timing out when the map is configured with a generic map store. [#24534] 
 * Fixed an issue where the `SELECT COUNT(DISTINCT COLUMN)` query for maps was producing incorrect results. [#24464]
-* Fixed an issue where there was a memory leak when High-Density Memory Store is used and Jet engine metrics are enabled. [#23492]
+* Fixed an issue where there was a memory leak when Jet engine metrics are enabled. [#23492]
 * Fixed an issue where the `DELETE FROM` or `UPDATE` functions, when used with fully-qualified names, was failing in a JDBC table. [#23476]
-* Fixed an issue where Data Definition Language (DDL) could not be generated for a map with High-Density Memory Store and having no indexes. [#24054]
 * Fixed an issue where SQL statements were failing when a class (to determine the fields of a key/value pair) no longer exists but the mapping is still valid. [#24003]
 * Fixed an issue where `lastAccessTime` and `expirationTime` was not updated when an entry is accessed via `executeOnEntries`. [#23926]
 * Fixed an issue where the Hazelcast configuration was modified by the Jet engine, if the wildcard configuration is used and Jet is enabled; meaning the configurations
 made by the user was not being reflected. [#23848]
 * Fixed an issue where Hazelcast was failing to connect to a database when using Debezium, and the key of a record is null. [#23768]
+* Fixed an issue where the `SELECT` query was returning duplicated rows for the mappings in AWS S3 bucket. [#23723]
 * Enabled smart client connectivity to Hazelcast clusters deployed on Kubernetes, when advanced network configuration is enabled. [#23707]
 * Fixed an issue where Debezium connector for MongoDB could not keep the connection after some time. [#23689]
 * Enhanced the handling of errors coming from the Kubernetes API:
@@ -134,9 +144,11 @@ As a consequence, the `hz-cli` could not be used from bash on Windows. [#22884]
 * Fixed an issue where a CP Subsystem object could be destroyed without a permission even the object has security and permission configurations enabled. [#22475]
 * Fixed an issue where external data store configurations could not be added dynamically. [#22450]
 * Fixed an issue where replication over WAN was failing on the source cluster members, when there are multiple batch publishers configured in a single WAN replication. [#22437]
+* Fixed an issue where creating a JDBC SQL mapping without specifying the columns was causing the column order to be reversed compared to that in the remote source table (affecting statements such as `SELECT * FROM ...` and `INSERT INTO <mapping> VALUES`. [#22410]
 * Fixed an issue where the map entries recovered from persistence were not expiring after their time-to-live durations. [#22279]
 * Fixed an issue where Hazelcast members in a Spring Boot application could not establish a connection to each other when deployed
 in Kubernetes cluster with Istio Envoy Proxy enabled. [#22256]
+* * Eliminated the usage of `ForkJoinPool#commonPool` for internal Hazelcast code, improving stability and avoiding potential deadlocks. [#18190]
 
 ## Contributors
 
