@@ -20,19 +20,19 @@
 int32_t throw_exception(JNIEnv *env, char *cause, int32_t errno) {
     char error_msg[1024];
     snprintf(error_msg, sizeof(error_msg), "%s - %s", cause, strerror(errno));
-    return (*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/RuntimeException"), &error_msg);
+    return (*env)->ThrowNew(env, (*env)->FindClass(env, "java/lang/RuntimeException"), (const char*)&error_msg);
 }
 
 int32_t throw_io_exception(JNIEnv *env, char *cause, int32_t errno) {
     char error_msg[1024];
     snprintf(error_msg, sizeof(error_msg), "%s - %s", cause, strerror(errno));
-    return (*env)->ThrowNew(env, (*env)->FindClass(env, "java/io/IOException"), &error_msg);
+    return (*env)->ThrowNew(env, (*env)->FindClass(env, "java/io/IOException"), (const char*)&error_msg);
 }
 
 int32_t throw_bind_exception(JNIEnv *env, char *cause, int32_t errno) {
     char error_msg[1024];
     snprintf(error_msg, sizeof(error_msg), "%s - %s", cause, strerror(errno));
-    return (*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/BindException"), &error_msg);
+    return (*env)->ThrowNew(env, (*env)->FindClass(env, "java/net/BindException"), (const char*)&error_msg);
 }
 
 int32_t throw_out_of_memory_error(JNIEnv *env) {

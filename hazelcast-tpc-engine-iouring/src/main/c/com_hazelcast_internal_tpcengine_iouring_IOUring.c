@@ -64,7 +64,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_IOUring_register(JNIEnv* env, jcla
                                                          jint opcode, jlong arg, jint nr_args){
      int res = io_uring_register(fd, opcode, (void *)arg, nr_args);
      if (res < 0){
-        return throw_exception(env, "io_uring_enter", -res);
+        throw_exception(env, "io_uring_enter", -res);
      }
 }
 
@@ -86,7 +86,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_IOUring_unregisterRingFd(JNIEnv* e
     // https://man7.org/linux/man-pages/man3/io_uring_unregister_ring_fd.3.html
     int res = io_uring_unregister_ring_fd((struct io_uring *)ring_addr);
     if (res != 1){
-        return throw_exception(env, "io_uring_unregister_ring_fd", -res);
+        throw_exception(env, "io_uring_unregister_ring_fd", -res);
     }
 }
 

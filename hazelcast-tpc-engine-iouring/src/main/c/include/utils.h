@@ -8,6 +8,8 @@ int32_t throw_exception(JNIEnv *env, char *cause, int32_t ret);
 
 int32_t throw_io_exception(JNIEnv *env, char *cause, int32_t ret);
 
+int32_t throw_bind_exception(JNIEnv *env, char *cause, int32_t ret);
+
 int32_t throw_out_of_memory_error(JNIEnv *env);
 
 #endif

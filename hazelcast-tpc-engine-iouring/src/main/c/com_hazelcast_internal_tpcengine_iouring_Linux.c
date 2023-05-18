@@ -40,14 +40,14 @@ Java_com_hazelcast_internal_tpcengine_iouring_Linux_strerror(JNIEnv* env, jclass
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_eventfd(JNIEnv* env, jclass this_class, jint initval,
-                                                      jint flags){
+                                                            jint flags){
     return eventfd(initval, flags);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_open(JNIEnv* env, jclass this_class, jstring pathname,
-                                                   jlong flags, jint mode){
-    char* path = (*env)->GetStringUTFChars( env, pathname, NULL );
+                                                         jlong flags, jint mode){
+    const char* path = (*env)->GetStringUTFChars(env, pathname, NULL);
     return open(path, (int)flags, (mode_t)mode);
 }
 
@@ -59,31 +59,31 @@ Java_com_hazelcast_internal_tpcengine_iouring_Linux_close(JNIEnv* env, jclass th
 
 JNIEXPORT jlong JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_read(JNIEnv* env, jclass this_class, jint fd, jlong buf,
-                                                   jlong count){
+                                                         jlong count){
     return read(fd, (void *)buf, (size_t)count);
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_write(JNIEnv* env, jclass this_class, jint fd, jlong buf,
-                                                    jlong count){
+                                                          jlong count){
     return write(fd, (void *)buf, (size_t)count);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_eventfd_1write(JNIEnv* env, jclass this_class, jint fd,
-                                                             jlong value){
+                                                                   jlong value){
     return eventfd_write(fd, value);
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_pread(JNIEnv* env, jclass this_class, jint fd, jlong buf,
-                                                    jlong count, jlong offset){
+                                                          jlong count, jlong offset){
     return pread(fd, (void *)buf, (size_t)count, (off_t) offset);
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_pwrite(JNIEnv* env, jclass this_class, jint fd, jlong buf,
-                                                     jlong count, jlong offset){
+                                                           jlong count, jlong offset){
     return pwrite(fd, (void *)buf, (size_t)count, (off_t) offset);
 }
 
@@ -106,9 +106,10 @@ JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_fdatasync(JNIEnv* env, jclass this_class, jint fd){
     return fdatasync(fd);
 }
+
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1gettime(JNIEnv* env, jclass this_class, jint clk_id,
-                                                             jlong tp){
+                                                                   jlong tp){
     return 0;// return clock_gettime(clk_id, );
 }
 
