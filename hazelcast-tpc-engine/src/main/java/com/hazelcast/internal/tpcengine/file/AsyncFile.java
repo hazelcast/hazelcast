@@ -30,10 +30,12 @@ import com.hazelcast.internal.tpcengine.Promise;
  * This way you can use the API from virtual threads and from platform threads. The platform threads
  * should probably run into an exception when they call a blocking method.
  */
+@SuppressWarnings("checkstyle:IllegalTokenText")
 public abstract class AsyncFile {
 
     public static final int PERMISSIONS_ALL = 0666;
 
+    // https://elixir.bootlin.com/linux/latest/source/arch/alpha/include/uapi/asm/fcntl.h#L5
     public static final int O_RDONLY = 00;
     public static final int O_WRONLY = 01;
     public static final int O_RDWR = 02;

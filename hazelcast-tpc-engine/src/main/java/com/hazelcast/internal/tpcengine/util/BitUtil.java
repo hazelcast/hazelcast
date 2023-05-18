@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public final class BitUtil {
     public static final int SIZEOF_BYTE = Byte.BYTES;
     public static final int SIZEOF_CHAR = Character.BYTES;

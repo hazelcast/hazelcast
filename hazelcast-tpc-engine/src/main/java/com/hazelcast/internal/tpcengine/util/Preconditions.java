@@ -18,14 +18,16 @@ package com.hazelcast.internal.tpcengine.util;
 
 public final class Preconditions {
 
+    public static final int MAX_PORT = 65335;
+
     private Preconditions() {
     }
 
     public static int checkValidPort(int port, String paramName) {
         if (port < 0) {
             throw new IllegalArgumentException(paramName + " is " + port + " but must be >= 0");
-        } else if (port > 65335) {
-            throw new IllegalArgumentException(paramName + " is " + port + " but must be <= " + 65335);
+        } else if (port > MAX_PORT) {
+            throw new IllegalArgumentException(paramName + " is " + port + " but must be <= " + MAX_PORT);
         } else {
             return port;
         }
