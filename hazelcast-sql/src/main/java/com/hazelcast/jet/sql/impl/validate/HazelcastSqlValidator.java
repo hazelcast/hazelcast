@@ -42,12 +42,14 @@ import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.ResourceUtil;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalLiteral;
+import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -59,6 +61,7 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
+import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlQualified;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
@@ -70,6 +73,7 @@ import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -82,6 +86,8 @@ import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.extractHzObjectType;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isHzObjectType;
 import static org.apache.calcite.sql.JoinType.FULL;
+import static org.apache.calcite.sql.SqlKind.AS;
+import static org.apache.calcite.sql.SqlKind.COLLECTION_TABLE;
 
 /**
  * Hazelcast-specific SQL validator.
@@ -100,6 +106,11 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
      * Visitor to rewrite Calcite operators to Hazelcast operators.
      */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
+
+    /**
+     * Wraps TABLE operators in subqueries when they appear as join operands.
+     */
+    private final TableOperatorWrapper tableOperatorWrapper;
 
     /**
      * Parameter converter that will be passed to parameter metadata.
@@ -126,6 +137,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
+        this.tableOperatorWrapper = new TableOperatorWrapper();
         this.arguments = arguments;
         this.iMapResolver = iMapResolver;
     }
@@ -423,6 +435,14 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             // operator and the second '+' refers to HazelcastSqlOperatorTable.PLUS
             // operator.
             rewritten.accept(rewriteVisitor);
+
+            // Wrap TABLE operators in subqueries to prevent scoping issues.
+            // TABLE(...) expressions do not create a separate scope; that's why when
+            // they are used as join operands, the operators they enclose, such as
+            // DESCRIPTOR(...), are assigned the JoinScope. This results in incorrect
+            // indexing after resolving identifiers or name clashes due to combined
+            // namespaces.
+            rewritten.accept(tableOperatorWrapper);
         }
 
         return rewritten;
@@ -524,5 +544,101 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             throw QueryException.error(SqlErrorCode.OBJECT_NOT_FOUND, message, exception, sql);
         }
         return exception;
+    }
+
+    /**
+     * Wraps TABLE operators in subqueries when they appear as join operands.
+     * <p>
+     * {@code FROM TABLE(...) JOIN TABLE(...)} → <br>
+     * {@code FROM (SELECT * FROM TABLE(...)) JOIN (SELECT * FROM TABLE(...))}
+     */
+    private static class TableOperatorWrapper extends SqlIdentityVisitor {
+        @Override
+        public SqlNode visit(@Nonnull SqlCall call) {
+            if (call instanceof SqlJoin) {
+                SqlJoin join = (SqlJoin) call;
+                join.setLeft(wrapTableOperator(join.getLeft()));
+                join.setRight(wrapTableOperator(join.getRight()));
+                return join;
+            }
+            return super.visit(call);
+        }
+
+        private SqlNode wrapTableOperator(SqlNode node) {
+            if (node instanceof SqlCall) {
+                SqlCall call = (SqlCall) node;
+                if (call.getOperator().getKind() == AS) {
+                    call.setOperand(0, wrapTableOperator(call.getOperandList().get(0)));
+                    return call;
+                } else if (call.getOperator().getKind() == COLLECTION_TABLE) {
+                    return new SqlSelect(call.getParserPosition(), null, SqlNodeList.SINGLETON_STAR,
+                            super.visit(call), null, null, null, null, null, null, null, null);
+                }
+            }
+            return node.accept(this);
+        }
+    }
+
+    /**
+     * An {@link SqlVisitor} that replaces every {@link SqlNode} by itself,
+     * which makes it suitable for implementing {@code SqlNode} transformers.
+     * Note that such a transformer needs to be called in
+     * {@link #performUnconditionalRewrites}.
+     */
+    private static class SqlIdentityVisitor implements SqlVisitor<SqlNode> {
+        @Override
+        public SqlNode visit(@Nonnull SqlCall call) {
+            List<SqlNode> operands = call.getOperandList();
+            int operandCount = operands.size();
+            if (call instanceof SqlSelect) {
+                // In SqlSelect, the last operand is not included in setOperand().
+                SqlSelect select = (SqlSelect) call;
+                if (select.getHints() != null) {
+                    select.setHints((SqlNodeList) visit(select.getHints()));
+                }
+                operandCount--;
+            }
+            for (int i = 0; i < operandCount; i++) {
+                if (operands.get(i) != null) {
+                    call.setOperand(i, operands.get(i).accept(this));
+                }
+            }
+            return call;
+        }
+
+        @Override
+        public SqlNode visit(@Nonnull SqlNodeList nodeList) {
+            for (int i = 0; i < nodeList.size(); i++) {
+                if (nodeList.get(i) != null) {
+                    nodeList.set(i, nodeList.get(i).accept(this));
+                }
+            }
+            return nodeList;
+        }
+
+        @Override
+        public SqlNode visit(SqlLiteral literal) {
+            return literal;
+        }
+
+        @Override
+        public SqlNode visit(SqlIdentifier id) {
+            return id;
+        }
+
+        @Override
+        public SqlNode visit(SqlDataTypeSpec type) {
+            return type;
+        }
+
+        @Override
+        public SqlNode visit(SqlDynamicParam param) {
+            return param;
+        }
+
+        @Override
+        public SqlNode visit(SqlIntervalQualifier intervalQualifier) {
+            return intervalQualifier;
+        }
     }
 }
