@@ -20,7 +20,8 @@ import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Promise;
 
 /**
- * Represents a File that can only be accessed asynchronously.
+ * A File that can only be accessed asynchronously. So operations are submitted asynchronously
+ * to the storage device and do not block.
  * <p/>
  * This class isn't thread-safe. It should only be processed by the owning {@link Eventloop}.
  * <p/>
@@ -54,7 +55,7 @@ public abstract class AsyncFile {
     public abstract int fd();
 
     /**
-     * Returns the metrics for this AsyncFile.
+     * Returns the {@link AsyncFileMetrics} for this AsyncFile.
      *
      * @return the metrics.
      */
@@ -63,10 +64,12 @@ public abstract class AsyncFile {
     }
 
     /**
-     * Executes a noop asynchronously. This method exists purely for benchmarking
-     * purposes and is made for the io_uring NOOP.
+     * Executes a nop asynchronously. This method exists purely for benchmarking
+     * purposes and is made for the IORING_OP_NOP.
      * </p>
      * Any other implementation is free to ignore it.
+     * <p/>
+     * The state of the file is irrelevant to this method.
      *
      * @return a future.
      */
@@ -157,8 +160,6 @@ public abstract class AsyncFile {
      * @return a Fut with the response code of the request.
      */
     public abstract Promise<Integer> pwrite(long offset, int length, long srcAddr);
-
-    public abstract Promise<Integer> pwrite(long offset, int length, long srcAddr, int flags, int rwFlags);
 
     @Override
     public String toString() {

@@ -429,7 +429,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setBlocking(JNIEnv* en
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_NativeSocket_isBlocking(JNIEnv* env, jclass this_class, jint socketfd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isBlocking(JNIEnv* env, jclass this_class, jint socketfd){
     int res = fcntl(socketfd, F_GETFL, 0);
     if (res == -1){
         return throw_io_exception(env, "Failed to call socket.isBlocking", errno);

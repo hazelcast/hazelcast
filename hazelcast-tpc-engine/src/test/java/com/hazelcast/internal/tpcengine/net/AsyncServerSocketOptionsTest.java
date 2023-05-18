@@ -35,6 +35,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public abstract class AsyncServerSocketOptionsTest {
 
@@ -123,8 +124,13 @@ public abstract class AsyncServerSocketOptionsTest {
     public void test_SO_RCVBUF() {
         AsyncServerSocket serverSocket = newServerSocket();
         AsyncSocketOptions options = serverSocket.options();
-        options.set(SO_RCVBUF, 64 * 1024);
-        assertEquals(Integer.valueOf(64 * 1024), options.get(SO_RCVBUF));
+        int newSize = 64 * 1024;
+        options.set(SO_RCVBUF, newSize);
+
+        int actualSize = options.get(SO_RCVBUF);
+        // When using a native socket, this value is doubled:
+        // https://linux.die.net/man/7/socket
+        assertTrue("actual size was:" + actualSize, actualSize == newSize || actualSize == 2 * newSize);
     }
 
     @Test

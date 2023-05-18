@@ -23,6 +23,7 @@ import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_FSYNC;
+import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.opcodeToString;
 
@@ -102,7 +103,7 @@ public class StorageDeviceScheduler {
         return promise;
     }
 
-    private void submitNext() {
+    private void scheduleNext() {
         if (concurrent < maxConcurrent) {
             IoOp op = waitQueue.poll();
             if (op != null) {
@@ -166,7 +167,7 @@ public class StorageDeviceScheduler {
                 promise.complete(res);
             }
 
-            submitNext();
+            scheduleNext();
             file = null;
             promise = null;
             opAllocator.free(this);

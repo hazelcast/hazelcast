@@ -32,9 +32,6 @@ public class StorageDeviceRegistry {
     private final StorageDevice defaultDev = new StorageDevice("/", 128, 4096);
     private final List<StorageDevice> devs = new ArrayList<>();
 
-    public StorageDeviceRegistry() {
-    }
-
     public StorageDevice findStorageDevice(String path) {
         checkNotNull(path, "path");
 

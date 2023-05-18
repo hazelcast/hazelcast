@@ -104,14 +104,6 @@ public final class IOUringAsyncFile extends AsyncFile {
     }
 
     @Override
-    public Promise<Integer> pwrite(long offset, int length, long srcAddr, int flags, int rwFlags) {
-        final AsyncFileMetrics metrics = this.metrics;
-        metrics.incWrites();
-        metrics.incBytesWritten(length);
-        return scheduler.submit(this, IORING_OP_WRITE, flags, rwFlags, srcAddr, length, offset);
-    }
-
-    @Override
     public Promise<Integer> fsync() {
         metrics.incFsyncs();
         return scheduler.submit(this, IORING_OP_FSYNC, 0, 0, 0, 0, 0);
