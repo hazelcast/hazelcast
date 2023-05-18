@@ -40,7 +40,14 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 
-@SuppressWarnings({"checkstyle:TrailingComment", "checkstyle:MemberName", "checkstyle:TypeName"})
+// TODO: In the future add padding to get isolated state separated from state accessed by other threads.
+@SuppressWarnings({"checkstyle:TrailingComment",
+        "checkstyle:MemberName",
+        "checkstyle:TypeName",
+        "checkstyle:MethodName",
+        "checkstyle:VisibilityModifier",
+        "checkstyle:ExecutableStatementCount",
+        "checkstyle:DeclarationOrder"})
 public final class IOUringAsyncSocket extends AsyncSocket {
 
     static {

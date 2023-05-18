@@ -196,7 +196,9 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
                 metrics.incAccepted();
 
-                SocketAddress address = LinuxSocket.toInetSocketAddress(acceptMemory.memoryAddress, acceptMemory.lengthMemoryAddress);
+                SocketAddress address = LinuxSocket.toInetSocketAddress(
+                        acceptMemory.memoryAddress,
+                        acceptMemory.lengthMemoryAddress);
 
                 if (logger.isInfoEnabled()) {
                     logger.info(IOUringAsyncServerSocket.this + " new connected accepted: " + address);

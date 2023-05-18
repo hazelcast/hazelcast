@@ -28,6 +28,8 @@ import java.util.UUID;
 /**
  * Contains the functionality for loading the IOUring library.
  */
+
+@SuppressWarnings({"checkstyle:SimplifyBooleanReturn", "checkstyle:no-uuid-randomUUID"})
 public final class IOUringLibrary {
     private static final int MIN_MAJOR_VERSION = 5;
     // We need at least 5.6 due to reliance on IORING_OP_TIMEOUT

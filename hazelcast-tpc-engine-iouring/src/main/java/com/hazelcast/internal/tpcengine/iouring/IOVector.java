@@ -46,7 +46,7 @@ import static java.nio.ByteBuffer.allocateDirect;
  * The current implementation isn't the most efficient because we move all the iovs to the beginning
  * and the way this is done is by evaluating all the non empty buffers. A mem copy would be a lot faster
  */
-@SuppressWarnings("checkstyle:LocalVariableName")
+@SuppressWarnings({"checkstyle:TrailingComment", "checkstyle:LocalVariableName"})
 public final class IOVector {
     private static final sun.misc.Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     private static final int OFFSET_IOV_LEN = SIZEOF_LONG;
@@ -119,7 +119,7 @@ public final class IOVector {
      * Gets the IOBuffer at the given index.
      *
      * @param index
-     * @return
+     * @return the IOBuffer at index
      */
     public IOBuffer get(int index) {
         return ioBufs[index];
@@ -219,7 +219,7 @@ public final class IOVector {
                     // all written bytes have been accounted for.
                     writtenSoFar = 0;
                     if (index == 0) {
-                        set(index, buf);// we need to update the length location!!!
+                        set(index, buf); // we need to update the length location!!!
                         // it the first buffer and not fully written, we are done. We don't need to
                         // do any compaction.
                         break;

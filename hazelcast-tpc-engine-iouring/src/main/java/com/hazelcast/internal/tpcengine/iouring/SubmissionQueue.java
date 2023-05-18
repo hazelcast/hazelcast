@@ -29,7 +29,7 @@ import static com.hazelcast.internal.tpcengine.iouring.Linux.errno;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 
 // https://github.com/axboe/liburing/blob/master/src/include/liburing.h
-@SuppressWarnings("checkstyle:ConstantName")
+@SuppressWarnings({"checkstyle:ConstantName", "checkstyle:ParameterName", "checkstyle:ParameterNumber"})
 public final class SubmissionQueue {
     public static final int OFFSET_SQE_opcode = 0;
     public static final int OFFSET_SQE_flags = 1;
@@ -45,7 +45,7 @@ public final class SubmissionQueue {
     private static final int SIZE_SQE = 64;
     private static final int INT_SIZE = Integer.BYTES;
 
-    public boolean ringBufferRegistered;
+    boolean ringBufferRegistered;
     int enterRingFd;
     int ringFd;
 

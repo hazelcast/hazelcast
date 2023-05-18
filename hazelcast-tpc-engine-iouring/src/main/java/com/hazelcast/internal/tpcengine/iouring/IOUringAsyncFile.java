@@ -41,6 +41,7 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 /**
  * IOUring implementation of the {@link AsyncFile}.
  */
+@SuppressWarnings({"checkstyle:TrailingComment"})
 public final class IOUringAsyncFile extends AsyncFile {
     StorageDevice dev;
     int fd;

@@ -24,7 +24,9 @@ import java.io.UncheckedIOException;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
-@SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount"})
+@SuppressWarnings({"checkstyle:cyclomaticcomplexity",
+        "checkstyle:returncount",
+        "checkstyle:SimplifyBooleanReturn"})
 public class IOUringAsyncSocketOptions implements AsyncSocketOptions {
 
     private final LinuxSocket nativeSocket;

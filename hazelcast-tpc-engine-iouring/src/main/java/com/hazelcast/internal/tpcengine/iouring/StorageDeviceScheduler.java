@@ -22,13 +22,13 @@ import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_FSYNC;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.opcodeToString;
 
 public class StorageDeviceScheduler {
-    private final int maxConcurrent;
+
     final String path;
+    IOUringEventloop eventloop;
+    private final int maxConcurrent;
     private final LongObjectHashMap<IOCompletionHandler> handlers;
     private final SubmissionQueue sq;
     private final StorageDevice dev;
@@ -39,8 +39,6 @@ public class StorageDeviceScheduler {
     private final CircularQueue<IoOp> waitQueue;
     private final SlabAllocator<IoOp> opAllocator;
     private long count;
-
-    IOUringEventloop eventloop;
 
     public StorageDeviceScheduler(StorageDevice dev, IOUringEventloop eventloop) {
         this.dev = dev;
@@ -62,15 +60,15 @@ public class StorageDeviceScheduler {
                                    long offset) {
         IoOp op = opAllocator.allocate();
 
-        if (opcode == IORING_OP_FSYNC) {
-            // if there are no pending writes, the fsync can immediately be used.
-            // if there are pending writes, the fsync need to wait till all the writes
-            // before the fsync have completed.
-        } else if (opcode == IORING_OP_WRITE) {
-            op.writeId = ++file.newestWriteSeq;
-        } else {
-            op.writeId = -1;
-        }
+//        if (opcode == IORING_OP_FSYNC) {
+//            // if there are no pending writes, the fsync can immediately be used.
+//            // if there are pending writes, the fsync need to wait till all the writes
+//            // before the fsync have completed.
+//        } else if (opcode == IORING_OP_WRITE) {
+//            op.writeId = ++file.newestWriteSeq;
+//        } else {
+//            op.writeId = -1;
+//        }
 
         op.file = file;
         op.opcode = opcode;

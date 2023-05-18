@@ -118,7 +118,7 @@ public final class CompletionQueue {
         return UNSAFE.getIntVolatile(null, tailAddr);
     }
 
-    native void init(long io_uring);
+    native void init(long uring);
 
     void onClose() {
         headAddr = 0;

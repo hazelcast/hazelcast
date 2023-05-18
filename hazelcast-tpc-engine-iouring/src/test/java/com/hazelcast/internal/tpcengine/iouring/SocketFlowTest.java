@@ -51,7 +51,7 @@ public class SocketFlowTest {
     private class ServerThread extends Thread {
         private ServerSocket serverSocket;
 
-        public ServerThread(ServerSocket serverSocket) {
+        private ServerThread(ServerSocket serverSocket) {
             this.serverSocket = serverSocket;
         }
 

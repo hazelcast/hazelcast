@@ -24,6 +24,7 @@ import java.io.UncheckedIOException;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
+@SuppressWarnings("checkstyle:SimplifyBooleanReturn")
 public class IOUringAsyncServerSocketOptions implements AsyncSocketOptions {
 
     private final LinuxSocket nativeSocket;

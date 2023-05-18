@@ -41,9 +41,13 @@ import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
-@SuppressWarnings({"checkstyle:MemberName", "checkstyle:DeclarationOrder", "checkstyle:NestedIfDepth"})
+@SuppressWarnings({"checkstyle:MemberName",
+        "checkstyle:DeclarationOrder",
+        "checkstyle:NestedIfDepth",
+        "checkstyle:MethodName"})
 public class IOUringEventloop extends Eventloop {
     private  static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
+    protected static final int NANOSECONDS_IN_SECOND = 1_000_000_000;
 
     private final IOUringReactor ioUringReactor;
     private final StorageDeviceRegistry deviceRegistry;
@@ -65,7 +69,7 @@ public class IOUringEventloop extends Eventloop {
     final EventFd eventfd = new EventFd();
     private final long eventFdReadBuf = UNSAFE.allocateMemory(SIZEOF_LONG);
 
-    private long permanentHandlerIdGenerator = 0;
+    private long permanentHandlerIdGenerator;
     private long tmpHandlerIdGenerator = -1;
 
     public IOUringEventloop(IOUringReactor reactor, IOUringReactorBuilder builder) {
@@ -151,14 +155,12 @@ public class IOUringEventloop extends Eventloop {
                                 sq_offerTimeout(timeoutNanos);
                                 sq.submitAndWait();
                                 nanoClock.update();
-                                ;
                             } else {
                                 sq.submit();
                             }
                         } else {
                             sq.submitAndWait();
                             nanoClock.update();
-                            ;
                         }
                     } else {
                         sq.submit();
@@ -207,9 +209,9 @@ public class IOUringEventloop extends Eventloop {
             UNSAFE.putLong(timeoutSpecAddr, 0);
             UNSAFE.putLong(timeoutSpecAddr + SIZEOF_LONG, 0);
         } else {
-            long seconds = timeoutNanos / 1_000_000_000;
+            long seconds = timeoutNanos / NANOSECONDS_IN_SECOND;
             UNSAFE.putLong(timeoutSpecAddr, seconds);
-            UNSAFE.putLong(timeoutSpecAddr + SIZEOF_LONG, timeoutNanos - seconds * 1_000_000_000);
+            UNSAFE.putLong(timeoutSpecAddr + SIZEOF_LONG, timeoutNanos - seconds * NANOSECONDS_IN_SECOND);
         }
 
         // todo: return value isn't checked
