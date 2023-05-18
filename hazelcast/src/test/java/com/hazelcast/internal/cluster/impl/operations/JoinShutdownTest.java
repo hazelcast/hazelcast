@@ -49,6 +49,7 @@ import java.util.Collections;
 
 import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.instance.impl.TestUtil.toData;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static org.jgroups.util.Util.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -105,10 +106,10 @@ public class JoinShutdownTest extends HazelcastTestSupport {
 
         ByteBuffer buffer = toBuffer(op);
         int position = buffer.position();
-        buffer.position(286);
+        upcast(buffer).position(286);
         buffer.putInt(42_000_000);
-        buffer.position(position);
-        buffer.flip();
+        upcast(buffer).position(position);
+        upcast(buffer).flip();
 
         if (joinedBefore) {
             node.getClusterService().resetJoinState();
@@ -148,7 +149,7 @@ public class JoinShutdownTest extends HazelcastTestSupport {
     }
 
     private static void send(Operation operation) throws Exception {
-        send((ByteBuffer) toBuffer(operation).flip());
+        send((ByteBuffer) upcast(toBuffer(operation)).flip());
     }
 
     private static void send(ByteBuffer buffer) throws Exception {
