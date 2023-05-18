@@ -42,6 +42,7 @@
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <hazelcast.module.name>com.hazelcast.core</hazelcast.module.name>
 
         <jdk.version>11</jdk.version>
         <target.dir>target</target.dir>
