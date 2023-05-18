@@ -5,6 +5,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 * **Connector for Kafka Connect source (BETA)**: Import data from an external system directly into a Hazelcast data pipeline without the need of a Kafka cluster.
 * **Connector for MongoDB (BETA)**: Read and write from/to MongoDB via this connector and execute SQL queries on Mongo collections directly from Hazelcast.
 * **Partition-Aware SQL Client**: Send the SQL commands only to the members having the relevant data, which reduces the network hops and improves the query performances.
+* **Data connection support in SQL**: data connections and mappings using them can be managed using SQL commands.
 
 ## Breaking Changes
 
@@ -48,19 +49,19 @@ See Configuring TCP Keep-Alive. [#24050]
 ### SQL Engine
 
 * The `CREATE MAPPING` statement for Compact Serialization now supports nullable primitives. [#24300]
-* Added support of tolerance for stream-to-stream equi, non-equi, and outer JOINs. [#22979], [#23462]
+* Added support of fault tolerance and processing guarantees for stream-to-stream JOINs. [#22979], [#23462]
 * Implemented the `GET_DDL` function. [#23595]
 * Implemented the `SHOW DATA CONNECTIONS` and `SHOW RESOURCES` statements to show the connections and resources created by the `CREATE CONNECTIONS` statement. [#24028], [#23844]
 * Added support of providing declarative partitioning strategies based on attributes. These attributes represent specific partition keys for a map.
 You can also configure this strategy dynamically. [#23535], [#23954]
 * Added `attributes` and `user_defined_types` tables to `information_schema`. [#23267]
-* Added support of suspending all streamingg jobs on failure by default.[#23178]
+* Made all streaming SQL jobs to be suspending on failure. [#23178]
 * Implemented the `TO_CHAR` function which is capable of formatting dates, timestamps, and numbers. [#22529]
 * Implemented `JSON=VARCHAR` comparison. [#22746]
+* Added support of configuring SQL Catalog persistence. [#24383]
 
 ### Jet Engine
 
-* Added support of configuring SQL Catalog persistence. [#24383]
 * Added support of modifying the job configuration of suspended jobs so that jobs can run without overflow failures by adding more resources. [#23862]
 * Each Jet engine job was creating a client for connecting to the remote cluster, resulting in an excessive number of clients.
 This has been fixed by introducing a single data connection which can be reused for all job instances. [#23472], [#23849]
@@ -148,7 +149,7 @@ As a consequence, the `hz-cli` could not be used from bash on Windows. [#22884]
 * Fixed an issue where the map entries recovered from persistence were not expiring after their time-to-live durations. [#22279]
 * Fixed an issue where Hazelcast members in a Spring Boot application could not establish a connection to each other when deployed
 in Kubernetes cluster with Istio Envoy Proxy enabled. [#22256]
-* * Eliminated the usage of `ForkJoinPool#commonPool` for internal Hazelcast code, improving stability and avoiding potential deadlocks. [#18190]
+* Eliminated the usage of `ForkJoinPool#commonPool` for internal Hazelcast code, improving stability and avoiding potential deadlocks. [#18190]
 
 ## Contributors
 
