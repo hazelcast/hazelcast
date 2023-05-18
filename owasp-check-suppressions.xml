@@ -29,6 +29,13 @@
         <cpe>cpe:/a:hazelcast:hazelcast</cpe>
     </suppress>
     <suppress>
+       <notes><![CDATA[
+      False positive. The jackson-core is not related to the json-java package.
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-core@.*$</packageUrl>
+       <cpe>cpe:/a:json-java_project:json-java</cpe>
+    </suppress>
+    <suppress>
         <notes><![CDATA[
         False positive - these log4j CVEs have the fixes present in the version 1.2.17.redhat-00008.
         ]]></notes>
@@ -36,5 +43,12 @@
         <cve>CVE-2020-9488</cve>
         <cve>CVE-2020-9493</cve>
         <cve>CVE-2022-23307</cve>
+    </suppress>
+    <suppress>
+       <notes><![CDATA[
+       Commit with the fix was backported to this branch (eeb392a0b33f94b8cab127b9f01a6c0a0e4b43d6).
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast[-]?.*@.*$</packageUrl>
+       <cve>CVE-2022-36437</cve>
     </suppress>
 </suppressions>
