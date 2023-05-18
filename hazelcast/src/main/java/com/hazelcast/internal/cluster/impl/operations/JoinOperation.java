@@ -42,12 +42,12 @@ public interface JoinOperation extends UrgentSystemOperation, AllowedDuringPassi
     static void verifyCanShutdown(Node node, String reason) {
         if (node.getClusterService().isJoined()) {
             throw new IllegalStateException(
-                    "Canceling the termination as the node is already joined to a cluster. " +
-                            "Termination request reason: " + reason);
+                    "Canceling the termination as the node is already joined to a cluster. "
+                            + "Termination request reason: " + reason);
         } else if (node.getClusterService().isJoinedBefore()) {
             throw new IllegalStateException(
-                    " Canceling the termination as the node has been joined to a cluster before. " +
-                            "Termination request reason:" + reason);
+                    " Canceling the termination as the node has been joined to a cluster before. "
+                            + "Termination request reason:" + reason);
         }
     }
 }
