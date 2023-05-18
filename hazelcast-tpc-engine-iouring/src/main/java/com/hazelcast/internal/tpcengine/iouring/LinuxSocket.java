@@ -36,6 +36,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * https://web.archive.org/web/20080920074705/http://kennke.org/blog/2007/07/24/efficient-jni-programming-ii-field-and-method-access/
  * https://web.archive.org/web/20090816180817/http://kennke.org/blog/2007/07/28/efficient-jni-programming-iii-array-access/
  */
+@SuppressWarnings({"checkstyle:LineLength", "checkstyle:MethodCount"})
 public final class LinuxSocket implements AutoCloseable {
 
     static {
@@ -44,10 +45,20 @@ public final class LinuxSocket implements AutoCloseable {
     }
 
     // https://students.mimuw.edu.pl/SO/Linux/Kod/include/linux/socket.h.html
-    public final static int AF_INET = 2;
-    public final static int AF_INET6 = 10;
-    public final static int SOCK_STREAM = 1;
-    //public final static int SIZEOF_SOCKADDR_STORAGE;
+    public static final int AF_INET = 2;
+    public static final int AF_INET6 = 10;
+    public static final int SOCK_STREAM = 1;
+    //public static final int SIZEOF_SOCKADDR_STORAGE;
+
+
+    private final int fd;
+    private boolean closed;
+    private final int addressFamily;
+
+    public LinuxSocket(int fd, int addressFamily) {
+        this.fd = fd;
+        this.addressFamily = addressFamily;
+    }
 
     public static LinuxSocket openTcpIpv4Socket() {
         int family = AF_INET;
@@ -127,14 +138,6 @@ public final class LinuxSocket implements AutoCloseable {
 
     private static native int getSoLinger(int socketFd) throws IOException;
 
-    private final int fd;
-    private boolean closed;
-    private final int addressFamily;
-
-    public LinuxSocket(int fd, int addressFamily) {
-        this.fd = fd;
-        this.addressFamily = addressFamily;
-    }
 
     public int getAddressFamily() {
         return addressFamily;

@@ -40,6 +40,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 /**
  * The io_uring implementation of the {@link AsyncServerSocket}.
  */
+@SuppressWarnings({"checkstyle:MethodName", "checkstyle:TypeName", "checkstyle:MemberName"})
 public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
     private final LinuxSocket nativeSocket;
@@ -53,7 +54,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     private final Thread eventloopThread;
 
     private long userdata_acceptHandler;
-    private boolean bind = false;
+    private boolean bind;
     private boolean started;
 
     IOUringAsyncServerSocket(IOUringAsyncServerSocketBuilder builder) {

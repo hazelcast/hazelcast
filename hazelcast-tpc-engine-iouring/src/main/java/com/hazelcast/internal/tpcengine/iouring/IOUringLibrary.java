@@ -25,11 +25,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.UUID;
 
-import static com.hazelcast.internal.tpcengine.util.OS.linuxKernelMajorVersion;
-import static com.hazelcast.internal.tpcengine.util.OS.linuxKernelMinorVersion;
-import static com.hazelcast.internal.tpcengine.util.OS.osName;
-import static com.hazelcast.internal.tpcengine.util.OS.osVersion;
-
 /**
  * Contains the functionality for loading the IOUring library.
  */
@@ -38,7 +33,7 @@ public final class IOUringLibrary {
     // We need at least 5.6 due to reliance on IORING_OP_TIMEOUT
     private static final int MIN_MINOR_VERSION = 6;
 
-    private final static Throwable LOAD_FAILURE;
+    private static final Throwable LOAD_FAILURE;
 
     private IOUringLibrary() {
     }

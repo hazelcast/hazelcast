@@ -23,7 +23,6 @@ import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_FSYNC;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.opcodeToString;
 
@@ -175,15 +174,15 @@ public class StorageDeviceScheduler {
 
         @Override
         public String toString() {
-            return "Op{" +
-                    "file=" + file +
-                    ", offset=" + offset +
-                    ", length=" + length +
-                    ", opcode=" + opcodeToString(opcode) +
-                    ", flags=" + flags +
-                    ", rwFlags=" + rwFlags +
-                    ", bufferAddress=" + bufferAddress +
-                    '}';
+            return "Op{"
+                    + "file=" + file
+                    + ", offset=" + offset
+                    + ", length=" + length
+                    + ", opcode=" + opcodeToString(opcode)
+                    + ", flags=" + flags
+                    + ", rwFlags=" + rwFlags
+                    + ", bufferAddress=" + bufferAddress
+                    + '}';
         }
     }
 }

@@ -29,12 +29,8 @@ import static com.hazelcast.internal.tpcengine.iouring.Linux.errno;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 
 // https://github.com/axboe/liburing/blob/master/src/include/liburing.h
+@SuppressWarnings("checkstyle:ConstantName")
 public final class SubmissionQueue {
-    private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
-
-    private static final int SIZE_SQE = 64;
-    private static final int INT_SIZE = Integer.BYTES;
-
     public static final int OFFSET_SQE_opcode = 0;
     public static final int OFFSET_SQE_flags = 1;
     public static final int OFFSET_SQE_ioprio = 2;
@@ -45,7 +41,10 @@ public final class SubmissionQueue {
     public static final int OFFSET_SQE_rw_flags = 28;
     public static final int OFFSET_SQE_user_data = 32;
 
-    private final IOUring uring;
+    private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
+    private static final int SIZE_SQE = 64;
+    private static final int INT_SIZE = Integer.BYTES;
+
     public boolean ringBufferRegistered;
     int enterRingFd;
     int ringFd;
@@ -58,6 +57,7 @@ public final class SubmissionQueue {
     int ringEntries;
     int localTail;
     int localHead;
+    private final IOUring uring;
 
     SubmissionQueue(IOUring uring) {
         this.uring = uring;

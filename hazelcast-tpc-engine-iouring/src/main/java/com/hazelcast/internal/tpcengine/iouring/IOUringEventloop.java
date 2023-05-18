@@ -1,8 +1,24 @@
+/*
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Scheduler;
+import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
@@ -25,8 +41,9 @@ import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
+@SuppressWarnings({"checkstyle:MemberName", "checkstyle:DeclarationOrder", "checkstyle:NestedIfDepth"})
 public class IOUringEventloop extends Eventloop {
-    private final static Unsafe UNSAFE = UnsafeLocator.UNSAFE;
+    private  static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final IOUringReactor ioUringReactor;
     private final StorageDeviceRegistry deviceRegistry;
@@ -50,7 +67,6 @@ public class IOUringEventloop extends Eventloop {
 
     private long permanentHandlerIdGenerator = 0;
     private long tmpHandlerIdGenerator = -1;
-
 
     public IOUringEventloop(IOUringReactor reactor, IOUringReactorBuilder builder) {
         super(reactor, builder);
@@ -134,13 +150,15 @@ public class IOUringEventloop extends Eventloop {
                             if (timeoutNanos > 0) {
                                 sq_offerTimeout(timeoutNanos);
                                 sq.submitAndWait();
-                                nanoClock.update();;
+                                nanoClock.update();
+                                ;
                             } else {
                                 sq.submit();
                             }
                         } else {
                             sq.submitAndWait();
-                            nanoClock.update();;
+                            nanoClock.update();
+                            ;
                         }
                     } else {
                         sq.submit();

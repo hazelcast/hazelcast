@@ -21,17 +21,14 @@ import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
+@SuppressWarnings("checkstyle:VisibilityModifier")
 public final class CompletionQueue {
-    private final TpcLogger logger = TpcLoggerLocator.getLogger(CompletionQueue.class);
 
-    public final static Unsafe UNSAFE = UnsafeLocator.UNSAFE;
+    public static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     public static final int OFFSET_CQE_USERDATA = 0;
     public static final int OFFSET_CQE_RES = 8;
     public static final int OFFSET_CQE_FLAGS = 12;
-
     public static final int CQE_SIZE = 16;
-
-    private final IOUring uring;
 
     public int localHead;
     public int localTail;
@@ -41,6 +38,9 @@ public final class CompletionQueue {
     public long cqesAddr;
 
     public int ringMask;
+
+    private final TpcLogger logger = TpcLoggerLocator.getLogger(CompletionQueue.class);
+    private final IOUring uring;
 
     CompletionQueue(IOUring uring) {
         this.uring = uring;

@@ -21,7 +21,6 @@ import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**

@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.Option;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

@@ -21,7 +21,6 @@ import com.hazelcast.internal.tpcengine.Promise;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.AsyncFileMetrics;
 import com.hazelcast.internal.tpcengine.file.StorageDevice;
-import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -43,15 +42,15 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
  * IOUring implementation of the {@link AsyncFile}.
  */
 public final class IOUringAsyncFile extends AsyncFile {
+    StorageDevice dev;
+    int fd;
+    long newestWriteSeq;
+    long[] fences;
 
     private final IOUringEventloop eventloop;
     private final String path;
     private final StorageDeviceScheduler scheduler;
 
-    StorageDevice dev;
-    int fd;
-    long newestWriteSeq;
-    long[] fences;
 
     // todo: Using path as a string forces creating litter.
     IOUringAsyncFile(String path, IOUringReactor reactor) {

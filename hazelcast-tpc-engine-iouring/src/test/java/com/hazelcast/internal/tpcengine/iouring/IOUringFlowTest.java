@@ -63,7 +63,7 @@ public class IOUringFlowTest {
             }
             int submittedEntries = sq.submit();
             assertEquals(batchSize, submittedEntries);
-            int head = cq.acquireHead();// no acquire needed
+            int head = cq.acquireHead();
 
             for (; ; ) {
                 int tail = cq.acquireTail();

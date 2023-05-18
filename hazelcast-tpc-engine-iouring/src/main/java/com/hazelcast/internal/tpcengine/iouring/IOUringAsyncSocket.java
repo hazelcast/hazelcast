@@ -40,7 +40,7 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 
-
+@SuppressWarnings({"checkstyle:TrailingComment", "checkstyle:MemberName", "checkstyle:TypeName"})
 public final class IOUringAsyncSocket extends AsyncSocket {
 
     static {

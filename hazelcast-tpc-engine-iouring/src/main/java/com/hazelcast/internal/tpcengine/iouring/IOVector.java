@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
-
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 
@@ -47,14 +46,15 @@ import static java.nio.ByteBuffer.allocateDirect;
  * The current implementation isn't the most efficient because we move all the iovs to the beginning
  * and the way this is done is by evaluating all the non empty buffers. A mem copy would be a lot faster
  */
+@SuppressWarnings("checkstyle:LocalVariableName")
 public final class IOVector {
-    private final static sun.misc.Unsafe UNSAFE = UnsafeLocator.UNSAFE;
-    private final static int OFFSET_IOV_LEN = SIZEOF_LONG;//todo:
+    private static final sun.misc.Unsafe UNSAFE = UnsafeLocator.UNSAFE;
+    private static final int OFFSET_IOV_LEN = SIZEOF_LONG;
 
     private final IOBuffer[] ioBufs;
     private final int capacity;
     private final long addr;
-    private int count = 0;
+    private int count;
     private long pending;
     private final ByteBuffer buf;
 

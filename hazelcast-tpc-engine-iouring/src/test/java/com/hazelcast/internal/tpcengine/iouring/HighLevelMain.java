@@ -32,7 +32,7 @@ public class HighLevelMain {
 
         System.out.println("submittedEntries:" + submittedEntries);
         CompletionQueue cq = uring.completionQueue();
-        int head = cq.acquireHead();// no acquire needed
+        int head = cq.acquireHead();
 
         for (; ; ) {
             int tail = cq.acquireTail();

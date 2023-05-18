@@ -16,17 +16,22 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
+@SuppressWarnings({"checkstyle:MagicNumber",
+        "checkstyle:ConstantName",
+        "checkstyle:MethodName",
+        "checkstyle:ParameterName",
+        "checkstyle:IllegalTokenText"})
 public final class Linux {
 
     //todo: should not be hardcoded value.
-    public final static int IOV_MAX = 1024;
+    public static final int IOV_MAX = 1024;
 
     public static final int PERMISSIONS_ALL = 0666;
 
     public static final int SIZEOF_KERNEL_TIMESPEC = 16;
     public static final int SIZEOF_SOCKADDR_STORAGE = 128;
     // assuming 64 bit Linux
-    public final static int SIZEOF_IOVEC = 16;
+    public static final int SIZEOF_IOVEC = 16;
 
     public static final int FALSE = 0;
 
@@ -73,6 +78,7 @@ public final class Linux {
      * @return the error code. For an unknown error number, 'unknown-code[errornumber]'
      * is returned. So this method will never throw an Exception.
      */
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:Returncount", "checkstyle:CyclomaticComplexity"})
     public static String errorcode(int errnum) {
         switch (errnum) {
             case 1:

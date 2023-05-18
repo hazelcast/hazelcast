@@ -21,7 +21,6 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 
-
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;

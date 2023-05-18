@@ -24,11 +24,12 @@ import java.net.UnknownHostException;
  * A Factory for creating {@link java.net.SocketAddress}. This is used in the JNI
  * code to create the Java objects.
  */
-public class SocketAddressFactory {
+public final class SocketAddressFactory {
 
     private SocketAddressFactory() {
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     public static InetSocketAddress createIPv4Address(int ip, int port) throws UnknownHostException {
         byte[] addr = {
                 (byte) (ip >>> 24),
