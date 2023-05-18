@@ -16,11 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.file.AsyncFileTest;
 import com.hazelcast.internal.tpcengine.Reactor;
-import org.junit.Ignore;
+import com.hazelcast.internal.tpcengine.file.AsyncFileTest;
 
-@Ignore
 public class IOUringAsyncFileTest extends AsyncFileTest {
 
     @Override

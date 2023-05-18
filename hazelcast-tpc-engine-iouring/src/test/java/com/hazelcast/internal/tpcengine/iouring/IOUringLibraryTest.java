@@ -18,14 +18,18 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeTrue;
+
 public class IOUringLibraryTest {
 
-    // todo: this test will fail on anything else than Linux 5.6+
     @Test
     public void test() {
-        IOUringLibrary.ensureAvailable();
+        assumeTrue(IOUringLibrary.isAvailable());
 
         // ensure that we can actually load the IOUring.
         IOUring uring = new IOUring(10, 0);
+        assertNotNull(uring.submissionQueue());
+        assertNotNull(uring.completionQueue());
     }
 }
