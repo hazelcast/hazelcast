@@ -43,19 +43,19 @@ public class PortFreeRule extends ExternalResource {
     }
 
     private void assertPortFree() {
-         if(!OS.isLinux()){
+        if (!OS.isLinux()) {
             // Functionality only available under Linux.
             return;
         }
 
         try {
-            Process process = new ProcessBuilder("lsof", "-i", "-P","-n","tcp:" + port).start();
+            Process process = new ProcessBuilder("lsof", "-i", "-P", "-n", "tcp:" + port).start();
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             int exitCode = process.waitFor();
 
             // nothing was found.
             if (exitCode == 1) {
-                System.out.println("Port "+port+" is free");
+                System.out.println("Port " + port + " is free");
                 return;
             }
 
@@ -65,7 +65,7 @@ public class PortFreeRule extends ExternalResource {
                 result.append(line);
                 result.append(System.getProperty("line.separator"));
             }
-          //  System.out.println("---------------["+check()+"]");
+            //  System.out.println("---------------["+check()+"]");
 
             Thread.sleep(100);
             fail("Port " + port + " is not properly closed: " + result);
@@ -75,7 +75,7 @@ public class PortFreeRule extends ExternalResource {
     }
 
     public String check() throws IOException, InterruptedException {
-        return execute("lsof", "-i", "-P","-n","tcp:" + port);
+        return execute("lsof", "-i", "-P", "-n", "tcp:" + port);
     }
 
     private static String execute(String... command) throws InterruptedException, IOException {

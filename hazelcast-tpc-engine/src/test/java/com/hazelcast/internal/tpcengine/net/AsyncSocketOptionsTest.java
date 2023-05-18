@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

@@ -106,8 +106,8 @@ public class Promise<E> {
         }
     }
 
-    public void completeWithIOException(String message, Throwable cause){
-        completeExceptionally(new UncheckedIOException(new IOException(message,cause)));
+    public void completeWithIOException(String message, Throwable cause) {
+        completeExceptionally(new UncheckedIOException(new IOException(message, cause)));
     }
 
     /**

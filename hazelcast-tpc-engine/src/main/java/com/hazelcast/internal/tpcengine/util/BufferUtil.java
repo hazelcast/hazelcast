@@ -42,6 +42,9 @@ public final class BufferUtil {
         }
     }
 
+    private BufferUtil() {
+    }
+
     public static ByteBuffer allocateDirect(int capacity, int alignment) {
         if (alignment < 0) {
             throw new IllegalArgumentException("alignment can't be smaller than 1");
@@ -63,7 +66,7 @@ public final class BufferUtil {
     }
 
     public static long addressOf(ByteBuffer byteBuffer) {
-        if(!byteBuffer.isDirect()){
+        if (!byteBuffer.isDirect()) {
             throw new IllegalArgumentException("Only direct bytebuffers allowed");
         }
         return UNSAFE.getLong(byteBuffer, ADDRESS_OFFSET);
@@ -85,8 +88,6 @@ public final class BufferUtil {
         }
     }
 
-    private BufferUtil() {
-    }
 
     /**
      * Creates a debug String for te given ByteBuffer. Useful when debugging IO.

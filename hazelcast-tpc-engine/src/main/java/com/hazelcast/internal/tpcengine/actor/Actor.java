@@ -25,7 +25,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 public abstract class Actor implements Runnable {
 
-    public final static int DEFAULT_MAILBOX_CAPACITY = 512;
+    public static final int DEFAULT_MAILBOX_CAPACITY = 512;
 
     private final MpscArrayQueue mailbox;
     private final AtomicBoolean scheduled = new AtomicBoolean();

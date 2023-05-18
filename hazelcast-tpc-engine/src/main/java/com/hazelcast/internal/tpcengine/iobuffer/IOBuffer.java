@@ -286,7 +286,7 @@ public class IOBuffer {
     // very inefficient
     public String readString() {
         int size = buff.getInt();
-        if(size == -1){
+        if (size == -1) {
             return null;
         }
 

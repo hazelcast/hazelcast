@@ -25,10 +25,10 @@ import com.hazelcast.internal.tpcengine.Promise;
  * <p/>
  * This class isn't thread-safe. It should only be processed by the owning {@link Eventloop}.
  * <p/>
- *  If in the future we want to support Virtual Threads, we do not need to introduce a new
+ * If in the future we want to support Virtual Threads, we do not need to introduce a new
  * 'SyncFile'. It would be sufficient to offer blocking operations which acts like scheduling points.
- *  This way you can use the API from virtual threads and from platform threads. The platform threads
- *  should probably run into an exception when they call a blocking method.
+ * This way you can use the API from virtual threads and from platform threads. The platform threads
+ * should probably run into an exception when they call a blocking method.
  */
 public abstract class AsyncFile {
 
@@ -59,7 +59,7 @@ public abstract class AsyncFile {
      *
      * @return the metrics.
      */
-    public AsyncFileMetrics metrics(){
+    public AsyncFileMetrics metrics() {
         return metrics;
     }
 
@@ -85,7 +85,7 @@ public abstract class AsyncFile {
     /**
      * Submits an fsync. The sync isn't ordered with respect to any concurrent writes. See
      * {@link #barrierFsync()} for that.
-     *
+     * <p>
      * todo: probably better to add flag for fdatasync instead of making it a method.
      *
      * @return
@@ -96,9 +96,9 @@ public abstract class AsyncFile {
      * Waits for all prior writes to complete before issuing the fsync. So all earlier writes
      * will be ordered before this fsync but later writes will not be ordered with respect to
      * this fsync.
-     *
+     * <p>
      * todo: probably better to add flag for fdata sync instead of making it a method.
-     *
+     * <p>
      * todo: perhaps better to have different barriers?
      * 1) no ordering
      * 2) earlier writes | fsync

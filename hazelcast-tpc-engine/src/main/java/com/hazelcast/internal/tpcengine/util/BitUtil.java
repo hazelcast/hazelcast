@@ -23,7 +23,7 @@ public final class BitUtil {
     public static final int SIZEOF_LONG = Long.BYTES;
     public static final int SIZEOF_FLOAT = Float.BYTES;
     public static final int SIZEOF_DOUBLE = Double.BYTES;
-    public final static int SIZEOF_UUID = SIZEOF_LONG + SIZEOF_LONG;
+    public static final int SIZEOF_UUID = SIZEOF_LONG + SIZEOF_LONG;
     public static final int SIZEOF_CRC32 = SIZEOF_INT;
 
     private BitUtil() {
