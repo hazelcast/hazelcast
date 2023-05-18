@@ -23,6 +23,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.Random;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public class TopicPublishMain {
 
     public static void main(String[] args) throws Exception {

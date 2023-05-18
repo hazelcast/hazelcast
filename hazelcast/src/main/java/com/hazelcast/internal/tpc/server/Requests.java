@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpc.FrameCodec;
 import com.hazelcast.internal.tpc.RequestFuture;
 import org.jctools.util.PaddedAtomicLong;
 
-
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -29,7 +28,7 @@ import static java.lang.System.currentTimeMillis;
 
 /**
  * The pending requests for some Reactor. This could be a local or a remote reactor.
- *
+ * <p>
  * Idea:
  * Instead of using a ConcurrentHashMap where we are going to get litter when an
  * request is inserted and when a request is removed, use an array of slots. In this
@@ -64,7 +63,6 @@ public class Requests {
         this.mask = capacity - 1;
         this.array = new AtomicReferenceArray<>(capacity);
     }
-
 
 
     /**

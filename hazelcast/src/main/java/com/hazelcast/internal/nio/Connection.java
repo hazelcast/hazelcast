@@ -24,7 +24,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Consumer;
 
 /**
  * Represents a 'connection' between two machines.

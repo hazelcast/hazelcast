@@ -26,6 +26,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.TPC_EVENTLOOP_COUNT;
 /**
  * A benchmark that measures performance of a remote empty get.
  */
+@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier"})
 public class IMapRemoteGetMain {
 
     public static void main(String[] args) throws Exception {
@@ -39,10 +40,10 @@ public class IMapRemoteGetMain {
         Thread.sleep(5000);
         System.out.println("Waiting for partition tables to settle: done");
 
-        Integer x=0;
-        for(;;) {
-            if(node2.getLocalEndpoint().getSocketAddress()
-                    .equals(node1.getPartitionService().getPartition(x).getOwner().getSocketAddress())){
+        Integer x = 0;
+        for (; ; ) {
+            if (node2.getLocalEndpoint().getSocketAddress()
+                    .equals(node1.getPartitionService().getPartition(x).getOwner().getSocketAddress())) {
                 break;
             }
             x++;

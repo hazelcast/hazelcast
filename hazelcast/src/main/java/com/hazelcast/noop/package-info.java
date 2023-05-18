@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.pubsub.impl;
-
-public class SubscriberService {
-}
+/**
+ *
+ */
+package com.hazelcast.noop;

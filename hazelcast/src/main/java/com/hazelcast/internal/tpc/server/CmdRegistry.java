@@ -95,7 +95,7 @@ public class CmdRegistry {
         return entries.get(cmdId);
     }
 
-    public static class Entry {
+    public static final class Entry {
         private final Supplier<? extends Cmd> supplier;
         private final int cmdId;
 

@@ -69,6 +69,7 @@ import static java.lang.System.getProperty;
  * <p>
  * todo: Should also handle redirect messages.
  */
+@SuppressWarnings("checkstyle:MagicNumber")
 public final class ServerRpcCore implements RpcCore {
     private final boolean writeThrough = parseBoolean(getProperty("hazelcast.tpc.write-through", "false"));
     private final boolean regularSchedule = parseBoolean(getProperty("hazelcast.tpc.regular-schedule", "true"));

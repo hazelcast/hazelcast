@@ -60,9 +60,10 @@ public class CmdAllocator {
             cmd = pool.supplier.get();
             cmd.allocator = this;
             init(cmd);
-       } else {
+        } else {
             cmd = pool.array[pool.index];
-            pool.array[pool.index] = null;//not needed
+            //not needed
+            pool.array[pool.index] = null;
             pool.index--;
             pool.allocatedFromPool++;
         }
@@ -93,14 +94,14 @@ public class CmdAllocator {
         pool.array[pool.index] = cmd;
     }
 
-    private static class Pool {
+    private static final class Pool {
         public long dropped;
         // index points to first item that can be removed.
         private int index = -1;
         private final Cmd[] array;
         private final Supplier<? extends Cmd> supplier;
-        private long allocatedFromPool = 0;
-        private long allocated = 0;
+        private long allocatedFromPool;
+        private long allocated;
 
         private Pool(Supplier<? extends Cmd> supplier, int poolCapacity) {
             this.array = new Cmd[poolCapacity];

@@ -22,6 +22,7 @@ import java.io.File;
  * A the sequence of segments for a single partition/topic.
  */
 // https://strimzi.io/blog/2021/12/17/kafka-segment-retention/
+@SuppressWarnings({"checkstyle:VisibilityModifier"})
 public class TopicPartition {
 
     public int activeBufferLength;

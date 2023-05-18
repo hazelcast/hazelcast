@@ -21,7 +21,7 @@ import com.hazelcast.internal.tpc.server.Cmd;
 
 public final class NopCmd extends Cmd {
 
-    public final static byte ID = 1;
+    public static final byte ID = 1;
 
     public NopCmd() {
         super(ID);

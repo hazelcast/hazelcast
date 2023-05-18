@@ -35,11 +35,11 @@ import static com.hazelcast.pubsub.impl.TopicSegment.SIZEOF_SEGMENT_HEADER;
 // todo: what happens when an active segment is being made and a concurrent write is performed.
 public class PublishCmd extends Cmd {
 
-    public final static byte ID = 7;
+    public static final byte ID = 7;
 
-    private final static int STATE_INIT = 0;
-    private final static int STATE_CREATING_ACTIVE_SEGMENT = 1;
-    private final static int STATE_RUN = 2;
+    private static final int STATE_INIT = 0;
+    private static final int STATE_CREATING_ACTIVE_SEGMENT = 1;
+    private static final int STATE_RUN = 2;
 
     // the topicName is backed by the request.
     private final CharVector topicName = new CharVector();
@@ -84,7 +84,9 @@ public class PublishCmd extends Cmd {
 
                     if (topicPartition.activeSegment.buffer == null) {
                         // There is no active buffer, so lets open it.
-                        topicPartition.activeSegment.buffer = eventloop.fileIOBufferAllocator().allocate(topicPartition.activeBufferLength);
+                        topicPartition.activeSegment.buffer = eventloop
+                                .fileIOBufferAllocator()
+                                .allocate(topicPartition.activeBufferLength);
                     }
 
                     state = STATE_RUN;
@@ -143,7 +145,8 @@ public class PublishCmd extends Cmd {
         int length = diskBuffer.capacity();
         long address = addressOf(diskBuffer.byteBuffer());
 
-        Promise<Integer> pwrite = topicPartition.activeSegment.file.pwrite(topicPartition.activeSegment.fileOffset, length, address);
+        Promise<Integer> pwrite = topicPartition.activeSegment.file
+                .pwrite(topicPartition.activeSegment.fileOffset, length, address);
         topicPartition.activeSegment.fileOffset += length;
         pwrite.releaseOnComplete();
         // todo: creating object
@@ -175,20 +178,20 @@ public class PublishCmd extends Cmd {
 //                    throw new RuntimeException(error1);
 //                }
 
-                // get rid of oldest segment
-                // this is blocking which sucks.
-                long nr = topicPartition.activeSegmentId - topicPartition.maxRetainedSegments;
-                File heaFile = new File(topicPartition.dir, String.format("%019d", nr) + ".log");
-                heaFile.delete();
+            // get rid of oldest segment
+            // this is blocking which sucks.
+            long nr = topicPartition.activeSegmentId - topicPartition.maxRetainedSegments;
+            File heaFile = new File(topicPartition.dir, String.format("%019d", nr) + ".log");
+            heaFile.delete();
 
-                TopicSegment segment = new TopicSegment();//litter
-                segment.file = segmentFile;
-                topicPartition.activeSegment = segment;
-                topicPartition.activeSegment.offset = SIZEOF_SEGMENT_HEADER;
-                topicPartition.activeSegment.fileOffset = SIZEOF_SEGMENT_HEADER;
-                topicPartition.activeSegment.buffer = eventloop.fileIOBufferAllocator().allocate(topicPartition.activeBufferLength);
-                scheduler.schedule(PublishCmd.this);
-        //    });
+            TopicSegment segment = new TopicSegment();//litter
+            segment.file = segmentFile;
+            topicPartition.activeSegment = segment;
+            topicPartition.activeSegment.offset = SIZEOF_SEGMENT_HEADER;
+            topicPartition.activeSegment.fileOffset = SIZEOF_SEGMENT_HEADER;
+            topicPartition.activeSegment.buffer = eventloop.fileIOBufferAllocator().allocate(topicPartition.activeBufferLength);
+            scheduler.schedule(PublishCmd.this);
+            //    });
         });
     }
 }

@@ -21,11 +21,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.noop.Noop;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public class LocalNoopBenchmark {
 
     public static void main(String[] args) throws Exception {
-        System.setProperty(ClusterProperty.TPC_ENABLED.getName(),"true");
-        System.setProperty(ClusterProperty.TPC_EVENTLOOP_COUNT.getName(),"1");
+        System.setProperty(ClusterProperty.TPC_ENABLED.getName(), "true");
+        System.setProperty(ClusterProperty.TPC_EVENTLOOP_COUNT.getName(), "1");
         HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
 
         Noop nop = node1.getProxy(Noop.class, "nop");
@@ -42,7 +43,7 @@ public class LocalNoopBenchmark {
                 System.out.println("at k:" + count);
             }
 
-            nop.concurrentNoop(concurrency,0);
+            nop.concurrentNoop(concurrency, 0);
             count += concurrency;
         }
 

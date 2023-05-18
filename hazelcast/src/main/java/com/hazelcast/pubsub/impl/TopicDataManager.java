@@ -59,7 +59,7 @@ public class TopicDataManager {
     // todo: should be configurable
     private final int segmentSize = 100 * 1024 * OS.pageSize();
     private final int maxRetainedSegments = 10;
-    private final int activeBufferLength = 16*OS.pageSize();
+    private final int activeBufferLength = 16 * OS.pageSize();
     private final File[] rootDirs;
 
     public TopicDataManager(int partitionCount) {
@@ -190,7 +190,7 @@ public class TopicDataManager {
                     }
 
                     int storedCrcCode = in.readInt();
-                    int calculatedCrcCode = CRC.crc32(message,0,msgLength);
+                    int calculatedCrcCode = CRC.crc32(message, 0, msgLength);
                     if (storedCrcCode != calculatedCrcCode) {
                         logger.warning("Message crc code mismatch. "
                                 + " segment:" + segmentFile.getAbsolutePath()

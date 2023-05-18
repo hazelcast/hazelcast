@@ -14,18 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.pubsub.impl;
-
-import com.hazelcast.internal.util.HashUtil;
-
-public class CRC {
-
-    public static int crc32(byte[] bytes) {
-        return crc32(bytes, 0, bytes.length);
-    }
-
-    // todo: need to be replaced by a fast crc 32 implementation
-    public static int crc32(byte[] bytes, int offset, int length) {
-        return HashUtil.MurmurHash3_x86_32(bytes, 0, length);
-    }
-}
+/**
+ *
+ */
+package com.hazelcast.pubsub;

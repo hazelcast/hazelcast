@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.pubsub;
-
-import com.hazelcast.core.TpcProxy;
-
-public interface Subscriber extends TpcProxy {
-}
+/**
+ *
+ */
+package com.hazelcast.pubsub.impl;

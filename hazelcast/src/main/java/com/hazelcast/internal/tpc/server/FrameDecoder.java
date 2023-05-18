@@ -30,8 +30,8 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.tpc.FrameCodec.FLAG_RES;
 import static com.hazelcast.internal.tpc.FrameCodec.FLAG_PACKET;
+import static com.hazelcast.internal.tpc.FrameCodec.FLAG_RES;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_UUID;
 
@@ -39,10 +39,10 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_UUID;
  * The FrameDecoder decodes frames (which can contain a nested packet).
  */
 public class FrameDecoder extends AsyncSocketReader {
-    private final static int STATE_INITIAL = 0;
-    private final static int STATE_READING_NOTHING = 1;
-    private final static int STATE_READING_PACKET = 2;
-    private final static int STATE_READING_FRAME = 3;
+    private static final int STATE_INITIAL = 0;
+    private static final int STATE_READING_NOTHING = 1;
+    private static final int STATE_READING_PACKET = 2;
+    private static final int STATE_READING_FRAME = 3;
 
     public IOBufferAllocator requestAllocator;
     public IOBufferAllocator responseAllocator;

@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.internal.server.tcp.TcpServerConnection;
-
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
@@ -35,7 +33,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_TPC_PORTS;
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
 import static java.lang.Character.toLowerCase;
@@ -134,6 +131,7 @@ public final class StringUtil {
 
     /**
      * Check if all Strings are not blank
+     *
      * @param values the strings to check
      * @return true if all the strings are not {@code null} and not blank, false otherwise
      */
@@ -146,6 +144,7 @@ public final class StringUtil {
 
     /**
      * Check if any String from the provided Strings
+     *
      * @param values the strings to check
      * @return true if at least one string of the {@param values} are not {@code null} and not blank
      */
@@ -172,7 +171,7 @@ public final class StringUtil {
 
     /**
      * Converts the first character to lower case.
-     *
+     * <p>
      * Empty strings are ignored.
      *
      * @param s the given string
@@ -314,10 +313,10 @@ public final class StringUtil {
     /**
      * Convert getter into a property name
      * Example: 'getFoo' is converted into 'foo'
-     *
+     * <p>
      * It's written defensively, when output is not a getter then it
      * returns the original name.
-     *
+     * <p>
      * It only converts names starting with a get- prefix. When a getter
      * starts with an is- prefix (=boolean) then it does not convert it.
      *
@@ -379,7 +378,7 @@ public final class StringUtil {
      * @return
      */
     public static List<Integer> toIntegerList(String input) {
-        if(input == null){
+        if (input == null) {
             return Collections.emptyList();
         }
 
@@ -502,6 +501,7 @@ public final class StringUtil {
 
     /**
      * Converts the provided collection to string, joined by LINE_SEPARATOR
+     *
      * @param collection collection to convert to string
      * @return string
      */
@@ -511,6 +511,7 @@ public final class StringUtil {
 
     /**
      * Converts the provided collection to string, joined by the provided separator.
+     *
      * @param collection collection to convert to string
      * @return string
      */
@@ -522,6 +523,7 @@ public final class StringUtil {
 
     /**
      * Converts the provided array to string, joined by LINE_SEPARATOR
+     *
      * @param arr array to convert to string
      * @return string
      */
@@ -536,7 +538,7 @@ public final class StringUtil {
      * {@code indent} parameter is negative, or XML transformation fails, then the original value is returned unchanged. The
      * {@link IllegalArgumentException} is thrown when {@code indent==0}.
      *
-     * @param input the XML String
+     * @param input  the XML String
      * @param indent indentation (number of spaces used for one indentation level)
      * @return formatted XML String or the original String if the formatting fails.
      * @throws IllegalArgumentException when indentation is equal to zero
@@ -552,7 +554,7 @@ public final class StringUtil {
      * it's longer, trims it to one char less (not taking word boundaries into
      * account), and appends an ellipsis. Returns {@code null} for null input.
      *
-     * @param s The string to shorten
+     * @param s         The string to shorten
      * @param maxLength Maximum length the returned string must have
      * @return Shortened string
      */

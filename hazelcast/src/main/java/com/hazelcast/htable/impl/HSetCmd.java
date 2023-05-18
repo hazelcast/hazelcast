@@ -22,7 +22,7 @@ import com.hazelcast.internal.tpc.server.Cmd;
 
 public final class HSetCmd extends Cmd {
 
-    public final static byte ID = 3;
+    public static final byte ID = 3;
 
     private final Bin key = new Bin();
     private final Bin value = new Bin();

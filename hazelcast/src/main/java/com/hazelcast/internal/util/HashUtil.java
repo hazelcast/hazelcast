@@ -323,7 +323,7 @@ public final class HashUtil {
     /**
      * A function that calculates the index (e.g. to be used in an array/list) for a given hash. The returned value will always
      * be equal or larger than 0 and will always be smaller than 'length'.
-     *
+     * <p>
      * The reason this function exists is to deal correctly with negative and especially the Integer.MIN_VALUE; since that can't
      * be used safely with a Math.abs function.
      *
@@ -348,7 +348,7 @@ public final class HashUtil {
             return 0;
         }
 
-        return (int)(abs(hash) % length);
+        return (int) (abs(hash) % length);
     }
 
     /**

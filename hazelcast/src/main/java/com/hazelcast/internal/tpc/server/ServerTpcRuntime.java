@@ -77,6 +77,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * So how do we go from partition to a channel?
  */
+@SuppressWarnings("checkstyle:MagicNumber")
 public class ServerTpcRuntime implements TpcRuntime {
 
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;

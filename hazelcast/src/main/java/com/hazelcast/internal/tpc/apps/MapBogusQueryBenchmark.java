@@ -21,13 +21,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.htable.HTable;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier"})
 public class MapBogusQueryBenchmark {
-    public final static int items = 1_000_000;
-    public final static int queryCount = 2000;
+    public static final int items = 1_000_000;
+    public static final int queryCount = 2000;
 
     public static void main(String[] args) throws Exception {
-        System.setProperty(ClusterProperty.TPC_ENABLED.getName(),"true");
-        System.setProperty(ClusterProperty.TPC_EVENTLOOP_COUNT.getName(),"1");
+        System.setProperty(ClusterProperty.TPC_ENABLED.getName(), "true");
+        System.setProperty(ClusterProperty.TPC_EVENTLOOP_COUNT.getName(), "1");
         HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
         HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
 

@@ -21,17 +21,18 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.noop.Noop;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier"})
 public class NoopBenchmark {
     public static long operations = 5_000_000;
     public static int concurrency = 2;
 
     public static void main(String[] args) throws Exception {
-        System.setProperty(ClusterProperty.TPC_ENABLED.getName(),"true");
-        System.setProperty(ClusterProperty.TPC_EVENTLOOP_COUNT.getName(),"1");
+        System.setProperty(ClusterProperty.TPC_ENABLED.getName(), "true");
+        System.setProperty(ClusterProperty.TPC_EVENTLOOP_COUNT.getName(), "1");
 
         HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
         HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
-       // HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
+        // HazelcastInstance node2 = Hazelcast.newHazelcastInstance();
 
         Noop nop = node1.getProxy(Noop.class, "sometable");
 

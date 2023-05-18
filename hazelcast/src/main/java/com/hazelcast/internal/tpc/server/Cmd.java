@@ -21,15 +21,16 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 
 /**
  * a {@link Cmd} is comparable with the classic Hazelcast Operation.
- *
+ * <p>
  * Configure Concurrency at Cmd level? E.g. some operations could require exclusive
  * access while other could allow for concurrent commands.
  */
+@SuppressWarnings({"checkstyle:VisibilityModifier"})
 public abstract class Cmd {
 
-    public final static int COMPLETED = 0;
-    public final static int BLOCKED = 1;
-    public final static int EXCEPTION = 2;
+    public static final int COMPLETED = 0;
+    public static final int BLOCKED = 1;
+    public static final int EXCEPTION = 2;
 
     public boolean priority;
     public int partitionId;
@@ -50,7 +51,7 @@ public abstract class Cmd {
     /**
      * Is only called once during the whole lifetime of the Cmd.
      */
-    public void init(){
+    public void init() {
     }
 
     public abstract int run() throws Exception;

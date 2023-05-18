@@ -22,7 +22,7 @@ import com.hazelcast.internal.tpc.offheapmap.OffheapMap;
 
 public class QueryCmd extends Cmd {
 
-    public final static byte ID = 4;
+    public static final byte ID = 4;
     // Currently, we always execute the same bogus query.
     // Probably the queryOp should have some query id for prepared queries
     // And we do a lookup based on that query id.

@@ -14,17 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.pubsub.impl;
-
-import com.hazelcast.internal.tpc.server.ServerRpcCore;
-import com.hazelcast.pubsub.Subscriber;
-
-public class SubscriberImpl implements Subscriber {
-    private final String topic;
-    private final ServerRpcCore[] partitionActorRefs;
-
-    public SubscriberImpl(String topic, ServerRpcCore[] partitionActorRefs) {
-        this.topic = topic;
-        this.partitionActorRefs = partitionActorRefs;
-    }
-}
+/**
+ *
+ */
+package com.hazelcast.noop.impl;

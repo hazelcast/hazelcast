@@ -21,7 +21,6 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -52,7 +51,7 @@ public abstract class AbstractPartitionMessageTask<P>
         }
         op.setCallerUuid(endpoint.getUuid());
         return nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), op, getPartitionId())
-                         .setResultDeserialized(false).invoke();
+                .setResultDeserialized(false).invoke();
 
     }
 

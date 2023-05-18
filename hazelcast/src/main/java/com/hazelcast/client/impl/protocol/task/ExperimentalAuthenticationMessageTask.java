@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.TpcToken;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExperimentalAuthenticationCodec;
 import com.hazelcast.cluster.Address;
@@ -56,7 +55,7 @@ public class ExperimentalAuthenticationMessageTask
 
     @Override
     protected void setTpcTokenToEndpoint() {
-        if(true){
+        if (true) {
             throw new RuntimeException("not implemented");
         }
 //        if (!nodeEngine.getTpcServerBootstrap().isEnabled()) {

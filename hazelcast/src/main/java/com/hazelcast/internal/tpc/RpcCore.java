@@ -34,7 +34,7 @@ public interface RpcCore extends Consumer<IOBuffer> {
 
     /**
      * Invokes a request on some partition.
-     *
+     * <p>
      * todo: Instead of partition, the hash should be passed.
      *
      * @param partitionId the id of the partition.

@@ -84,7 +84,7 @@ public class MemberHandshake
         this.uuid = uuid;
     }
 
-    public Map<String,String> options(){
+    public Map<String, String> options() {
         return options;
     }
 
@@ -99,7 +99,7 @@ public class MemberHandshake
 
     public String getOption(String key, String defaultValue) {
         String value = options.get(key);
-        return value == null ? defaultValue :value;
+        return value == null ? defaultValue : value;
     }
 
     public int getIntOption(String key, int defaultValue) {

@@ -88,7 +88,7 @@ public class OperationScheduler implements Scheduler {
             Operation op = (Operation) task;
             queue.add(op, op.isUrgent());
         } else if (task instanceof Packet) {
-            if(packetDispatcher == null){
+            if (packetDispatcher == null) {
                 packetDispatcher = node.nodeEngine.getPacketDispatcher();
             }
             packetDispatcher.accept((Packet) task);

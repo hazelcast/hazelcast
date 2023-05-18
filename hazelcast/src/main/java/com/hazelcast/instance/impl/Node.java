@@ -46,7 +46,6 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
-import com.hazelcast.internal.tpc.server.ServerTpcRuntime;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
@@ -78,6 +77,7 @@ import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
+import com.hazelcast.internal.tpc.server.ServerTpcRuntime;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.FutureUtil;
@@ -589,7 +589,7 @@ public class Node {
     }
 
     private void callGracefulShutdownAwareServices(final int maxWaitSeconds) {
-        if(true) {
+        if (true) {
             return;
         }
 
@@ -818,8 +818,8 @@ public class Node {
                         && shutdownIntent != ClusterTopologyIntent.NOT_IN_MANAGED_CONTEXT) {
                     final ClusterState clusterState = clusterService.getClusterState();
                     logger.info("Running shutdown hook... Current node state: " + state
-                                + ", detected shutdown intent: " + shutdownIntent
-                                + ", cluster state: " + clusterState);
+                            + ", detected shutdown intent: " + shutdownIntent
+                            + ", cluster state: " + clusterState);
                     clusterTopologyIntentTracker.shutdownWithIntent(shutdownIntent);
                 } else {
                     logger.info("Running shutdown hook... Current node state: " + state);
@@ -857,8 +857,9 @@ public class Node {
      * When running in managed context with automatic cluster state management,
      * return true if the current cluster size (as observed by Hazelcast's cluster service)
      * is same as the cluster specification size (as provided by the runtime environment ie Kubernetes).
-     * @return  {@code true} if running with auto cluster state management and current cluster size is same as
-     *          specified one, otherwise {@code false}.
+     *
+     * @return {@code true} if running with auto cluster state management and current cluster size is same as
+     * specified one, otherwise {@code false}.
      */
     public boolean isClusterComplete() {
         return clusterTopologyIntentTracker.isEnabled()

@@ -34,7 +34,7 @@ import static com.hazelcast.pubsub.impl.PublishCmd.ID;
 
 public class PublisherProxy extends AbstractDistributedObject implements Publisher {
 
-   private final ConcurrentIOBufferAllocator requestAllocator;
+    private final ConcurrentIOBufferAllocator requestAllocator;
     private final byte[] topicNameBytes;
     private final TpcRuntime tpcRuntime;
     private final int requestTimeoutMs;

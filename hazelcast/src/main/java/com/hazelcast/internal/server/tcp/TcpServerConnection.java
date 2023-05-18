@@ -239,8 +239,8 @@ public class TcpServerConnection implements ServerConnection {
         return !connectionType.equals(MEMBER);
     }
 
-    private final static AtomicLong total = new AtomicLong();
-    private final static AtomicLong tpc = new AtomicLong();
+    private static final AtomicLong total = new AtomicLong();
+    private static final AtomicLong tpc = new AtomicLong();
 
     @Override
     public boolean write(OutboundFrame frame) {
