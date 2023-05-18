@@ -18,7 +18,6 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterClockImpl;
@@ -32,6 +31,7 @@ import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -59,6 +59,7 @@ import static org.jgroups.util.Util.assertTrue;
 @Category(QuickTest.class)
 public class JoinShutdownTest extends HazelcastTestSupport {
 
+    private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
     private HazelcastInstance hz;
 
     @Parameter
@@ -71,12 +72,13 @@ public class JoinShutdownTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        hz = Hazelcast.newHazelcastInstance();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        hz = factory.newHazelcastInstance(config);
     }
 
     @After
     public void tearDown() throws Exception {
-        hz.shutdown();
+        factory.terminateAll();
     }
 
     @Test
@@ -114,48 +116,51 @@ public class JoinShutdownTest extends HazelcastTestSupport {
         if (joinedBefore) {
             node.getClusterService().resetJoinState();
         }
-        send(buffer);
+        send(buffer, node.getThisAddress().getInetSocketAddress());
         assertTrue(hz.getLifecycleService().isRunning());
     }
 
     @Test
     public void joinedMemberShouldNotShutdown_whenConfigMismatchOp() throws Exception {
-        assertTrueEventually(() -> getNode(hz).getClusterService().isJoined());
+        Node node = getNode(hz);
+        assertTrueEventually(() -> node.getClusterService().isJoined());
         if (joinedBefore) {
-            getNode(hz).getClusterService().resetJoinState();
+            node.getClusterService().resetJoinState();
         }
-        send(new ConfigMismatchOp("Random reason"));
+        send(new ConfigMismatchOp("Random reason"), node.getThisAddress().getInetSocketAddress());
         assertTrue(hz.getLifecycleService().isRunning());
     }
 
     @Test
     public void joinedMemberShouldNotShutdown_whenBeforeJoinCheckFailureOp() throws Exception {
-        assertTrueEventually(() -> getNode(hz).getClusterService().isJoined());
+        Node node = getNode(hz);
+        assertTrueEventually(() -> node.getClusterService().isJoined());
         if (joinedBefore) {
-            getNode(hz).getClusterService().resetJoinState();
+            node.getClusterService().resetJoinState();
         }
-        send(new BeforeJoinCheckFailureOp("Random reason"));
+        send(new BeforeJoinCheckFailureOp("Random reason"), node.getThisAddress().getInetSocketAddress());
         assertTrue(hz.getLifecycleService().isRunning());
     }
 
     @Test
     public void joinedMemberShouldNotShutdown_whenAuthenticationFailureOp() throws Exception {
-        assertTrueEventually(() -> getNode(hz).getClusterService().isJoined());
+        Node node = getNode(hz);
+        assertTrueEventually(() -> node.getClusterService().isJoined());
         if (joinedBefore) {
-            getNode(hz).getClusterService().resetJoinState();
+            node.getClusterService().resetJoinState();
         }
-        send(new AuthenticationFailureOp());
+        send(new AuthenticationFailureOp(), node.getThisAddress().getInetSocketAddress());
         assertTrue(hz.getLifecycleService().isRunning());
     }
 
-    private static void send(Operation operation) throws Exception {
-        send((ByteBuffer) upcast(toBuffer(operation)).flip());
+    private static void send(Operation operation, InetSocketAddress address) throws Exception {
+        send((ByteBuffer) upcast(toBuffer(operation)).flip(), address);
     }
 
-    private static void send(ByteBuffer buffer) throws Exception {
+    private static void send(ByteBuffer buffer, InetSocketAddress address) throws Exception {
         // send bytebuffer
         try (SocketChannel socketChannel = SocketChannel.open()) {
-            socketChannel.connect(new InetSocketAddress("127.0.0.1", 5701));
+            socketChannel.connect(address);
             while (buffer.hasRemaining()) {
                 socketChannel.write(buffer);
             }
