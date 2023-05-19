@@ -31,7 +31,7 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 // commandid: 20
 // response
 // call id: long 12
-public class FrameCodec {
+public final class FrameCodec {
     // It is a request.
     public static final int FLAG_REQ = 1 << 1;
     // it is a normal response.
@@ -57,6 +57,9 @@ public class FrameCodec {
     public static final int OFFSET_REQ_CALL_ID = OFFSET_PARTITION_ID + SIZEOF_INT;
     public static final int OFFSET_REQ_CMD_ID = OFFSET_REQ_CALL_ID + SIZEOF_LONG;
     public static final int OFFSET_REQ_PAYLOAD = OFFSET_REQ_CMD_ID + SIZEOF_INT;
+
+    private FrameCodec() {
+    }
 
     public static boolean isComplete(IOBuffer frame) {
         if (frame.position() < SIZEOF_INT) {
@@ -95,10 +98,12 @@ public class FrameCodec {
 
     public static void writeRequestHeader(IOBuffer frame, int partitionId, int commandId) {
         frame.ensureRemaining(OFFSET_REQ_PAYLOAD);
-        frame.writeInt(-1); //size
+        //size
+        frame.writeInt(-1);
         frame.writeInt(FrameCodec.FLAG_REQ);
         frame.writeInt(partitionId);
-        frame.writeLong(-1); //callid
+        //callid
+        frame.writeLong(-1);
         frame.writeInt(commandId);
     }
 

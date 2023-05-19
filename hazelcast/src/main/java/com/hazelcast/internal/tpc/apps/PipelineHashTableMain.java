@@ -28,7 +28,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import static com.hazelcast.internal.tpc.apps.MainUtil.findPartition;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 
-@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier"})
+@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier", "checkstyle:HideUtilityClassConstructor"})
 public class PipelineHashTableMain {
 
     public static long rounds = 400 * 1000;
@@ -36,11 +36,13 @@ public class PipelineHashTableMain {
     public static int hashtableSize = 100_000;
     public static byte[][] keys;
     public static int partitionCount = 10;
+    static long keyGenerator;
 
     public static void main(String[] args) throws Exception {
         System.setProperty(ClusterProperty.TPC_ENABLED.getName(), "true");
         System.setProperty(ClusterProperty.TPC_EVENTLOOP_COUNT.getName(), "1");
-        System.setProperty("hazelcast.partition.count", "" + partitionCount);// for maximum pressure on the partition
+        // for maximum pressure on the partition
+        System.setProperty("hazelcast.partition.count", "" + partitionCount);
 
         keys = new byte[hashtableSize][];
 
@@ -100,7 +102,6 @@ public class PipelineHashTableMain {
         System.out.println("Generating data: Done");
     }
 
-    static long keyGenerator = 0;
 
     private static byte[] generateKeyFor(int targetPartitionId) {
         byte[] key = new byte[8];

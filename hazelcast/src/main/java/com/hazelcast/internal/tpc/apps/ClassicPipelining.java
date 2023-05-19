@@ -26,7 +26,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.internal.tpc.apps.MainUtil.findPartition;
 
-@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier"})
+@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier", "checkstyle:HideUtilityClassConstructor"})
 public class ClassicPipelining {
 
     public static long rounds = 10 * 1000;
@@ -34,11 +34,11 @@ public class ClassicPipelining {
     public static int hashtableSize = 100_000;
     public static byte[][] keys;
     public static int partitionCount = 10;
-    private static long keyGenerator = 0;
-
+    private static long keyGenerator;
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("hazelcast.partition.count", "" + partitionCount);// for maximum pressure on the partition
+        // for maximum pressure on the partition
+        System.setProperty("hazelcast.partition.count", "" + partitionCount);
         System.setProperty("hazelcast.operation.thread.count", "1");
 
         HazelcastInstance localNode = Hazelcast.newHazelcastInstance();

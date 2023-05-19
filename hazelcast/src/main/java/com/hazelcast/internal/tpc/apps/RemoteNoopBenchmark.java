@@ -25,7 +25,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
  * There is great variability between the runs. I believe this is related to the amount of batching that happens at the
  * network level when concurrency level is set higher than 1.
  */
-@SuppressWarnings("checkstyle:MagicNumber")
+@SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:HideUtilityClassConstructor", "checkstyle:ConstantName"})
 public class RemoteNoopBenchmark {
     public static final long operations = 1000000;
     public static final int concurrency = 1;

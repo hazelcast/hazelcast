@@ -23,7 +23,7 @@ import com.hazelcast.htable.HTable;
 import com.hazelcast.htable.Pipeline;
 import com.hazelcast.spi.properties.ClusterProperty;
 
-@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier"})
+@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier", "checkstyle:HideUtilityClassConstructor"})
 public class PipelineNoopMain {
 
     public static long rounds = 1000 * 1000;
@@ -33,7 +33,8 @@ public class PipelineNoopMain {
     public static void main(String[] args) throws Exception {
         System.setProperty(ClusterProperty.TPC_ENABLED.getName(), "true");
         System.setProperty(ClusterProperty.TPC_EVENTLOOP_COUNT.getName(), "1");
-        System.setProperty("hazelcast.partition.count", "" + partitionCount);// for maximum pressure on the partition
+        // for maximum pressure on the partition
+        System.setProperty("hazelcast.partition.count", "" + partitionCount);
 
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);

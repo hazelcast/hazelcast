@@ -42,7 +42,8 @@ public final class PipelineImpl implements Pipeline {
         this.tpcRuntime = tpcRuntime;
         this.requestAllocator = requestAllocator;
         this.partitionCount = tpcRuntime.getPartitionCount();
-        this.request = new IOBuffer(64 * 1024);//requestAllocator.allocate();
+        //requestAllocator.allocate();
+        this.request = new IOBuffer(64 * 1024);
     }
 
     public void noop(int partitionId) {

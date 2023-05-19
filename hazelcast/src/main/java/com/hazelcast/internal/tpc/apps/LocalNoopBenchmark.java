@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.noop.Noop;
 import com.hazelcast.spi.properties.ClusterProperty;
 
-@SuppressWarnings("checkstyle:MagicNumber")
+@SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:HideUtilityClassConstructor"})
 public class LocalNoopBenchmark {
 
     public static void main(String[] args) throws Exception {

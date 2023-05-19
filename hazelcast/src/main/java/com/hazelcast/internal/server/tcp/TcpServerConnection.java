@@ -69,6 +69,9 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnection implements ServerConnection {
 
+    private static final AtomicLong total = new AtomicLong();
+    private static final AtomicLong tpc = new AtomicLong();
+
     private volatile AsyncSocket[] tpcSockets;
     private final IOBufferAllocator bufAllocator = new UnpooledIOBufferAllocator();
 
@@ -238,9 +241,6 @@ public class TcpServerConnection implements ServerConnection {
     public boolean isClient() {
         return !connectionType.equals(MEMBER);
     }
-
-    private static final AtomicLong total = new AtomicLong();
-    private static final AtomicLong tpc = new AtomicLong();
 
     @Override
     public boolean write(OutboundFrame frame) {
