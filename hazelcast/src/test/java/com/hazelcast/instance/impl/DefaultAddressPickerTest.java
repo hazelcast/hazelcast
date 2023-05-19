@@ -368,6 +368,7 @@ public class DefaultAddressPickerTest {
         assertNotEquals(addressDefinition.hashCode(), addressDefinitionOtherPort.hashCode());
         assertNotEquals(addressDefinition.hashCode(), addressDefinitionOtherInetAddress.hashCode());
     }
+
     @Test
     public void testNotMatchingInterface_forCustomConfigFile() throws Exception {
         Config config = new Config();
@@ -380,6 +381,7 @@ public class DefaultAddressPickerTest {
         assertTrue(thrown.getMessage().contentEquals("Hazelcast CANNOT start on this node. No matching network interface found.\n"
                 + "Interface matching must be either disabled or updated in the custom_file.xml config file."));
     }
+    
     @Test
     public void testNotMatchingInterface_forNoConfigFile() throws Exception {
         Config config = new Config();
