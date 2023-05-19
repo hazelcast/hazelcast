@@ -24,6 +24,8 @@ import com.hazelcast.nio.ssl.SSLEngineFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -39,8 +41,26 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
 
     static final Executor DEFAULT_TLS_EXECUTOR = Executors.newSingleThreadExecutor();
-
     static final int DEFAULT_WRITE_QUEUE_CAPACITY = 2 << 16;
+
+    private static final Constructor<AsyncSocket> TLS_NIO_ASYNC_SOCKET_CONSTRUCTOR;
+
+    private static final String TLS_NIO_ASYNC_SOCKET_CLASS_NAME = "com.hazelcast.internal.tpcengine.nio.TlsNioAsyncSocket";
+
+    static {
+        Constructor<AsyncSocket> tlsNioAsyncSocketConstructor = null;
+        try {
+            Class<?> clazz = NioAsyncSocketBuilder.class.getClassLoader().loadClass(TLS_NIO_ASYNC_SOCKET_CLASS_NAME);
+            tlsNioAsyncSocketConstructor = (Constructor<AsyncSocket>) clazz.getDeclaredConstructor(NioAsyncSocketBuilder.class);
+            tlsNioAsyncSocketConstructor.setAccessible(true);
+        } catch (ClassNotFoundException e) {
+            tlsNioAsyncSocketConstructor = null;
+        } catch (NoSuchMethodException e) {
+            throw new Error(e);
+        } finally {
+            TLS_NIO_ASYNC_SOCKET_CONSTRUCTOR = tlsNioAsyncSocketConstructor;
+        }
+    }
 
     final NioReactor reactor;
     final SocketChannel socketChannel;
@@ -161,14 +181,14 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         if (Thread.currentThread() == reactor.eventloopThread()) {
             return sslEngineFactory == null
                     ? new NioAsyncSocket(this)
-                    : new TlsNioAsyncSocket(this);
+                    : newTlsNioAsyncSocket(this);
         } else {
             CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
             reactor.execute(() -> {
                 try {
                     AsyncSocket asyncSocket = sslEngineFactory == null
                             ? new NioAsyncSocket(NioAsyncSocketBuilder.this)
-                            : new TlsNioAsyncSocket(NioAsyncSocketBuilder.this);
+                            : newTlsNioAsyncSocket(NioAsyncSocketBuilder.this);
 
                     future.complete(asyncSocket);
                 } catch (Throwable e) {
@@ -178,6 +198,18 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
             });
 
             return future.join();
+        }
+    }
+
+    private AsyncSocket newTlsNioAsyncSocket(NioAsyncSocketBuilder nioAsyncSocketBuilder) {
+        if (TLS_NIO_ASYNC_SOCKET_CONSTRUCTOR == null) {
+            throw new IllegalStateException("class " + TLS_NIO_ASYNC_SOCKET_CLASS_NAME + " is not found");
+        }
+
+        try {
+            return TLS_NIO_ASYNC_SOCKET_CONSTRUCTOR.newInstance(nioAsyncSocketBuilder);
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 
