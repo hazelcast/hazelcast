@@ -19,7 +19,6 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.PortFreeRule;
 import com.hazelcast.internal.tpcengine.TpcTestSupport;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 

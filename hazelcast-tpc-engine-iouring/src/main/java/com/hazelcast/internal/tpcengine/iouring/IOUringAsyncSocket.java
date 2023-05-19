@@ -398,7 +398,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
-                if (res<  0) {
+                if (res < 0) {
                     throw new UncheckedIOException(new IOException("Socket writev failed. " + Linux.strerror(-res)));
                 }
 

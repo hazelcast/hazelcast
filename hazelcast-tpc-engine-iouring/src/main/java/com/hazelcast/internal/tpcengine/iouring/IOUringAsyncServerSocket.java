@@ -20,7 +20,6 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.net.AcceptRequest;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
-import com.hazelcast.internal.tpcengine.util.CloseUtil;
 import com.hazelcast.internal.tpcengine.util.ExceptionUtil;
 
 import java.io.IOException;
