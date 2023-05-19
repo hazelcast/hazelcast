@@ -228,7 +228,7 @@ class DefaultAddressPicker
     private String errorMsgForNoMatchingInterface() {
         File file = config.getConfigurationFile();
         String configSource = file != null && file.exists() && file.isFile()
-                ? "the " + file.getName() + " config file." : "the member configurations.";
+                ? "the " + file.getName() + " config file." : "the member configuration.";
         String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
                 + "Interface matching must be either disabled or updated in " + configSource;
         return msg;
