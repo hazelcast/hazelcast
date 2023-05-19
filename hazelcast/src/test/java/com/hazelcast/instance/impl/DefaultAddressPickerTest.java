@@ -390,7 +390,7 @@ public class DefaultAddressPickerTest {
         RuntimeException thrown =  assertThrows(RuntimeException.class,
                 () -> HazelcastInstanceFactory.newHazelcastInstance(config));
         assertTrue(thrown.getMessage().contentEquals("Hazelcast CANNOT start on this node. No matching network interface found.\n"
-                + "Interface matching must be either disabled or updated in the member configurations."));
+                + "Interface matching must be either disabled or updated in the member configuration."));
     }
     private static InetAddress findAnyNonLoopbackInterface() {
         return findNonLoopbackInterface(false, false);
