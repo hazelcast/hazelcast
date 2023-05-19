@@ -50,6 +50,12 @@ public interface Job {
      */
     boolean isLightJob();
 
+
+    /**
+     * This line is waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaay too long
+     */
+    default void checkstyleWillNotLikeThat() {}
+
     /**
      * Returns the ID of this job.
      */
