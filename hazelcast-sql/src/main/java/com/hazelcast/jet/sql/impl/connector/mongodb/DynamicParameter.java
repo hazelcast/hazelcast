@@ -15,32 +15,19 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import org.bson.Document;
-
-import java.io.Serializable;
-import java.util.List;
+import javax.annotation.Nonnull;
 import java.util.Objects;
-import java.util.Set;
-
-import static java.util.Arrays.asList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Class used to mark a place in Mongo filter/projection, that will be replaced with dynamic parameter.
  *
- * Serialized form looks like:
- * <pre>{@code
- * "someParam": {
- *     "objectType": "DynamicParameter",
- *     "index": 1
- * }
- * }</pre>
+ * Serialized form is a string matching {@linkplain #PATTERN}.
  */
-public class DynamicParameter implements Serializable {
+public class DynamicParameter implements DynamicallyReplacedPlaceholder {
 
-    private static final List<String> NODES = asList("index", "objectType");
-    private static final String DYNAMIC_PARAMETER_DISCRIMINATOR = "DynamicParameter";
-
-    private final String objectType = DYNAMIC_PARAMETER_DISCRIMINATOR;
+    private static final Pattern PATTERN = Pattern.compile("<!DynamicParameter\\((\\d+)\\)!>");
     private final int index;
 
     public DynamicParameter(int index) {
@@ -51,36 +38,20 @@ public class DynamicParameter implements Serializable {
         return index;
     }
 
-    /**
-     * Always {@linkplain #DYNAMIC_PARAMETER_DISCRIMINATOR}.
-     */
-    public String getObjectType() {
-        return objectType;
+    @Nonnull
+    @Override
+    public String asString() {
+        return "<!DynamicParameter(" + index + ")!>";
     }
 
-    /**
-     * Parses given document and check if it follows the structure of this marking object:
-     * <ul>
-     *     <li>Two keys</li>
-     *     <li>Keys have name as in {@linkplain #NODES}</li>
-     *     <li>objectType key has value {@linkplain #DYNAMIC_PARAMETER_DISCRIMINATOR}</li>
-     *     <li>Index key has integer value</li>
-     * </ul>
-     *
-     * If all the critera are met, it will return a new {@linkplain DynamicParameter} object
-     * with {@linkplain #getIndex()} equal to the value of {@code index} key.
-     *
-     *  Returns {@code null} if given document does not follow the required structure.
-     */
-    public static DynamicParameter parse(Document doc) {
-        Set<String> keySet = doc.keySet();
-        if (keySet.size() == 2 && keySet.containsAll(NODES)) {
-            Object objectType = doc.get("objectType");
-            assert objectType instanceof String;
-            if (DYNAMIC_PARAMETER_DISCRIMINATOR.equals(objectType)) {
-                return new DynamicParameter(doc.getInteger("index"));
+    public static DynamicParameter matches(Object o) {
+        if (o instanceof String) {
+            Matcher matcher = PATTERN.matcher((String) o);
+            if (matcher.matches()) {
+                return new DynamicParameter(Integer.parseInt(matcher.group(1)));
             }
         }
+
         return null;
     }
 
@@ -98,11 +69,11 @@ public class DynamicParameter implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(objectType, index);
+        return Objects.hash(index);
     }
 
     @Override
     public String toString() {
-        return "ParameterReplace(" + index + ')';
+        return "DynamicParameter(" + index + ')';
     }
 }

@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>5.3.0-SNAPSHOT</version>
+    <version>5.4.0-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -55,7 +55,7 @@
         <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>3.5.0</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
             *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:
             com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
@@ -78,13 +78,13 @@
         <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>3.0.0</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
-        <maven.enforcer.plugin.version>3.2.1</maven.enforcer.plugin.version>
+        <maven.enforcer.plugin.version>3.3.0</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.3.0</maven.resources.plugin.version>
         <owasp.dependency-check.version>8.1.2</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
-        <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
+        <codehause.license.plugin.version>2.0.1</codehause.license.plugin.version>
 
         <!-- Version of the client used in Hazelcast 3 connector -->
         <hazelcast-3.version>3.12.13</hazelcast-3.version>
@@ -93,8 +93,9 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.454</aws.sdk.version>
-        <classgraph.version>4.8.157</classgraph.version>
+        <aws.sdk.version>1.12.467</aws.sdk.version>
+        <calcite.version>1.32.0</calcite.version>
+        <classgraph.version>4.8.158</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
         <guava.version>31.1-jre</guava.version>
@@ -109,12 +110,12 @@
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
-        <kafka.version>2.8.2</kafka.version>
-        <kotlin.version>1.8.20</kotlin.version>
+        <kafka.version>3.4.0</kafka.version>
+        <kotlin.version>1.8.21</kotlin.version>
         <reload4j.version>1.2.24</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
-        <netty.version>4.1.91.Final</netty.version>
+        <netty.version>4.1.92.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.0</parquet.version>
@@ -127,7 +128,7 @@
         See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
         -->
         <protobuf.version>22.0</protobuf.version>
-        <java.protobuf.version>3.22.1</java.protobuf.version>
+        <java.protobuf.version>3.23.0</java.protobuf.version>
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
         <scala.version>2.13</scala.version>
@@ -156,11 +157,11 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.18.0</testcontainers.version>
+        <testcontainers.version>1.18.1</testcontainers.version>
         <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.0.1</archunit.version>
-        <errorprone.version>2.18.0</errorprone.version>
+        <errorprone.version>2.19.1</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
         <kubernetes-server-mock.version>6.5.0</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
@@ -1868,7 +1869,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.33.0</version>
+                <version>3.34.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>

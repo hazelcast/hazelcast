@@ -20,12 +20,14 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.Aggregates;
@@ -223,6 +225,7 @@ public final class MongoSourceBuilder {
      *
      * @param <T> type of the emitted objects
      */
+    @SuppressWarnings("UnusedReturnValue")
     public static final class Batch<T> extends Base<T> {
 
         @SuppressWarnings("unchecked")
@@ -410,8 +413,9 @@ public final class MongoSourceBuilder {
 
             final ReadMongoParams<T> localParams = params;
 
-            return Sources.batchFromProcessor(name, ProcessorMetaSupplier.of(
-                    () -> new ReadMongoP<>(localParams)));
+            ConnectorPermission permission = params.buildPermissions();
+            return Sources.batchFromProcessor(name, ProcessorMetaSupplier.of(permission,
+                    ProcessorSupplier.of(() -> new ReadMongoP<>(localParams))));
         }
     }
 
@@ -605,9 +609,10 @@ public final class MongoSourceBuilder {
 
             final ReadMongoParams<T> localParams = params;
 
+            ConnectorPermission permission = params.buildPermissions();
             return Sources.streamFromProcessorWithWatermarks(name, true,
-                    eventTimePolicy -> ProcessorMetaSupplier.of(
-                        () -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy))));
+                    eventTimePolicy -> ProcessorMetaSupplier.of(permission,
+                        ProcessorSupplier.of(() -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy)))));
         }
     }
 

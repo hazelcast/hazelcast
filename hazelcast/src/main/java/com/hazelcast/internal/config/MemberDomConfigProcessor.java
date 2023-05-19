@@ -30,6 +30,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -3264,6 +3265,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("statement-timeout-millis", nodeName)) {
                 sqlConfig.setStatementTimeoutMillis(Long.parseLong(getTextContent(child)));
             }
+            if (matches("catalog-persistence-enabled", nodeName)) {
+                sqlConfig.setCatalogPersistenceEnabled(Boolean.parseBoolean(getTextContent(child)));
+            }
         }
     }
 
@@ -3490,6 +3494,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         DataConnectionConfig dataConnectionConfig = ConfigUtils.getByNameOrNew(config.getDataConnectionConfigs(),
                 name, DataConnectionConfig.class);
         handleDataConnection(node, dataConnectionConfig);
+        DataConnectionConfigValidator.validate(dataConnectionConfig);
     }
 
     protected void handleDataConnection(Node node, DataConnectionConfig dataConnectionConfig) {

@@ -55,11 +55,36 @@ public final class KafkaProcessors {
             @Nonnull String... topics
     ) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
+        TopicsConfig topicsConfig = new TopicsConfig().addTopics(Arrays.asList(topics));
         return ProcessorMetaSupplier.of(
                 PREFERRED_LOCAL_PARALLELISM,
                 StreamKafkaP.processorSupplier(
                         (c) -> new KafkaConsumer<>(properties),
-                        Arrays.asList(topics),
+                        topicsConfig,
+                        projectionFn,
+                        eventTimePolicy
+                )
+        );
+    }
+
+    /**
+     * Returns a supplier of processors for {@link
+     * KafkaSources#kafka(Properties, FunctionEx, TopicsConfig)}}.
+     *
+     * @since 5.3
+     */
+    public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+            @Nonnull TopicsConfig topicsConfig
+    ) {
+        Preconditions.checkPositive(topicsConfig.getTopicNames().size(), "At least one topic must be supplied");
+        return ProcessorMetaSupplier.of(
+                PREFERRED_LOCAL_PARALLELISM,
+                StreamKafkaP.processorSupplier(
+                        (c) -> new KafkaConsumer<>(properties),
+                        topicsConfig,
                         projectionFn,
                         eventTimePolicy
                 )
@@ -77,11 +102,12 @@ public final class KafkaProcessors {
             @Nonnull String... topics
     ) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
+        TopicsConfig topicsConfig = new TopicsConfig().addTopics(Arrays.asList(topics));
         return ProcessorMetaSupplier.of(
                 PREFERRED_LOCAL_PARALLELISM,
                 StreamKafkaP.processorSupplier(
                         StreamKafkaP.kafkaConsumerFn(dataConnectionRef),
-                        Arrays.asList(topics),
+                        topicsConfig,
                         projectionFn,
                         eventTimePolicy
                 )
@@ -124,6 +150,25 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for
+     * {@link KafkaSinks#kafka(DataConnectionRef, Properties, String, FunctionEx, FunctionEx)}.
+     */
+    public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull Properties properties,
+            @Nonnull String topic,
+            @Nonnull FunctionEx<? super T, ? extends K> extractKeyFn,
+            @Nonnull FunctionEx<? super T, ? extends V> extractValueFn,
+            boolean exactlyOnce
+    ) {
+        return writeKafkaP(dataConnectionRef,
+                properties,
+                (T t) -> new ProducerRecord<>(topic, extractKeyFn.apply(t), extractValueFn.apply(t)),
+                exactlyOnce
+        );
+    }
+
+    /**
+     * Returns a supplier of processors for
      * {@link KafkaSinks#kafka(Properties, FunctionEx)}.
      */
     public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
@@ -145,4 +190,18 @@ public final class KafkaProcessors {
     ) {
         return ProcessorMetaSupplier.of(1, WriteKafkaP.supplier(dataConnectionRef, toRecordFn, exactlyOnce));
     }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link KafkaSinks#kafka(Properties, FunctionEx)}.
+     */
+    public static <T, K, V> ProcessorMetaSupplier writeKafkaP(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<? super T, ? extends ProducerRecord<K, V>> toRecordFn,
+            boolean exactlyOnce
+    ) {
+        return ProcessorMetaSupplier.of(1, WriteKafkaP.supplier(dataConnectionRef, properties, toRecordFn, exactlyOnce));
+    }
+
 }

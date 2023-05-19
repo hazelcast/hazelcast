@@ -22,7 +22,10 @@ import com.mongodb.client.model.Filters;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.bson.Document;
 import org.bson.conversions.Bson;
+
+import java.util.Arrays;
 
 /**
  * Utility methods for REX to Mongo expression conversion.
@@ -64,27 +67,27 @@ public final class RexToMongo {
 
             case EQUALS:
                 assert operands[0] instanceof String;
-                return Filters.eq((String) operands[0], operands[1]);
+                return Filters.expr(new Document("$eq", Arrays.asList(operands[0], operands[1])));
 
             case NOT_EQUALS:
                 assert operands[0] instanceof String;
-                return Filters.ne((String) operands[0], operands[1]);
+                return Filters.expr(new Document("$ne", Arrays.asList(operands[0], operands[1])));
 
             case GREATER_THAN:
                 assert operands[0] instanceof String;
-                return Filters.gt((String) operands[0], operands[1]);
+                return Filters.expr(new Document("$gt", Arrays.asList(operands[0], operands[1])));
 
             case GREATER_THAN_OR_EQUAL:
                 assert operands[0] instanceof String;
-                return Filters.gte((String) operands[0], operands[1]);
+                return Filters.expr(new Document("$gte", Arrays.asList(operands[0], operands[1])));
 
             case LESS_THAN:
                 assert operands[0] instanceof String;
-                return Filters.lt((String) operands[0], operands[1]);
+                return Filters.expr(new Document("$lt", Arrays.asList(operands[0], operands[1])));
 
             case LESS_THAN_OR_EQUAL:
                 assert operands[0] instanceof String;
-                return Filters.lte((String) operands[0], operands[1]);
+                return Filters.expr(new Document("$lte", Arrays.asList(operands[0], operands[1])));
 
             case IS_TRUE:
                 return Filters.eq((String) operands[0], true);

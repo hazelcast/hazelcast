@@ -140,6 +140,7 @@ public class HazelcastTable extends AbstractTable {
         return projects;
     }
 
+    @Nullable
     public RexNode getFilter() {
         return filter;
     }

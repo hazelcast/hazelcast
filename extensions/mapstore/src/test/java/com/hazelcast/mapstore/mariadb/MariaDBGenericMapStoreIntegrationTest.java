@@ -17,9 +17,12 @@
 package com.hazelcast.mapstore.mariadb;
 
 import com.hazelcast.mapstore.GenericMapStoreIntegrationTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MariaDBDatabaseProvider;
 import org.junit.BeforeClass;
+import org.junit.experimental.categories.Category;
 
+@Category({NightlyTest.class})
 public class MariaDBGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
 
     public MariaDBGenericMapStoreIntegrationTest() {

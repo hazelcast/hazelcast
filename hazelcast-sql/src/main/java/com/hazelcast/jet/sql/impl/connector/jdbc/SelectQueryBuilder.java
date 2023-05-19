@@ -16,54 +16,42 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext;
+import com.google.common.primitives.Ints;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.sql.SqlDialect;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 class SelectQueryBuilder extends AbstractQueryBuilder {
 
-    private final SimpleContext simpleContext;
-    private final ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
+    private final List<Integer> dynamicParams = new ArrayList<>();
 
     @SuppressWarnings("ExecutableStatementCount")
-    SelectQueryBuilder(JdbcTable jdbcTable, RexNode filter, List<RexNode> projects) {
-        super(jdbcTable);
-
-        simpleContext = new SimpleContext(dialect, value -> {
-            JdbcTableField field = jdbcTable.getField(value);
-            return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
-        });
+    SelectQueryBuilder(JdbcTable table, SqlDialect dialect, RexNode predicate, List<RexNode> projection) {
+        super(table, dialect);
 
         StringBuilder sb = new StringBuilder();
         sb.append("SELECT ");
-        if (!projects.isEmpty()) {
-            appendProjection(sb, projects);
+        if (!projection.isEmpty()) {
+            appendProjection(sb, projection);
         } else {
             sb.append("*");
         }
         sb.append(" FROM ");
-        dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
-        if (filter != null) {
-            SqlNode sqlNode = simpleContext.toSql(null, filter);
-            sqlNode.accept(paramCollectingVisitor);
-            String predicateFragment = sqlNode.toSqlString(dialect).toString();
-
-            sb.append(" WHERE ")
-              .append(predicateFragment);
+        dialect.quoteIdentifier(sb, table.getExternalNameList());
+        if (predicate != null) {
+            appendPredicate(sb, predicate, dynamicParams);
         }
         query = sb.toString();
     }
 
-    private void appendProjection(StringBuilder sb, List<RexNode> projects) {
-        Iterator<RexNode> it = projects.iterator();
+    private void appendProjection(StringBuilder sb, List<RexNode> projection) {
+        Iterator<RexNode> it = projection.iterator();
         while (it.hasNext()) {
             RexNode node = it.next();
-            sb.append(simpleContext.toSql(null, node).toSqlString(dialect).toString());
+            sb.append(context.toSql(null, node).toSqlString(dialect).toString());
             if (it.hasNext()) {
                 sb.append(',');
             }
@@ -71,6 +59,6 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
     }
 
     int[] parameterPositions() {
-        return paramCollectingVisitor.parameterPositions();
+        return Ints.toArray(dynamicParams);
     }
 }

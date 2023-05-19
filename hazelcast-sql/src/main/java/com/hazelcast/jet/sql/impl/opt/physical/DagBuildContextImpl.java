@@ -21,6 +21,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.DagBuildContext;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
@@ -32,15 +33,25 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 public class DagBuildContextImpl implements DagBuildContext {
+    private final NodeEngine nodeEngine;
     private final DAG dag;
     private final QueryParameterMetadata parameterMetadata;
     private Table table;
     private PhysicalRel rel;
 
-    public DagBuildContextImpl(DAG dag, QueryParameterMetadata parameterMetadata) {
-        this.dag = dag;
+    public DagBuildContextImpl(NodeEngine nodeEngine, DAG dag, QueryParameterMetadata parameterMetadata) {
+        this.nodeEngine = requireNonNull(nodeEngine);
+        this.dag = requireNonNull(dag);
         this.parameterMetadata = parameterMetadata;
+    }
+
+    @Nonnull
+    @Override
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
     }
 
     @Nonnull

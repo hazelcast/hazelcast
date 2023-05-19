@@ -26,6 +26,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
@@ -159,8 +160,7 @@ public class JobUploadStatus {
     }
 
     void createNewTemporaryFile() throws IOException {
-        // Create a new temporary file
-        Path jarPath = Files.createTempFile(jobMetaDataParameterObject.getFileName(), ".jar"); //NOSONAR
+        Path jarPath = createJarPath();
 
         // Make it accessible only by the owner
         File jarFile = jarPath.toFile();
@@ -179,6 +179,20 @@ public class JobUploadStatus {
 
         // Keep the temporary file's path in the metadata object
         jobMetaDataParameterObject.setJarPath(jarPath);
+    }
+
+    @SuppressWarnings("java:S5443")
+    Path createJarPath() throws IOException {
+        Path jarPath;
+        if (jobMetaDataParameterObject.getUploadDirectoryPath() != null) {
+            Path path = Paths.get(jobMetaDataParameterObject.getUploadDirectoryPath());
+            // Create a new temporary file in the given directory
+            jarPath = Files.createTempFile(path, jobMetaDataParameterObject.getFileName(), ".jar");
+        } else {
+            // Create a new temporary file in the default temporary file directory
+            jarPath = Files.createTempFile(jobMetaDataParameterObject.getFileName(), ".jar");
+        }
+        return jarPath;
     }
 
     private static void validateReceivedParameters(JobMultiPartParameterObject parameterObject) {

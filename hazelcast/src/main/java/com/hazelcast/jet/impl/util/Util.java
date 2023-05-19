@@ -68,6 +68,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -571,6 +572,17 @@ public final class Util {
     }
 
     /**
+     * Merge two {@link Properties} instances into one.
+     * {@code newProperties}'s keys has priority over {@code original} keys.
+     */
+    public static Properties mergeProps(Properties original, Properties newProperties) {
+        Properties props = new Properties();
+        props.putAll(original);
+        props.putAll(newProperties);
+        return props;
+    }
+
+    /**
      * Edits the permissions on the file denoted by {@code path} by calling
      * {@code editFn} with the set of that file's current permissions. {@code
      * editFn} should modify that set to the desired permission set, and this
@@ -657,7 +669,7 @@ public final class Util {
      * output order. The output field named {@code age} is missing in input, so
      * the value for it is {@code null} for any input.
      *
-     * @param inputFields the input headers
+     * @param inputFields  the input headers
      * @param outputFields the output headers
      * @return the indices to map input to output
      */
@@ -697,7 +709,7 @@ public final class Util {
         } else if (instance instanceof HazelcastInstanceProxy) {
             return ((HazelcastInstanceProxy) instance).getSerializationService();
         } else if (instance instanceof HazelcastClientInstanceImpl) {
-            return  ((HazelcastClientInstanceImpl) instance).getSerializationService();
+            return ((HazelcastClientInstanceImpl) instance).getSerializationService();
         } else if (instance instanceof HazelcastClientProxy) {
             return ((HazelcastClientProxy) instance).getSerializationService();
         } else {

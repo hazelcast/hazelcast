@@ -63,7 +63,8 @@ public class CacheContext {
     }
 
     public void decreaseCacheEntryListenerCount() {
-        cacheEntryListenerCount.decrementAndGet();
+        int newCount = cacheEntryListenerCount.decrementAndGet();
+        assert newCount >= 0 : "CacheEntryListenerCount decremented to a value below zero! New value: " + newCount;
     }
 
     public void resetCacheEntryListenerCount() {

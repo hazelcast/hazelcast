@@ -42,8 +42,11 @@ public class HazelcastMySqlDialect extends MysqlSqlDialect {
             case OTHER:
                 if (call.getOperator() instanceof HazelcastConcatOperator) {
                     unparseConcat(writer, call);
+                    break;
+                } else {
+                    super.unparseCall(writer, call, leftPrec, rightPrec);
+                    break;
                 }
-                break;
 
             default:
                 super.unparseCall(writer, call, leftPrec, rightPrec);

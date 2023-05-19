@@ -30,6 +30,7 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -60,16 +61,17 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(NightlyTest.class)
+@Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
-    private static final int EVENTS_PER_SINK = 500;
-    private static final int SINK_COUNT = 400;
-    protected static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_COUNT;
     protected static final int SNAPSHOT_TIMEOUT_SECONDS = 30;
-
     protected static final String JOB_NAME = "s2s_join";
     protected static final String EXACTLY_ONCE = "exactlyOnce";
     protected static final String AT_LEAST_ONCE = "atLeastOnce";
+
+    protected final int eventsPerSink = 500;
+    protected int sinkCount = 400;
+    protected int eventsToProcess = eventsPerSink * sinkCount;
+
     private static KafkaTestSupport kafkaTestSupport;
     private volatile Throwable ex;
 
@@ -80,9 +82,9 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
     protected String sinkTopic;
     private JobRestarter jobRestarter;
 
-    protected int expectedEventsCount = EVENTS_TO_PROCESS;
+    protected int expectedEventsCount = eventsToProcess;
     protected int firstItemId = 1;
-    protected int lastItemId = EVENTS_TO_PROCESS;
+    protected int lastItemId = eventsToProcess;
 
     @Parameter(value = 0)
     public String processingGuarantee;
@@ -168,7 +170,7 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
         }
     }
 
-    @Test
+    @Test(timeout = 1_200_000L)
     public void stressTest() throws Exception {
         sqlService.execute(setupFetchingQuery());
 
@@ -262,15 +264,15 @@ public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport 
     private void createTopicData(SqlService sqlService, String topicName) {
         try {
             int itemsSank = 0;
-            for (int sink = 1; sink <= SINK_COUNT; sink++) {
+            for (int sink = 1; sink <= sinkCount; sink++) {
                 StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
-                for (int i = 0; i < EVENTS_PER_SINK; ++i) {
+                for (int i = 0; i < eventsPerSink; ++i) {
                     ++itemsSank;
                     queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("'),");
                 }
                 queryBuilder.setLength(queryBuilder.length() - 1);
 
-                assertEquals(itemsSank, EVENTS_PER_SINK * sink);
+                assertEquals(itemsSank, eventsPerSink * sink);
                 sqlService.execute(queryBuilder.toString());
                 logger.info("Items sank " + itemsSank);
             }

@@ -20,6 +20,7 @@ import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
+import java.util.Locale;
 
 import static java.util.Objects.requireNonNull;
 
@@ -88,7 +89,7 @@ public class DataConnectionResource {
 
         DataConnectionResource dataConnectionResource = (DataConnectionResource) o;
 
-        if (!type.equals(dataConnectionResource.type)) {
+        if (!type.equalsIgnoreCase(dataConnectionResource.type)) {
             return false;
         }
         return Arrays.equals(name, dataConnectionResource.name);
@@ -96,7 +97,7 @@ public class DataConnectionResource {
 
     @Override
     public int hashCode() {
-        int result = type.hashCode();
+        int result = type.toLowerCase(Locale.ROOT).hashCode();
         result = 31 * result + Arrays.hashCode(name);
         return result;
     }

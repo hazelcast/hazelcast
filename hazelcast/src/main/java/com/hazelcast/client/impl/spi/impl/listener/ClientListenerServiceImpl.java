@@ -357,7 +357,7 @@ public class ClientListenerServiceImpl
                     return false;
                 }
                 listenerRegistration.getConnectionRegistrations().forEach((connection, registration) ->
-                        ((ClientConnection) connection).removeEventHandler(registration.getCallId()));
+                        connection.removeEventHandler(registration.getCallId()));
                 return true;
             }).get();
         } catch (Exception e) {

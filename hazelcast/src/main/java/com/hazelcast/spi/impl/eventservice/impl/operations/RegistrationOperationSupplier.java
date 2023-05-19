@@ -27,15 +27,21 @@ import java.util.function.Supplier;
  */
 public class RegistrationOperationSupplier implements Supplier<Operation> {
     private final Registration reg;
+    private final int orderKey;
     private final ClusterService clusterService;
 
     public RegistrationOperationSupplier(Registration reg, ClusterService clusterService) {
+        this(reg, -1, clusterService);
+    }
+
+    public RegistrationOperationSupplier(Registration reg, int orderKey, ClusterService clusterService) {
         this.reg = reg;
+        this.orderKey = orderKey;
         this.clusterService = clusterService;
     }
 
     @Override
     public Operation get() {
-        return new RegistrationOperation(reg, clusterService.getMemberListVersion());
+        return new RegistrationOperation(reg, orderKey, clusterService.getMemberListVersion());
     }
 }

@@ -185,14 +185,23 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
+    protected static void assertJdbcQueryRowsAnyOrder(String query, Row... rows) {
+        List<Row> actualRows = jdbcRows(query);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
+    }
+
     protected static List<Row> jdbcRowsTable(String tableName) {
         return jdbcRows("SELECT * FROM " + tableName);
     }
 
     @Nonnull
     protected static List<Row> jdbcRows(String query) {
+        return jdbcRows(query, dbConnectionUrl);
+    }
+
+    public static List<Row> jdbcRows(String query, String connectionUrl) {
         List<Row> rows = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
+        try (Connection conn = DriverManager.getConnection(connectionUrl);
              Statement stmt = conn.createStatement()
         ) {
             stmt.execute(query);
@@ -209,5 +218,4 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
             throw new RuntimeException(e);
         }
     }
-
 }
