@@ -20,7 +20,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegati
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
- * This class should get all the JNI methods.
+ * The JNI wrapper around an io_uring instance.
  * <p>
  * Good read:
  * https://github.com/axboe/liburing/issues/536

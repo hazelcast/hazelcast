@@ -43,7 +43,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 @SuppressWarnings({"checkstyle:MethodName", "checkstyle:TypeName", "checkstyle:MemberName"})
 public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
-    private final LinuxSocket nativeSocket;
+    private final LinuxSocket linuxSocket;
 
     private final IOUringReactor reactor;
     private final AcceptMemory acceptMemory = new AcceptMemory();
@@ -61,7 +61,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         this.reactor = builder.reactor;
         this.eventloop = (IOUringEventloop) reactor.eventloop();
         this.options = builder.options;
-        this.nativeSocket = builder.nativeSocket;
+        this.linuxSocket = builder.nativeSocket;
         this.eventloopThread = reactor.eventloopThread();
         this.acceptConsumer = builder.acceptConsumer;
         this.sq = eventloop.sq;
@@ -84,7 +84,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
      * @return the {@link LinuxSocket}.
      */
     public LinuxSocket nativeSocket() {
-        return nativeSocket;
+        return linuxSocket;
     }
 
     @Override
@@ -92,7 +92,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         if (!bind) {
             return -1;
         } else {
-            return nativeSocket.getLocalAddress().getPort();
+            return linuxSocket.getLocalAddress().getPort();
         }
     }
 
@@ -106,14 +106,14 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         if (!bind) {
             return null;
         } else {
-            return nativeSocket.getLocalAddress();
+            return linuxSocket.getLocalAddress();
         }
     }
 
     @Override
     protected void close0() throws IOException {
         reactor.deregisterCloseable(this);
-        nativeSocket.close();
+        linuxSocket.close();
     }
 
     @Override
@@ -122,11 +122,11 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         checkNotNegative(backlog, "backlog");
 
         try {
-            boolean blocking = nativeSocket.isBlocking();
-            nativeSocket.setBlocking(true);
-            nativeSocket.bind(localAddress);
-            nativeSocket.listen(backlog);
-            nativeSocket.setBlocking(blocking);
+            boolean blocking = linuxSocket.isBlocking();
+            linuxSocket.setBlocking(true);
+            linuxSocket.bind(localAddress);
+            linuxSocket.listen(backlog);
+            linuxSocket.setBlocking(blocking);
             bind = true;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -177,7 +177,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
                 IORING_OP_ACCEPT,
                 0,
                 SOCK_NONBLOCK | SOCK_CLOEXEC,
-                nativeSocket.fd(),
+                linuxSocket.fd(),
                 acceptMemory.memoryAddress,
                 0,
                 acceptMemory.lengthMemoryAddress,

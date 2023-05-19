@@ -16,10 +16,9 @@
     </parent>
 
     <properties>
+        <checkstyle.skip>true</checkstyle.skip>
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt
-        </checkstyle.headerLocation>
         <maven.ant-run-plugin>3.1.0</maven.ant-run-plugin>
 
         <jmh.version>1.36</jmh.version>

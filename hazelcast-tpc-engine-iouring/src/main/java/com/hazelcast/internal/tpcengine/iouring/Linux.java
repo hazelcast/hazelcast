@@ -62,6 +62,8 @@ public final class Linux {
     public static final int SO_BSDCOMPAT = 14;
     public static final int SO_REUSEPORT = 15;
 
+    public static final int EAGAIN =11;
+
     static {
         IOUringLibrary.ensureAvailable();
     }
@@ -426,6 +428,8 @@ public final class Linux {
      * @return
      */
     public static native long pwrite(int fd, long buf, long count, long offset);
+
+    public static native long filesize(int fd);
 
     /**
      * https://man7.org/linux/man-pages/man1/sync.1.html

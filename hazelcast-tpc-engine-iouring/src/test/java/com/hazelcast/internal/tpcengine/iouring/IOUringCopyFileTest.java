@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
-open module com.hazelcast.tests {
-    requires com.hazelcast.core;
+package com.hazelcast.internal.tpcengine.iouring;
+
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.file.CopyFileTest;
+
+public class IOUringCopyFileTest extends CopyFileTest {
+    @Override
+    public Reactor newReactor() {
+        return new IOUringReactor();
+    }
 }

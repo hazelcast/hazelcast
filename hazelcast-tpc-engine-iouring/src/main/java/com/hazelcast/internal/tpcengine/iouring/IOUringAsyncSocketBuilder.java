@@ -43,7 +43,7 @@ public class IOUringAsyncSocketBuilder implements AsyncSocketBuilder {
             this.nativeSocket = LinuxSocket.openTcpIpv4Socket();
             this.clientSide = true;
         } else {
-            this.nativeSocket = acceptRequest.nativeSocket;
+            this.nativeSocket = acceptRequest.linuxSocket;
             this.clientSide = false;
         }
         this.options = new IOUringAsyncSocketOptions(nativeSocket);

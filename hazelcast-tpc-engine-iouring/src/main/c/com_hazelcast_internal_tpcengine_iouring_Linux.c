@@ -22,8 +22,10 @@
 #include <fcntl.h>
 #include <sys/eventfd.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <errno.h>
+
 #include "include/utils.h"
 #include "include/com_hazelcast_internal_tpcengine_iouring_Linux.h"
 
@@ -156,3 +158,19 @@ Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1threadCpuTime(JNIEnv*
     }
     return (uint64_t) timespec.tv_sec * 1000000000 + timespec.tv_nsec;
 }
+
+JNIEXPORT jlong JNICALL
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_filesize(JNIEnv* env, jclass this_class, jint fd){
+    struct stat s;
+    int res = fstat(fd, &s);
+    if (res == -1) {
+        return throw_exception(env, "filesize", -res);
+     }
+
+    return (jlong)s.st_size;
+}
+
+
+//int fileSize(int fd) {
+
+//}

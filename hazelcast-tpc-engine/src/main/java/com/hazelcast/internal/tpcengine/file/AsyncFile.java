@@ -163,6 +163,15 @@ public abstract class AsyncFile {
      */
     public abstract Promise<Integer> pwrite(long offset, int length, long srcAddr);
 
+    /**
+     * Returns the size of the file in bytes.
+     * <p/>
+     * The AsyncFile must be opened for this method to be called successfully.
+     *
+     * @return the size of the file in bytes.
+     */
+    public abstract long size();
+
     @Override
     public String toString() {
         return path();

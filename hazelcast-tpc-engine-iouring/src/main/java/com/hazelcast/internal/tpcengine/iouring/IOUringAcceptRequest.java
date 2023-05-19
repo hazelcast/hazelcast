@@ -20,14 +20,14 @@ import com.hazelcast.internal.tpcengine.net.AcceptRequest;
 
 public class IOUringAcceptRequest implements AcceptRequest {
 
-    final LinuxSocket nativeSocket;
+    final LinuxSocket linuxSocket;
 
-    public IOUringAcceptRequest(LinuxSocket nativeSocket) {
-        this.nativeSocket = nativeSocket;
+    public IOUringAcceptRequest(LinuxSocket linuxSocket) {
+        this.linuxSocket = linuxSocket;
     }
 
     @Override
     public void close() throws Exception {
-        nativeSocket.close();
+        linuxSocket.close();
     }
 }

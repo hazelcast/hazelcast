@@ -283,8 +283,6 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     // todo: boolean return
     private void sq_addRead() {
-        System.out.println("addRead");
-
         int pos = rcvBuff.position();
 
         // todo: why is this done every time
@@ -399,7 +397,9 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         public void handle(int res, int flags, long userdata) {
             try {
                 if (res < 0) {
-                    throw new UncheckedIOException(new IOException("Socket writev failed. " + Linux.strerror(-res)));
+                    throw new UncheckedIOException(new IOException("Socket writev failed. "
+                            + "'" + Linux.strerror(-res) + "'"
+                            + " errorcode:" + Linux.errorcode(-res)));
                 }
 
                 //System.out.println(IOUringAsyncSocket.this + " written " + res);
@@ -416,7 +416,9 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         public void handle(int res, int flags, long userdata) {
             try {
                 if (res < 0) {
-                    throw new UncheckedIOException(new IOException("Socket write failed. " + Linux.strerror(-res)));
+                    throw new UncheckedIOException(new IOException("Socket write failed. "
+                            + "'" + Linux.strerror(-res) + "'"
+                            + " errorcode:" + Linux.errorcode(-res)));
                 }
                 //System.out.println(IOUringAsyncSocket.this + " written " + res);
 
@@ -457,7 +459,9 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     // https://man7.org/linux/man-pages/man2/recv.2.html
                     close("Socket closed by peer", null);
                 } else {
-                    throw new UncheckedIOException(new IOException("Socket read failed. " + Linux.strerror(-res)));
+                    throw new UncheckedIOException(new IOException("Socket read failed. "
+                            + "'" + Linux.strerror(-res) + "'"
+                            + " errorcode:" + Linux.errorcode(-res)));
                 }
 
                 //System.out.println("Bytes read:" + res);

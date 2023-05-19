@@ -22,23 +22,19 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
-import java.nio.file.FileSystems;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_CREAT;
+import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_RDONLY;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_WRONLY;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.PERMISSIONS_ALL;
+import static com.hazelcast.internal.tpcengine.file.FileTestSupport.randomTmpFile;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.toPageAlignedAddress;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 public abstract class AsyncFileTest {
@@ -46,8 +42,6 @@ public abstract class AsyncFileTest {
     private Reactor reactor;
 
     public abstract Reactor newReactor();
-
-    private List<String> testFiles = new LinkedList<>();
 
     @Before
     public void before() {
@@ -60,18 +54,115 @@ public abstract class AsyncFileTest {
         if (reactor != null) {
             reactor.shutdown();
         }
-
-        for (String testFile : testFiles) {
-            File file = new File(testFile);
-            file.delete();
-        }
     }
 
     @Test
+    public void test_1B() {
+        run(1);
+    }
+
+    @Test
+    public void test_2B() {
+        run(2);
+    }
+
+    @Test
+    public void test_1KB() {
+        run(1024);
+    }
+
+    @Test
+    public void test_2KB() {
+        run(2048);
+    }
+
+    @Test
+    public void test_4KB() {
+        run(4096);
+    }
+
+    @Test
+    public void test_8KB() {
+        run(8192);
+    }
+
+    @Test
+    public void test_64KB() {
+        run(64 * 1024);
+    }
+
+    @Test
+    public void test_128KB() {
+        run(128 * 1024);
+    }
+
+    @Test
+    public void test_256KB() {
+        run(256 * 1024);
+    }
+
+    @Test
+    public void test_512KB() {
+        run(512 * 1024);
+    }
+
+    @Test
+    public void test_1MB() {
+        run(1024 * 1024);
+    }
+
+    public void run(int size) {
+        CompletableFuture<Long> future = new CompletableFuture<Long>();
+        File tmpFile = randomTmpFile(size);
+
+        Runnable task = () -> {
+            AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
+
+            file.open(O_RDONLY, PERMISSIONS_ALL).then((integer, throwable) -> {
+                if (throwable != null) {
+                    future.completeExceptionally(throwable);
+                }
+
+                future.complete(file.size());
+            });
+
+        };
+        reactor.offer(task);
+
+        assertSuccessEventually(future);
+        assertEquals(new Long(size), future.join());
+    }
+
+//    @Test
+//    public void test_fileSize_whenNotOpened() {
+//        CompletableFuture<UncheckedIOException> future = new CompletableFuture<>();
+//        String path = randomTmpFile();
+//
+//        Runnable task = () -> {
+//            AsyncFile file = reactor.eventloop().newAsyncFile(path);
+//
+//            try{
+//                System.out.println(file.size());
+//                future.completeExceptionally(new Exception("An IOException should have been thrown"));
+//            }catch (UncheckedIOException e){
+//                future.complete(e);
+//            }catch (Throwable e){
+//                future.completeExceptionally(e);
+//            }
+//        };
+//        reactor.offer(task);
+//
+//        assertSuccessEventually(future);
+//        assertNotNull(future.join());
+//    }
+
+    @Test
     public void testOpen() {
+        File tmpFile = randomTmpFile();
+
         CompletableFuture future = new CompletableFuture();
         Runnable task = () -> {
-            AsyncFile file = reactor.eventloop().newAsyncFile(randomTmpFile());
+            AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
 
             assertFalse(new File(file.path()).exists());
 
@@ -129,8 +220,7 @@ public abstract class AsyncFileTest {
 
     @Test
     public void testWrite() {
-        String path = randomTmpFile();
-        System.out.println(path);
+        File tmpFile = randomTmpFile();
 
         ByteBuffer buffer = ByteBuffer.allocateDirect(2 * pageSize());
         long rawAddress = addressOf(buffer);
@@ -143,7 +233,7 @@ public abstract class AsyncFileTest {
         CompletableFuture future = new CompletableFuture();
 
         Runnable task = () -> {
-            AsyncFile file = reactor.eventloop().newAsyncFile(path);
+            AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
 
             file.open(O_WRONLY | O_CREAT, PERMISSIONS_ALL).then((integer, throwable1) -> {
                 if (throwable1 != null) {
@@ -172,9 +262,8 @@ public abstract class AsyncFileTest {
 
     @Test
     public void testRead() {
-        String path = randomTmpFile();
-        write(path, "1234");
-
+        File tmpFile = randomTmpFile();
+        FileTestSupport.write(tmpFile, "1234");
 
         ByteBuffer buffer = ByteBuffer.allocateDirect(2 * pageSize());
         long rawAddress = addressOf(buffer);
@@ -183,9 +272,9 @@ public abstract class AsyncFileTest {
 
         CompletableFuture future = new CompletableFuture();
         Runnable task = () -> {
-            AsyncFile file = reactor.eventloop().newAsyncFile(path);
+            AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
 
-            file.open(AsyncFile.O_RDONLY, PERMISSIONS_ALL).then((result1, throwable1) -> {
+            file.open(O_RDONLY, PERMISSIONS_ALL).then((result1, throwable1) -> {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);
                 } else {
@@ -204,22 +293,5 @@ public abstract class AsyncFileTest {
         assertSuccessEventually(future);
     }
 
-    private String randomTmpFile() {
-        String tmpdir = System.getProperty("java.io.tmpdir");
-        String uuid = UUID.randomUUID().toString().replace("-", "");
-        String separator = FileSystems.getDefault().getSeparator();
-        String path = tmpdir + separator + uuid;
-        testFiles.add(path);
-        return path;
-    }
 
-    private void write(String path, String content) {
-        try {
-            FileWriter myWriter = new FileWriter(path);
-            myWriter.write(content);
-            myWriter.close();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
 }
