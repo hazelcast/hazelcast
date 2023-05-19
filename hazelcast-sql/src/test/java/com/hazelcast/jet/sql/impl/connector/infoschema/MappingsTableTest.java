@@ -30,6 +30,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -48,7 +49,8 @@ public class MappingsTableTest {
                 singletonMap("key", "value")
         );
 
-        MappingsTable mappingTable = new MappingsTable("catalog", null, "table-schema", singletonList(mapping));
+        MappingsTable mappingTable = new MappingsTable("catalog", null, "table-schema", singletonList(mapping),
+                (s) -> fail("Should not be invoked"), false);
 
         // when
         List<Object[]> rows = mappingTable.rows();
@@ -60,6 +62,69 @@ public class MappingsTableTest {
                 , "table-name"
                 , "\"external-schema\".\"table-external-name\""
                 , "table-type"
+                , "{\"key\":\"value\"}"
+        });
+    }
+
+    @Test
+    public void test_rows_security_enabled() {
+        // given
+        Mapping mapping = new Mapping(
+                "table-name",
+                new String[]{"external-schema", "table-external-name"},
+                null,
+                "table-type",
+                null,
+                emptyList(),
+                singletonMap("key", "value")
+        );
+
+        MappingsTable mappingTable = new MappingsTable("catalog", null, "table-schema", singletonList(mapping),
+                (s) -> fail("Should not be invoked"), true);
+
+        // when
+        List<Object[]> rows = mappingTable.rows();
+
+        // then
+        assertThat(rows).containsExactly(new Object[]{
+                "catalog"
+                , "table-schema"
+                , "table-name"
+                , "\"external-schema\".\"table-external-name\""
+                , "table-type"
+                , null
+        });
+    }
+
+    @Test
+    public void test_rows_dataconnection() {
+        // given
+        Mapping mapping = new Mapping(
+                "table-name",
+                new String[]{"external-schema", "table-external-name"},
+                "some-dc",
+                null,
+                null,
+                emptyList(),
+                singletonMap("key", "value")
+        );
+
+        MappingsTable mappingTable = new MappingsTable("catalog", null, "table-schema", singletonList(mapping),
+                (dc) -> {
+                    assertThat(dc).isEqualTo("some-dc");
+                    return "external-dc-type";
+                }, false);
+
+        // when
+        List<Object[]> rows = mappingTable.rows();
+
+        // then
+        assertThat(rows).containsExactly(new Object[]{
+                "catalog"
+                , "table-schema"
+                , "table-name"
+                , "\"external-schema\".\"table-external-name\""
+                , "external-dc-type"
                 , "{\"key\":\"value\"}"
         });
     }

@@ -122,11 +122,20 @@ public class SqlDeleteTest extends SqlTestSupport {
     }
 
     @Test
-    public void doNotDelete_whenKeyFieldOccursMoreThanOneWithConjunctionPredicate() {
+    public void doNotDelete_whenKeyFieldOccursMoreThanOnceWithConjunctionPredicate() {
         createMapping("test_map", int.class, int.class);
         put(1);
 
         checkUpdateCount("delete from test_map where __key = 1 and __key = 2", 0);
+        assertMapContainsKey(1);
+    }
+
+    @Test
+    public void doNotDelete_whenAlwaysFalsePredicate() {
+        createMapping("test_map", int.class, int.class);
+        put(1);
+
+        checkUpdateCount("delete from test_map where 1 = 2", 0);
         assertMapContainsKey(1);
     }
 

@@ -511,6 +511,7 @@
 
     <sql>
         <statement-timeout-millis>0</statement-timeout-millis>
+        <catalog-persistence-enabled>false</catalog-persistence-enabled>
     </sql>
 
     <jet enabled="false" resource-upload-enabled="false">

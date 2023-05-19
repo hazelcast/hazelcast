@@ -120,7 +120,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         this.watermarkKeysAssigner = watermarkKeysAssigner;
         this.objectKeys.addAll(usedViews);
 
-        dagBuildContext = new DagBuildContextImpl(getDag(), parameterMetadata);
+        dagBuildContext = new DagBuildContextImpl(nodeEngine, getDag(), parameterMetadata);
     }
 
     @Override
@@ -176,32 +176,36 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onUpdate(UpdatePhysicalRel rel) {
-        // currently it's not possible to have a unbounded UPDATE, but if we do, we'd need this calculation
-        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rel.getInput(), MOCK_EEC);
+        // currently it's not possible to have an unbounded UPDATE, but if we do, we'd need this calculation
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(rel, MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
         Vertex vertex = getJetSqlConnector(table).updateProcessor(
-                dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()));
-        connectInput(rel.getInput(), vertex, null);
+                dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()),
+                wrap(rel.getPredicate()), rel.getInput() != null);
+        if (rel.getInput() != null) {
+            connectInput(rel.getInput(), vertex, null);
+        }
         return vertex;
     }
 
     @Override
     public Vertex onDelete(DeletePhysicalRel rel) {
         // currently it's not possible to have a unbounded DELETE, but if we do, we'd need this calculation
-        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(
-                (PhysicalRel) rel.getInput(), MOCK_EEC);
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(rel, MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
-        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dagBuildContext);
-        connectInput(rel.getInput(), vertex, null);
+        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dagBuildContext,
+                wrap(rel.getPredicate()), rel.getInput() != null);
+        if (rel.getInput() != null) {
+            connectInput(rel.getInput(), vertex, null);
+        }
         return vertex;
     }
 

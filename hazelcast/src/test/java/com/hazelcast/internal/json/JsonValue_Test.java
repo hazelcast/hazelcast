@@ -33,9 +33,6 @@ import java.io.Writer;
 import static com.hazelcast.internal.json.TestUtil.assertException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 @Category(QuickTest.class)
 public class JsonValue_Test {
@@ -77,7 +74,7 @@ public class JsonValue_Test {
     final JsonValue value = new JsonObject();
 
     assertException(NullPointerException.class, "config is null", new RunnableEx() {
-      public void run() throws IOException {
+      public void run() {
         value.toString(null);
       }
     });
@@ -86,11 +83,11 @@ public class JsonValue_Test {
   @Test
   public void writeTo_doesNotCloseWriter() throws IOException {
     JsonValue value = new JsonObject();
-    Writer writer = mock(StringWriter.class);
+    MockWriter writer = new MockWriter();
 
     value.writeTo(writer);
 
-    verify(writer, never()).close();
+    assertFalse(writer.closeMethodIsCalled);
   }
 
   @Test
@@ -169,7 +166,7 @@ public class JsonValue_Test {
   public void isXxx_returnsFalseForIncompatibleType() {
     JsonValue jsonValue = new JsonValue() {
       @Override
-      void write(JsonWriter writer) throws IOException {
+      void write(JsonWriter writer) {
       }
     };
 
@@ -183,4 +180,13 @@ public class JsonValue_Test {
     assertFalse(jsonValue.isFalse());
   }
 
+  static class MockWriter extends StringWriter {
+    boolean closeMethodIsCalled;
+
+    @Override
+    public void close() throws IOException {
+      super.close();
+      closeMethodIsCalled = true;
+    }
+  }
 }

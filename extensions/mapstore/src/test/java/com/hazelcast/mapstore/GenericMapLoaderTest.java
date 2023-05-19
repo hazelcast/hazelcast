@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -50,6 +51,7 @@ import static com.hazelcast.nio.serialization.FieldKind.NOT_AVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
+import static org.junit.Assume.assumeFalse;
 
 /**
  * This test runs the MapLoader methods directly, but it runs within real Hazelcast instance
@@ -357,6 +359,20 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void givenRowAndIdColumn_whenLoadAllMultipleItems_thenReturnGenericRecords() throws Exception {
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 2);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
+        mapLoader = createMapLoader(properties, hz);
+        Map<Integer, GenericRecord> records = mapLoader.loadAll(newArrayList(0, 1));
+
+        assertThat(records).hasSize(2);
+    }
+
+    @Test
     public void givenRowDoesNotExist_whenLoadAll_thenReturnEmptyMap() throws Exception {
         createTable(mapName);
         mapLoader = createMapLoader();
@@ -503,6 +519,29 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     @Test
     public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchema() throws Exception {
+        String schemaName = "custom_schema";
+        createSchema(schemaName);
+        String tableName = randomTableName() + "-with-hyphen";
+        String fullTableName = schemaName + "." + quote(tableName);
+
+        createTable(fullTableName);
+        insertItems(fullTableName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(EXTERNAL_NAME_PROPERTY, schemaName + ".\"" + tableName + "\"");
+        mapLoader = createMapLoader(properties, hz);
+
+        GenericRecord record = mapLoader.load(0);
+        assertThat(record).isNotNull();
+    }
+
+    @Test
+    public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchemaWithDotInName()
+            throws Exception {
+        // See MySQLSchemaJdbcSqlConnectorTest
+        assumeFalse(MySQLDatabaseProvider.TEST_MYSQL_VERSION.startsWith("5"));
+
         String schemaName = "custom_schema";
         createSchema(schemaName);
         String tableName = randomTableName() + ".with_dot";

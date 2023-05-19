@@ -28,7 +28,7 @@ import java.util.Properties;
 
 class DockerizedKafkaTestSupport extends KafkaTestSupport {
 
-    private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.3.0");
+    private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.4.0");
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerizedKafkaTestSupport.class);
 
     private KafkaContainer kafkaContainer;
@@ -36,7 +36,11 @@ class DockerizedKafkaTestSupport extends KafkaTestSupport {
     public void createKafkaCluster() throws IOException {
         kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + TEST_KAFKA_VERSION))
                 .withEmbeddedZookeeper()
-                .withLogConsumer(new Slf4jLogConsumer(LOGGER));
+                .withLogConsumer(new Slf4jLogConsumer(LOGGER))
+                // Workaround for https://github.com/testcontainers/testcontainers-java/issues/3288
+                // It adds 0.5s sleep before running the script copied from the host to the container.
+                .withCommand("-c",
+                    "while [ ! -f /testcontainers_start.sh ]; do sleep 0.1; done; sleep 0.5; /testcontainers_start.sh");
         kafkaContainer.start();
 
         brokerConnectionString = kafkaContainer.getBootstrapServers();

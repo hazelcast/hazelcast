@@ -249,7 +249,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         // Update by multiple keys
         sql = "EXPLAIN PLAN FOR UPDATE map SET this = 2 WHERE __key = 1 AND __key = 2";
         assertRowsOrdered(sql, asList(
-                new Row("UpdatePhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], operation=[UPDATE], " +
+                new Row("UpdatePhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
                         "updateColumnList=[[this]], sourceExpressionList=[[2]], flattened=[false])"),
                 new Row("  ValuesPhysicalRel(values=[{expressions=[]}])")
         ));
@@ -275,9 +275,17 @@ public class ExplainStatementTest extends SqlTestSupport {
         sql = "EXPLAIN PLAN FOR DELETE FROM map";
         assertRowsOrdered(sql, asList(
                 new Row("DeletePhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
-                        "operation=[DELETE], flattened=[false])"),
+                        "flattened=[false])"),
                 new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0]]]], discriminator=[0])")
+        ));
 
+        // Delete by predicate
+        sql = "EXPLAIN PLAN FOR DELETE FROM map WHERE __key > 1";
+        assertRowsOrdered(sql, asList(
+                new Row("DeletePhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
+                        "flattened=[false])"),
+                new Row("  FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0], " +
+                        "filter=>($0, 1)]]], discriminator=[0])")
         ));
     }
 

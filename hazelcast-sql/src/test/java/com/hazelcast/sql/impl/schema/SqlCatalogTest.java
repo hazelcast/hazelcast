@@ -113,7 +113,7 @@ public class SqlCatalogTest {
 
     private static class MockTable extends Table {
         MockTable(String schema, String tableName) {
-            super(schema, tableName, emptyList(), null);
+            super(schema, tableName, emptyList(), null, "Mock", false);
         }
 
         @Override

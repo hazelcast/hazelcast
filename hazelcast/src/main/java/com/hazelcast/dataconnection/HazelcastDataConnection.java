@@ -30,6 +30,7 @@ import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 /**
@@ -62,6 +63,11 @@ public class HazelcastDataConnection extends DataConnectionBase {
      * The constant to be used as property key for YAML file path for connecting to remote cluster
      */
     public static final String CLIENT_YML_PATH = "client_yml_path";
+
+    /**
+     * IMap Journal resource type name
+     */
+    public static final String OBJECT_TYPE_IMAP_JOURNAL = "IMapJournal";
 
     private final ClientConfig clientConfig;
 
@@ -107,13 +113,19 @@ public class HazelcastDataConnection extends DataConnectionBase {
 
     @Nonnull
     @Override
+    public Collection<String> resourceTypes() {
+        return Collections.singleton(OBJECT_TYPE_IMAP_JOURNAL);
+    }
+
+    @Nonnull
+    @Override
     public Collection<DataConnectionResource> listResources() {
         HazelcastInstance instance = getClient();
         try {
             return instance.getDistributedObjects()
                     .stream()
                     .filter(IMap.class::isInstance)
-                    .map(o -> new DataConnectionResource("IMap", o.getName()))
+                    .map(o -> new DataConnectionResource(OBJECT_TYPE_IMAP_JOURNAL, o.getName()))
                     .collect(Collectors.toList());
         } finally {
             instance.shutdown();

@@ -66,6 +66,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.version.Version;
@@ -113,6 +114,7 @@ import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
@@ -842,6 +844,31 @@ public class JobCoordinationService {
     }
 
     /**
+     * Applies the specified listener registration if the job is not completed/failed.
+     * Otherwise, an {@link IllegalStateException} is thrown by the returned future.
+     */
+    public CompletableFuture<UUID> addJobStatusListener(long jobId, boolean isLightJob, Registration registration) {
+        if (isLightJob) {
+            Object mc = lightMasterContexts.get(jobId);
+            if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
+                throw new JobNotFoundException(jobId);
+            } else {
+                return completedFuture(((LightMasterContext) mc).addStatusListener(registration));
+            }
+        }
+        return callWithJob(jobId,
+                masterContext -> masterContext.addStatusListener(registration),
+                jobResult -> {
+                    throw cannotAddStatusListener(jobResult.getJobStatus());
+                },
+                jobRecord -> {
+                    JobEventService jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
+                    return jobEventService.handleAllRegistrations(jobId, registration).getId();
+                },
+                null);
+    }
+
+    /**
      * Add the given member to shutting down members. This will prevent
      * submission of more executions until the member actually leaves the
      * cluster. The returned future will complete when all executions of which
@@ -1385,6 +1412,11 @@ public class JobCoordinationService {
         jobRepository.cleanup(nodeEngine);
         if (!jobsScanned) {
             synchronized (lock) {
+                // Note that setting jobsScanned is required for Jet to accept submitted jobs.
+                // When a new cluster is started, job records IMap does not exist until first job is submitted.
+                // This causes slight possibility of accepting duplicated job in case of HotRestart,
+                // but that is acceptable risk.
+                // See comment in JobRepository.cleanup().
                 jobsScanned = true;
             }
         }

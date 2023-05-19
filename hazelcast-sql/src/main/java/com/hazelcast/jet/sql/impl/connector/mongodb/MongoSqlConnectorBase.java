@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -23,16 +24,16 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Projections;
 import org.apache.calcite.rex.RexNode;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
@@ -42,15 +43,13 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
-import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
 
 /**
  * Base for MongoDB SQL Connectors.
@@ -67,21 +66,32 @@ import static java.util.stream.Collectors.toList;
  */
 public abstract class MongoSqlConnectorBase implements SqlConnector {
 
+    protected static final Set<String> ALLOWED_OBJECT_TYPES = ImmutableSet.of("Collection", "ChangeStream");
+
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
-        if (externalName.length > 2) {
-            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalName)
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
+        if (externalResource.externalName().length > 2) {
+            throw QueryException.error("Invalid external name " + quoteCompoundIdentifier(externalResource.externalName())
                     + ", external name for Mongo is allowed to have only one component (collection)"
                     + " or two components (database and collection)");
         }
+        if (!ALLOWED_OBJECT_TYPES.contains(externalResource.objectType())) {
+            throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
+        }
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        return fieldResolver.resolveFields(externalName, dataConnectionName, options, userFields, isStream());
+        return fieldResolver.resolveFields(externalResource.externalName(),
+                externalResource.dataConnection(),
+                externalResource.options(),
+                userFields,
+                isStream(externalResource.objectType()));
+    }
+
+    private static boolean isStream(String objectType) {
+        return "ChangeStream".equalsIgnoreCase(objectType);
     }
 
     @Nonnull
@@ -93,17 +103,30 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
 
     @Nonnull
     @Override
-    public Table createTable(@Nonnull NodeEngine nodeEngine, @Nonnull String schemaName, @Nonnull String mappingName,
-                             @Nonnull String[] externalName, @Nullable String dataConnectionName,
-                             @Nonnull Map<String, String> options, @Nonnull List<MappingField> resolvedFields) {
-        String collectionName = externalName.length == 2 ? externalName[1] : externalName[0];
+    public String defaultObjectType() {
+        return "Collection";
+    }
+
+    @Nonnull
+    @Override
+    public Table createTable(@Nonnull NodeEngine nodeEngine,
+                             @Nonnull String schemaName, @Nonnull String mappingName,
+                             @Nonnull SqlExternalResource externalResource,
+                             @Nonnull List<MappingField> resolvedFields) {
+        if (!ALLOWED_OBJECT_TYPES.contains(externalResource.objectType())) {
+            throw QueryException.error("Mongo connector allows only object types: " + ALLOWED_OBJECT_TYPES);
+        }
+        String collectionName = externalResource.externalName().length == 2
+                ? externalResource.externalName()[1]
+                : externalResource.externalName()[0];
         FieldResolver fieldResolver = new FieldResolver(nodeEngine);
-        String databaseName = Options.getDatabaseName(nodeEngine, externalName, dataConnectionName);
+        String databaseName = Options.getDatabaseName(nodeEngine, externalResource.externalName(),
+                externalResource.dataConnection());
         ConstantTableStatistics stats = new ConstantTableStatistics(0);
 
         List<TableField> fields = new ArrayList<>(resolvedFields.size());
         boolean containsId = false;
-        boolean isStreaming = isStream();
+        boolean isStreaming = isStream(externalResource.objectType());
         boolean hasPK = false;
         for (MappingField resolvedField : resolvedFields) {
             String externalNameFromName = (isStreaming ? "fullDocument." : "") + resolvedField.name();
@@ -131,8 +154,9 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                         "DOCUMENT", !hasPK));
             }
         }
-        return new MongoTable(schemaName, mappingName, databaseName, collectionName, dataConnectionName, options, this,
-                fields, stats, isStreaming);
+        return new MongoTable(schemaName, mappingName, databaseName, collectionName,
+                externalResource.dataConnection(), externalResource.options(), this,
+                fields, stats, externalResource.objectType());
     }
 
     @Override
@@ -144,26 +168,17 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         MongoTable table = context.getTable();
 
-        RexToMongoVisitor visitor = new RexToMongoVisitor(table.externalNames());
+        RexToMongoVisitor visitor = new RexToMongoVisitor();
 
-        TranslationResult<Document> filter = translateFilter(predicate, visitor);
-        TranslationResult<List<String>> projections = translateProjections(projection, context, visitor);
-
-        // if not all filters are pushed down, then we cannot push down projection
-        // because later filters may use those fields
-        // We could do it smarter and check field usage in the filters, but it's something TODO
-        List<String> projectionList = filter.allProceeded
-                ? projections.result
-                : allFieldsExternalNames(table);
-        boolean needTwoSteps = !filter.allProceeded || !projections.allProceeded;
+        Document filter = translateFilter(predicate, visitor);
+        List<ProjectionData> projections = translateProjections(projection, context, visitor);
 
         ProcessorMetaSupplier supplier;
-        if (isStream()) {
+        if (table.isStreaming()) {
             BsonTimestamp startAt = Options.startAt(table.getOptions());
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionList, startAt,
-                    eventTimePolicyProvider));
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections, startAt, eventTimePolicyProvider));
         } else {
-            supplier = wrap(context, new SelectProcessorSupplier(table, filter.result, projectionList));
+            supplier = wrap(context, new SelectProcessorSupplier(table, filter, projections));
         }
 
         DAG dag = context.getDag();
@@ -171,22 +186,6 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 "Select (" + table.getSqlName() + ")", supplier
         );
 
-        if (needTwoSteps) {
-            List<Expression<?>> projectionExpr = context.convertProjection(projection);
-            Expression<Boolean> filterExpr = context.convertFilter(predicate);
-            Vertex vEnd = dag.newUniqueVertex(
-                    "ProjectAndFilter(" + table + ")",
-                    SqlProcessors.rowProjector(
-                            table.externalNames(),
-                            table.fieldTypes(),
-                            table.queryTargetSupplier(),
-                            filterExpr,
-                            projectionExpr
-                    )
-            );
-            dag.edge(between(sourceVertex, vEnd).isolated());
-            return vEnd;
-        }
         return sourceVertex;
     }
 
@@ -197,57 +196,65 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 : ProcessorMetaSupplier.of(supplier);
     }
 
-    private static TranslationResult<Document> translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {
+    private static Document translateFilter(HazelcastRexNode filterNode, RexToMongoVisitor visitor) {
+        if (filterNode == null) {
+            return null;
+        }
+        Object result = filterNode.unwrap(RexNode.class).accept(visitor);
+        boolean isBson = result instanceof Bson;
+        assert isBson || result instanceof InputRef;
+
+        if (isBson) {
+            return bsonToDocument((Bson) result);
+        } else {
+            InputRef placeholder = (InputRef) result;
+            return bsonToDocument(Filters.eq(placeholder.asString(), true));
+        }
+    }
+
+    private static List<ProjectionData> translateProjections(
+            List<HazelcastRexNode> projectionNodes,
+            DagBuildContext context,
+            RexToMongoVisitor visitor
+    ) {
+        List<ProjectionData> projection = new ArrayList<>();
+
+        MongoTable table = context.getTable();
+        String[] externalNames = table.externalNames();
+        for (int i = 0; i < projectionNodes.size(); i++) {
+            Object translated = projectionNodes.get(i).unwrap(RexNode.class).accept(visitor);
+            InputRef ref = InputRef.match(translated);
+            if (ref != null) {
+                String externalName = externalNames[ref.getInputIndex()];
+                Document projectionExpr = bsonToDocument(Projections.include(externalNames));
+                projection.add(new ProjectionData(externalName, projectionExpr, i, table.fieldType(externalName)));
+            } else {
+                Document projectionExpr = new Document("projected_value_" + i, new Document("$literal", translated));
+                projection.add(new ProjectionData("projected_value_" + i, projectionExpr, i, null));
+            }
+        }
+
+        if (projection.isEmpty()) {
+            throw new IllegalArgumentException("Projection list cannot be empty");
+        }
+
+        return projection;
+    }
+
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        RexToMongoVisitor visitor = new RexToMongoVisitor();
+        RexNode rexNode = expression.unwrap(RexNode.class);
         try {
-            if (filterNode == null) {
-                return new TranslationResult<>(null, true);
-            }
-            Object result = filterNode.unwrap(RexNode.class).accept(visitor);
-            assert result instanceof Bson;
-
-            Document expression = bsonToDocument((Bson) result);
-            return new TranslationResult<>(expression, true);
-        } catch (Throwable t) {
-            return new TranslationResult<>(null, false);
+            rexNode.accept(visitor);
+            return true;
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 
-    private static TranslationResult<List<String>> translateProjections(List<HazelcastRexNode> projectionNodes,
-                                                                        DagBuildContext context,
-                                                                        RexToMongoVisitor visitor) {
-        try {
-            List<String> fields = projectionNodes.stream()
-                                          .map(e -> e.unwrap(RexNode.class).accept(visitor))
-                                          .filter(proj -> proj instanceof String)
-                                          .map(p -> (String) p)
-                                          .collect(toList());
-
-            if (fields.isEmpty()) {
-                throw new IllegalArgumentException("Projection list cannot be empty");
-            }
-            if (fields.size() != projectionNodes.size()) {
-                return new TranslationResult<>(allFieldsExternalNames(context.getTable()), false);
-            }
-
-            return new TranslationResult<>(fields, true);
-        } catch (Throwable t) {
-            return new TranslationResult<>(allFieldsExternalNames(context.getTable()), false);
-        }
-    }
-
-    private static List<String> allFieldsExternalNames(MongoTable table) {
-        return table.getFields().stream()
-                    .map(f -> ((MongoTableField) f).externalName)
-                    .collect(toList());
-    }
-
-    static final class TranslationResult<T> {
-        final T result;
-        final boolean allProceeded;
-
-        private TranslationResult(T result, boolean allProceeded) {
-            this.result = result;
-            this.allProceeded = allProceeded;
-        }
+    @Override
+    public boolean dmlSupportsPredicates() {
+        return true;
     }
 }

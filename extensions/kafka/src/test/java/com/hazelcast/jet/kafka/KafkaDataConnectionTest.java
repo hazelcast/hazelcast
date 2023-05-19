@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka;
 
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionResource;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 
 import static java.util.stream.Collectors.toList;
@@ -67,12 +69,27 @@ public class KafkaDataConnectionTest {
 
     @Test
     public void should_create_new_consumer_for_each_call() {
-        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+        kafkaDataConnection = createNonSharedKafkaDataConnection();
 
         try (Consumer<Object, Object> c1 = kafkaDataConnection.newConsumer();
              Consumer<Object, Object> c2 = kafkaDataConnection.newConsumer()) {
             assertThat(c1).isNotSameAs(c2);
         }
+    }
+
+    @Test
+    public void newConsumer_should_fail_with_shared_data_connection() {
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+
+        assertThatThrownBy(() -> kafkaDataConnection.newConsumer())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("KafkaConsumer is not thread-safe and can't be used"
+                        + " with shared DataConnection 'kafka-data-connection'");
+
+        assertThatThrownBy(() -> kafkaDataConnection.newConsumer(new Properties()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("KafkaConsumer is not thread-safe and can't be used"
+                        + " with shared DataConnection 'kafka-data-connection'");
     }
 
     @Test
@@ -170,6 +187,44 @@ public class KafkaDataConnectionTest {
         assertThatThrownBy(() -> p1.partitionsFor("my-topic"))
                 .isInstanceOf(KafkaException.class)
                 .hasMessage("Requested metadata update after close");
+    }
+
+    @Test
+    public void should_list_resource_types() {
+        // given
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+
+        // when
+        Collection<String> resourcedTypes = kafkaDataConnection.resourceTypes();
+
+        //then
+        assertThat(resourcedTypes)
+                .map(r -> r.toLowerCase(Locale.ROOT))
+                .containsExactlyInAnyOrder("topic");
+    }
+
+    @Test
+    public void shared_producer_should_not_be_created_with_additional_props() {
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+        Properties properties = new Properties();
+        properties.put("A", "B");
+
+        assertThatThrownBy(() -> kafkaDataConnection.getProducer(null, properties))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("For shared Kafka producer, please provide all serialization options");
+
+        kafkaDataConnection.release();
+    }
+
+    @Test
+    public void shared_producer_is_allowed_to_be_created_with_empty_props() {
+        kafkaDataConnection = createKafkaDataConnection(kafkaTestSupport);
+
+        Producer<Object, Object> kafkaProducer = kafkaDataConnection.getProducer(null, new Properties());
+        assertThat(kafkaProducer).isNotNull();
+
+        kafkaProducer.close();
+        kafkaDataConnection.release();
     }
 
     private KafkaDataConnection createKafkaDataConnection(KafkaTestSupport kafkaTestSupport) {

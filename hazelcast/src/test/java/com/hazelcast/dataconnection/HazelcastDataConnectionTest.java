@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Locale;
 
 import static java.nio.file.Files.readAllBytes;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,7 +80,7 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
         hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig);
         Collection<DataConnectionResource> resources = hazelcastDataConnection.listResources();
 
-        assertThat(resources).contains(new DataConnectionResource("IMap", "my_map"));
+        assertThat(resources).contains(new DataConnectionResource("IMapJournal", "my_map"));
     }
 
     @Test
@@ -189,6 +190,21 @@ public class HazelcastDataConnectionTest extends HazelcastTestSupport {
             c1.shutdown();
             c2.shutdown();
         }
+    }
+
+    @Test
+    public void should_list_resource_types() {
+        // given
+        DataConnectionConfig dataConnectionConfig = nonSharedDataConnectionConfig(clusterName);
+        hazelcastDataConnection = new HazelcastDataConnection(dataConnectionConfig);
+
+        // when
+        Collection<String> resourcedTypes = hazelcastDataConnection.resourceTypes();
+
+        //then
+        assertThat(resourcedTypes)
+                .map(r -> r.toLowerCase(Locale.ROOT))
+                .containsExactlyInAnyOrder("imapjournal");
     }
 
     private static DataConnectionConfig nonSharedDataConnectionConfig(String clusterName) {

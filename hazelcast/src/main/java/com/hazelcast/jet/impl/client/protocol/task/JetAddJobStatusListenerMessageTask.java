@@ -19,48 +19,49 @@ package com.hazelcast.jet.impl.client.protocol.task;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetAddJobStatusListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.JetAddJobStatusListenerCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.JobStatusEvent;
 import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.impl.JobEventService;
+import com.hazelcast.jet.impl.operation.AddJobStatusListenerOperation;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.JobPermission;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.security.Permission;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JobProxy.checkJobStatusListenerSupported;
-import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
-public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessageTask<RequestParameters> {
+public class JetAddJobStatusListenerMessageTask extends AbstractJetMessageTask<RequestParameters, UUID> {
 
     public JetAddJobStatusListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
-        super(clientMessage, node, connection);
+        super(clientMessage, node, connection,
+                JetAddJobStatusListenerCodec::decodeRequest,
+                JetAddJobStatusListenerCodec::encodeResponse);
     }
 
     @Override
-    protected CompletableFuture<UUID> processInternal() {
+    protected UUID getLightJobCoordinator() {
+        return parameters.lightJobCoordinator;
+    }
+
+    @Override
+    protected Operation prepareOperation() {
         checkJobStatusListenerSupported(nodeEngine);
-        JobEventService jobEventService = getService(JobEventService.SERVICE_NAME);
         long jobId = parameters.jobId;
-        JobStatusListener listener = new ClientJobStatusListener();
-        return parameters.localOnly
-                ? newCompletedFuture(jobEventService.addLocalEventListener(jobId, listener))
-                : jobEventService.addEventListenerAsync(jobId, listener);
+        JobEventService jobEventService = nodeEngine.getService(JobEventService.SERVICE_NAME);
+        Registration registration = jobEventService.prepareRegistration(
+                jobId, new ClientJobStatusListener(), parameters.localOnly);
+        return new AddJobStatusListenerOperation(
+                jobId, parameters.lightJobCoordinator != null, registration);
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return JetAddJobStatusListenerCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected ClientMessage encodeResponse(Object response) {
-        return JetAddJobStatusListenerCodec.encodeResponse((UUID) response);
+    protected Object processResponseBeforeSending(Object response) {
+        endpoint.addListenerDestroyAction(getServiceName(), getDistributedObjectName(), (UUID) response);
+        return response;
     }
 
     @Override
@@ -79,8 +80,8 @@ public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessa
     }
 
     @Override
-    public Permission getRequiredPermission() {
-        return new JobPermission(ActionConstants.ACTION_LISTEN);
+    public String[] actions() {
+        return new String[] {ActionConstants.ACTION_LISTEN};
     }
 
     @Override

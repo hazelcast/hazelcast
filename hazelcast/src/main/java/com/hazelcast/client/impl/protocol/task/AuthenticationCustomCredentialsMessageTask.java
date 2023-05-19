@@ -58,7 +58,7 @@ public class AuthenticationCustomCredentialsMessageTask
     @SuppressWarnings("checkstyle:ParameterNumber")
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte serializationVersion,
                                        String serverVersion, int partitionCount, UUID clusterId,
-                                       boolean clientFailoverSupported, List<Integer> tpcPorts) {
+                                       boolean clientFailoverSupported, List<Integer> tpcPorts, byte[] tpcToken) {
         return ClientAuthenticationCustomCodec.encodeResponse(status, thisAddress, uuid, serializationVersion,
                 serverVersion, partitionCount, clusterId, clientFailoverSupported);
     }

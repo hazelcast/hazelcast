@@ -18,12 +18,11 @@ package com.hazelcast.mapstore.postgres;
 
 import com.hazelcast.mapstore.GenericMapStoreTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-@Category({NightlyTest.class, ParallelJVMTest.class})
+@Category(NightlyTest.class)
 public class PostgresGenericMapStoreTest extends GenericMapStoreTest {
 
     @BeforeClass

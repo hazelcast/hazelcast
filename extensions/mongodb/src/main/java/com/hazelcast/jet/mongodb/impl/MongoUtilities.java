@@ -45,6 +45,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public final class MongoUtilities {
 
+    /**
+     * A predicate that matches all rows in update queries.
+     */
+    public static final Document UPDATE_ALL_PREDICATE = Document.parse("{}");
+
     private MongoUtilities() {
     }
 

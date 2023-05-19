@@ -49,7 +49,8 @@ public class StreamTable extends JetTable {
             String name,
             List<Expression<?>> argumentExpressions
     ) {
-        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(Integer.MAX_VALUE));
+        super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(Integer.MAX_VALUE),
+                sqlConnector.defaultObjectType(), true);
 
         this.argumentExpressions = argumentExpressions;
     }

@@ -49,6 +49,10 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
         return new HazelcastJsonValue(value);
     }
 
+    public static HazelcastJsonValue jsonArray(Object... values) {
+        return json(jsonString(values));
+    }
+
     public static Object querySingleValue(final String sql) {
         final List<Map<String, Object>> rows = query(sql);
         assertEquals(1, rows.size());

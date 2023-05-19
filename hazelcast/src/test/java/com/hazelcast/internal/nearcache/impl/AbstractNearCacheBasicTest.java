@@ -1500,6 +1500,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         // the Near Cache is empty, we shouldn't see memory costs anymore
         assertNearCacheSizeEventually(context, 0);
         assertThatMemoryCostsAreZero(context);
+        executorService.shutdownNow();
     }
 
     /**

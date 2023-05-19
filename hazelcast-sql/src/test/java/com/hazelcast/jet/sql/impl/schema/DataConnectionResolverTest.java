@@ -50,7 +50,7 @@ public class DataConnectionResolverTest {
     @Before
     public void before() {
         MockitoAnnotations.openMocks(this);
-        dataConnectionResolver = new DataConnectionResolver(dataConnectionService, relationsStorage);
+        dataConnectionResolver = new DataConnectionResolver(dataConnectionService, relationsStorage, false);
     }
 
     // region dataConnection storage tests

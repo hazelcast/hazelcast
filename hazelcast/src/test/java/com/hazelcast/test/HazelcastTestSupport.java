@@ -18,7 +18,6 @@ package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
@@ -43,6 +42,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
@@ -317,16 +317,6 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    protected void assertNoRunningInstancesEventually(String methodName, TestHazelcastFactory hazelcastFactory) {
-        // check for running Hazelcast instances
-        assertTrueEventually(() -> {
-            Collection<HazelcastInstance> instances = hazelcastFactory.getAllHazelcastInstances();
-            if (!instances.isEmpty()) {
-                fail("After " + methodName + " following instances haven't been shut down: " + instances);
-            }
-        });
-    }
-
     // ###########################################
     // ########## implementation getter ##########
     // ###########################################
@@ -354,10 +344,17 @@ public abstract class HazelcastTestSupport {
     /**
      * Note: the {@code cancel()} method on the returned future has no effect.
      */
-    public static Future spawn(Runnable task) {
+    public static Future spawn(RunnableEx task) {
         FutureTask<Runnable> futureTask = new FutureTask<>(task, null);
         new Thread(futureTask).start();
         return futureTask;
+    }
+
+    /**
+     * Note: the {@code cancel()} method on the returned future has no effect.
+     */
+    public static Future spawn(Runnable task) {
+        return spawn(task::run);
     }
 
     /**
