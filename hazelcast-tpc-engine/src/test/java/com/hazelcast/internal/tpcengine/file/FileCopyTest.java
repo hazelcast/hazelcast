@@ -37,7 +37,7 @@ import static com.hazelcast.internal.tpcengine.file.FileTestSupport.randomTmpFil
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.allocateDirect;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
 
-public abstract class CopyFileTest {
+public abstract class FileCopyTest {
     private Reactor reactor;
 
     public abstract Reactor newReactor();
@@ -56,8 +56,72 @@ public abstract class CopyFileTest {
     }
 
     @Test
-    public void test() {
-        File srcTmpFile = randomTmpFile(1234);
+    public void test_1B() {
+        run(1);
+    }
+
+    @Test
+    public void test_2B() {
+        run(2);
+    }
+
+    @Test
+    public void test_1KB() {
+        run(1024);
+    }
+
+    @Test
+    public void test_2KB() {
+        run(2048);
+    }
+
+    @Test
+    public void test_4KB() {
+        run(4096);
+    }
+
+    @Test
+    public void test_8KB() {
+        run(8192);
+    }
+
+    @Test
+    public void test_64KB() {
+        run(64 * 1024);
+    }
+
+    @Test
+    public void test_128KB() {
+        run(128 * 1024);
+    }
+
+    @Test
+    public void test_256KB() {
+        run(256 * 1024);
+    }
+
+    @Test
+    public void test_512KB() {
+        run(512 * 1024);
+    }
+
+    @Test
+    public void test_1MB() {
+        run(1024 * 1024);
+    }
+
+    @Test
+    public void test_2MB() {
+        run(2*1024 * 1024);
+    }
+
+    @Test
+    public void test_4MB() {
+        run(4*1024 * 1024);
+    }
+
+    public void run(int size) {
+        File srcTmpFile = randomTmpFile(size);
         File dstTmpFile = randomTmpFile();
 
         CompletableFuture future = new CompletableFuture();
@@ -111,12 +175,6 @@ public abstract class CopyFileTest {
 
         @Override
         public void run() {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-
             if (read) {
                 src.pread(block * pageSize(), pageSize(), bufferAddress).then(this);
             } else {
@@ -135,7 +193,6 @@ public abstract class CopyFileTest {
             if (read) {
                 read = false;
                 bytesToWrite = integer;
-                System.out.println("bytesToWrite:" + integer);
                 run();
             } else {
                 read = true;

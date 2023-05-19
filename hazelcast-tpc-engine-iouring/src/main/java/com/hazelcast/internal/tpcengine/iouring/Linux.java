@@ -16,6 +16,10 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
+import java.io.UncheckedIOException;
+
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
+
 @SuppressWarnings({"checkstyle:MagicNumber",
         "checkstyle:ConstantName",
         "checkstyle:MethodName",
@@ -62,13 +66,21 @@ public final class Linux {
     public static final int SO_BSDCOMPAT = 14;
     public static final int SO_REUSEPORT = 15;
 
-    public static final int EAGAIN =11;
+    public static final int EAGAIN = 11;
 
     static {
         IOUringLibrary.ensureAvailable();
     }
 
     private Linux() {
+    }
+
+    public static UncheckedIOException newSysCallFailedException(String msg, String syscall, int errnum) {
+        String s = syscall.replace("(", ".").replace(")", ".");
+
+        return newUncheckedIOException(msg + " "
+                + syscall + " failed with error " + errorcode(errnum) + " '" + strerror(errnum) + "'."
+                + "Go to https://man7.org/linux/man-pages/man2/" + s + "html for more detail.");
     }
 
     /**

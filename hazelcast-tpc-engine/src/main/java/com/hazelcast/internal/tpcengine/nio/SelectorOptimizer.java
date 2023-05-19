@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -28,6 +27,7 @@ import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.lang.Class.forName;
 import static java.lang.System.arraycopy;
@@ -42,7 +42,7 @@ import static java.lang.System.arraycopy;
  */
 public final class SelectorOptimizer {
     static final String SELECTOR_IMPL = "sun.nio.ch.SelectorImpl";
-    private static final  TpcLogger LOGGER = TpcLoggerLocator.getLogger(SelectorOptimizer.class);
+    private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(SelectorOptimizer.class);
 
     private SelectorOptimizer() {
     }
@@ -58,7 +58,7 @@ public final class SelectorOptimizer {
         try {
             selector = Selector.open();
         } catch (IOException e) {
-            throw new UncheckedIOException(new IOException("Failed to open a Selector", e));
+            throw newUncheckedIOException("Failed to open a Selector", e);
         }
 
         boolean optimize = Boolean.parseBoolean(System.getProperty("hazelcast.io.optimizeselector", "true"));

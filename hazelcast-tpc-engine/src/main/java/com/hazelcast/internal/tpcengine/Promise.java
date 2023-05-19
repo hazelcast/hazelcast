@@ -16,11 +16,10 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
@@ -107,7 +106,7 @@ public class Promise<E> {
     }
 
     public void completeWithIOException(String message, Throwable cause) {
-        completeExceptionally(new UncheckedIOException(new IOException(message, cause)));
+        completeExceptionally(newUncheckedIOException(message, cause));
     }
 
     /**

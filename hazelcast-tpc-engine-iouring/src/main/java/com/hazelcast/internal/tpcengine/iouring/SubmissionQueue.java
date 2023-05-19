@@ -19,14 +19,14 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_ENTER_GETEVENTS;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_ENTER_REGISTERED_RING;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_NOP;
-import static com.hazelcast.internal.tpcengine.iouring.Linux.errno;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 
 // https://github.com/axboe/liburing/blob/master/src/include/liburing.h
 @SuppressWarnings({"checkstyle:ConstantName", "checkstyle:ParameterName", "checkstyle:ParameterNumber"})
@@ -210,11 +210,11 @@ public final class SubmissionQueue {
 
         int res = IOUring.enter(enterRingFd, toSubmit, 1, flags);
 
-        if (res >= 0) {
-            return toSubmit;
-        } else {
-            throw new UncheckedIOException(new IOException(strerror(errno())));
+        if (res < 0) {
+            throw newEnterFailedException(-res);
         }
+
+        return toSubmit;
     }
 
     public int submit() {
@@ -225,26 +225,24 @@ public final class SubmissionQueue {
 
         if (toSubmit == 0) {
             return 0;
-        } else {
-            int flags = 0;
-            if (ringBufferRegistered) {
-                flags |= IORING_ENTER_REGISTERED_RING;
-            }
-
-            UNSAFE.putOrderedInt(null, this.tailAddr, localTail);
-
-            int res = IOUring.enter(enterRingFd, toSubmit, 0, flags);
-            if (res >= 0) {
-                // System.out.println("Sq::submit res "+res);
-
-                if (res != toSubmit) {
-                    System.out.println("Not all items got submitted");
-                }
-                return toSubmit;
-            } else {
-                throw new UncheckedIOException(new IOException(strerror(errno())));
-            }
         }
+        int flags = 0;
+        if (ringBufferRegistered) {
+            flags |= IORING_ENTER_REGISTERED_RING;
+        }
+
+        UNSAFE.putOrderedInt(null, this.tailAddr, localTail);
+
+        int res = IOUring.enter(enterRingFd, toSubmit, 0, flags);
+        if (res < 0) {
+            throw newEnterFailedException(-res);
+        }
+        // System.out.println("Sq::submit res "+res);
+
+        if (res != toSubmit) {
+            System.out.println("Not all items got submitted");
+        }
+        return toSubmit;
     }
 
     void onClose() {
@@ -255,5 +253,12 @@ public final class SubmissionQueue {
         arrayAddr = 0;
         ringMask = 0;
         ringEntries = 0;
+    }
+
+    private static UncheckedIOException newEnterFailedException(int errnum) {
+        return newUncheckedIOException("Failed to submit work to io_uring. "
+                + "io_uring_enter failed with error " + errorcode(errnum) + " '" + strerror(errnum) + "'."
+                + "Go to https://man7.org/linux/man-pages/man2/io_uring_enter.2.html section 'ERRORS',"
+                + "for a proper explanation of the errorcode.");
     }
 }

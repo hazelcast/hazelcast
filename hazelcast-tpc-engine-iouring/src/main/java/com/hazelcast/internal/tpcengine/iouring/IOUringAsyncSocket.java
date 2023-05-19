@@ -25,15 +25,16 @@ import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCompletionFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_RECV;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_SEND;
+import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITEV;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
@@ -397,9 +398,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         public void handle(int res, int flags, long userdata) {
             try {
                 if (res < 0) {
-                    throw new UncheckedIOException(new IOException("Socket writev failed. "
-                            + "'" + Linux.strerror(-res) + "'"
-                            + " errorcode:" + Linux.errorcode(-res)));
+                    throw newCompletionFailedException("Failed to write data to the socket.", IORING_OP_WRITEV, -res);
                 }
 
                 //System.out.println(IOUringAsyncSocket.this + " written " + res);
@@ -416,9 +415,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         public void handle(int res, int flags, long userdata) {
             try {
                 if (res < 0) {
-                    throw new UncheckedIOException(new IOException("Socket write failed. "
-                            + "'" + Linux.strerror(-res) + "'"
-                            + " errorcode:" + Linux.errorcode(-res)));
+                    throw newCompletionFailedException("Failed to write data to the socket.", IORING_OP_WRITE, -res);
                 }
                 //System.out.println(IOUringAsyncSocket.this + " written " + res);
 
@@ -459,9 +456,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     // https://man7.org/linux/man-pages/man2/recv.2.html
                     close("Socket closed by peer", null);
                 } else {
-                    throw new UncheckedIOException(new IOException("Socket read failed. "
-                            + "'" + Linux.strerror(-res) + "'"
-                            + " errorcode:" + Linux.errorcode(-res)));
+                    throw newCompletionFailedException("Failed to read data from the socket.", IORING_OP_RECV, -res);
                 }
 
                 //System.out.println("Bytes read:" + res);

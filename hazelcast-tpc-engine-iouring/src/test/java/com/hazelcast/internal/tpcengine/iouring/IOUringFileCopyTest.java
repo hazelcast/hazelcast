@@ -17,9 +17,9 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.file.CopyFileTest;
+import com.hazelcast.internal.tpcengine.file.FileCopyTest;
 
-public class IOUringCopyFileTest extends CopyFileTest {
+public class IOUringFileCopyTest extends FileCopyTest {
     @Override
     public Reactor newReactor() {
         return new IOUringReactor();

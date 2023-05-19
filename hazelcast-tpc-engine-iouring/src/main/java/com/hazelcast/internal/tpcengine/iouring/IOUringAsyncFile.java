@@ -21,6 +21,7 @@ import com.hazelcast.internal.tpcengine.Promise;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.AsyncFileMetrics;
 import com.hazelcast.internal.tpcengine.file.StorageDevice;
+import com.hazelcast.internal.tpcengine.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,6 +38,7 @@ import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_OPENAT;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 
 /**
  * IOUring implementation of the {@link AsyncFile}.
@@ -60,7 +62,7 @@ public final class IOUringAsyncFile extends AsyncFile {
 
         this.dev = reactor.deviceRegistry.findStorageDevice(path);
         if (dev == null) {
-            throw new UncheckedIOException(new IOException("Could not find storage device for [" + path() + "]"));
+            throw newUncheckedIOException("Could not find storage device for [" + path() + "]");
         }
 
         StorageDeviceScheduler scheduler = eventloop.deviceSchedulers.get(dev);

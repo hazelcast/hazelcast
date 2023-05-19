@@ -16,10 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-
-import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.newSysCallFailedException;
 
 /**
  * Represents an event-filedescriptor. One of the applications is the
@@ -33,7 +30,7 @@ public final class EventFd implements AutoCloseable {
     public EventFd() {
         int res = Linux.eventfd(0, 0);
         if (res == -1) {
-            throw new UncheckedIOException(new IOException("Failed to create eventfd " + strerror(Linux.errno())));
+            throw newSysCallFailedException("Failed to create event filedescriptor.", "eventfd(2)", -res);
         }
         this.fd = res;
     }
@@ -41,7 +38,7 @@ public final class EventFd implements AutoCloseable {
     public void write(long value) {
         int res = Linux.eventfd_write(fd, value);
         if (res == -1) {
-            throw new UncheckedIOException(new IOException("Failed to write to eventfd " + strerror(Linux.errno())));
+            throw newSysCallFailedException("Failed to write to event filedescriptor.", "eventfd_write(2)", -res);
         }
     }
 

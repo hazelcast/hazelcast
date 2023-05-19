@@ -17,12 +17,12 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_NONBLOCK;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.newSysCallFailedException;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
@@ -59,7 +59,7 @@ public final class LinuxSocket implements AutoCloseable {
         int family = AF_INET;
         int res = socket(family, SOCK_STREAM | SOCK_NONBLOCK, 0);
         if (res < 0) {
-            throw new UncheckedIOException(new IOException("Failed to open a socket. " + Linux.strerror(-res)));
+            throw newSysCallFailedException("Failed to open a socket.", "open(2)", -res);
         }
         return new LinuxSocket(res, family);
     }
