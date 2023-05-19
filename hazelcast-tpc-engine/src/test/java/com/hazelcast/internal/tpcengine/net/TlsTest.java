@@ -14,16 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.nio;
+package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocket;
-import com.hazelcast.internal.tpcengine.net.DefaultSSLEngineFactory;
-import com.hazelcast.internal.tpcengine.net.DevNullAsyncSocketReader;
-
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import org.junit.After;
 import org.junit.Test;
 
@@ -38,13 +33,11 @@ import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class TLSTest {
+public abstract class TlsTest {
 
     private final List<Reactor> reactors = new ArrayList<>();
 
-    public ReactorBuilder newReactorBuilder() {
-        return new NioReactorBuilder();
-    }
+    public abstract ReactorBuilder newReactorBuilder();
 
     public Reactor newReactor() {
         ReactorBuilder builder = newReactorBuilder();

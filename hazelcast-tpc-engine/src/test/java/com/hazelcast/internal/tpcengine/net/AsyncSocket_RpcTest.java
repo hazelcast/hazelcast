@@ -69,6 +69,9 @@ public abstract class AsyncSocket_RpcTest {
 
     public abstract ReactorBuilder newReactorBuilder();
 
+    protected void customizeSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    }
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         assumeNotIbmJDK8();
@@ -281,13 +284,13 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress) {
-        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
+        AsyncSocketBuilder clientSocketBuilder = clientReactor.newAsyncSocketBuilder()
                 .set(TCP_NODELAY, true)
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setReader(new ClientAsyncSocketReader())
-                .setSSLEngineFactory(new DefaultSSLEngineFactory())
-                .build();
+                .setReader(new ClientAsyncSocketReader());
+        customizeSocketBuilder(clientSocketBuilder);
+        AsyncSocket clientSocket = clientSocketBuilder.build();
 
         clientSocket.start();
         clientSocket.connect(serverAddress).join();
@@ -298,13 +301,13 @@ public abstract class AsyncSocket_RpcTest {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setAcceptConsumer(acceptRequest -> {
-                    serverReactor.newAsyncSocketBuilder(acceptRequest)
+                    AsyncSocketBuilder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest)
                             .set(TCP_NODELAY, true)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                            .setReader(new ServerAsyncSocketReader())
-                            .setSSLEngineFactory(new DefaultSSLEngineFactory())
-                            .build()
+                            .setReader(new ServerAsyncSocketReader());
+                    customizeSocketBuilder(socketBuilder);
+                    socketBuilder.build()
                             .start();
                 })
                 .build();
