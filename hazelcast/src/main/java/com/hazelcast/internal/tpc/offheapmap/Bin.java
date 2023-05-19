@@ -26,6 +26,7 @@ import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static sun.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public final class Bin {
 
     private IOBuffer buf;

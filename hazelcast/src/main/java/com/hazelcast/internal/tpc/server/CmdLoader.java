@@ -30,7 +30,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  */
 public final class CmdLoader {
 
-    private static final String resourceName = "META-INF/services/com.hazelcast.Commands";
+    private static final String RESOURCE_NAME = "META-INF/services/com.hazelcast.Commands";
 
     private final ClassLoader classLoader;
     private final CmdRegistry commandRegistry;
@@ -42,7 +42,7 @@ public final class CmdLoader {
 
     public void load() {
         try {
-            Enumeration<URL> resources = classLoader.getResources(resourceName);
+            Enumeration<URL> resources = classLoader.getResources(RESOURCE_NAME);
             while (resources.hasMoreElements()) {
                 load(resources.nextElement());
             }

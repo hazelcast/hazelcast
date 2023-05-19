@@ -55,6 +55,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * requests, but we don't want to slow down the rate of responses or
  * other data.
  */
+@SuppressWarnings("checkstyle:MagicNumber")
 public final class RequestScheduler implements Scheduler {
 
     private final SwCounter scheduled = newSwCounter();

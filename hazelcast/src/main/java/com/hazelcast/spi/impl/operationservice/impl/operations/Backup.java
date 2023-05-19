@@ -199,7 +199,7 @@ public final class Backup extends Operation implements BackupOperation, AllowedD
             operationService.getBackupHandler().notifyBackupComplete(callId);
         } else {
             operationService.getOutboundResponseHandler()
-                    .sendBackupAck(getConnection().getConnectionManager(),getPartitionId(),
+                    .sendBackupAck(getConnection().getConnectionManager(), getPartitionId(),
                             originalCaller, callId, backupOp.isUrgent());
         }
     }

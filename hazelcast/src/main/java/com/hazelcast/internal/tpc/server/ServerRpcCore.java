@@ -401,13 +401,13 @@ public final class ServerRpcCore implements RpcCore {
         }
     }
 
-    private class ResponseThread extends Thread {
+    private final class ResponseThread extends Thread {
 
         // todo: create litter
         // todo: unbounded
         private final MPSCQueue<IOBuffer> queue;
         private final boolean spin;
-        private volatile boolean shuttingdown = false;
+        private volatile boolean shuttingdown;
 
         private ResponseThread(int index, boolean spin) {
             super("ResponseThread-" + index);

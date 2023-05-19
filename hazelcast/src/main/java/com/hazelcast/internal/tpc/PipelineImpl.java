@@ -28,15 +28,16 @@ import java.util.Arrays;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 
+@SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MagicNumber"})
 public final class PipelineImpl implements Pipeline {
 
+    public IOBuffer request;
+    public int count;
     private final TpcRuntime tpcRuntime;
     private final IOBufferAllocator requestAllocator;
     private final int partitionCount;
     private int partitionId = -1;
-    public IOBuffer request;
     private int countPos;
-    public int count;
 
     public PipelineImpl(TpcRuntime tpcRuntime, IOBufferAllocator requestAllocator) {
         this.tpcRuntime = tpcRuntime;
@@ -102,7 +103,8 @@ public final class PipelineImpl implements Pipeline {
         }
 
         if (partitionId > partitionCount - 1) {
-            throw new IllegalArgumentException("PartitionId can't be larger than " + (partitionCount - 1) + " but was:" + partitionId);
+            throw new IllegalArgumentException("PartitionId can't be larger than "
+                    + (partitionCount - 1) + " but was:" + partitionId);
         }
 
         if (this.partitionId == -1) {

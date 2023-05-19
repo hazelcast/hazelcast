@@ -31,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.hazelcast.noop.impl.NopCmd.ID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public class Nop implements Command {
 
     private final TpcRuntime tpcRuntime;

@@ -31,6 +31,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public class NoopProxy extends AbstractDistributedObject implements Noop {
 
     private final ConcurrentIOBufferAllocator requestAllocator;

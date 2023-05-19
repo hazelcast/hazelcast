@@ -23,7 +23,7 @@ import com.hazelcast.htable.HSet;
 import com.hazelcast.htable.HTable;
 import com.hazelcast.spi.properties.ClusterProperty;
 
-@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier"})
+@SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:HideUtilityClassConstructor"})
 public class HTableGetBenchmark {
 
     public static void main(String[] args) throws Exception {

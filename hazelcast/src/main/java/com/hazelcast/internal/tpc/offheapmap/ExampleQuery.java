@@ -21,10 +21,11 @@ import sun.misc.Unsafe;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_INT;
 
+@SuppressWarnings("checkstyle:VisibilityModifier")
 public class ExampleQuery implements Query {
-    private final Unsafe unsafe = UnsafeUtil.UNSAFE;
-
     public long result;
+
+    private final Unsafe unsafe = UnsafeUtil.UNSAFE;
 
     @Override
     public void clear() {

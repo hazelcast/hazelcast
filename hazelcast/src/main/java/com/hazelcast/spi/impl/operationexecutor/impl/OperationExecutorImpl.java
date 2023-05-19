@@ -91,7 +91,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </li>
  * </ol>
  */
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:ClassFanOutComplexity"})
 public final class OperationExecutorImpl implements OperationExecutor, StaticMetricsProvider {
     private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");

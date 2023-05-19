@@ -30,6 +30,7 @@ import static com.hazelcast.htable.impl.HSetCmd.ID;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public class HSet implements Command {
 
     private final TpcRuntime tpcRuntime;

@@ -21,7 +21,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.htable.HTable;
 import com.hazelcast.spi.properties.ClusterProperty;
 
-@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier"})
+@SuppressWarnings({"checkstyle:MagicNumber",
+        "VisibilityModifier",
+        "checkstyle:HideUtilityClassConstructor",
+        "checkstyle:ConstantName"})
 public class MapBogusQueryBenchmark {
     public static final int items = 1_000_000;
     public static final int queryCount = 2000;

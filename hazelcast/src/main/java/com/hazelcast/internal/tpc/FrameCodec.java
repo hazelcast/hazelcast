@@ -89,7 +89,8 @@ public final class FrameCodec {
 
     public static void writeResponseHeader(IOBuffer frame, int partitionId, long callId, int flags) {
         frame.ensureRemaining(OFFSET_RES_PAYLOAD);
-        frame.writeInt(-1);  //size
+        //size
+        frame.writeInt(-1);
         frame.writeInt(FLAG_RES | flags);
 
         frame.writeInt(partitionId);

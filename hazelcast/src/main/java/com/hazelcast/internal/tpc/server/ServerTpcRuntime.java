@@ -77,18 +77,18 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * So how do we go from partition to a channel?
  */
-@SuppressWarnings("checkstyle:MagicNumber")
+@SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:VisibilityModifier"})
 public class ServerTpcRuntime implements TpcRuntime {
 
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;
 
+    public volatile boolean shuttingdown;
+    public final Node node;
+    public final ILogger logger;
     private final boolean poolRequests = parseBoolean(getProperty("hazelcast.alto.pool-requests", "true"));
     private final boolean poolRemoteResponses = parseBoolean(getProperty("hazelcast.alto.pool-remote-responses", "true"));
     private final int requestTimeoutMs = parseInt(getProperty("hazelcast.alto.request.timeoutMs", "23000"));
-    public final Node node;
-    public final ILogger logger;
     private final int eventloopCount;
-    public volatile boolean shuttingdown = false;
     private TpcEngine tpcEngine;
     private ServerRpcCore rpcCore;
     private ArrayList<RequestScheduler> schedulers = new ArrayList<>();

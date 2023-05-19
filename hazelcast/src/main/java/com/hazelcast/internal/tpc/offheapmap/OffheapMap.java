@@ -35,6 +35,7 @@ import static java.lang.System.currentTimeMillis;
  * <p>
  * export LD_PRELOAD=/lib64/libjemalloc.so
  */
+@SuppressWarnings("checkstyle:MagicNumber")
 public class OffheapMap {
 
     private final Unsafe unsafe = UnsafeUtil.UNSAFE;

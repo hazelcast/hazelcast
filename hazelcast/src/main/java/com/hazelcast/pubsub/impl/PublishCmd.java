@@ -33,6 +33,7 @@ import static com.hazelcast.pubsub.impl.TopicSegment.SIZEOF_SEGMENT_HEADER;
 
 
 // todo: what happens when an active segment is being made and a concurrent write is performed.
+@SuppressWarnings("checkstyle:AvoidNestedBlocks")
 public class PublishCmd extends Cmd {
 
     public static final byte ID = 7;
@@ -184,7 +185,8 @@ public class PublishCmd extends Cmd {
             File heaFile = new File(topicPartition.dir, String.format("%019d", nr) + ".log");
             heaFile.delete();
 
-            TopicSegment segment = new TopicSegment();//litter
+            //litter
+            TopicSegment segment = new TopicSegment();
             segment.file = segmentFile;
             topicPartition.activeSegment = segment;
             topicPartition.activeSegment.offset = SIZEOF_SEGMENT_HEADER;

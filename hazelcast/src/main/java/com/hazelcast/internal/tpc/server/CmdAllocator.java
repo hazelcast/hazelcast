@@ -25,6 +25,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * An Allocator for {@link Cmd} instances. Should be confined within a single
  * {@link RequestScheduler}.
  */
+@SuppressWarnings("checkstyle:VisibilityModifier")
 public class CmdAllocator {
 
     private final Pool[] pools;

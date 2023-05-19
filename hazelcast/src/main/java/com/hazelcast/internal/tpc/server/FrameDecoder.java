@@ -38,6 +38,9 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_UUID;
 /**
  * The FrameDecoder decodes frames (which can contain a nested packet).
  */
+@SuppressWarnings({"checkstyle:VisibilityModifier",
+        "checkstyle:CyclomaticComplexity",
+        "checkstyle:NPathComplexity"})
 public class FrameDecoder extends AsyncSocketReader {
     private static final int STATE_INITIAL = 0;
     private static final int STATE_READING_NOTHING = 1;

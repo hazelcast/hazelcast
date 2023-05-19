@@ -26,7 +26,9 @@ import static com.hazelcast.spi.properties.ClusterProperty.TPC_EVENTLOOP_COUNT;
 /**
  * A benchmark that measures performance of a remote empty get.
  */
-@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier"})
+@SuppressWarnings({"checkstyle:MagicNumber",
+        "checkstyle:VisibilityModifier",
+        "checkstyle:HideUtilityClassConstructor"})
 public class IMapRemoteGetMain {
 
     public static void main(String[] args) throws Exception {

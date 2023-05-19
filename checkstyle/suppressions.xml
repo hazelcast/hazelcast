@@ -26,6 +26,7 @@
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
     <suppress checks="IllegalImport" files="com[\\/]hazelcast[\\/]internal[\\/]tpcengine[\\/]"/>
+    <suppress checks="IllegalImport" files="com[\\/]hazelcast[\\/]internal[\\/]tpc[\\/]"/>
 
     <!-- Suppress checking of copyright notice -->
     <suppress checks="Header" files="classloading[\\/]ThreadLocalLeakTestUtils"/>

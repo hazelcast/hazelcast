@@ -43,6 +43,7 @@ import static java.lang.System.currentTimeMillis;
  * <p>
  * The problem is when requests are lost. Then the slots won't be reclaimed.
  */
+@SuppressWarnings("checkstyle:MagicNumber")
 public class Requests {
 
     final PaddedAtomicLong started = new PaddedAtomicLong();

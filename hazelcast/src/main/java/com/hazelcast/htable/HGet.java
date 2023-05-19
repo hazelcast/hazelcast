@@ -32,6 +32,7 @@ import static com.hazelcast.htable.impl.HGetCmd.ID;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public class HGet implements Command {
     private final TpcRuntime tpcRuntime;
     private final String name;

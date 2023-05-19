@@ -20,6 +20,7 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 
 import java.util.concurrent.CompletableFuture;
 
+@SuppressWarnings({"checkstyle:VisibilityModifier"})
 public class RequestFuture<T> extends CompletableFuture<T> {
 
     public IOBuffer request;

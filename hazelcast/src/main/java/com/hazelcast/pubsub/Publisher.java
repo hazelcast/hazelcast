@@ -29,7 +29,15 @@ public interface Publisher extends TpcProxy {
      *
      */
     byte SYNC_NONE = 0;
+
+    /**
+     *
+     */
     byte SYNC_FSYNC = 1;
+
+    /**
+     *
+     */
     byte SYNC_FDATASYNC = 2;
 
     /**

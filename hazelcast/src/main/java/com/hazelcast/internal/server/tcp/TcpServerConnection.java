@@ -69,8 +69,8 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 @SuppressWarnings("checkstyle:methodcount")
 public class TcpServerConnection implements ServerConnection {
 
-    private static final AtomicLong total = new AtomicLong();
-    private static final AtomicLong tpc = new AtomicLong();
+    private static final AtomicLong TOTAL = new AtomicLong();
+    private static final AtomicLong TPC = new AtomicLong();
 
     private volatile AsyncSocket[] tpcSockets;
     private final IOBufferAllocator bufAllocator = new UnpooledIOBufferAllocator();
@@ -244,9 +244,9 @@ public class TcpServerConnection implements ServerConnection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (total.incrementAndGet() % 10000 == 0) {
-            System.out.println("Ratio " + ((1.0d + tpc.get()) / total.get()) + "");
-        }
+//        if (TOTAL.incrementAndGet() % 10000 == 0) {
+//            System.out.println("Ratio " + ((1.0d + TPC.get()) / TOTAL.get()) + "");
+//        }
 
         AsyncSocket[] tpcSockets0 = tpcSockets;
         if (tpcSockets0 == null) {
@@ -267,8 +267,6 @@ public class TcpServerConnection implements ServerConnection {
 
                 if (partitionId > -1) {
                     buffer = frame(packet);
-                } else {
-                 //   new Exception().printStackTrace();
                 }
             } else if (frame instanceof ClientMessage) {
                 ClientMessage message = (ClientMessage) frame;
@@ -290,7 +288,7 @@ public class TcpServerConnection implements ServerConnection {
 
                 AsyncSocket socket = tpcSockets0[partitionId % tpcSockets0.length];
                // System.out.println("found");
-                tpc.incrementAndGet();
+                //TPC.incrementAndGet();
                 if (socket.writeAndFlush(buffer)) {
                     return true;
                 } else {

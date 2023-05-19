@@ -38,7 +38,7 @@ public class TopicPublishMain {
         HTable table = node1.getProxy(HTable.class, "sometable");
 
         long start = System.currentTimeMillis();
-        int iterations = 200 * 1000 * 1000;// * 1000 * 1000;
+        int iterations = 200 * 1000 * 1000;
 
         Random random = new Random();
         Publisher publisher = node1.getProxy(Publisher.class, "sometopic");

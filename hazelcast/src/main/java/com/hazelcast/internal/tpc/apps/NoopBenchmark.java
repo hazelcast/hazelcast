@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.noop.Noop;
 import com.hazelcast.spi.properties.ClusterProperty;
 
-@SuppressWarnings({"checkstyle:MagicNumber", "VisibilityModifier"})
+@SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:VisibilityModifier", "checkstyle:HideUtilityClassConstructor"})
 public class NoopBenchmark {
     public static long operations = 5_000_000;
     public static int concurrency = 2;

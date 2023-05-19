@@ -23,6 +23,7 @@ import com.hazelcast.internal.tpc.offheapmap.OffheapMap;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public class HTableDataManager {
 
     private final HashMap[] partitionMaps;

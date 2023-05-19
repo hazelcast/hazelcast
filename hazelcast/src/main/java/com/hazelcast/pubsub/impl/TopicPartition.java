@@ -27,11 +27,11 @@ public class TopicPartition {
 
     public int activeBufferLength;
     public int partitionId;
-    public long offset = 0;
+    public long offset;
     public TopicSegment activeSegment;
     public long activeSegmentId = -1;
     public int maxRetainedSegments;
-    public int syncInterval = 1000;
+    public int syncInterval;
     public File dir;
     public int segmentSize;
 }

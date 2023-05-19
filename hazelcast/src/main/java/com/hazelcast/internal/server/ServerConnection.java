@@ -18,15 +18,13 @@ package com.hazelcast.internal.server;
 
 import com.hazelcast.internal.nio.Connection;
 
-import java.util.function.Consumer;
-
 /**
  * A ServerConnection is the serverside part of any form of connection on a member. So it could be member to member
  * connection, but it could also be the server side companion of a client to member connection.
  */
 public interface ServerConnection extends Connection {
 
-     /**
+    /**
      * Gets the ServerConnectionManager this ServerConnection belongs to.
      *
      * @return the ServerConnectionManager.
@@ -35,7 +33,7 @@ public interface ServerConnection extends Connection {
 
     /**
      * Returns the connection type.
-     *
+     * <p>
      * See  {@link com.hazelcast.internal.nio.ConnectionType} for in-house candidates. Note that a type could be
      * provided by a custom client, and it can be a string outside of {@link com.hazelcast.internal.nio.ConnectionType}
      *
@@ -57,6 +55,6 @@ public interface ServerConnection extends Connection {
      */
     boolean isClient();
 
-   // void onSetRemoteUuid(Consumer<ServerConnection> consumer);
+    // void onSetRemoteUuid(Consumer<ServerConnection> consumer);
 
 }

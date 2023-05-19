@@ -37,6 +37,7 @@ import static com.hazelcast.pubsub.impl.TopicSegment.SIZEOF_SEGMENT_HEADER;
 /**
  * https://www.sqlite.org/fileformat2.html#walformat
  */
+@SuppressWarnings("checkstyle:MethodLength")
 public class TopicDataManager {
 
     private static final FileFilter LOG_FILTER = pathname -> pathname.getName().endsWith(".log");

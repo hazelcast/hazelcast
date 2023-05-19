@@ -85,7 +85,8 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         ServerConnectionManager connectionManager = operation.getConnection().getConnectionManager();
         boolean send;
         if (obj == null) {
-            send = sendNormalResponse(connectionManager, target, operation.getPartitionId(), operation.getCallId(), 0, operation.isUrgent(), null);
+            send = sendNormalResponse(
+                    connectionManager, target, operation.getPartitionId(), operation.getCallId(), 0, operation.isUrgent(), null);
         } else if (obj.getClass() == NormalResponse.class) {
             NormalResponse response = (NormalResponse) obj;
             send = sendNormalResponse(connectionManager, target, operation.getPartitionId(),
@@ -168,7 +169,8 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         return newResponsePacket(bytes, partitionId, urgent);
     }
 
-    public void sendBackupAck(ServerConnectionManager connectionManager, int partitionId, Address target, long callId, boolean urgent) {
+    public void sendBackupAck(ServerConnectionManager connectionManager,
+                              int partitionId, Address target, long callId, boolean urgent) {
         checkTarget(target);
 
         Packet packet = toBackupAckPacket(partitionId, callId, urgent);

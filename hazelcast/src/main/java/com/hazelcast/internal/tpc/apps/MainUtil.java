@@ -22,6 +22,7 @@ import com.hazelcast.partition.PartitionService;
 
 import java.net.SocketAddress;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public final class MainUtil {
 
     private MainUtil() {
@@ -47,5 +48,4 @@ public final class MainUtil {
             x++;
         }
     }
-
 }

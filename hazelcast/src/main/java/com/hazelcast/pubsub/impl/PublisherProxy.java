@@ -32,6 +32,7 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.pubsub.impl.CRC.crc32;
 import static com.hazelcast.pubsub.impl.PublishCmd.ID;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public class PublisherProxy extends AbstractDistributedObject implements Publisher {
 
     private final ConcurrentIOBufferAllocator requestAllocator;

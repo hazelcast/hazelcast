@@ -40,6 +40,7 @@ import static java.lang.Character.toLowerCase;
 /**
  * Utility class for Strings.
  */
+@SuppressWarnings("checkstyle:MethodCount")
 public final class StringUtil {
 
     /**
