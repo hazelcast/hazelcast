@@ -29,7 +29,7 @@ public class StorageDeviceScheduler {
     final String path;
     IOUringEventloop eventloop;
     private final int maxConcurrent;
-    private final LongObjectHashMap<IOCompletionHandler> handlers;
+    private final LongObjectHashMap<CompletionHandler> handlers;
     private final SubmissionQueue sq;
     private final StorageDevice dev;
     private int concurrent;
@@ -131,7 +131,7 @@ public class StorageDeviceScheduler {
         }
     }
 
-    private class IoOp implements IOCompletionHandler {
+    private class IoOp implements CompletionHandler {
         private long writeId;
         private IOUringAsyncFile file;
         private long offset;

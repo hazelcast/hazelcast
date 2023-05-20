@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-public interface IOCompletionHandler {
+public interface CompletionHandler {
 
     void handle(int res, int flags, long userdata);
 }

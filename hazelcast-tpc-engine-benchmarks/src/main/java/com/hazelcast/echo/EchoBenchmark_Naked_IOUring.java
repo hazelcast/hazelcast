@@ -2,7 +2,6 @@ package com.hazelcast.echo;
 
 import com.hazelcast.internal.tpcengine.iouring.AcceptMemory;
 import com.hazelcast.internal.tpcengine.iouring.CompletionQueue;
-import com.hazelcast.internal.tpcengine.iouring.IOCompletionHandler;
 import com.hazelcast.internal.tpcengine.iouring.IOUring;
 import com.hazelcast.internal.tpcengine.iouring.LinuxSocket;
 import com.hazelcast.internal.tpcengine.iouring.SubmissionQueue;
@@ -143,7 +142,7 @@ public class EchoBenchmark_Naked_IOUring {
             }
         }
 
-        private class CompletionHandler implements IOCompletionHandler {
+        private class CompletionHandler implements com.hazelcast.internal.tpcengine.iouring.CompletionHandler {
 
             @Override
             public void handle(int res, int flags, long userdata) {
@@ -256,7 +255,7 @@ public class EchoBenchmark_Naked_IOUring {
             }
         }
 
-        private class CompletionHandler implements IOCompletionHandler {
+        private class CompletionHandler implements com.hazelcast.internal.tpcengine.iouring.CompletionHandler {
 
             @Override
             public void handle(int res, int flags, long userdata_id) {

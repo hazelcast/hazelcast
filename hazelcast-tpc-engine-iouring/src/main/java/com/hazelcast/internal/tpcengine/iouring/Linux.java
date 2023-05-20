@@ -67,6 +67,7 @@ public final class Linux {
     public static final int SO_REUSEPORT = 15;
 
     public static final int EAGAIN = 11;
+    public static final int ECONNRESET = 104;
 
     static {
         IOUringLibrary.ensureAvailable();
@@ -76,11 +77,15 @@ public final class Linux {
     }
 
     public static UncheckedIOException newSysCallFailedException(String msg, String syscall, int errnum) {
-        String s = syscall.replace("(", ".").replace(")", ".");
-
         return newUncheckedIOException(msg + " "
-                + syscall + " failed with error " + errorcode(errnum) + " '" + strerror(errnum) + "'."
-                + "Go to https://man7.org/linux/man-pages/man2/" + s + "html for more detail.");
+                + syscall + " failed with error " + errorcode(errnum) + " '" + strerror(errnum) + "'. "
+                + "Check " + toManPagesUrl(syscall) + " for more detail.");
+    }
+
+    public static String toManPagesUrl(String syscall) {
+        String s = syscall.replace("(", ".").replace(")", ".");
+        String man = syscall.endsWith("p)") ? "man3" : "man2";
+        return "https://man7.org/linux/man-pages/" + man + "/" + s + "html";
     }
 
     /**

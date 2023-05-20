@@ -28,13 +28,12 @@ import java.net.SocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCompletionFailedException;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_ACCEPT;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_CLOEXEC;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_NONBLOCK;
 import static com.hazelcast.internal.tpcengine.iouring.LinuxSocket.AF_INET;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
-import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
@@ -186,13 +185,13 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         );
     }
 
-    private class Handler_OP_ACCEPT implements IOCompletionHandler {
+    private class Handler_OP_ACCEPT implements CompletionHandler {
 
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
                 if (res < 0) {
-                    throw newCompletionFailedException("Failed to accept a socket.", IORING_OP_ACCEPT, -res);
+                    throw newCQEFailedException("Failed to accept a socket.", "accept(2)", IORING_OP_ACCEPT, -res);
                 }
 
                 metrics.incAccepted();

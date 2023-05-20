@@ -28,11 +28,11 @@ public final class ExceptionUtil {
     private ExceptionUtil() {
     }
 
-    public static UncheckedIOException newUncheckedIOException(String message){
+    public static UncheckedIOException newUncheckedIOException(String message) {
         return new UncheckedIOException(new IOException(message));
     }
 
-    public static UncheckedIOException newUncheckedIOException(String message, Throwable cause){
+    public static UncheckedIOException newUncheckedIOException(String message, Throwable cause) {
         return new UncheckedIOException(new IOException(message, cause));
     }
 

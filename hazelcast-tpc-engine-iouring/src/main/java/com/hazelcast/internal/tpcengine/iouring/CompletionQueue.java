@@ -26,6 +26,7 @@ import java.io.UncheckedIOException;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.toManPagesUrl;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 
 @SuppressWarnings("checkstyle:VisibilityModifier")
@@ -53,12 +54,12 @@ public final class CompletionQueue {
         this.uring = uring;
     }
 
-    static UncheckedIOException newCompletionFailedException(String msg, int opcode, int errnum) {
+    static UncheckedIOException newCQEFailedException(String msg, String syscall, int opcode, int errnum) {
         return newUncheckedIOException(msg + " "
-                + "Opcode " + opcodeToString(opcode) + " failed with error " + errorcode(errnum)
-                + " '" + strerror(errnum) + "'. "
-                + "Go to https://man7.org/linux/man-pages/man2/io_uring_enter.2.html section 'CQE ERRORS', "
-                + "for a proper explanation of the errorcode.");
+                + "Opcode " + opcodeToString(opcode) + " failed with error, "
+                + "system call " + syscall + " '" + strerror(errnum) + "' erorcode=" + errorcode(errnum) + ". "
+                + "First check " + toManPagesUrl("io_uring_enter(2)") + " section 'CQE ERRORS', "
+                + "and then check " + toManPagesUrl(syscall) + " for more detail.");
     }
 
     /**
@@ -82,7 +83,7 @@ public final class CompletionQueue {
      * @param completionHandler callback for every completed entry.
      * @return the number of processed completions.
      */
-    public int process(IOCompletionHandler completionHandler) {
+    public int process(CompletionHandler completionHandler) {
         // acquire load.
         localTail = UNSAFE.getIntVolatile(null, tailAddr);
 

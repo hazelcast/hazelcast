@@ -31,24 +31,19 @@ import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCompletionFailedException;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_RECV;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_SEND;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITEV;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 
 // TODO: In the future add padding to get isolated state separated from state accessed by other threads.
-@SuppressWarnings({"checkstyle:TrailingComment",
-        "checkstyle:MemberName",
-        "checkstyle:TypeName",
-        "checkstyle:MethodName",
-        "checkstyle:VisibilityModifier",
-        "checkstyle:ExecutableStatementCount",
-        "checkstyle:DeclarationOrder"})
+@SuppressWarnings({"checkstyle:TrailingComment", "checkstyle:MemberName", "checkstyle:TypeName", "checkstyle:MethodName", "checkstyle:VisibilityModifier", "checkstyle:ExecutableStatementCount", "checkstyle:DeclarationOrder"})
 public final class IOUringAsyncSocket extends AsyncSocket {
 
     static {
@@ -295,8 +290,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
         // IORING_OP_RECV provides better performance than IORING_OP_READ
         // https://github.com/axboe/liburing/issues/536
-        sq.offer(
-                IORING_OP_RECV,     // op
+        sq.offer(IORING_OP_RECV,     // op
                 0,                  // flags
                 0,                  // rw-flags
                 linuxSocket.fd(),      // fd
@@ -361,8 +355,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
                     // IORING_OP_SEND is more efficient than IORING_OP_WRITE
                     // todo: return value
-                    sq.offer(
-                            IORING_OP_SEND,         // op
+                    sq.offer(IORING_OP_SEND,         // op
                             0,                       // flags
                             0,                       // rw-flags
                             linuxSocket.fd(),           // fd
@@ -376,8 +369,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     int count = ioVector.count();
 
                     // todo: return value
-                    sq.offer(
-                            IORING_OP_WRITEV,       // op
+                    sq.offer(IORING_OP_WRITEV,       // op
                             0,                      // flags
                             0,                      // rw-flags
                             linuxSocket.fd(),          // fd
@@ -393,12 +385,12 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         }
     }
 
-    private class Handler_OP_WRITEV implements IOCompletionHandler {
+    private class Handler_OP_WRITEV implements CompletionHandler {
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
                 if (res < 0) {
-                    throw newCompletionFailedException("Failed to write data to the socket.", IORING_OP_WRITEV, -res);
+                    throw newCQEFailedException("Failed to write data to the socket.", "writev(3p)", IORING_OP_WRITEV, -res);
                 }
 
                 //System.out.println(IOUringAsyncSocket.this + " written " + res);
@@ -410,12 +402,12 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         }
     }
 
-    private class Handler_OP_WRITE implements IOCompletionHandler {
+    private class Handler_OP_WRITE implements CompletionHandler {
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
                 if (res < 0) {
-                    throw newCompletionFailedException("Failed to write data to the socket.", IORING_OP_WRITE, -res);
+                    throw newCQEFailedException("Failed to write data to the socket.", "write(2)", IORING_OP_WRITE, -res);
                 }
                 //System.out.println(IOUringAsyncSocket.this + " written " + res);
 
@@ -427,18 +419,18 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         }
     }
 
-    private class Handler_OP_READ implements IOCompletionHandler {
+    private class Handler_OP_READ implements CompletionHandler {
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
                 if (res > 0) {
-                    int read = res;
+                    int bytesRead = res;
                     metrics.incReadEvents();
-                    metrics.incBytesRead(read);
+                    metrics.incBytesRead(bytesRead);
 
                     // io_uring has written the new data into the byteBuffer, but the position we
                     // need to manually update.
-                    rcvBuff.position(rcvBuff.position() + read);
+                    rcvBuff.position(rcvBuff.position() + bytesRead);
 
                     // prepare buffer for reading
                     rcvBuff.flip();
@@ -449,14 +441,17 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     // prepare buffer for writing.
                     compactOrClear(rcvBuff);
 
-                    // signal that we want to read more data.
+                    // we want to read more data
                     sq_addRead();
                 } else if (res == 0) {
                     // 0 indicates end of stream.
                     // https://man7.org/linux/man-pages/man2/recv.2.html
-                    close("Socket closed by peer", null);
+                    close("Socket closed by peer.", null);
+                } else if (-res == ECONNRESET) {
+                    // https://man7.org/linux/man-pages/man2/recv.2.html
+                    close("Socket reset by peer.", null);
                 } else {
-                    throw newCompletionFailedException("Failed to read data from the socket.", IORING_OP_RECV, -res);
+                    throw newCQEFailedException("Failed to read data from the socket.", "recv(2)", IORING_OP_RECV, -res);
                 }
 
                 //System.out.println("Bytes read:" + res);

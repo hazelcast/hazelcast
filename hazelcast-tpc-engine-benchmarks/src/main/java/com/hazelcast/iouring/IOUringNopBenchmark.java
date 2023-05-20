@@ -1,7 +1,6 @@
 package com.hazelcast.iouring;
 
 import com.hazelcast.internal.tpcengine.iouring.CompletionQueue;
-import com.hazelcast.internal.tpcengine.iouring.IOCompletionHandler;
 import com.hazelcast.internal.tpcengine.iouring.IOUring;
 import com.hazelcast.internal.tpcengine.iouring.Linux;
 import com.hazelcast.internal.tpcengine.iouring.SubmissionQueue;
@@ -40,7 +39,7 @@ public class IOUringNopBenchmark {
                 final IOUring uring = new IOUring(4096, 0);
                 final SubmissionQueue sq = uring.submissionQueue();
                 final CompletionQueue cq = uring.completionQueue();
-                final CompletionHandler handler = new CompletionHandler(sq, latch);
+                final IOUringNopBenchmark.CompletionHandler handler = new IOUringNopBenchmark.CompletionHandler(sq, latch);
                 final boolean spin = IOUringNopBenchmark.spin;
 
                 for (int k = 0; k < concurrency; k++) {
@@ -61,7 +60,7 @@ public class IOUringNopBenchmark {
         }
     }
 
-    private static class CompletionHandler implements IOCompletionHandler {
+    private static class CompletionHandler implements com.hazelcast.internal.tpcengine.iouring.CompletionHandler {
         private final SubmissionQueue sq;
         private final CountDownLatch latch;
         private long iteration = 0;

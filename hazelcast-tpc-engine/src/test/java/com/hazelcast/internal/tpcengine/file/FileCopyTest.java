@@ -112,12 +112,12 @@ public abstract class FileCopyTest {
 
     @Test
     public void test_2MB() {
-        run(2*1024 * 1024);
+        run(2 * 1024 * 1024);
     }
 
     @Test
     public void test_4MB() {
-        run(4*1024 * 1024);
+        run(4 * 1024 * 1024);
     }
 
     public void run(int size) {

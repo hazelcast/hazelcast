@@ -54,7 +54,7 @@ public class IOUringEventloop extends Eventloop {
     final Map<StorageDevice, StorageDeviceScheduler> deviceSchedulers = new HashMap<>();
     private final IOUring uring;
 
-    final LongObjectHashMap<IOCompletionHandler> handlers = new LongObjectHashMap<>(4096);
+    final LongObjectHashMap<CompletionHandler> handlers = new LongObjectHashMap<>(4096);
 
     // this is not a very efficient allocator. It would be better to allocate a large chunk of
     // memory and then carve out smaller blocks. But for now it will do.
@@ -238,8 +238,8 @@ public class IOUringEventloop extends Eventloop {
     }
 
 
-    private class EventloopHandler implements IOCompletionHandler {
-        final LongObjectHashMap<IOCompletionHandler> handlers = IOUringEventloop.this.handlers;
+    private class EventloopHandler implements CompletionHandler {
+        final LongObjectHashMap<CompletionHandler> handlers = IOUringEventloop.this.handlers;
 
         @Override
         public void handle(int res, int flags, long userdata) {
@@ -247,7 +247,7 @@ public class IOUringEventloop extends Eventloop {
             // on completion.
             // Permanent handlers have a userdata equal or larger than 0 and should not
             // be removed on completion.
-            IOCompletionHandler h = userdata >= 0
+            CompletionHandler h = userdata >= 0
                     ? handlers.get(userdata)
                     : handlers.remove(userdata);
 
@@ -259,14 +259,14 @@ public class IOUringEventloop extends Eventloop {
         }
     }
 
-    private class EventFdCompletionHandler implements IOCompletionHandler {
+    private class EventFdCompletionHandler implements CompletionHandler {
         @Override
         public void handle(int res, int flags, long userdata) {
             sq_offerEventFdRead();
         }
     }
 
-    private class TimeoutCompletionHandler implements IOCompletionHandler {
+    private class TimeoutCompletionHandler implements CompletionHandler {
         @Override
         public void handle(int res, int flags, long userdata) {
         }
