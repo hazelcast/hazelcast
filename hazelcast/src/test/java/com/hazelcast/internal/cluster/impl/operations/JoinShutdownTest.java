@@ -31,7 +31,7 @@ import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,9 +55,7 @@ import static org.jgroups.util.Util.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-// Quick test -> NightlyTest before merge.
-// We don't need this test in PR builder IMO.
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 public class JoinShutdownTest {
 
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
