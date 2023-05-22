@@ -66,10 +66,10 @@ public abstract class KafkaTestSupport {
         if (!dockerEnabled()) {
             assertPropertyNotSet("test.kafka.version");
             assertPropertyNotSet("test.redpanda.version");
-            assertPropertyNotSet("test.use.redpanda");
+            assertPropertyNotSet("test.kafka.use.redpanda");
             return new EmbeddedKafkaTestSupport();
         } else {
-            if (System.getProperties().containsKey("test.use.redpanda")) {
+            if (System.getProperties().containsKey("test.kafka.use.redpanda")) {
                 return new DockerizedRedPandaTestSupport();
             } else {
                 return new DockerizedKafkaTestSupport();
