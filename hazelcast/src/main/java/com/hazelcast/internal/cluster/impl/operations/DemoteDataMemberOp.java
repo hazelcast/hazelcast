@@ -27,7 +27,7 @@ import java.util.UUID;
 /**
  * Demotes caller data member to a lite member. Should be executed on only master node.
  *
- * @since 5.3
+ * @since 5.4
  */
 public class DemoteDataMemberOp extends AbstractClusterOperation {
 

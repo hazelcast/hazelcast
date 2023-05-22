@@ -59,12 +59,13 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
 
         Queue<NodeGroup> groups = createNodeGroups(memberGroups);
-        if (groups.isEmpty()) {
-            return null;
-        }
-
         int partitionCount = currentState.length;
         PartitionReplica[][] state = new PartitionReplica[partitionCount][InternalPartition.MAX_REPLICA_COUNT];
+
+        if (groups.isEmpty()) {
+            return state;
+        }
+
         initialize(currentState, state, partitions);
 
         int tryCount = 0;

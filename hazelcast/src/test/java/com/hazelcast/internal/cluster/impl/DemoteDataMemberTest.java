@@ -28,6 +28,7 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.IMap;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationRegistry;
@@ -44,6 +45,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -64,10 +66,10 @@ import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -197,8 +199,8 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
 
         hz1.getCluster().demoteLocalDataMember();
 
-        assertNoPartitionsAssignedEventually(hz1);
-        waitAllForSafeState(hz1, hz2, hz3);
+        assertNoPartitionsAssigned(hz1);
+        waitAllForSafeState(Arrays.asList(hz1, hz2, hz3));
 
         long partitionStamp = getPartitionService(hz1).getPartitionStateStamp();
         assertEquals(partitionStamp, getPartitionService(hz2).getPartitionStateStamp());
@@ -225,6 +227,56 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         long partitionStamp = getPartitionService(hz1).getPartitionStateStamp();
         assertEquals(partitionStamp, getPartitionService(hz2).getPartitionStateStamp());
         assertEquals(partitionStamp, getPartitionService(hz3).getPartitionStateStamp());
+    }
+
+    @Test
+    public void dataMember_shouldLooseDataWhenOnlyMember() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
+
+        int entryCount = 100;
+        String mapName = randomMapName();
+        IMap<String, String> testMap = hz1.getMap(mapName);
+        for (int i = 0; i < entryCount; ++i) {
+            testMap.put("key" + i, "value" + i);
+        }
+        assertEquals(entryCount, testMap.size());
+        assertPartitionsAssigned(hz1);
+
+        hz1.getCluster().demoteLocalDataMember();
+
+        assertNoPartitionsAssigned(hz1);
+        assertTrue(getMember(hz1).isLiteMember());
+        assertAllLiteMembers(hz1.getCluster());
+
+        exception.expect(NoDataMemberInClusterException.class);
+        testMap.isEmpty();
+    }
+
+    @Test
+    public void dataMember_shouldLooseDataWhenLastDataMember() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(new Config().setLiteMember(true));
+        HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
+        HazelcastInstance hz3 = factory.newHazelcastInstance(new Config().setLiteMember(true));
+
+        warmUpPartitions(hz1, hz2, hz3);
+        assertPartitionsAssigned(hz2);
+
+        assertTrue(hz1.getPartitionService().isLocalMemberSafe());
+        assertTrue(hz1.getPartitionService().isClusterSafe());
+
+        hz2.getCluster().demoteLocalDataMember();
+
+        assertNoPartitionsAssigned(hz2);
+        assertTrue(getMember(hz2).isLiteMember());
+        assertAllLiteMembers(hz1.getCluster());
+
+        assertAllLiteMembersEventually(hz2.getCluster());
+        assertAllLiteMembersEventually(hz3.getCluster());
+        waitAllForSafeState(hz1, hz2, hz3);
     }
 
     @Test
@@ -437,7 +489,8 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         InternalPartition[] partitions = getPartitionService(instance).getInternalPartitions();
         for (InternalPartition partition : partitions) {
             for (int i = 0; i < InternalPartition.MAX_REPLICA_COUNT; i++) {
-                assertNotEquals(address, partition.getReplicaAddress(i));
+                assertNotEquals("Replica " + i + " of partition " + partition + " must not have the given address",
+                        address, partition.getReplicaAddress(i));
             }
         }
     }

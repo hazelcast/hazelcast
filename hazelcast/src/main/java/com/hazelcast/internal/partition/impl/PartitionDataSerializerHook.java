@@ -24,6 +24,8 @@ import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
 import com.hazelcast.internal.partition.operation.AssignPartitions;
+import com.hazelcast.internal.partition.operation.DemoteRequestOperation;
+import com.hazelcast.internal.partition.operation.DemoteResponseOperation;
 import com.hazelcast.internal.partition.operation.FetchPartitionStateOperation;
 import com.hazelcast.internal.partition.operation.HasOngoingMigration;
 import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
@@ -80,8 +82,10 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
     public static final int MIGRATION_EVENT = 23;
     public static final int PARTITION_LOST_EVENT = 24;
     public static final int REPLICA_SYNC_REQUEST_OFFLOADABLE = 25;
+    public static final int DEMOTE_REQUEST = 26;
+    public static final int DEMOTE_RESPONSE = 27;
 
-    private static final int LEN = REPLICA_SYNC_REQUEST_OFFLOADABLE + 1;
+    private static final int LEN = DEMOTE_RESPONSE + 1;
 
     @Override
     public int getFactoryId() {
@@ -117,6 +121,8 @@ public final class PartitionDataSerializerHook implements DataSerializerHook {
         constructors[MIGRATION_EVENT] = arg -> new MigrationStateImpl();
         constructors[PARTITION_LOST_EVENT] = arg -> new PartitionLostEventImpl();
         constructors[REPLICA_SYNC_REQUEST_OFFLOADABLE] = arg -> new PartitionReplicaSyncRequestOffloadable();
+        constructors[DEMOTE_REQUEST] = arg -> new DemoteRequestOperation();
+        constructors[DEMOTE_RESPONSE] = arg -> new DemoteResponseOperation();
         return new ArrayDataSerializableFactory(constructors);
     }
 }

@@ -90,6 +90,7 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
@@ -1091,9 +1092,15 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
 
         MemberImpl master = getMasterMember();
+
+        long maxWaitSeconds = node.getProperties().getSeconds(ClusterProperty.DEMOTE_MAX_WAIT);
+        if (!nodeEngine.getPartitionService().onDemote(maxWaitSeconds, SECONDS)) {
+            throw new IllegalStateException("Cannot demote to lite member! Previous master was: " + master.getAddress()
+                    + ", Current master is: " + getMasterAddress() + ". Cluster state is " + getClusterState());
+        }
+
         DemoteDataMemberOp op = new DemoteDataMemberOp();
         op.setCallerUuid(member.getUuid());
-
         InvocationFuture<MembersView> future =
                 nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, op, master.getAddress());
         MembersView view = future.joinInternal();

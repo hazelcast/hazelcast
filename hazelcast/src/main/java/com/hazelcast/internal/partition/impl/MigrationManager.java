@@ -38,6 +38,7 @@ import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.MigrationPlanner.MigrationDecisionCallback;
+import com.hazelcast.internal.partition.operation.DemoteResponseOperation;
 import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
 import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
@@ -142,6 +143,8 @@ public class MigrationManager {
     private final long partitionMigrationTimeout;
     private final CoalescingDelayedTrigger delayedResumeMigrationTrigger;
     private final Set<Member> shutdownRequestedMembers = new HashSet<>();
+    private final Set<Member> demoteRequestedMembers = new HashSet<>();
+
     // updates will be done under lock, but reads will be multithreaded.
     private final ConcurrentMap<Integer, MigrationInfo> activeMigrations = new ConcurrentHashMap<>();
     // both reads and updates will be done under lock!
@@ -630,6 +633,26 @@ public class MigrationManager {
         migrationInterceptor = new MigrationInterceptor.NopMigrationInterceptor();
     }
 
+    boolean onDemoteRequest(Member member) {
+        if (!partitionStateManager.isInitialized()) {
+            if (demoteRequestedMembers.add(member)) {
+                logger.info("Demote request of " + member + " is handled");
+            }
+            sendDemoteResponseOperation(member);
+            return true;
+        }
+        ClusterState clusterState = node.getClusterService().getClusterState();
+        if (!clusterState.isMigrationAllowed() && clusterState != ClusterState.IN_TRANSITION) {
+            logger.info("Demote is not possible in cluster state " + clusterState);
+            return false;
+        }
+        if (demoteRequestedMembers.add(member)) {
+            logger.info("Demote request of " + member + " is handled");
+            triggerControlTask();
+        }
+        return true;
+    }
+
     void onShutdownRequest(Member member) {
         if (!partitionStateManager.isInitialized()) {
             sendShutdownResponseOperation(member);
@@ -648,6 +671,7 @@ public class MigrationManager {
 
     void onMemberRemove(Member member) {
         shutdownRequestedMembers.remove(member);
+        demoteRequestedMembers.remove(member);
     }
 
     void schedule(MigrationRunnable runnable) {
@@ -707,6 +731,7 @@ public class MigrationManager {
         activeMigrations.clear();
         completedMigrations.clear();
         shutdownRequestedMembers.clear();
+        demoteRequestedMembers.clear();
         migrationTasksAllowed.set(true);
     }
 
@@ -743,8 +768,21 @@ public class MigrationManager {
         partition.setReplicas(members);
     }
 
-    Set<Member> getShutdownRequestedMembers() {
-        return shutdownRequestedMembers;
+    Set<Member> getDataDisownRequestedMembers() {
+        Set<Member> result = new HashSet<>(shutdownRequestedMembers);
+        result.addAll(demoteRequestedMembers);
+        return result;
+    }
+
+    /**
+     * Sends a {@link DemoteResponseOperation} to the {@code address} or takes a shortcut if demote is local.
+     */
+    private void sendDemoteResponseOperation(Member member) {
+        if (node.getThisAddress().equals(member.getAddress())) {
+            partitionService.onDemoteResponse();
+        } else {
+            nodeEngine.getOperationService().send(new DemoteResponseOperation(member.getUuid()), member.getAddress());
+        }
     }
 
     /**
@@ -848,6 +886,7 @@ public class MigrationManager {
                 }
                 processNewPartitionState(newState);
                 migrationQueue.add(new ProcessShutdownRequestsTask());
+                migrationQueue.add(new ProcessDemoteRequestsTask());
             } finally {
                 partitionServiceLock.unlock();
             }
@@ -872,11 +911,7 @@ public class MigrationManager {
             if (newState != null) {
                 logger.info("Identified a snapshot of left member for repartition");
             } else {
-                newState = partitionStateManager.repartition(shutdownRequestedMembers, null);
-            }
-            if (newState == null) {
-                migrationQueue.add(new ProcessShutdownRequestsTask());
-                return null;
+                newState = partitionStateManager.repartition(getDataDisownRequestedMembers(), null);
             }
 
             if (!migrationsTasksAllowed()) {
@@ -889,7 +924,7 @@ public class MigrationManager {
             Set<UUID> shutdownRequestedReplicas = new HashSet<>();
             Set<UUID> currentReplicas = new HashSet<>();
             Map<UUID, Address> currentAddressMapping = new HashMap<>();
-            shutdownRequestedMembers.forEach(member -> shutdownRequestedReplicas.add(member.getUuid()));
+            getDataDisownRequestedMembers().forEach(member -> shutdownRequestedReplicas.add(member.getUuid()));
 
             Collection<Member> currentMembers = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
             currentMembers.forEach(member -> currentReplicas.add(member.getUuid()));
@@ -928,7 +963,7 @@ public class MigrationManager {
                     .collect(Collectors.toCollection(() -> new PartitionIdSet(partitions.length)));
 
             if (!partitionIds.isEmpty()) {
-                PartitionReplica[][] state = partitionStateManager.repartition(shutdownRequestedMembers, partitionIds);
+                PartitionReplica[][] state = partitionStateManager.repartition(getDataDisownRequestedMembers(), partitionIds);
                 if (state != null) {
                     logger.warning("Assigning new owners for " + partitionIds.size()
                             + " LOST partitions, when migration is not allowed!");
@@ -1094,8 +1129,6 @@ public class MigrationManager {
                 } else if (destination == null && sourceNewReplicaIndex == -1) {
                     assert source != null : "partitionId=" + partitionId + " source is null";
                     assert sourceCurrentReplicaIndex != -1
-                            : "partitionId=" + partitionId + " invalid index: " + sourceCurrentReplicaIndex;
-                    assert sourceCurrentReplicaIndex != 0
                             : "partitionId=" + partitionId + " invalid index: " + sourceCurrentReplicaIndex;
                     PartitionReplica currentSource = partition.getReplica(sourceCurrentReplicaIndex);
                     assert source.equals(currentSource)
@@ -1946,6 +1979,40 @@ public class MigrationManager {
     }
 
     /**
+     * Processes demote requests, either for this node or for other members of the cluster. Checks if any member is
+     * still in the partition table and triggers the control task.
+     * Invoked on the master node. Acquires partition service lock.
+     */
+    private class ProcessDemoteRequestsTask implements MigrationRunnable {
+        @Override
+        public void run() {
+            if (!partitionService.isLocalMemberMaster()) {
+                return;
+            }
+            partitionServiceLock.lock();
+            try {
+                final int demoteRequestCount = demoteRequestedMembers.size();
+                if (demoteRequestCount > 0) {
+                    boolean present = false;
+                    for (Member member : demoteRequestedMembers) {
+                        if (partitionStateManager.isAbsentInPartitionTable(member)) {
+                            sendDemoteResponseOperation(member);
+                        } else {
+                            logger.warning(member + " requested to demote but still in partition table");
+                            present = true;
+                        }
+                    }
+                    if (present) {
+                        triggerControlTask();
+                    }
+                }
+            } finally {
+                partitionServiceLock.unlock();
+            }
+        }
+    }
+
+    /**
      * Processes shutdown requests, either for this node or for other members of the cluster. If all members requested
      * shutdown it will simply send the shutdown response, otherwise checks if any member is still in the partition table
      * and triggers the control task.
@@ -1960,8 +2027,9 @@ public class MigrationManager {
             partitionServiceLock.lock();
             try {
                 final int shutdownRequestCount = shutdownRequestedMembers.size();
+                final int dataDisownRequestCount = getDataDisownRequestedMembers().size();
                 if (shutdownRequestCount > 0) {
-                    if (shutdownRequestCount == nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR)) {
+                    if (dataDisownRequestCount == nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR)) {
                         for (Member member : shutdownRequestedMembers) {
                             sendShutdownResponseOperation(member);
                         }
