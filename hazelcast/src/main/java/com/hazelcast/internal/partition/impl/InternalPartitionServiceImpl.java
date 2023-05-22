@@ -931,7 +931,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     UUID memberUuid = node.getLocalMember().getUuid();
                     DemoteRequestOperation op = new DemoteRequestOperation(memberUuid);
 
-                    InvocationFuture<Boolean> demotionInitResult = operationService.invokeOnTarget(op.getServiceName(), op, masterAddress);
+                    InvocationFuture<Boolean> demotionInitResult = operationService.invokeOnTarget(op.getServiceName(),
+                            op, masterAddress);
                     try {
                         long startTime = System.currentTimeMillis();
                         demoteInitiated = demotionInitResult.get(awaitStep, TimeUnit.MILLISECONDS);
