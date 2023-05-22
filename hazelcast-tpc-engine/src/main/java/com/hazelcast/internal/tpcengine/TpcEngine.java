@@ -186,10 +186,11 @@ public final class TpcEngine {
      * <p/>
      * This method is thread-safe.
      *
-     * @param timeout the timeout
+     * @param timeout the timeout. If the timeout is 0, then this call will not wait.
      * @param unit    the TimeUnit
      * @return true if the TpcEngine is terminated.
      * @throws InterruptedException if the calling thread got interrupted while waiting.
+     * @throws NullPointerException if unit is null.
      */
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         return terminationLatch.await(timeout, unit);
