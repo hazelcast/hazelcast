@@ -68,7 +68,6 @@ jobs:
           -Drat.skip=true \
           -Dspotless.check.skip=true \
           -Dattribution.skip \
-          -Danimal.sniffer.skip=true \
           -Dmaven.source.skip=true
           echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
           cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar

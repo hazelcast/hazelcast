@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
-open module com.hazelcast.test.modulepath {
-    requires com.hazelcast.core;
-}
+/**
+ * Package to test module path.
+ */
+package com.hazelcast.test.modulepath;
