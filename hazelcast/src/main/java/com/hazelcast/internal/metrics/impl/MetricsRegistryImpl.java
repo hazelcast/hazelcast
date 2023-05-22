@@ -285,7 +285,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     private MetricDescriptorImpl createDescriptor(String name) {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(staticDescriptorSupplier);
-        int dotIdx = name.indexOf('.');
+        int dotIdx = name.lastIndexOf('.');
 
         if (dotIdx < 0) {
             // simple metric name
