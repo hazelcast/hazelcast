@@ -28,8 +28,8 @@ import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -54,7 +54,7 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfigWithout
 import static org.jgroups.util.Util.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 // Quick test -> NightlyTest before merge.
 // We don't need this test in PR builder IMO.
 @Category(QuickTest.class)
