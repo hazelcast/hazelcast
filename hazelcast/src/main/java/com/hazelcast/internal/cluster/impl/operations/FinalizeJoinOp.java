@@ -126,6 +126,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         if (deserializationFailure != null) {
             getLogger().severe("Node could not join cluster.", deserializationFailure);
             Node node = clusterService.getNodeEngine().getNode();
+            JoinOperation.verifyCanShutdown(node, deserializationFailure.getMessage());
             node.shutdown(true);
             throw ExceptionUtil.rethrow(deserializationFailure);
         }

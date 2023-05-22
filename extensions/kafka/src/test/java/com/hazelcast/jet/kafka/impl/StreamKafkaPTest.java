@@ -138,7 +138,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.kafka(properties(), "nonExistentTopic"))
                 .withoutTimestamps()
-                .writeTo(Sinks.list("sink"));
+                .writeTo(Sinks.list("test_nonExistentTopic"));
 
         Job job = instance().getJet().newJob(p);
 
@@ -149,17 +149,18 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     @Test
     public void when_projectionFunctionProvided_then_appliedToReadRecords() {
         int messageCount = 20;
+        String sinkListName = randomName();
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.<Integer, String, String>kafka(properties(), rec -> rec.value() + "-x", topic1Name))
                 .withoutTimestamps()
-                .writeTo(Sinks.list("sink"));
+                .writeTo(Sinks.list(sinkListName));
 
         instance().getJet().newJob(p);
         sleepAtLeastSeconds(3);
         for (int i = 0; i < messageCount; i++) {
             kafkaTestSupport.produce(topic1Name, i, Integer.toString(i));
         }
-        IList<String> list = instance().getList("sink");
+        IList<String> list = instance().getList(sinkListName);
         assertTrueEventually(() -> {
             assertEquals(messageCount, list.size());
             for (int i = 0; i < messageCount; i++) {
@@ -187,6 +188,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     private void testWithPartitionsInitialOffsets(
             ProcessingGuarantee guarantee, int expectedRecordsReadFromTopic1, int expectedRecordsReadFromTopic2
     ) {
+        String sinkListName = randomName();
         for (int i = 0; i < 100; i++) {
             kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
             kafkaTestSupport.produce(topic2Name, i, String.valueOf(i));
@@ -210,12 +212,12 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                         properties(), r -> Tuple2.tuple2(r.value(), r.topic()), topicsConfig
                 ))
                 .withoutTimestamps()
-                .writeTo(Sinks.list("sink"));
+                .writeTo(Sinks.list(sinkListName));
 
         instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(guarantee));
         sleepAtLeastSeconds(3);
 
-        IList<Tuple2<String, String>> list = instance().getList("sink");
+        IList<Tuple2<String, String>> list = instance().getList(sinkListName);
         int totalRecordsRead = expectedRecordsReadFromTopic1 + expectedRecordsReadFromTopic2;
         assertTrueEventually(() -> assertEquals(totalRecordsRead, list.size()), 5);
 
@@ -322,6 +324,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             int expectedCountAfterRestart,
             Properties kafkaProperties
     ) {
+        String sinkListName = randomName();
         for (int i = 0; i < messageCount; i++) {
             kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
         }
@@ -330,12 +333,12 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.<Integer, String, String>kafka(kafkaProperties, ConsumerRecord::value, topicsConfig))
                 .withoutTimestamps()
-                .writeTo(Sinks.list("sink"));
+                .writeTo(Sinks.list(sinkListName));
 
         Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(processingGuarantee));
         sleepAtLeastSeconds(3);
 
-        assertTrueEventually(() -> assertEquals(expectedCountBeforeRestart, instance().getList("sink").size()), 5);
+        assertTrueEventually(() -> assertEquals(expectedCountBeforeRestart, instance().getList(sinkListName).size()), 5);
 
         job.restart();
 
@@ -344,7 +347,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         }
         sleepAtLeastSeconds(3);
 
-        assertTrueEventually(() -> assertEquals(expectedCountAfterRestart, instance().getList("sink").size()), 5);
+        assertTrueEventually(() -> assertEquals(expectedCountAfterRestart, instance().getList(sinkListName).size()), 5);
     }
 
     @Test
@@ -361,11 +364,12 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         int messageCount = 20;
         HazelcastInstance[] instances = new HazelcastInstance[2];
         Arrays.setAll(instances, i -> createHazelcastInstance());
+        String sinkListName = randomName();
 
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.kafka(properties(), topic1Name, topic2Name))
                 .withoutTimestamps()
-                .writeTo(Sinks.list("sink"));
+                .writeTo(Sinks.list(sinkListName));
 
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(guarantee);
@@ -376,7 +380,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             kafkaTestSupport.produce(topic1Name, i, Integer.toString(i));
             kafkaTestSupport.produce(topic2Name, i - messageCount, Integer.toString(i - messageCount));
         }
-        IList<Object> list = instances[0].getList("sink");
+        IList<Object> list = instances[0].getList(sinkListName);
 
         assertTrueEventually(() -> {
             assertEquals(messageCount * 2, list.size());
@@ -526,6 +530,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     public void when_duplicateTopicsProvide_then_uniqueTopicsSubscribed() {
         HazelcastInstance[] instances = instances();
         assertClusterSizeEventually(2, instances);
+        String sinkListName = randomName();
 
         // need new topic because we want 2 partitions only
         String topic = randomString();
@@ -536,7 +541,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         p.readFrom(KafkaSources.kafka(properties(), topic, topic))
                 .withoutTimestamps()
                 .setLocalParallelism(1)
-                .writeTo(Sinks.list("sink"));
+                .writeTo(Sinks.list(sinkListName));
 
         JobConfig config = new JobConfig();
         Job job = instances[0].getJet().newJob(p, config);
@@ -548,7 +553,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             kafkaTestSupport.produce(topic, i, Integer.toString(i));
         }
 
-        IList<Object> list = instances[0].getList("sink");
+        IList<Object> list = instances[0].getList(sinkListName);
         try {
             // Wait for all messages
             assertTrueEventually(() -> assertThat(list).hasSize(messageCount), 15);
@@ -672,7 +677,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_partitionAddedWhileJobDown_then_consumedFromBeginning() throws Exception {
-        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        String sinkListName = randomName();
+        IList<Entry<Integer, String>> sinkList = instance().getList(sinkListName);
         Pipeline p = Pipeline.create();
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "latest");
@@ -706,7 +712,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_autoOffsetResetLatest_then_doesNotReadOldMessages() throws Exception {
-        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        String sinkListName = randomName();
+        IList<Entry<Integer, String>> sinkList = instance().getList(sinkListName);
         Pipeline p = Pipeline.create();
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "latest");
@@ -721,7 +728,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_autoOffsetResetEarliest_then_startsFromEarliestAfterRestart() throws Exception {
-        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        String sinkListName = randomName();
+        IList<Entry<Integer, String>> sinkList = instance().getList(sinkListName);
         Pipeline p = Pipeline.create();
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "earliest");
@@ -743,7 +751,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_autoOffsetResetEarliestAndGroupIdSet_then_startsFromCommittedOffsetAfterRestart() throws Exception {
-        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        String sinkListName = randomName();
+        IList<Entry<Integer, String>> sinkList = instance().getList(sinkListName);
         Pipeline p = Pipeline.create();
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "earliest");
@@ -847,7 +856,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                         .setProperties(properties())
         );
 
-        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        String sinkListName = randomName();
+        IList<Entry<Integer, String>> sinkList = instance().getList(sinkListName);
         Pipeline p = Pipeline.create();
         Properties properties = properties();
         properties.setProperty("auto.offset.reset", "latest");
