@@ -21,30 +21,38 @@ which becomes noticeable in very small batch jobs.
 
 ## Terminology
 
+- Member pruning - prevention of cluster members without requested data on board to be involved in job execution;
+- Processor pruning - elimination of redundant (it can work only with input) stage processor creation;
+- (IMap) Partition pruning - extract partition condition and assigning only required partition to read by `ReadMapOrCacheP`;
 
 ## Goals
 
+The goals of that initiative is corresponding with items enumerated in 'Terminology' section : 
+
 - deploy a job only on members with required partitions.
+- prune processors which are not required for job execution - e.g, their input processor doesn't produce data and 
+the processor itself can work only with input.
+- limit count partitions involved in IMap scan.
 
 Non-goals are :
-- support member pruning for streaming jobs. 
-- support migration-tolerance for member pruning. 
+- support any kind of pruning for streaming jobs. It may be considered to do later, but now it is not a case.
+- support migration-tolerance for member and processor pruning. 
 
 
 ## Technical Design
 
-As it was mentioned in Background section
+Let's split member pruning, processor pruning and partition pruning as separate stages, which can complement each other, 
+but on their own, each kind of pruning is still a good optimization.
 
-First, we propose changing the contract of `ProcessorMetaSupplier#get` return function so that it will be
-allowed to return `null` for addresses for which it does not want to deploy processors. But this will not be enough 
-to completely eliminate a member from the execution. 
+### Member pruning
 
-Consider this DAG for example:
-p1 -> p2
-The `p1` is the source, and `p2` is the sink, but we deliberately don't use that term, because the processor logic is
-opaque to Jet. If `p1` is null for a member, `p2` has no input. But `p2` is still allowed to generate data, 
-so we can’t eliminate it. For example, if `p2` outputs the sum of input items, it still might want to emit `0`, 
-if there’s no input. 
+Member pruning by its own, may have pretty simple solution. To implement it, we need to support that solution in `ExecutionPlanBuilder` (execution plan creation phase).
+Previous `ProcessorMetaSupplier#get` contract was a reason for strict assumptions in execution plan creation algorithm,
+but that has changed.
+
+#### Use cases for member pruning
+
+#### Solution design details
 
 To support this behaviour, we need to extend the API. One option is add a method to PMS:
 ```java
@@ -56,57 +64,65 @@ interface ProcessorMetaSupplier extends IdentifiedDataSerializable {
     // ...
 }
 ```
-The default return value is `true` for backwards compatibility. This means that all current and new processors that 
+The default return value is `true` for backwards compatibility. This means that all current and new processors that
 do no work without an input will have to override this method.
 
-Second, we need to support that solution in `ExecutionPlanBuilder` (execution plan creation phase). 
-Previous `ProcessorMetaSupplier#get` contract was a reason for strict assumptions in execution plan creation algorithm, 
-but that has changed. Moreover, we need to change algorithm in `ExecutionPlanBuilder` to accept `nulls`.
+Next, we need to determine exact scope of the change : there are two main approaches were considered, 
+to shorten their meaning we mark them as 'heavyweight' and 'lightweight'. The difference between these two approaches 
+is an exact stage when we understand that some member may be pruned from job execution: 'heavyweight' approach tries 
+to be more generic and define it for any accept DAG, when 'lightweight' approach focus on hinting `ExecutionPlanBuilder`
+with additional meta-information from DAG and JobConfig constructed by SQL optimizer.
 
-There are two main approaches were considered, to shorten their meaning we mark them as 'heavyweight' and 'lightweight'.
-The difference between these two approaches is an exact stage when we understand that some member may be pruned 
-from job execution: 'heavyweight' approach tries to be more generic and define it for any accept DAG, when 'lightweight' 
-approach focus on hinting `ExecutionPlanBuilder` with additional meta-information from DAG and JobConfig constructed by
-SQL optimizer.
+##### Heavyweight approach
 
-More details are available in chapters below.
-
-#### Heavyweight approach
-
-The core idea here is that  `ExecutionPlanBuilder` would have detailed analysis of received DAG before execution plan 
-creation and then, possibly, trying to optimize DAG and only then apply member pruning based. The requirements 
-to prune member are : 
+The core idea here is that  `ExecutionPlanBuilder` would have detailed analysis of received DAG before execution plan
+creation and then, possibly, trying to optimize DAG and only then apply member pruning based. The requirements
+to prune member are :
 - each vertex in the DAG may work without an input;
-- DAG does not contain `distributed-broadcast` edges; 
-- even if DAG contains `distributed-broadcast` edges, we may prune members if they don't accumulate a data, e.g., batch aggregation.
-- TODO: more?
+- DAG does not contain `distributed-broadcast` edges;
 
-As a pros, using this approach generify member pruning usage for both SQL, Pipeline API; allow usage for any connectors. 
+As a pros, using this approach generify member pruning usage for both SQL, Pipeline API; allow usage for any connectors.
 As a cons, this approach brings high complexity in problem analysis, long development and big list of corner cases, which
 are discussed in chapter below.
 
-##### Issues/corner cases for heavyweight approach.
-Note : to be written. Maybe author will involve ASCII art for better visibility.
+##### Lightweight approach
 
-1. Complexify code path for _all_ jobs planning.
-2. Absolute majority of 'member-prunable' jobs are submitted by SQL.
-3. `Source` -> `Transform` -> `Aggregation` -> `Sink`. Edges to `Aggregation` vertex (as usual)  may be distributed.
+Unlike a way described above, we can think that member pruning would be beneficial mostly for small jobs.
+The overwhelming majority of such jobs are generated by SQL, and our team effort is to replace Predicate API,
+where `PartitionPredicate` is available for partitioned data querying.
+For that, we can use SQL optimization phase also for determining partitions and for all relations: we extract information
+about required partitions to run to JobConfig, and then mark DAG as 'ableToPruneMembers'. This mark is an indicator
+for `ExecutionPlanBuilder` to choose code path with member pruning during execution plans creation.
 
-#### Lightweight approach
+### Processor pruning
 
-Unlike a way described above, we can think that member pruning would be beneficial mostly for small jobs. 
-The overwhelming majority of such jobs are generated by SQL, and our team effort is to replace Predicate API, 
-where `PartitionPredicate` is available for partitioned data querying. 
-For that, we can use SQL optimization phase also for determining partitions and for all relations: we extract information 
-about required partitions to run to JobConfig, and then mark DAG as 'ableToPruneMembers'. This mark is an indicator 
-for `ExecutionPlanBuilder` to choose code path with member pruning during execution plans creation. 
+#### Use cases for member pruning
 
-##### Issues/corner cases for lightweight approach.
+#### Solution design details
 
-1. Any SELECT queries may require a coordinator member to participate in job as sink result consumer. 
+We propose to change the contract of `ProcessorMetaSupplier#get` return function so that it will be
+allowed to return `null` for addresses for which it does not want to deploy processors. But this will not be enough 
+to completely eliminate a member from the execution. 
+
+Consider this DAG for example:
+p1 -> p2
+The `p1` is the source, and `p2` is the sink, but we deliberately don't use that term, because the processor logic is
+opaque to Jet. If `p1` is null for a member, `p2` has no input. But `p2` is still allowed to generate data, 
+so we can’t eliminate it. For example, if `p2` outputs the sum of input items, it still might want to emit `0`, 
+if there’s no input.
+
+TODO: finish it
+
+### Partition pruning
+
+Partition pruning is a pretty simple optimization : we will extract partition key condition from during SQL opt phase,
+pass it to specialized processor supplier which will spawn `ReadMapOrCacheP` with required partitions to scan.
+
+#### Use cases for member pruning
 
 ### Notes
 
+### Acceptance Criteria
 
 
 
