@@ -66,8 +66,138 @@ public final class Linux {
     public static final int SO_BSDCOMPAT = 14;
     public static final int SO_REUSEPORT = 15;
 
+    public static final int EPERM = 1;
+    public static final int ENOENT = 2;
+    public static final int ESRCH = 3;
+    public static final int EINTR = 4;
+    public static final int EIO = 5;
+    public static final int ENXIO = 6;
+    public static final int E2BIG = 7;
+    public static final int ENOEXEC = 8;
+    public static final int EBADF = 9;
+    public static final int ECHILD = 10;
     public static final int EAGAIN = 11;
+    public static final int ENOMEM = 12;
+    public static final int EACCES = 13;
+    public static final int EFAULT = 14;
+    public static final int ENOTBLK = 15;
+    public static final int EBUSY = 16;
+    public static final int EEXIST = 17;
+    public static final int EXDEV = 18;
+    public static final int ENODEV = 19;
+    public static final int ENOTDIR = 20;
+    public static final int EISDIR = 21;
+    public static final int EINVAL = 22;
+    public static final int ENFILE = 23;
+    public static final int EMFILE = 24;
+    public static final int ENOTTY = 25;
+    public static final int ETXTBSY = 26;
+    public static final int EFBIG = 27;
+    public static final int ENOSPC = 28;
+    public static final int ESPIPE = 29;
+    public static final int EROFS = 30;
+    public static final int EMLINK = 31;
+    public static final int EPIPE = 32;
+    public static final int EDOM = 33;
+    public static final int ERANGE = 34;
+    public static final int EDEADLK = 35;
+    public static final int ENAMETOOLONG = 36;
+    public static final int ENOLCK = 37;
+    public static final int ENOSYS = 38;
+    public static final int ENOTEMPTY = 39;
+    public static final int ELOOP = 40;
+    public static final int ENOMSG = 42;
+    public static final int EIDRM = 43;
+    public static final int ECHRNG = 44;
+    public static final int EL2NSYNC = 45;
+    public static final int EL3HLT = 46;
+    public static final int EL3RST = 47;
+    public static final int ELNRNG = 48;
+    public static final int EUNATCH = 49;
+    public static final int ENOCSI = 50;
+    public static final int EL2HLT = 51;
+    public static final int EBADE = 52;
+    public static final int EBADR = 53;
+    public static final int EXFULL = 54;
+    public static final int ENOANO = 55;
+    public static final int EBADRQC = 56;
+    public static final int EBADSLT = 57;
+    public static final int EBFONT = 59;
+    public static final int ENOSTR = 60;
+    public static final int ENODATA = 61;
+    public static final int ETIME = 62;
+    public static final int ENOSR = 63;
+    public static final int ENONET = 64;
+    public static final int ENOPKG = 65;
+    public static final int EREMOTE = 66;
+    public static final int ENOLINK = 67;
+    public static final int EADV = 68;
+    public static final int ESRMNT = 69;
+    public static final int ECOMM = 70;
+    public static final int EPROTO = 71;
+    public static final int EMULTIHOP = 72;
+    public static final int EDOTDOT = 73;
+    public static final int EBADMSG = 74;
+    public static final int EOVERFLOW = 75;
+    public static final int ENOTUNIQ = 76;
+    public static final int EBADFD = 77;
+    public static final int EREMCHG = 78;
+    public static final int ELIBACC = 79;
+    public static final int ELIBBAD = 80;
+    public static final int ELIBSCN = 81;
+    public static final int ELIBMAX = 82;
+    public static final int ELIBEXEC = 83;
+    public static final int EILSEQ = 84;
+    public static final int ERESTART = 85;
+    public static final int ESTRPIPE = 86;
+    public static final int EUSERS = 87;
+    public static final int ENOTSOCK = 88;
+    public static final int EDESTADDRREQ = 89;
+    public static final int EMSGSIZE = 90;
+    public static final int EPROTOTYPE = 91;
+    public static final int ENOPROTOOPT = 92;
+    public static final int EPROTONOSUPPORT = 93;
+    public static final int ESOCKTNOSUPPORT = 94;
+    public static final int EOPNOTSUPP = 95;
+    public static final int EPFNOSUPPORT = 96;
+    public static final int EAFNOSUPPORT = 97;
+    public static final int EADDRINUSE = 98;
+    public static final int EADDRNOTAVAIL = 99;
+    public static final int ENETDOWN = 100;
+    public static final int ENETUNREACH = 101;
+    public static final int ENETRESET = 102;
+    public static final int ECONNABORTED = 103;
     public static final int ECONNRESET = 104;
+    public static final int ENOBUFS = 105;
+    public static final int EISCONN = 106;
+    public static final int ENOTCONN = 107;
+    public static final int ESHUTDOWN = 108;
+    public static final int ETOOMANYREFS = 109;
+    public static final int ETIMEDOUT = 110;
+    public static final int ECONNREFUSED = 111;
+    public static final int EHOSTDOWN = 112;
+    public static final int EHOSTUNREACH = 113;
+    public static final int EALREADY = 114;
+    public static final int EINPROGRESS = 115;
+    public static final int ESTALE = 116;
+    public static final int EUCLEAN = 117;
+    public static final int ENOTNAM = 118;
+    public static final int ENAVAIL = 119;
+    public static final int EISNAM = 120;
+    public static final int EREMOTEIO = 121;
+    public static final int EDQUOT = 122;
+    public static final int ENOMEDIUM = 123;
+    public static final int EMEDIUMTYPE = 124;
+    public static final int ECANCELED = 125;
+    public static final int ENOKEY = 126;
+    public static final int EKEYEXPIRED = 127;
+    public static final int EKEYREVOKED = 128;
+    public static final int EKEYREJECTED = 129;
+    public static final int EOWNERDEAD = 130;
+    public static final int ENOTRECOVERABLE = 131;
+    public static final int ERFKILL = 132;
+    public static final int EHWPOISON = 133;
+
 
     static {
         IOUringLibrary.ensureAvailable();
@@ -100,264 +230,268 @@ public final class Linux {
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:Returncount", "checkstyle:CyclomaticComplexity"})
     public static String errorcode(int errnum) {
         switch (errnum) {
-            case 1:
+            case EPERM:
                 return "EPERM";
-            case 2:
+            case ENOENT:
                 return "ENOENT";
-            case 3:
+            case ESRCH:
                 return "ESRCH";
-            case 4:
+            case EINTR:
                 return "EINTR";
-            case 5:
+            case EIO:
                 return "EIO";
-            case 6:
+            case ENXIO:
                 return "ENXIO";
-            case 7:
+            case E2BIG:
                 return "E2BIG";
-            case 8:
+            case ENOEXEC:
                 return "ENOEXEC";
-            case 9:
+            case EBADF:
                 return "EBADF";
-            case 10:
+            case ECHILD:
                 return "ECHILD";
-            case 11:
+            case EAGAIN:
                 return "EAGAIN";
-            case 12:
+            case ENOMEM:
                 return "ENOMEM";
-            case 13:
+            case EACCES:
                 return "EACCES";
-            case 14:
+            case EFAULT:
                 return "EFAULT";
-            case 15:
+            case ENOTBLK:
                 return "ENOTBLK";
-            case 16:
+            case EBUSY:
                 return "EBUSY";
-            case 17:
+            case EEXIST:
                 return "EEXIST";
-            case 18:
+            case EXDEV:
                 return "EXDEV";
-            case 19:
+            case ENODEV:
                 return "ENODEV";
-            case 20:
+            case ENOTDIR:
                 return "ENOTDIR";
-            case 21:
+            case EISDIR:
                 return "EISDIR";
-            case 22:
+            case EINVAL:
                 return "EINVAL";
-            case 23:
+            case ENFILE:
                 return "ENFILE";
-            case 24:
+            case EMFILE:
                 return "EMFILE";
-            case 25:
+            case ENOTTY:
                 return "ENOTTY";
-            case 26:
+            case ETXTBSY:
                 return "ETXTBSY";
-            case 27:
+            case EFBIG:
+                return "EFBIG";
+            case ENOSPC:
                 return "ENOSPC";
-            case 28:
+            case ESPIPE:
                 return "ESPIPE";
-            case 29:
+            case EROFS:
                 return "EROFS";
-            case 30:
+            case EMLINK:
                 return "EMLINK";
-            case 31:
+            case EPIPE:
                 return "EPIPE";
-            case 32:
+            case EDOM:
                 return "EDOM";
-            case 33:
-                return "ESRCH";
-            case 34:
+            case ERANGE:
                 return "ERANGE";
-            case 35:
+            case EDEADLK:
                 return "EDEADLK";
-            case 36:
+            case ENAMETOOLONG:
                 return "ENAMETOOLONG";
-            case 37:
+            case ENOLCK:
                 return "ENOLCK";
-            case 38:
+            case ENOSYS:
                 return "ENOSYS";
-            case 39:
+            case ENOTEMPTY:
                 return "ENOTEMPTY";
-            case 40:
+            case ELOOP:
                 return "ELOOP";
-            case 42:
+            case ENOMSG:
                 return "ENOMSG";
-            case 43:
+            case EIDRM:
                 return "EIDRM";
-            case 44:
+            case ECHRNG:
                 return "ECHRNG";
-            case 45:
+            case EL2NSYNC:
                 return "EL2NSYNC";
-            case 46:
+            case EL3HLT:
                 return "EL3HLT";
-            case 47:
+            case EL3RST:
                 return "EL3RST";
-            case 48:
+            case ELNRNG:
                 return "ELNRNG";
-            case 49:
+            case EUNATCH:
                 return "EUNATCH";
-            case 50:
+            case ENOCSI:
                 return "ENOCSI";
-            case 51:
+            case EL2HLT:
                 return "EL2HLT";
-            case 52:
+            case EBADE:
                 return "EBADE";
-            case 53:
+            case EBADR:
                 return "EBADR";
-            case 54:
+            case EXFULL:
                 return "EXFULL";
-            case 55:
+            case ENOANO:
                 return "ENOANO";
-            case 56:
+            case EBADRQC:
                 return "EBADRQC";
-            case 57:
+            case EBADSLT:
                 return "EBADSLT";
-            case 59:
+            case EBFONT:
                 return "EBFONT";
-            case 60:
+            case ENOSTR:
                 return "ENOSTR";
-            case 61:
+            case ENODATA:
                 return "ENODATA";
-            case 62:
+            case ETIME:
                 return "ETIME";
-            case 63:
+            case ENOSR:
                 return "ENOSR";
-            case 64:
+            case ENONET:
                 return "ENONET";
-            case 65:
+            case ENOPKG:
                 return "ENOPKG";
-            case 66:
+            case EREMOTE:
                 return "EREMOTE";
-            case 67:
+            case ENOLINK:
                 return "ENOLINK";
-            case 68:
+            case EADV:
                 return "EADV";
-            case 69:
+            case ESRMNT:
                 return "ESRMNT";
-            case 70:
+            case ECOMM:
                 return "ECOMM";
-            case 71:
+            case EPROTO:
                 return "EPROTO";
-            case 72:
+            case EMULTIHOP:
                 return "EMULTIHOP";
-            case 73:
+            case EDOTDOT:
                 return "EDOTDOT";
-            case 74:
+            case EBADMSG:
                 return "EBADMSG";
-            case 75:
+            case EOVERFLOW:
                 return "EOVERFLOW";
-            case 76:
+            case ENOTUNIQ:
                 return "ENOTUNIQ";
-            case 77:
+            case EBADFD:
                 return "EBADFD";
-            case 78:
+            case EREMCHG:
                 return "EREMCHG";
-            case 79:
+            case ELIBACC:
                 return "ELIBACC";
-            case 80:
+            case ELIBBAD:
                 return "ELIBBAD";
-            case 81:
+            case ELIBSCN:
                 return "ELIBSCN";
-            case 82:
+            case ELIBMAX:
                 return "ELIBMAX";
-            case 83:
+            case ELIBEXEC:
                 return "ELIBEXEC";
-            case 84:
+            case EILSEQ:
                 return "EILSEQ";
-            case 85:
+            case ERESTART:
                 return "ERESTART";
-            case 86:
+            case ESTRPIPE:
                 return "ESTRPIPE";
-            case 87:
+            case EUSERS:
                 return "EUSERS";
-            case 88:
+            case ENOTSOCK:
                 return "ENOTSOCK";
-            case 89:
+            case EDESTADDRREQ:
                 return "EDESTADDRREQ";
-            case 90:
+            case EMSGSIZE:
                 return "EMSGSIZE";
-            case 91:
+            case EPROTOTYPE:
                 return "EPROTOTYPE";
-            case 92:
+            case ENOPROTOOPT:
                 return "ENOPROTOOPT";
-            case 93:
+            case EPROTONOSUPPORT:
                 return "EPROTONOSUPPORT";
-            case 94:
+            case ESOCKTNOSUPPORT:
                 return "ESOCKTNOSUPPORT";
-            case 95:
+            case EOPNOTSUPP:
                 return "EOPNOTSUPP";
-            case 96:
+            case EPFNOSUPPORT:
                 return "EPFNOSUPPORT";
-            case 97:
+            case EAFNOSUPPORT:
                 return "EAFNOSUPPORT";
-            case 98:
+            case EADDRINUSE:
                 return "EADDRINUSE";
-            case 99:
+            case EADDRNOTAVAIL:
                 return "EADDRNOTAVAIL";
-            case 100:
+            case ENETDOWN:
                 return "ENETDOWN";
-            case 101:
+            case ENETUNREACH:
                 return "ENETUNREACH";
-            case 102:
+            case ENETRESET:
                 return "ENETRESET";
-            case 103:
+            case ECONNABORTED:
                 return "ECONNABORTED";
-            case 104:
+            case ECONNRESET:
                 return "ECONNRESET";
-            case 105:
+            case ENOBUFS:
                 return "ENOBUFS";
-            case 106:
+            case EISCONN:
                 return "EISCONN";
-            case 107:
+            case ENOTCONN:
                 return "ENOTCONN";
-            case 108:
+            case ESHUTDOWN:
                 return "ESHUTDOWN";
-            case 109:
+            case ETOOMANYREFS:
                 return "ETOOMANYREFS";
-            case 110:
+            case ETIMEDOUT:
                 return "ETIMEDOUT";
-            case 111:
+            case ECONNREFUSED:
                 return "ECONNREFUSED";
-            case 112:
+            case EHOSTDOWN:
                 return "EHOSTDOWN";
-            case 113:
+            case EHOSTUNREACH:
                 return "EHOSTUNREACH";
-            case 114:
+            case EALREADY:
                 return "EALREADY";
-            case 115:
+            case EINPROGRESS:
                 return "EINPROGRESS";
-            case 116:
+            case ESTALE:
                 return "ESTALE";
-            case 117:
+            case EUCLEAN:
                 return "EUCLEAN";
-            case 118:
+            case ENOTNAM:
                 return "ENOTNAM";
-            case 119:
+            case ENAVAIL:
                 return "ENAVAIL";
-            case 120:
+            case EISNAM:
                 return "EISNAM";
-            case 121:
+            case EREMOTEIO:
                 return "EREMOTEIO";
-            case 122:
+            case EDQUOT:
                 return "EDQUOT";
-            case 123:
+            case ENOMEDIUM:
                 return "ENOMEDIUM";
-            case 124:
+            case EMEDIUMTYPE:
                 return "EMEDIUMTYPE";
-            case 125:
+            case ECANCELED:
                 return "ECANCELED";
-            case 126:
+            case ENOKEY:
                 return "ENOKEY";
-            case 127:
+            case EKEYEXPIRED:
                 return "EKEYEXPIRED";
-            case 128:
+            case EKEYREVOKED:
                 return "EKEYREVOKED";
-            case 129:
+            case EKEYREJECTED:
                 return "EKEYREJECTED";
-            case 130:
+            case EOWNERDEAD:
                 return "EOWNERDEAD";
-            case 131:
+            case ENOTRECOVERABLE:
                 return "ENOTRECOVERABLE";
+            case ERFKILL:
+                return "ERFKILL";
+            case EHWPOISON:
+                return "EHWPOISON";
             default:
                 return "unknown-code[" + errnum + "]";
         }

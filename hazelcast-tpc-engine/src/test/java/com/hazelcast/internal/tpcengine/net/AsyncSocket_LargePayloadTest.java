@@ -228,7 +228,7 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     @Test
     public void test_concurrency_10_payload_32MB() throws InterruptedException {
-        test(32768 * 1024, 10);
+        test(10 * 32768 * 1024, 10);
     }
 
     public void test(int payloadSize, int concurrency) throws InterruptedException {
@@ -238,7 +238,7 @@ public abstract class AsyncSocket_LargePayloadTest {
 
         AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress(), completionLatch);
 
-        System.out.println("Starting");
+        Thread.sleep(1000);
 
         for (int k = 0; k < concurrency; k++) {
             byte[] payload = new byte[payloadSize];

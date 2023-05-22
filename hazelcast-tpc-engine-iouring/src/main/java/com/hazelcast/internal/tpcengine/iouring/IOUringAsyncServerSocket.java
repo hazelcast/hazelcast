@@ -190,40 +190,39 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
-                if (res < 0) {
+                if (res >= 0) {
+                    // we need to re-register for more accepts.
+                    // todo: return value
+                    sq_offer_OP_ACCEPT();
+
+                    metrics.incAccepted();
+
+                    SocketAddress address = LinuxSocket.toInetSocketAddress(
+                            acceptMemory.memoryAddress,
+                            acceptMemory.lengthMemoryAddress);
+
+                    if (logger.isInfoEnabled()) {
+                        logger.info(IOUringAsyncServerSocket.this + " new connected accepted: " + address);
+                    }
+
+                    // todo: ugly that AF_INET is hard configured.
+                    // We should use the address to determine the type
+                    LinuxSocket socket = new LinuxSocket(res, AF_INET);
+                    AcceptRequest acceptRequest = new IOUringAcceptRequest(socket);
+                    try {
+                        acceptConsumer.accept(acceptRequest);
+                    } catch (Throwable t) {
+                        // If for whatever reason the socket isn't consumed, we need
+                        // to properly close the socket. Otherwise the socket remains
+                        // under a CLOSE_WAIT state and the port doesn't get released.
+                        closeQuietly(acceptRequest);
+                        throw ExceptionUtil.sneakyThrow(t);
+                    }
+                } else {
                     throw newCQEFailedException("Failed to accept a socket.", "accept(2)", IORING_OP_ACCEPT, -res);
                 }
-
-                metrics.incAccepted();
-
-                SocketAddress address = LinuxSocket.toInetSocketAddress(
-                        acceptMemory.memoryAddress,
-                        acceptMemory.lengthMemoryAddress);
-
-                if (logger.isInfoEnabled()) {
-                    logger.info(IOUringAsyncServerSocket.this + " new connected accepted: " + address);
-                }
-
-                // todo: ugly that AF_INET is hard configured.
-                // We should use the address to determine the type
-                LinuxSocket socket = new LinuxSocket(res, AF_INET);
-                AcceptRequest acceptRequest = new IOUringAcceptRequest(socket);
-                try {
-                    acceptConsumer.accept(acceptRequest);
-                } catch (Throwable t) {
-                    // If for whatever reason the socket isn't consumed, we need
-                    // to properly close the socket. Otherwise the socket remains
-                    // under a CLOSE_WAIT state and the port doesn't get released.
-                    closeQuietly(acceptRequest);
-                    throw ExceptionUtil.sneakyThrow(t);
-                }
-
-                //todo: return value
             } catch (Exception e) {
                 close(null, e);
-            } finally {
-                // we need to re-register for more accepts.
-                sq_offer_OP_ACCEPT();
             }
         }
     }

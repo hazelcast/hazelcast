@@ -36,6 +36,7 @@ import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_RECV;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_SEND;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITEV;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.EAGAIN;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
@@ -43,7 +44,13 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 
 // TODO: In the future add padding to get isolated state separated from state accessed by other threads.
-@SuppressWarnings({"checkstyle:TrailingComment", "checkstyle:MemberName", "checkstyle:TypeName", "checkstyle:MethodName", "checkstyle:VisibilityModifier", "checkstyle:ExecutableStatementCount", "checkstyle:DeclarationOrder"})
+@SuppressWarnings({"checkstyle:TrailingComment",
+        "checkstyle:MemberName",
+        "checkstyle:TypeName",
+        "checkstyle:MethodName",
+        "checkstyle:VisibilityModifier",
+        "checkstyle:ExecutableStatementCount",
+        "checkstyle:DeclarationOrder"})
 public final class IOUringAsyncSocket extends AsyncSocket {
 
     static {
@@ -389,13 +396,18 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
-                if (res < 0) {
+                if (res >= 0) {
+                    //System.out.println(IOUringAsyncSocket.this + " written " + res);
+                    ioVector.compact(res);
+                    resetFlushed();
+                } else if (res == -EAGAIN) {
+                    // TODO: Can this lead to spinning?
+                    System.out.println("-----");
+                    // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
+                    localTaskQueue.add(eventloopTask);
+                } else {
                     throw newCQEFailedException("Failed to write data to the socket.", "writev(3p)", IORING_OP_WRITEV, -res);
                 }
-
-                //System.out.println(IOUringAsyncSocket.this + " written " + res);
-                ioVector.compact(res);
-                resetFlushed();
             } catch (Exception e) {
                 close("Closing IOUringAsyncSocket due to exception", e);
             }
@@ -406,13 +418,16 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
-                if (res < 0) {
+                if (res >= 0) {
+                    //System.out.println(IOUringAsyncSocket.this + " written " + res);
+                    ioVector.compact(res);
+                    resetFlushed();
+                } else if (res == -EAGAIN) {
+                    // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
+                    localTaskQueue.add(eventloopTask);
+                } else {
                     throw newCQEFailedException("Failed to write data to the socket.", "write(2)", IORING_OP_WRITE, -res);
                 }
-                //System.out.println(IOUringAsyncSocket.this + " written " + res);
-
-                ioVector.compact(res);
-                resetFlushed();
             } catch (Exception e) {
                 close("Closing IOUringAsyncSocket due to exception", e);
             }
@@ -447,12 +462,14 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     // 0 indicates end of stream.
                     // https://man7.org/linux/man-pages/man2/recv.2.html
                     close("Socket closed by peer.", null);
-                } else if (-res == ECONNRESET) {
+                } else if (res == -ECONNRESET) {
                     // https://man7.org/linux/man-pages/man2/recv.2.html
                     close("Socket reset by peer.", null);
                 } else {
                     throw newCQEFailedException("Failed to read data from the socket.", "recv(2)", IORING_OP_RECV, -res);
                 }
+
+                // TODO: It could be that we run into an EAGAIN or EWOULDBLOCK.
 
                 //System.out.println("Bytes read:" + res);
             } catch (Exception e) {
