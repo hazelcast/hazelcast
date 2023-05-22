@@ -60,6 +60,10 @@ public final class HazelcastProperty {
         this(name, String.valueOf(defaultValue));
     }
 
+    public HazelcastProperty(String name, Long defaultValue) {
+        this(name, String.valueOf(defaultValue));
+    }
+
     public HazelcastProperty(String name, Double defaultValue) {
         this(name, String.valueOf(defaultValue));
     }

@@ -559,10 +559,6 @@
                     <groupId>com.google.j2objc</groupId>
                     <artifactId>j2objc-annotations</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>animal-sniffer-annotations</artifactId>
-                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
