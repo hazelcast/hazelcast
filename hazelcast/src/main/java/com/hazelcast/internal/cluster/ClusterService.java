@@ -106,8 +106,8 @@ public interface ClusterService extends CoreService, Cluster {
 
     /**
      * Returns whether this member joined to a cluster before. If a member
-     * joins a cluster and then split brain resets the join state, still true
-     * will be returned.
+     * joins a cluster and then split brain resets the join state, still
+     * {@code true} will be returned.
      *
      * @return {@code true} if this member is joined to a cluster before, {@code false} otherwise
      */
