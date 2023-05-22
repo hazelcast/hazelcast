@@ -275,7 +275,7 @@ public class HealthMonitor {
         final LongGauge operationServicePendingInvocationsCount
                 = metricRegistry.newLongGauge("operation.invocations.pending");
         final DoubleGauge operationServicePendingInvocationsPercentage
-                = metricRegistry.newDoubleGauge("operation.invocations.used");
+                = metricRegistry.newDoubleGauge("operation.invocations.usedPercentage");
 
         final LongGauge proxyCount
                 = metricRegistry.newLongGauge("proxy.proxyCount");
