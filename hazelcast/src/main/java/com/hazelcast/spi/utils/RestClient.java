@@ -259,7 +259,7 @@ public final class RestClient {
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init(keyStore);
 
-            SSLContext context = SSLContext.getInstance("TLSv1.2");
+            SSLContext context = SSLContext.getInstance("TLS");
             context.init(null, tmf.getTrustManagers(), null);
             return context.getSocketFactory();
 
