@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
-import com.hazelcast.nio.ssl.SSLEngineFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -28,9 +27,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SSL_ENGINE_FACTORY;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
@@ -40,7 +38,6 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  */
 public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
 
-    static final Executor DEFAULT_TLS_EXECUTOR = Executors.newSingleThreadExecutor();
     static final int DEFAULT_WRITE_QUEUE_CAPACITY = 2 << 16;
 
     private static final Constructor<AsyncSocket> TLS_NIO_ASYNC_SOCKET_CONSTRUCTOR;
@@ -72,9 +69,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
     AsyncSocketReader reader;
     NioAsyncSocketOptions options;
-    SSLEngineFactory sslEngineFactory;
     private boolean built;
-    Executor tlsExecutor = DEFAULT_TLS_EXECUTOR;
 
     NioAsyncSocketBuilder(NioReactor reactor, NioAcceptRequest acceptRequest) {
         try {
@@ -107,22 +102,6 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         verifyNotBuilt();
 
         return options.set(option, value);
-    }
-
-    @Override
-    public AsyncSocketBuilder setSSLEngineFactory(SSLEngineFactory sslEngineFactory) {
-        verifyNotBuilt();
-
-        this.sslEngineFactory = checkNotNull(sslEngineFactory, "sslEngineFactory");
-        return this;
-    }
-
-    @Override
-    public AsyncSocketBuilder setTlsExecutor(Executor tlsExecutor) {
-        verifyNotBuilt();
-
-        this.tlsExecutor = checkNotNull(tlsExecutor, "tlsExecutor");
-        return this;
     }
 
     public NioAsyncSocketBuilder setDirectBuffers(boolean directBuffers) {
@@ -179,14 +158,14 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         }
 
         if (Thread.currentThread() == reactor.eventloopThread()) {
-            return sslEngineFactory == null
+            return options.get(SSL_ENGINE_FACTORY) == null
                     ? new NioAsyncSocket(this)
                     : newTlsNioAsyncSocket(this);
         } else {
             CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
             reactor.execute(() -> {
                 try {
-                    AsyncSocket asyncSocket = sslEngineFactory == null
+                    AsyncSocket asyncSocket = options.get(SSL_ENGINE_FACTORY) == null
                             ? new NioAsyncSocket(NioAsyncSocketBuilder.this)
                             : newTlsNioAsyncSocket(NioAsyncSocketBuilder.this);
 
