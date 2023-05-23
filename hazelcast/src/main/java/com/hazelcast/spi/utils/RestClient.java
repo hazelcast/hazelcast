@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 
 public final class RestClient {
@@ -55,7 +56,9 @@ public final class RestClient {
      * HTTP status code 404 NOT FOUND
      */
     public static final int HTTP_NOT_FOUND = 404;
+
     private static final String WATCH_FORMAT = "watch=1&resourceVersion=%s";
+
     private final String url;
     private final List<Parameter> headers = new ArrayList<>();
     private final HttpClient httpClient;
@@ -211,16 +214,24 @@ public final class RestClient {
             HttpRequest request = requestBuilder.build();
             HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
 
+            checkResponseCode(request.method(), response);
             return new WatchResponse(response);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Failure in executing REST call", e);
         }
     }
 
-    private void checkResponseCode(String method, HttpResponse<String> response) {
+    private void checkResponseCode(String method, HttpResponse<?> response) {
         int responseCode = response.statusCode();
         if (!isExpectedResponseCode(responseCode)) {
-            String errorMessage = response.body();
+            String errorMessage = "none, body type: " + response.body().getClass();
+            if (response.body() instanceof String) {
+                errorMessage = (String) response.body();
+            } else if(response.body() instanceof InputStream) {
+                Scanner scanner = new Scanner((InputStream) response.body(), StandardCharsets.UTF_8);
+                scanner.useDelimiter("\\Z");
+                errorMessage = scanner.next();
+            }
             throw new RestClientException(
                     String.format("Failure executing: %s at: %s. Message: %s", method, url, errorMessage),
                     responseCode);
