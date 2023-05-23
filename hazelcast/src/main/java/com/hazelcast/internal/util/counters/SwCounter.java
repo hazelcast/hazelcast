@@ -16,14 +16,8 @@
 
 package com.hazelcast.internal.util.counters;
 
-import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
-
-import java.lang.reflect.Field;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-
-import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 
 /**
  * A {@link Counter} that is made to be used by a single writing thread.
@@ -43,9 +37,25 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * This causes a lot of syntactic noise due to lack of abstraction.
  * A counter.inc() gives a better clue what the intent is.
  */
-public abstract class SwCounter implements Counter {
+public class SwCounter implements Counter {
 
-    private SwCounter() {
+    private static final VarHandle VALUE;
+
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            VALUE = l.findVarHandle(SwCounter.class, "value", long.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+
+    private volatile long value;
+
+
+    private SwCounter(long value) {
+        this.value = value;
     }
 
     /**
@@ -64,123 +74,44 @@ public abstract class SwCounter implements Counter {
      * @return the created SwCounter.
      */
     public static SwCounter newSwCounter(long initialValue) {
-        return GlobalMemoryAccessorRegistry.MEM_AVAILABLE
-                ? new UnsafeSwCounter(initialValue) : new SafeSwCounter(initialValue);
+        return new SwCounter(initialValue);
     }
 
-    /**
-     * The UnsafeSwCounter relies on the same {@link sun.misc.Unsafe#putOrderedLong(Object, long, long)} as the
-     * {@link AtomicLongFieldUpdater#lazySet(Object, long)} but it removes all kinds of checks.
-     * <p>
-     * For the AtomicLongFieldUpdater, these checks are needed since an arbitrary object can be passed to the
-     * lazySet method and that needs to be verified. In our case we always pass the UnsafeSwCounter instance so
-     * there is no need for these checks.
-     */
-    static final class UnsafeSwCounter extends SwCounter {
-        private static final long OFFSET;
 
-        static {
-            Field field = null;
-            try {
-                field = UnsafeSwCounter.class.getDeclaredField("value");
-            } catch (NoSuchFieldException ignore) {
-                ignore(ignore);
-            }
-            OFFSET = MEM.objectFieldOffset(field);
-        }
-
-        private volatile long value;
-
-        UnsafeSwCounter(long initialValue) {
-            this.value = initialValue;
-        }
-
-        @Override
-        @SuppressWarnings("checkstyle:innerassignment")
-        public long inc() {
-            final long newLocalValue = value + 1;
-            MEM.putOrderedLong(this, OFFSET, newLocalValue);
-            return newLocalValue;
-        }
-
-        @Override
-        @SuppressWarnings("checkstyle:innerassignment")
-        public long inc(long amount) {
-            final long newLocalValue = value + amount;
-            MEM.putOrderedLong(this, OFFSET, newLocalValue);
-            return newLocalValue;
-        }
-
-        @Override
-        public long get() {
-            return value;
-        }
-
-        @Override
-        public void set(long newValue) {
-            MEM.putOrderedLong(this, OFFSET, newValue);
-        }
-
-        @Override
-        public long getAndSet(long newValue) {
-            final long oldLocalValue = value;
-            MEM.putOrderedLong(this, OFFSET, newValue);
-            return oldLocalValue;
-        }
-
-        @Override
-        public String toString() {
-            return "Counter{value=" + value + '}';
-        }
+    @Override
+    public long inc() {
+        long l = (long) VALUE.getOpaque(this) + 1;
+        VALUE.setOpaque(this, l);
+        return l;
     }
 
-    /**
-     * Makes use of the AtomicLongFieldUpdater.lazySet.
-     */
-    static final class SafeSwCounter extends SwCounter {
-
-        private static final AtomicLongFieldUpdater<SafeSwCounter> COUNTER = newUpdater(SafeSwCounter.class, "value");
-
-        private volatile long value;
-
-        SafeSwCounter(long initialValue) {
-            this.value = initialValue;
-        }
-
-        @Override
-        public long inc() {
-            final long newValue = value + 1;
-            COUNTER.lazySet(this, newValue);
-            return newValue;
-        }
-
-        @Override
-        public long inc(long amount) {
-            final long newValue = value + amount;
-            COUNTER.lazySet(this, newValue);
-            return newValue;
-        }
-
-        @Override
-        public long get() {
-            return value;
-        }
-
-        @Override
-        public void set(long newValue) {
-            COUNTER.lazySet(this, newValue);
-        }
-
-        @Override
-        public long getAndSet(long newValue) {
-            final long oldValue = value;
-            COUNTER.lazySet(this, newValue);
-            return oldValue;
-        }
-
-        @Override
-        public String toString() {
-            return "Counter{value=" + value + '}';
-        }
+    @Override
+    public long inc(long amount) {
+        long l = (long) VALUE.getOpaque(this) + amount;
+        VALUE.setOpaque(this, l);
+        return l;
     }
+
+    @Override
+    public long get() {
+        return value;
+    }
+
+    @Override
+    public void set(long newValue) {
+        COUNTER.lazySet(this, newValue);
+    }
+
+    @Override
+    public long getAndSet(long newValue) {
+        final long oldValue = value;
+        COUNTER.lazySet(this, newValue);
+        return oldValue;
+    }
+
+    @Override
+    public String toString() {
+        return "Counter{value=" + value + '}';
+    }
+
 }
