@@ -69,8 +69,7 @@ class KubernetesClient {
             "\"reason\":\"NotFound\"",
             "Failure in generating SSLSocketFactory");
 
-    // TODO: Update after testing
-    private static final int STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS = 10_000;
+    private static final int STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS = 1000;
 
     private final String stsName;
     private final String namespace;
