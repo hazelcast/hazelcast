@@ -22,8 +22,12 @@ import java.lang.invoke.VarHandle;
 /**
  * A {@link Counter} that is made to be used by a single writing thread.
  * <p>
- * It makes use of the lazySet to provide a lower overhead than a volatile write on X86 systems.
- * The volatile write requires waiting for the store buffer to be drained which isn't needed for the lazySet.
+ * It makes use of the opaque read/writes to provide a lower overhead than a volatile write. Volatile write is
+ * pretty expensive. On the X86 is causes subsequent loads to wait till the store in the store buffer has been
+ * written to the coherent cache. And this can take some time because it could be that a whole bunch of cache
+ * lines need to be invalidated and this can add a lot of latency to those loads. Opaque doesn't provide any
+ * ordering guarantees with respect to other variables. It is atomic and coherent and it is super well suited for
+ * progress indicators like performance counters.
  * <p>
  * This counter does not provide padding to prevent false sharing.
  * <p>
@@ -52,7 +56,6 @@ public class SwCounter implements Counter {
 
 
     private volatile long value;
-
 
     private SwCounter(long value) {
         this.value = value;
@@ -94,24 +97,21 @@ public class SwCounter implements Counter {
 
     @Override
     public long get() {
-        return value;
+        return (long) VALUE.getOpaque(this);
     }
 
     @Override
     public void set(long newValue) {
-        COUNTER.lazySet(this, newValue);
+        VALUE.setOpaque(this, newValue);
     }
 
     @Override
     public long getAndSet(long newValue) {
-        final long oldValue = value;
-        COUNTER.lazySet(this, newValue);
-        return oldValue;
+        return (long) VALUE.getAndSet(this, newValue);
     }
 
     @Override
     public String toString() {
         return "Counter{value=" + value + '}';
     }
-
 }
