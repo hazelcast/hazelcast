@@ -23,6 +23,8 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketTest;
 import com.hazelcast.internal.tpcengine.net.DefaultSSLEngineFactory;
 
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SSL_ENGINE_FACTORY;
+
 public class TlsNioAsyncSocketTest extends AsyncSocketTest {
 
     @Override
@@ -33,12 +35,12 @@ public class TlsNioAsyncSocketTest extends AsyncSocketTest {
     @Override
     protected AsyncSocketBuilder newAsyncSocketBuilder(Reactor reactor) {
         return reactor.newAsyncSocketBuilder()
-                .setSSLEngineFactory(new DefaultSSLEngineFactory());
+                .set(SSL_ENGINE_FACTORY, new DefaultSSLEngineFactory());
     }
 
     @Override
     protected AsyncSocketBuilder newAsyncSocketBuilder(Reactor reactor, AcceptRequest acceptRequest) {
         return reactor.newAsyncSocketBuilder(acceptRequest)
-                .setSSLEngineFactory(new DefaultSSLEngineFactory());
+                .set(SSL_ENGINE_FACTORY, new DefaultSSLEngineFactory());
     }
 }

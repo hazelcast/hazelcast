@@ -21,6 +21,8 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket_LargePayloadTest;
 import com.hazelcast.internal.tpcengine.net.DefaultSSLEngineFactory;
 
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SSL_ENGINE_FACTORY;
+
 public class TlsNioAsyncSocket_LargePayloadTest extends AsyncSocket_LargePayloadTest {
 
     @Override
@@ -30,6 +32,6 @@ public class TlsNioAsyncSocket_LargePayloadTest extends AsyncSocket_LargePayload
 
     @Override
     protected void customizeSocketBuilder(AsyncSocketBuilder socketBuilder) {
-        socketBuilder.setSSLEngineFactory(new DefaultSSLEngineFactory());
+        socketBuilder.set(SSL_ENGINE_FACTORY, new DefaultSSLEngineFactory());
     }
 }
