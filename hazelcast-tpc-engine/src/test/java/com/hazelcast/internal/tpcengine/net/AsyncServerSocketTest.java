@@ -233,10 +233,7 @@ public abstract class AsyncServerSocketTest {
 
         CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
         assertCompletesEventually(connect);
-        assertTrueEventually(() -> {
-            System.out.println("clientSocket.isClosed:" + clientSocket.isClosed());
-            assertTrue(clientSocket.isClosed());
-        });
+        assertTrueEventually(() -> assertTrue(clientSocket.isClosed()));
     }
 
     @Test

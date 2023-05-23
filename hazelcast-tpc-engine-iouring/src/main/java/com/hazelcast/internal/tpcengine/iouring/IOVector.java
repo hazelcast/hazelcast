@@ -111,7 +111,7 @@ public final class IOVector {
      *
      * @return the number of IOBuffers.
      */
-    public int count() {
+    public int cnt() {
         return count;
     }
 

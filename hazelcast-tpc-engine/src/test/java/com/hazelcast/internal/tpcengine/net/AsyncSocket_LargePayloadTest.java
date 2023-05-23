@@ -228,7 +228,7 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     @Test
     public void test_concurrency_10_payload_32MB() throws InterruptedException {
-        test(10 * 32768 * 1024, 10);
+        test(32768 * 1024, 10);
     }
 
     public void test(int payloadSize, int concurrency) throws InterruptedException {

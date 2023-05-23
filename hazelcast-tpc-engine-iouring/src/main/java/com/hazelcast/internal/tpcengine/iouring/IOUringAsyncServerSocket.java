@@ -21,6 +21,8 @@ import com.hazelcast.internal.tpcengine.net.AcceptRequest;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.util.ExceptionUtil;
+import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
+import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -33,6 +35,16 @@ import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_ACCEPT;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_CLOEXEC;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_NONBLOCK;
 import static com.hazelcast.internal.tpcengine.iouring.LinuxSocket.AF_INET;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_flags;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_ioprio;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_len;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_off;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_opcode;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -42,6 +54,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  */
 @SuppressWarnings({"checkstyle:MethodName", "checkstyle:TypeName", "checkstyle:MemberName"})
 public final class IOUringAsyncServerSocket extends AsyncServerSocket {
+    private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final LinuxSocket linuxSocket;
 
@@ -53,7 +66,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     private final IOUringAsyncServerSocketOptions options;
     private final Thread eventloopThread;
 
-    private long userdata_acceptHandler;
+    private long userdata_OP_ACCEPT;
     private boolean bind;
     private boolean started;
 
@@ -73,8 +86,8 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         // todo: return value not checked.
         reactor.offer(() -> {
             // todo: on close we need to deregister
-            this.userdata_acceptHandler = eventloop.nextPermanentHandlerId();
-            eventloop.handlers.put(userdata_acceptHandler, new Handler_OP_ACCEPT());
+            this.userdata_OP_ACCEPT = eventloop.nextPermanentHandlerId();
+            eventloop.handlers.put(userdata_OP_ACCEPT, new Handler_OP_ACCEPT());
         });
     }
 
@@ -164,25 +177,29 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         }
         started = true;
 
-        if (!sq_offer_OP_ACCEPT()) {
-            throw new IllegalStateException("Submission queue rejected the OP_ACCEPT");
-        }
+        sq_add_OP_ACCEPT();
+
         if (logger.isInfoEnabled()) {
             logger.info("ServerSocket listening at " + getLocalAddress());
         }
     }
 
-    private boolean sq_offer_OP_ACCEPT() {
-        return sq.offer(
-                IORING_OP_ACCEPT,
-                0,
-                SOCK_NONBLOCK | SOCK_CLOEXEC,
-                linuxSocket.fd(),
-                acceptMemory.memoryAddress,
-                0,
-                acceptMemory.lengthMemoryAddress,
-                userdata_acceptHandler
-        );
+    private void sq_add_OP_ACCEPT() {
+        int index = sq.nextIndex();
+        if (index < 0) {
+            throw new RuntimeException("No space in submission queue");
+        }
+
+        long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_ACCEPT);
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, acceptMemory.lenAddr);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, acceptMemory.addr);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, SOCK_NONBLOCK | SOCK_CLOEXEC);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_ACCEPT);
     }
 
     private class Handler_OP_ACCEPT implements CompletionHandler {
@@ -191,15 +208,15 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         public void handle(int res, int flags, long userdata) {
             try {
                 if (res >= 0) {
-                    // we need to re-register for more accepts.
-                    // todo: return value
-                    sq_offer_OP_ACCEPT();
-
+                    int fd = res;
                     metrics.incAccepted();
 
+                    // re-register for more accepts.
+                    sq_add_OP_ACCEPT();
+
                     SocketAddress address = LinuxSocket.toInetSocketAddress(
-                            acceptMemory.memoryAddress,
-                            acceptMemory.lengthMemoryAddress);
+                            acceptMemory.addr,
+                            acceptMemory.lenAddr);
 
                     if (logger.isInfoEnabled()) {
                         logger.info(IOUringAsyncServerSocket.this + " new connected accepted: " + address);
@@ -207,16 +224,21 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
                     // todo: ugly that AF_INET is hard configured.
                     // We should use the address to determine the type
-                    LinuxSocket socket = new LinuxSocket(res, AF_INET);
-                    AcceptRequest acceptRequest = new IOUringAcceptRequest(socket);
+                    LinuxSocket linuxSocket = new LinuxSocket(fd, AF_INET);
+                    AcceptRequest acceptRequest = new IOUringAcceptRequest(linuxSocket);
                     try {
                         acceptConsumer.accept(acceptRequest);
                     } catch (Throwable t) {
+                        logger.severe(t);
+
                         // If for whatever reason the socket isn't consumed, we need
                         // to properly close the socket. Otherwise the socket remains
                         // under a CLOSE_WAIT state and the port doesn't get released.
                         closeQuietly(acceptRequest);
-                        throw ExceptionUtil.sneakyThrow(t);
+
+                        if (logger.isWarningEnabled()) {
+                            logger.warning("Closing socket " + address + "->" + getLocalAddress());
+                        }
                     }
                 } else {
                     throw newCQEFailedException("Failed to accept a socket.", "accept(2)", IORING_OP_ACCEPT, -res);

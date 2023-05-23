@@ -59,7 +59,7 @@ public class IOUringFlowTest {
             }
 
             for (int k = 0; k < batchSize; k++) {
-                sq.offerNop(10);
+                sq.offer_NOP(10);
             }
             int submittedEntries = sq.submit();
             assertEquals(batchSize, submittedEntries);

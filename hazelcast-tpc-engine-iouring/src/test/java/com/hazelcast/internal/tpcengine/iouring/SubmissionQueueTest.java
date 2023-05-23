@@ -59,7 +59,7 @@ public class SubmissionQueueTest {
 
         int count = 10;
         for (int k = 0; k < count; k++) {
-            sq.offerNop(1);
+            sq.offer_NOP(1);
         }
 
         int submitted = sq.submitAndWait();
@@ -102,7 +102,7 @@ public class SubmissionQueueTest {
 
         int pending = 10;
         for (int k = 0; k < pending; k++) {
-            sq.offerNop(k);
+            sq.offer_NOP(k);
         }
 
         long localHead = sq.localHead;
@@ -147,7 +147,7 @@ public class SubmissionQueueTest {
         SubmissionQueue sq = uring.submissionQueue();
 
         for (int k = 0; k < entries; k++) {
-            sq.offerNop(1);
+            sq.offer_NOP(1);
             Assert.assertEquals(0, sq.acquireTail());
             Assert.assertEquals(k + 1, sq.localTail);
         }
@@ -159,13 +159,13 @@ public class SubmissionQueueTest {
         uring = new IOUring(entries, 0);
         SubmissionQueue sq = uring.submissionQueue();
         for (int k = 0; k < entries; k++) {
-            assertTrue(sq.offerNop(1));
+            assertTrue(sq.offer_NOP(1));
         }
 
         long tail = sq.tail();
         long localTail = sq.localTail;
 
-        boolean success = sq.offerNop(1);
+        boolean success = sq.offer_NOP(1);
 
         assertFalse(success);
         Assert.assertEquals(tail, sq.tail());

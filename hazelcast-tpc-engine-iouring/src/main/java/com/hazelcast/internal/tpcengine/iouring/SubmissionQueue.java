@@ -26,10 +26,14 @@ import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_ENTER_REGI
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_NOP;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
+import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 
 // https://github.com/axboe/liburing/blob/master/src/include/liburing.h
-@SuppressWarnings({"checkstyle:ConstantName", "checkstyle:ParameterName", "checkstyle:ParameterNumber"})
+@SuppressWarnings({"checkstyle:ConstantName",
+        "checkstyle:ParameterName",
+        "checkstyle:MethodName",
+        "checkstyle:ParameterNumber"})
 public final class SubmissionQueue {
     public static final int OFFSET_SQE_opcode = 0;
     public static final int OFFSET_SQE_flags = 1;
@@ -40,10 +44,9 @@ public final class SubmissionQueue {
     public static final int OFFSET_SQE_len = 24;
     public static final int OFFSET_SQE_rw_flags = 28;
     public static final int OFFSET_SQE_user_data = 32;
+    public static final int SIZEOF_SQE = 64;
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
-    private static final int SIZE_SQE = 64;
-    private static final int INT_SIZE = Integer.BYTES;
 
     boolean ringBufferRegistered;
     int enterRingFd;
@@ -103,7 +106,7 @@ public final class SubmissionQueue {
     }
 
     public void array(int pos, int value) {
-        UNSAFE.putInt(arrayAddr + INT_SIZE * pos, value);
+        UNSAFE.putInt(arrayAddr + SIZEOF_INT * pos, value);
     }
 
     /**
@@ -136,18 +139,18 @@ public final class SubmissionQueue {
                          int flags,
                          int rwFlags,
                          int fd,
-                         long bufferAddress,
+                         long bufferAddr,
                          int length,
                          long offset,
                          long userData) {
         //System.out.println("writeSqe:" + index);
-        long sqeAddr = sqesAddr + index * SIZE_SQE;
+        long sqeAddr = sqesAddr + index * SIZEOF_SQE;
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, opcode);
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) flags);
         UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
         UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, fd);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, offset);
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, bufferAddress);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, bufferAddr);
         UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, length);
         UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, rwFlags);
         UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userData);
@@ -170,7 +173,7 @@ public final class SubmissionQueue {
         return true;
     }
 
-    public boolean offerNop(long userdata) {
+    public boolean offer_NOP(long userdata) {
         int index = nextIndex();
         if (index == -1) {
             return false;
@@ -210,11 +213,11 @@ public final class SubmissionQueue {
 
         int res = IOUring.enter(enterRingFd, toSubmit, 1, flags);
 
-        if (res < 0) {
+        if (res >= 0) {
+            return toSubmit;
+        } else {
             throw newEnterFailedException(-res);
         }
-
-        return toSubmit;
     }
 
     public int submit() {

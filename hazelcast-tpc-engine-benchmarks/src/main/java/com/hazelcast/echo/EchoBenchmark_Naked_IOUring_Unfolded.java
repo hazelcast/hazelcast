@@ -223,7 +223,7 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
             handlers[acceptHandler.id] = acceptHandler;
             handlerIdGenerator++;
 
-            sq.offer(IORING_OP_ACCEPT, 0, SOCK_NONBLOCK | SOCK_CLOEXEC, serverSocket.fd(), acceptMemory.memoryAddress, 0, acceptMemory.lengthMemoryAddress, acceptHandler.id);
+            sq.offer(IORING_OP_ACCEPT, 0, SOCK_NONBLOCK | SOCK_CLOEXEC, serverSocket.fd(), acceptMemory.addr, 0, acceptMemory.lenAddr, acceptHandler.id);
 
             int localTail = cq.localTail;
             int localHead = cq.localHead;
@@ -255,7 +255,7 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
                         LinuxSocket clientSocket = new LinuxSocket(res, AF_INET);
                         clientSocket.setTcpNoDelay(true);
 
-                        sq.offer(IORING_OP_ACCEPT, 0, SOCK_NONBLOCK | SOCK_CLOEXEC, serverSocket.fd(), acceptMemory.memoryAddress, 0, acceptMemory.lengthMemoryAddress, handler.id);
+                        sq.offer(IORING_OP_ACCEPT, 0, SOCK_NONBLOCK | SOCK_CLOEXEC, serverSocket.fd(), acceptMemory.addr, 0, acceptMemory.lenAddr, handler.id);
                         //System.out.println("Connection established " + clientSocket.getLocalAddress() + "->" + clientSocket.getRemoteAddress());
 
                         Handler readHandler = new Handler();

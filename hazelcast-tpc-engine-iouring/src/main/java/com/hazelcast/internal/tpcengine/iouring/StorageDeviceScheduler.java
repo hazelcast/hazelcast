@@ -21,10 +21,24 @@ import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
+import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
+import sun.misc.Unsafe;
 
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.opcodeToString;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_flags;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_ioprio;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_len;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_off;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_opcode;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
 
 public class StorageDeviceScheduler {
+
+    private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     final String path;
     IOUringEventloop eventloop;
@@ -36,8 +50,8 @@ public class StorageDeviceScheduler {
     // a queue of IoOps that could not be submitted to io_uring because either
     // io_uring was full or because the max number of concurrent IoOps for that
     // device was exceeded.
-    private final CircularQueue<IoOp> waitQueue;
-    private final SlabAllocator<IoOp> opAllocator;
+    private final CircularQueue<IO> waitQueue;
+    private final SlabAllocator<IO> ioAllocator;
     private long count;
 
     public StorageDeviceScheduler(StorageDevice dev, IOUringEventloop eventloop) {
@@ -45,7 +59,7 @@ public class StorageDeviceScheduler {
         this.path = dev.path();
         this.maxConcurrent = dev.maxConcurrent();
         this.waitQueue = new CircularQueue<>(dev.maxWaiting());
-        this.opAllocator = new SlabAllocator<>(dev.maxWaiting(), IoOp::new);
+        this.ioAllocator = new SlabAllocator<>(dev.maxWaiting(), IO::new);
         this.eventloop = eventloop;
         this.handlers = eventloop.handlers;
         this.sq = eventloop.sq;
@@ -58,25 +72,25 @@ public class StorageDeviceScheduler {
                                    long bufferAddress,
                                    int length,
                                    long offset) {
-        IoOp op = opAllocator.allocate();
+        IO io = ioAllocator.allocate();
 
 //        if (opcode == IORING_OP_FSYNC) {
 //            // if there are no pending writes, the fsync can immediately be used.
 //            // if there are pending writes, the fsync need to wait till all the writes
 //            // before the fsync have completed.
 //        } else if (opcode == IORING_OP_WRITE) {
-//            op.writeId = ++file.newestWriteSeq;
+//            io.writeId = ++file.newestWriteSeq;
 //        } else {
-//            op.writeId = -1;
+//            io.writeId = -1;
 //        }
 
-        op.file = file;
-        op.opcode = opcode;
-        op.flags = flags;
-        op.rwFlags = rwFlags;
-        op.bufferAddress = bufferAddress;
-        op.length = length;
-        op.offset = offset;
+        io.file = file;
+        io.opcode = opcode;
+        io.flags = flags;
+        io.rwFlags = rwFlags;
+        io.addr = bufferAddress;
+        io.len = length;
+        io.offset = offset;
 
 //        count++;
 //        if (count % 100000 == 0) {
@@ -84,12 +98,12 @@ public class StorageDeviceScheduler {
 //        }
 
         Promise<Integer> promise = eventloop.promiseAllocator.allocate();
-        op.promise = promise;
+        io.promise = promise;
 
         if (concurrent < maxConcurrent) {
-            offerOp(op);
-        } else if (!waitQueue.offer(op)) {
-            opAllocator.free(op);
+            offerIO(io);
+        } else if (!waitQueue.offer(io)) {
+            ioAllocator.free(io);
             // todo: better approach needed
             promise.completeWithIOException(
                     "Overload. Max concurrent operations " + maxConcurrent + " dev: [" + dev.path() + "]", null);
@@ -102,44 +116,48 @@ public class StorageDeviceScheduler {
 
     private void scheduleNext() {
         if (concurrent < maxConcurrent) {
-            IoOp op = waitQueue.poll();
-            if (op != null) {
-                offerOp(op);
+            IO io = waitQueue.poll();
+            if (io != null) {
+                offerIO(io);
             }
         }
     }
 
-    private void offerOp(IoOp op) {
+    private void offerIO(IO io) {
         long userdata = eventloop.nextTmpHandlerId();
-        handlers.put(userdata, op);
+        handlers.put(userdata, io);
 
         concurrent++;
 
-        boolean offered = sq.offer(
-                op.opcode,
-                op.flags,
-                op.rwFlags,
-                op.file.fd,
-                op.bufferAddress,
-                op.length,
-                op.offset,
-                userdata);
-
-        // todo: we need to find better solution
-        if (!offered) {
-            throw new RuntimeException("Could not offer op: " + op);
+        int index = sq.nextIndex();
+        if (index > 0) {
+            //System.out.println("writeSqe:" + index);
+            long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, io.opcode);
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) io.flags);
+            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, io.file.fd);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, io.offset);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, io.addr);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, io.len);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, io.rwFlags);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+            //System.out.println("SubmissionQueue: userdata:" + userData + " index:" + index + " io:" + opcode);
+        } else {
+            // todo: we need to find better solution
+            throw new RuntimeException("Could not offer io: " + io);
         }
     }
 
-    private class IoOp implements CompletionHandler {
+    private class IO implements CompletionHandler {
         private long writeId;
         private IOUringAsyncFile file;
         private long offset;
-        private int length;
+        private int len;
         private byte opcode;
         private int flags;
         private int rwFlags;
-        private long bufferAddress;
+        private long addr;
         private Promise<Integer> promise;
 
         @Override
@@ -167,19 +185,19 @@ public class StorageDeviceScheduler {
             scheduleNext();
             file = null;
             promise = null;
-            opAllocator.free(this);
+            ioAllocator.free(this);
         }
 
         @Override
         public String toString() {
-            return "Op{"
+            return "IO{"
                     + "file=" + file
                     + ", offset=" + offset
-                    + ", length=" + length
+                    + ", length=" + len
                     + ", opcode=" + opcodeToString(opcode)
                     + ", flags=" + flags
                     + ", rwFlags=" + rwFlags
-                    + ", bufferAddress=" + bufferAddress
+                    + ", bufferAddress=" + addr
                     + '}';
         }
     }

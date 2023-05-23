@@ -31,7 +31,7 @@ public class IOVectorTest {
         IOVector v = new IOVector(64);
 
         Assert.assertEquals(64, v.capacity());
-        Assert.assertEquals(0, v.count());
+        Assert.assertEquals(0, v.cnt());
         assertTrue(v.isEmpty());
     }
 
@@ -58,7 +58,7 @@ public class IOVectorTest {
         boolean result = v.offer(new IOBuffer(1024, true));
 
         assertFalse(result);
-        Assert.assertEquals(capacity, v.count());
+        Assert.assertEquals(capacity, v.cnt());
     }
 
     @Test
@@ -70,7 +70,7 @@ public class IOVectorTest {
             buf.writeInt(10);
             buf.flip();
             assertTrue(v.offer(buf));
-            Assert.assertEquals(k + 1, v.count());
+            Assert.assertEquals(k + 1, v.cnt());
             Assert.assertEquals((k + 1) * SIZEOF_INT, v.pending());
         }
     }
@@ -95,7 +95,7 @@ public class IOVectorTest {
         long pending = v.pending();
         v.compact(pending);
 
-        Assert.assertEquals(0, v.count());
+        Assert.assertEquals(0, v.cnt());
         Assert.assertEquals(0, v.pending());
     }
 
@@ -112,7 +112,7 @@ public class IOVectorTest {
 
         v.compact(0);
 
-        Assert.assertEquals(16, v.count());
+        Assert.assertEquals(16, v.cnt());
         Assert.assertEquals(16 * SIZEOF_INT, v.pending());
     }
 
@@ -139,7 +139,7 @@ public class IOVectorTest {
 
         v.compact(1);
 
-        Assert.assertEquals(3, v.count());
+        Assert.assertEquals(3, v.cnt());
         Assert.assertEquals(3 * SIZEOF_INT - 1, v.pending());
         Assert.assertEquals(1, buf1.position());
         Assert.assertEquals(0, buf2.position());
@@ -169,7 +169,7 @@ public class IOVectorTest {
 
         v.compact(5);
 
-        Assert.assertEquals(2, v.count());
+        Assert.assertEquals(2, v.cnt());
         Assert.assertEquals(3 * SIZEOF_INT - 5, v.pending());
         Assert.assertEquals(1, buf2.position());
         Assert.assertEquals(0, buf3.position());

@@ -237,9 +237,9 @@ public class EchoBenchmark_Naked_IOUring {
                         0,
                         SOCK_NONBLOCK | SOCK_CLOEXEC,
                         serverSocket.fd(),
-                        acceptMemory.memoryAddress,
+                        acceptMemory.addr,
                         0,
-                        acceptMemory.lengthMemoryAddress,
+                        acceptMemory.lenAddr,
                         acceptHandler.id
                 );
 
@@ -275,9 +275,9 @@ public class EchoBenchmark_Naked_IOUring {
                                 0,
                                 SOCK_NONBLOCK | SOCK_CLOEXEC,
                                 serverSocket.fd(),
-                                acceptMemory.memoryAddress,
+                                acceptMemory.addr,
                                 0,
-                                acceptMemory.lengthMemoryAddress,
+                                acceptMemory.lenAddr,
                                 handler.id
                         );
                         //System.out.println("Connection established " + clientSocket.getLocalAddress() + "->" + clientSocket.getRemoteAddress());

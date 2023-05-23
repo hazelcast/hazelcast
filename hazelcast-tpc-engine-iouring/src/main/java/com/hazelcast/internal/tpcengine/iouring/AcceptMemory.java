@@ -27,22 +27,22 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 // So we don't need to worry about concurrent access to the same AcceptMemory.
 @SuppressWarnings("checkstyle:VisibilityModifier")
 public class AcceptMemory {
-    public final ByteBuffer memory;
-    public final long memoryAddress;
-    public final ByteBuffer lengthMemory;
-    public final long lengthMemoryAddress;
+    public final ByteBuffer buffer;
+    public final long addr;
+    public final ByteBuffer lenBuffer;
+    public final long lenAddr;
 
     public AcceptMemory() {
-        this.memory = ByteBuffer.allocateDirect(SIZEOF_SOCKADDR_STORAGE);
-        memory.order(ByteOrder.nativeOrder());
-        this.memoryAddress = addressOf(memory);
+        this.buffer = ByteBuffer.allocateDirect(SIZEOF_SOCKADDR_STORAGE);
+        buffer.order(ByteOrder.nativeOrder());
+        this.addr = addressOf(buffer);
 
-        this.lengthMemory = ByteBuffer.allocateDirect(SIZEOF_LONG);
-        lengthMemory.order(ByteOrder.nativeOrder());
+        this.lenBuffer = ByteBuffer.allocateDirect(SIZEOF_LONG);
+        lenBuffer.order(ByteOrder.nativeOrder());
 
         // Needs to be initialized to the size of acceptedAddressMemory.
         // See https://man7.org/linux/man-pages/man2/accept.2.html
-        this.lengthMemory.putLong(0, SIZEOF_SOCKADDR_STORAGE);
-        this.lengthMemoryAddress = addressOf(lengthMemory);
+        this.lenBuffer.putLong(0, SIZEOF_SOCKADDR_STORAGE);
+        this.lenAddr = addressOf(lenBuffer);
     }
 }

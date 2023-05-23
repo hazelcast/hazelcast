@@ -22,7 +22,9 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
+import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import org.jctools.queues.MpmcArrayQueue;
+import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -39,6 +41,16 @@ import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITEV;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EAGAIN;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_flags;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_ioprio;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_len;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_off;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_opcode;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
@@ -57,6 +69,8 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         // Ensure JNI is initialized as soon as this class is loaded
         IOUringLibrary.ensureAvailable();
     }
+
+    private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final IOUringEventloop eventloop;
     private final IOUringReactor reactor;
@@ -272,7 +286,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    protected void close0() throws IOException {
+    protected void close0() {
         //todo: also think about releasing the resources like IOBuffers
 
         if (reactor != null) {
@@ -295,17 +309,23 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             throw new RuntimeException("Calling sq_addRead with 0 length for the read buffer");
         }
 
-        // IORING_OP_RECV provides better performance than IORING_OP_READ
-        // https://github.com/axboe/liburing/issues/536
-        sq.offer(IORING_OP_RECV,     // op
-                0,                  // flags
-                0,                  // rw-flags
-                linuxSocket.fd(),      // fd
-                address,            // buffer address
-                length,             // length
-                0,                  // offset
-                userdata_OP_READ    // userdata
-        );
+        int index = sq.nextIndex();
+        if (index >= 0) {
+            long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
+            // IORING_OP_RECV provides better performance than IORING_OP_READ
+            // https://github.com/axboe/liburing/issues/536
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_RECV);
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, address);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, length);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_READ);
+        } else {
+            throw new RuntimeException("No space in submission queue");
+        }
     }
 
     @Override
@@ -328,7 +348,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     logger.info("Connected from " + localAddress + "->" + remoteAddress);
                 }
 
-                reactor.offer(() -> sq_addRead());
+                reactor.offer(this::sq_addRead);
 
                 future.complete(null);
             } else {
@@ -351,40 +371,39 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     throw new RuntimeException("Channel should be in flushed state");
                 }
 
-                ioVector.populate(unflushedBufs);
+                int index = sq.nextIndex();
+                if (index >= 0) {
+                    long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
 
-                if (ioVector.count() == 1) {
-                    // There is just one item in the ioVecArray, so instead of doing a vectorized write, we do a regular write.
-                    ByteBuffer buffer = ioVector.get(0).byteBuffer();
-                    long bufferAddress = addressOf(buffer);
-                    long address = bufferAddress + buffer.position();
-                    int length = buffer.remaining();
+                    ioVector.populate(unflushedBufs);
 
-                    // IORING_OP_SEND is more efficient than IORING_OP_WRITE
-                    // todo: return value
-                    sq.offer(IORING_OP_SEND,         // op
-                            0,                       // flags
-                            0,                       // rw-flags
-                            linuxSocket.fd(),           // fd
-                            address,                 // buffer address
-                            length,                  // number of bytes to write.
-                            0,                       // offset
-                            userdata_OP_WRITE        // userdata
-                    );
+                    if (ioVector.cnt() == 1) {
+                        // There is just one item in the ioVecArray, so instead of doing a vectorized write,
+                        // we do a regular write.
+                        ByteBuffer buffer = ioVector.get(0).byteBuffer();
+
+                        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_SEND);
+                        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+                        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
+                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
+                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, addressOf(buffer) + buffer.position());
+                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, buffer.remaining());
+                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
+                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_WRITE);
+                    } else {
+                        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_WRITEV);
+                        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+                        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
+                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
+                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, ioVector.addr());
+                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, ioVector.cnt());
+                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
+                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_WRITEV);
+                    }
                 } else {
-                    long address = ioVector.addr();
-                    int count = ioVector.count();
-
-                    // todo: return value
-                    sq.offer(IORING_OP_WRITEV,       // op
-                            0,                      // flags
-                            0,                      // rw-flags
-                            linuxSocket.fd(),          // fd
-                            address,                // iov start address
-                            count,                  // number of iov entries
-                            0,                      // offset
-                            userdata_OP_WRITEV      // userdata
-                    );
+                    throw new RuntimeException("No space in submission queue");
                 }
             } catch (Exception e) {
                 close("Closing IOUringAsyncSocket due to exception", e);
@@ -393,16 +412,28 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     private class Handler_OP_WRITEV implements CompletionHandler {
+//        private long handle;
+//        private long egain;
+
         @Override
         public void handle(int res, int flags, long userdata) {
             try {
+//                handle++;
+//
+//                if (handle % 10000 == 0) {
+//                    System.out.println(100f * egain / handle + " %");
+//                }
+
                 if (res >= 0) {
                     //System.out.println(IOUringAsyncSocket.this + " written " + res);
                     ioVector.compact(res);
                     resetFlushed();
                 } else if (res == -EAGAIN) {
+                    //System.out.println(ioVector.count());
+
+                    //egain++;
                     // TODO: Can this lead to spinning?
-                    System.out.println("-----");
+                    //System.out.println("-----");
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
                     localTaskQueue.add(eventloopTask);
                 } else {

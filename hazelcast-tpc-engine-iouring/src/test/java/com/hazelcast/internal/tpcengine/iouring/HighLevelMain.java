@@ -26,7 +26,7 @@ public class HighLevelMain {
 
         int count = 10;
         for (int k = 0; k < count; k++) {
-            sq.offerNop(10);
+            sq.offer_NOP(10);
         }
         int submittedEntries = sq.submit();
 

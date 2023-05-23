@@ -25,6 +25,10 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * Good read:
  * https://github.com/axboe/liburing/issues/536
  * https://tchaloupka.github.io/during/during.io_uring.RegisterOpCode.html
+ * https://nick-black.com/dankwiki/index.php/Io_uring
+ *
+ * TODO:
+ * IORING_SETUP_SINGLE_ISSUER
  */
 @SuppressWarnings({"checkstyle:ParameterName", "checkstyle:ConstantName"})
 public final class IOUring implements AutoCloseable {

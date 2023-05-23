@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.newSysCallFailedException;
 
 /**
- * Represents an event-filedescriptor. One of the applications is the
+ * Represents an event file-descriptor. One of the applications is the
  * notification of a thread that is blocking on the io_uring_enter.
  */
 public final class EventFd implements AutoCloseable {
@@ -30,7 +30,7 @@ public final class EventFd implements AutoCloseable {
     public EventFd() {
         int res = Linux.eventfd(0, 0);
         if (res == -1) {
-            throw newSysCallFailedException("Failed to create event filedescriptor.", "eventfd(2)", -res);
+            throw newSysCallFailedException("Failed to create eventfd.", "eventfd(2)", -res);
         }
         this.fd = res;
     }
@@ -38,7 +38,7 @@ public final class EventFd implements AutoCloseable {
     public void write(long value) {
         int res = Linux.eventfd_write(fd, value);
         if (res == -1) {
-            throw newSysCallFailedException("Failed to write to event filedescriptor.", "eventfd_write(2)", -res);
+            throw newSysCallFailedException("Failed to write to eventfd.", "eventfd_write(2)", -res);
         }
     }
 
