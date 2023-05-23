@@ -117,8 +117,7 @@ public class GcpDiscoveryStrategyFactory
 
     static boolean isEndpointAvailable(String url) {
         return !RestClient.create(url)
-                .withConnectTimeoutSeconds(1)
-                .withReadTimeoutSeconds(1)
+                .withTimeoutSeconds(1)
                 .withRetries(1)
                 .withHeader("Metadata-Flavor", "Google")
                 .get()

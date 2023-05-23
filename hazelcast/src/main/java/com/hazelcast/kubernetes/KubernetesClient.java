@@ -69,6 +69,9 @@ class KubernetesClient {
             "\"reason\":\"NotFound\"",
             "Failure in generating SSLSocketFactory");
 
+    // TODO: Update after testing
+    private static final int STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS = 10_000;
+
     private final String stsName;
     private final String namespace;
     private final String kubernetesMaster;
@@ -80,7 +83,7 @@ class KubernetesClient {
     private final String servicePerPodLabelName;
     private final String servicePerPodLabelValue;
     @Nullable
-    private final Thread stsMonitorThread;
+    private final StsMonitorThread stsMonitorThread;
 
     private final KubernetesTokenProvider tokenProvider;
 
@@ -110,7 +113,7 @@ class KubernetesClient {
         this.apiProvider =  buildKubernetesApiUrlProvider();
         this.stsName = extractStsName();
         this.stsMonitorThread = (clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled())
-                ? new Thread(new StsMonitor(), "hz-k8s-sts-monitor") : null;
+                ? new StsMonitorThread() : null;
     }
 
     // constructor that allows overriding detected statefulset name for usage in tests
@@ -136,7 +139,7 @@ class KubernetesClient {
         this.apiProvider =  buildKubernetesApiUrlProvider();
         this.stsName = stsName;
         this.stsMonitorThread = (clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled())
-                ? new Thread(new StsMonitor(), "hz-k8s-sts-monitor") : null;
+                ? new StsMonitorThread() : null;
     }
 
     // test usage only
@@ -166,12 +169,26 @@ class KubernetesClient {
     }
 
     public void destroy() {
-        if (clusterTopologyIntentTracker != null) {
-            clusterTopologyIntentTracker.destroy();
-        }
+        // It's important we shut down the StsMonitorThread first, as the ClusterTopologyIntentTracker
+        // receives messages from this thread, and we want to let it process all available messages
+        // before the intent tracker is shutdown
         if (stsMonitorThread != null) {
-            LOGGER.info("Interrupting StatefulSet monitor thread");
-            stsMonitorThread.interrupt();
+            LOGGER.info("Shutting down StatefulSet monitor thread");
+            stsMonitorThread.shutdown();
+        }
+
+        if (clusterTopologyIntentTracker != null) {
+            // Join the StsMonitor thread to ensure it has completed processing all messages
+            // before shutting down our ClusterTopologyIntentTracker (which processes messages)
+            if (stsMonitorThread != null) {
+                try {
+                    stsMonitorThread.join(STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            clusterTopologyIntentTracker.destroy();
         }
     }
 
@@ -570,9 +587,8 @@ class KubernetesClient {
      */
     private JsonObject callGet(final String urlString) {
         return RetryUtils.retry(() -> Json
-                .parse(RestClient.create(urlString)
+                .parse(RestClient.createWithSSL(urlString, caCertificate)
                         .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
-                        .withCaCertificates(caCertificate)
                         .get()
                         .getBody())
                 .asObject(), retries, NON_RETRYABLE_KEYWORDS);
@@ -722,7 +738,7 @@ class KubernetesClient {
         }
     }
 
-    final class StsMonitor implements Runnable {
+    final class StsMonitorThread extends Thread {
 
         // backoff properties when retrying
         private static final int MAX_SPINS = 3;
@@ -732,15 +748,18 @@ class KubernetesClient {
 
         // used only for tests
         volatile boolean running = true;
+        volatile boolean shuttingDown;
 
         String latestResourceVersion;
         RuntimeContext latestRuntimeContext;
         int idleCount;
+        RestClient.WatchResponse watchResponse;
 
         private final String stsUrlString;
         private final BackoffIdleStrategy backoffIdleStrategy;
 
-        StsMonitor() {
+        StsMonitorThread() {
+            super("hz-k8s-sts-monitor");
             stsUrlString = formatStsListUrl();
             backoffIdleStrategy = new BackoffIdleStrategy(MAX_SPINS, MAX_YIELDS,
                     MILLISECONDS.toNanos(MIN_PARK_PERIOD_MILLIS), SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
@@ -756,11 +775,10 @@ class KubernetesClient {
          */
         @Override
         public void run() {
-            RestClient.WatchResponse watchResponse;
             String message;
 
             while (running) {
-                if (Thread.interrupted()) {
+                if (shuttingDown) {
                     break;
                 }
                 try {
@@ -782,13 +800,27 @@ class KubernetesClient {
                         onMessage(message);
                     }
                 } catch (IOException e) {
-                    LOGGER.info("Exception while watching for StatefulSet changes", e);
-                    try {
-                        watchResponse.disconnect();
-                    } catch (Exception t) {
-                        LOGGER.fine("Exception while closing connection after an IOException", t);
+                    // If we're shutting down, the watchResponse is already disconnected, and
+                    // the IOException can be disregarded; otherwise continue with logging
+                    if (!shuttingDown) {
+                        LOGGER.info("Exception while watching for StatefulSet changes", e);
+
+                        try {
+                            watchResponse.disconnect();
+                        } catch (Exception t) {
+                            LOGGER.fine("Exception while closing connection after an IOException", t);
+                        }
                     }
                 }
+            }
+        }
+
+        public void shutdown() {
+            this.shuttingDown = true;
+            try {
+                watchResponse.disconnect();
+            } catch (IOException e) {
+                LOGGER.fine("Exception while closing connection during shutdown", e);
             }
         }
 
@@ -834,9 +866,8 @@ class KubernetesClient {
          */
         @Nonnull
         RestClient.WatchResponse sendWatchRequest() {
-            RestClient restClient = RestClient.create(stsUrlString)
-                    .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
-                    .withCaCertificates(caCertificate);
+            RestClient restClient = RestClient.createWithSSL(stsUrlString, caCertificate)
+                    .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()));
             return restClient.watch(latestResourceVersion);
         }
 

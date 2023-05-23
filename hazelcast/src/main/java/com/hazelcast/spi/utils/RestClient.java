@@ -19,32 +19,30 @@ package com.hazelcast.spi.utils;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.spi.exception.RestClientException;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 public final class RestClient {
 
@@ -57,24 +55,45 @@ public final class RestClient {
      * HTTP status code 404 NOT FOUND
      */
     public static final int HTTP_NOT_FOUND = 404;
-
     private static final String WATCH_FORMAT = "watch=1&resourceVersion=%s";
-
     private final String url;
     private final List<Parameter> headers = new ArrayList<>();
+    private final HttpClient httpClient;
     private Set<Integer> expectedResponseCodes;
     private String body;
-    private int readTimeoutSeconds;
-    private int connectTimeoutSeconds;
+    private int timeoutSeconds;
     private int retries;
-    private String caCertificate;
 
-    protected RestClient(String url) {
+    /**
+     * Build a new RestClient, backed by an {@link HttpClient} without {@link SSLContext}
+     * @param url the URL to connect to
+     */
+    private RestClient(String url) {
         this.url = url;
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
+    }
+
+    /**
+     * Build a new RestClient, backed by an {@link HttpClient} using {@link SSLContext}
+     * @param url           the URL to connect to
+     * @param caCertificate the SSL certificate to use
+     */
+    private RestClient(String url, String caCertificate) {
+        this.url = url;
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .sslContext(buildSslContext(caCertificate))
+                .build();
     }
 
     public static RestClient create(String url) {
         return new RestClient(url);
+    }
+
+    public static RestClient createWithSSL(String url, String caCertificate) {
+        return new RestClient(url, caCertificate);
     }
 
     public RestClient withHeaders(Map<String, String> headers) {
@@ -94,23 +113,19 @@ public final class RestClient {
         return this;
     }
 
-    public RestClient withReadTimeoutSeconds(int readTimeoutSeconds) {
-        this.readTimeoutSeconds = readTimeoutSeconds;
+    public RestClient withTimeoutSeconds(int timeoutSeconds) {
+        this.timeoutSeconds = timeoutSeconds;
         return this;
     }
 
-    public RestClient withConnectTimeoutSeconds(int connectTimeoutSeconds) {
-        this.connectTimeoutSeconds = connectTimeoutSeconds;
+    // Select the preferred timeout based on 2 inputs (legacy support)
+    public RestClient withPreferredTimeoutSeconds(int timeoutSeconds1, int timeoutSeconds2) {
+        this.timeoutSeconds = Math.max(timeoutSeconds1, timeoutSeconds2);
         return this;
     }
 
     public RestClient withRetries(int retries) {
         this.retries = retries;
-        return this;
-    }
-
-    public RestClient withCaCertificates(String caCertificate) {
-        this.caCertificate = caCertificate;
         return this;
     }
 
@@ -123,56 +138,44 @@ public final class RestClient {
     }
 
     public Response get() {
-        return callWithRetries("GET");
+        return callWithRetries(buildHttpRequest("GET"));
     }
 
     public Response post() {
-        return callWithRetries("POST");
+        return callWithRetries(buildHttpRequest("POST"));
     }
 
     public Response put() {
-        return callWithRetries("PUT");
+        return callWithRetries(buildHttpRequest("PUT"));
     }
 
-    private Response callWithRetries(String method) {
-        return RetryUtils.retry(() -> call(method), retries);
+    private HttpRequest buildHttpRequest(String method) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(url));
+
+        if (timeoutSeconds > 0) {
+            builder.timeout(Duration.ofSeconds(timeoutSeconds));
+        }
+        headers.forEach(parameter -> builder.header(parameter.getKey(), parameter.getValue()));
+
+        HttpRequest.BodyPublisher publisher = body == null ? HttpRequest.BodyPublishers.noBody()
+                : HttpRequest.BodyPublishers.ofString(body);
+
+        return builder.method(method, publisher)
+                .build();
     }
 
-    private Response call(String method) {
-        HttpURLConnection connection = null;
+    private Response callWithRetries(HttpRequest request) {
+        return RetryUtils.retry(() -> call(request), retries);
+    }
+
+    private Response call(HttpRequest request) {
         try {
-            URL urlToConnect = new URL(url);
-            connection = (HttpURLConnection) urlToConnect.openConnection();
-            if (connection instanceof HttpsURLConnection && caCertificate != null) {
-                ((HttpsURLConnection) connection).setSSLSocketFactory(buildSslSocketFactory());
-            }
-            connection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(readTimeoutSeconds));
-            connection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(connectTimeoutSeconds));
-            connection.setRequestMethod(method);
-            for (Parameter header : headers) {
-                connection.setRequestProperty(header.getKey(), header.getValue());
-            }
-            if (body != null) {
-                byte[] bodyData = body.getBytes(StandardCharsets.UTF_8);
-
-                connection.setDoOutput(true);
-                connection.setRequestProperty("charset", "utf-8");
-                connection.setRequestProperty("Content-Length", Integer.toString(bodyData.length));
-
-                try (DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream())) {
-                    outputStream.write(bodyData);
-                    outputStream.flush();
-                }
-            }
-
-            checkResponseCode(method, connection);
-            return new Response(connection.getResponseCode(), read(connection));
-        } catch (IOException e) {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            checkResponseCode(request.method(), response);
+            return new Response(response.statusCode(), response.body());
+        } catch (IOException | InterruptedException e) {
             throw new RestClientException("Failure in executing REST call", e);
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
         }
     }
 
@@ -183,54 +186,43 @@ public final class RestClient {
      * (by invoking {@link WatchResponse#disconnect()}) once the watch is no longer required.
      */
     public WatchResponse watch(String resourceVersion) {
-        HttpURLConnection connection = null;
         try {
-            String appendWatchParameter = (url.contains("?") ? "&" : "?")
-                    + String.format(WATCH_FORMAT, resourceVersion);
+            String appendWatchParameter = (url.contains("?") ? "&" : "?") + String.format(WATCH_FORMAT, resourceVersion);
             String completeUrl = url + appendWatchParameter;
-            URL urlToConnect = new URL(completeUrl);
-            connection = (HttpURLConnection) urlToConnect.openConnection();
-            if (connection instanceof HttpsURLConnection && caCertificate != null) {
-                ((HttpsURLConnection) connection).setSSLSocketFactory(buildSslSocketFactory());
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                    .uri(URI.create(completeUrl))
+                    .GET();
+
+            if (timeoutSeconds > 0) {
+                requestBuilder.timeout(Duration.ofSeconds(timeoutSeconds));
             }
-            connection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(readTimeoutSeconds));
-            connection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(connectTimeoutSeconds));
-            connection.setRequestMethod("GET");
+
             for (Parameter header : headers) {
-                connection.setRequestProperty(header.getKey(), header.getValue());
+                requestBuilder.header(header.getKey(), header.getValue());
             }
+
             if (body != null) {
                 byte[] bodyData = body.getBytes(StandardCharsets.UTF_8);
-
-                connection.setDoOutput(true);
-                connection.setRequestProperty("charset", "utf-8");
-                connection.setRequestProperty("Content-Length", Integer.toString(bodyData.length));
-
-                try (DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream())) {
-                    outputStream.write(bodyData);
-                    outputStream.flush();
-                }
+                requestBuilder.setHeader("Content-Length", String.valueOf(bodyData.length));
+                requestBuilder.setHeader("charset", "utf-8");
+                requestBuilder.method("GET", HttpRequest.BodyPublishers.ofByteArray(bodyData));
             }
 
-            checkResponseCode("GET", connection);
-            return new WatchResponse(connection);
-        } catch (IOException e) {
-            throw new RestClientException("Failure in executing REST call", e);
+            HttpRequest request = requestBuilder.build();
+            HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+            return new WatchResponse(response);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException("Failure in executing REST call", e);
         }
     }
 
-    private void checkResponseCode(String method, HttpURLConnection connection)
-            throws IOException {
-        int responseCode = connection.getResponseCode();
+    private void checkResponseCode(String method, HttpResponse<String> response) {
+        int responseCode = response.statusCode();
         if (!isExpectedResponseCode(responseCode)) {
-            String errorMessage;
-            try {
-                errorMessage = read(connection);
-            } catch (Exception e) {
-                throw new RestClientException(
-                        String.format("Failure executing: %s at: %s", method, url), responseCode);
-            }
-            throw new RestClientException(String.format("Failure executing: %s at: %s. Message: %s", method, url, errorMessage),
+            String errorMessage = response.body();
+            throw new RestClientException(
+                    String.format("Failure executing: %s at: %s. Message: %s", method, url, errorMessage),
                     responseCode);
         }
     }
@@ -243,15 +235,15 @@ public final class RestClient {
     }
 
     /**
-     * Builds SSL Socket Factory with the public CA Certificate from Kubernetes Master.
+     * Builds SSL Context with the public CA Certificate from Kubernetes Master.
      */
-    private SSLSocketFactory buildSslSocketFactory() {
+    private SSLContext buildSslContext(String caCertificate) {
         try {
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, null);
 
             int i = 0;
-            for (Certificate certificate : generateCertificates()) {
+            for (Certificate certificate : generateCertificates(caCertificate)) {
                 String alias = String.format("ca-%d", i++);
                 keyStore.setCertificateEntry(alias, certificate);
             }
@@ -261,7 +253,7 @@ public final class RestClient {
 
             SSLContext context = SSLContext.getInstance("TLS");
             context.init(null, tmf.getTrustManagers(), null);
-            return context.getSocketFactory();
+            return context;
 
         } catch (Exception e) {
             throw new RestClientException("Failure in generating SSLSocketFactory", e);
@@ -271,8 +263,7 @@ public final class RestClient {
     /**
      * Generates CA Certificate from the default CA Cert file or from the externally provided "ca-certificate" property.
      */
-    private Collection<? extends Certificate> generateCertificates()
-            throws CertificateException {
+    private Collection<? extends Certificate> generateCertificates(String caCertificate) throws CertificateException {
         InputStream caInput = null;
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -281,21 +272,6 @@ public final class RestClient {
         } finally {
             IOUtil.closeResource(caInput);
         }
-    }
-
-    private static String read(HttpURLConnection connection) {
-        InputStream stream;
-        try {
-            stream = connection.getInputStream();
-        } catch (IOException e) {
-            stream = connection.getErrorStream();
-        }
-        if (stream == null) {
-            return null;
-        }
-        Scanner scanner = new Scanner(stream, "UTF-8");
-        scanner.useDelimiter("\\Z");
-        return scanner.next();
     }
 
     public static class Response {
@@ -318,16 +294,14 @@ public final class RestClient {
     }
 
     public static class WatchResponse {
-
         private final int code;
-        private final HttpURLConnection connection;
+        private final HttpResponse<InputStream> response;
         private final BufferedReader reader;
 
-        public WatchResponse(HttpURLConnection connection) throws IOException {
-            this.code = connection.getResponseCode();
-            this.connection = connection;
-            this.reader = new BufferedReader(new InputStreamReader(connection.getInputStream(),
-                    StandardCharsets.UTF_8));
+        public WatchResponse(HttpResponse<InputStream> response) throws IOException {
+            this.code = response.statusCode();
+            this.response = response;
+            this.reader = new BufferedReader(new InputStreamReader(response.body()));
         }
 
         public int getCode() {
@@ -338,8 +312,8 @@ public final class RestClient {
             return reader.readLine();
         }
 
-        public void disconnect() {
-            connection.disconnect();
+        public void disconnect() throws IOException {
+            response.body().close();
         }
     }
 

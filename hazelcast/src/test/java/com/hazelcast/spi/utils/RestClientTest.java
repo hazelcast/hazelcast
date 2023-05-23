@@ -112,8 +112,7 @@ public class RestClientTest {
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-            .withReadTimeoutSeconds(1200)
-            .withConnectTimeoutSeconds(1200)
+            .withTimeoutSeconds(1200)
             .withRetries(1)
             .get()
             .getBody();
@@ -249,8 +248,8 @@ public class RestClientTest {
         Tls13CipherCheckingServer server = new Tls13CipherCheckingServer(new ServerSocket(0));
         try {
             new Thread(server).start();
-            RestClient.create("https://127.0.0.1:" + server.serverSocket.getLocalPort())
-                    .withCaCertificates(readFile("src/test/resources/kubernetes/ca.crt")).get();
+            RestClient.createWithSSL("https://127.0.0.1:" + server.serverSocket.getLocalPort(),
+                    readFile("src/test/resources/kubernetes/ca.crt")).get();
         } catch (Exception e) {
             // whatever
         } finally {
