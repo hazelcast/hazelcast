@@ -46,11 +46,49 @@ but on their own, each kind of pruning is still a good optimization.
 
 ### Member pruning
 
-Member pruning by its own, may have pretty simple solution. To implement it, we need to support that solution in `ExecutionPlanBuilder` (execution plan creation phase).
-Previous `ProcessorMetaSupplier#get` contract was a reason for strict assumptions in execution plan creation algorithm,
-but that has changed.
+Member pruning by its own, may have pretty simple solution. To implement it, we need to support that solution 
+in `ExecutionPlanBuilder` (execution plan creation phase).  Previous `ProcessorMetaSupplier#get` contract was a reason 
+for strict assumptions in execution plan creation algorithm, but that has changed.
 
 #### Use cases for member pruning
+
+**Important note**: by default, the basic unit on example pictures will be DAG vertices, but sometimes we will 
+use processors as basic unit instead. We will explicitly declare it.
+
+##### Member pruning for simple map scan
+
+Prune all members except Member 1 for scanning job. We want to highlight this simple case, because we assume that 
+the bigger part of the submitted queries looks like `SELECT * FROM map WHERE ...`. So, if you may hint the optimizer
+with partitionKey, the submitted job would be even local.
+
+```
+- SCAN[map2, partitionKey=1]
+```
+
+##### Member pruning for Scan -> Hash Join in big cluster
+
+Prune members without any connections, so, only Member 1 and Member K left in cluster.
+
+```
+- HASH JOIN
+    - SCAN[map1, partitionKey=1]
+    - SCAN[map2, partitionKey=K]
+```
+
+![Scan + Scan -> HashJoin](https://svgshare.com/i/tTX.svg)
+
+##### Member pruning for Scan -> Transform -> Aggregate
+```
+- AGGREGATION
+  - TRANSFORM
+    - SCAN[map, partitionKey=K]
+```
+
+![Scan + Scan -> HashJoin](https://svgshare.com/i/tTL.svg)
+
+On the picture above the basic units are processors, since the actual graph looks like `Scan -> Transform -> Aggregate`.
+So, here we can eliminate whole Member 2, since according to partition key condition only Member 1 contains required data
+and final destination point `Aggregate`. Moreover, it is a good example for further processor pruning optimization :
 
 #### Solution design details
 
@@ -96,33 +134,34 @@ for `ExecutionPlanBuilder` to choose code path with member pruning during execut
 
 ### Processor pruning
 
-#### Use cases for member pruning
+#### Use cases for processor pruning
+
+##### Processor pruning for Scan -> Transform -> Aggregate
+
+![Scan + Scan -> HashJoin](https://svgshare.com/i/tTM.svg)
+
+On the picture above we can see optimized example from member pruning case. We can go further and just don't create 
+processors which are not participating in data processing: 
+
+![Scan + Scan -> HashJoin](https://svgshare.com/i/tUD.svg)
 
 #### Solution design details
 
 We propose to change the contract of `ProcessorMetaSupplier#get` return function so that it will be
 allowed to return `null` for addresses for which it does not want to deploy processors. But this will not be enough 
-to completely eliminate a member from the execution. 
-
-Consider this DAG for example:
-p1 -> p2
-The `p1` is the source, and `p2` is the sink, but we deliberately don't use that term, because the processor logic is
-opaque to Jet. If `p1` is null for a member, `p2` has no input. But `p2` is still allowed to generate data, 
-so we can’t eliminate it. For example, if `p2` outputs the sum of input items, it still might want to emit `0`, 
-if there’s no input.
+to completely eliminate a member from the execution.
 
 TODO: finish it
 
-### Partition pruning
+### Scan processor partition pruning
 
 Partition pruning is a pretty simple optimization : we will extract partition key condition from during SQL opt phase,
-pass it to specialized processor supplier which will spawn `ReadMapOrCacheP` with required partitions to scan.
-
-#### Use cases for member pruning
+pass it to specialized processor supplier which will spawn `ReadMapOrCacheP` with only required partitions to scan.
 
 ### Notes
 
 ### Acceptance Criteria
+
 
 
 
