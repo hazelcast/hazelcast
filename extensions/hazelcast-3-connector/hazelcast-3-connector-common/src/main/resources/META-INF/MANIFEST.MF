@@ -1,1 +1,0 @@
-Automatic-Module-Name: com.hazelcast.hazelcast3connector.common
