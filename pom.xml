@@ -691,6 +691,8 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${maven.javadoc.plugin.version}</version>
                     <configuration>
+                        <source>11</source>
+                        <detectJavaApiLink>false</detectJavaApiLink>
                         <maxmemory>1024</maxmemory>
                         <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
                         <doclint>-missing</doclint>
