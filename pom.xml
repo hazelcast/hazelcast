@@ -43,6 +43,7 @@
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <hazelcast.module.name>com.hazelcast.core</hazelcast.module.name>
 
         <jdk.version>11</jdk.version>
         <target.dir>target</target.dir>
@@ -52,7 +53,7 @@
         <hazelcast.distribution>Hazelcast</hazelcast.distribution>
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
-        <hazelcast.previous.version>5.2.0</hazelcast.previous.version>
+        <hazelcast.previous.version>5.3.0</hazelcast.previous.version>
 
         <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
@@ -75,7 +76,7 @@
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>3.0.0</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>3.1.0</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.2.2</maven.checkstyle.plugin.version>
         <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>3.0.0</maven.failsafe.plugin.version>
@@ -95,7 +96,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.467</aws.sdk.version>
+        <aws.sdk.version>1.12.472</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
         <classgraph.version>4.8.158</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
@@ -120,7 +121,7 @@
         <netty.version>4.1.92.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
-        <parquet.version>1.13.0</parquet.version>
+        <parquet.version>1.13.1</parquet.version>
         <picocli.version>4.7.3</picocli.version>
         <postgresql.version>42.5.4</postgresql.version>
         <prometheus.version>0.18.0</prometheus.version>
@@ -188,6 +189,33 @@
 
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
+
+        <!--
+        Allow access to Operating system metrics:
+           open jdk.management/com.sun.management.internal
+           export jdk.management/com.ibm.lang.management.internal
+
+        Avoid warnings caused by reflection in
+        SelectorOptimizer:
+           open java.base/sun.nio.ch
+        FilteringClassLoader:
+           open java.base/java.lang
+        TimedMemberStateFactoryHelper:
+           open java.management/sun.management
+
+        Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
+           export java.xml/jdk.xml.internal
+        -->
+        <javaModuleArgs>
+            --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
+            --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
+            --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
+            --add-opens java.base/java.lang=${hazelcast.module.name}
+            --add-opens java.management/sun.management=${hazelcast.module.name}
+            --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
+            --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
+            --illegal-access=deny
+        </javaModuleArgs>
     </properties>
     <licenses>
         <license>
@@ -316,8 +344,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
-                    <source>${jdk.version}</source>
-                    <target>${jdk.version}</target>
+                    <release>${jdk.version}</release>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <!--
                     Workaround for compilation failure on Windows in hazelcast-sql module:
@@ -329,6 +356,9 @@
                     <excludes>
                         <exclude>**/package-info.java</exclude>
                     </excludes>
+                    <testExcludes>
+                        <exclude>**/package-info.java</exclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
 
@@ -419,59 +449,59 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
-<!--                <artifactId>maven-enforcer-plugin</artifactId>-->
-<!--                <version>${maven.enforcer.plugin.version}</version>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>enforce-tools</id>-->
-<!--                        <goals>-->
-<!--                            <goal>enforce</goal>-->
-<!--                        </goals>-->
-<!--                        <configuration>-->
-<!--                            <rules>-->
-<!--                                <requireJavaVersion>-->
-<!--                                    &lt;!&ndash; JDK 1.8+ is required for compilation. &ndash;&gt;-->
-<!--                                    <version>[1.8.0,)</version>-->
-<!--                                </requireJavaVersion>-->
-<!--                                <enforceBytecodeVersion>-->
-<!--                                    <maxJdkVersion>1.8</maxJdkVersion>-->
-<!--                                    <excludes>-->
-<!--                                        &lt;!&ndash;-->
-<!--                                        The archunit library containse several classes to process JDK9 modules.-->
-<!--                                        It is a test dependency and can be ignored.-->
-<!--                                        &ndash;&gt;-->
-<!--                                        <exclude>com.tngtech.archunit:archunit</exclude>-->
-<!--                                    </excludes>-->
-<!--                                    <ignoreClasses>-->
-<!--                                        &lt;!&ndash;-->
-<!--                                        Some dependencies contain JDK9 specific classes with JDK9 in the name-->
-<!--                                        e.g. wiremock.org.eclipse.jetty.alpn.java.server.JDK9ServerALPNProcessor-->
-<!--                                        &ndash;&gt;-->
-<!--                                        <ignoreClass>*JDK9*</ignoreClass>-->
-<!--                                        &lt;!&ndash;-->
-<!--                                        Classes from org:mongodb:bson-record-codec to map record to bson.-->
-<!--                                        Ignoring whole package, because we shade the module into hazelcast-jet-mongodb.-->
-<!--                                        &ndash;&gt;-->
-<!--                                        <ignoreClass>org.bson.codecs.record.*</ignoreClass>-->
-<!--                                    </ignoreClasses>-->
-<!--                                </enforceBytecodeVersion>-->
-<!--                            </rules>-->
-<!--                        </configuration>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--                <dependencies>-->
-<!--                    <dependency>-->
-<!--                        <groupId>org.codehaus.mojo</groupId>-->
-<!--                        <artifactId>extra-enforcer-rules</artifactId>-->
-<!--                        &lt;!&ndash;-->
-<!--                        Version 1.6.1 produces harmless, but noisy warning about missing dependencies.-->
-<!--                        See https://github.com/mojohaus/extra-enforcer-rules/issues/225-->
-<!--                        &ndash;&gt;-->
-<!--                        <version>1.5.1</version>-->
-<!--                    </dependency>-->
-<!--                </dependencies>-->
-<!--            </plugin>-->
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven.enforcer.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-tools</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <!-- JDK 11+ is required for compilation. -->
+                                    <version>[11,)</version>
+                                </requireJavaVersion>
+                                <enforceBytecodeVersion>
+                                    <maxJdkVersion>11</maxJdkVersion>
+                                    <excludes>
+                                        <!--
+                                        The archunit library containse several classes to process JDK9 modules.
+                                        It is a test dependency and can be ignored.
+                                        -->
+                                        <exclude>com.tngtech.archunit:archunit</exclude>
+                                    </excludes>
+                                    <ignoreClasses>
+                                        <!--
+                                        Some dependencies contain JDK9 specific classes with JDK9 in the name
+                                        e.g. wiremock.org.eclipse.jetty.alpn.java.server.JDK9ServerALPNProcessor
+                                        -->
+                                        <ignoreClass>*JDK9*</ignoreClass>
+                                        <!--
+                                        Classes from org:mongodb:bson-record-codec to map record to bson.
+                                        Ignoring whole package, because we shade the module into hazelcast-jet-mongodb.
+                                        -->
+                                        <ignoreClass>org.bson.codecs.record.*</ignoreClass>
+                                    </ignoreClasses>
+                                </enforceBytecodeVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>extra-enforcer-rules</artifactId>
+                        <!--
+                        Version 1.6.1 produces harmless, but noisy warning about missing dependencies.
+                        See https://github.com/mojohaus/extra-enforcer-rules/issues/225
+                        -->
+                        <version>1.5.1</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
@@ -635,31 +665,6 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>org.codehaus.mojo</groupId>-->
-<!--                <artifactId>animal-sniffer-maven-plugin</artifactId>-->
-<!--                <configuration>-->
-<!--                    <checkTestClasses>true</checkTestClasses>-->
-<!--                    <signature>-->
-<!--                        <groupId>org.codehaus.mojo.signature</groupId>-->
-<!--                        <artifactId>java18</artifactId>-->
-<!--                        <version>1.0</version>-->
-<!--                    </signature>-->
-<!--                    <ignores>-->
-<!--                        <ignore>java.lang.invoke.MethodHandle</ignore>-->
-<!--                        <ignore>sun.misc.Unsafe</ignore>-->
-<!--                    </ignores>-->
-<!--                </configuration>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>source-java8-check</id>-->
-<!--                        <phase>test-compile</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>check</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
         </plugins>
         <pluginManagement>
             <plugins>
@@ -747,11 +752,6 @@
                             <exclusionPattern>inside edge crossings that are between</exclusionPattern>
                         </exclusionPatterns>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>animal-sniffer-maven-plugin</artifactId>
-                    <version>${maven.animal.sniffer.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1344,54 +1344,6 @@
         </profile>
 
         <profile>
-            <id>jdk-9</id>
-            <activation>
-                <jdk>[9,)</jdk>
-            </activation>
-            <properties>
-                <!--
-                Allow access to Operating system metrics:
-                   open jdk.management/com.sun.management.internal
-                   export jdk.management/com.ibm.lang.management.internal
-
-                Avoid warnings caused by reflection in
-                SelectorOptimizer:
-                   open java.base/sun.nio.ch
-                FilteringClassLoader:
-                   open java.base/java.lang
-                TimedMemberStateFactoryHelper:
-                   open java.management/sun.management
-
-                Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
-                   export java.xml/jdk.xml.internal
-                -->
-                <javaModuleArgs>
-                    --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
-                    --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
-                    --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
-                    --add-opens java.base/java.lang=${hazelcast.module.name}
-                    --add-opens java.management/sun.management=${hazelcast.module.name}
-                    --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
-                    --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
-                    --illegal-access=deny
-                </javaModuleArgs>
-            </properties>
-        </profile>
-
-<!--        <profile>-->
-<!--            <id>modulepath-tests</id>-->
-<!--            <activation>-->
-<!--                <property>-->
-<!--                    <name>!quick</name>-->
-<!--                </property>-->
-<!--                <jdk>[9,)</jdk>-->
-<!--            </activation>-->
-<!--            <modules>-->
-<!--                <module>modulepath-tests</module>-->
-<!--            </modules>-->
-<!--        </profile>-->
-
-        <profile>
             <!-- same as default build (excludes Nightly & Slow tests), outputs serialized objects to a blob -->
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
@@ -1847,7 +1799,7 @@
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.5-2</version>
+                <version>1.5.5-3</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>

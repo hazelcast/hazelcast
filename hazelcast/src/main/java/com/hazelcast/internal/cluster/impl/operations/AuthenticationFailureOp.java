@@ -30,6 +30,7 @@ public class AuthenticationFailureOp extends AbstractClusterOperation {
     public void run() {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
+        JoinOperation.verifyCanShutdown(node, "Authentication failed on master node!");
         final ILogger logger = nodeEngine.getLogger("com.hazelcast.security");
         logger.severe("Node could not join cluster. Authentication failed on master node! Node is going to shutdown now!");
         node.shutdown(true);
