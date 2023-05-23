@@ -32,7 +32,6 @@ import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_KEEPALI
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEADDR;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_KEEPCOUNT;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_KEEPIDLE;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_KEEPINTERVAL;
@@ -159,14 +158,6 @@ public abstract class AsyncSocketOptionsTest {
         assertEquals(Boolean.TRUE, options.get(SO_KEEPALIVE));
         options.set(SO_KEEPALIVE, false);
         assertEquals(Boolean.FALSE, options.get(SO_KEEPALIVE));
-    }
-
-    @Test
-    public void test_SO_TIMEOUT() {
-        AsyncSocket socket = newSocket();
-        AsyncSocketOptions options = socket.options();
-        options.set(SO_TIMEOUT, 3600);
-        assertEquals(Integer.valueOf(3600), options.get(SO_TIMEOUT));
     }
 
     @Test
