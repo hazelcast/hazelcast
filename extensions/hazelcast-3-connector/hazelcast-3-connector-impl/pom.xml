@@ -34,6 +34,13 @@
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Automatic-Module-Name>com.hazelcast.jet.hazelcast3.impl</Automatic-Module-Name>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
             </plugin>
         </plugins>
     </build>
