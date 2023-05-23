@@ -107,7 +107,9 @@ public final class SwCounter implements Counter {
 
     @Override
     public long getAndSet(long newValue) {
-        return (long) VALUE.getAndSet(this, newValue);
+        long oldValue = (long) VALUE.getOpaque(this);
+        VALUE.setOpaque(this, newValue);
+        return oldValue;
     }
 
     @Override
