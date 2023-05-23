@@ -55,7 +55,7 @@ public class SwCounterTest {
         assertEquals(10, counter.getAndSet(20));
         assertEquals(20, counter.get());
     }
-    
+
     @Test
     public void test_set() {
         counter.set(100_000);
