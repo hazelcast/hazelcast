@@ -87,8 +87,6 @@ class KubernetesClient {
     private final String servicePerPodLabelValue;
     @Nullable
     private final StsMonitorThread stsMonitorThread;
-    @Nullable
-    private final CountDownLatch stsMonitorThreadShutdownLatch;
 
     private final KubernetesTokenProvider tokenProvider;
 
@@ -119,7 +117,6 @@ class KubernetesClient {
         this.stsName = extractStsName();
         this.stsMonitorThread = (clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled())
                 ? new StsMonitorThread() : null;
-        this.stsMonitorThreadShutdownLatch = stsMonitorThread == null ? null : new CountDownLatch(1);
     }
 
     // constructor that allows overriding detected statefulset name for usage in tests
@@ -146,7 +143,6 @@ class KubernetesClient {
         this.stsName = stsName;
         this.stsMonitorThread = (clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled())
                 ? new StsMonitorThread() : null;
-        this.stsMonitorThreadShutdownLatch = stsMonitorThread == null ? null : new CountDownLatch(1);
     }
 
     // test usage only
@@ -165,7 +161,6 @@ class KubernetesClient {
         this.servicePerPodLabelValue = servicePerPodLabelValue;
         this.apiProvider = apiProvider;
         this.stsMonitorThread = null;
-        this.stsMonitorThreadShutdownLatch = null;
         this.stsName = extractStsName();
         this.clusterTopologyIntentTracker = null;
     }
@@ -186,13 +181,11 @@ class KubernetesClient {
         }
 
         if (clusterTopologyIntentTracker != null) {
-            // Wait for this CountDownLatch to ensure the StsMonitor Thread has completed processing
-            // all messages before shutting down our ClusterTopologyIntentTracker (which processes messages)
-            if (stsMonitorThreadShutdownLatch != null) {
+            // Join the StsMonitor thread to ensure it has completed processing all messages
+            // before shutting down our ClusterTopologyIntentTracker (which processes messages)
+            if (stsMonitorThread != null) {
                 try {
-                    if (!stsMonitorThreadShutdownLatch.await(STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS, MILLISECONDS)) {
-                        LOGGER.warning("StatefulSet monitor thread did not complete within timeout");
-                    }
+                    stsMonitorThread.join(STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -825,11 +818,6 @@ class KubernetesClient {
                         LOGGER.fine("Exception while closing connection after an IOException", t);
                     }
                 }
-            }
-
-            // Informs the parent class that this thread is fully completed
-            if (stsMonitorThreadShutdownLatch != null) {
-                stsMonitorThreadShutdownLatch.countDown();
             }
         }
 
