@@ -27,7 +27,7 @@ import java.lang.invoke.VarHandle;
  * written to the coherent cache. And this can take some time because it could be that a whole bunch of cache
  * lines need to be invalidated and this can add a lot of latency to those loads. Opaque doesn't provide any
  * ordering guarantees with respect to other variables. It is atomic and coherent and it is super well suited for
- * progress indicators like performance counters.
+ * progress indicators like performance counters. Opaque is primary
  * <p>
  * This counter does not provide padding to prevent false sharing.
  * <p>
@@ -41,7 +41,7 @@ import java.lang.invoke.VarHandle;
  * This causes a lot of syntactic noise due to lack of abstraction.
  * A counter.inc() gives a better clue what the intent is.
  */
-public class SwCounter implements Counter {
+public final class SwCounter implements Counter {
 
     private static final VarHandle VALUE;
 
