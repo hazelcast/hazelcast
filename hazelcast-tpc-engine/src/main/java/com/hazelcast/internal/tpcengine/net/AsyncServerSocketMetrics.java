@@ -44,7 +44,7 @@ public class AsyncServerSocketMetrics {
      * @return the number of accepted sockets.
      */
     public long accepted() {
-        return (Long) ACCEPTED.getOpaque(this);
+        return (long) ACCEPTED.getOpaque(this);
     }
 
     /**

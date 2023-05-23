@@ -55,7 +55,7 @@ public class AsyncSocketMetrics {
      * @return bytes read.
      */
     public long bytesRead() {
-        return bytesRead;
+        return (long) BYTES_READ.getOpaque(this);
     }
 
     /**
@@ -73,7 +73,7 @@ public class AsyncSocketMetrics {
      * @return the bytes written.
      */
     public long bytesWritten() {
-        return bytesWritten;
+        return (long) BYTES_WRITTEN.getOpaque(this);
     }
 
     /**
@@ -92,7 +92,7 @@ public class AsyncSocketMetrics {
      * @return number of write events.
      */
     public long writeEvents() {
-        return writeEvents;
+        return (long) WRITE_EVENTS.getOpaque(this);
     }
 
     /**
@@ -109,7 +109,7 @@ public class AsyncSocketMetrics {
      * @return number of read events.
      */
     public long readEvents() {
-        return readEvents;
+        return (long) READ_EVENTS.getOpaque(this);
     }
 
     /**
