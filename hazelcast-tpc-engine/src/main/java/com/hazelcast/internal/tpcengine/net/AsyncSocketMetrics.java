@@ -17,42 +17,37 @@
 package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
-import sun.misc.Unsafe;
 
-import java.lang.reflect.Field;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 
 /**
  * Contains the metrics for an {@link AsyncSocket}.
  */
 @SuppressWarnings("checkstyle:ConstantName")
 public class AsyncSocketMetrics {
-    private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
-    private static final long OFFSET_bytesRead;
-    private static final long OFFSET_bytesWritten;
-    private static final long OFFSET_writeEvents;
-    private static final long OFFSET_readEvents;
+
+    private static final VarHandle BYTES_READ;
+    private static final VarHandle BYTES_WRITTEN;
+    private static final VarHandle WRITE_EVENTS;
+    private static final VarHandle READ_EVENTS;
+
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            BYTES_READ = l.findVarHandle(AsyncSocketMetrics.class, "bytesRead", long.class);
+            BYTES_WRITTEN = l.findVarHandle(AsyncSocketMetrics.class, "bytesWritten", long.class);
+            WRITE_EVENTS = l.findVarHandle(AsyncSocketMetrics.class, "writeEvents", long.class);
+            READ_EVENTS = l.findVarHandle(AsyncSocketMetrics.class, "readEvents", long.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     private volatile long bytesRead;
     private volatile long bytesWritten;
     private volatile long writeEvents;
     private volatile long readEvents;
-
-    static {
-        try {
-            OFFSET_bytesRead = getOffset("bytesRead");
-            OFFSET_bytesWritten = getOffset("bytesWritten");
-            OFFSET_writeEvents = getOffset("writeEvents");
-            OFFSET_readEvents = getOffset("readEvents");
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static long getOffset(String fieldName) throws NoSuchFieldException {
-        Field field = AsyncSocketMetrics.class.getDeclaredField(fieldName);
-        return UNSAFE.objectFieldOffset(field);
-    }
 
     /**
      * Returns bytes read.
@@ -60,7 +55,7 @@ public class AsyncSocketMetrics {
      * @return bytes read.
      */
     public long bytesRead() {
-        return bytesRead;
+        return (long) BYTES_READ.getOpaque(this);
     }
 
     /**
@@ -69,7 +64,7 @@ public class AsyncSocketMetrics {
      * @param delta the amount to increase.
      */
     public void incBytesRead(long delta) {
-        UNSAFE.putOrderedLong(this, OFFSET_bytesRead, bytesRead + delta);
+        BYTES_READ.setOpaque(this, (long) BYTES_READ.getOpaque(this) + delta);
     }
 
     /**
@@ -78,7 +73,7 @@ public class AsyncSocketMetrics {
      * @return the bytes written.
      */
     public long bytesWritten() {
-        return bytesWritten;
+        return (long) BYTES_WRITTEN.getOpaque(this);
     }
 
     /**
@@ -87,7 +82,7 @@ public class AsyncSocketMetrics {
      * @param delta the amount to increase.
      */
     public void incBytesWritten(long delta) {
-        UNSAFE.putOrderedLong(this, OFFSET_bytesWritten, bytesWritten + delta);
+        BYTES_WRITTEN.setOpaque(this, (long) BYTES_WRITTEN.getOpaque(this) + delta);
     }
 
     /**
@@ -97,14 +92,14 @@ public class AsyncSocketMetrics {
      * @return number of write events.
      */
     public long writeEvents() {
-        return writeEvents;
+        return (long) WRITE_EVENTS.getOpaque(this);
     }
 
     /**
      * Increases the number of write events by 1.
      */
     public void incWriteEvents() {
-        UNSAFE.putOrderedLong(this, OFFSET_writeEvents, writeEvents + 1);
+        WRITE_EVENTS.setOpaque(this, (long) WRITE_EVENTS.getOpaque(this) + 1);
     }
 
     /**
@@ -114,13 +109,13 @@ public class AsyncSocketMetrics {
      * @return number of read events.
      */
     public long readEvents() {
-        return readEvents;
+        return (long) READ_EVENTS.getOpaque(this);
     }
 
     /**
      * Increases the number of read events by 1.
      */
     public void incReadEvents() {
-        UNSAFE.putOrderedLong(this, OFFSET_readEvents, readEvents + 1);
+        READ_EVENTS.setOpaque(this, (long) READ_EVENTS.getOpaque(this) + 1);
     }
 }
