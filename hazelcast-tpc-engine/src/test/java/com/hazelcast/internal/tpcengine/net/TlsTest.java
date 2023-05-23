@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SSL_ENGINE_FACTORY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -59,7 +60,7 @@ public abstract class TlsTest {
                 .setAcceptConsumer(acceptRequest -> {
                     AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
                             .setReader(new DevNullAsyncSocketReader())
-                            .setSSLEngineFactory(sslEngineFactory)
+                            .set(SSL_ENGINE_FACTORY, sslEngineFactory)
                             .build();
                     socket.start();
                 })
@@ -71,7 +72,7 @@ public abstract class TlsTest {
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
                 .setReader(new DevNullAsyncSocketReader())
-                .setSSLEngineFactory(sslEngineFactory)
+                .set(SSL_ENGINE_FACTORY, sslEngineFactory)
                 .build();
         clientSocket.start();
 

@@ -25,6 +25,8 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
@@ -32,10 +34,12 @@ import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_KEEPALI
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEADDR;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SSL_ENGINE_FACTORY;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_KEEPCOUNT;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_KEEPIDLE;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_KEEPINTERVAL;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TLS_EXECUTOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -197,5 +201,39 @@ public abstract class AsyncSocketOptionsTest {
             assertFalse(options.set(TCP_KEEPINTERVAL, 100));
             assertNull(options.get(TCP_KEEPINTERVAL));
         }
+    }
+
+    @Test
+    public void test_SSL_ENGINE_FACTORY() {
+        AsyncSocket socket = newSocket();
+        AsyncSocketOptions options = socket.options();
+        Object sslEngineFactory = new Object();
+        assertTrue(options.isSupported(SSL_ENGINE_FACTORY));
+        assertTrue(options.set(SSL_ENGINE_FACTORY, sslEngineFactory));
+        assertEquals(sslEngineFactory, options.get(SSL_ENGINE_FACTORY));
+    }
+
+    @Test
+    public void test_default_SSL_ENGINE_FACTORY() {
+        AsyncSocket socket = newSocket();
+        AsyncSocketOptions options = socket.options();
+        assertNull(options.get(SSL_ENGINE_FACTORY));
+    }
+
+    @Test
+    public void test_TLS_EXECUTOR() {
+        AsyncSocket socket = newSocket();
+        AsyncSocketOptions options = socket.options();
+        ExecutorService tlsExecutor = Executors.newSingleThreadExecutor();
+        assertTrue(options.isSupported(TLS_EXECUTOR));
+        assertTrue(options.set(TLS_EXECUTOR, tlsExecutor));
+        assertEquals(tlsExecutor, options.get(TLS_EXECUTOR));
+    }
+
+    @Test
+    public void test_default_TLS_EXECUTOR() {
+        AsyncSocket socket = newSocket();
+        AsyncSocketOptions options = socket.options();
+        assertNull(options.get(TLS_EXECUTOR));
     }
 }

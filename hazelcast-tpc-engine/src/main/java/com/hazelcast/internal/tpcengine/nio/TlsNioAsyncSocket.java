@@ -22,6 +22,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.ExceptionUtil;
+import com.hazelcast.nio.ssl.SSLEngineFactory;
 import org.jctools.queues.MpmcArrayQueue;
 
 import javax.net.ssl.SSLEngine;
@@ -40,8 +41,11 @@ import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SSL_ENGINE_FACTORY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TLS_EXECUTOR;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
@@ -65,6 +69,7 @@ import static javax.net.ssl.SSLEngineResult.HandshakeStatus.FINISHED;
 public class TlsNioAsyncSocket extends AsyncSocket {
 
     private static final int BUF_SIZE = 32 * 1024;
+    private static final Executor DEFAULT_TLS_EXECUTOR = Executors.newSingleThreadExecutor();
 
     private final NioAsyncSocketOptions options;
     private final AtomicReference<Thread> flushThread = new AtomicReference<>();
@@ -86,6 +91,7 @@ public class TlsNioAsyncSocket extends AsyncSocket {
     private boolean connecting;
     private volatile CompletableFuture<Void> connectFuture;
 
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
     TlsNioAsyncSocket(NioAsyncSocketBuilder builder) {
         super(builder.clientSide);
 
@@ -107,7 +113,8 @@ public class TlsNioAsyncSocket extends AsyncSocket {
             this.handler = new TlsHandler(builder);
             this.key = socketChannel.register(reactor.selector, 0, handler);
             this.reader = builder.reader;
-            this.tlsExecutor = builder.tlsExecutor;
+            Executor providedTlsExecutor = builder.options.get(TLS_EXECUTOR);
+            this.tlsExecutor = providedTlsExecutor == null ? DEFAULT_TLS_EXECUTOR : providedTlsExecutor;
             // There is no need for the socket to be scheduled on startup because the
             // Handshake is already executing. Only when the handshake is done, the
             // flushthread will be unset.
@@ -364,7 +371,8 @@ public class TlsNioAsyncSocket extends AsyncSocket {
             this.directBuffers = builder.directBuffers;
 
             //todo: we need to pass the correct address.
-            this.sslEngine = builder.sslEngineFactory.create(clientSide, null);
+            SSLEngineFactory sslEngineFactory = (SSLEngineFactory) builder.options.get(SSL_ENGINE_FACTORY);
+            this.sslEngine = sslEngineFactory.create(clientSide, null);
 
             int bufSize = BUF_SIZE;
 //            int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
