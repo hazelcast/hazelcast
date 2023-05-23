@@ -39,7 +39,7 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
     final ServerSocketChannel serverSocketChannel;
     final NioAsyncServerSocketOptions options;
     Consumer<AcceptRequest> acceptConsumer;
-    private boolean build;
+    private boolean built;
 
     NioAsyncServerSocketBuilder(NioReactor reactor) {
         this.reactor = reactor;
@@ -54,7 +54,7 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
 
     @Override
     public NioAsyncServerSocketBuilder setAcceptConsumer(Consumer<AcceptRequest> acceptConsumer) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         this.acceptConsumer = checkNotNull(acceptConsumer, "acceptConsumer");
         return this;
@@ -62,21 +62,21 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
 
     @Override
     public <T> boolean setIfSupported(Option<T> option, T value) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
-        return options.setIfSupported(option, value);
+        return options.set(option, value);
     }
 
     @SuppressWarnings("java:S1181")
     @Override
     public AsyncServerSocket build() {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         if (acceptConsumer == null) {
             throw new IllegalStateException("acceptConsumer not configured.");
         }
 
-        build = true;
+        built = true;
 
         if (Thread.currentThread() == reactor.eventloopThread()) {
             return new NioAsyncServerSocket(this);
@@ -96,8 +96,8 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
         }
     }
 
-    private void verifyNotBuild() {
-        if (build) {
+    private void verifyNotBuilt() {
+        if (built) {
             throw new IllegalStateException("Can't call build twice on the same AsyncServerSocketBuilder");
         }
     }
