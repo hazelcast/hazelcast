@@ -20,15 +20,13 @@ import com.hazelcast.client.impl.spi.impl.listener.ClientListenerServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.core.Processor.Context;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.JobEventService;
-import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sinks;
-import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
-import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -43,8 +41,10 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -58,6 +58,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -74,6 +75,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     private static final String ADVANCE_MAP_NAME = "advanceCount";
     private static final String RUN_MAP_NAME = "runCount";
 
+    @SuppressWarnings("Convert2MethodRef")
     @Parameters(name = "{0}")
     public static Iterable<Object[]> parameters() {
         return asList(
@@ -113,6 +115,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     public void testListener_suspend_resume_restart_cancelJob() {
         testListener(streamSource(),
                 (job, listener) -> {
+                    listener.advance(3);
                     assertEqualsEventually(listener::runCount, 1);
                     job.suspend();
                     assertJobStatusEventually(job, SUSPENDED);
@@ -158,10 +161,13 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     @Test
     public void testListener_restartOnException() {
         testListener(new JobConfig().setAutoScaling(true),
-                streamSource(r -> {
-                    throw new RestartableException();
+                streamSource(run -> {
+                    if (run == 1) {
+                        throw new RestartableException();
+                    }
                 }),
                 (job, listener) -> {
+                    listener.advance(2);
                     assertEqualsEventually(listener::runCount, 2);
                     cancelAndJoin(job);
                     assertTailEqualsEventually(listener.log.stream().map(SIMPLIFY).collect(toList()),
@@ -261,12 +267,8 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         testListenerLateRegistration(JetService::newLightJob);
     }
 
-    private void testListenerLateRegistration(BiFunction<JetService, Pipeline, Job> submit) {
-        Pipeline p = Pipeline.create();
-        p.readFrom(batchSource())
-                .writeTo(Sinks.noop());
-
-        Job job = submit.apply(instance.get().getJet(), p);
+    private void testListenerLateRegistration(BiFunction<JetService, DAG, Job> submit) {
+        Job job = submit.apply(instance.get().getJet(), batchSource());
         advance(job.getId(), 1);
         jobIdString = job.getIdString();
         job.join();
@@ -289,45 +291,39 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         });
     }
 
-    protected void testListener(JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
-        testListener(source, (jet, p) -> jet.newJob(p, config), test);
+    protected void testListener(JobConfig config, DAG dag, BiConsumer<Job, JobStatusLogger> test) {
+        testListener(dag, (jet, p) -> jet.newJob(p, config), test);
     }
 
-    protected void testListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
-        testListener(new JobConfig(), source, test);
+    protected void testListener(DAG dag, BiConsumer<Job, JobStatusLogger> test) {
+        testListener(new JobConfig(), dag, test);
     }
 
-    protected void testListener(Object source, Consumer<Job> test, String... log) {
-        testListener(source, (job, listener) -> {
+    protected void testListener(DAG dag, Consumer<Job> test, String... log) {
+        testListener(dag, (job, listener) -> {
             test.accept(job);
             assertTailEqualsEventually(listener.log, log);
         });
     }
 
-    protected void testLightListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
-        testListener(source, (jet, p) -> {
+    protected void testLightListener(DAG dag, BiConsumer<Job, JobStatusLogger> test) {
+        testListener(dag, (jet, p) -> {
             Job job = jet.newLightJob(p);
             assertJobVisible(instance.get(), job, job.getIdString());
             return job;
         }, test);
     }
 
-    protected void testLightListener(Object source, Consumer<Job> test, String log) {
-        testLightListener(source, (job, listener) -> {
+    protected void testLightListener(DAG dag, Consumer<Job> test, String log) {
+        testLightListener(dag, (job, listener) -> {
             test.accept(job);
             assertEqualsEventually(listener.log, log);
         });
     }
 
-    private void testListener(Object source, BiFunction<JetService, Pipeline, Job> submit,
+    private void testListener(DAG dag, BiFunction<JetService, DAG, Job> submit,
                               BiConsumer<Job, JobStatusLogger> test) {
-        Pipeline p = Pipeline.create();
-        (source instanceof BatchSource
-                    ? p.readFrom((BatchSource<?>) source)
-                    : p.readFrom((StreamSource<?>) source).withoutTimestamps())
-                .writeTo(Sinks.noop());
-
-        Job job = submit.apply(instance.get().getJet(), p);
+        Job job = submit.apply(instance.get().getJet(), dag);
         JobStatusLogger listener = new JobStatusLogger(job);
         jobIdString = job.getIdString();
         registrationId = listener.registrationId;
@@ -347,7 +343,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     protected static <T> void assertTailEqualsEventually(List<T> actual, T... expected) {
         assertTrueEventually(() -> {
             List<T> actualCopy = new ArrayList<>(actual);
-            assertBetween("length", actualCopy.size(), expected.length - 2, expected.length);
+            assertBetween("length", actualCopy.size(), expected.length - 1, expected.length);
             List<T> tail = asList(expected).subList(expected.length - actualCopy.size(), expected.length);
             assertEquals(tail, actualCopy);
         });
@@ -406,59 +402,65 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         instance.get().getMap(ADVANCE_MAP_NAME).put(jobId, count);
     }
 
-    protected static BatchSource<Integer> batchSource() {
+    protected static DAG batchSource() {
         return batchSource(r -> { });
     }
 
-    protected static BatchSource<Integer> batchSource(ConsumerEx<Integer> action) {
-        return SourceBuilder.batch("batchSource",
-                        ctx -> new TestSource(ctx, action, false))
-                .fillBufferFn(TestSource::fillBuffer)
-                .build();
+    protected static DAG batchSource(ConsumerEx<Integer> action) {
+        return new DAG().vertex(new Vertex("batchSource",
+                forceTotalParallelismOne(new TestProcessorSupplier(action, false))));
     }
 
-    protected static BatchSource<Integer> streamSource() {
+    protected static DAG streamSource() {
         return streamSource(r -> { });
     }
 
-    protected static BatchSource<Integer> streamSource(ConsumerEx<Integer> action) {
-        return SourceBuilder.batch("streamSource",
-                        ctx -> new TestSource(ctx, action, true))
-                .fillBufferFn(TestSource::fillBuffer)
-                .build();
+    protected static DAG streamSource(ConsumerEx<Integer> action) {
+        return new DAG().vertex(new Vertex("streamSource",
+                forceTotalParallelismOne(new TestProcessorSupplier(action, true))));
     }
 
-    static class TestSource {
-        final Runnable incrementRunCount;
-        final Supplier<Boolean> advance;
+    static class TestProcessorSupplier implements ProcessorSupplier {
         final ConsumerEx<Integer> action;
         final boolean streaming;
-        final int currentRun;
+        Runnable incrementRunCount;
+        int currentRun;
         boolean firstRun = true;
 
-        TestSource(Context ctx, ConsumerEx<Integer> action, boolean streaming) {
-            IMap<Long, Integer> runCount = ctx.hazelcastInstance().getMap(RUN_MAP_NAME);
-            IMap<Long, Integer> allowedRunCount = ctx.hazelcastInstance().getMap(ADVANCE_MAP_NAME);
-            long jobId = ctx.jobId();
-            currentRun = runCount.getOrDefault(jobId, 0) + 1;
-            incrementRunCount = () -> runCount.compute(jobId, (id, count) -> count == null ? 1 : count + 1);
-            advance = () -> allowedRunCount.getOrDefault(jobId, 0) >= currentRun;
+        TestProcessorSupplier(ConsumerEx<Integer> action, boolean streaming) {
             this.action = action;
             this.streaming = streaming;
         }
 
-        void fillBuffer(SourceBuffer<Integer> buf) {
-            if (firstRun) {
-                incrementRunCount.run();
-                firstRun = false;
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            IMap<Long, Integer> runCount = context.hazelcastInstance().getMap(RUN_MAP_NAME);
+            IMap<Long, Integer> allowedRunCount = context.hazelcastInstance().getMap(ADVANCE_MAP_NAME);
+            long jobId = context.jobId();
+            currentRun = runCount.getOrDefault(jobId, 0) + 1;
+            incrementRunCount = () -> runCount.compute(jobId, (id, count) -> count == null ? 1 : count + 1);
+            //noinspection StatementWithEmptyBody
+            while (allowedRunCount.getOrDefault(jobId, 0) < currentRun) {
+                // Busy-wait until it is allowed to advance
             }
-            if (advance.get()) {
-                action.accept(currentRun);
-                buf.add(currentRun);
-                if (!streaming) {
-                    buf.close();
+        }
+
+        @Nonnull
+        @Override
+        public Collection<? extends Processor> get(int count) {
+            return Collections.singletonList(new AbstractProcessor() {
+                @Override
+                public boolean complete() {
+                    if (firstRun) {
+                        incrementRunCount.run();
+                        firstRun = false;
+                    }
+                    action.accept(currentRun);
+                    //noinspection ResultOfMethodCallIgnored
+                    tryEmit(currentRun);
+                    return !streaming;
                 }
-            }
+            });
         }
     }
 }
