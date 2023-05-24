@@ -24,7 +24,7 @@ import com.hazelcast.internal.tpcengine.Reactor;
  * <p/>
  * This builder assumes TCP/IPv4. For different types of sockets
  * new configuration options on this builder need to be added or
- * a the {@link Reactor#newAsyncSocketBuilder()} needs to be modified.
+ * {@link Reactor#newAsyncSocketBuilder()} needs to be modified.
  * <p/>
  * Cast to specific builder for specialized options when available.
  */
