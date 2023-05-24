@@ -173,6 +173,7 @@ public final class HazelcastWriters {
                 new WriteListPSupplier<>(clientXml, name));
     }
 
+    @SuppressWarnings("AnonInnerLength")
     public static ProcessorMetaSupplier writeObservableSupplier(@Nonnull String name) {
         return new ProcessorMetaSupplier() {
             @Nonnull
@@ -194,6 +195,21 @@ public final class HazelcastWriters {
             @Override
             public Permission getRequiredPermission() {
                 return new RingBufferPermission(name, ACTION_CREATE, ACTION_PUT);
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public boolean initIsCooperative() {
+                return true;
+            }
+
+            @Override
+            public boolean closeIsCooperative() {
+                return true;
             }
         };
     }

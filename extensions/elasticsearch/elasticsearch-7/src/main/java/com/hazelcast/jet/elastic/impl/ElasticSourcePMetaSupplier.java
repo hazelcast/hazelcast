@@ -139,4 +139,8 @@ public class ElasticSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
         }
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
 }
