@@ -154,18 +154,19 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
         container.stop(); //allow the resource reaper to clean its registries
     }
 
+    @SuppressWarnings("unchecked")
     protected <T> T namedTestContainer(GenericContainer<?> container) {
         if (container instanceof JdbcDatabaseContainer) {
-            container = ((JdbcDatabaseContainer) container)
+            container = ((JdbcDatabaseContainer<?>) container)
                     .withConnectTimeoutSeconds(300)
                     .withStartupTimeoutSeconds(300);
         }
         return (T) container
                 .withStartupAttempts(5)
                 .withCreateContainerCmdModifier(createContainerCmd -> {
-            String source = AbstractCdcIntegrationTest.this.getClass().getSimpleName() + "." + testName.getMethodName()
-                .replaceAll("\\[|\\]|\\/| ", "_");
-            createContainerCmd.withName(source + "___" + randomName());
+                    String testName = this.testName.getMethodName().replaceAll("[\\[\\]/ ]", "_");
+                    String source = AbstractCdcIntegrationTest.this.getClass().getSimpleName() + "." + testName;
+                    createContainerCmd.withName(source + "___" + randomName());
         });
     }
 

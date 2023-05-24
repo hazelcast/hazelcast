@@ -32,8 +32,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.io.Serializable;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
@@ -67,7 +65,7 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
     @BeforeClass
     public static void ignoreOnArm64() {
         //There is no working arm64 version of example-postgres image
-//        assumeNoArm64Architecture();
+        assumeNoArm64Architecture();
     }
 
     @Before
@@ -113,6 +111,7 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
         return getPostgreSqlConnection(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
     }
 
+    @SuppressWarnings("unused")
     protected static class Customer implements Serializable {
 
         @JsonProperty("id")
@@ -179,6 +178,7 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
         }
     }
 
+    @SuppressWarnings("unused")
     protected static class Order implements Serializable {
 
         @JsonProperty("id")
