@@ -22,6 +22,7 @@ import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
@@ -31,6 +32,8 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.io.Serializable;
 import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
@@ -64,12 +67,24 @@ public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcInte
     @BeforeClass
     public static void ignoreOnArm64() {
         //There is no working arm64 version of example-postgres image
-        assumeNoArm64Architecture();
+//        assumeNoArm64Architecture();
+    }
+
+    @Before
+    public void beforeEach() throws SQLException {
+        String dbConnectionUrl = postgres.getJdbcUrl();
+        try (Connection conn = getPostgreSqlConnection(dbConnectionUrl, postgres.getUsername(), postgres.getPassword());
+             Statement stmt = conn.createStatement()
+        ) {
+            stmt.execute("ALTER TABLE inventory.customers REPLICA IDENTITY FULL;");
+            stmt.execute("ALTER TABLE inventory.orders REPLICA IDENTITY FULL;");
+            stmt.execute("ALTER TABLE inventory.products REPLICA IDENTITY FULL;");
+        }
     }
 
     protected PostgresCdcSources.Builder sourceBuilder(String name) {
         return PostgresCdcSources.postgres(name)
-                .setDatabaseAddress(postgres.getContainerIpAddress())
+                .setDatabaseAddress(postgres.getHost())
                 .setDatabasePort(postgres.getMappedPort(POSTGRESQL_PORT))
                 .setDatabaseUser("postgres")
                 .setDatabasePassword("postgres")
