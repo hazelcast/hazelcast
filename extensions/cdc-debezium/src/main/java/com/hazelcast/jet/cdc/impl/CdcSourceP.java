@@ -30,9 +30,9 @@ import com.hazelcast.logging.ILogger;
 import io.debezium.document.Document;
 import io.debezium.document.DocumentReader;
 import io.debezium.document.DocumentWriter;
-import io.debezium.relational.history.AbstractDatabaseHistory;
-import io.debezium.relational.history.DatabaseHistoryException;
+import io.debezium.relational.history.AbstractSchemaHistory;
 import io.debezium.relational.history.HistoryRecord;
+import io.debezium.relational.history.SchemaHistoryException;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
@@ -492,7 +492,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         }
     }
 
-    public static class DatabaseHistoryImpl extends AbstractDatabaseHistory {
+    public static class DatabaseHistoryImpl extends AbstractSchemaHistory {
 
         private final List<byte[]> history;
 
@@ -501,7 +501,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         }
 
         @Override
-        protected void storeRecord(HistoryRecord record) throws DatabaseHistoryException {
+        protected void storeRecord(HistoryRecord record) throws SchemaHistoryException {
             history.add(DocumentWriter.defaultWriter().writeAsBytes(record.document()));
         }
 
