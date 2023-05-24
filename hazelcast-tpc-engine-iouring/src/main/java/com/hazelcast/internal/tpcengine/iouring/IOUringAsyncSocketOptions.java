@@ -59,7 +59,7 @@ public class IOUringAsyncSocketOptions implements AsyncSocketOptions {
     }
 
     @Override
-    public <T> T getIfSupported(Option<T> option) {
+    public <T> T get(Option<T> option) {
         checkNotNull(option, "option");
 
         try {
@@ -89,7 +89,7 @@ public class IOUringAsyncSocketOptions implements AsyncSocketOptions {
 
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
-    public <T> boolean setIfSupported(Option<T> option, T value) {
+    public <T> boolean set(Option<T> option, T value) {
         checkNotNull(option, "option");
         checkNotNull(value, "value");
 

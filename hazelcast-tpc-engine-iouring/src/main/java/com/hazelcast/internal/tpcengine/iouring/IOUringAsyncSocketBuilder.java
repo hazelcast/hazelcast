@@ -53,7 +53,7 @@ public class IOUringAsyncSocketBuilder implements AsyncSocketBuilder {
     public <T> boolean setIfSupported(Option<T> option, T value) {
         verifyNotBuild();
 
-        return options.setIfSupported(option, value);
+        return options.set(option, value);
     }
 
     @Override
