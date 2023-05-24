@@ -691,6 +691,13 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${maven.javadoc.plugin.version}</version>
                     <configuration>
+                        <!--
+                         JavaDoc generation fails on JDK 11 with very strange errors, e.g. that classes
+                         cannot be compiled (while compile works).
+                         Please see https://github.com/hazelcast/hazelcast/pull/24621
+                         -->
+                        <source>8</source>
+                        <detectJavaApiLink>false</detectJavaApiLink>
                         <maxmemory>1024</maxmemory>
                         <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
                         <doclint>-missing</doclint>
