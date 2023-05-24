@@ -43,6 +43,13 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
         this(minSize, direct, 1);
     }
 
+    /**
+     *
+     * @param minSize
+     * @param direct when direct is false, alignment is ignored since the address
+     *               of the buffer can't be obtained.
+     * @param alignment
+     */
     public NonConcurrentIOBufferAllocator(int minSize, boolean direct, int alignment) {
         this.minSize = checkNotNegative(minSize, "minSize");
         this.direct = direct;
@@ -63,11 +70,7 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
                 //System.out.println(" new buf");
                 ByteBuffer buffer;
                 if (direct) {
-                    if (alignment == 1) {
-                        buffer = allocateDirect(minSize);
-                    } else {
-                        buffer = BufferUtil.allocateDirect(minSize, alignment);
-                    }
+                    buffer = BufferUtil.allocateDirect(minSize, alignment);
                 } else {
                     buffer = ByteBuffer.allocate(minSize);
                 }

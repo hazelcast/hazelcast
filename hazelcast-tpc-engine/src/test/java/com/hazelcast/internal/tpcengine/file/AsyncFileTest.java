@@ -223,8 +223,8 @@ public abstract class AsyncFileTest {
         File tmpFile = randomTmpFile();
 
         ByteBuffer buffer = ByteBuffer.allocateDirect(2 * pageSize());
-        long rawAddress = addressOf(buffer);
-        long bufferAddress = toPageAlignedAddress(rawAddress);
+        long base = addressOf(buffer);
+        long address = toPageAlignedAddress(base);
 
         for (int k = 0; k < buffer.capacity() / 2; k++) {
             buffer.putChar('a');
@@ -239,7 +239,7 @@ public abstract class AsyncFileTest {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);
                 } else {
-                    file.pwrite(0, 20, bufferAddress).then((result, throwable2) -> {
+                    file.pwrite(0, 20, address).then((result, throwable2) -> {
                         if (throwable2 != null) {
                             future.completeExceptionally(throwable2);
                         } else {
@@ -266,9 +266,8 @@ public abstract class AsyncFileTest {
         FileTestSupport.write(tmpFile, "1234");
 
         ByteBuffer buffer = ByteBuffer.allocateDirect(2 * pageSize());
-        long rawAddress = addressOf(buffer);
-        long bufferAddress = toPageAlignedAddress(rawAddress);
-
+        long base = addressOf(buffer);
+        long address = toPageAlignedAddress(base);
 
         CompletableFuture future = new CompletableFuture();
         Runnable task = () -> {
@@ -278,7 +277,7 @@ public abstract class AsyncFileTest {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);
                 } else {
-                    file.pread(0, 4096, bufferAddress).then((result2, throwable2) -> {
+                    file.pread(0, 4096, address).then((result2, throwable2) -> {
                         if (throwable2 != null) {
                             future.completeExceptionally(throwable2);
                         } else {

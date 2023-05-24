@@ -16,10 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.file;
 
-import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
-import sun.misc.Unsafe;
-
-import java.lang.reflect.Field;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 
 /**
  * Contains the metrics for the {@link AsyncFile}.
@@ -27,14 +25,13 @@ import java.lang.reflect.Field;
 @SuppressWarnings("checkstyle:ConstantName")
 public final class AsyncFileMetrics {
 
-    private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
-    private static final long OFFSET_reads;
-    private static final long OFFSET_writes;
-    private static final long OFFSET_nops;
-    private static final long OFFSET_fsyncs;
-    private static final long OFFSET_fdatasyncs;
-    private static final long OFFSET_bytesRead;
-    private static final long OFFSET_bytesWritten;
+    private static final VarHandle NOPS;
+    private static final VarHandle READS;
+    private static final VarHandle WRITES;
+    private static final VarHandle FSYNCS;
+    private static final VarHandle FDATASYNCS;
+    private static final VarHandle BYTES_READ;
+    private static final VarHandle BYTES_WRITTEN;
 
     private volatile long nops;
     private volatile long reads;
@@ -46,97 +43,94 @@ public final class AsyncFileMetrics {
 
     static {
         try {
-            OFFSET_reads = getOffset("reads");
-            OFFSET_writes = getOffset("writes");
-            OFFSET_nops = getOffset("nops");
-            OFFSET_fsyncs = getOffset("fsyncs");
-            OFFSET_fdatasyncs = getOffset("fdatasyncs");
-            OFFSET_bytesRead = getOffset("bytesRead");
-            OFFSET_bytesWritten = getOffset("bytesWritten");
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            NOPS = l.findVarHandle(AsyncFileMetrics.class, "nops", long.class);
+            READS = l.findVarHandle(AsyncFileMetrics.class, "reads", long.class);
+            WRITES = l.findVarHandle(AsyncFileMetrics.class, "writes", long.class);
+            FSYNCS = l.findVarHandle(AsyncFileMetrics.class, "fsyncs", long.class);
+            FDATASYNCS = l.findVarHandle(AsyncFileMetrics.class, "fdatasyncs", long.class);
+            BYTES_READ = l.findVarHandle(AsyncFileMetrics.class, "bytesRead", long.class);
+            BYTES_WRITTEN = l.findVarHandle(AsyncFileMetrics.class, "bytesWritten", long.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
         }
     }
 
-    private static long getOffset(String fieldName) throws NoSuchFieldException {
-        Field field = AsyncFileMetrics.class.getDeclaredField(fieldName);
-        return UNSAFE.objectFieldOffset(field);
-    }
 
     /**
      * Returns the number of read operations that have been performed on the file.
      */
     public long reads() {
-        return reads;
+        return (long) READS.getOpaque(this);
     }
 
     public void incReads() {
-        UNSAFE.putOrderedLong(this, OFFSET_reads, reads + 1);
+        READS.setOpaque(this, (long) READS.getOpaque(this) + 1);
     }
 
     /**
      * Returns the number of write operations that have been performed on the file.
      */
     public long writes() {
-        return writes;
+        return (long) WRITES.getOpaque(this);
     }
 
     public void incWrites() {
-        UNSAFE.putOrderedLong(this, OFFSET_writes, writes + 1);
+        WRITES.setOpaque(this, (long) WRITES.getOpaque(this) + 1);
     }
 
     /**
      * Returns the number of nop operations that have been performed on the file.
      */
     public long nops() {
-        return nops;
+        return (long) NOPS.getOpaque(this);
     }
 
     public void incNops() {
-        UNSAFE.putOrderedLong(this, OFFSET_nops, nops + 1);
+        NOPS.setOpaque(this, (long) NOPS.getOpaque(this) + 1);
     }
 
     /**
      * Returns the number of fsyncs that have been called on the file.
      */
     public long fsyncs() {
-        return fsyncs;
+        return (long) FSYNCS.getOpaque(this);
     }
 
     public void incFsyncs() {
-        UNSAFE.putOrderedLong(this, OFFSET_fsyncs, fsyncs + 1);
+        FSYNCS.setOpaque(this, (long) FSYNCS.getOpaque(this) + 1);
     }
 
     /**
      * Returns the number of fdatasyncs that have been called on the file.
      */
     public long fdatasyncs() {
-        return fdatasyncs;
+        return (long) FDATASYNCS.getOpaque(this);
     }
 
     public void incFdatasyncs() {
-        UNSAFE.putOrderedLong(this, OFFSET_fdatasyncs, fdatasyncs + 1);
+        FDATASYNCS.setOpaque(this, (long) FSYNCS.getOpaque(this) + 1);
     }
 
     /**
      * Returns the number bytes that have been written to the file.
      */
     public long bytesWritten() {
-        return bytesWritten;
+        return (long) BYTES_WRITTEN.getOpaque(this);
     }
 
     public void incBytesWritten(int amount) {
-        UNSAFE.putOrderedLong(this, OFFSET_bytesWritten, bytesWritten + amount);
+        BYTES_WRITTEN.setOpaque(this, (long) BYTES_WRITTEN.getOpaque(this) + amount);
     }
 
     /**
      * Returns the number of bytes that have bee read from the file.
      */
     public long bytesRead() {
-        return bytesRead;
+        return (long) BYTES_READ.getOpaque(this);
     }
 
     public void incBytesRead(int amount) {
-        UNSAFE.putOrderedLong(this, OFFSET_bytesRead, bytesRead + amount);
+        BYTES_READ.setOpaque(this, (long) BYTES_READ.getOpaque(this) + amount);
     }
 }

@@ -51,8 +51,10 @@ public final class BufferUtil {
         } else if (alignment == 1) {
             return ByteBuffer.allocateDirect(capacity);
         } else {
-            long rawAddress = UNSAFE.allocateMemory(capacity + alignment);
-            long address = toAlignedAddress(rawAddress, alignment);
+            // TODO: The problem is when the ByteBuffer is deallocated because the 'address'
+            //  is used for deallocation and not 'base'
+            long base = UNSAFE.allocateMemory(capacity + alignment);
+            long address = toAlignedAddress(base, alignment);
             return newDirectByteBuffer(address, capacity);
         }
     }
@@ -65,26 +67,26 @@ public final class BufferUtil {
         return buffer;
     }
 
-    public static long addressOf(ByteBuffer byteBuffer) {
-        if (!byteBuffer.isDirect()) {
+    public static long addressOf(ByteBuffer buffer) {
+        if (!buffer.isDirect()) {
             throw new IllegalArgumentException("Only direct bytebuffers allowed");
         }
-        return UNSAFE.getLong(byteBuffer, ADDRESS_OFFSET);
+        return UNSAFE.getLong(buffer, ADDRESS_OFFSET);
     }
 
-    public static long toPageAlignedAddress(long rawAddress) {
-        if (rawAddress % PAGE_SIZE == 0) {
-            return rawAddress;
+    public static long toPageAlignedAddress(long base) {
+        if (base % PAGE_SIZE == 0) {
+            return base;
         } else {
-            return rawAddress - rawAddress % PAGE_SIZE + PAGE_SIZE;
+            return base - base % PAGE_SIZE + PAGE_SIZE;
         }
     }
 
-    public static long toAlignedAddress(long rawAddress, int alignment) {
-        if (rawAddress % alignment == 0) {
-            return rawAddress;
+    public static long toAlignedAddress(long base, int alignment) {
+        if (base % alignment == 0) {
+            return base;
         } else {
-            return rawAddress - rawAddress % alignment + alignment;
+            return base - base % alignment + alignment;
         }
     }
 
