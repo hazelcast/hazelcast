@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.jet.sql.impl.connector.map.model.Person;
+import com.hazelcast.jet.sql.impl.connector.map.model.Order;
+import com.hazelcast.jet.sql.impl.connector.map.model.OrderKey;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,12 +29,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlPartitionPruningSingleTableAggregationTest extends SqlTestSupport {
-    private String mapName = "test_map"; //generateRandomString(16);
+    private String mapName = "orders"; //generateRandomString(16);
 
     @BeforeClass
     public static void beforeClass() {
@@ -41,15 +46,25 @@ public class SqlPartitionPruningSingleTableAggregationTest extends SqlTestSuppor
 
     @Before
     public void createTestTable() {
-        createMapping(mapName, Person.class, Integer.class);
+        createMapping(mapName, OrderKey.class, Order.class);
         instance().getSql().execute("select get_ddl('relation',  '" + mapName + "')")
                 .forEach(r -> System.out.println(r.<Object>getObject(0)));
 
         IMap<Object, Object> map = instance().getMap(mapName);
 
-        for (int i = 0; i < 1000; i++) {
-            String key = "key" + i%3;
-            map.put(new Person(i, key), i);
+        final String[] countries = new String[] {"PL", "UA", "UK", "US"};
+        int orderId = 1000;
+        for (int custId = 0; custId < 10; ++custId) {
+            // create skewed data
+            for (int i = 0; i < 3*custId; i++) {
+                OrderKey key = new OrderKey("C" + custId, orderId++, countries[custId % countries.length]);
+                Order data = new Order();
+                data.setAmount(BigDecimal.valueOf(orderId + 5));
+                data.setOrderDate(LocalDateTime.now().minusYears(1).plusHours(orderId));
+                data.setPriority(orderId % 7 == 0 ? Order.Priority.URGENT : Order.Priority.NORMAL);
+                data.setDeliveryDate(orderId % 2 == 0 ? null : data.getOrderDate().plusDays(4));
+                map.put(key, data);
+            }
         }
     }
 
@@ -59,24 +74,46 @@ public class SqlPartitionPruningSingleTableAggregationTest extends SqlTestSuppor
     }
 
     @Test
-    public void test_countFilterKeyAttr() {
-        test_countPartitioned("name='key0'");
-        test_countPartitioned("id=10");
+    public void test_countFilterKeyPartitionAttr() {
+        test_countPartitioned("customerId='C2'");
+    }
+
+    @Test
+    public void test_countFilterKeyNonPartitionAttr() {
+        test_countPartitioned("country='PL'");
+    }
+
+    @Test
+    public void test_countFilterKeyPartitionAndNonPartitionAttr() {
+        // additional predicates should not confuse partition pruning - can be executed as residual filters
+        test_countPartitioned("customerId='C2' and country like 'U%'");
+    }
+
+    @Test
+    public void test_countFilterKeyPartitionAnValueAttr() {
+        // additional predicates should not confuse partition pruning - can be executed as residual filters
+        test_countPartitioned("customerId='C2' and cast(priority as varchar) = 'NORMAL'");
+    }
+
+    @Test
+    public void test_countMultiplePartitions() {
+        test_countPartitioned("customerId in ('C2', 'C3', 'C4')");
     }
 
     private void test_countPartitioned(String filter) {
         String filterText = filter != null ? " WHERE " + filter : "";
 
         //TODO: how is distinct different?
+        //TODO: order by after aggregation
 
         // no grouping
-        analyzeQuery("select count(*) from " + mapName + filterText, null); //rows(1, 1000L));
+        analyzeQuery("select count(*), sum(amount) from " + mapName + filterText, null);
         // group by key attr
-        analyzeQuery("select count(*), name from " + mapName + filterText + " group by name", null);
+        analyzeQuery("select count(*), sum(amount), customerId from " + mapName + filterText + " group by customerId", null);
         // group by key attr function
-        analyzeQuery("select count(*), name from " + mapName + filterText + " group by name", null);
+        analyzeQuery("select count(*), sum(amount), lower(customerId) from " + mapName + filterText + " group by lower(customerId)", null);
         // group by key attr and value (same for attr?)
-        analyzeQuery("select count(*), name, this from " + mapName + filterText + " group by name, this", null);
+        analyzeQuery("select count(*), sum(amount), customerId, priority from " + mapName + filterText + " group by customerId, priority", null);
     }
 
     private void analyzeQuery(String sql, List<Row> rows) {
@@ -85,7 +122,11 @@ public class SqlPartitionPruningSingleTableAggregationTest extends SqlTestSuppor
             assertRowsAnyOrder(sql, rows);
         } else {
 //            instance().getSql().execute(sql).forEach(System.out::println);
-            instance().getSql().execute(sql).close();
+            try(SqlResult result = instance().getSql().execute(sql)) {
+                StreamSupport.stream(result.spliterator(), false)
+                        .limit(10)
+                        .forEach(System.out::println);
+            }
         }
     }
 }
