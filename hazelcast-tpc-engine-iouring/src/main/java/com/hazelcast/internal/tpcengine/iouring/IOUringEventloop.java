@@ -51,14 +51,14 @@ public class IOUringEventloop extends Eventloop {
 
     private final IOUringReactor ioUringReactor;
     private final StorageDeviceRegistry deviceRegistry;
-    final Map<StorageDevice, FileIOScheduler> deviceSchedulers = new HashMap<>();
+    final Map<StorageDevice, BlockIOScheduler> deviceSchedulers = new HashMap<>();
     private final IOUring uring;
 
     final LongObjectHashMap<CompletionHandler> handlers = new LongObjectHashMap<>(4096);
 
     // this is not a very efficient allocator. It would be better to allocate a large chunk of
     // memory and then carve out smaller blocks. But for now it will do.
-    private final IOBufferAllocator storeIOBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
+    private final IOBufferAllocator blockIOBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
     final SubmissionQueue sq;
     private final CompletionQueue cq;
     private final EventloopHandler eventLoopHandler;
@@ -115,8 +115,8 @@ public class IOUringEventloop extends Eventloop {
     }
 
     @Override
-    public IOBufferAllocator fileIOBufferAllocator() {
-        return storeIOBufferAllocator;
+    public IOBufferAllocator blockIOBufferAllocator() {
+        return blockIOBufferAllocator;
     }
 
     @Override

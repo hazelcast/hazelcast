@@ -43,7 +43,7 @@ class NioEventloop extends Eventloop {
     }
 
     @Override
-    public IOBufferAllocator fileIOBufferAllocator() {
+    public IOBufferAllocator blockIOBufferAllocator() {
         throw new UnsupportedOperationException();
     }
 

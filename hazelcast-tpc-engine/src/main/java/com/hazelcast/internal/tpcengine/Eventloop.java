@@ -79,7 +79,7 @@ public abstract class Eventloop {
         scheduler.init(this);
     }
 
-    public abstract IOBufferAllocator fileIOBufferAllocator();
+    public abstract IOBufferAllocator blockIOBufferAllocator();
 
     public abstract AsyncFile newAsyncFile(String path);
 

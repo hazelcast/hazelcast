@@ -224,7 +224,7 @@ public abstract class AsyncFileTest {
 
         Runnable task = () -> {
             AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
-            IOBuffer buffer = reactor.eventloop().fileIOBufferAllocator().allocate(pageSize());
+            IOBuffer buffer = reactor.eventloop().blockIOBufferAllocator().allocate(pageSize());
             for (int k = 0; k < buffer.capacity() / 2; k++) {
                 buffer.writeChar('a');
             }
@@ -263,7 +263,7 @@ public abstract class AsyncFileTest {
 
         CompletableFuture future = new CompletableFuture();
         Runnable task = () -> {
-            IOBuffer buffer = reactor.eventloop().fileIOBufferAllocator().allocate(pageSize());
+            IOBuffer buffer = reactor.eventloop().blockIOBufferAllocator().allocate(pageSize());
             AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
 
             file.open(O_RDONLY, PERMISSIONS_ALL).then((result1, throwable1) -> {

@@ -31,7 +31,7 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
  * This way you can use the API from virtual threads and from platform threads. The platform threads
  * should probably run into an exception when they call a blocking method.
  * <p>
- * The {@link IOBuffer} used for reading/writing be created using the {@link Eventloop#fileIOBufferAllocator()}
+ * The {@link IOBuffer} used for reading/writing be created using the {@link Eventloop#blockIOBufferAllocator()}
  * because depending on the AsyncFile implementation/configuration, there are special requirements e.g.
  * 4K alignment in case of Direct I/O.
  */
@@ -146,7 +146,7 @@ public abstract class AsyncFile {
      * @param length the number of bytes to read.
      * @param dst the IOBuffer to read the data into.
      * @return a Promise with the response code of the request.
-     * @see Eventloop#fileIOBufferAllocator()
+     * @see Eventloop#blockIOBufferAllocator()
      */
     public abstract Promise<Integer> pread(long offset, int length, IOBuffer dst);
 
@@ -157,7 +157,7 @@ public abstract class AsyncFile {
      * @param length the number of bytes to write
      * @param src the IOBuffer to read the data from.
      * @return a Promise with the response code of the request.
-     * @see Eventloop#fileIOBufferAllocator()
+     * @see Eventloop#blockIOBufferAllocator()
      */
     public abstract Promise<Integer> pwrite(long offset, int length, IOBuffer src);
 

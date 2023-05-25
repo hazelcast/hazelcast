@@ -86,7 +86,7 @@ public class PublishCmd extends Cmd {
                     if (topicPartition.activeSegment.buffer == null) {
                         // There is no active buffer, so lets open it.
                         topicPartition.activeSegment.buffer = eventloop
-                                .fileIOBufferAllocator()
+                                .blockIOBufferAllocator()
                                 .allocate(topicPartition.activeBufferLength);
                     }
 
@@ -109,7 +109,7 @@ public class PublishCmd extends Cmd {
                             if (diskBuffer.remaining() == 0) {
                                 // the disk buffer is filled up, so we can asynchronously write it to disk.
                                 IOBuffer oldDiskBuffer = diskBuffer;
-                                diskBuffer = eventloop.fileIOBufferAllocator().allocate();
+                                diskBuffer = eventloop.blockIOBufferAllocator().allocate();
                                 topicPartition.activeSegment.buffer = diskBuffer;
                                 asyncWrite(oldDiskBuffer);
                             }
@@ -192,7 +192,7 @@ public class PublishCmd extends Cmd {
             topicPartition.activeSegment = segment;
             topicPartition.activeSegment.offset = SIZEOF_SEGMENT_HEADER;
             topicPartition.activeSegment.fileOffset = SIZEOF_SEGMENT_HEADER;
-            topicPartition.activeSegment.buffer = eventloop.fileIOBufferAllocator().allocate(topicPartition.activeBufferLength);
+            topicPartition.activeSegment.buffer = eventloop.blockIOBufferAllocator().allocate(topicPartition.activeBufferLength);
             scheduler.schedule(PublishCmd.this);
             //    });
         });

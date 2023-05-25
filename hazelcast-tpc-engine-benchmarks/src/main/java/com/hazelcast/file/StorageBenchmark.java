@@ -273,14 +273,13 @@ public class StorageBenchmark {
             }
 
             this.block = (blockCount * taskIndex) / benchmark.iodepth;
-            //System.out.println("block:"+block);
             // Setting up the buffer
-            this.writeBuffer = reactor.eventloop().fileIOBufferAllocator().allocate(bs);
+            this.writeBuffer = reactor.eventloop().blockIOBufferAllocator().allocate(bs);
             for (int c = 0; c < writeBuffer.capacity() / 2; c++) {
                 writeBuffer.writeChar('c');
             }
             writeBuffer.flip();
-            this.readBuffer = reactor.eventloop().fileIOBufferAllocator().allocate(bs);
+            this.readBuffer = reactor.eventloop().blockIOBufferAllocator().allocate(bs);
         }
 
         @Override
@@ -317,10 +316,6 @@ public class StorageBenchmark {
                     if (block > blockCount) {
                         block = 0;
                     }
-//
-//                    if (completed < 100) {
-//                        System.out.println(offset);
-//                    }
 
                     readBuffer.position(0);
                     p = file.pread(offset, bs, readBuffer);
@@ -456,7 +451,7 @@ public class StorageBenchmark {
 
         public InitFileTask(Reactor reactor, int ioTaskIndex, int iodepth) {
             // Setting up the buffer
-            this.buffer = reactor.eventloop().fileIOBufferAllocator().allocate(StorageBenchmark.this.bs);
+            this.buffer = reactor.eventloop().blockIOBufferAllocator().allocate(StorageBenchmark.this.bs);
             for (int c = 0; c < buffer.capacity() / 2; c++) {
                 buffer.writeChar('c');
             }
@@ -616,7 +611,6 @@ public class StorageBenchmark {
                             sb.append("/s");
                         }
 
-
                         long bytesRead = metrics.bytesRead();
                         if (bytesRead > 0) {
                             double bytesThp = ((bytesRead - lastMetrics.bytesRead) * 1000d) / (nowMs - lastMs);
@@ -657,7 +651,6 @@ public class StorageBenchmark {
                             sb.append(humanReadableCountSI(fdataSyncsThp));
                             sb.append("/s");
                         }
-
 
                         long nops = metrics.nops();
                         if (nops > 0) {
