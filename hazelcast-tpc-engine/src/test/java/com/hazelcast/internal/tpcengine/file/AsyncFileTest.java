@@ -230,7 +230,6 @@ public abstract class AsyncFileTest {
             }
             buffer.flip();
 
-
             file.open(O_WRONLY | O_CREAT, PERMISSIONS_ALL).then((integer, throwable1) -> {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);

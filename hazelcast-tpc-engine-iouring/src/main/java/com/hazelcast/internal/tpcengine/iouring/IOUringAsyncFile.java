@@ -22,6 +22,7 @@ import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.AsyncFileMetrics;
 import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.iouring.StorageDeviceScheduler.IO;
 
 import java.nio.charset.StandardCharsets;
 import java.util.function.BiConsumer;
@@ -82,7 +83,11 @@ public final class IOUringAsyncFile extends AsyncFile {
     @Override
     public Promise<Integer> nop() {
         metrics.incNops();
-        return scheduler.submit(this, IORING_OP_NOP, 0, 0, null, 0, 0);
+
+        IO io = scheduler.allocateIO();
+        io.file = this;
+        io.opcode = IORING_OP_NOP;
+        return scheduler.submit(io);
     }
 
     @Override
@@ -90,7 +95,15 @@ public final class IOUringAsyncFile extends AsyncFile {
         final AsyncFileMetrics metrics = this.metrics;
         metrics.incReads();
         metrics.incBytesRead(length);
-        return scheduler.submit(this, IORING_OP_READ, 0, 0, dst, length, offset);
+
+        IO io = scheduler.allocateIO();
+        io.file = this;
+        io.opcode = IORING_OP_READ;
+        io.buf = dst;
+        io.addr = dst.address();
+        io.len = length;
+        io.offset = offset;
+        return scheduler.submit(io);
     }
 
     @Override
@@ -98,39 +111,53 @@ public final class IOUringAsyncFile extends AsyncFile {
         final AsyncFileMetrics metrics = this.metrics;
         metrics.incWrites();
         metrics.incBytesWritten(length);
-        return scheduler.submit(this, IORING_OP_WRITE, 0, 0, src, length, offset);
+
+        IO io = scheduler.allocateIO();
+        io.file = this;
+        io.opcode = IORING_OP_WRITE;
+        io.buf = src;
+        io.addr = src.address();
+        io.len = length;
+        io.offset = offset;
+
+        return scheduler.submit(io);
     }
 
     @Override
     public Promise<Integer> fsync() {
         metrics.incFsyncs();
-        return scheduler.submit(this, IORING_OP_FSYNC, 0, 0, null, 0, 0);
+
+        IO io = scheduler.allocateIO();
+        io.file = this;
+        io.opcode = IORING_OP_FSYNC;
+        return scheduler.submit(io);
     }
 
     @Override
     public Promise<Integer> fdatasync() {
         metrics.incFdatasyncs();
+
+        IO io = scheduler.allocateIO();
+        io.file = this;
+        io.opcode = IORING_OP_FSYNC;
         // The IOURING_FSYNC_DATASYNC maps to the same position as the rw-flags
-        // https://unixism.net/loti/ref-liburing/sqe.html
-        return scheduler.submit(this, IORING_OP_FSYNC, 0, IORING_FSYNC_DATASYNC, null, 0, 0);
+        io.rwFlags = IORING_FSYNC_DATASYNC;
+        return scheduler.submit(io);
     }
 
     @Override
     public Promise<Integer> barrierFsync() {
-        return null;
+        throw new RuntimeException("Not implemented yet");
     }
 
     @Override
     public void writeBarrier() {
-        fences[0] = newestWriteSeq;
-        //todo: move to next
+        throw new RuntimeException("Not implemented yet");
     }
 
     @Override
     public void writeWriteBarrier() {
-        fences[0] = newestWriteSeq;
-        //todo: move to next
-        // todo: no difference write fence and write-write fence
+        throw new RuntimeException("Not implemented yet");
     }
 
     // for mapping see: https://patchwork.kernel.org/project/linux-fsdevel/patch/20191213183632.19441-2-axboe@kernel.dk/
@@ -149,25 +176,28 @@ public final class IOUringAsyncFile extends AsyncFile {
     public Promise<Integer> open(int flags, int permissions) {
         Promise<Integer> p = eventloop.promiseAllocator.allocate();
 
-        // C strings end with \0
+        // todo: unwanted litter.
         byte[] chars = path.getBytes(StandardCharsets.UTF_8);
 
-        // todo: litter. Can be pooled.
-        IOBuffer pathBuffer = IOBuffer.allocateDirect(chars.length + SIZEOF_CHAR);
+        IOBuffer pathBuffer = eventloop.fileIOBufferAllocator().allocate(chars.length + SIZEOF_CHAR);
         pathBuffer.writeBytes(chars);
+        // C strings end with \0
         pathBuffer.writeChar('\0');
         pathBuffer.flip();
 
+        IO io = scheduler.allocateIO();
+        io.file = this;
+        io.opcode = IORING_OP_OPENAT;
+        io.rwFlags = flags;
+        io.addr = pathBuffer.address();
+        io.len = permissions;// len field is used for the permissions
+
         // https://man.archlinux.org/man/io_uring_enter.2.en
-        Promise openat = scheduler.submit(
-                this,
-                IORING_OP_OPENAT,
-                0,
-                flags,
-                pathBuffer,
-                permissions,                // len field is used for the permissions
-                0);
+        Promise openat = scheduler.submit(io);
+
         openat.then((BiConsumer<Integer, Throwable>) (fd, throwable) -> {
+            pathBuffer.release();
+
             if (throwable != null) {
                 p.completeWithIOException("Can't open file [" + path + "]", throwable);
                 return;
@@ -186,7 +216,10 @@ public final class IOUringAsyncFile extends AsyncFile {
 
     @Override
     public Promise<Integer> close() {
-        return scheduler.submit(this, IORING_OP_CLOSE, 0, 0, null, 0, 0);
+        IO io = scheduler.allocateIO();
+        io.file = this;
+        io.opcode = IORING_OP_CLOSE;
+        return scheduler.submit(io);
     }
 
     @Override

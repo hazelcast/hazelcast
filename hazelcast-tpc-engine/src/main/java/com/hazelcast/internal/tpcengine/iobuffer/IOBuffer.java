@@ -53,6 +53,16 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
  * https://stackoverflow.com/questions/16465477/is-there-a-way-to-create-a-direct-bytebuffer-from-a-pointer-solely-in-java
  * E.g. in case of the buffer pool (application specific page cache) we just want to take a pointer to
  * some memory in the bufferpool and pass it to the IOBuffer for reading/writing that page to disk.
+ * <p>
+ * Currently every IOBuffer is expandable. But this should not always be the case. Sometimes we just want to
+ * allocate a chunk of memory and that is it.
+ * <p>
+ * Every IOBuffer should have the ability to 'transform' itself into a ByteBuffer (one or more) This is needed for Nio.
+ * Very similar to that of Netty.
+ * <p>
+ * There should be a read/write position instead of the buffer position which depending if a buffer is in reading/writing mode.
+ * <p>
+ * The IOBuffer should be the care taker of reading/writing to the underlying byte array or pointer.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MethodCount", "java:S1149", "java:S1135"})
 public class IOBuffer {
@@ -398,4 +408,7 @@ public class IOBuffer {
         BufferUtil.compactOrClear(buff);
     }
 
+    public String toDebugString(){
+        return BufferUtil.toDebugString("iobuffer",buff);
+    }
 }

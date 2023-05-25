@@ -145,7 +145,7 @@ public abstract class AsyncFile {
      * @param offset the offset within the file
      * @param length the number of bytes to read.
      * @param dst the IOBuffer to read the data into.
-     * @return a Fut with the response code of the request.
+     * @return a Promise with the response code of the request.
      * @see Eventloop#fileIOBufferAllocator()
      */
     public abstract Promise<Integer> pread(long offset, int length, IOBuffer dst);
@@ -156,7 +156,7 @@ public abstract class AsyncFile {
      * @param offset the offset within the file.
      * @param length the number of bytes to write
      * @param src the IOBuffer to read the data from.
-     * @return a Fut with the response code of the request.
+     * @return a Promise with the response code of the request.
      * @see Eventloop#fileIOBufferAllocator()
      */
     public abstract Promise<Integer> pwrite(long offset, int length, IOBuffer src);

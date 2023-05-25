@@ -19,14 +19,12 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.Promise;
 import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_OPENAT;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
@@ -68,39 +66,11 @@ public class StorageDeviceScheduler {
         this.sq = eventloop.sq;
     }
 
-    public Promise<Integer> submit(IOUringAsyncFile file,
-                                   byte opcode,
-                                   int flags,
-                                   int rwFlags,
-                                   IOBuffer buf,
-                                   int length,
-                                   long offset) {
-        IO io = ioAllocator.allocate();
+    public IO allocateIO() {
+        return ioAllocator.allocate();
+    }
 
-//        if (opcode == IORING_OP_FSYNC) {
-//            // if there are no pending writes, the fsync can immediately be used.
-//            // if there are pending writes, the fsync need to wait till all the writes
-//            // before the fsync have completed.
-//        } else if (opcode == IORING_OP_WRITE) {
-//            io.writeId = ++file.newestWriteSeq;
-//        } else {
-//            io.writeId = -1;
-//        }
-
-        io.file = file;
-        io.opcode = opcode;
-        io.flags = flags;
-        io.rwFlags = rwFlags;
-        io.buf = buf;
-        // todo: we need to verify that the buf has enough capacity for the request
-        io.addr = buf == null ? 0 : buf.address();
-        io.len = length;
-        io.offset = offset;
-
-//        count++;
-//        if (count % 100000 == 0) {
-//            System.out.println("count: " + count + " waitQueue.size:" + waitQueue.size() + " qd:" + concurrent);
-//        }
+    public Promise<Integer> submit(IO io) {
 
         Promise<Integer> promise = eventloop.promiseAllocator.allocate();
         io.promise = promise;
@@ -108,7 +78,7 @@ public class StorageDeviceScheduler {
         if (concurrent < maxConcurrent) {
             offerIO(io);
         } else if (!waitQueue.offer(io)) {
-            ioAllocator.free(io);
+            io.release();
             // todo: better approach needed
             promise.completeWithIOException(
                     "Overload. Max concurrent operations " + maxConcurrent + " dev: [" + dev.path() + "]", null);
@@ -135,7 +105,7 @@ public class StorageDeviceScheduler {
         concurrent++;
 
         int index = sq.nextIndex();
-        if (index > 0) {
+        if (index >= 0) {
             //System.out.println("writeSqe:" + index);
             long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
             UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, io.opcode);
@@ -154,17 +124,17 @@ public class StorageDeviceScheduler {
         }
     }
 
-    private class IO implements CompletionHandler {
-        private IOBuffer buf;
-        private long writeId;
-        private IOUringAsyncFile file;
-        private long offset;
-        private int len;
-        private byte opcode;
-        private int flags;
-        private int rwFlags;
-        private long addr;
-        private Promise<Integer> promise;
+    public class IO implements CompletionHandler {
+        public IOBuffer buf;
+        public long writeId;
+        public IOUringAsyncFile file;
+        public long offset;
+        public int len;
+        public byte opcode;
+        public int flags;
+        public int rwFlags;
+        public long addr;
+        public Promise<Integer> promise;
 
         @Override
         public void handle(int res, int flags, long userdata) {
@@ -181,7 +151,7 @@ public class StorageDeviceScheduler {
 
             } else {
                 // todo: nasty hack
-                if (buf != null && opcode!=IORING_OP_OPENAT) {
+                if (buf != null) {
 //                    System.out.println("res:"+res);
 //                    System.out.println(BufferUtil.toDebugString("buf",buf.byteBuffer()));
                     buf.incPosition(res);
@@ -195,6 +165,17 @@ public class StorageDeviceScheduler {
             }
 
             scheduleNext();
+            release();
+        }
+
+        private void release() {
+            addr = 0;
+            rwFlags = 0;
+            flags = 0;
+            opcode = 0;
+            len = 0;
+            offset = 0;
+            buf = null;
             file = null;
             promise = null;
             ioAllocator.free(this);
@@ -209,7 +190,8 @@ public class StorageDeviceScheduler {
                     + ", opcode=" + opcodeToString(opcode)
                     + ", flags=" + flags
                     + ", rwFlags=" + rwFlags
-                    + ", bufferAddress=" + addr
+                    + ", addr=" + addr
+                    + ", buf=" + (buf == null ? "null" : buf.toDebugString())
                     + '}';
         }
     }
