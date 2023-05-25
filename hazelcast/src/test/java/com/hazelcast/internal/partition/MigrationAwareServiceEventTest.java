@@ -105,7 +105,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
         }
         waitAllForSafeState(hz);
 
-        assertThat(responseHandler.failures, Matchers.empty());
+        assertThat(responseHandler.failures).isEmpty();
     }
 
     private Config newConfig(FailingOperationResponseHandler responseHandler) {
