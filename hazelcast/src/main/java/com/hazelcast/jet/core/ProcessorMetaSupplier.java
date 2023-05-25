@@ -50,15 +50,18 @@ import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static java.util.Collections.singletonList;
 
 /**
@@ -155,9 +158,26 @@ public interface ProcessorMetaSupplier extends Serializable {
      * been called.
      *
      * @see #isReusable()
+     * @see #doesWorkWithoutInput()
      */
-    @Nonnull
+
     Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
+
+    /**
+     * Returns false, if processor does not need to be created if the engine knows it will have no input.
+     * This happens after a distribute-to edge on members which are not the target. Or if the upstream’s
+     * ProcessorMetaSupplier returned `null` and there’s a non-distributed edge to this processor.
+     * <p>
+     * For example, a filter processor does nothing if there’s no input. A source processor by definition
+     * does not expect any input, and needs to do work in that case, so it must return true.
+     * An intermediate processor, e.g, a summing processor, might want to emit a zero in case there’s no input,
+     * so it also must return true, similarly to a file sink that wants to create an empty file in case of no input.
+     *
+     * @since 5.4
+     */
+    default boolean doesWorkWithoutInput() {
+        return true;
+    }
 
     /**
      * Returns {@code true} if the {@link #close(Throwable)} method of this
@@ -218,14 +238,14 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Reusable meta-suppliers differ because the meta supplier instance may be
      * shared and reused. That is why: <ol>
      * <li> {@link #init} can be invoked multiple times (also after
-     *      {@link #close}).
+     * {@link #close}).
      * <li> {@link #get} can be invoked multiple times, but each {@link #get}
-     *      invocation will be preceded by {@link #init} invocation for given
-     *      job execution.
+     * invocation will be preceded by {@link #init} invocation for given
+     * job execution.
      * <li> {@link #close} can be invoked multiple times with or without
-     *      preceding invocations of the other methods.
+     * preceding invocations of the other methods.
      * <li> Meta-supplier method invocation sequences for different concurrent
-     *      job executions may be interleaved.
+     * job executions may be interleaved.
      * </ol>
      * It is recommended that reusable meta-supplier does not have any mutable
      * state that is changed by any of the methods. It is, however, allowed to
@@ -244,8 +264,8 @@ public interface ProcessorMetaSupplier extends Serializable {
      * returns the same instance for each given {@code Address}.
      *
      * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
-     * @param permission the required permission to run the processor
-     * @param procSupplier the processor supplier
+     * @param permission                the required permission to run the processor
+     * @param procSupplier              the processor supplier
      */
     @Nonnull
     static ProcessorMetaSupplier of(
@@ -322,7 +342,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * ProcessorSupplier}.
      *
      * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
-     * @param addressToSupplier the mapping from address to ProcessorSupplier
+     * @param addressToSupplier         the mapping from address to ProcessorSupplier
      */
     @Nonnull
     static ProcessorMetaSupplier of(
@@ -336,7 +356,8 @@ public interface ProcessorMetaSupplier extends Serializable {
                 return preferredLocalParallelism;
             }
 
-            @Nonnull @Override
+            @Nonnull
+            @Override
             public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return addressToSupplier;
             }
@@ -465,12 +486,11 @@ public interface ProcessorMetaSupplier extends Serializable {
      * The vertex containing the {@code ProcessorMetaSupplier} must have a local
      * parallelism setting of 1, otherwise {code IllegalArgumentException} is thrown.
      *
-     * @param supplier the supplier that will be wrapped
+     * @param supplier     the supplier that will be wrapped
      * @param partitionKey the supplier will only be created on the node that owns the supplied
      *                     partition key
-     * @param permission the required permission to run the processor
+     * @param permission   the required permission to run the processor
      * @return the wrapped {@code ProcessorMetaSupplier}
-     *
      * @throws IllegalArgumentException if vertex has local parallelism setting of greater than 1
      */
     @Nonnull
@@ -489,7 +509,7 @@ public interface ProcessorMetaSupplier extends Serializable {
                             "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
                                     + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
-                String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
+                String key = getPartitionKey(partitionKey);
                 int partitionId = context.hazelcastInstance().getPartitionService().getPartition(key).getPartitionId();
                 ownerAddress = context.partitionAssignment().entrySet().stream()
                         .filter(en -> arrayIndexOf(partitionId, en.getValue()) >= 0)
@@ -498,7 +518,8 @@ public interface ProcessorMetaSupplier extends Serializable {
                         .orElseThrow(() -> new RuntimeException("Owner partition not assigned to any participating member"));
             }
 
-            @Nonnull @Override
+            @Nonnull
+            @Override
             public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return addr -> addr.equals(ownerAddress) ? supplier : count -> singletonList(new ExpectNothingP());
             }
@@ -552,6 +573,32 @@ public interface ProcessorMetaSupplier extends Serializable {
         return new SpecificMemberPms(supplier, memberAddress);
     }
 
+    static ProcessorMetaSupplier memberPruningMetaSupplier(
+            @Nonnull ProcessorSupplier supplier
+    ) {
+        return new ProcessorMetaSupplier() {
+            @Override
+            public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+                return addr -> addresses.contains(addr) ? supplier : null;
+            }
+
+            @Override
+            public boolean doesWorkWithoutInput() {
+                return false;
+            }
+
+            @Override
+            public boolean initIsCooperative() {
+                return true;
+            }
+
+            @Override
+            public boolean closeIsCooperative() {
+                return true;
+            }
+        };
+    }
+
 
     /**
      * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
@@ -598,7 +645,8 @@ public interface ProcessorMetaSupplier extends Serializable {
             }
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             if (!addresses.contains(memberAddress)) {
                 throw new JetException("Cluster does not contain the required member: " + memberAddress);
@@ -864,7 +912,7 @@ public interface ProcessorMetaSupplier extends Serializable {
          *
          * @param permission Permission to be checked
          * @throws AccessControlException when the security is enabled and the checked permission is not implied for the current
-         *         {@link Subject}
+         *                                {@link Subject}
          */
         void checkPermission(@Nonnull Permission permission) throws AccessControlException;
     }

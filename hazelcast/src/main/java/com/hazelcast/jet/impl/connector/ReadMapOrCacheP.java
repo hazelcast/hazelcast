@@ -65,14 +65,17 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import org.graalvm.compiler.core.common.type.ArithmeticOpTable.BinaryOp.Add;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -272,6 +275,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         private static final long serialVersionUID = 1L;
         private final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
+        private Map<Address, int[]> partitionAssignment = null;
+        private int[] partitionsToScan = null;
 
         LocalProcessorMetaSupplier(
                 @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
@@ -279,9 +284,40 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             this.readerSupplier = readerSupplier;
         }
 
+        LocalProcessorMetaSupplier(
+                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
+                int[] partitionsToScan
+        ) {
+            this.readerSupplier = readerSupplier;
+            this.partitionsToScan = partitionsToScan;
+        }
+
         @Override @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new LocalProcessorSupplier<>(readerSupplier);
+            if (partitionsToScan == null) {
+                return address -> new LocalProcessorSupplier<>(readerSupplier);
+            } else {
+                return address -> {
+                    int[] partitions = partitionAssignment.get(address);
+                    Arrays.sort(partitions);
+                    List<Integer> partitionsToScanList = new ArrayList<>();
+                    for (int pId : partitionsToScan) {
+                        if (Arrays.binarySearch(partitions, pId) > 0) {
+                            partitionsToScanList.add(pId);
+                        }
+                    }
+
+                    int[] memberPartitionsToScan = partitionsToScanList.stream().mapToInt(i -> i).toArray();
+                    return new LocalProcessorSupplier<>(readerSupplier, memberPartitionsToScan);
+                };
+            }
+        }
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            if (partitionsToScan != null) {
+                this.partitionAssignment = context.partitionAssignment();
+            }
         }
 
         @Override
@@ -315,9 +351,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         private BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 
-        private transient int[] memberPartitions;
         private transient HazelcastInstance hzInstance;
         private transient InternalSerializationService serializationService;
+        private transient int[] partitionsToScan;
 
         public LocalProcessorSupplier() {
         }
@@ -328,16 +364,26 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             this.readerSupplier = readerSupplier;
         }
 
+        private LocalProcessorSupplier(
+                @Nonnull BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
+                int[] partitionsToScan
+        ) {
+            this.readerSupplier = readerSupplier;
+            this.partitionsToScan = partitionsToScan;
+        }
+
         @Override
         public void init(@Nonnull Context context) {
             hzInstance = context.hazelcastInstance();
             serializationService = ((ProcSupplierCtx) context).serializationService();
-            memberPartitions = context.partitionAssignment().get(hzInstance.getCluster().getLocalMember().getAddress());
+            if (partitionsToScan == null) {
+                partitionsToScan = context.partitionAssignment().get(hzInstance.getCluster().getLocalMember().getAddress());
+            }
         }
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return Arrays.stream(distributeObjects(count, memberPartitions))
+            return Arrays.stream(distributeObjects(count, partitionsToScan))
                     .map(partitions ->
                             new ReadMapOrCacheP<>(readerSupplier.apply(hzInstance, serializationService), partitions))
                     .collect(toList());

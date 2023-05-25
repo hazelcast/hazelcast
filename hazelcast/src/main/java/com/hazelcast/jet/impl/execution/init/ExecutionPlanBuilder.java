@@ -39,17 +39,20 @@ import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
@@ -58,6 +61,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
+import static java.util.Objects.*;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.stream.Collectors.toMap;
@@ -69,25 +73,50 @@ public final class ExecutionPlanBuilder {
 
     @SuppressWarnings({"checkstyle:ParameterNumber", "rawtypes"})
     public static CompletableFuture<Map<MemberInfo, ExecutionPlan>> createExecutionPlans(
-            NodeEngineImpl nodeEngine, List<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
-            JobConfig jobConfig, long lastSnapshotId, boolean isLightJob, Subject subject
+            NodeEngineImpl nodeEngine,
+            List<MemberInfo> memberInfos,
+            DAG dag,
+            long jobId,
+            long executionId,
+            JobConfig jobConfig,
+            long lastSnapshotId,
+            boolean isLightJob,
+            Subject subject
     ) {
         final VerticesIdAndOrder verticesIdAndOrder = VerticesIdAndOrder.assignVertexIds(dag);
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
-        final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos);
-        final Map<Address, int[]> partitionsByAddress =
+        Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos);
+        Map<Address, int[]> partitionsByAddress =
                 partitionsByMember.entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
-        final List<Address> addresses = toList(partitionsByMember.keySet(), MemberInfo::getAddress);
-        final int clusterSize = partitionsByMember.size();
+        int clusterSize = partitionsByMember.size();
         final boolean isJobDistributed = clusterSize > 1;
         final EdgeConfig defaultEdgeConfig = nodeEngine.getConfig().getJetConfig().getDefaultEdgeConfig();
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
+
+        if (dag.membersArePrunable()) {
+            Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+            Map<MemberInfo, int[]> requiredMembers = new HashMap<>();
+            for (Entry<MemberInfo, int[]> entry : partitionsByMember.entrySet()) {
+                for (int partitionId : entry.getValue()) {
+                    if (requireNonNull(requiredPartitions).contains(partitionId)) {
+                        requiredMembers.putIfAbsent(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+            partitionsByMember = requiredMembers;
+            partitionsByAddress = requiredMembers.entrySet()
+                    .stream()
+                    .collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
+            clusterSize = partitionsByAddress.size();
+        }
+
         for (MemberInfo member : partitionsByMember.keySet()) {
             plans.put(member, new ExecutionPlan(partitionsByAddress, jobConfig, lastSnapshotId, memberIndex++,
                     clusterSize, isLightJob, subject, verticesIdAndOrder.count()));
         }
 
+        final List<Address> addresses = toList(partitionsByMember.keySet(), MemberInfo::getAddress);
         ExecutorService initOffloadExecutor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
         CompletableFuture[] futures = new CompletableFuture[verticesIdAndOrder.count()];
         for (VertexIdPos entry : verticesIdAndOrder) {
@@ -108,6 +137,8 @@ public final class ExecutionPlanBuilder {
             String prefix = prefix(jobConfig.getName(), jobId, vertex.getName(), "#PMS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
 
+            Map<Address, int[]> finalPartitionsByAddress = partitionsByAddress;
+            int finalClusterSize = clusterSize;
             RunnableEx action = () -> {
                 JetServiceBackend jetBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
                 JobClassLoaderService jobClassLoaderService = jetBackend.getJobClassLoaderService();
@@ -115,8 +146,8 @@ public final class ExecutionPlanBuilder {
                 try {
                     doWithClassLoader(processorClassLoader, () ->
                             metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId,
-                                    jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, clusterSize,
-                                    isLightJob, partitionsByAddress, subject, processorClassLoader)));
+                                    jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, finalClusterSize,
+                                    isLightJob, finalPartitionsByAddress, subject, processorClassLoader)));
                 } catch (Exception e) {
                     throw sneakyThrow(peel(e));
                 }
@@ -141,7 +172,7 @@ public final class ExecutionPlanBuilder {
             futures[entry.requiredPosition] = runAsync(action, executor);
         }
         return CompletableFuture.allOf(futures)
-                                .thenCompose(r -> completedFuture(plans));
+                .thenCompose(r -> completedFuture(plans));
     }
 
     /**
@@ -182,8 +213,8 @@ public final class ExecutionPlanBuilder {
         @Override
         public Iterator<VertexIdPos> iterator() {
             return vertexIdMap.entrySet().stream()
-                              .map(e -> new VertexIdPos(e.getValue(), e.getKey(), vertexPosById.get(e.getValue())))
-                              .iterator();
+                    .map(e -> new VertexIdPos(e.getValue(), e.getKey(), vertexPosById.get(e.getValue())))
+                    .iterator();
         }
     }
 
@@ -242,7 +273,7 @@ public final class ExecutionPlanBuilder {
                 member = memberList.get(memberIndex++ % memberList.size());
             }
             partitionsForMember.computeIfAbsent(member, ignored -> new FixedCapacityIntArrayList(partitionCount))
-                               .add(partitionId);
+                    .add(partitionId);
         }
 
         Map<MemberInfo, int[]> partitionAssignment = new HashMap<>();
