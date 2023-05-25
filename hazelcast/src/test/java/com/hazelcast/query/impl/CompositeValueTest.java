@@ -31,7 +31,7 @@ import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SuppressWarnings("EqualsWithItself")
+@SuppressWarnings({"EqualsWithItself", "java:S5863"})
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompositeValueTest {
