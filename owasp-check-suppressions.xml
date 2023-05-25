@@ -35,4 +35,18 @@
        <packageUrl regex="true">^pkg:maven/org\.apache\.calcite\.avatica/avatica\-core@.*$</packageUrl>
        <cpe>cpe:/a:apache:calcite</cpe>
     </suppress>
+    <suppress>
+       <notes><![CDATA[
+       False positive. incorrectly identified as json-java.
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-core@.*$</packageUrl>
+       <cpe>cpe:/a:json-java_project:json-java</cpe>
+    </suppress>
+    <suppress>
+       <notes><![CDATA[
+       False positive. incorrectly identified as json-java.
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/com\.jayway\.jsonpath/json\-path@.*$</packageUrl>
+       <cpe>cpe:/a:json-java_project:json-java</cpe>
+    </suppress>
 </suppressions>
