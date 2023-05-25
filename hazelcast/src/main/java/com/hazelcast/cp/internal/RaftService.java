@@ -68,7 +68,6 @@ import com.hazelcast.cp.internal.raftop.metadata.RaftServicePreJoinOp;
 import com.hazelcast.cp.internal.raftop.metadata.RemoveCPMemberOp;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
@@ -596,9 +595,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
     private void publishGroupAvailabilityEvents(MemberImpl removedMember) {
         ClusterService clusterService = nodeEngine.getClusterService();
-        if (clusterService.getClusterVersion().isUnknownOrLessThan(Versions.V4_1)) {
-            return;
-        }
 
         // since only the Metadata CP group members keep the CP groups,
         // they will be the ones that keep track of unreachable CP members.

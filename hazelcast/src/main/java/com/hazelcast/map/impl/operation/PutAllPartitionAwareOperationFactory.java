@@ -16,13 +16,11 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -36,7 +34,7 @@ import java.util.Map;
  * <p>
  * Used to reduce the number of remote invocations of an {@link IMap#putAll(Map)} or {@link IMap#setAll(Map)} call.
  */
-public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperationFactory implements Versioned {
+public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperationFactory {
 
     protected String name;
     protected MapEntries[] mapEntries;
@@ -71,9 +69,7 @@ public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperatio
         for (MapEntries entry : mapEntries) {
             entry.writeData(out);
         }
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeBoolean(triggerMapLoader);
-        }
+        out.writeBoolean(triggerMapLoader);
     }
 
     @Override
@@ -86,11 +82,7 @@ public class PutAllPartitionAwareOperationFactory extends PartitionAwareOperatio
             entry.readData(in);
             mapEntries[i] = entry;
         }
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            triggerMapLoader = in.readBoolean();
-        } else {
-            triggerMapLoader = true;
-        }
+        triggerMapLoader = in.readBoolean();
     }
 
     @Override
