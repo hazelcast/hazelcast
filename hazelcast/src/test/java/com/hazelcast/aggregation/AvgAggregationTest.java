@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.data.Offset;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,6 +32,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.aggregation.TestSamples.addValues;
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
@@ -47,17 +49,14 @@ import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.INTEGER;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.LONG;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.NUMBER;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
+import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("ConstantConditions")
 public class AvgAggregationTest {
 
-    public static final double ERROR = 1e-8;
+    public static final Offset<Double> ERROR = Offset.offset(1e-8);
 
     private final InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
@@ -65,18 +64,18 @@ public class AvgAggregationTest {
     public void testBigDecimalAvg() {
         List<BigDecimal> values = sampleBigDecimals();
         BigDecimal expectation = Sums.sumBigDecimals(values)
-                .divide(BigDecimal.valueOf(values.size()));
+                                     .divide(BigDecimal.valueOf(values.size()));
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalAvg();
+        Aggregator<Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalAvg();
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalAvg();
+        Aggregator<Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalAvg();
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -85,28 +84,28 @@ public class AvgAggregationTest {
         BigDecimal sum = Sums.sumValueContainer(values, BIG_DECIMAL);
         BigDecimal expectation = sum.divide(BigDecimal.valueOf(values.size()));
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalAvg("bigDecimal");
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalAvg("bigDecimal");
         for (ValueContainer value : values) {
             aggregation.accumulate(newExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
                 = Aggregators.bigDecimalAvg("bigDecimal");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testBigDecimalAvg_withNull() {
-        Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigDecimalAvg();
+        var aggregation = Aggregators.bigDecimalAvg();
         aggregation.accumulate(createEntryWithValue(null));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testBigDecimalAvg_withAttributePath_withNull() {
-        Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigDecimalAvg("bigDecimal");
+        var aggregation = Aggregators.bigDecimalAvg("bigDecimal");
         aggregation.accumulate(newExtractableEntryWithValue(null));
     }
 
@@ -116,16 +115,16 @@ public class AvgAggregationTest {
         BigDecimal expectation = new BigDecimal(Sums.sumBigIntegers(values))
                 .divide(BigDecimal.valueOf(values.size()));
 
-        Aggregator<Map.Entry<BigInteger, BigInteger>, BigDecimal> aggregation = Aggregators.bigIntegerAvg();
+        Aggregator<Entry<BigInteger, BigInteger>, BigDecimal> aggregation = Aggregators.bigIntegerAvg();
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<BigInteger, BigInteger>, BigDecimal> resultAggregation = Aggregators.bigIntegerAvg();
+        Aggregator<Entry<BigInteger, BigInteger>, BigDecimal> resultAggregation = Aggregators.bigIntegerAvg();
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -135,28 +134,28 @@ public class AvgAggregationTest {
         BigDecimal expectation = new BigDecimal(sum)
                 .divide(BigDecimal.valueOf(values.size()));
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigIntegerAvg("bigInteger");
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigIntegerAvg("bigInteger");
         for (ValueContainer value : values) {
             aggregation.accumulate(newExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
                 = Aggregators.bigIntegerAvg("bigInteger");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testBigIntegerAvg_withNull() {
-        Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigIntegerAvg();
+        var aggregation = Aggregators.bigIntegerAvg();
         aggregation.accumulate(createEntryWithValue(null));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testBigIntegerAvg_withAttributePath_withNull() {
-        Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigIntegerAvg("bigDecimal");
+        var aggregation = Aggregators.bigIntegerAvg("bigDecimal");
         aggregation.accumulate(newExtractableEntryWithValue(null));
     }
 
@@ -165,16 +164,16 @@ public class AvgAggregationTest {
         List<Double> values = sampleDoubles();
         double expectation = Sums.sumDoubles(values) / (double) values.size();
 
-        Aggregator<Map.Entry<Double, Double>, Double> aggregation = Aggregators.doubleAvg();
+        Aggregator<Entry<Double, Double>, Double> aggregation = Aggregators.doubleAvg();
         for (Double value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<Double, Double>, Double> resultAggregation = Aggregators.doubleAvg();
+        Aggregator<Entry<Double, Double>, Double> resultAggregation = Aggregators.doubleAvg();
         resultAggregation.combine(aggregation);
         Double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isEqualTo(expectation, ERROR);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -182,27 +181,27 @@ public class AvgAggregationTest {
         List<ValueContainer> values = sampleValueContainers(DOUBLE);
         double expectation = (Double) Sums.sumValueContainer(values, DOUBLE) / (double) values.size();
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleAvg("doubleValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleAvg("doubleValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(newExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.doubleAvg("doubleValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.doubleAvg("doubleValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, ERROR);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testDoubleAvg_withNull() {
-        Aggregator<Map.Entry, Double> aggregation = Aggregators.doubleAvg();
+        var aggregation = Aggregators.doubleAvg();
         aggregation.accumulate(createEntryWithValue(null));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testDoubleAvg_withAttributePath_withNull() {
-        Aggregator<Map.Entry, Double> aggregation = Aggregators.doubleAvg("bigDecimal");
+        var aggregation = Aggregators.doubleAvg("bigDecimal");
         aggregation.accumulate(newExtractableEntryWithValue(null));
     }
 
@@ -211,16 +210,16 @@ public class AvgAggregationTest {
         List<Integer> values = sampleIntegers();
         double expectation = (double) Sums.sumIntegers(values) / (double) values.size();
 
-        Aggregator<Map.Entry<Integer, Integer>, Double> aggregation = Aggregators.integerAvg();
+        Aggregator<Entry<Integer, Integer>, Double> aggregation = Aggregators.integerAvg();
         for (Integer value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<Integer, Integer>, Double> resultAggregation = Aggregators.integerAvg();
+        Aggregator<Entry<Integer, Integer>, Double> resultAggregation = Aggregators.integerAvg();
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, ERROR);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -228,27 +227,27 @@ public class AvgAggregationTest {
         List<ValueContainer> values = sampleValueContainers(INTEGER);
         double expectation = (Long) Sums.sumValueContainer(values, INTEGER) / (double) values.size();
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.integerAvg("intValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.integerAvg("intValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(newExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.integerAvg("intValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.integerAvg("intValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, ERROR);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testIntegerAvg_withNull() {
-        Aggregator<Map.Entry, Double> aggregation = Aggregators.integerAvg();
+        var aggregation = Aggregators.integerAvg();
         aggregation.accumulate(createEntryWithValue(null));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testIntegerAvg_withAttributePath_withNull() {
-        Aggregator<Map.Entry, Double> aggregation = Aggregators.integerAvg("bigDecimal");
+        var aggregation = Aggregators.integerAvg("bigDecimal");
         aggregation.accumulate(newExtractableEntryWithValue(null));
     }
 
@@ -257,16 +256,16 @@ public class AvgAggregationTest {
         List<Long> values = sampleLongs();
         double expectation = (double) Sums.sumLongs(values) / (double) values.size();
 
-        Aggregator<Map.Entry<Long, Long>, Double> aggregation = Aggregators.longAvg();
+        Aggregator<Entry<Long, Long>, Double> aggregation = Aggregators.longAvg();
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.longAvg();
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.longAvg();
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, ERROR);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -274,27 +273,27 @@ public class AvgAggregationTest {
         List<ValueContainer> values = sampleValueContainers(LONG);
         double expectation = (Long) Sums.sumValueContainer(values, LONG) / (double) values.size();
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.longAvg("longValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.longAvg("longValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(newExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.longAvg("longValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.longAvg("longValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, ERROR);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testLongAvg_withNull() {
-        Aggregator<Map.Entry, Double> aggregation = Aggregators.longAvg();
+        var aggregation = Aggregators.longAvg();
         aggregation.accumulate(createEntryWithValue(null));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testLongAvg_withAttributePath_withNull() {
-        Aggregator<Map.Entry, Double> aggregation = Aggregators.longAvg("bigDecimal");
+        var aggregation = Aggregators.longAvg("bigDecimal");
         aggregation.accumulate(newExtractableEntryWithValue(null));
     }
 
@@ -306,16 +305,16 @@ public class AvgAggregationTest {
         values.addAll(sampleIntegers());
         double expectation = Sums.sumFloatingPointNumbers(values) / (double) values.size();
 
-        Aggregator<Map.Entry<Number, Number>, Double> aggregation = Aggregators.numberAvg();
+        Aggregator<Entry<Number, Number>, Double> aggregation = Aggregators.numberAvg();
         for (Number value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.numberAvg();
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.numberAvg();
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, ERROR);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -324,27 +323,27 @@ public class AvgAggregationTest {
         addValues(values, DOUBLE);
         double expectation = (Double) Sums.sumValueContainer(values, NUMBER) / (double) values.size();
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.numberAvg("numberValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.numberAvg("numberValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(newExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.numberAvg("numberValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.numberAvg("numberValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, ERROR);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testGenericAvg_withNull() {
-        Aggregator<Map.Entry, Double> aggregation = Aggregators.numberAvg();
+        var aggregation = Aggregators.numberAvg();
         aggregation.accumulate(createEntryWithValue(null));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
     public void testGenericAvg_withAttributePath_withNull() {
-        Aggregator<Map.Entry, Double> aggregation = Aggregators.numberAvg("bigDecimal");
+        var aggregation = Aggregators.numberAvg("bigDecimal");
         aggregation.accumulate(newExtractableEntryWithValue(null));
     }
 

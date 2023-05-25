@@ -22,9 +22,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -38,7 +36,7 @@ public class DefaultArgumentParserTest {
         Object arguments = parser.parse("123");
 
         // THEN
-        assertThat((String) arguments, equalTo("123"));
+        assertThat((String) arguments).isEqualTo("123");
     }
 
     @Test
@@ -47,7 +45,7 @@ public class DefaultArgumentParserTest {
         Object arguments = parser.parse(null);
 
         // THEN
-        assertThat(arguments, equalTo(null));
+        assertThat(arguments).isEqualTo(null);
     }
 
 }

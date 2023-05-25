@@ -30,11 +30,8 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.Predicates.or;
-import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -53,7 +50,7 @@ public class OrToInVisitorTest {
     public void whenEmptyPredicate_thenReturnItself() {
         OrPredicate or = new OrPredicate(null);
         OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
-        assertThat(or, equalTo(result));
+        assertThat(or).isEqualTo(result);
     }
 
     @Test
@@ -62,7 +59,7 @@ public class OrToInVisitorTest {
         Predicate p2 = equal("age", 2);
         OrPredicate or = (OrPredicate) or(p1, p2);
         OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
-        assertThat(or, equalTo(result));
+        assertThat(or).isEqualTo(result);
     }
 
     @Test
@@ -75,7 +72,7 @@ public class OrToInVisitorTest {
         Predicate p5 = notEqual("age", 5);
         OrPredicate or = (OrPredicate) or(p1, p2, p3, p4, p5);
         OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
-        assertThat(or, equalTo(result));
+        assertThat(or).isEqualTo(result);
     }
 
     @Test
@@ -88,7 +85,7 @@ public class OrToInVisitorTest {
         Predicate p5 = notEqual("age", 5);
         OrPredicate or = (OrPredicate) or(p1, p2, p3, p4, p5);
         OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
-        assertThat(or, equalTo(result));
+        assertThat(or).isEqualTo(result);
     }
 
     @Test
@@ -102,8 +99,8 @@ public class OrToInVisitorTest {
         OrPredicate or = (OrPredicate) or(p1, p2, p3, p4, p5);
         InPredicate result = (InPredicate) visitor.visit(or, indexes);
         Comparable[] values = result.values;
-        assertThat(values, arrayWithSize(5));
-        assertThat(values, Matchers.is(Matchers.<Comparable>arrayContainingInAnyOrder(1, 2, 3, 4, 5)));
+        assertThat(values).hasSize(5);
+        assertThat(values).containsExactlyInAnyOrder(1, 2, 3, 4, 5);
     }
 
     @Test
@@ -121,10 +118,10 @@ public class OrToInVisitorTest {
         for (Predicate predicate : predicates) {
             if (predicate instanceof InPredicate) {
                 Comparable[] values = ((InPredicate) predicate).values;
-                assertThat(values, arrayWithSize(5));
-                assertThat(values, Matchers.is(Matchers.<Comparable>arrayContainingInAnyOrder(1, 2, 3, 4, 5)));
+                assertThat(values).hasSize(5);
+                assertThat(values).containsExactlyInAnyOrder(1, 2, 3, 4, 5);
             } else {
-                assertThat(predicate, instanceOf(NotEqualPredicate.class));
+                assertThat(predicate).isInstanceOf(NotEqualPredicate.class);
             }
         }
     }

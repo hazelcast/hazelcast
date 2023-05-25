@@ -50,10 +50,8 @@ import static com.hazelcast.internal.serialization.impl.compact.reader.CompactVa
 import static com.hazelcast.internal.serialization.impl.compact.reader.CompactValueReaderTestStructure.nested;
 import static com.hazelcast.internal.serialization.impl.compact.reader.CompactValueReaderTestStructure.prim;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isA;
-import static org.junit.Assert.assertThat;
-
+import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Tests that verifies the behavior of the DefaultObjectReader.
  * All tests cases are generated, since there's a lot of possible cases due to the long lists of read* method on the reader.
@@ -146,7 +144,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 result = ((MultiResult) result).getResults().toArray();
             }
         }
-        assertThat(result, equalTo(resultToMatch));
+        assertThat(result).isEqualTo(resultToMatch);
 
     }
 

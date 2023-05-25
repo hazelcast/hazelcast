@@ -54,9 +54,8 @@ import static com.hazelcast.internal.serialization.impl.portable.portablereader.
 import static com.hazelcast.internal.serialization.impl.portable.portablereader.DefaultPortableReaderTestStructure.nested;
 import static com.hazelcast.internal.serialization.impl.portable.portablereader.DefaultPortableReaderTestStructure.prim;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.isA;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests that verifies the behavior of the DefaultPortableReader.
@@ -149,9 +148,9 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 // in case of multi result while invoking generic "read" method deal with the multi results
                 result = ((MultiResult) result).getResults().toArray();
             }
-            assertThat(result, equalTo(resultToMatch));
+            assertThat(result).isEqualTo(resultToMatch);
         } else {
-            assertThat(result, equalTo(resultToMatch));
+            assertThat(result).isEqualTo(resultToMatch);
         }
 
     }
