@@ -18,12 +18,15 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Promise;
 import com.hazelcast.internal.tpcengine.file.StorageDevice;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
+import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_OPENAT;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
@@ -69,7 +72,7 @@ public class StorageDeviceScheduler {
                                    byte opcode,
                                    int flags,
                                    int rwFlags,
-                                   long bufferAddress,
+                                   IOBuffer buf,
                                    int length,
                                    long offset) {
         IO io = ioAllocator.allocate();
@@ -88,7 +91,9 @@ public class StorageDeviceScheduler {
         io.opcode = opcode;
         io.flags = flags;
         io.rwFlags = rwFlags;
-        io.addr = bufferAddress;
+        io.buf = buf;
+        // todo: we need to verify that the buf has enough capacity for the request
+        io.addr = buf == null ? 0 : buf.address();
         io.len = length;
         io.offset = offset;
 
@@ -150,6 +155,7 @@ public class StorageDeviceScheduler {
     }
 
     private class IO implements CompletionHandler {
+        private IOBuffer buf;
         private long writeId;
         private IOUringAsyncFile file;
         private long offset;
@@ -174,6 +180,12 @@ public class StorageDeviceScheduler {
                 // todo: if there is trailing fsync
 
             } else {
+                // todo: nasty hack
+                if (buf != null && opcode!=IORING_OP_OPENAT) {
+//                    System.out.println("res:"+res);
+//                    System.out.println(BufferUtil.toDebugString("buf",buf.byteBuffer()));
+                    buf.incPosition(res);
+                }
                 // todo: this is where we want to deal with the sync.
                 // so if the call is a write and we see there is a trailing fsync, check all all prior writes
                 // have completed. If they have, we can issue the fsync.

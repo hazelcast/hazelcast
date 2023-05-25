@@ -16,14 +16,14 @@
 
 package com.hazelcast.internal.tpcengine.file;
 
+import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.util.BufferUtil;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
@@ -34,7 +34,6 @@ import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_WRONLY;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.PERMISSIONS_ALL;
 import static com.hazelcast.internal.tpcengine.file.FileTestSupport.assertSameContent;
 import static com.hazelcast.internal.tpcengine.file.FileTestSupport.randomTmpFile;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.allocateDirect;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
 
 public abstract class FileCopyTest {
@@ -127,8 +126,9 @@ public abstract class FileCopyTest {
         CompletableFuture future = new CompletableFuture();
 
         Runnable task = () -> {
-            AsyncFile src = reactor.eventloop().newAsyncFile(srcTmpFile.getAbsolutePath());
-            AsyncFile dst = reactor.eventloop().newAsyncFile(dstTmpFile.getAbsolutePath());
+            Eventloop eventloop = reactor.eventloop();
+            AsyncFile src = eventloop.newAsyncFile(srcTmpFile.getAbsolutePath());
+            AsyncFile dst = eventloop.newAsyncFile(dstTmpFile.getAbsolutePath());
 
             src.open(O_RDONLY, PERMISSIONS_ALL).then((r1, throwable) -> {
                 if (throwable != null) {
@@ -140,7 +140,7 @@ public abstract class FileCopyTest {
                         future.completeExceptionally(throwable2);
                     }
 
-                    reactor.execute(new CopyFileTask(src, dst, future));
+                    reactor.execute(new CopyFileTask(reactor, src, dst, future));
                 });
             });
 
@@ -152,8 +152,7 @@ public abstract class FileCopyTest {
     }
 
     private class CopyFileTask implements Runnable, BiConsumer<Integer, Throwable> {
-        private final ByteBuffer buffer;
-        private final long bufferAddress;
+        private final IOBuffer buffer;
         private final CompletableFuture future;
         private int block;
         private long blockCount;
@@ -161,25 +160,24 @@ public abstract class FileCopyTest {
         private long bytesWritten;
         private final AsyncFile src;
         private final AsyncFile dst;
-        private boolean read;
+        private boolean read = true;
 
-        private CopyFileTask(AsyncFile src, AsyncFile dst, CompletableFuture future) {
+        private CopyFileTask(Reactor reactor, AsyncFile src, AsyncFile dst, CompletableFuture future) {
+            this.buffer = reactor.eventloop().fileIOBufferAllocator().allocate(pageSize());
+            System.out.println("buffer capacity: " + buffer.capacity());
             this.blockCount = src.size();
             this.src = src;
             this.dst = dst;
             this.future = future;
-            // Setting up the buffer
-            this.buffer = allocateDirect(pageSize(), pageSize());
-            this.bufferAddress = BufferUtil.addressOf(buffer);
         }
 
         @Override
         public void run() {
             if (read) {
-                src.pread(block * pageSize(), pageSize(), bufferAddress).then(this);
+                src.pread(block * pageSize(), buffer.remaining(), buffer).then(this);
             } else {
                 //
-                dst.pwrite(bytesWritten, bytesToWrite, bufferAddress).then(this);
+                dst.pwrite(bytesWritten, bytesToWrite, buffer).then(this);
             }
         }
 
@@ -191,24 +189,23 @@ public abstract class FileCopyTest {
             }
 
             if (read) {
+                buffer.flip();
                 read = false;
                 bytesToWrite = integer;
                 run();
             } else {
+                buffer.clearOrCompact();
                 read = true;
                 bytesWritten += integer;
                 // if we are at the end
                 if (bytesWritten == src.size()) {
-                    dst.close().then(new BiConsumer<Integer, Throwable>() {
-                        @Override
-                        public void accept(Integer integer, Throwable throwable) {
-                            if (throwable != null) {
-                                future.completeExceptionally(throwable);
-                                return;
-                            }
-
-                            future.complete(null);
+                    dst.close().then((integer1, throwable1) -> {
+                        if (throwable1 != null) {
+                            future.completeExceptionally(throwable1);
+                            return;
                         }
+
+                        future.complete(null);
                     });
 
                     return;

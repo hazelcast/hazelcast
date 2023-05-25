@@ -17,12 +17,12 @@
 package com.hazelcast.internal.tpcengine.file;
 
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
@@ -31,8 +31,6 @@ import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_RDONLY;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_WRONLY;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.PERMISSIONS_ALL;
 import static com.hazelcast.internal.tpcengine.file.FileTestSupport.randomTmpFile;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.toPageAlignedAddress;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -222,24 +220,22 @@ public abstract class AsyncFileTest {
     public void testWrite() {
         File tmpFile = randomTmpFile();
 
-        ByteBuffer buffer = ByteBuffer.allocateDirect(2 * pageSize());
-        long base = addressOf(buffer);
-        long address = toPageAlignedAddress(base);
-
-        for (int k = 0; k < buffer.capacity() / 2; k++) {
-            buffer.putChar('a');
-        }
-
         CompletableFuture future = new CompletableFuture();
 
         Runnable task = () -> {
             AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
+            IOBuffer buffer = reactor.eventloop().fileIOBufferAllocator().allocate(pageSize());
+            for (int k = 0; k < buffer.capacity() / 2; k++) {
+                buffer.writeChar('a');
+            }
+            buffer.flip();
+
 
             file.open(O_WRONLY | O_CREAT, PERMISSIONS_ALL).then((integer, throwable1) -> {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);
                 } else {
-                    file.pwrite(0, 20, address).then((result, throwable2) -> {
+                    file.pwrite(0, 20, buffer).then((result, throwable2) -> {
                         if (throwable2 != null) {
                             future.completeExceptionally(throwable2);
                         } else {
@@ -265,22 +261,22 @@ public abstract class AsyncFileTest {
         File tmpFile = randomTmpFile();
         FileTestSupport.write(tmpFile, "1234");
 
-        ByteBuffer buffer = ByteBuffer.allocateDirect(2 * pageSize());
-        long base = addressOf(buffer);
-        long address = toPageAlignedAddress(base);
 
         CompletableFuture future = new CompletableFuture();
         Runnable task = () -> {
+            IOBuffer buffer = reactor.eventloop().fileIOBufferAllocator().allocate(pageSize());
             AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
 
             file.open(O_RDONLY, PERMISSIONS_ALL).then((result1, throwable1) -> {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);
                 } else {
-                    file.pread(0, 4096, address).then((result2, throwable2) -> {
+
+                    file.pread(0, 4096, buffer).then((result2, throwable2) -> {
                         if (throwable2 != null) {
                             future.completeExceptionally(throwable2);
                         } else {
+                            buffer.clear();
                             future.complete(null);
                         }
                     });

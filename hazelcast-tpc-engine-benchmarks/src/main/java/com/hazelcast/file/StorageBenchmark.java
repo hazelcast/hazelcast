@@ -23,11 +23,10 @@ import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.AsyncFileMetrics;
 import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
-import com.hazelcast.internal.tpcengine.util.BufferUtil;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.util.ThreadAffinity;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.text.CharacterIterator;
 import java.text.DecimalFormat;
@@ -47,7 +46,6 @@ import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_DIRECT;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_NOATIME;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_RDWR;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.PERMISSIONS_ALL;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.allocateDirect;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -182,7 +180,7 @@ public class StorageBenchmark {
                         }
 
                         for (int k = 0; k < iodepth; k++) {
-                            reactor.offer(new IOTask(this, file, completionLatch, k));
+                            reactor.offer(new IOTask(reactor, this, file, completionLatch, k));
                         }
                     });
                 });
@@ -247,8 +245,8 @@ public class StorageBenchmark {
         private long operationCount;
         private final CountDownLatch completionLatch;
         private long block;
-        private final long dst;
-        private final ByteBuffer buffer;
+        private final IOBuffer writeBuffer;
+        private final IOBuffer readBuffer;
         private final Random random = new Random();
         private final int bs;
         private final long blockCount;
@@ -257,7 +255,7 @@ public class StorageBenchmark {
         private final int syncInterval;
         private boolean fdatasync;
 
-        public IOTask(StorageBenchmark benchmark, AsyncFile file, CountDownLatch completionLatch, int taskIndex) {
+        public IOTask(Reactor reactor, StorageBenchmark benchmark, AsyncFile file, CountDownLatch completionLatch, int taskIndex) {
             this.readwrite = benchmark.readwrite;
             this.file = file;
             this.completionLatch = completionLatch;
@@ -277,11 +275,12 @@ public class StorageBenchmark {
             this.block = (blockCount * taskIndex) / benchmark.iodepth;
             //System.out.println("block:"+block);
             // Setting up the buffer
-            this.buffer = allocateDirect(bs, pageSize());
-            this.dst = BufferUtil.addressOf(buffer);
-            for (int c = 0; c < buffer.capacity() / 2; c++) {
-                buffer.putChar('c');
+            this.writeBuffer = reactor.eventloop().fileIOBufferAllocator().allocate(bs);
+            for (int c = 0; c < writeBuffer.capacity() / 2; c++) {
+                writeBuffer.writeChar('c');
             }
+            writeBuffer.flip();
+            this.readBuffer = reactor.eventloop().fileIOBufferAllocator().allocate(bs);
         }
 
         @Override
@@ -308,7 +307,8 @@ public class StorageBenchmark {
                     if (block > blockCount) {
                         block = 0;
                     }
-                    p = file.pwrite(offset, bs, dst);
+                    writeBuffer.position(0);
+                    p = file.pwrite(offset, bs, writeBuffer);
                 }
                 break;
                 case READWRITE_READ: {
@@ -322,7 +322,8 @@ public class StorageBenchmark {
 //                        System.out.println(offset);
 //                    }
 
-                    p = file.pread(offset, bs, dst);
+                    readBuffer.position(0);
+                    p = file.pread(offset, bs, readBuffer);
                 }
                 break;
                 case READWRITE_RANDWRITE: {
@@ -338,13 +339,15 @@ public class StorageBenchmark {
 
                     long nextBlock = nextLong(random, blockCount);
                     long offset = nextBlock * bs;
-                    p = file.pwrite(offset, bs, dst);
+                    writeBuffer.position(0);
+                    p = file.pwrite(offset, bs, writeBuffer);
                 }
                 break;
                 case READWRITE_RANDREAD: {
                     long nextBlock = nextLong(random, blockCount);
                     long offset = nextBlock * bs;
-                    p = file.pread(offset, bs, dst);
+                    readBuffer.position(0);
+                    p = file.pread(offset, bs, readBuffer);
                 }
                 break;
                 default:
@@ -393,7 +396,7 @@ public class StorageBenchmark {
 
                     AtomicInteger completed = new AtomicInteger(iodepth);
                     for (int k = 0; k < iodepth; k++) {
-                        InitFileTask initFileTask = new InitFileTask(k, iodepth);
+                        InitFileTask initFileTask = new InitFileTask(reactor,k, iodepth);
                         initFileTask.startMs = startMs;
                         initFileTask.completionLatch = completionLatch;
                         initFileTask.completed = completed;
@@ -447,18 +450,17 @@ public class StorageBenchmark {
         private AsyncFile file;
         private CountDownLatch completionLatch;
         private long block;
-        private final long bufferAddress;
-        private final ByteBuffer buffer;
+        private final IOBuffer buffer;
         private final int blockSize;
         private final long blockCount;
 
-        public InitFileTask(int ioTaskIndex, int iodepth) {
+        public InitFileTask(Reactor reactor, int ioTaskIndex, int iodepth) {
             // Setting up the buffer
-            this.buffer = allocateDirect(bs, pageSize());
-            this.bufferAddress = BufferUtil.addressOf(buffer);
+            this.buffer = reactor.eventloop().fileIOBufferAllocator().allocate(StorageBenchmark.this.bs);
             for (int c = 0; c < buffer.capacity() / 2; c++) {
-                buffer.putChar('c');
+                buffer.writeChar('c');
             }
+            buffer.flip();
 
             this.blockSize = StorageBenchmark.this.bs;
             long fileBlockCount = StorageBenchmark.this.fileSize / StorageBenchmark.this.bs;
@@ -473,7 +475,7 @@ public class StorageBenchmark {
         public void run() {
             long offset = block * blockSize;
             block++;
-            Promise<Integer> p = file.pwrite(offset, blockSize, bufferAddress);
+            Promise<Integer> p = file.pwrite(offset, blockSize, buffer);
             p.then(this).releaseOnComplete();
         }
 
@@ -503,6 +505,7 @@ public class StorageBenchmark {
                 return;
             }
 
+            buffer.position(0);
             run();
         }
     }

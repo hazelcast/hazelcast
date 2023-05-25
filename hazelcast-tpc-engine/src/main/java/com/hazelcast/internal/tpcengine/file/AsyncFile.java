@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine.file;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Promise;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 
 /**
  * A File that can only be accessed asynchronously. So operations are submitted asynchronously
@@ -29,6 +30,10 @@ import com.hazelcast.internal.tpcengine.Promise;
  * 'SyncFile'. It would be sufficient to offer blocking operations which acts like scheduling points.
  * This way you can use the API from virtual threads and from platform threads. The platform threads
  * should probably run into an exception when they call a blocking method.
+ * <p>
+ * The {@link IOBuffer} used for reading/writing be created using the {@link Eventloop#fileIOBufferAllocator()}
+ * because depending on the AsyncFile implementation/configuration, there are special requirements e.g.
+ * 4K alignment in case of Direct I/O.
  */
 @SuppressWarnings("checkstyle:IllegalTokenText")
 public abstract class AsyncFile {
@@ -50,7 +55,7 @@ public abstract class AsyncFile {
     /**
      * Returns the file descriptor.
      * <p/>
-     * If {@link #open(int)} hasn't been called, then the value is undefined.
+     * If {@link #open(int)} hasn't been called, then the value is undefined. todo: perhaps better to return -1?
      *
      * @return the file decriptor.
      */
@@ -135,38 +140,33 @@ public abstract class AsyncFile {
 
     /**
      * Reads data from a file from some offset.
-     * <p>
-     * todo:
-     * The problem is that we can't just pass any buffer. In case of DIO, the buffer
-     * needs to be properly aligned. So if there would be a map.get, you can't just start adding
-     * the data after.
-     * <p>
-     * todo: use an IOBuffer instead of an dstAddr/length. This way can integrate with
-     * AsyncFileChannel.
+     * <p/>
      *
-     * @param offset the offset.
+     * @param offset the offset within the file
      * @param length the number of bytes to read.
+     * @param dst the IOBuffer to read the data into.
      * @return a Fut with the response code of the request.
+     * @see Eventloop#fileIOBufferAllocator()
      */
-    public abstract Promise<Integer> pread(long offset, int length, long dstAddr);
+    public abstract Promise<Integer> pread(long offset, int length, IOBuffer dst);
 
     /**
      * Writes data to a file from the given offset.
-     * <p>
-     * todo: use an IOBuffer instead of an srcAddr/length. This way can integrate with
-     * AsyncFileChannel.
      *
-     * @param offset
-     * @param length
-     * @param srcAddr
+     * @param offset the offset within the file.
+     * @param length the number of bytes to write
+     * @param src the IOBuffer to read the data from.
      * @return a Fut with the response code of the request.
+     * @see Eventloop#fileIOBufferAllocator()
      */
-    public abstract Promise<Integer> pwrite(long offset, int length, long srcAddr);
+    public abstract Promise<Integer> pwrite(long offset, int length, IOBuffer src);
 
     /**
      * Returns the size of the file in bytes.
      * <p/>
      * The AsyncFile must be opened for this method to be called successfully.
+     * <p>
+     * todo: What happens when the file is not open.
      *
      * @return the size of the file in bytes.
      */

@@ -146,18 +146,19 @@ public class PublishCmd extends Cmd {
         int length = diskBuffer.capacity();
         long address = addressOf(diskBuffer.byteBuffer());
 
-        Promise<Integer> pwrite = topicPartition.activeSegment.file
-                .pwrite(topicPartition.activeSegment.fileOffset, length, address);
-        topicPartition.activeSegment.fileOffset += length;
-        pwrite.releaseOnComplete();
-        // todo: creating object
-        pwrite.then((result, error) -> {
-            if (error != null) {
-                throw new RuntimeException(error);
-            }
-
-            diskBuffer.release();
-        });
+        //todo
+//        Promise<Integer> pwrite = topicPartition.activeSegment.file
+//                .pwrite(topicPartition.activeSegment.fileOffset, length, address);
+//        topicPartition.activeSegment.fileOffset += length;
+//        pwrite.releaseOnComplete();
+//        // todo: creating object
+//        pwrite.then((result, error) -> {
+//            if (error != null) {
+//                throw new RuntimeException(error);
+//            }
+//
+//            diskBuffer.release();
+//        });
     }
 
     private void roll(TopicPartition topicPartition) {

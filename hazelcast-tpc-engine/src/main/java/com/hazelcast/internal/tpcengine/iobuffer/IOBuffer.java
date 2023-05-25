@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine.iobuffer;
 
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,6 +57,7 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MethodCount", "java:S1149", "java:S1135"})
 public class IOBuffer {
 
+
     public IOBuffer next;
     public AsyncSocket socket;
 
@@ -67,6 +69,7 @@ public class IOBuffer {
     AtomicInteger refCount = new AtomicInteger();
 
     private ByteBuffer buff;
+    private long address;
 
     public IOBuffer(int size) {
         this(size, false);
@@ -75,10 +78,44 @@ public class IOBuffer {
     public IOBuffer(int size, boolean direct) {
         //todo: allocate power of 2.
         this.buff = direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+        if (buff.isDirect()) {
+            address = BufferUtil.addressOf(buff);
+        } else {
+            address = 0;
+        }
+    }
+
+
+    public IOBuffer(int size, boolean direct, int alginment) {
+        //todo: allocate power of 2.
+        this.buff = direct ? BufferUtil.allocateDirect(size, alginment) : ByteBuffer.allocate(size);
+        if (buff.isDirect()) {
+            address = BufferUtil.addressOf(buff);
+        } else {
+            address = 0;
+        }
     }
 
     public IOBuffer(ByteBuffer buffer) {
         this.buff = buffer;
+        if (buff.isDirect()) {
+            address = BufferUtil.addressOf(buff);
+        } else {
+            address = 0;
+        }
+    }
+
+    public static IOBuffer allocateDirect(int capacity) {
+        return allocateDirect(capacity, 1);
+    }
+
+    public static IOBuffer allocateDirect(int capacity, int alignment) {
+        ByteBuffer byteBuffer = BufferUtil.allocateDirect(capacity, alignment);
+        return new IOBuffer(byteBuffer);
+    }
+
+    public long address() {
+        return address;
     }
 
     public ByteBuffer byteBuffer() {
@@ -356,4 +393,9 @@ public class IOBuffer {
             }
         }
     }
+
+    public void clearOrCompact() {
+        BufferUtil.compactOrClear(buff);
+    }
+
 }

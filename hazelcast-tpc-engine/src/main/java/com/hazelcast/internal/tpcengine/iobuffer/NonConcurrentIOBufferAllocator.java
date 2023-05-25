@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
-import static java.nio.ByteBuffer.allocateDirect;
 
 /**
  * A {@link IOBufferAllocator} that can only be used serially (so by a single thread).
@@ -44,10 +43,9 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
     }
 
     /**
-     *
      * @param minSize
-     * @param direct when direct is false, alignment is ignored since the address
-     *               of the buffer can't be obtained.
+     * @param direct    when direct is false, alignment is ignored since the address
+     *                  of the buffer can't be obtained.
      * @param alignment
      */
     public NonConcurrentIOBufferAllocator(int minSize, boolean direct, int alignment) {
