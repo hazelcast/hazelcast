@@ -16,74 +16,43 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.h2;
 
+import com.hazelcast.jet.sql.impl.connector.jdbc.AbstractQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
 import org.apache.calcite.sql.SqlDialect;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Builder for upsert statement
  */
-public class H2UpsertQueryBuilder {
+public class H2UpsertQueryBuilder extends AbstractQueryBuilder {
 
-    private final String query;
+    public H2UpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
+        super(jdbcTable, dialect);
 
-    private final String quotedTableName;
-    private final List<String> quotedColumnNames;
+        StringBuilder sb = new StringBuilder();
+        appendMergeClause(sb);
+        sb.append(' ');
+        appendKeyClause(sb);
+        sb.append(' ');
+        appendValuesClause(sb);
 
-    private final List<String> quotedPrimaryKeys;
-
-    public H2UpsertQueryBuilder(JdbcTable jdbcTable) {
-        SqlDialect sqlDialect = jdbcTable.sqlDialect();
-
-        // Quote identifiers
-        quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
-        quotedColumnNames = jdbcTable.dbFieldNames()
-                .stream()
-                .map(sqlDialect::quoteIdentifier)
-                .collect(Collectors.toList());
-        quotedPrimaryKeys = jdbcTable.getPrimaryKeyList()
-                .stream()
-                .map(sqlDialect::quoteIdentifier)
-                .collect(Collectors.toList());
-
-
-        StringBuilder stringBuilder = new StringBuilder();
-
-        getMergeClause(stringBuilder);
-        getKeyClause(stringBuilder);
-        getValuesClause(stringBuilder);
-
-        query = stringBuilder.toString();
+        query = sb.toString();
     }
 
-    void getMergeClause(StringBuilder stringBuilder) {
-        stringBuilder.append("MERGE INTO ")
-                .append(quotedTableName)
-                .append(" (")
-                .append(String.join(",", quotedColumnNames))
-                .append(") ");
+    void appendMergeClause(StringBuilder sb) {
+        sb.append("MERGE INTO ");
+        dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
+        sb.append(' ');
+        appendFieldNames(sb, jdbcTable.dbFieldNames());
     }
 
-    void getKeyClause(StringBuilder stringBuilder) {
-        stringBuilder.append("KEY (")
-                .append(String.join(",", quotedPrimaryKeys))
-                .append(") ");
+    void appendKeyClause(StringBuilder sb) {
+        sb.append("KEY ");
+        appendFieldNames(sb, jdbcTable.getPrimaryKeyList());
     }
 
-    void getValuesClause(StringBuilder stringBuilder) {
-        String values = quotedColumnNames.stream()
-                .map(dbFieldName -> "?")
-                .collect(Collectors.joining(","));
-
-        stringBuilder.append("VALUES (").append(values).append(")");
+    void appendValuesClause(StringBuilder sb) {
+        sb.append("VALUES ");
+        appendValues(sb, jdbcTable.dbFieldNames().size());
     }
 
-    /**
-     * Returns the built upsert statement
-     */
-    public String query() {
-        return query;
-    }
 }

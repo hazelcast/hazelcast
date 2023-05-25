@@ -24,7 +24,8 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
@@ -63,7 +64,7 @@ import com.hazelcast.config.tpc.TpcConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
-import com.hazelcast.internal.config.DataLinkConfigReadOnly;
+import com.hazelcast.internal.config.DataConnectionConfigReadOnly;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
@@ -1221,40 +1222,41 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public Map<String, DataLinkConfig> getDataLinkConfigs() {
-        Map<String, DataLinkConfig> staticConfigs = staticConfig.getDataLinkConfigs();
-        Map<String, DataLinkConfig> dynamicConfigs = configurationService.getDataLinkConfigs();
+    public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
+        Map<String, DataConnectionConfig> staticConfigs = staticConfig.getDataConnectionConfigs();
+        Map<String, DataConnectionConfig> dynamicConfigs = configurationService.getDataConnectionConfigs();
 
         return aggregate(staticConfigs, dynamicConfigs);
     }
 
     @Override
-    public Config setDataLinkConfigs(Map<String, DataLinkConfig> dataLinkConfigs) {
+    public Config setDataConnectionConfigs(Map<String, DataConnectionConfig> dataConnectionConfigs) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
     @Override
-    public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
-        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getDataLinkConfigs(),
-                dataLinkConfig.getName(), dataLinkConfig);
+    public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
+        DataConnectionConfigValidator.validate(dataConnectionConfig);
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getDataConnectionConfigs(),
+                dataConnectionConfig.getName(), dataConnectionConfig);
         if (staticConfigDoesNotExist) {
-            configurationService.broadcastConfig(dataLinkConfig);
+            configurationService.broadcastConfig(dataConnectionConfig);
         }
         return this;
     }
 
     @Override
-    public DataLinkConfig getDataLinkConfig(String name) {
-        return getDataLinkConfigInternal(name, name);
+    public DataConnectionConfig getDataConnectionConfig(String name) {
+        return getDataConnectionConfigInternal(name, name);
     }
 
-    private DataLinkConfig getDataLinkConfigInternal(String name, String fallbackName) {
-        return (DataLinkConfig) configSearcher.getConfig(name, fallbackName, supplierFor(DataLinkConfig.class));
+    private DataConnectionConfig getDataConnectionConfigInternal(String name, String fallbackName) {
+        return (DataConnectionConfig) configSearcher.getConfig(name, fallbackName, supplierFor(DataConnectionConfig.class));
     }
 
     @Override
-    public DataLinkConfig findDataLinkConfig(String name) {
-        return new DataLinkConfigReadOnly(getDataLinkConfigInternal(name, "default"));
+    public DataConnectionConfig findDataConnectionConfig(String name) {
+        return new DataConnectionConfigReadOnly(getDataConnectionConfigInternal(name, "default"));
     }
 
     @Override

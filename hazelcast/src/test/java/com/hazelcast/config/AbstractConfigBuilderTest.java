@@ -490,6 +490,15 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testDefaultAdvancedNetworkConfig();
 
     @Test
+    public abstract void testAdvancedNetworkConfig_whenInvalidSocketKeepIdleSeconds();
+
+    @Test
+    public abstract void testAdvancedNetworkConfig_whenInvalidSocketKeepIntervalSeconds();
+
+    @Test
+    public abstract void testAdvancedNetworkConfig_whenInvalidSocketKeepCount();
+
+    @Test
     public abstract void testAmbiguousNetworkConfig_throwsException();
 
     @Test
@@ -705,7 +714,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testIntegrityCheckerConfig();
 
     @Test
-    public abstract void testDataLinkConfigs();
+    public abstract void testDataConnectionConfigs();
 
     @Test
     public abstract void testTpcConfig();

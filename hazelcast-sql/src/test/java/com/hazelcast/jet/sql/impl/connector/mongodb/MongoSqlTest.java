@@ -15,6 +15,8 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -46,6 +48,7 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     protected static MongoDatabase database;
     protected static String databaseName;
     protected static String collectionName;
+    protected static String connectionString;
 
     @Rule
     public final TestName testName = new TestName();
@@ -54,11 +57,23 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     public static void beforeClass() throws InterruptedException {
         assumeDockerEnabled();
         mongoContainer.start();
-
-        initialize(2, null);
-        sqlService = instance().getSql();
-        mongoClient = MongoClients.create(mongoContainer.getConnectionString());
+        connectionString = mongoContainer.getConnectionString();
         databaseName = randomName();
+
+        Config conf = new Config();
+        conf.getJetConfig().setEnabled(true);
+        DataConnectionConfig testMongo = new DataConnectionConfig();
+        testMongo.setShared(true)
+                 .setType("Mongo")
+                 .setName("testMongo")
+                 .setProperty("connectionString", connectionString)
+                 .setProperty("database", databaseName);
+        conf.addDataConnectionConfig(testMongo);
+        initialize(2, conf);
+
+        sqlService = instance().getSql();
+
+        mongoClient = MongoClients.create(connectionString);
         database = mongoClient.getDatabase(databaseName);
     }
 
@@ -82,8 +97,8 @@ public abstract class MongoSqlTest extends SqlTestSupport {
     }
 
     protected static String options() {
-        return String.format("OPTIONS ( 'database' = '%s', 'connectionString' = '%s', 'idColumn' = 'id') ", databaseName,
-                mongoContainer.getConnectionString());
+        return String.format("OPTIONS ('connectionString' = '%s', 'idColumn' = 'id') ",
+                connectionString);
     }
 
 }

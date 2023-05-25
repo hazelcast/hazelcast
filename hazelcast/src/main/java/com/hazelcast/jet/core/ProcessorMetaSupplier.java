@@ -18,8 +18,8 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.DataLink;
-import com.hazelcast.datalink.DataLinkService;
+import com.hazelcast.dataconnection.DataConnection;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.SerializableByConvention;
@@ -62,16 +62,18 @@ import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static java.util.Collections.singletonList;
 
 /**
- * Factory of {@link ProcessorSupplier} instances. The starting point of
- * the chain leading to the eventual creation of {@code Processor} instances
- * on each cluster member:
+ * Factory of {@link ProcessorSupplier} instances. The starting point of the
+ * chain leading to the eventual creation of {@link Processor} instances on
+ * each cluster member:
  * <ol><li>
- * client creates {@code ProcessorMetaSupplier} as a part of the DAG;
+ * client or member creates {@code ProcessorMetaSupplier} as a part of the DAG;
  * </li><li>
- * serializes it and sends to a cluster member;
+ * client or member sends it to the job coordinator (if the member is job coordinator
+ * and the DAG consists of {@linkplain #isReusable reusable} {@code
+ * ProcessorMetaSupplier}s, the serialization may be skipped);
  * </li><li>
- * the member deserializes and uses it to create one {@code ProcessorSupplier}
- * for each cluster member;
+ * the job coordinator uses it to create one {@code
+ * ProcessorSupplier} for each cluster member;
  * </li><li>
  * serializes each {@code ProcessorSupplier} and sends it to its target member;
  * </li><li>
@@ -79,11 +81,11 @@ import static java.util.Collections.singletonList;
  * of {@code Processor} as requested by the <em>parallelism</em> property on
  * the corresponding {@code Vertex}.
  * </li></ol>
- * Before being asked to create {@code ProcessorSupplier}s this meta-supplier will
- * be given access to the Hazelcast instance and, in particular, its cluster topology
- * and partitioning services. It can use the information from these services to
- * precisely parameterize each {@code Processor} instance that will be created on
- * each member.
+ * Before being asked to create {@code ProcessorSupplier}s this meta-supplier
+ * will be given access to the Hazelcast instance and, in particular, its
+ * cluster topology and partitioning services. It can use the information from
+ * these services to precisely parameterize each {@code Processor} instance
+ * that will be created on each member.
  *
  * @since Jet 3.0
  */
@@ -121,10 +123,11 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
-     * Called on the cluster member that receives the client request, after
-     * deserializing the meta-supplier instance. Gives access to the Hazelcast
-     * instance's services and provides the parallelism parameters determined
-     * from the cluster size.
+     * Called on the cluster member that receives the job request. Gives access
+     * to the Hazelcast instance's services and provides the parallelism
+     * parameters determined from the cluster size.
+     *
+     * @see #isReusable()
      */
     default void init(@Nonnull Context context) throws Exception {
     }
@@ -150,6 +153,8 @@ public interface ProcessorMetaSupplier extends Serializable {
      * The method will be called once per job execution on the job's
      * <em>coordinator</em> member. {@code init()} will have already
      * been called.
+     *
+     * @see #isReusable()
      */
     @Nonnull
     Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
@@ -186,8 +191,52 @@ public interface ProcessorMetaSupplier extends Serializable {
      *              Note that it might not be the actual error that caused the job
      *              to fail - it can be several other exceptions. We only guarantee
      *              that it's non-null if the job didn't complete successfully.
+     * @see #isReusable()
      */
     default void close(@Nullable Throwable error) throws Exception {
+    }
+
+    /**
+     * Returns {@code true} if the same instance can be reused in different job
+     * executions or in different vertices. In that case, {@link #init}, {@link
+     * #get} and {@link #close} methods must be thread-safe and obey additional
+     * conditions defined below.
+     * <p>
+     * When a job is submitted from a client, the job definition is serialized,
+     * so the job coordinator will receive a different copy of processor
+     * meta-suppliers even if they are used multiple times within the same DAG,
+     * or across different DAGs, or submitted through different jobs. While this
+     * serialization mechanism ensures that processor meta-supplier instances do
+     * not share any internal state, it is unnecessary —and avoided— for jobs
+     * consisting of reusable meta-suppliers and submitted from the job
+     * coordinator —which is always the case for member-originated light jobs.
+     * <p>
+     * Non-reusable meta-suppliers <em>(default)</em> have a simple order of
+     * method executions: {@link #init} (once), {@link #get} (at most once after
+     * {@link #init}, {@link #close} (last).
+     * <p>
+     * Reusable meta-suppliers differ because the meta supplier instance may be
+     * shared and reused. That is why: <ol>
+     * <li> {@link #init} can be invoked multiple times (also after
+     *      {@link #close}).
+     * <li> {@link #get} can be invoked multiple times, but each {@link #get}
+     *      invocation will be preceded by {@link #init} invocation for given
+     *      job execution.
+     * <li> {@link #close} can be invoked multiple times with or without
+     *      preceding invocations of the other methods.
+     * <li> Meta-supplier method invocation sequences for different concurrent
+     *      job executions may be interleaved.
+     * </ol>
+     * It is recommended that reusable meta-supplier does not have any mutable
+     * state that is changed by any of the methods. It is, however, allowed to
+     * initialize some thread-safe constant fields in {@link #init} method, for
+     * example, save some constant data from {@link Context} for further usage.
+     * Note, however, that cluster topology may change and should not be stored.
+     *
+     * @since 5.3
+     */
+    default boolean isReusable() {
+        return false;
     }
 
     /**
@@ -290,6 +339,21 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull @Override
             public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return addressToSupplier;
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public boolean initIsCooperative() {
+                return true;
+            }
+
+            @Override
+            public boolean closeIsCooperative() {
+                return true;
             }
         };
     }
@@ -448,6 +512,16 @@ public interface ProcessorMetaSupplier extends Serializable {
             public Permission getRequiredPermission() {
                 return permission;
             }
+
+            @Override
+            public boolean initIsCooperative() {
+                return true;
+            }
+
+            @Override
+            public boolean closeIsCooperative() {
+                return true;
+            }
         };
     }
 
@@ -538,6 +612,21 @@ public interface ProcessorMetaSupplier extends Serializable {
         }
 
         @Override
+        public boolean isReusable() {
+            return true;
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
+
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(supplier);
             out.writeObject(memberAddress);
@@ -581,6 +670,21 @@ public interface ProcessorMetaSupplier extends Serializable {
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             Address memberAddress = addresses.get(RandomPicker.getInt(addresses.size()));
             return addr -> addr.equals(memberAddress) ? supplier : new ExpectNothingProcessorSupplier();
+        }
+
+        @Override
+        public boolean isReusable() {
+            return true;
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return true;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
         }
 
         @Override
@@ -749,11 +853,11 @@ public interface ProcessorMetaSupplier extends Serializable {
         ClassLoader classLoader();
 
         /**
-         * A service to access {@link DataLink}s in processors.
+         * A service to access {@link DataConnection}s in processors.
          *
          * @since 5.3
          */
-        DataLinkService dataLinkService();
+        DataConnectionService dataConnectionService();
 
         /**
          * Check if the current Subject has the given permission granted (or implied).

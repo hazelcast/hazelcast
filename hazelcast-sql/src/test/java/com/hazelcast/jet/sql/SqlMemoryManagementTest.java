@@ -29,7 +29,6 @@ import org.junit.experimental.categories.Category;
 
 import java.util.function.Function;
 
-import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
@@ -86,7 +85,7 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
         System.out.println(sql);
         sqlService.execute(sql);
         Job job = instance().getJet().getJob(jobName);
-        assertJobStatusEventually(job, SUSPENDED);
+        assertJobSuspendedEventually(job);
         assertThat(job.getSuspensionCause().errorCause())
                 .contains("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
 

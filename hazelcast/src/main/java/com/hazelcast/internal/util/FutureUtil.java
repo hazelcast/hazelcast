@@ -422,8 +422,8 @@ public final class FutureUtil {
      * @param futures the list of futures
      * @return {@code true} if all futures are done
      */
-    public static boolean allDone(Collection<Future> futures) {
-        for (Future f : futures) {
+    public static boolean allDone(Collection<Future<?>> futures) {
+        for (Future<?> f : futures) {
             if (!f.isDone()) {
                 return false;
             }
@@ -437,8 +437,8 @@ public final class FutureUtil {
      * @param futures
      * @throws Exception
      */
-    public static void checkAllDone(Collection<Future> futures) throws Exception {
-        for (Future f : futures) {
+    public static void checkAllDone(Collection<Future<?>> futures) throws Exception {
+        for (Future<?> f : futures) {
             if (f.isDone()) {
                 f.get();
             }
@@ -451,9 +451,9 @@ public final class FutureUtil {
      * @param futures
      * @return list of completed futures
      */
-    public static List<Future> getAllDone(Collection<Future> futures) {
-        List<Future> doneFutures = new ArrayList<Future>();
-        for (Future f : futures) {
+    public static List<Future<?>> getAllDone(Collection<Future<?>> futures) {
+        List<Future<?>> doneFutures = new ArrayList<Future<?>>();
+        for (Future<?> f : futures) {
             if (f.isDone()) {
                 doneFutures.add(f);
             }

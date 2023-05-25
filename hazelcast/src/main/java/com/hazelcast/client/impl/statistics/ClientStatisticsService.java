@@ -140,26 +140,27 @@ public class ClientStatisticsService {
     }
 
     private void collectAndSendStats() {
-        ClientMetricCollector clientMetricCollector = new ClientMetricCollector();
-        CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
-                publisherMetricsCollector);
+        try (ClientMetricCollector clientMetricCollector = new ClientMetricCollector()) {
+            CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
+                    publisherMetricsCollector);
 
-        long collectionTimestamp = System.currentTimeMillis();
-        metricsRegistry.collect(compositeMetricsCollector);
-        publisherMetricsCollector.publishCollectedMetrics();
+            long collectionTimestamp = System.currentTimeMillis();
+            metricsRegistry.collect(compositeMetricsCollector);
+            publisherMetricsCollector.publishCollectedMetrics();
 
-        TcpClientConnection connection = getConnection();
-        if (connection == null) {
-            logger.finest("Cannot send client statistics to the server. No connection found.");
-            return;
+            TcpClientConnection connection = getConnection();
+            if (connection == null) {
+                logger.finest("Cannot send client statistics to the server. No connection found.");
+                return;
+            }
+
+            final StringBuilder clientAttributes = new StringBuilder();
+            periodicStats.fillMetrics(collectionTimestamp, clientAttributes, connection);
+            addNearCacheStats(clientAttributes);
+
+            byte[] metricsBlob = clientMetricCollector.getBlob();
+            sendStats(collectionTimestamp, clientAttributes.toString(), metricsBlob, connection);
         }
-
-        final StringBuilder clientAttributes = new StringBuilder();
-        periodicStats.fillMetrics(collectionTimestamp, clientAttributes, connection);
-        addNearCacheStats(clientAttributes);
-
-        byte[] metricsBlob = clientMetricCollector.getBlob();
-        sendStats(collectionTimestamp, clientAttributes.toString(), metricsBlob, connection);
     }
 
     private void addNearCacheStats(final StringBuilder stats) {
@@ -390,7 +391,7 @@ public class ClientStatisticsService {
     }
 
     private class ClientMetricCollector
-            implements MetricsCollector {
+            implements MetricsCollector, AutoCloseable {
 
         private final MetricsCompressor compressor = new MetricsCompressor();
 
@@ -415,7 +416,12 @@ public class ClientStatisticsService {
         }
 
         private byte[] getBlob() {
-            return compressor.getBlobAndReset();
+            return compressor.getBlobAndClose();
+        }
+
+        @Override
+        public void close() {
+            compressor.close();
         }
     }
 }

@@ -43,6 +43,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.wan.WanPublisherState;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -3952,6 +3953,45 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIdleSeconds() {
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", -1);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
+
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 0);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
+
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-idle-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepIntervalSeconds() {
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", -1);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
+
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 0);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
+
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-interval-seconds", 32768);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
+    public void testAdvancedNetworkConfig_whenInvalidSocketKeepCount() {
+        String invalid1 = getAdvancedNetworkConfigWithSocketOption("keep-count", -1);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid1));
+
+        String invalid2 = getAdvancedNetworkConfigWithSocketOption("keep-count", 0);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid2));
+
+        String invalid3 = getAdvancedNetworkConfigWithSocketOption("keep-count", 128);
+        Assert.assertThrows(IllegalArgumentException.class, () -> buildConfig(invalid3));
+    }
+
+    @Override
+    @Test
     public void testAmbiguousNetworkConfig_throwsException() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -4201,10 +4241,12 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  sql:\n"
-                + "    statement-timeout-millis: 30\n";
+                + "    statement-timeout-millis: 30\n"
+                + "    catalog-persistence-enabled: true\n";
         Config config = buildConfig(yaml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+        assertTrue(sqlConfig.isCatalogPersistenceEnabled());
     }
 
     @Override
@@ -4542,35 +4584,35 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testDataLinkConfigs() {
+    public void testDataConnectionConfigs() {
         String yaml = ""
                 + "hazelcast:\n"
-                + "  data-link:\n"
+                + "  data-connection:\n"
                 + "    mysql-database:\n"
-                + "      class-name: com.hazelcast.datalink.JdbcDataLink\n"
+                + "      type: jdbc\n"
                 + "      properties:\n"
                 + "        jdbcUrl: jdbc:mysql://dummy:3306\n"
                 + "        some.property: dummy-value\n"
                 + "      shared: true\n"
                 + "    other-database:\n"
-                + "      class-name: com.hazelcast.datalink.OtherDataLink\n";
+                + "      type: other\n";
 
         Config config = new InMemoryYamlConfig(yaml);
 
-        Map<String, DataLinkConfig> dataLinkConfigs = config.getDataLinkConfigs();
+        Map<String, DataConnectionConfig> dataConnectionConfigs = config.getDataConnectionConfigs();
 
-        assertThat(dataLinkConfigs).hasSize(2);
-        assertThat(dataLinkConfigs).containsKey("mysql-database");
-        DataLinkConfig mysqlDataLinkConfig = dataLinkConfigs.get("mysql-database");
-        assertThat(mysqlDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.JdbcDataLink");
-        assertThat(mysqlDataLinkConfig.getName()).isEqualTo("mysql-database");
-        assertThat(mysqlDataLinkConfig.isShared()).isTrue();
-        assertThat(mysqlDataLinkConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
-        assertThat(mysqlDataLinkConfig.getProperty("some.property")).isEqualTo("dummy-value");
+        assertThat(dataConnectionConfigs).hasSize(2);
+        assertThat(dataConnectionConfigs).containsKey("mysql-database");
+        DataConnectionConfig mysqlDataConnectionConfig = dataConnectionConfigs.get("mysql-database");
+        assertThat(mysqlDataConnectionConfig.getType()).isEqualTo("jdbc");
+        assertThat(mysqlDataConnectionConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataConnectionConfig.isShared()).isTrue();
+        assertThat(mysqlDataConnectionConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataConnectionConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
-        assertThat(dataLinkConfigs).containsKey("other-database");
-        DataLinkConfig otherDataLinkConfig = dataLinkConfigs.get("other-database");
-        assertThat(otherDataLinkConfig.getClassName()).isEqualTo("com.hazelcast.datalink.OtherDataLink");
+        assertThat(dataConnectionConfigs).containsKey("other-database");
+        DataConnectionConfig otherDataConnectionConfig = dataConnectionConfigs.get("other-database");
+        assertThat(otherDataConnectionConfig.getType()).isEqualTo("other");
     }
 
     @Override
@@ -4693,5 +4735,16 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
             assertThat(tpcSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
             assertThat(tpcSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
         });
+    }
+
+    public String getAdvancedNetworkConfigWithSocketOption(String socketOption, int value) {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network:\n"
+                + "    enabled: true\n"
+                + "    member-server-socket-endpoint-config: \n"
+                + "      socket-options: \n"
+                + "        " + socketOption + ": " + value + "\n";
+        return yaml;
     }
 }

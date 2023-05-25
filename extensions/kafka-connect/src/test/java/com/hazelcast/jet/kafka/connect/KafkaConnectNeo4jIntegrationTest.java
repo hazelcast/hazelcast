@@ -25,22 +25,24 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.apache.kafka.connect.data.Values;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.neo4j.driver.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.net.URL;
@@ -54,13 +56,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
     @ClassRule
     public static final OverridePropertyRule enableLogging = set("hazelcast.logging.type", "log4j2");
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectNeo4jIntegrationTest.class);
+
     public static final Neo4jContainer<?> container = new Neo4jContainer<>(DockerImageName.parse("neo4j:5.5.0"))
-            .withoutAuthentication();
-    private static final ILogger LOGGER = Logger.getLogger(KafkaConnectNeo4jIntegrationTest.class);
+            .withoutAuthentication()
+            .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
+
     private static final int ITEM_COUNT = 1_000;
 
     //This is the last JDK8-compatible version of the Neo4j connector
@@ -98,10 +104,10 @@ public class KafkaConnectNeo4jIntegrationTest extends JetTestSupport {
         insertNodes("items-1");
 
         Pipeline pipeline = Pipeline.create();
-        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties))
+        StreamStage<String> streamStage = pipeline.readFrom(KafkaConnectSources.connect(connectorProperties,
+                        SourceRecordUtil::convertToString))
                 .withoutTimestamps()
-                .setLocalParallelism(2)
-                .map(record -> Values.convertToString(record.valueSchema(), record.value()));
+                .setLocalParallelism(2);
         streamStage.writeTo(Sinks.logger());
         streamStage
                 .writeTo(AssertionSinks.assertCollectedEventually(60,

@@ -28,9 +28,9 @@ import com.hazelcast.jet.impl.processor.TransactionPoolSnapshotUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
 import com.hazelcast.jet.impl.util.LoggingUtil;
-import com.hazelcast.jet.kafka.KafkaDataLink;
+import com.hazelcast.jet.kafka.KafkaDataConnection;
 import com.hazelcast.jet.kafka.KafkaProcessors;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.logging.ILogger;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -183,7 +183,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     }
 
     private void recoverTransaction(KafkaTransactionId txnId, boolean commit) {
-        try (KafkaProducer<?, ?> p  = getProducerFn.apply(txnId.getKafkaId())) {
+        try (KafkaProducer<?, ?> p = getProducerFn.apply(txnId.getKafkaId())) {
             if (commit) {
                 ResumeTransactionUtil.resumeTransaction(p, txnId.producerId(), txnId.epoch());
                 try {
@@ -237,21 +237,22 @@ public final class WriteKafkaP<T, K, V> implements Processor {
     }
 
     /**
-     * Use {@link KafkaProcessors#writeKafkaP(com.hazelcast.jet.pipeline.DataLinkRef, FunctionEx, boolean)}
+     * Use {@link KafkaProcessors#writeKafkaP(DataConnectionRef, FunctionEx, boolean)}
      */
     public static <T, K, V> ProcessorSupplier supplier(
-            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull Function<? super T, ? extends ProducerRecord<K, V>> toRecordFn,
             boolean exactlyOnce
     ) {
         return new ProcessorSupplier() {
 
-            private transient KafkaDataLink kafkaDatalink;
+            private transient KafkaDataConnection kafkaDataConnection;
 
             @Override
             public void init(@Nonnull Context context) {
-                kafkaDatalink = context.dataLinkService()
-                                       .getAndRetainDataLink(dataLinkRef.getName(), KafkaDataLink.class);
+                kafkaDataConnection = context
+                        .dataConnectionService()
+                        .getAndRetainDataConnection(dataConnectionRef.getName(), KafkaDataConnection.class);
             }
 
             @Nonnull
@@ -259,7 +260,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
                                 .mapToObj(i -> new WriteKafkaP<T, K, V>(
-                                        (txnId) -> kafkaDatalink.getProducer(txnId),
+                                        (txnId) -> kafkaDataConnection.getProducer(txnId),
                                         toRecordFn,
                                         exactlyOnce
                                 ))
@@ -268,8 +269,49 @@ public final class WriteKafkaP<T, K, V> implements Processor {
 
             @Override
             public void close(@Nullable Throwable error) {
-                if (kafkaDatalink != null) {
-                    kafkaDatalink.release();
+                if (kafkaDataConnection != null) {
+                    kafkaDataConnection.release();
+                }
+            }
+        };
+    }
+
+    /**
+     * Use {@link KafkaProcessors#writeKafkaP(DataConnectionRef, Properties, FunctionEx, boolean)}
+     */
+    public static <T, K, V> ProcessorSupplier supplier(
+            @Nonnull DataConnectionRef dataConnectionRef,
+            @Nonnull Properties properties,
+            @Nonnull Function<? super T, ? extends ProducerRecord<K, V>> toRecordFn,
+            boolean exactlyOnce
+    ) {
+        return new ProcessorSupplier() {
+
+            private transient KafkaDataConnection kafkaDataConnection;
+
+            @Override
+            public void init(@Nonnull Context context) {
+                kafkaDataConnection = context
+                        .dataConnectionService()
+                        .getAndRetainDataConnection(dataConnectionRef.getName(), KafkaDataConnection.class);
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return IntStream.range(0, count)
+                        .mapToObj(i -> new WriteKafkaP<T, K, V>(
+                                (txnId) -> kafkaDataConnection.getProducer(txnId, properties),
+                                toRecordFn,
+                                exactlyOnce
+                        ))
+                        .collect(Collectors.toList());
+            }
+
+            @Override
+            public void close(@Nullable Throwable error) {
+                if (kafkaDataConnection != null) {
+                    kafkaDataConnection.release();
                 }
             }
         };

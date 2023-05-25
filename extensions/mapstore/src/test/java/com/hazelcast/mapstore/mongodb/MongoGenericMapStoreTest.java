@@ -18,7 +18,7 @@ package com.hazelcast.mapstore.mongodb;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.mongodb.compact.ObjectIdCompactSerializer;
-import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
 import com.hazelcast.map.IMap;
 import com.hazelcast.mapstore.GenericMapStore;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -43,7 +42,6 @@ import org.example.PersonWithId;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,6 +49,7 @@ import org.testcontainers.containers.MongoDBContainer;
 
 import java.util.ArrayList;
 
+import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -84,9 +83,9 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         Config memberConfig = smallInstanceConfig()
                 // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
-                .addDataLinkConfig(
-                        new DataLinkConfig(TEST_DATABASE_REF)
-                                .setClassName(MongoDataLink.class.getName())
+                .addDataConnectionConfig(
+                        new DataConnectionConfig(TEST_DATABASE_REF)
+                                .setType("Mongo")
                                 .setShared(false)
                                 .setProperty("connectionString", connectionString)
                                 .setProperty("database", database.getName())
@@ -102,8 +101,8 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
 
     @AfterClass
     public static void afterClass() {
-        mongoClient.close();
-        mongoContainer.stop();
+        closeResource(mongoClient);
+        closeResource(mongoContainer);
     }
 
     @Before
@@ -115,7 +114,7 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
         MapConfig mapConfig = new MapConfig(tableName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
-        mapStoreConfig.setProperty("data-link-ref", TEST_DATABASE_REF);
+        mapStoreConfig.setProperty("data-connection-ref", TEST_DATABASE_REF);
         mapStoreConfig.setProperty("type-name", "org.example.PersonWithId");
         mapStoreConfig.setProperty("id-column", "personId");
         mapConfig.setMapStoreConfig(mapStoreConfig);
@@ -181,14 +180,14 @@ public class MongoGenericMapStoreTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    @Ignore("no delete support yet")
     public void testRemove() {
         HazelcastInstance client = client();
         IMap<Integer, PersonWithId> map = client.getMap(tableName);
 
         assertThat(database.getCollection(tableName).countDocuments()).isEqualTo(1);
 
-        map.remove(0);
+        Integer key = map.keySet().iterator().next();
+        map.remove(key);
 
         assertThat(database.getCollection(tableName).countDocuments()).isZero();
     }

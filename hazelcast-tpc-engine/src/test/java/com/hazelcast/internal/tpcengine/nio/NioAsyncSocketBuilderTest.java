@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AsyncSocket;
-import com.hazelcast.internal.tpcengine.AsyncSocketBuilderTest;
-import com.hazelcast.internal.tpcengine.DevNullReadHandler;
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilderTest;
+import com.hazelcast.internal.tpcengine.net.DevNullAsyncSocketReader;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -54,7 +54,7 @@ public class NioAsyncSocketBuilderTest extends AsyncSocketBuilderTest {
     public void test_setWriteQueueCapacity_whenAlreadyBuild() {
         NioReactor reactor = (NioReactor) newReactor();
         NioAsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        builder.setReadHandler(new DevNullReadHandler());
+        builder.setReader(new DevNullAsyncSocketReader());
         AsyncSocket socket = builder.build();
 
         assertThrows(IllegalStateException.class, () -> builder.setWriteQueueCapacity(1024));
@@ -73,7 +73,7 @@ public class NioAsyncSocketBuilderTest extends AsyncSocketBuilderTest {
     public void test_setReceiveBufferIsDirect_whenAlreadyBuild() {
         NioReactor reactor = (NioReactor) newReactor();
         NioAsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        builder.setReadHandler(new DevNullReadHandler());
+        builder.setReader(new DevNullAsyncSocketReader());
         AsyncSocket socket = builder.build();
 
         assertThrows(IllegalStateException.class, builder::build);

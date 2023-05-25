@@ -168,6 +168,16 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
+    public void update_complexKeySimpleValue() {
+        createMapping("test_map", Key.class, String.class);
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(new Key(1), "300");
+
+        checkUpdateCount("UPDATE test_map SET this = CAST(3 + keyField AS VARCHAR)", 0);
+        assertThat(map).containsExactly(entry(new Key(1), "4"));
+    }
+
+    @Test
     public void update_basedOnWholeKey() {
         createMapping("test_map", Key.class, int.class);
         Map<Key, Integer> map = instance().getMap("test_map");

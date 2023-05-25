@@ -20,18 +20,13 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.sql.SQLException;
-
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     private String tableName;
-    private String alternativeSchemaTable;
 
     @BeforeClass
     public static void beforeClass() {
@@ -43,7 +38,6 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         tableName = randomTableName();
         String schemaName = randomName();
         executeJdbc("CREATE SCHEMA " + schemaName);
-        alternativeSchemaTable = schemaName + "." + tableName;
     }
 
     @Test
@@ -75,10 +69,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("INSERT INTO " + tableName + " VALUES (0, 'name-0')");
@@ -107,10 +98,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + " id INT, "
                         + " fullName VARCHAR EXTERNAL NAME name"
                         + ") "
-                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                        + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("INSERT INTO " + tableName + " (fullName, id) VALUES ('name-0', 0), ('name-1', 1)");
@@ -137,12 +125,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
-    /**
-     * H2 throws org.h2.jdbc.JdbcBatchUpdateException, after which the insert is retried, we can either handle
-     * java.sql.BatchUpdateException as non-transient exception, or something else, not sure
-     */
     @Test
-    @Ignore
     public void insertIntoTableSameValues() throws Exception {
         createTable(tableName);
         createMapping(tableName);
@@ -158,11 +141,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     public void insertIntoTableReverseColumnOrder() throws Exception {
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)");
         execute(
-                "CREATE MAPPING " + tableName
-                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                        + " OPTIONS ( "
-                        + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                        + ")"
+                "CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("INSERT INTO " + tableName + " (name, id) VALUES ('name-0', 0)");
@@ -172,26 +151,4 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         );
     }
 
-    @Test
-    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
-    public void insertIntoTableNonDefaultSchema() throws SQLException {
-        createTable(alternativeSchemaTable);
-        createMapping(alternativeSchemaTable);
-
-        execute("INSERT INTO \"" + alternativeSchemaTable + "\" VALUES (0, 'name-0')");
-        assertJdbcRowsAnyOrder(alternativeSchemaTable, new Row(0, "name-0"));
-    }
-
-
-    @Test
-    @Ignore("Requires https://github.com/hazelcast/hazelcast/pull/23634")
-    public void insertIntoTableWithExternalNameNonDefaultSchema() throws Exception {
-        createTable(alternativeSchemaTable);
-        String mappingName = "mapping_" + randomName();
-        createMapping(alternativeSchemaTable, mappingName);
-
-        execute("INSERT INTO " + mappingName + " VALUES (0, 'name-0')");
-
-        assertJdbcRowsAnyOrder(alternativeSchemaTable, new Row(0, "name-0"));
-    }
 }

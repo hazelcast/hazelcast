@@ -55,18 +55,18 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_LINK;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_DATACONNECTION;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_LINK;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_DATACONNECTION;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_INDEX;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_LINK;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_VIEW_DATACONNECTION;
 
 abstract class SqlPlanImpl extends SqlPlan {
 
@@ -136,6 +136,9 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
+            if (mapping.dataConnection() != null) {
+                context.checkPermission(new SqlPermission(mapping.dataConnection(), ACTION_VIEW_DATACONNECTION));
+            }
             context.checkPermission(new SqlPermission(mapping.name(), ACTION_CREATE));
         }
 
@@ -201,7 +204,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
     }
 
-    static class CreateDataLinkPlan extends SqlPlanImpl {
+    static class CreateDataConnectionPlan extends SqlPlanImpl {
         private final boolean replace;
         private final boolean ifNotExists;
         private final String name;
@@ -210,7 +213,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Map<String, String> options;
         private final PlanExecutor planExecutor;
 
-        CreateDataLinkPlan(
+        CreateDataConnectionPlan(
                 PlanKey planKey,
                 boolean replace,
                 boolean ifNotExists,
@@ -268,26 +271,26 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             if (isReplace()) {
-                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK, ACTION_DROP_LINK));
+                context.checkPermission(new SqlPermission(name, ACTION_CREATE_DATACONNECTION, ACTION_DROP_DATACONNECTION));
             } else {
-                context.checkPermission(new SqlPermission(name, ACTION_CREATE_LINK));
+                context.checkPermission(new SqlPermission(name, ACTION_CREATE_DATACONNECTION));
             }
         }
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoArguments("CREATE DATA LINK", arguments);
-            SqlPlanImpl.ensureNoTimeout("CREATE DATA LINK", timeout);
+            SqlPlanImpl.ensureNoArguments("CREATE DATA CONNECTION", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE DATA CONNECTION", timeout);
             return planExecutor.execute(this);
         }
     }
 
-    static class DropDataLinkPlan extends SqlPlanImpl {
+    static class DropDataConnectionPlan extends SqlPlanImpl {
         private final String name;
         private final boolean ifExists;
         private final PlanExecutor planExecutor;
 
-        DropDataLinkPlan(
+        DropDataConnectionPlan(
                 PlanKey planKey,
                 String name,
                 boolean ifExists,
@@ -315,7 +318,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(name, ACTION_VIEW_LINK, ACTION_DROP_LINK));
+            context.checkPermission(new SqlPermission(name, ACTION_VIEW_DATACONNECTION, ACTION_DROP_DATACONNECTION));
         }
 
         @Override
@@ -325,7 +328,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoTimeout("DROP DATA LINK", timeout);
+            SqlPlanImpl.ensureNoTimeout("DROP DATA CONNECTION", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -842,6 +845,79 @@ abstract class SqlPlanImpl extends SqlPlan {
         }
     }
 
+    static class CreateTypePlan extends SqlPlanImpl {
+        private final String name;
+        private final boolean replace;
+        private final boolean ifNotExists;
+        private final List<TypeDefinitionColumn> columns;
+        private final Map<String, String> options;
+        private final PlanExecutor planExecutor;
+
+        CreateTypePlan(
+                final PlanKey planKey,
+                final String name,
+                final boolean replace,
+                final boolean ifNotExists,
+                final List<TypeDefinitionColumn> columns,
+                final Map<String, String> options,
+                final PlanExecutor planExecutor
+        ) {
+            super(planKey);
+            this.name = name;
+            this.replace = replace;
+            this.ifNotExists = ifNotExists;
+            this.columns = columns;
+            this.options = options;
+            this.planExecutor = planExecutor;
+        }
+
+        public String name() {
+            return name;
+        }
+
+        public Map<String, String> options() {
+            return options;
+        }
+
+        public String option(String name) {
+            return options.get(name);
+        }
+
+        public boolean replace() {
+            return replace;
+        }
+
+        public boolean ifNotExists() {
+            return ifNotExists;
+        }
+
+        public List<TypeDefinitionColumn> columns() {
+            return columns;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_CREATE_TYPE));
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("CREATE TYPE", arguments);
+            SqlPlanImpl.ensureNoTimeout("CREATE TYPE", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
     static class DropTypePlan extends SqlPlanImpl {
         private final String typeName;
         private final boolean ifExists;
@@ -893,19 +969,19 @@ abstract class SqlPlanImpl extends SqlPlan {
 
     static class ShowStatementPlan extends SqlPlanImpl {
         private final ShowStatementTarget showTarget;
-        private final String dataLinkName;
+        private final String dataConnectionName;
         private final PlanExecutor planExecutor;
 
         ShowStatementPlan(
                 PlanKey planKey,
                 ShowStatementTarget showTarget,
-                String dataLinkName,
+                String dataConnectionName,
                 PlanExecutor planExecutor
         ) {
             super(planKey);
 
             this.showTarget = showTarget;
-            this.dataLinkName = dataLinkName;
+            this.dataConnectionName = dataConnectionName;
             this.planExecutor = planExecutor;
         }
 
@@ -913,8 +989,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             return showTarget;
         }
 
-        String getDataLinkName() {
-            return dataLinkName;
+        String getDataConnectionName() {
+            return dataConnectionName;
         }
 
         @Override
@@ -1512,79 +1588,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             return planExecutor.execute(this, arguments, timeout);
-        }
-    }
-
-    static class CreateTypePlan extends SqlPlanImpl {
-        private final String name;
-        private final boolean replace;
-        private final boolean ifNotExists;
-        private final List<TypeDefinitionColumn> columns;
-        private final Map<String, String> options;
-        private final PlanExecutor planExecutor;
-
-        CreateTypePlan(
-                final PlanKey planKey,
-                final String name,
-                final boolean replace,
-                final boolean ifNotExists,
-                final List<TypeDefinitionColumn> columns,
-                final Map<String, String> options,
-                final PlanExecutor planExecutor
-        ) {
-            super(planKey);
-            this.name = name;
-            this.replace = replace;
-            this.ifNotExists = ifNotExists;
-            this.columns = columns;
-            this.options = options;
-            this.planExecutor = planExecutor;
-        }
-
-        public String name() {
-            return name;
-        }
-
-        public Map<String, String> options() {
-            return options;
-        }
-
-        public String option(String name) {
-            return options.get(name);
-        }
-
-        public boolean replace() {
-            return replace;
-        }
-
-        public boolean ifNotExists() {
-            return ifNotExists;
-        }
-
-        public List<TypeDefinitionColumn> columns() {
-            return columns;
-        }
-
-        @Override
-        public boolean isCacheable() {
-            return false;
-        }
-
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(name, ACTION_CREATE_TYPE));
-        }
-
-        @Override
-        public boolean producesRows() {
-            return false;
-        }
-
-        @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
-            SqlPlanImpl.ensureNoArguments("CREATE TYPE", arguments);
-            SqlPlanImpl.ensureNoTimeout("CREATE TYPE", timeout);
-            return planExecutor.execute(this);
         }
     }
 

@@ -18,7 +18,6 @@ package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
@@ -43,6 +42,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
@@ -89,6 +89,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -316,16 +317,6 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    protected void assertNoRunningInstancesEventually(String methodName, TestHazelcastFactory hazelcastFactory) {
-        // check for running Hazelcast instances
-        assertTrueEventually(() -> {
-            Collection<HazelcastInstance> instances = hazelcastFactory.getAllHazelcastInstances();
-            if (!instances.isEmpty()) {
-                fail("After " + methodName + " following instances haven't been shut down: " + instances);
-            }
-        });
-    }
-
     // ###########################################
     // ########## implementation getter ##########
     // ###########################################
@@ -353,10 +344,17 @@ public abstract class HazelcastTestSupport {
     /**
      * Note: the {@code cancel()} method on the returned future has no effect.
      */
-    public static Future spawn(Runnable task) {
+    public static Future spawn(RunnableEx task) {
         FutureTask<Runnable> futureTask = new FutureTask<>(task, null);
         new Thread(futureTask).start();
         return futureTask;
+    }
+
+    /**
+     * Note: the {@code cancel()} method on the returned future has no effect.
+     */
+    public static Future spawn(Runnable task) {
+        return spawn(task::run);
     }
 
     /**
@@ -1023,6 +1021,16 @@ public abstract class HazelcastTestSupport {
     public static void assertSizeEventually(final int expectedSize, final Collection collection, long timeoutSeconds) {
         assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:" + collection, expectedSize,
                 collection.size()), timeoutSeconds);
+    }
+
+    public static void assertSizeEventually(int expectedSize, Supplier<Collection> collectionSupplier) {
+        assertSizeEventually(expectedSize, collectionSupplier, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertSizeEventually(int expectedSize, Supplier<Collection> collectionSupplier, long timeoutSeconds) {
+        assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:"
+                        + collectionSupplier.get(), expectedSize, collectionSupplier.get().size()),
+                timeoutSeconds);
     }
 
     public static void assertSizeEventually(int expectedSize, Map<?, ?> map) {

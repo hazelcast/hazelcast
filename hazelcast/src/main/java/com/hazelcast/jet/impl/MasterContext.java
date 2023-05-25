@@ -28,6 +28,7 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
@@ -35,6 +36,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -47,10 +49,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
+import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
@@ -175,9 +177,26 @@ public class MasterContext {
             if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {
                 throw new IllegalStateException("Job not suspended, but " + jobStatus);
             }
+            boolean wasSplitBrainProtectionEnabled = jobConfig().isSplitBrainProtectionEnabled();
             deltaConfig.applyTo(jobConfig());
             jobRepository.updateJobRecord(jobRecord);
+            if (jobConfig().isSplitBrainProtectionEnabled() != wasSplitBrainProtectionEnabled) {
+                updateQuorumSize(jobConfig().isSplitBrainProtectionEnabled()
+                        ? coordinationService.getQuorumSize() : 0);
+            }
             return jobConfig();
+        } finally {
+            unlock();
+        }
+    }
+
+    public UUID addStatusListener(Registration registration) {
+        lock();
+        try {
+            if (jobStatus.isTerminal()) {
+                throw cannotAddStatusListener(jobStatus);
+            }
+            return jobEventService.handleAllRegistrations(jobId, registration).getId();
         } finally {
             unlock();
         }
@@ -255,12 +274,12 @@ public class MasterContext {
         coordinationService().assertOnCoordinatorThread();
         // This method can be called in parallel if multiple members are added. We don't synchronize here,
         // but the worst that can happen is that we write the JobRecord out unnecessarily.
-        if (jobExecutionRecord.getQuorumSize() < newQuorumSize) {
-            jobExecutionRecord.setLargerQuorumSize(newQuorumSize);
-            writeJobExecutionRecord(false);
-            logger.info("Current quorum size: " + jobExecutionRecord.getQuorumSize() + " of job "
-                    + idToString(jobRecord.getJobId()) + " is updated to: " + newQuorumSize);
-        }
+        int quorumSize = newQuorumSize > 0
+            ? jobExecutionRecord.setLargerQuorumSize(newQuorumSize)
+            : jobExecutionRecord.resetQuorumSize();
+        writeJobExecutionRecord(false);
+        logger.info("Quorum size of job " + jobIdString() + " is updated from " + quorumSize
+                + " to " + (newQuorumSize > 0 ? Math.max(quorumSize, newQuorumSize) : 0));
     }
 
     void writeJobExecutionRecord(boolean canCreate) {

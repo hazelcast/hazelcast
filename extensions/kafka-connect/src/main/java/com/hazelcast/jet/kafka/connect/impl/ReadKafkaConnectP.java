@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
@@ -26,38 +27,53 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.KAFKA_CONNECT_PREFIX;
 import static com.hazelcast.internal.metrics.impl.ProviderHelper.provide;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 
-public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetricsProvider {
+public class ReadKafkaConnectP<T> extends AbstractProcessor implements DynamicMetricsProvider {
 
     private final ConnectorWrapper connectorWrapper;
-    private final EventTimeMapper<SourceRecord> eventTimeMapper;
+    private final EventTimeMapper<T> eventTimeMapper;
+    private final FunctionEx<SourceRecord, T> projectionFn;
     private TaskRunner taskRunner;
     private boolean snapshotInProgress;
-    private Traverser<Entry<BroadcastKey<String>, TaskRunner.State>> snapshotTraverser;
+    private Traverser<Entry<BroadcastKey<String>, State>> snapshotTraverser;
     private boolean snapshotsEnabled;
     private int processorIndex;
-    private Traverser<?> traverser;
+    private Traverser<?> traverser = Traversers.empty();
     private final LocalKafkaConnectStatsImpl localKafkaConnectStats = new LocalKafkaConnectStatsImpl();
 
-    public ReadKafkaConnectP(ConnectorWrapper connectorWrapper, EventTimePolicy<? super SourceRecord> eventTimePolicy) {
+    public ReadKafkaConnectP(@Nonnull ConnectorWrapper connectorWrapper,
+                             @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+                             @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
+        checkNotNull(connectorWrapper, "connectorWrapper is required");
+        checkNotNull(eventTimePolicy, "eventTimePolicy is required");
+        checkNotNull(projectionFn, "projectionFn is required");
         this.connectorWrapper = connectorWrapper;
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+        this.projectionFn = projectionFn;
         eventTimeMapper.addPartitions(1);
     }
 
@@ -80,33 +96,27 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
         if (snapshotInProgress) {
             return false;
         }
-        if (traverser == null) {
-            long start = Timer.nanos();
-            List<SourceRecord> sourceRecords = taskRunner.poll();
-            long durationInNanos = Timer.nanosElapsed(start);
-            localKafkaConnectStats.addSourceRecordPollDuration(Duration.ofNanos(durationInNanos));
-            localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
-            this.traverser = traverser(sourceRecords)
-                    .map(rec -> {
-                        taskRunner.commitRecord((SourceRecord) rec);
-                        return rec;
-                    })
-                    .onFirstNull(() -> traverser = null);
+        if (!emitFromTraverser(traverser)) {
+            return false;
         }
+
+        long start = Timer.nanos();
+        List<SourceRecord> sourceRecords = taskRunner.poll();
+        long durationInNanos = Timer.nanosElapsed(start);
+        localKafkaConnectStats.addSourceRecordPollDuration(Duration.ofNanos(durationInNanos));
+        localKafkaConnectStats.incrementSourceRecordPoll(sourceRecords.size());
+        this.traverser = sourceRecords.isEmpty() ? eventTimeMapper.flatMapIdle() :
+                traverseIterable(sourceRecords)
+                        .flatMap(rec -> {
+                            long eventTime = rec.timestamp() == null ?
+                                    EventTimeMapper.NO_NATIVE_TIME
+                                    : rec.timestamp();
+                            T projectedRecord = projectionFn.apply(rec);
+                            taskRunner.commitRecord(rec);
+                            return eventTimeMapper.flatMapEvent(projectedRecord, 0, eventTime);
+                        });
         emitFromTraverser(traverser);
         return false;
-    }
-
-    @Nonnull
-    public Traverser<?> traverser(List<SourceRecord> sourceRecords) {
-        if (sourceRecords.isEmpty()) {
-            return eventTimeMapper.flatMapIdle();
-        }
-        return traverseIterable(sourceRecords)
-                .flatMap(rec -> {
-                    long eventTime = rec.timestamp() == null ? 0 : rec.timestamp();
-                    return eventTimeMapper.flatMapEvent(rec, 0, eventTime);
-                });
     }
 
     @Override
@@ -129,10 +139,11 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
         return broadcastKey("snapshot-" + processorIndex);
     }
 
+    @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         boolean forThisProcessor = snapshotKey().equals(key);
         if (forThisProcessor) {
-            taskRunner.restoreSnapshot((TaskRunner.State) value);
+            taskRunner.restoreSnapshot((State) value);
         }
     }
 
@@ -172,4 +183,33 @@ public class ReadKafkaConnectP extends AbstractProcessor implements DynamicMetri
         provide(descriptor, context, KAFKA_CONNECT_PREFIX, getStats());
     }
 
+    public static <T> ProcessorSupplier processSupplier(@Nonnull Properties properties,
+                                                        @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+                                                        @Nonnull FunctionEx<SourceRecord, T> projectionFn) {
+        return new ProcessorSupplier() {
+            private transient ConnectorWrapper connectorWrapper;
+
+            @Override
+            public void init(@Nonnull Context context) {
+                properties.put("tasks.max", Integer.toString(context.localParallelism()));
+                this.connectorWrapper = new ConnectorWrapper(properties);
+            }
+
+            @Override
+            public void close(@Nullable Throwable error) {
+                if (connectorWrapper != null) {
+                    connectorWrapper.stop();
+                }
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return IntStream.range(0, count)
+                        .mapToObj(i -> new ReadKafkaConnectP(connectorWrapper, eventTimePolicy, projectionFn))
+                        .collect(Collectors.toList());
+            }
+
+        };
+    }
 }

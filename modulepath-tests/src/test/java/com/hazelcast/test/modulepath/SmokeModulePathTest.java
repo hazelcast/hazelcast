@@ -71,7 +71,7 @@ public class SmokeModulePathTest {
     public void testModuleNames() {
         Set<String> hazelcastModuleNames = ModuleLayer.boot().modules().stream().map(Module::getName)
                 .filter(s -> s.contains("hazelcast")).collect(Collectors.toSet());
-        assertThat(hazelcastModuleNames, hasItems("com.hazelcast.core", "com.hazelcast.tests"));
+        assertThat(hazelcastModuleNames, hasItems("com.hazelcast.core", "com.hazelcast.test.modulepath"));
     }
 
     /**

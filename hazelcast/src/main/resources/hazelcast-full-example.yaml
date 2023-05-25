@@ -99,7 +99,13 @@ hazelcast:
   # Set to true to allow Management Center access to contents of Hazelcast data structures (for instance map entries), false to disallow.
   # Management Center can't access the data if at least one member has the data access disabled.
   # Default value is true.
-
+  # * trusted-interfaces:
+  # Includes allowed IP addresses for Management Center connections.
+  # It configures addresses from which clients are allowed to run cluster management tasks over the Hazelcast client protocol.
+  # You can give an IP addresses range using the wildcards (*) or intervals in the IPv4 address
+  # (e.g. 192.168.1.* or 192.168.1.100-110).
+  # Default value is empty, meaning all Management Center connections can execute management tasks.
+  #
   # Hazelcast's Open Source edition provides the Management Center with monitoring at most 3 members
   # in your cluster. To use it for more members, you need to have either a Management Center,
   # Hazelcast Enterprise or Hazelcast Enterprise HD license.
@@ -108,6 +114,9 @@ hazelcast:
     scripting-enabled: false
     console-enabled: false
     data-access-enabled: true
+    trusted-interfaces:
+      - 10.10.1.*
+      - 10.10.2.*
   #
   # The "properties" mapping lets you add properties to some of the Hazelcast elements used to configure some of
   # the Hazelcast modules.
@@ -3704,9 +3713,19 @@ hazelcast:
   # It has the following sub-elements:
   #     * "statement-timeout-millis":
   #         Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
+  #     * "catalog-persistence-enabled":
+  #         Sets whether SQL Catalog persistence is enabled for the node.
+  #         With SQL Catalog persistence enabled you can restart the whole cluster without
+  #         losing schema definition objects (such as MAPPINGs, TYPEs, VIEWs and DATA CONNECTIONs).
+  #         The feature is implemented on top of the Hot Restart feature of Hazelcast
+  #         which persists the data to disk. If enabled, you have to also configure
+  #         Hot Restart. Feature is disabled by default. If you enable this option in
+  #         open-source, the member will fail to start, you need Enterprise to run it
+  #         and obtain a license from Hazelcast.
   #
   sql:
     statement-timeout-millis: 0
+    catalog-persistence-enabled: false
 
   #  ===== HAZELCAST JET CONFIGURATION =====
   #
@@ -3867,18 +3886,18 @@ hazelcast:
   # Integrity Checker is disabled by default.
   integrity-checker:
     enabled: false
-  #      ===== HAZELCAST DATA LINK CONFIGURATION =====
+  #      ===== HAZELCAST DATA CONNECTION CONFIGURATION =====
   #
-  #      Configuration element's name is <data-link>. Contains configuration of data links
+  #      Configuration element's name is <data-connection>. Contains configuration of data connections
   #      used by map stores and jdbc sinks and sources.
-  data-link:
+  data-connection:
     mysql-database:
-      class-name: com.hazelcast.datalink.JdbcDataLink
+      type: jdbc
       properties:
         jdbcUrl: jdbc:mysql://dummy:3306
       shared: false
     other-database:
-      class-name: com.hazelcast.datalink.OtherDataLink
+      type: other
 
   #    ===== HAZELCAST TPC CONFIGURATION =====
   #

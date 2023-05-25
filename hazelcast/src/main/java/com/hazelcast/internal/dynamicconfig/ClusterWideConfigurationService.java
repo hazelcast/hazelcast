@@ -20,7 +20,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigPatternMatcher;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -117,7 +117,7 @@ public class ClusterWideConfigurationService implements
     private final ConcurrentMap<String, ReliableTopicConfig> reliableTopicConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, DataLinkConfig> dataLinkConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, DataConnectionConfig> dataConnectionConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
 
@@ -139,7 +139,7 @@ public class ClusterWideConfigurationService implements
             cacheSimpleConfigs,
             flakeIdGeneratorConfigs,
             pnCounterConfigs,
-            dataLinkConfigs,
+            dataConnectionConfigs,
     };
 
     private volatile Version version;
@@ -328,11 +328,11 @@ public class ClusterWideConfigurationService implements
         } else if (newConfig instanceof PNCounterConfig) {
             PNCounterConfig config = (PNCounterConfig) newConfig;
             currentConfig = pnCounterConfigs.putIfAbsent(config.getName(), config);
-        } else if (newConfig instanceof DataLinkConfig) {
-            DataLinkConfig config = (DataLinkConfig) newConfig;
-            currentConfig = dataLinkConfigs.putIfAbsent(config.getName(), config);
+        } else if (newConfig instanceof DataConnectionConfig) {
+            DataConnectionConfig config = (DataConnectionConfig) newConfig;
+            currentConfig = dataConnectionConfigs.putIfAbsent(config.getName(), config);
             if (currentConfig == null) {
-                nodeEngine.getDataLinkService().createConfigDataLink(config);
+                nodeEngine.getDataConnectionService().createConfigDataConnection(config);
             }
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
@@ -536,13 +536,13 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public DataLinkConfig findDataLinkConfig(String baseName) {
-        return lookupByPattern(configPatternMatcher, dataLinkConfigs, baseName);
+    public DataConnectionConfig findDataConnectionConfig(String baseName) {
+        return lookupByPattern(configPatternMatcher, dataConnectionConfigs, baseName);
     }
 
     @Override
-    public Map<String, DataLinkConfig> getDataLinkConfigs() {
-        return dataLinkConfigs;
+    public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
+        return dataConnectionConfigs;
     }
 
     @Override
@@ -556,10 +556,6 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public void updateTcpIpConfigMemberList(List<String> memberList) {
-        if (version.isLessThan(V5_2)) {
-            throw new UnsupportedOperationException("TCP-IP member list update is not supported"
-                    + " for the cluster version less than 5.2");
-        }
         invokeOnStableClusterSerial(
                 nodeEngine,
                 () -> new UpdateTcpIpMemberListOperation(memberList), CONFIG_PUBLISH_MAX_ATTEMPT_COUNT
@@ -613,7 +609,7 @@ public class ClusterWideConfigurationService implements
         configToVersion.put(FlakeIdGeneratorConfig.class, V4_0);
         configToVersion.put(PNCounterConfig.class, V4_0);
         configToVersion.put(MerkleTreeConfig.class, V4_0);
-        configToVersion.put(DataLinkConfig.class, V5_2);
+        configToVersion.put(DataConnectionConfig.class, V5_2);
 
         return Collections.unmodifiableMap(configToVersion);
     }

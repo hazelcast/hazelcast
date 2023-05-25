@@ -18,16 +18,15 @@ package com.hazelcast.mapstore.mysql;
 
 import com.hazelcast.mapstore.GenericMapStoreTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-@Category({NightlyTest.class, ParallelJVMTest.class})
+@Category(NightlyTest.class)
 public class MySQLGenericMapStoreTest extends GenericMapStoreTest {
 
     @BeforeClass
-    public static void beforeClass()  {
+    public static void beforeClass() {
         initialize(new MySQLDatabaseProvider());
     }
 

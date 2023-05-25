@@ -36,7 +36,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_DATA_LINK_NAME;
 import static java.util.Arrays.asList;
 import static org.assertj.core.util.Lists.newArrayList;
 
@@ -62,8 +61,8 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         return asList(new Object[][]{
                 {"VARCHAR(100)", "VARCHAR", "'dummy'", "dummy"},
                 {"BOOLEAN", "BOOLEAN", "TRUE", true},
-                {"TINYINT", "TINYINT", "1", 1},
-                {"SMALLINT", "SMALLINT", "2", 2},
+                {"TINYINT", "TINYINT", "1", (byte) 1},
+                {"SMALLINT", "SMALLINT", "2", (short) 2},
                 {"INTEGER", "INTEGER", "3", 3},
                 {"BIGINT", "BIGINT", "4", 4L},
                 {"DECIMAL (10,5)", "DECIMAL", "1.12345", new BigDecimal("1.12345")},
@@ -96,10 +95,7 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + " ("
                 + "table_column " + mappingType
                 + ") "
-                + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + " '" + OPTION_DATA_LINK_NAME + "'='" + TEST_DATABASE_REF + "'"
-                + ")"
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder("SELECT * FROM " + mappingName, new Row(expected));

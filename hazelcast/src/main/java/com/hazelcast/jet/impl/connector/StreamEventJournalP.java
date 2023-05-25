@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.datalink.HazelcastDataLink;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
 import com.hazelcast.function.SupplierEx;
@@ -350,7 +350,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final String clientXml;
-        private final String dataLinkName;
+        private final String dataConnectionName;
         private final FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                 eventJournalReaderSupplier;
         private final PredicateEx<? super E> predicate;
@@ -366,7 +366,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         private transient Map<Address, List<Integer>> addrToPartitions;
 
         ClusterMetaSupplier(
-                @Nullable String dataLinkName,
+                @Nullable String dataConnectionName,
                 @Nullable String clientXml,
                 @Nonnull FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                         eventJournalReaderSupplier,
@@ -376,10 +376,10 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 @Nonnull EventTimePolicy<? super T> eventTimePolicy,
                 @Nonnull SupplierEx<Permission> permissionFn
         ) {
-            if (dataLinkName != null && clientXml != null) {
-                throw new IllegalArgumentException("Only one of dataLinkName or clientXml should be provided");
+            if (dataConnectionName != null && clientXml != null) {
+                throw new IllegalArgumentException("Only one of dataConnectionName or clientXml should be provided");
             }
-            this.dataLinkName = dataLinkName;
+            this.dataConnectionName = dataConnectionName;
             this.clientXml = clientXml;
             this.eventJournalReaderSupplier = eventJournalReaderSupplier;
             this.predicate = predicate;
@@ -391,12 +391,12 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         @Override
         public int preferredLocalParallelism() {
-            return isRemote(dataLinkName, clientXml) ? 1 : 2;
+            return isRemote(dataConnectionName, clientXml) ? 1 : 2;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            if (isRemote(dataLinkName, clientXml)) {
+            if (isRemote(dataConnectionName, clientXml)) {
                 initRemote(context);
             } else {
                 PermissionsUtil.checkPermission(eventJournalReaderSupplier, context);
@@ -405,7 +405,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
 
         private void initRemote(Context context) {
-            HazelcastInstance client = createRemoteClient(context, dataLinkName, clientXml);
+            HazelcastInstance client = createRemoteClient(context, dataConnectionName, clientXml);
             try {
                 HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
                 remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
@@ -433,16 +433,26 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
             // Return a new factory per member owning the given partitions
             return address -> new ClusterProcessorSupplier<>(addrToPartitions.get(address),
-                    dataLinkName, clientXml, eventJournalReaderSupplier, predicate, projection, initialPos,
+                    dataConnectionName, clientXml, eventJournalReaderSupplier, predicate, projection, initialPos,
                     eventTimePolicy);
         }
 
         @Override
         public Permission getRequiredPermission() {
-            if (isRemote(dataLinkName, clientXml)) {
+            if (isRemote(dataConnectionName, clientXml)) {
                 return null;
             }
             return permissionFn.get();
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return !isRemote(dataConnectionName, clientXml);
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
         }
     }
 
@@ -453,7 +463,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         @Nonnull
         private final List<Integer> ownedPartitions;
         @Nullable
-        private final String dataLinkName;
+        private final String dataConnectionName;
         @Nullable
         private final String clientXml;
         @Nonnull
@@ -473,7 +483,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         ClusterProcessorSupplier(
                 @Nonnull List<Integer> ownedPartitions,
-                @Nullable String dataLinkName,
+                @Nullable String dataConnectionName,
                 @Nullable String clientXml,
                 @Nonnull FunctionEx<? super HazelcastInstance, ? extends EventJournalReader<E>>
                         eventJournalReaderSupplier,
@@ -483,7 +493,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 @Nonnull EventTimePolicy<? super T> eventTimePolicy
         ) {
             this.ownedPartitions = ownedPartitions;
-            this.dataLinkName = dataLinkName;
+            this.dataConnectionName = dataConnectionName;
             this.clientXml = clientXml;
             this.eventJournalReaderSupplier = eventJournalReaderSupplier;
             this.predicate = predicate;
@@ -498,9 +508,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             HazelcastInstance instance = context.hazelcastInstance();
 
             // The order is important.
-            // If dataLinkConfig is specified prefer it to clientXml
-            if (isRemote(dataLinkName, clientXml)) {
-                client = createRemoteClient(context, dataLinkName, clientXml);
+            // If dataConnectionConfig is specified prefer it to clientXml
+            if (isRemote(dataConnectionName, clientXml)) {
+                client = createRemoteClient(context, dataConnectionName, clientXml);
                 instance = client;
             }
             // Create a new EventJournalReader
@@ -537,25 +547,25 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     }
 
     private static HazelcastInstance createRemoteClient(
-            ProcessorMetaSupplier.Context context, String dataLinkName, String clientXml) {
+            ProcessorMetaSupplier.Context context, String dataConnectionName, String clientXml) {
         // The order is important.
-        // If dataLinkConfig is specified prefer it to clientXml
-        if (dataLinkName != null) {
-            HazelcastDataLink hazelcastDataLink = context
-                    .dataLinkService()
-                    .getAndRetainDataLink(dataLinkName, HazelcastDataLink.class);
+        // If dataConnectionConfig is specified prefer it to clientXml
+        if (dataConnectionName != null) {
+            HazelcastDataConnection hazelcastDataConnection = context
+                    .dataConnectionService()
+                    .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
             try {
-                return hazelcastDataLink.getClient();
+                return hazelcastDataConnection.getClient();
             } finally {
-                hazelcastDataLink.release();
+                hazelcastDataConnection.release();
             }
         } else {
             return newHazelcastClient(asClientConfig(clientXml));
         }
     }
 
-    private static boolean isRemote(String dataLinkName, String clientXml) {
-        return dataLinkName != null || clientXml != null;
+    private static boolean isRemote(String dataConnectionName, String clientXml) {
+        return dataConnectionName != null || clientXml != null;
     }
 
     public static <K, V, T> ProcessorMetaSupplier streamMapSupplier(
@@ -576,7 +586,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     public static <K, V, T> ProcessorMetaSupplier streamRemoteMapSupplier(
             @Nonnull String mapName,
-            @Nullable String dataLinkName,
+            @Nullable String dataConnectionName,
             @Nullable String clientXml,
             @Nonnull PredicateEx<? super EventJournalMapEvent<K, V>> predicate,
             @Nonnull FunctionEx<? super EventJournalMapEvent<K, V>, ? extends T> projection,
@@ -585,7 +595,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         checkSerializable(predicate, "predicate");
         checkSerializable(projection, "projection");
 
-        return new ClusterMetaSupplier<>(dataLinkName, clientXml,
+        return new ClusterMetaSupplier<>(dataConnectionName, clientXml,
                 SecuredFunctions.mapEventJournalReaderFn(mapName),
                 predicate, projection, initialPos, eventTimePolicy,
                 () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));

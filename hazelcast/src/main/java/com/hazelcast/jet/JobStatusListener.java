@@ -44,6 +44,7 @@ import java.util.UUID;
  * @see Job#removeStatusListener(UUID)
  * @since 5.3
  */
+@FunctionalInterface
 public interface JobStatusListener {
     /**
      * Invoked upon job status change. <ol>

@@ -20,15 +20,17 @@ import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
+import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
@@ -54,7 +56,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  * @param <T> type of the items the sink will accept
  */
 @Beta
-@SuppressWarnings("UnusedReturnValue")
+@SuppressWarnings({"UnusedReturnValue", "unused"})
 public final class MongoSinkBuilder<T> {
 
     /**
@@ -112,10 +114,10 @@ public final class MongoSinkBuilder<T> {
     MongoSinkBuilder(
             @Nonnull String name,
             @Nonnull Class<T> documentClass,
-            @Nonnull DataLinkRef dataLinkRef
+            @Nonnull DataConnectionRef dataConnectionRef
             ) {
         this.name = checkNotNull(name, "sink name cannot be null");
-        params.setDataLinkRef(checkNonNullAndSerializable(dataLinkRef, "dataLinkRef"));
+        params.setDataConnectionRef(checkNonNullAndSerializable(dataConnectionRef, "dataConnectionRef"));
         params.setDocumentType(checkNotNull(documentClass, "document class cannot be null"));
 
         if (Document.class.isAssignableFrom(documentClass)) {
@@ -234,6 +236,19 @@ public final class MongoSinkBuilder<T> {
     }
 
     /**
+     * If {@code true}, the lack of database or collection will cause an error.
+     * If {@code false}, database and collection will be automatically created.
+     * Default value is {@code true}.
+     *
+     * @param throwOnNonExisting if exception should be thrown when database or collection does not exist.
+     */
+    @Nonnull
+    public MongoSinkBuilder<T> throwOnNonExisting(boolean throwOnNonExisting) {
+        params.setThrowOnNonExisting(throwOnNonExisting);
+        return this;
+    }
+
+    /**
      * Creates and returns the MongoDB {@link Sink} with the components you
      * supplied to this builder.
      */
@@ -242,8 +257,9 @@ public final class MongoSinkBuilder<T> {
         params.checkValid();
         final WriteMongoParams<T> localParams = this.params;
 
-        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
-                () -> new WriteMongoP<>(localParams)));
+        ConnectorPermission permission = params.buildPermission();
+        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism, permission,
+                ProcessorSupplier.of(() -> new WriteMongoP<>(localParams))));
     }
 
 }

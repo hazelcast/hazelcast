@@ -18,7 +18,7 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.DataLinkService;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.JetInstance;
@@ -260,8 +260,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     }
 
     @Override
-    public DataLinkService dataLinkService() {
-        return Util.getNodeEngine(instance).getDataLinkService();
+    public DataConnectionService dataConnectionService() {
+        return Util.getNodeEngine(instance).getDataConnectionService();
     }
 
     @Nonnull

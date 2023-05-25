@@ -39,10 +39,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.hazelcast.mapstore.GenericMapStore.DATA_LINK_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.MAPPING_PREFIX;
-import static com.hazelcast.mapstore.GenericMapStore.TABLE_NAME_PROPERTY;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -150,10 +150,10 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void whenStore_thenTableContainsRow() throws Exception {
-        createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -204,11 +204,11 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void givenRowAndIdColumn_whenStore_thenRowIsUpdated() throws Exception {
-        createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -273,11 +273,11 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void givenIdColumn_whenDelete_thenRowRemovedFromTable() throws Exception {
-        createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 2);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -303,11 +303,11 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Test
     public void givenIdColumn_whenDeleteAll_thenRowRemovedFromTable() throws Exception {
-        createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
         insertItems(mapName, 2);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
         mapStore = createMapStore(properties, hz);
@@ -339,8 +339,8 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         insertItems(tableName, 1);
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
-        properties.setProperty(TABLE_NAME_PROPERTY, tableName);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(EXTERNAL_NAME_PROPERTY, tableName);
         mapStore = createMapStore(properties, hz);
 
         GenericRecord record = mapStore.load(0);
@@ -358,7 +358,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         }
 
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
 
         properties.setProperty("columns", "id,name");
         mapStore = createMapStore(properties, hz);
@@ -382,7 +382,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     private <K> GenericMapStore<K> createMapStore(HazelcastInstance instance) {
         Properties properties = new Properties();
-        properties.setProperty(DATA_LINK_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
         return createMapStore(properties, instance);
     }
 
@@ -392,7 +392,7 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
 
     @Override
     protected <K> GenericMapStore<K> createUnitUnderTest(Properties properties, HazelcastInstance instance, boolean init) {
-        MapConfig mapConfig = createMapConfigWithMapStore(mapName);
+        MapConfig mapConfig = createMapConfigWithMapStore(mapName, properties);
         instance.getConfig().addMapConfig(mapConfig);
 
         GenericMapStore<K> mapStore = new GenericMapStore<>();
@@ -403,9 +403,10 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
         return mapStore;
     }
 
-    private MapConfig createMapConfigWithMapStore(String mapName) {
+    private MapConfig createMapConfigWithMapStore(String mapName, Properties properties) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
+        mapStoreConfig.setProperties(properties);
         MapConfig mapConfig = new MapConfig(mapName);
         mapConfig.setMapStoreConfig(mapStoreConfig);
         return mapConfig;

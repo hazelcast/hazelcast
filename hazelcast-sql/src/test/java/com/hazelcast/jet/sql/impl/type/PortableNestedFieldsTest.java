@@ -125,7 +125,7 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_portable_unknownClassDef_noColumns() {
+    public void when_unknownClassDef_noColumns_then_fail() {
         assertThatThrownBy(() -> instance().getSql().execute("CREATE TYPE Foo " +
                         "OPTIONS('format'='portable', 'portableFactoryId'='42', 'portableClassId'='43')"))
                 .isInstanceOf(HazelcastSqlException.class)
@@ -134,7 +134,7 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_portable_unknownClassDef_givenColumns() {
+    public void test_unknownClassDef_givenColumns() {
         instance().getSql().execute("CREATE TYPE Foo (column1 INT, column2 VARCHAR) " +
                 "OPTIONS('format'='portable', 'portableFactoryId'='44', 'portableClassId'='45')");
         // we test that the above command doesn't fail.

@@ -90,6 +90,39 @@ public interface SqlService {
     }
 
     /**
+     * Convenience method to execute a distributed non-DQL statement (that is
+     * a statement that does not return rows) with the given parameter values.
+     * <p>
+     * Converts passed SQL string and parameter values into an {@link
+     * SqlStatement} object and invokes {@link #execute(SqlStatement)}.
+     *
+     * <p>
+     * This method can be used for statements other than "SELECT" queries.
+     * The returned value is the {@link SqlResult#updateCount()} value.
+     *
+     * @param sql       SQL string
+     * @param arguments query parameter values that will be passed to {@link SqlStatement#setParameters(List)}
+     * @throws NullPointerException     if the SQL string is null
+     * @throws IllegalArgumentException if the SQL string is empty
+     * @throws HazelcastSqlException    in case of execution error
+     * @see SqlService
+     * @see SqlStatement
+     *
+     * @see #execute(SqlStatement)
+     * @see #execute(String, Object...)
+     *
+     * @return The number of updated(/inserted/deleted) rows.
+     *
+     * @since 5.3
+     */
+    default long executeUpdate(@Nonnull String sql, Object... arguments) {
+        try (SqlResult result = execute(sql, arguments)) {
+            assert !result.isRowSet() : "Result should not contain rowSet when called from executeUpdate";
+            return result.updateCount();
+        }
+    }
+
+    /**
      * Executes an SQL statement.
      *
      * @param statement statement to be executed

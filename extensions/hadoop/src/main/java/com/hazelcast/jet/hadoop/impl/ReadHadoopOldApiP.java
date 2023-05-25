@@ -147,6 +147,11 @@ public final class ReadHadoopOldApiP<K, V, R> extends AbstractProcessor {
         public FileTraverser<R> traverser() throws Exception {
             return new HadoopFileTraverser<>(jobConf, asList(getSplits(jobConf, 1)), projectionFn);
         }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
     }
 
     private static final class Supplier<K, V, R> implements ProcessorSupplier {

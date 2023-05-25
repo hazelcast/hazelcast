@@ -105,23 +105,21 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                 + ", '" + OPTION_STREAMING + "'='" + streamingActual + "'"
                 + ")";
         System.out.println(sql);
-        sqlService.execute(sql).updateCount();
+        sqlService.executeUpdate(sql);
     }
 
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String externalName
-    ) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
         }
 
-        String[] names = options.get(OPTION_NAMES).split(DELIMITER);
-        String[] types = options.get(OPTION_TYPES).split(DELIMITER);
+        String[] names = externalResource.options().get(OPTION_NAMES).split(DELIMITER);
+        String[] types = externalResource.options().get(OPTION_TYPES).split(DELIMITER);
 
         assert names.length == types.length;
 
@@ -138,10 +136,9 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String externalName,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
-    ) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> resolvedFields) {
+        Map<String, String> options = externalResource.options();
         String[] names = options.get(OPTION_NAMES).split(DELIMITER);
         String[] types = options.get(OPTION_TYPES).split(DELIMITER);
 
@@ -187,7 +184,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull List<HazelcastRexNode> projection,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
-        TestTable table = (TestTable) context.getTable();
+        TestTable table = context.getTable();
         List<Object[]> rows = table.rows;
         boolean streaming = table.streaming;
         Expression<Boolean> convertedPredicate = context.convertFilter(predicate);
@@ -205,6 +202,11 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
         return context.getDag().newUniqueVertex(table.toString(), pms);
     }
 
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
+    }
+
     protected abstract ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn);
 
     public static final class TestTable extends JetTable {
@@ -220,7 +222,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
                 @Nonnull List<Object[]> rows,
                 boolean streaming
         ) {
-            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(rows.size()));
+            super(sqlConnector, fields, schemaName, name, new ConstantTableStatistics(rows.size()), null, streaming);
             this.rows = rows;
             this.streaming = streaming;
         }

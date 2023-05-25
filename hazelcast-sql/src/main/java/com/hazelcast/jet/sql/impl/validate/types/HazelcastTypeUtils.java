@@ -419,4 +419,8 @@ public final class HazelcastTypeUtils {
     public static boolean hasParameters(SqlCallBinding binding) {
         return binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
     }
+
+    public static boolean hasSameTypeFamily(RelDataType sourceType, RelDataType targetType) {
+        return sourceType.getFamily().equals(targetType.getFamily());
+    }
 }

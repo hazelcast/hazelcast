@@ -36,9 +36,10 @@ import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.parse.SqlCreateJob.parseLong;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static java.util.Objects.requireNonNull;
 
 public class SqlAlterJob extends SqlAlter {
@@ -99,27 +100,11 @@ public class SqlAlterJob extends SqlAlter {
     protected void unparseAlterOperation(SqlWriter writer, int leftPrec, int rightPrec) {
         name.unparse(writer, leftPrec, rightPrec);
 
-        if (options != null && !options.isEmpty()) {
-            writer.newlineAndIndent();
-            writer.keyword("OPTIONS");
-            SqlWriter.Frame withFrame = writer.startList("(", ")");
-            for (SqlNode property : options) {
-                printIndent(writer);
-                property.unparse(writer, leftPrec, rightPrec);
-            }
-            writer.newlineAndIndent();
-            writer.endList(withFrame);
-        }
+        unparseOptions(writer, options);
 
         if (operation != null) {
             writer.keyword(operation.name());
         }
-    }
-
-    private void printIndent(SqlWriter writer) {
-        writer.sep(",", false);
-        writer.newlineAndIndent();
-        writer.print(" ");
     }
 
     @Override
@@ -137,18 +122,9 @@ public class SqlAlterJob extends SqlAlter {
                 throw validator.newValidationError(option, RESOURCE.duplicateOption(key));
             }
 
-            Supplier<Long> valueAsLong = () -> {
-                try {
-                    return Long.parseLong(value);
-                } catch (NumberFormatException e) {
-                    throw validator.newValidationError(option.value(),
-                            RESOURCE.jobOptionIncorrectNumber(key, value));
-                }
-            };
-
             switch (key) {
                 case "snapshotIntervalMillis":
-                    deltaConfig.setSnapshotIntervalMillis(valueAsLong.get());
+                    deltaConfig.setSnapshotIntervalMillis(parseLong(validator, option));
                     break;
                 case "autoScaling":
                     deltaConfig.setAutoScaling(Boolean.parseBoolean(value));
@@ -163,11 +139,14 @@ public class SqlAlterJob extends SqlAlter {
                     deltaConfig.setStoreMetricsAfterJobCompletion(Boolean.parseBoolean(value));
                     break;
                 case "maxProcessorAccumulatedRecords":
-                    deltaConfig.setMaxProcessorAccumulatedRecords(valueAsLong.get());
+                    deltaConfig.setMaxProcessorAccumulatedRecords(parseLong(validator, option));
                     break;
                 case "suspendOnFailure":
                     deltaConfig.setSuspendOnFailure(Boolean.parseBoolean(value));
                     break;
+                case "processingGuarantee":
+                case "initialSnapshotName":
+                    throw validator.newValidationError(option.key(), RESOURCE.notSupported(key, "ALTER JOB"));
                 default:
                     throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
             }

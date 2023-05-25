@@ -19,7 +19,6 @@ package com.hazelcast.jet.elastic;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.Pipeline;
 import org.apache.lucene.search.TotalHits;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -159,11 +158,6 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
         submitJob(p);
 
         assertNoDocuments("my-index");
-    }
-
-    private void refreshIndex() throws IOException {
-        // Need to refresh index because the default bulk request doesn't do it and we may not see the result
-        elasticClient.indices().refresh(new RefreshRequest("my-index"), DEFAULT);
     }
 
     public static class TestItem implements Serializable {

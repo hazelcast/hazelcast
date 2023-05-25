@@ -18,79 +18,70 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.h2;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
 import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.dialect.H2SqlDialect;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
 
 import java.util.Arrays;
+import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class H2UpsertQueryBuilderTest {
-    @Mock
-    JdbcTable jdbcTable;
 
     @Mock
-    SqlDialect sqlDialect;
+    JdbcTable table;
+
+    SqlDialect dialect = H2SqlDialect.DEFAULT;
 
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        when(jdbcTable.getExternalName()).thenReturn("table1");
-        when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
-        when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
-        when(jdbcTable.sqlDialect()).thenReturn(sqlDialect);
-
-        when(sqlDialect.quoteIdentifier(anyString())).thenAnswer((InvocationOnMock invocation) -> {
-            Object argument = invocation.getArguments()[0];
-            return "\"" + argument + "\"";
-        });
+        when(table.getExternalName()).thenReturn(new String[]{"table1"});
+        when(table.getExternalNameList()).thenReturn(Collections.singletonList("table1"));
+        when(table.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
+        when(table.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
     }
 
     @Test
-    public void testGetMergeClause() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
-        StringBuilder stringBuilder = new StringBuilder();
-        builder.getMergeClause(stringBuilder);
+    public void appendMergeClause() {
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
+        StringBuilder sb = new StringBuilder();
+        builder.appendMergeClause(sb);
 
-        String insertClause = stringBuilder.toString();
-        assertEquals("MERGE INTO \"table1\" (\"field1\",\"field2\") ", insertClause);
+        String mergeClause = sb.toString();
+        assertThat(mergeClause).isEqualTo("MERGE INTO \"table1\" (\"field1\",\"field2\")");
     }
 
     @Test
-    public void testGetKeyClause() {
-        when(jdbcTable.getExternalName()).thenReturn("table1");
-        when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
-        when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
+    public void appendKeyClause() {
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
+        StringBuilder sb = new StringBuilder();
+        builder.appendKeyClause(sb);
 
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
-        StringBuilder stringBuilder = new StringBuilder();
-        builder.getKeyClause(stringBuilder);
-
-        String keyClause = stringBuilder.toString();
-        assertEquals("KEY (\"pk1\",\"pk2\") ", keyClause);
+        String keyClause = sb.toString();
+        assertThat(keyClause).isEqualTo("KEY (\"pk1\",\"pk2\")");
     }
 
     @Test
-    public void testGetValuesClause() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
-        StringBuilder stringBuilder = new StringBuilder();
-        builder.getValuesClause(stringBuilder);
+    public void appendValuesClause() {
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
+        StringBuilder sb = new StringBuilder();
+        builder.appendValuesClause(sb);
 
-        String valueClause = stringBuilder.toString();
-        assertEquals("VALUES (?,?)", valueClause);
+        String valueClause = sb.toString();
+        assertThat(valueClause).isEqualTo("VALUES (?,?)");
     }
 
     @Test
     public void testQuery() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
 
         String query = builder.query();
-        assertEquals("MERGE INTO \"table1\" (\"field1\",\"field2\") KEY (\"pk1\",\"pk2\") VALUES (?,?)", query);
+        assertThat(query).isEqualTo("MERGE INTO \"table1\" (\"field1\",\"field2\") KEY (\"pk1\",\"pk2\") VALUES (?,?)");
     }
 }

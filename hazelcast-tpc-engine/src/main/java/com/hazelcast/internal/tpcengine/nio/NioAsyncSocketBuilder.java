@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AsyncSocket;
-import com.hazelcast.internal.tpcengine.AsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.Option;
-import com.hazelcast.internal.tpcengine.ReadHandler;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -44,9 +44,9 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     boolean writeThrough;
     boolean receiveBufferIsDirect = true;
     int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
-    ReadHandler readHandler;
+    AsyncSocketReader reader;
     NioAsyncSocketOptions options;
-    private boolean build;
+    private boolean built;
 
     NioAsyncSocketBuilder(NioReactor reactor, NioAcceptRequest acceptRequest) {
         try {
@@ -68,34 +68,34 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
 
     @Override
     public <T> boolean setIfSupported(Option<T> option, T value) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
-        return options.setIfSupported(option, value);
+        return options.set(option, value);
     }
 
     public NioAsyncSocketBuilder setReceiveBufferIsDirect(boolean receiveBufferIsDirect) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         this.receiveBufferIsDirect = receiveBufferIsDirect;
         return this;
     }
 
     public NioAsyncSocketBuilder setWriteQueueCapacity(int writeQueueCapacity) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         this.writeQueueCapacity = checkPositive(writeQueueCapacity, "writeQueueCapacity");
         return this;
     }
 
     public NioAsyncSocketBuilder setRegularSchedule(boolean regularSchedule) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         this.regularSchedule = regularSchedule;
         return this;
     }
 
     public NioAsyncSocketBuilder setWriteThrough(boolean writeThrough) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         this.writeThrough = writeThrough;
         return this;
@@ -104,26 +104,26 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     /**
      * Sets the read handler. Should be called before this AsyncSocket is started.
      *
-     * @param readHandler the ReadHandler
+     * @param reader the ReadHandler
      * @return this
      * @throws NullPointerException if readHandler is null.
      */
-    public final NioAsyncSocketBuilder setReadHandler(ReadHandler readHandler) {
-        verifyNotBuild();
+    public final NioAsyncSocketBuilder setReader(AsyncSocketReader reader) {
+        verifyNotBuilt();
 
-        this.readHandler = checkNotNull(readHandler);
+        this.reader = checkNotNull(reader);
         return this;
     }
 
     @SuppressWarnings("java:S1181")
     @Override
     public AsyncSocket build() {
-        verifyNotBuild();
+        verifyNotBuilt();
 
-        build = true;
+        built = true;
 
-        if (readHandler == null) {
-            throw new IllegalStateException("readHandler is not configured.");
+        if (reader == null) {
+            throw new IllegalStateException("reader is not configured.");
         }
 
         if (Thread.currentThread() == reactor.eventloopThread()) {
@@ -144,8 +144,8 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         }
     }
 
-    private void verifyNotBuild() {
-        if (build) {
+    private void verifyNotBuilt() {
+        if (built) {
             throw new IllegalStateException("Can't call build twice on the same AsyncSocketBuilder");
         }
     }

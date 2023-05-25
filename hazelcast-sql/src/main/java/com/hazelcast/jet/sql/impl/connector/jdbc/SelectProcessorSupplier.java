@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
@@ -31,36 +32,82 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
-import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.ArrayList;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
+@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public class SelectProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
+
+    private static final Map<String, BiFunctionEx<ResultSet, Integer, Object>> GETTERS = new HashMap<>();
+
+    static {
+        GETTERS.put("BOOLEAN", ResultSet::getBoolean);
+        GETTERS.put("BOOL", ResultSet::getBoolean);
+        GETTERS.put("BIT", ResultSet::getBoolean);
+
+        GETTERS.put("TINYINT", ResultSet::getByte);
+
+        GETTERS.put("SMALLINT", ResultSet::getShort);
+        GETTERS.put("INT2", ResultSet::getShort);
+
+        GETTERS.put("INT", ResultSet::getInt);
+        GETTERS.put("INT4", ResultSet::getInt);
+        GETTERS.put("INTEGER", ResultSet::getInt);
+
+        GETTERS.put("INT8", ResultSet::getLong);
+        GETTERS.put("BIGINT", ResultSet::getLong);
+
+        GETTERS.put("VARCHAR", ResultSet::getString);
+        GETTERS.put("CHARACTER VARYING", ResultSet::getString);
+        GETTERS.put("TEXT", ResultSet::getString);
+
+        GETTERS.put("REAL", ResultSet::getFloat);
+        GETTERS.put("FLOAT", ResultSet::getFloat);
+        GETTERS.put("FLOAT4", ResultSet::getFloat);
+
+        GETTERS.put("DOUBLE", ResultSet::getDouble);
+        GETTERS.put("DOUBLE PRECISION", ResultSet::getDouble);
+        GETTERS.put("DECIMAL", ResultSet::getBigDecimal);
+        GETTERS.put("NUMERIC", ResultSet::getBigDecimal);
+
+        GETTERS.put("DATE", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDate.class));
+        GETTERS.put("TIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalTime.class));
+        GETTERS.put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
+        GETTERS.put("TIMESTAMP_WITH_TIMEZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
+    }
 
     private String query;
     private int[] parameterPositions;
 
     private transient ExpressionEvalContext evalContext;
+    private transient volatile BiFunctionEx<ResultSet, Integer, Object>[] valueGetters;
 
     @SuppressWarnings("unused")
     public SelectProcessorSupplier() {
     }
 
-    public SelectProcessorSupplier(@Nonnull String dataLinkName,
+    public SelectProcessorSupplier(@Nonnull String dataConnectionName,
                                    @Nonnull String query,
                                    @Nonnull int[] parameterPositions) {
-        super(dataLinkName);
+        super(dataConnectionName);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
     }
@@ -74,67 +121,71 @@ public class SelectProcessorSupplier
     @Nonnull
     @Override
     public Collection<? extends Processor> get(int count) {
-        List<Processor> processors = new ArrayList<>(count);
-        for (int i = 0; i < count; i++) {
-            Processor processor = new ReadJdbcP<>(
-                    () -> dataLink.getConnection(),
-                    (connection, parallelism, index) -> {
-                        PreparedStatement statement = connection.prepareStatement(query);
-                        List<Object> arguments = evalContext.getArguments();
-                        for (int j = 0; j < parameterPositions.length; j++) {
-                            statement.setObject(j + 1, arguments.get(parameterPositions[j]));
-                        }
-                        try {
-                            return statement.executeQuery();
-                        } catch (SQLException e) {
-                            statement.close();
-                            throw e;
-                        }
-                    },
-                    rs -> {
-                        int columnCount = rs.getMetaData().getColumnCount();
-                        Object[] row = new Object[columnCount];
-                        for (int j = 0; j < columnCount; j++) {
-                            Object value = rs.getObject(j + 1);
-                            row[j] = convertValue(value);
-                        }
+        assert count == 1;
 
-                        return new JetSqlRow(evalContext.getSerializationService(), row);
+        Processor processor = new ReadJdbcP<>(
+                () -> dataConnection.getConnection(),
+                (connection, parallelism, index) -> {
+                    PreparedStatement statement = connection.prepareStatement(query);
+                    List<Object> arguments = evalContext.getArguments();
+                    for (int j = 0; j < parameterPositions.length; j++) {
+                        statement.setObject(j + 1, arguments.get(parameterPositions[j]));
                     }
-            );
-            processors.add(processor);
-        }
-        return processors;
+                    try {
+                        ResultSet rs = statement.executeQuery();
+                        valueGetters = prepareValueGettersFromMetadata(rs);
+                        return rs;
+                    } catch (SQLException e) {
+                        statement.close();
+                        throw e;
+                    }
+                },
+                (rs) -> {
+                    int columnCount = rs.getMetaData().getColumnCount();
+                    Object[] row = new Object[columnCount];
+                    for (int j = 0; j < columnCount; j++) {
+                        Object value = valueGetters[j].apply(rs, j + 1);
+                        row[j] = value;
+                    }
+
+                    return new JetSqlRow(evalContext.getSerializationService(), row);
+                }
+        );
+
+        return singleton(processor);
+
     }
 
-    private Object convertValue(Object value) {
-        if (value instanceof Date) {
-            return ((Date) value).toLocalDate();
-        } else if (value instanceof Time) {
-            return ((Time) value).toLocalTime();
-        } else if (value instanceof Timestamp) {
-            return ((Timestamp) value).toLocalDateTime();
-        } else {
-            return value;
+    private BiFunctionEx<ResultSet, Integer, Object>[] prepareValueGettersFromMetadata(ResultSet rs) throws SQLException {
+        ResultSetMetaData metaData = rs.getMetaData();
+
+        BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
+        for (int j = 0; j < metaData.getColumnCount(); j++) {
+            String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
+            valueGetters[j] = GETTERS.getOrDefault(
+                    type,
+                    (resultSet, n) -> rs.getObject(n)
+            );
         }
+        return valueGetters;
     }
 
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(dataLinkName, ACTION_READ));
+        return singletonList(ConnectorPermission.jdbc(dataConnectionName, ACTION_READ));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(dataLinkName);
+        out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        dataLinkName = in.readString();
+        dataConnectionName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
     }

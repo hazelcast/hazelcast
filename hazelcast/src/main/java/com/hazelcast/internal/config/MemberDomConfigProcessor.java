@@ -29,7 +29,8 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -190,7 +191,7 @@ import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
-import static com.hazelcast.internal.config.ConfigSections.DATA_LINK;
+import static com.hazelcast.internal.config.ConfigSections.DATA_CONNECTION;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
@@ -387,8 +388,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDynamicConfiguration(node);
         } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
             handleIntegrityChecker(node);
-        } else if (matches(DATA_LINK.getName(), nodeName)) {
-            handleDataLinks(node);
+        } else if (matches(DATA_CONNECTION.getName(), nodeName)) {
+            handleDataConnections(node);
         } else if (matches(TPC.getName(), nodeName)) {
             handleTpc(node);
         } else {
@@ -3264,6 +3265,9 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("statement-timeout-millis", nodeName)) {
                 sqlConfig.setStatementTimeoutMillis(Long.parseLong(getTextContent(child)));
             }
+            if (matches("catalog-persistence-enabled", nodeName)) {
+                sqlConfig.setCatalogPersistenceEnabled(Boolean.parseBoolean(getTextContent(child)));
+            }
         }
     }
 
@@ -3485,22 +3489,23 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    protected void handleDataLinks(Node node) {
+    protected void handleDataConnections(Node node) {
         String name = getAttribute(node, "name");
-        DataLinkConfig dataLinkConfig = ConfigUtils.getByNameOrNew(config.getDataLinkConfigs(),
-                name, DataLinkConfig.class);
-        handleDataLink(node, dataLinkConfig);
+        DataConnectionConfig dataConnectionConfig = ConfigUtils.getByNameOrNew(config.getDataConnectionConfigs(),
+                name, DataConnectionConfig.class);
+        handleDataConnection(node, dataConnectionConfig);
+        DataConnectionConfigValidator.validate(dataConnectionConfig);
     }
 
-    protected void handleDataLink(Node node, DataLinkConfig dataLinkConfig) {
+    protected void handleDataConnection(Node node, DataConnectionConfig dataConnectionConfig) {
         for (Node child : childElements(node)) {
             String childName = cleanNodeName(child);
-            if (matches("class-name", childName)) {
-                dataLinkConfig.setClassName(getTextContent(child));
+            if (matches("type", childName)) {
+                dataConnectionConfig.setType(getTextContent(child));
             } else if (matches("properties", childName)) {
-                fillProperties(child, dataLinkConfig.getProperties());
+                fillProperties(child, dataConnectionConfig.getProperties());
             } else if (matches("shared", childName)) {
-                dataLinkConfig.setShared(getBooleanValue(getTextContent(child)));
+                dataConnectionConfig.setShared(getBooleanValue(getTextContent(child)));
             }
         }
     }

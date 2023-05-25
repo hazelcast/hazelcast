@@ -1089,6 +1089,7 @@
 
             <hz:sql>
                 <hz:statement-timeout-millis>30</hz:statement-timeout-millis>
+                <hz:catalog-persistence-enabled>false</hz:catalog-persistence-enabled>
             </hz:sql>
 
             <hz:jet enabled="true" resource-upload-enabled="true">
@@ -1131,13 +1132,13 @@
                 </hz:properties>
             </hz:auditlog>
             <hz:integrity-checker enabled="false"/>
-            <hz:data-link name="${datalink.name}">
-                <hz:class-name>com.hazelcast.datalink.impl.DataLinkTestUtil$DummyDataLink</hz:class-name>
+            <hz:data-connection name="${dataconnection.name}">
+                <hz:type>dummy</hz:type>
                 <hz:properties>
-                    <hz:property name="jdbcUrl">${datalink.url}</hz:property>
+                    <hz:property name="jdbcUrl">${dataconnection.url}</hz:property>
                 </hz:properties>
                 <hz:shared>false</hz:shared>
-            </hz:data-link>
+            </hz:data-connection>
             <hz:tpc enabled="true">
                 <hz:eventloop-count>12</hz:eventloop-count>
             </hz:tpc>

@@ -53,9 +53,9 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  *
  * @param <K>    the type of the key stored in Near Cache
  * @param <V>    the type of the value stored in Near Cache
- * @param <KS>   the type of the key of the underlying {@link com.hazelcast.internal.nearcache.impl.NearCacheRecordMap}
- * @param <R>    the type of the value of the underlying {@link com.hazelcast.internal.nearcache.impl.NearCacheRecordMap}
- * @param <NCRM> the type of the underlying {@link com.hazelcast.internal.nearcache.impl.NearCacheRecordMap}
+ * @param <KS>   the type of the key of the underlying {@link SampleableNearCacheRecordMap}
+ * @param <R>    the type of the value of the underlying {@link SampleableNearCacheRecordMap}
+ * @param <NCRM> the type of the underlying {@link SampleableNearCacheRecordMap}
  */
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCacheRecord,
@@ -205,11 +205,17 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     @SuppressWarnings("unused")
     protected void onExpire(K key, R record) {
+        if (!canUpdateStats(record)) {
+            return;
+        }
         nearCacheStats.incrementExpirations();
     }
 
     @Override
     public void onEvict(KS key, R record, boolean wasExpired) {
+        if (!canUpdateStats(record)) {
+            return;
+        }
         if (wasExpired) {
             nearCacheStats.incrementExpirations();
         } else {

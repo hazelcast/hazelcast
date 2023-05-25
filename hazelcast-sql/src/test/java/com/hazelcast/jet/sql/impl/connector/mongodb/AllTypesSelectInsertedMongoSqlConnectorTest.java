@@ -130,12 +130,12 @@ public class AllTypesSelectInsertedMongoSqlConnectorTest extends MongoSqlTest {
 
         String mappingName = "mapping_" + randomName();
         execute("CREATE MAPPING " + mappingName
-                + " EXTERNAL NAME " + collectionName
+                + " EXTERNAL NAME " + databaseName + "." + collectionName
                 + " ("
                 + "id INT, "
                 + "table_column " + mappingType
                 + ") "
-                + "TYPE MongoDB " + options()
+                + "TYPE Mongo " + options()
         );
 
         MongoCollection<Document> sourceCollection = database.getCollection(collectionName);

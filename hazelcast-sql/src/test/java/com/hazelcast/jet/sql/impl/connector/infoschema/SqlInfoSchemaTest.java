@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DataLinkConfig;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.SqlService;
@@ -109,28 +109,28 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_datalinks() {
+    public void test_dataConnections() {
         // given
-        String type = "DUMMY";
-        // create config-originated data link
-        getNodeEngineImpl(instance()).getDataLinkService().createConfigDataLink(
-                new DataLinkConfig()
-                        .setName("c_dl")
-                        .setClassName(type)
+        String type = "dummy";
+        // create config-originated data connection
+        getNodeEngineImpl(instance()).getDataConnectionService().createConfigDataConnection(
+                new DataConnectionConfig()
+                        .setName("c_dc")
+                        .setType(type)
         );
 
-        // create SQL-originated data link
-        sqlService.execute("CREATE DATA LINK sql_default_shared_dl TYPE DUMMY");
-        sqlService.execute("CREATE DATA LINK sql_shared_dl TYPE DUMMY SHARED");
-        sqlService.execute("CREATE DATA LINK sql_non_shared_dl TYPE DUMMY NOT SHARED");
+        // create SQL-originated data connection
+        sqlService.execute("CREATE DATA CONNECTION sql_default_shared_dc TYPE DUMMY");
+        sqlService.execute("CREATE DATA CONNECTION sql_shared_dc TYPE DUMMY SHARED");
+        sqlService.execute("CREATE DATA CONNECTION sql_non_shared_dc TYPE DUMMY NOT SHARED");
 
         assertRowsAnyOrder(
-                "SELECT * FROM information_schema.datalinks",
+                "SELECT * FROM information_schema.dataconnections",
                 asList(
-                        new Row("hazelcast", "public", "sql_default_shared_dl", type, true, "{}", "SQL"),
-                        new Row("hazelcast", "public", "sql_shared_dl", type, true, "{}", "SQL"),
-                        new Row("hazelcast", "public", "sql_non_shared_dl", type, false, "{}", "SQL"),
-                        new Row("hazelcast", "public", "c_dl", type, true, "{}", "CONFIG")
+                        new Row("hazelcast", "public", "sql_default_shared_dc", type, true, "{}", "SQL"),
+                        new Row("hazelcast", "public", "sql_shared_dc", type, true, "{}", "SQL"),
+                        new Row("hazelcast", "public", "sql_non_shared_dc", type, false, "{}", "SQL"),
+                        new Row("hazelcast", "public", "c_dc", type, true, "{}", "CONFIG")
                 )
         );
     }
@@ -144,7 +144,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                                 "hazelcast",
                                 "public",
                                 mappingName,
-                                mappingExternalName,
+                                '"' + mappingExternalName + '"',
                                 IMapSqlConnector.TYPE_NAME,
                                 "{"
                                         + "\"keyFormat\":\"int\""

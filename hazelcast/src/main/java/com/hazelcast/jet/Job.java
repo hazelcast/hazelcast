@@ -164,6 +164,7 @@ public interface Job {
      *
      * @return The registration id
      * @throws UnsupportedOperationException if the cluster version is less than 5.3
+     * @throws IllegalStateException if the job is completed or failed
      * @since 5.3
      */
     UUID addStatusListener(@Nonnull JobStatusListener listener);

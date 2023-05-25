@@ -41,6 +41,7 @@ class KafkaTable extends JetTable {
     private final UpsertTargetDescriptor valueUpsertDescriptor;
 
     private final String topicName;
+    private final String dataConnectionName;
     private final Map<String, String> options;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
@@ -51,13 +52,15 @@ class KafkaTable extends JetTable {
             List<TableField> fields,
             TableStatistics statistics,
             String topicName,
+            String dataConnectionName,
             Map<String, String> options,
             QueryTargetDescriptor keyQueryDescriptor,
             UpsertTargetDescriptor keyUpsertDescriptor,
             QueryTargetDescriptor valueQueryDescriptor,
-            UpsertTargetDescriptor valueUpsertDescriptor
+            UpsertTargetDescriptor valueUpsertDescriptor,
+            String objectType
     ) {
-        super(sqlConnector, fields, schemaName, name, statistics);
+        super(sqlConnector, fields, schemaName, name, statistics, objectType, true);
 
         this.keyQueryDescriptor = keyQueryDescriptor;
         this.keyUpsertDescriptor = keyUpsertDescriptor;
@@ -66,11 +69,16 @@ class KafkaTable extends JetTable {
         this.valueUpsertDescriptor = valueUpsertDescriptor;
 
         this.topicName = topicName;
+        this.dataConnectionName = dataConnectionName;
         this.options = options;
     }
 
     String topicName() {
         return topicName;
+    }
+
+    String dataConnectionName() {
+        return dataConnectionName;
     }
 
     Properties kafkaConsumerProperties() {

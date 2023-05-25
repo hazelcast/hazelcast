@@ -16,8 +16,7 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
+import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -29,6 +28,7 @@ import org.bson.BsonType;
 import org.bson.Document;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,11 +36,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.getBsonType;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.BsonTypes.resolveTypeFromJava;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
-import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.DATA_LINK_REF_OPTION;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static com.mongodb.client.model.Filters.eq;
 import static java.util.Objects.requireNonNull;
@@ -56,21 +54,23 @@ class FieldResolver {
     /**
      * Resolves fields based on the options passed to the connector and schema provided by user (if any).
      *
-     * @param externalName external name of the mapping, namely collection name
-     * @param options      options provided for the connector
-     * @param userFields   user-provided field list
+     * @param externalName       external name of the mapping, namely collection name
+     * @param dataConnectionName name of data connection used to create this mapping
+     * @param options            options provided for the connector
+     * @param userFields         user-provided field list
      * @return resolved fields - all fields from collection or user provided fields with resolved types
      * @throws IllegalArgumentException if given column type won't be resolved or field from user mapping won't exist
      *                                  in the collection
      */
     List<MappingField> resolveFields(
-            @Nonnull String externalName,
+            @Nonnull String[] externalName,
+            @Nullable String dataConnectionName,
             @Nonnull Map<String, String> options,
             @Nonnull List<MappingField> userFields,
             boolean stream
     ) {
         Predicate<MappingField> pkColumnName = Options.getPkColumnChecker(options, stream);
-        Map<String, DocumentField> dbFields = readFields(externalName, options, stream);
+        Map<String, DocumentField> dbFields = readFields(externalName, dataConnectionName, options, stream);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -158,12 +158,16 @@ class FieldResolver {
         }
     }
 
-    Map<String, DocumentField> readFields(String collectionName, Map<String, String> options, boolean stream) {
+    Map<String, DocumentField> readFields(String[] externalNames,
+                                          String dataConnectionName,
+                                          Map<String, String> options,
+                                          boolean stream) {
+        String collectionName = externalNames.length == 2 ? externalNames[1] : externalNames[0];
+        String databaseName = Options.getDatabaseName(nodeEngine, externalNames, dataConnectionName);
+
         Map<String, DocumentField> fields = new HashMap<>();
-        Tuple2<MongoClient, MongoDataLink> connect = connect(options);
-        try (MongoClient client = connect.f0()) {
+        try (MongoClient client = connect(dataConnectionName, options)) {
             requireNonNull(client);
-            String databaseName = Options.getDatabaseName(nodeEngine, options);
 
             MongoDatabase database = client.getDatabase(databaseName);
             List<Document> collections = database.listCollections()
@@ -210,17 +214,14 @@ class FieldResolver {
                 fields.put("operationType", new DocumentField(BsonType.STRING, "operationType"));
                 fields.put("resumeToken", new DocumentField(BsonType.STRING, "resumeToken"));
                 fields.put("wallTime", new DocumentField(BsonType.DATE_TIME, "wallTime"));
-                fields.put("ts", new DocumentField(BsonType.DATE_TIME, "ts"));
+                fields.put("ts", new DocumentField(BsonType.TIMESTAMP, "ts"));
                 fields.put("clusterTime", new DocumentField(BsonType.TIMESTAMP, "clusterTime"));
-            }
-        } finally {
-            if (connect.f1() != null) {
-                connect.f1().release();
             }
         }
         return fields;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private Document getIgnoringNulls(@Nonnull Document doc, @Nonnull String... options) {
         Document returned = doc;
         for (String option : options) {
@@ -233,17 +234,21 @@ class FieldResolver {
         return returned;
     }
 
-    private Tuple2<MongoClient, MongoDataLink> connect(Map<String, String> options) {
-        if (options.containsKey(DATA_LINK_REF_OPTION)) {
-            MongoDataLink link = nodeEngine.getDataLinkService().getAndRetainDataLink(
-                    options.get(DATA_LINK_REF_OPTION),
-                    MongoDataLink.class);
-            return tuple2(link.getClient(), link);
+    private MongoClient connect(String dataConnectionName, Map<String, String> options) {
+        if (dataConnectionName != null) {
+            MongoDataConnection link = nodeEngine.getDataConnectionService().getAndRetainDataConnection(
+                    dataConnectionName,
+                    MongoDataConnection.class);
+            try {
+                return link.getClient();
+            } finally {
+                link.release();
+            }
         } else {
             String connectionString = requireNonNull(options.get(CONNECTION_STRING_OPTION),
                     "Cannot connect to MongoDB, connectionString was not provided");
 
-            return tuple2(MongoClients.create(connectionString), null);
+            return MongoClients.create(connectionString);
         }
     }
 

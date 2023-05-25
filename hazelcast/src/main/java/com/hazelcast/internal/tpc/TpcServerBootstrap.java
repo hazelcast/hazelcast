@@ -25,9 +25,9 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.tpcengine.AsyncServerSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReadHandler;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.tpcengine.TpcEngineBuilder;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
@@ -51,10 +51,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_KEEPALIVE;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.SO_SNDBUF;
-import static com.hazelcast.internal.tpcengine.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_KEEPALIVE;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -88,7 +88,7 @@ public class TpcServerBootstrap {
     @SuppressWarnings("java:S1170")
     private final boolean tcpNoDelay = true;
     private final boolean enabled;
-    private final Map<Reactor, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
+    private final Map<Reactor, Supplier<? extends AsyncSocketReader>> readHandlerSuppliers = new HashMap<>();
     private final List<AsyncServerSocket> serverSockets = new ArrayList<>();
     private final Config config;
     private volatile List<Integer> clientPorts;
@@ -202,15 +202,15 @@ public class TpcServerBootstrap {
         for (int k = 0; k < tpcEngine.reactorCount(); k++) {
             Reactor reactor = tpcEngine.reactor(k);
 
-            Supplier<ReadHandler> readHandlerSupplier =
-                    () -> new ClientReadHandler(nodeEngine.getNode().clientEngine);
+            Supplier<AsyncSocketReader> readHandlerSupplier =
+                    () -> new ClientAsyncSocketReader(nodeEngine.getNode().clientEngine, nodeEngine.getProperties());
             readHandlerSuppliers.put(reactor, readHandlerSupplier);
 
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                     .setAcceptConsumer(acceptRequest -> {
                         reactor.newAsyncSocketBuilder(acceptRequest)
-                                .setReadHandler(readHandlerSuppliers.get(reactor).get())
+                                .setReader(readHandlerSuppliers.get(reactor).get())
                                 .set(SO_SNDBUF, clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE)
                                 .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                                 .set(TCP_NODELAY, tcpNoDelay)

@@ -34,7 +34,7 @@ import static java.util.Arrays.asList;
 @SuppressWarnings("WeakerAccess")
 public final class ThreadLeakTestUtils {
 
-    private static final int ASSERT_TIMEOUT_SECONDS = 300;
+    private static final int ASSERT_TIMEOUT_SECONDS = 180;
 
     /**
      * List of whitelisted classes of threads, which are allowed to be not joinable.

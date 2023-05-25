@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.AsyncSocket;
-import com.hazelcast.internal.tpcengine.AsyncSocketMetrics;
-import com.hazelcast.internal.tpcengine.AsyncSocketOptions;
-import com.hazelcast.internal.tpcengine.ReadHandler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -38,7 +38,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -64,7 +63,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final IOVector ioVector = new IOVector();
     private final boolean regularSchedule;
     private final boolean writeThrough;
-    private final ReadHandler readHandler;
+    private final AsyncSocketReader reader;
     private final CircularQueue localTaskQueue;
 
     // only accessed from eventloop thread
@@ -93,8 +92,8 @@ public final class NioAsyncSocket extends AsyncSocket {
             this.writeQueue = new MpmcArrayQueue<>(builder.writeQueueCapacity);
             this.handler = new Handler(builder);
             this.key = socketChannel.register(reactor.selector, 0, handler);
-            this.readHandler = builder.readHandler;
-            readHandler.init(this);
+            this.reader = builder.reader;
+            reader.init(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -132,10 +131,19 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     private void setReadable0(boolean readable) {
         if (readable) {
-            key.interestOps(key.interestOps() | OP_READ);
+            // Signal that we are interested in OP_READ events.
+            key.interestOpsOr(OP_READ);
         } else {
-            key.interestOps(key.interestOps() & ~OP_READ);
+            // Signal that we are not interesting in OP_READ events.
+            // So even if data is received or still available on the socket,
+            // we will not get further events.
+            key.interestOpsAnd(~OP_READ);
         }
+
+        // We are not running on the eventloop thread. We need to notify the
+        // reactor because a change in the interest set isn't picked up while
+        // the reactor is waiting on the selectionKey
+        reactor.wakeup();
     }
 
     @Override
@@ -348,12 +356,12 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @SuppressWarnings("java:S125")
     private final class Handler implements NioHandler, Runnable {
-        private final ByteBuffer receiveBuffer;
+        private final ByteBuffer rcvBuffer;
         private final AsyncSocketMetrics metrics = NioAsyncSocket.this.metrics;
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
             int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
-            this.receiveBuffer = builder.receiveBufferIsDirect
+            this.rcvBuffer = builder.receiveBufferIsDirect
                     ? ByteBuffer.allocateDirect(receiveBufferSize)
                     : ByteBuffer.allocate(receiveBufferSize);
         }
@@ -403,7 +411,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         private void handleRead() throws IOException {
             metrics.incReadEvents();
 
-            int read = socketChannel.read(receiveBuffer);
+            int read = socketChannel.read(rcvBuffer);
             //System.out.println(NioAsyncSocket.this + " bytes read: " + read);
 
             if (read == -1) {
@@ -411,9 +419,9 @@ public final class NioAsyncSocket extends AsyncSocket {
             }
 
             metrics.incBytesRead(read);
-            upcast(receiveBuffer).flip();
-            readHandler.onRead(receiveBuffer);
-            compactOrClear(receiveBuffer);
+            rcvBuffer.flip();
+            reader.onRead(rcvBuffer);
+            compactOrClear(rcvBuffer);
         }
 
         private void handleWrite() throws IOException {

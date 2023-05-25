@@ -15,7 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.jet.mongodb.datalink.MongoDataLink;
+import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -31,11 +31,46 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 final class Options {
 
-    static final String DATA_LINK_REF_OPTION = "data-link-name";
+    /**
+     * A valid MongoDB connectionString.
+     * Must be non-empty (if set).
+     * <p>Not mandatory if data connection is provided in mapping definition.</p>
+     */
     static final String CONNECTION_STRING_OPTION = "connectionString";
-    static final String DATABASE_NAME_OPTION = "database";
+
+    /**
+     * Option for streaming source only and mandatory for them.
+     * <p>
+     * Indicates a moment from which the oplog (changeStream) will be read. Possible values:
+     * <ul>
+     *     <li>string 'now' - sets current time (of submitting the mapping) as the start time</li>
+     *     <li>numeric value that means milliseconds of unix epoch</li>
+     *     <li>ISO-formatted instant in UTC timezone, like '2023-03-24T15:31:00Z'</li>
+     * </ul>
+     */
     static final String START_AT_OPTION = "startAt";
+
+    /**
+     * The name of the column that will be used as primary key.
+     * Note it's the name in Hazelcast, not external name.
+     * <p>Setting this option allows user to avoid using {@code _id} column as primary key, e.g. if user
+     * prefers to use some natural key instead of artificial key they added at project start.
+     *
+     * <p>Setting this property is not mandatory, by default connector will pick column that maps to Mongo's
+     * {@code _id} column.</p>
+     */
     static final String PK_COLUMN = "idColumn";
+
+    /**
+     * If set to true, the reading from MongoDB will be done in one processor instance.
+     * <p>
+     * Normally user wants to distribute the work, however the {@code $function} aggregate is not present on
+     * e.g. Atlas Serverless instances. In such cases setting this property to {@code true} allows user
+     * to query the Atlas Serverless - in one processor only, but better one than nothing. Maybe some day MongoDB will
+     * change that restriction.
+     */
+    static final String FORCE_PARALLELISM_ONE = "forceMongoReadParallelismOne";
+
     private static final String POSSIBLE_VALUES = "This property should " +
             " have value of: a) 'now' b) time in epoch milliseconds or c) " +
             " ISO-formatted instant in UTC timezone, like '2023-03-24T15:31:00Z'.";
@@ -63,24 +98,24 @@ final class Options {
         }
     }
 
-    static String getDatabaseName(NodeEngine nodeEngine, Map<String, String> options) {
-        String name = options.get(Options.DATABASE_NAME_OPTION);
-        if (name != null) {
-            return name;
+    static String getDatabaseName(NodeEngine nodeEngine, String[] externalName, String dataConnectionName) {
+        if (externalName.length == 2) {
+            return externalName[0];
         }
-        if (options.containsKey(DATA_LINK_REF_OPTION)) {
-            MongoDataLink link =
-                    nodeEngine.getDataLinkService().getAndRetainDataLink(options.get(DATA_LINK_REF_OPTION), MongoDataLink.class);
+        if (dataConnectionName != null) {
+            MongoDataConnection dataConnection =
+                    nodeEngine.getDataConnectionService().getAndRetainDataConnection(
+                            dataConnectionName, MongoDataConnection.class);
             try {
-                name = link.getDatabaseName();
+                String name = dataConnection.getDatabaseName();
                 if (name != null) {
                     return name;
                 }
             } finally {
-                link.release();
+                dataConnection.release();
             }
         }
-        throw new IllegalArgumentException(DATABASE_NAME_OPTION + " must be provided in the mapping or data link.");
+        throw new IllegalArgumentException("Database must be provided in the mapping or data connection.");
     }
 
     static Predicate<MappingField> getPkColumnChecker(Map<String, String> options, boolean isStreaming) {

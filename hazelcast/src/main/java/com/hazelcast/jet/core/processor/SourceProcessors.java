@@ -41,7 +41,7 @@ import com.hazelcast.jet.impl.connector.StreamFilesP;
 import com.hazelcast.jet.impl.connector.StreamJmsP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.FileSourceBuilder;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.SourceBuilder;
@@ -117,7 +117,7 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link Sources#mapJournal(String, JournalInitialPosition)} )}.
+     * {@link Sources#mapJournal(String, JournalInitialPosition)}.
      */
     @Nonnull
     public static <K, V> ProcessorMetaSupplier streamMapP(
@@ -442,16 +442,16 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for {@link Sources#jdbc(
-     *DataLinkRef, ToResultSetFunction, FunctionEx)}.
+     *DataConnectionRef, ToResultSetFunction, FunctionEx)}.
      *
      * @since 5.2
      */
     public static <T> ProcessorMetaSupplier readJdbcP(
-            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(dataLinkRef, resultSetFn, mapOutputFn);
+        return ReadJdbcP.supplier(dataConnectionRef, resultSetFn, mapOutputFn);
     }
 
     /**

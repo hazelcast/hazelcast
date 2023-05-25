@@ -19,8 +19,10 @@ import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.mongodb.WriteMode;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.retry.RetryStrategy;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ConnectorPermission;
 import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
@@ -35,13 +37,14 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.pipeline.DataLinkRef.dataLinkRef;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
+import static com.hazelcast.security.permission.ConnectorPermission.mongo;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class WriteMongoParams<I> implements Serializable {
 
     SupplierEx<? extends MongoClient> clientSupplier;
-    DataLinkRef dataLinkRef;
+    DataConnectionRef dataConnectionRef;
     String databaseName;
     String collectionName;
     Class<I> documentType;
@@ -58,6 +61,7 @@ public class WriteMongoParams<I> implements Serializable {
     @Nonnull
     WriteMode writeMode = WriteMode.REPLACE;
     FunctionEx<I, WriteModel<I>> writeModelFn;
+    boolean throwOnNonExisting = true;
 
     public WriteMongoParams() {
     }
@@ -74,30 +78,30 @@ public class WriteMongoParams<I> implements Serializable {
     }
 
     @Nullable
-    public DataLinkRef getDataLinkRef() {
-        return dataLinkRef;
+    public DataConnectionRef getDataConnectionRef() {
+        return dataConnectionRef;
     }
 
     @Nonnull
-    public WriteMongoParams<I> setDataLinkRef(@Nullable DataLinkRef dataLinkRef) {
-        this.dataLinkRef = dataLinkRef;
+    public WriteMongoParams<I> setDataConnectionRef(@Nullable DataConnectionRef dataConnectionRef) {
+        this.dataConnectionRef = dataConnectionRef;
         return this;
     }
 
     @Nonnull
-    public WriteMongoParams<I> setDataLinkRef(@Nullable String dataLinkName) {
-        if (dataLinkName != null) {
-            setDataLinkRef(dataLinkRef(dataLinkName));
+    public WriteMongoParams<I> setDataConnectionRef(@Nullable String dataConnectionName) {
+        if (dataConnectionName != null) {
+            setDataConnectionRef(dataConnectionRef(dataConnectionName));
         }
         return this;
     }
 
     public void checkConnectivityOptionsValid() {
-        boolean hasLink = dataLinkRef != null;
+        boolean hasDataConnection = dataConnectionRef != null;
         boolean hasClientSupplier = clientSupplier != null;
-        checkState(hasLink || hasClientSupplier, "Client supplier or data link ref should be provided");
-        checkState(hasLink != hasClientSupplier, "Only one of two should be provided: " +
-                "Client supplier or data link ref");
+        checkState(hasDataConnection || hasClientSupplier, "Client supplier or data connection ref should be provided");
+        checkState(hasDataConnection != hasClientSupplier, "Only one of two should be provided: " +
+                "Client supplier or data connection ref");
     }
 
     @Nonnull
@@ -244,6 +248,15 @@ public class WriteMongoParams<I> implements Serializable {
         return this;
     }
 
+    public boolean isThrowOnNonExisting() {
+        return throwOnNonExisting;
+    }
+
+    public WriteMongoParams<I> setThrowOnNonExisting(boolean throwOnNonExisting) {
+        this.throwOnNonExisting = throwOnNonExisting;
+        return this;
+    }
+
     public void checkValid() {
         checkConnectivityOptionsValid();
         checkNotNull(documentIdentityFn, "documentIdentityFn must be set");
@@ -258,5 +271,13 @@ public class WriteMongoParams<I> implements Serializable {
 
         checkState((databaseNameSelectFn == null) != (databaseName == null),
                 "Only select*Fn or *Name functions should be called, never mixed");
+    }
+
+    @Nonnull
+    public ConnectorPermission buildPermission() {
+        return mongo(dataConnectionRef == null ? null : dataConnectionRef.getName(),
+                getDatabaseName(),
+                getCollectionName(),
+                ActionConstants.ACTION_WRITE);
     }
 }

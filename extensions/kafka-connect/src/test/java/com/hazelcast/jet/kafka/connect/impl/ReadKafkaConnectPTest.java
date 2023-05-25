@@ -47,6 +47,7 @@ import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask.dummyRecord;
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.ITEMS_SIZE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -54,7 +55,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
-    private ReadKafkaConnectP readKafkaConnectP;
+    private ReadKafkaConnectP<Integer> readKafkaConnectP;
     private TestOutbox outbox;
     private TestProcessorContext context;
     private HazelcastInstance hazelcastInstance;
@@ -62,7 +63,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
-        readKafkaConnectP = new ReadKafkaConnectP(connectorWrapper, noEventTime());
+        readKafkaConnectP = new ReadKafkaConnectP<>(connectorWrapper, noEventTime(), rec -> (Integer) rec.value());
         outbox = new TestOutbox(new int[]{10}, 10);
         context = new TestProcessorContext();
         hazelcastInstance = createHazelcastInstance(smallInstanceConfig());
@@ -76,7 +77,49 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         boolean complete = readKafkaConnectP.complete();
 
         assertFalse(complete);
-        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(dummyRecord(0), dummyRecord(1), dummyRecord(2));
+        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2, 3, 4);
+    }
+
+    @Test
+    public void should_filter_items() throws Exception {
+        ConnectorWrapper connectorWrapper = new ConnectorWrapper(minimalProperties());
+        readKafkaConnectP = new ReadKafkaConnectP<>(connectorWrapper, noEventTime(), rec -> {
+            Integer value = (Integer) rec.value();
+            if (value % 2 == 0) {
+                return null;
+            } else {
+                return value;
+            }
+        });
+
+        readKafkaConnectP.init(outbox, context);
+        boolean complete = readKafkaConnectP.complete();
+
+        assertFalse(complete);
+        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(1, 3);
+    }
+
+
+    @Test
+    public void should_require_connectorWrapper() {
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(null, noEventTime(), rec -> (Integer) rec.value()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("connectorWrapper is required");
+    }
+
+    @Test
+    public void should_require_eventTimePolicy() {
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), null,
+                rec -> (Integer) rec.value()))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("eventTimePolicy is required");
+    }
+
+    @Test
+    public void should_require_projectionFn() {
+        assertThatThrownBy(() -> new ReadKafkaConnectP<>(new ConnectorWrapper(minimalProperties()), noEventTime(), null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("projectionFn is required");
     }
 
     @Test
@@ -105,7 +148,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
 
         readKafkaConnectP.complete();
 
-        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(dummyRecord(0), dummyRecord(1), dummyRecord(2));
+        assertThat(new ArrayList<>(outbox.queue(0))).containsExactly(0, 1, 2, 3, 4);
 
     }
 
@@ -151,16 +194,16 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         readKafkaConnectP.saveToSnapshot();
         lastSnapshot = outbox.snapshotQueue().peek();
         assertThat(lastSnapshot).isNotNull();
-        assertThat((TaskRunner.State) lastSnapshot.getValue()).isEqualTo(stateWithOffset(42));
+        assertThat((State) lastSnapshot.getValue()).isEqualTo(stateWithOffset(42));
 
     }
 
     @Nonnull
-    private static TaskRunner.State stateWithOffset(int value) {
+    private static State stateWithOffset(int value) {
         Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
         SourceRecord lastRecord = dummyRecord(value);
         partitionsToOffset.put(lastRecord.sourcePartition(), lastRecord.sourceOffset());
-        TaskRunner.State state = new TaskRunner.State(partitionsToOffset);
+        State state = new State(partitionsToOffset);
         return state;
     }
 
@@ -174,7 +217,7 @@ public class ReadKafkaConnectPTest extends HazelcastTestSupport {
         properties.setProperty("name", "some-name");
         properties.setProperty("tasks.max", "2");
         properties.setProperty("connector.class", DummySourceConnector.class.getName());
-        properties.setProperty(ITEMS_SIZE, "3");
+        properties.setProperty(ITEMS_SIZE, "5");
         return properties;
     }
 }

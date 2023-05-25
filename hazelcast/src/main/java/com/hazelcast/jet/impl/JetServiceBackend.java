@@ -49,7 +49,8 @@ import com.hazelcast.jet.impl.submitjob.memberside.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.submitjob.memberside.JobMultiPartParameterObject;
 import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStatus;
 import com.hazelcast.jet.impl.submitjob.memberside.JobUploadStore;
-import com.hazelcast.jet.impl.submitjob.memberside.validator.JobMetaDataParameterObjectValidator;
+import com.hazelcast.jet.impl.submitjob.memberside.validator.JarOnClientValidator;
+import com.hazelcast.jet.impl.submitjob.memberside.validator.JarOnMemberValidator;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -87,6 +88,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         LiveOperationsTracker, Consumer<Packet> {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
+    public static final String SQL_ARGUMENTS_KEY_NAME = "__sql.arguments";
     public static final String SQL_CATALOG_MAP_NAME = "__sql.catalog";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
@@ -400,15 +402,20 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      * Execute the given jar
      */
     public void jarOnMember(JobMetaDataParameterObject jobMetaDataParameterObject) {
-        JobMetaDataParameterObjectValidator.validateJarOnMember(jobMetaDataParameterObject);
+        // Performs validations before processing the request
+        JarOnMemberValidator.validate(jobMetaDataParameterObject);
+
         executeJar(jobMetaDataParameterObject);
     }
 
     /**
      * Store the metadata about the jar that is uploaded from client side
      */
-    public void storeJobMetaData(JobMetaDataParameterObject jobMetaDataParameterObject) {
+    public void jarOnClient(JobMetaDataParameterObject jobMetaDataParameterObject) {
+        // Performs validations before processing the request
         checkResourceUploadEnabled();
+        JarOnClientValidator.validate(jobMetaDataParameterObject);
+
         try {
             // Delegate processing to store
             jobUploadStore.processJobMetaData(jobMetaDataParameterObject);

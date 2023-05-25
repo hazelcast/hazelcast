@@ -18,20 +18,26 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.mongodb.impl.UpdateMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import com.mongodb.client.model.DeleteOneModel;
+import com.mongodb.client.model.DeleteManyModel;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.WriteModel;
+import org.bson.Document;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.Collection;
 
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_STRATEGY;
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.UPDATE_ALL_PREDICATE;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.DynamicallyReplacedPlaceholder.replacePlaceholdersInPredicate;
 import static java.util.Arrays.asList;
 
 /**
@@ -43,16 +49,23 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
     private final String connectionString;
     private final String databaseName;
     private final String collectionName;
+    private final Serializable predicate;
+    private final String[] externalNames;
+    private final boolean hasInput;
     private transient SupplierEx<MongoClient> clientSupplier;
-    private final String dataLinkName;
+    private final String dataConnectionName;
     private final String idField;
+    private ExpressionEvalContext evalContext;
 
-    DeleteProcessorSupplier(MongoTable table) {
+    DeleteProcessorSupplier(MongoTable table, Serializable predicate, boolean hasInput) {
         this.connectionString = table.connectionString;
         this.databaseName = table.databaseName;
-        this.dataLinkName = table.dataLinkName;
+        this.dataConnectionName = table.dataConnectionName;
         this.collectionName = table.collectionName;
+        this.externalNames = table.externalNames();
         this.idField = table.primaryKeyExternalName();
+        this.predicate = predicate;
+        this.hasInput = hasInput;
     }
 
     @Override
@@ -60,6 +73,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
         if (connectionString != null) {
             clientSupplier = () -> MongoClients.create(connectionString);
         }
+        evalContext = ExpressionEvalContext.from(context);
     }
 
     @Nonnull
@@ -68,26 +82,44 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
         Processor[] processors = new Processor[count];
 
         for (int i = 0; i < count; i++) {
-            Processor processor = new WriteMongoP<>(
-                    new WriteMongoParams<>()
-                            .setClientSupplier(clientSupplier)
-                            .setDataLinkRef(dataLinkName)
-                            .setDatabaseName(databaseName)
-                            .setCollectionName(collectionName)
-                            .setDocumentType(Object.class)
-                            .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
-                            .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
-                            .setIntermediateMappingFn(this::rowToDoc)
-                            .setWriteModelFn(this::delete)
-                    );
+            Processor processor;
+            if (hasInput) {
+                processor = new WriteMongoP<>(
+                        new WriteMongoParams<>()
+                                .setClientSupplier(clientSupplier)
+                                .setDataConnectionRef(dataConnectionName)
+                                .setDatabaseName(databaseName)
+                                .setCollectionName(collectionName)
+                                .setDocumentType(Object.class)
+                                .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
+                                .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
+                                .setIntermediateMappingFn(this::rowToDoc)
+                                .setWriteModelFn(this::delete)
+                );
 
+            } else {
+                Document predicateWithReplacements = predicate == null
+                        ? UPDATE_ALL_PREDICATE
+                        : replacePlaceholdersInPredicate(predicate, externalNames, evalContext);
+                processor = new UpdateMongoP<>(
+                        new WriteMongoParams<Document>()
+                                .setClientSupplier(clientSupplier)
+                                .setDataConnectionRef(dataConnectionName)
+                                .setDatabaseName(databaseName)
+                                .setCollectionName(collectionName)
+                                .setDocumentType(Document.class),
+                        () -> new DeleteManyModel<>(predicateWithReplacements)
+                );
+
+            }
             processors[i] = processor;
         }
+
         return asList(processors);
     }
 
     private WriteModel<Object> delete(Object pkValue) {
-        return new DeleteOneModel<>(Filters.eq(idField, pkValue));
+        return new DeleteManyModel<>(Filters.eq(idField, pkValue));
     }
 
     private Object rowToDoc(JetSqlRow row) {

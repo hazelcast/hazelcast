@@ -28,7 +28,7 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.internal.config.ConfigUtils;
-import com.hazelcast.internal.config.DataLinkConfigReadOnly;
+import com.hazelcast.internal.config.DataConnectionConfigReadOnly;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
@@ -221,7 +221,7 @@ public class Config {
     private IntegrityCheckerConfig integrityCheckerConfig = new IntegrityCheckerConfig();
 
     // @since 5.3
-    private final Map<String, DataLinkConfig> dataLinkConfigs = new ConcurrentHashMap<>();
+    private final Map<String, DataConnectionConfig> dataConnectionConfigs = new ConcurrentHashMap<>();
 
     // @since 5.3
     private TpcConfig tpcConfig = new TpcConfig();
@@ -3104,34 +3104,35 @@ public class Config {
     }
 
     /**
-     * Returns the map of data link configurations, mapped by config name.
+     * Returns the map of data connection configurations, mapped by config name.
      *
      * @since 5.3
      */
     @Beta
-    public Map<String, DataLinkConfig> getDataLinkConfigs() {
-        return dataLinkConfigs;
+    public Map<String, DataConnectionConfig> getDataConnectionConfigs() {
+        return dataConnectionConfigs;
     }
 
     /**
-     * Sets the map of data link configurations, mapped by config name.
+     * Sets the map of data connection configurations, mapped by config name.
      * <p>
-     * Example configuration: see {@link #addDataLinkConfig(DataLinkConfig)}
+     * Example configuration: see {@link #addDataConnectionConfig(DataConnectionConfig)}
      *
      * @since 5.3
      */
     @Beta
-    public Config setDataLinkConfigs(Map<String, DataLinkConfig> dataLinkConfigs) {
-        this.dataLinkConfigs.clear();
-        this.dataLinkConfigs.putAll(dataLinkConfigs);
-        for (Entry<String, DataLinkConfig> entry : dataLinkConfigs.entrySet()) {
+    public Config setDataConnectionConfigs(Map<String, DataConnectionConfig> dataConnectionConfigs) {
+        dataConnectionConfigs.values().forEach(DataConnectionConfigValidator::validate);
+        this.dataConnectionConfigs.clear();
+        this.dataConnectionConfigs.putAll(dataConnectionConfigs);
+        for (Entry<String, DataConnectionConfig> entry : dataConnectionConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
     }
 
     /**
-     * Adds an data link configuration.
+     * Adds a data connection configuration.
      * <p>
      * <p>
      * Example:
@@ -3141,24 +3142,25 @@ public class Config {
      *      properties.put("jdbcUrl", jdbcUrl);
      *      properties.put("username", username);
      *      properties.put("password", password);
-     *      DataLinkConfig dataLinkConfig = new DataLinkConfig()
-     *              .setName("my-jdbc-data-link")
-     *              .setClassName(JdbcDataLink.class.getName())
+     *      DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+     *              .setName("my-jdbc-data-connection")
+     *              .setType("Jdbc")
      *              .setProperties(properties);
-     *      config.addDataLinkConfig(dataLinkConfig);
+     *      config.addDataConnectionConfig(dataConnectionConfig);
      * }</pre>
      *
      * @since 5.3
      */
     @Beta
-    public Config addDataLinkConfig(DataLinkConfig dataLinkConfig) {
-        dataLinkConfigs.put(dataLinkConfig.getName(), dataLinkConfig);
+    public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
+        DataConnectionConfigValidator.validate(dataConnectionConfig);
+        dataConnectionConfigs.put(dataConnectionConfig.getName(), dataConnectionConfig);
         return this;
     }
 
 
     /**
-     * Returns the data link configuration for the given name, creating one
+     * Returns the data connection configuration for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
      * The configuration is found by matching the configuration name
@@ -3171,15 +3173,15 @@ public class Config {
      * This method is intended to easily and fluently create and add
      * configurations more specific than the default configuration without
      * explicitly adding it by invoking
-     * {@link #addDataLinkConfig(DataLinkConfig)}.
+     * {@link #addDataConnectionConfig(DataConnectionConfig)}.
      * <p>
      * Because it adds new configurations if they are not already present,
      * this method is intended to be used before this config is used to
      * create a hazelcast instance. Afterwards, newly added configurations
      * may be ignored.
      *
-     * @param name data link name
-     * @return data link configuration
+     * @param name data connection name
+     * @return data connection configuration
      * @throws InvalidConfigurationException if ambiguous configurations are
      *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
@@ -3188,12 +3190,12 @@ public class Config {
      * @since 5.3
      */
     @Beta
-    public DataLinkConfig getDataLinkConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, dataLinkConfigs, name, DataLinkConfig.class);
+    public DataConnectionConfig getDataConnectionConfig(String name) {
+        return ConfigUtils.getConfig(configPatternMatcher, dataConnectionConfigs, name, DataConnectionConfig.class);
     }
 
     /**
-     * Returns a read-only {@link DataLinkConfig}
+     * Returns a read-only {@link DataConnectionConfig}
      * configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -3201,8 +3203,8 @@ public class Config {
      * If there is no config found by the name, it will return the configuration
      * with the name {@code default}.
      *
-     * @param name name of the data link
-     * @return the data link configuration
+     * @param name name of the data connection
+     * @return the data connection configuration
      * @throws InvalidConfigurationException if ambiguous configurations are
      *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
@@ -3212,13 +3214,13 @@ public class Config {
      * @since 5.3
      */
     @Beta
-    public DataLinkConfig findDataLinkConfig(String name) {
+    public DataConnectionConfig findDataConnectionConfig(String name) {
         name = getBaseName(name);
-        DataLinkConfig config = lookupByPattern(configPatternMatcher, dataLinkConfigs, name);
+        DataConnectionConfig config = lookupByPattern(configPatternMatcher, dataConnectionConfigs, name);
         if (config != null) {
-            return new DataLinkConfigReadOnly(config);
+            return new DataConnectionConfigReadOnly(config);
         }
-        return new DataLinkConfigReadOnly(getDataLinkConfig("default"));
+        return new DataConnectionConfigReadOnly(getDataConnectionConfig("default"));
     }
 
     /**
@@ -3310,7 +3312,7 @@ public class Config {
                 + ", jetConfig=" + jetConfig
                 + ", deviceConfigs=" + deviceConfigs
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
-                + ", dataLinkConfigs=" + dataLinkConfigs
+                + ", dataConnectionConfigs=" + dataConnectionConfigs
                 + ", tpcConfig=" + tpcConfig
                 + '}';
     }

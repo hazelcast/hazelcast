@@ -26,7 +26,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
@@ -46,6 +46,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.rules.Timeout;
@@ -70,6 +71,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -85,7 +87,7 @@ import static org.junit.Assert.fail;
 
 public abstract class JetTestSupport extends HazelcastTestSupport {
 
-    public static final SerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
+    public static final InternalSerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
 
     /**
      * This is needed to finish tests which got stuck in @Before, @BeforeClass, @After or @AfterClass method.
@@ -301,6 +303,20 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
             }
         } while (executionId == null || executionId.equals(ignoredExecutionId));
         return executionId;
+    }
+
+    /**
+     * Asserts that the {@code job} is eventually SUSPENDED and waits until the suspension cause is set.
+     */
+    public static void assertJobSuspendedEventually(Job job) {
+        assertJobStatusEventually(job, SUSPENDED);
+        assertTrueEventually(() -> {
+            try {
+                assertNotNull(job.getSuspensionCause());
+            } catch (IllegalStateException notSuspended) {
+                Assertions.fail("Suspension cause is not set yet", notSuspended);
+            }
+        });
     }
 
     public static void assertJobStatusEventually(Job job, JobStatus expected, int timeoutSeconds) {

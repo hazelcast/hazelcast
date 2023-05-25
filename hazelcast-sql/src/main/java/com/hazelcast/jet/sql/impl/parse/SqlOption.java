@@ -81,6 +81,8 @@ public class SqlOption extends SqlCall {
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
         key.unparse(writer, leftPrec, rightPrec);
+        writer.setNeedWhitespace(false);
+        writer.print("=");
         value.unparse(writer, leftPrec, rightPrec);
     }
 }

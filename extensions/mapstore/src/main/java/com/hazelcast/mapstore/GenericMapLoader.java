@@ -16,11 +16,11 @@
 
 package com.hazelcast.mapstore;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datalink.JdbcDataLink;
+import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
@@ -37,10 +37,10 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -54,6 +54,8 @@ import static com.hazelcast.mapstore.ExistingMappingValidator.validateColumnsExi
 import static com.hazelcast.mapstore.FromSqlRowConverter.toGenericRecord;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * GenericMapLoader is an implementation of {@link MapLoader} built
@@ -63,11 +65,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * Usage:
  * <p>
- * First define data link, e.g. for JDBC use {@link JdbcDataLink}:
+ * First define data connection, e.g. for JDBC use {@link JdbcDataConnection}:
  * <pre>{@code Config config = new Config();
- * config.addDataLinkConfig(
- *   new DataLinkConfig("mysql-ref")
- *     .setClassName(JdbcDataLink.class.getName())
+ * config.addDataConnectionConfig(
+ *   new DataConnectionConfig("mysql-ref")
+ *     .setType("Jdbc")
  *     .setProperty("jdbcUrl", dbConnectionUrl)
  * );}</pre>
  * <p>
@@ -75,7 +77,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <pre>{@code MapConfig mapConfig = new MapConfig(mapName);
  * MapStoreConfig mapStoreConfig = new MapStoreConfig();
  * mapStoreConfig.setClassName(GenericMapLoader.class.getName());
- * mapStoreConfig.setProperty(JdbcSqlConnector.OPTION_DATA_LINK_REF, "mysql-ref");
+ * mapStoreConfig.setProperty(GenericMapLoader.DATA_CONNECTION_REF_PROPERTY, "mysql-ref");
  * mapConfig.setMapStoreConfig(mapStoreConfig);
  * instance().getConfig().addMapConfig(mapConfig);}</pre>
  * <p>
@@ -87,21 +89,41 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifecycleSupport {
 
     /**
+     * Property key to define data connection
+     */
+    public static final String DATA_CONNECTION_REF_PROPERTY = "data-connection-ref";
+    /**
+     * Property key to define external name of the table
+     */
+    public static final String EXTERNAL_NAME_PROPERTY = "external-name";
+
+    /**
+     * Property key to define id column name in database
+     */
+    public static final String ID_COLUMN_PROPERTY = "id-column";
+
+    /**
+     * Property key to define column names in database
+     */
+    public static final String COLUMNS_PROPERTY = "columns";
+
+    /**
+     * Property key to data connection type name
+     */
+    public static final String TYPE_NAME_PROPERTY = "type-name";
+
+    /**
+     * Property key to control loading of all keys when IMap is first created
+     */
+    public static final String LOAD_ALL_KEYS_PROPERTY = "load-all-keys";
+
+    /**
      * Timeout for initialization of GenericMapLoader
      */
     public static final HazelcastProperty MAPSTORE_INIT_TIMEOUT
             = new HazelcastProperty("hazelcast.mapstore.init.timeout", 30, SECONDS);
 
     static final String MAPPING_PREFIX = "__map-store.";
-
-    static final String DATA_LINK_REF_PROPERTY = "data-link-ref";
-    static final String TABLE_NAME_PROPERTY = "table-name";
-    static final String MAPPING_TYPE_PROPERTY = "mapping-type";
-
-    static final String ID_COLUMN_PROPERTY = "id-column";
-
-    static final String COLUMNS_PROPERTY = "columns";
-    static final String TYPE_NAME_PROPERTY = "type-name";
 
     protected SqlService sqlService;
 
@@ -151,9 +173,28 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     private void validateMapStoreConfig(HazelcastInstance instance, String mapName) {
         MapConfig mapConfig = instance.getConfig().findMapConfig(mapName);
-        if (!mapConfig.getMapStoreConfig().isOffload()) {
-            throw new HazelcastException("Config for GenericMapStore must have `offload` property set to true");
+        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        if (!mapStoreConfig.isOffload()) {
+            throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
+                                         " must have `offload` property set to true");
         }
+        if (mapStoreConfig.getProperty(DATA_CONNECTION_REF_PROPERTY) == null) {
+            throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
+                                         " must have `" + DATA_CONNECTION_REF_PROPERTY + "` property set");
+        }
+
+        // Validate that property is not an invalid boolean string
+        String loadAllKeys = mapStoreConfig.getProperty(LOAD_ALL_KEYS_PROPERTY);
+        if (loadAllKeys != null) {
+            if (!isBoolean(loadAllKeys)) {
+                throw new HazelcastException("MapStoreConfig for " + mapConfig.getName() +
+                                             " must have `" + LOAD_ALL_KEYS_PROPERTY + "` property set as true or false");
+            }
+        }
+    }
+
+    private boolean isBoolean(String value) {
+        return value.equalsIgnoreCase("false") || value.equalsIgnoreCase("true");
     }
 
     private ManagedExecutorService getMapStoreExecutor() {
@@ -169,18 +210,17 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
     private void createOrReadMapping() {
         logger.fine("Initializing for map " + mapName);
         try {
-            String mappingColumns = null;
+            List<SqlColumnMetadata> mappingColumns = null;
             if (genericMapStoreProperties.hasColumns()) {
                 mappingColumns = resolveMappingColumns();
                 logger.fine("Discovered following mapping columns: " + mappingColumns);
             }
 
-            mappingHelper.createMappingWithColumns(
+            mappingHelper.createMapping(
                     mappingName,
                     genericMapStoreProperties.tableName,
                     mappingColumns,
-                    deriveMappingType(),
-                    genericMapStoreProperties.dataLinkRef,
+                    genericMapStoreProperties.dataConnectionRef,
                     genericMapStoreProperties.idColumn
             );
 
@@ -202,44 +242,37 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
         }
     }
 
-    private String deriveMappingType() {
-        if (genericMapStoreProperties.mappingType != null) {
-            return genericMapStoreProperties.mappingType;
-        } else {
-            return nodeEngine().getDataLinkService().typeForDataLink(genericMapStoreProperties.dataLinkRef);
-        }
-    }
-
-
-    private String resolveMappingColumns() {
+    private List<SqlColumnMetadata> resolveMappingColumns() {
         // Create a temporary mapping
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
         mappingHelper.createMapping(
                 tempMapping,
                 genericMapStoreProperties.tableName,
-                deriveMappingType(),
-                genericMapStoreProperties.dataLinkRef,
+                null,
+                genericMapStoreProperties.dataConnectionRef,
                 genericMapStoreProperties.idColumn
         );
 
-        SqlRowMetadata rowMetadata = mappingHelper.loadRowMetadataFromMapping(tempMapping);
-        columnMetadataList = rowMetadata.getColumns();
+        columnMetadataList = mappingHelper.loadColumnMetadataFromMapping(tempMapping);
+        Map<String, SqlColumnMetadata> columnMap = columnMetadataList
+                .stream()
+                .collect(toMap(SqlColumnMetadata::getName, identity()));
         dropMapping(tempMapping);
 
         return genericMapStoreProperties.getAllColumns().stream()
-                .map(columnName -> validateColumn(rowMetadata, columnName))
-                .map(rowMetadata::getColumn)
-                .map(columnMetadata1 -> columnMetadata1.getName() + " " + columnMetadata1.getType())
-                .collect(Collectors.joining(", "));
+                                        .map(columnName -> validateColumn(columnMap, columnName))
+                                        .collect(Collectors.toList());
     }
 
     private void readExistingMapping() {
         logger.fine("Reading existing mapping for map" + mapName);
         try {
             // If mappingName does not exist, we get "... did you forget to CREATE MAPPING?" exception
-            SqlRowMetadata sqlRowMetadata = mappingHelper.loadRowMetadataFromMapping(mappingName);
-            validateColumnsExist(sqlRowMetadata, genericMapStoreProperties.getAllColumns());
-            columnMetadataList = sqlRowMetadata.getColumns();
+            columnMetadataList = mappingHelper.loadColumnMetadataFromMapping(mappingName);
+            Map<String, SqlColumnMetadata> columnMap = columnMetadataList
+                    .stream()
+                    .collect(toMap(SqlColumnMetadata::getName, identity()));
+            validateColumnsExist(columnMap, genericMapStoreProperties.getAllColumns());
             queries = new Queries(mappingName, genericMapStoreProperties.idColumn, columnMetadataList);
 
         } catch (Exception e) {
@@ -249,9 +282,7 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     @Override
     public void destroy() {
-        ManagedExecutorService asyncExecutor = nodeEngine()
-                .getExecutionService()
-                .getExecutor(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
+        ManagedExecutorService asyncExecutor = getMapStoreExecutor();
 
         asyncExecutor.submit(() -> {
             awaitInitFinished();
@@ -317,10 +348,14 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
 
     @Override
     public Iterable<K> loadAllKeys() {
+        // If loadAllKeys property is disabled, don't load anything
+        if (!genericMapStoreProperties.loadAllKeys) {
+            return Collections.emptyList();
+        }
+
         awaitSuccessfulInit();
 
         String sql = queries.loadAllKeys();
-        //noinspection resource
         SqlResult keysResult = sqlService.execute(sql);
 
         // The contract for loadAllKeys says that if iterator implements Closable
@@ -347,14 +382,14 @@ public class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoad
             boolean finished = initFinished.await(initTimeoutMillis, MILLISECONDS);
             if (!finished) {
                 throw new HazelcastException("MapStore init for map: " + mapName + " timed out after "
-                                             + initTimeoutMillis + " ms", initFailure);
+                        + initTimeoutMillis + " ms", initFailure);
             }
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
         }
     }
 
-    @VisibleForTesting
+    // Visible for testing
     boolean initHasFinished() {
         return initFinished.getCount() == 0;
     }

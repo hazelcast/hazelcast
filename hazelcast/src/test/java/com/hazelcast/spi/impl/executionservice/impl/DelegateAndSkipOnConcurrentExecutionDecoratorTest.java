@@ -50,6 +50,7 @@ public class DelegateAndSkipOnConcurrentExecutionDecoratorTest
         task.resumeExecution();
 
         assertEquals(1, task.getExecutionCount());
+        executor.shutdownNow();
     }
 
 

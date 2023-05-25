@@ -40,6 +40,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
+import static com.hazelcast.jet.sql.impl.parse.UnparseUtil.unparseOptions;
 import static java.util.Objects.requireNonNull;
 
 public class SqlCreateJob extends SqlCreate {
@@ -103,27 +104,11 @@ public class SqlCreateJob extends SqlCreate {
         }
         name.unparse(writer, leftPrec, rightPrec);
 
-        if (options.size() > 0) {
-            writer.newlineAndIndent();
-            writer.keyword("OPTIONS");
-            SqlWriter.Frame withFrame = writer.startList("(", ")");
-            for (SqlNode property : options) {
-                printIndent(writer);
-                property.unparse(writer, leftPrec, rightPrec);
-            }
-            writer.newlineAndIndent();
-            writer.endList(withFrame);
-        }
+        unparseOptions(writer, options);
 
         writer.newlineAndIndent();
         writer.keyword("AS");
         sqlInsert.unparse(writer, leftPrec, rightPrec);
-    }
-
-    private void printIndent(SqlWriter writer) {
-        writer.sep(",", false);
-        writer.newlineAndIndent();
-        writer.print(" ");
     }
 
     @Override
@@ -191,7 +176,7 @@ public class SqlCreateJob extends SqlCreate {
         validator.validate(sqlInsert);
     }
 
-    private static long parseLong(SqlValidator validator, SqlOption option) {
+    static long parseLong(SqlValidator validator, SqlOption option) {
         try {
             return Long.parseLong(option.valueString());
         } catch (NumberFormatException e) {

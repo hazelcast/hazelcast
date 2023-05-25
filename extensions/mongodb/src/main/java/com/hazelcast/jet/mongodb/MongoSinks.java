@@ -17,7 +17,7 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.pipeline.DataLinkRef;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.spi.annotation.Beta;
 import com.mongodb.client.MongoClient;
@@ -54,7 +54,6 @@ public final class MongoSinks {
      * <pre>{@code
      * Sink<Document> mongoSink =
      *         MongoSinks.builder(
-     *                     "stream-sink",
      *                     Document.class,
      *                     () -> MongoClients.create("mongodb://127.0.0.1:27017")
      *                 )
@@ -69,17 +68,16 @@ public final class MongoSinks {
      * }</pre>
      * @since 5.3
      *
-     * @param name               name of the sink
      * @param clientSupplier MongoDB client supplier
      * @param itemClass          type of document that will be saved
      * @param <T>                type of the items the sink accepts
      */
     @Beta
     public static <T> MongoSinkBuilder<T> builder(
-            @Nonnull String name,
             @Nonnull Class<T> itemClass,
             @Nonnull SupplierEx<MongoClient> clientSupplier
     ) {
+        String name = "MongoSink(" + itemClass.getSimpleName() + ")";
         return new MongoSinkBuilder<>(name, itemClass, clientSupplier);
     }
 
@@ -94,14 +92,13 @@ public final class MongoSinks {
      * of the job is {@link com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE}.
      * <p>
      * All writes are done using default MongoDB codecs with POJO class codec added.
-     *<p>
+     * <p>
      * Example usage:
      * <pre>{@code
      * Sink<Document> mongoSink =
      *         MongoSinks.builder(
-     *                     "stream-sink",
      *                     Document.class,
-     *                     dataLinkRef("someMongoDB")
+     *                     dataConnectionRef("someMongoDB")
      *                 )
      *                 .into("myDatabase", "myCollection")
      *                 .identifyDocumentBy("_id", doc -> doc.get("_id"))
@@ -112,24 +109,22 @@ public final class MongoSinks {
      * (...)
      * someStage.writeTo(mongoSink);
      * }</pre>
-     *
-     * Connector will use provided data link reference to obtain an instance of {@link MongoClient}. Depending
+     * <p>
+     * Connector will use provided data connection reference to obtain an instance of {@link MongoClient}. Depending
      * on the configuration this client may be shared between processors or not.
      *
+     * @param dataConnectionRef reference to mongo data connection
+     * @param itemClass         type of document that will be saved
+     * @param <T>               type of the items the sink accepts
      * @since 5.3
-     *
-     * @param name               name of the sink
-     * @param dataLinkRef        reference to mongo data link
-     * @param itemClass          type of document that will be saved
-     * @param <T>                type of the items the sink accepts
      */
     @Beta
     public static <T> MongoSinkBuilder<T> builder(
-            @Nonnull String name,
             @Nonnull Class<T> itemClass,
-            @Nonnull DataLinkRef dataLinkRef
+            @Nonnull DataConnectionRef dataConnectionRef
             ) {
-        return new MongoSinkBuilder<>(name, itemClass, dataLinkRef);
+        String name = "MongoSink(" + itemClass.getSimpleName() + ")";
+        return new MongoSinkBuilder<>(name, itemClass, dataConnectionRef);
     }
 
     /**
@@ -138,8 +133,7 @@ public final class MongoSinks {
      * Example usage:
      * <pre>{@code
      * Sink<Document> mongoSink =
-     *         MongoSinks.builder(
-     *                 "mongoSink",
+     *         MongoSinks.mongodb(
      *                 "mongodb://127.0.0.1:27017",
      *                 "myDatabase",
      *                 "myCollection"
@@ -152,20 +146,18 @@ public final class MongoSinks {
      *
      * @since 5.3
      *
-     * @param name name of this sink
      * @param connectionString connection string to MongoDB instance
      * @param database database to which the documents will be put into
      * @param collection collection to which the documents will be put into
      */
     @Beta
     public static Sink<Document> mongodb(
-            @Nonnull String name,
             @Nonnull String connectionString,
             @Nonnull String database,
             @Nonnull String collection
     ) {
-        return MongoSinks
-                .builder(name, Document.class, () -> MongoClients.create(connectionString))
+        String name = "MongoSink(" + database + "/" + collection + ")";
+        return new MongoSinkBuilder<>(name, Document.class, () -> MongoClients.create(connectionString))
                 .into(database, collection)
                 .identifyDocumentBy("_id", doc -> doc.get("_id"))
                 .build();
@@ -177,9 +169,8 @@ public final class MongoSinks {
      * Example usage:
      * <pre>{@code
      * Sink<Document> mongoSink =
-     *         MongoSinks.builder(
-     *                 "mongoSink",
-     *                 dataLinkRef("someMongoDB"),
+     *         MongoSinks.mongodb(
+     *                 dataConnectionRef("someMongoDB"),
      *                 "myDatabase",
      *                 "myCollection"
      *         );
@@ -191,20 +182,18 @@ public final class MongoSinks {
      *
      * @since 5.3
      *
-     * @param name name of this sink
-     * @param dataLinkRef reference to some mongo data link
+     * @param dataConnectionRef reference to some mongo data connection
      * @param database database to which the documents will be put into
      * @param collection collection to which the documents will be put into
      */
     @Beta
     public static Sink<Document> mongodb(
-            @Nonnull String name,
-            @Nonnull DataLinkRef dataLinkRef,
+            @Nonnull DataConnectionRef dataConnectionRef,
             @Nonnull String database,
             @Nonnull String collection
     ) {
-        return MongoSinks
-                .builder(name, Document.class, dataLinkRef)
+        String name = "MongoSink(ref " + dataConnectionRef + ")";
+        return new MongoSinkBuilder<>(name, Document.class, dataConnectionRef)
                 .into(database, collection)
                 .identifyDocumentBy("_id", doc -> doc.get("_id"))
                 .build();

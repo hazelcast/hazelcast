@@ -36,7 +36,8 @@ public class Cost implements RelOptCost {
 
     public static final Cost ZERO = new Cost(0.0d, 0.0d, 0.0d);
     public static final Cost TINY = new Cost(1.0d, 1.0d, 0.0d);
-    public static final Cost HUGE = new Cost(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
+    // non-infinite values must not overflow getValue() calculation
+    public static final Cost HUGE = new Cost(Double.MAX_VALUE / 100, Double.MAX_VALUE / 100, Double.MAX_VALUE / 100);
     public static final Cost INFINITY = new Cost(Double.MAX_VALUE, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
 
     private final double rows;

@@ -58,7 +58,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
     @Test
     public void removeInterceptor_returns_true_when_interceptor_removed() {
-        HazelcastInstance node = createHazelcastInstance();
+        HazelcastInstance node = createHazelcastInstance(getConfig());
 
         String mapName = "mapWithInterceptor";
         IMap map = node.getMap(mapName);
@@ -76,7 +76,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
     @Test
     public void removeInterceptor_returns_false_when_there_is_no_interceptor() {
-        HazelcastInstance node = createHazelcastInstance();
+        HazelcastInstance node = createHazelcastInstance(getConfig());
 
         IMap map = node.getMap("mapWithNoInterceptor");
 
@@ -86,10 +86,9 @@ public class InterceptorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapInterceptor() {
-        Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
-        nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance hz = nodeFactory.newHazelcastInstance(getConfig());
+        nodeFactory.newHazelcastInstance(getConfig());
 
         IMap<Object, Object> map = hz.getMap("testMapInterceptor");
         String id = map.addInterceptor(new SimpleInterceptor());
@@ -135,9 +134,8 @@ public class InterceptorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapInterceptorOnNewMember() {
-        Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance hz1 = nodeFactory.newHazelcastInstance(getConfig());
         IMap<Integer, Object> map1 = hz1.getMap("map");
 
         for (int i = 0; i < 100; i++) {
@@ -149,7 +147,7 @@ public class InterceptorTest extends HazelcastTestSupport {
             assertEquals("Expected negative value on map1.get(" + i + ")", i * -1, map1.get(i));
         }
 
-        HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(getConfig());
         IMap<Integer, Object> map2 = hz2.getMap("map");
         for (int i = 0; i < 100; i++) {
             assertEquals("Expected negative value on map1.get(" + i + ")", i * -1, map1.get(i));
@@ -269,9 +267,8 @@ public class InterceptorTest extends HazelcastTestSupport {
         String name = randomString();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
-        Config config = getConfig();
-        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(getConfig());
+        HazelcastInstance hz2 = factory.newHazelcastInstance(getConfig());
 
         IMap<Object, Object> map = hz2.getMap(name);
         map.addInterceptor(new NegativePutInterceptor());

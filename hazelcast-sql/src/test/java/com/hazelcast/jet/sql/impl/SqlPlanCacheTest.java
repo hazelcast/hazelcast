@@ -31,8 +31,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         initialize(2, null);
 
         // effectively disable periodic plan cache validation
-        stream(instances()).forEach(instance -> nodeEngine(instance)
-                .getSqlService()
+        stream(instances()).forEach(instance -> sqlServiceImpl(instance)
                 .getInternalService()
                 .getStateRegistryUpdater()
                 .setStateCheckFrequency(Long.MAX_VALUE)
