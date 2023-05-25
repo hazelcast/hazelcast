@@ -175,4 +175,11 @@
        <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-jackson2@.*$</packageUrl>
        <cpe>cpe:/a:json-java_project:json-java</cpe>
     </suppress>
+    <suppress>
+       <notes><![CDATA[
+       CVE affects only server side of Kafka.
+       ]]></notes>
+       <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
+       <vulnerabilityName>CVE-2023-25194</vulnerabilityName>
+    </suppress>
 </suppressions>
