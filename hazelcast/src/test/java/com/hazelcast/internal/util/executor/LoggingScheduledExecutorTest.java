@@ -66,6 +66,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     public ExpectedException expectedException = ExpectedException.none();
 
     @After
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public void tearDown() throws Exception {
         if (executor != null) {
             executor.shutdownNow();
@@ -75,8 +76,6 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
     @Test
     public void test_setRemoveOnCancelPolicy_isCalledOnJava7() throws Exception {
-        assumeThatNoJDK6();
-
         executor = new LoggingScheduledExecutor(logger, 1, factory);
 
         Method method = ScheduledThreadPoolExecutor.class.getMethod("getRemoveOnCancelPolicy");
