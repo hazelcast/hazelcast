@@ -17,10 +17,17 @@
 package com.hazelcast.mapstore.mysql;
 
 import com.hazelcast.mapstore.GenericMapStoreIntegrationTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
+import org.junit.experimental.categories.Category;
 
+@Category({NightlyTest.class})
 public class MySQLGenericMapStoreIntegrationTest extends GenericMapStoreIntegrationTest {
+
+    public MySQLGenericMapStoreIntegrationTest() {
+        setPrefix("mysql_");
+    }
 
     // Shadow the parent's @BeforeClass method by using the same method name
     @BeforeClass

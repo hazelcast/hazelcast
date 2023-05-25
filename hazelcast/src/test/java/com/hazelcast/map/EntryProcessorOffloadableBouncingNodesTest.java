@@ -64,7 +64,7 @@ public class EntryProcessorOffloadableBouncingNodesTest extends HazelcastTestSup
     private static final int CONCURRENCY = RuntimeAvailableProcessors.get();
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getBouncingTestConfig())
+    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(this::getBouncingTestConfig)
             .driverType(BounceTestConfiguration.DriverType.MEMBER).build();
 
     private void populateMap(IMap<Integer, SimpleValue> map) {

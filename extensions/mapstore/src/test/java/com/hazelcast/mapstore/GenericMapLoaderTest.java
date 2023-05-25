@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -34,20 +35,23 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.mapstore.GenericMapLoader.COLUMNS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.DATA_CONNECTION_REF_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.ID_COLUMN_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.MAPPING_PREFIX;
-import static com.hazelcast.mapstore.GenericMapLoader.TABLE_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapLoader.TYPE_NAME_PROPERTY;
 import static com.hazelcast.nio.serialization.FieldKind.NOT_AVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
+import static org.junit.Assume.assumeFalse;
 
 /**
  * This test runs the MapLoader methods directly, but it runs within real Hazelcast instance
@@ -355,6 +359,20 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void givenRowAndIdColumn_whenLoadAllMultipleItems_thenReturnGenericRecords() throws Exception {
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 2);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
+        mapLoader = createMapLoader(properties, hz);
+        Map<Integer, GenericRecord> records = mapLoader.loadAll(newArrayList(0, 1));
+
+        assertThat(records).hasSize(2);
+    }
+
+    @Test
     public void givenRowDoesNotExist_whenLoadAll_thenReturnEmptyMap() throws Exception {
         createTable(mapName);
         mapLoader = createMapLoader();
@@ -390,6 +408,55 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void givenFalse_whenLoadAllKeys_thenReturnNull() throws Exception {
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
+        properties.setProperty(LOAD_ALL_KEYS_PROPERTY, "false");
+        mapLoader = createMapLoader(properties, hz);
+
+        List<Integer> ids = newArrayList(mapLoader.loadAllKeys());
+        assertThat(ids).isEmpty();
+    }
+
+    @Test
+    public void givenTrue_whenLoadAllKeys_thenReturnKeys() throws Exception {
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
+        properties.setProperty(LOAD_ALL_KEYS_PROPERTY, "true");
+        mapLoader = createMapLoader(properties, hz);
+
+        List<Integer> ids = newArrayList(mapLoader.loadAllKeys());
+        assertThat(ids).contains(0);
+    }
+
+    @Test
+    public void givenInvalid_whenLoadAllKeys_thenReturnKeys() throws Exception {
+        createTable(mapName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(mapName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+
+        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
+        properties.setProperty(LOAD_ALL_KEYS_PROPERTY, "invalidBooleanValue");
+        assertThatThrownBy(() -> createMapLoader(properties, hz))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("MapStoreConfig for " + mapName + " must have `load-all-keys` property set as true or false");
+
+
+    }
+
+    @Test
     public void givenNoRows_whenLoadAllKeys_thenEmptyIterable() throws Exception {
         createTable(mapName);
         mapLoader = createMapLoader();
@@ -401,7 +468,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     @Test
     public void givenMapStoreConfigWithOffloadDisabled_thenFail() {
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
-                .setClassName(GenericMapStore.class.getName())
+                .setClassName(GenericMapLoader.class.getName())
                 .setOffload(false);
 
         MapConfig mapConfig = new MapConfig(mapName);
@@ -414,7 +481,24 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         assertThatThrownBy(() -> mapLoader.init(hz, properties, mapName))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessage("Config for GenericMapStore must have `offload` property set to true");
+                .hasMessage("MapStoreConfig for " + mapName + " must have `offload` property set to true");
+    }
+
+    @Test
+    public void givenMapStoreConfig_WithoutDataConnection_thenFail() {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setClassName(GenericMapLoader.class.getName());
+
+        MapConfig mapConfig = new MapConfig(mapName);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        instance().getConfig().addMapConfig(mapConfig);
+
+        mapLoader = new GenericMapLoader<>();
+        Properties properties = new Properties();
+
+        assertThatThrownBy(() -> mapLoader.init(hz, properties, mapName))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("MapStoreConfig for " + mapName + " must have `data-connection-ref` property set");
     }
 
     @Test
@@ -426,11 +510,57 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
         Properties properties = new Properties();
         properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
-        properties.setProperty(TABLE_NAME_PROPERTY, tableName);
+        properties.setProperty(EXTERNAL_NAME_PROPERTY, tableName);
         mapLoader = createMapLoader(properties, hz);
 
         GenericRecord record = mapLoader.load(0);
         assertThat(record).isNotNull();
+    }
+
+    @Test
+    public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchema() throws Exception {
+        String schemaName = "custom_schema";
+        createSchema(schemaName);
+        String tableName = randomTableName() + "-with-hyphen";
+        String fullTableName = schemaName + "." + quote(tableName);
+
+        createTable(fullTableName);
+        insertItems(fullTableName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(EXTERNAL_NAME_PROPERTY, schemaName + ".\"" + tableName + "\"");
+        mapLoader = createMapLoader(properties, hz);
+
+        GenericRecord record = mapLoader.load(0);
+        assertThat(record).isNotNull();
+    }
+
+    @Test
+    public void givenTableNameProperty_whenCreateMapLoader_thenUseTableNameWithCustomSchemaWithDotInName()
+            throws Exception {
+        // See MySQLSchemaJdbcSqlConnectorTest
+        assumeFalse(MySQLDatabaseProvider.TEST_MYSQL_VERSION.startsWith("5"));
+
+        String schemaName = "custom_schema";
+        createSchema(schemaName);
+        String tableName = randomTableName() + ".with_dot";
+        String fullTableName = schemaName + "." + quote(tableName);
+
+        createTable(fullTableName);
+        insertItems(fullTableName, 1);
+
+        Properties properties = new Properties();
+        properties.setProperty(DATA_CONNECTION_REF_PROPERTY, TEST_DATABASE_REF);
+        properties.setProperty(EXTERNAL_NAME_PROPERTY, schemaName + ".\"" + tableName + "\"");
+        mapLoader = createMapLoader(properties, hz);
+
+        GenericRecord record = mapLoader.load(0);
+        assertThat(record).isNotNull();
+    }
+
+    private static void createSchema(String schemaName) throws SQLException {
+        executeJdbc("CREATE SCHEMA IF NOT EXISTS " + schemaName + " ");
     }
 
     private <K> GenericMapLoader<K> createMapLoader() {
@@ -449,7 +579,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     protected <K> GenericMapLoader<K> createUnitUnderTest(Properties properties, HazelcastInstance instance,
                                                           boolean init) {
-        MapConfig mapConfig = createMapConfigWithMapStore(mapName);
+        MapConfig mapConfig = createMapConfigWithMapStore(mapName, properties);
         instance.getConfig().addMapConfig(mapConfig);
 
         GenericMapLoader<K> mapLoader = new GenericMapLoader<>();
@@ -460,9 +590,10 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
         return mapLoader;
     }
 
-    private MapConfig createMapConfigWithMapStore(String mapName) {
+    private MapConfig createMapConfigWithMapStore(String mapName, Properties properties) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapLoader.class.getName());
+        mapStoreConfig.setProperties(properties);
         MapConfig mapConfig = new MapConfig(mapName);
         mapConfig.setMapStoreConfig(mapStoreConfig);
         return mapConfig;

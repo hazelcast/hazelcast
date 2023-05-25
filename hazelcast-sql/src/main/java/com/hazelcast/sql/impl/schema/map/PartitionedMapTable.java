@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -52,6 +53,7 @@ public class PartitionedMapTable extends AbstractMapTable {
             schemaName,
             tableName,
             mapName,
+            IMapSqlConnector.OBJECT_TYPE_IMAP,
             fields,
             statistics,
             keyDescriptor,

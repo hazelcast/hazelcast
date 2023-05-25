@@ -31,6 +31,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -162,8 +163,16 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
      *     uploaded to a member.
      *     </li>
      * </ul>
+     * <p>
+     * Note : Job submission and job startup are two different things.
+     * The job submission is a synchronous process but job startup is an asynchronous process. This call can only detect
+     * failures during job submission. If you want to check for job startup failures, you need may use one of these
+     * methods and check for Job state
+     * <ul>
+     * <li>{@link JetService#getJob(String)}</li>
+     * <li>{@link JetService#getJobs()} </li>
      *
-     * @throws JetException on error
+     * @throws JetException on submission error.
      */
     public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
         if (submitJobParameters.isJarOnMember()) {

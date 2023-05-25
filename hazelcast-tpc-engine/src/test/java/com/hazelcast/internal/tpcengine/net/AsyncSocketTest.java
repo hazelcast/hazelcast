@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpcengine.net;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -30,6 +31,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
@@ -49,6 +51,11 @@ public abstract class AsyncSocketTest {
         Reactor reactor = builder.build();
         reactors.add(reactor);
         return reactor.start();
+    }
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        assumeNotIbmJDK8();
     }
 
     @After
@@ -145,7 +152,7 @@ public abstract class AsyncSocketTest {
                 .build();
         clientSocket.start();
 
-        CompletableFuture<Void> future = clientSocket.connect(new InetSocketAddress("127.0.0.1", 5000));
+        CompletableFuture<Void> future = clientSocket.connect(new InetSocketAddress("127.0.0.1", 5001));
 
         assertThrows(CompletionException.class, () -> future.join());
     }

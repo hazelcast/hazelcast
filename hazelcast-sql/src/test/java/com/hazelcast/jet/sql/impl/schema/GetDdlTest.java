@@ -50,6 +50,7 @@ public class GetDdlTest extends SqlTestSupport {
                         "  \"this\" INTEGER EXTERNAL NAME \"this\"" + LE +
                         ")" + LE +
                         "TYPE \"IMap\"" + LE +
+                        "OBJECT TYPE \"IMap\"" + LE +
                         "OPTIONS (" + LE +
                         "  'keyFormat'='java'," + LE +
                         "  'keyJavaClass'='int'," + LE +
@@ -91,7 +92,7 @@ public class GetDdlTest extends SqlTestSupport {
     @Test
     public void when_queryDataConnectionFromDataConnectionNamespace_then_success() {
         String createDataConnectionQuery = "CREATE OR REPLACE DATA CONNECTION \"hazelcast\".\"public\".\"dl\"" + LE
-                + "TYPE \"DUMMY\"" + LE + "SHARED";
+                + "TYPE \"dummy\"" + LE + "SHARED";
 
         instance().getSql().execute(createDataConnectionQuery);
         assertRowsAnyOrder("SELECT GET_DDL('dataconnection', 'dl')", ImmutableList.of(new Row(createDataConnectionQuery)));
@@ -167,6 +168,7 @@ public class GetDdlTest extends SqlTestSupport {
                                 "  \"this\" VARCHAR EXTERNAL NAME \"this\"" + LE +
                                 ")" + LE +
                                 "TYPE \"IMap\"" + LE +
+                                "OBJECT TYPE \"IMap\"" + LE +
                                 "OPTIONS (" + LE +
                                 "  'keyFormat'='java'," + LE +
                                 "  'keyJavaClass'='int'," + LE +

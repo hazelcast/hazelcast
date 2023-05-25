@@ -91,7 +91,7 @@ public enum EntryOpSteps implements IMapOpStep {
 
     RUN_OFFLOADED_ENTRY_PROCESSOR() {
         @Override
-        public boolean isStoreStep() {
+        public boolean isOffloadStep(State state) {
             return true;
         }
 
@@ -134,7 +134,7 @@ public enum EntryOpSteps implements IMapOpStep {
                 return DO_POST_OPERATE_OPS;
             }
 
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     },
 
@@ -331,7 +331,7 @@ public enum EntryOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

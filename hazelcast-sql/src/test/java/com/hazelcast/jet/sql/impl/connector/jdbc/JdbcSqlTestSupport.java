@@ -30,6 +30,7 @@ import org.junit.experimental.categories.Category;
 import javax.annotation.Nonnull;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -79,8 +80,8 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     @AfterClass
-    public static void afterClass() throws SQLException {
-        if (dbConnectionUrl != null) {
+    public static void afterClass() {
+        if (databaseProvider != null) {
             databaseProvider.shutdown();
             databaseProvider = null;
             dbConnectionUrl = null;
@@ -107,25 +108,6 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         executeJdbc("CREATE TABLE " + tableName + " (" + String.join(", ", columns) + ")");
     }
 
-    static void createTableWithAllTypes(String tableName) throws SQLException {
-        executeJdbc("CREATE TABLE " + tableName + " (" +
-                "v VARCHAR(100)," +
-                "b BOOLEAN, " +
-                "ti TINYINT, " +
-                "si SMALLINT, " +
-                "i INTEGER, " +
-                "bi BIGINT, " +
-                "dc DECIMAL, " +
-                "r REAL, " +
-                "dbl DOUBLE, " +
-                "tm TIME, " +
-                "dt DATE, " +
-                "ts TIMESTAMP, " +
-                "tstz TIMESTAMP WITH TIME ZONE" +
-                ")"
-        );
-    }
-
     public static void executeJdbc(String sql) throws SQLException {
         requireNonNull(dbConnectionUrl, "dbConnectionUrl must be set");
 
@@ -136,43 +118,55 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         }
     }
 
-    public static void insertItems(String tableName, int count) throws SQLException {
+    public static void insertItems(String tableName, int start, int count) throws SQLException {
+        int end = start + count;
+        String sql = String.format("INSERT INTO %s VALUES(?, ?)", tableName);
+
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
-             Statement stmt = conn.createStatement()
+             PreparedStatement stmt = conn.prepareStatement(sql)
         ) {
-            for (int i = 0; i < count; i++) {
-                stmt.execute(String.format("INSERT INTO " + tableName + " VALUES(%d, 'name-%d')", i, i));
+
+            for (int i = start; i < end; i++) {
+                stmt.setInt(1, i);
+                stmt.setString(2, String.format("name-%d", i));
+                stmt.addBatch();
+                stmt.clearParameters();
             }
+            stmt.executeBatch();
         }
+    }
+
+    public static void insertItems(String tableName, int count) throws SQLException {
+        insertItems(tableName, 0, count);
     }
 
     protected static void createMapping(String tableName) {
         execute(
                 "CREATE MAPPING \"" + tableName + "\" ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
     protected static void createMapping(String tableName, String mappingName) {
         execute(
                 "CREATE MAPPING \"" + mappingName + "\""
-                        + " EXTERNAL NAME " + tableName + " "
-                        + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
+                + " EXTERNAL NAME " + tableName + " "
+                + " ("
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
     protected static void createJdbcMappingUsingDataConnection(String name, String dataConnection) {
         try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + name +
-                " DATA CONNECTION " + quoteName(dataConnection) + "\n"
+                                                            " DATA CONNECTION " + quoteName(dataConnection) + "\n"
         )) {
-            assertThat(result.updateCount()).isEqualTo(0);
+            assertThat(result.updateCount()).isZero();
         }
     }
 
@@ -191,14 +185,23 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
+    protected static void assertJdbcQueryRowsAnyOrder(String query, Row... rows) {
+        List<Row> actualRows = jdbcRows(query);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
+    }
+
     protected static List<Row> jdbcRowsTable(String tableName) {
         return jdbcRows("SELECT * FROM " + tableName);
     }
 
     @Nonnull
     protected static List<Row> jdbcRows(String query) {
+        return jdbcRows(query, dbConnectionUrl);
+    }
+
+    public static List<Row> jdbcRows(String query, String connectionUrl) {
         List<Row> rows = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
+        try (Connection conn = DriverManager.getConnection(connectionUrl);
              Statement stmt = conn.createStatement()
         ) {
             stmt.execute(query);
@@ -215,5 +218,4 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
             throw new RuntimeException(e);
         }
     }
-
 }

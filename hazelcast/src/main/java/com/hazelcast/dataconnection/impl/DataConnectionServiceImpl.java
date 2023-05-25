@@ -17,6 +17,7 @@
 package com.hazelcast.dataconnection.impl;
 
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.config.DataConnectionConfigValidator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionRegistration;
@@ -45,12 +46,9 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     private final Map<Class<? extends DataConnection>, String> dataConnectionClassToType = new HashMap<>();
 
     private final Map<String, DataConnectionEntry> dataConnections = new ConcurrentHashMap<>();
-
-    private final ClassLoader classLoader;
     private final ILogger logger;
 
     public DataConnectionServiceImpl(Node node, ClassLoader classLoader) {
-        this.classLoader = classLoader;
         this.logger = node.getLogger(getClass());
         processDataConnectionRegistrations(classLoader);
 
@@ -67,7 +65,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
                     classLoader
             ).forEachRemaining(registration -> {
                 typeToDataConnectionClass.put(registration.type().toLowerCase(Locale.ROOT), registration.clazz());
-                dataConnectionClassToType.put(registration.clazz(), registration.type());
+                dataConnectionClassToType.put(registration.clazz(), registration.type().toLowerCase(Locale.ROOT));
             });
         } catch (Exception e) {
             throw new HazelcastException("Could not register data connections", e);
@@ -80,6 +78,7 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
     }
 
     private void put(DataConnectionConfig config, DataConnectionSource source) {
+        DataConnectionConfigValidator.validate(config);
         dataConnections.compute(config.getName(),
                 (key, current) -> {
                     if (current != null) {
@@ -166,7 +165,8 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
 
     @Override
     public Class<? extends DataConnection> classForDataConnectionType(String type) {
-        Class<? extends DataConnection> dataConnectionClass = typeToDataConnectionClass.get(type);
+        String caseInsensitiveType = type.toLowerCase(Locale.ROOT);
+        Class<? extends DataConnection> dataConnectionClass = typeToDataConnectionClass.get(caseInsensitiveType);
         if (dataConnectionClass == null) {
             throw new HazelcastException("Data connection type '" + type + "' is not known");
         }
@@ -205,18 +205,18 @@ public class DataConnectionServiceImpl implements InternalDataConnectionService 
 
     public List<DataConnection> getConfigCreatedDataConnections() {
         return dataConnections.values()
-                              .stream()
-                              .filter(dl -> dl.source == CONFIG)
-                              .map(dl -> dl.instance)
-                              .collect(Collectors.toList());
+                .stream()
+                .filter(dl -> dl.source == CONFIG)
+                .map(dl -> dl.instance)
+                .collect(Collectors.toList());
     }
 
     public List<DataConnection> getSqlCreatedDataConnections() {
         return dataConnections.values()
-                              .stream()
-                              .filter(dl -> dl.source == SQL)
-                              .map(dl -> dl.instance)
-                              .collect(Collectors.toList());
+                .stream()
+                .filter(dl -> dl.source == SQL)
+                .map(dl -> dl.instance)
+                .collect(Collectors.toList());
     }
 
     @Override

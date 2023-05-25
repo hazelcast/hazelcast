@@ -582,6 +582,7 @@ public class TopicTest extends HazelcastTestSupport {
         }
 
         assertTrue(latch.await(20, TimeUnit.SECONDS));
+        ex.shutdownNow();
     }
 
     @Test

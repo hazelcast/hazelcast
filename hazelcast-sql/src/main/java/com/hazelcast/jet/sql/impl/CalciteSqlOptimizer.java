@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
@@ -56,6 +56,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.CalcLimitTransposeRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateTopLevelDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.DeletePhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.LimitPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.MustNotExecutePhysicalRel;
@@ -66,6 +67,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.ShouldNotExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.UpdatePhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
@@ -85,8 +87,8 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropType;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
-import com.hazelcast.jet.sql.impl.schema.DataConnectionStorage;
 import com.hazelcast.jet.sql.impl.schema.DataConnectionResolver;
+import com.hazelcast.jet.sql.impl.schema.DataConnectionStorage;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
@@ -235,7 +237,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, this.connectorCache);
         DataConnectionResolver dataConnectionResolver = dataConnectionCatalog(
                 nodeEngine.getDataConnectionService(),
-                this.dataConnectionStorage
+                this.dataConnectionStorage,
+                nodeEngine.getHazelcastInstance().getConfig().getSecurityConfig().isEnabled()
         );
         this.tableResolvers = Arrays.asList(tableResolverImpl, dataConnectionResolver);
         this.planExecutor = new PlanExecutor(
@@ -257,9 +260,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private static DataConnectionResolver dataConnectionCatalog(
             InternalDataConnectionService dataConnectionService,
-            DataConnectionStorage storage
+            DataConnectionStorage storage,
+            boolean isSecurityEnabled
     ) {
-        return new DataConnectionResolver(dataConnectionService, storage);
+        return new DataConnectionResolver(dataConnectionService, storage, isSecurityEnabled);
     }
 
     @Nullable
@@ -555,6 +559,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
     }
 
+    @SuppressWarnings("checkstyle:ReturnCount")
     private SqlPlanImpl toPlan(
             PlanKey planKey,
             QueryParameterMetadata parameterMetadata,
@@ -624,6 +629,20 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     planExecutor,
                     permissions
             );
+        } else if (physicalRel instanceof UpdatePhysicalRel) {
+            checkDmlOperationWithView(physicalRel);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
+            return new DmlPlan(
+                    Operation.UPDATE,
+                    planKey,
+                    parameterMetadata,
+                    dagAndKeys.f1(),
+                    dagAndKeys.f0(),
+                    query,
+                    OptUtils.isUnbounded(physicalRel),
+                    planExecutor,
+                    permissions
+            );
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             assert !isCreateJob;
             DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
@@ -642,6 +661,20 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
             return new DmlPlan(
                     operation,
+                    planKey,
+                    parameterMetadata,
+                    dagAndKeys.f1(),
+                    dagAndKeys.f0(),
+                    query,
+                    OptUtils.isUnbounded(physicalRel),
+                    planExecutor,
+                    permissions
+            );
+        } else if (physicalRel instanceof DeletePhysicalRel) {
+            checkDmlOperationWithView(physicalRel);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
+            return new DmlPlan(
+                    Operation.DELETE,
                     planKey,
                     parameterMetadata,
                     dagAndKeys.f1(),

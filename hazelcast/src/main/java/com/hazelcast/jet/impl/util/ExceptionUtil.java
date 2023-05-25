@@ -22,17 +22,18 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
-import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
+import com.hazelcast.jet.impl.execution.TaskletExecutionException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
@@ -64,8 +65,9 @@ public final class ExceptionUtil {
             tuple3(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class, JobAlreadyExistsException::new),
             tuple3(JET_EXCEPTIONS_RANGE_START + 4, AssertionCompletedException.class, AssertionCompletedException::new),
             tuple3(JET_EXCEPTIONS_RANGE_START + 5, JetDisabledException.class, JetDisabledException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 6, CancellationByUserException.class, CancellationByUserException::new)
-        );
+            tuple3(JET_EXCEPTIONS_RANGE_START + 6, CancellationByUserException.class, CancellationByUserException::new),
+            tuple3(JET_EXCEPTIONS_RANGE_START + 7, TaskletExecutionException.class, TaskletExecutionException::new)
+    );
 
     private ExceptionUtil() { }
 
@@ -76,9 +78,9 @@ public final class ExceptionUtil {
     @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
     public static boolean isRestartableException(Throwable t) {
         return isTopologyException(t)
-                || t instanceof RestartableException
-                || t instanceof JetException && t.getCause() instanceof RestartableException
-                || t instanceof CompletionException && t.getCause() instanceof RestartableException
+                || (t instanceof RestartableException)
+                || (t instanceof JetException && isOrHasCause(t, RestartableException.class))
+                || (t instanceof CompletionException && isOrHasCause(t, RestartableException.class))
                 ;
     }
 

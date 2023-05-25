@@ -24,6 +24,7 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -34,6 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertOpenEventually;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
@@ -41,7 +43,6 @@ import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELA
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
 
 public abstract class AsyncSocket_LargePayloadTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
@@ -55,6 +56,11 @@ public abstract class AsyncSocket_LargePayloadTest {
     private Reactor serverReactor;
 
     public abstract ReactorBuilder newReactorBuilder();
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        assumeNotIbmJDK8();
+    }
 
     @Before
     public void before() {
@@ -283,7 +289,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     break;
                 }
 
-                upcast(payloadBuffer).flip();
+                payloadBuffer.flip();
                 IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
                 responseBuf.writeInt(payloadSize);
                 responseBuf.writeLong(round - 1);
@@ -332,7 +338,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     // not all bytes have been received.
                     break;
                 }
-                upcast(payloadBuffer).flip();
+                payloadBuffer.flip();
                 iteration.incrementAndGet();
 
                 if (round == 0) {

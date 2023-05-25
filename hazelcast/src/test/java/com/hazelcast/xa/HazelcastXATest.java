@@ -234,6 +234,7 @@ public class HazelcastXATest extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             assertFalse(map.isLocked(i));
         }
+        executorService.shutdownNow();
     }
 
     @Test

@@ -203,8 +203,6 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int UPDATE_DATA_CONNECTION_OPERATION = 80;
 
-    public static final int QUERY_DATA_TYPE = 81;
-
     public static final int ROW_HEAP = 82;
     public static final int ROW_EMPTY = 83;
 
@@ -216,8 +214,6 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int INTERVAL_YEAR_MONTH = 87;
     public static final int INTERVAL_DAY_SECOND = 88;
-
-    public static final int QUERY_DATA_TYPE_FIELD = 89;
 
     public static final int EXPRESSION_GET_DDL = 90;
 
@@ -325,8 +321,6 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
         constructors[DATA_CONNECTION] = arg -> new DataConnectionCatalogEntry();
 
-        constructors[QUERY_DATA_TYPE] = arg -> new QueryDataType();
-
         constructors[ROW_HEAP] = arg -> new HeapRow();
         constructors[ROW_EMPTY] = arg -> EmptyRow.INSTANCE;
 
@@ -339,7 +333,6 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_YEAR_MONTH] = arg -> new SqlYearMonthInterval();
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
-        constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
         constructors[EXPRESSION_GET_DDL] = arg -> new GetDdlFunction();
 
         return new ArrayDataSerializableFactory(constructors);
@@ -350,12 +343,16 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         ArrayDataSerializableFactory mapDataFactory = (ArrayDataSerializableFactory) factories.get(SqlDataSerializerHook.F_ID);
 
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors =
-                new ConstructorFunction[SqlDataSerializerHook.TYPE_FIELD + 1];
+                new ConstructorFunction[SqlDataSerializerHook.LEN];
+        constructors[SqlDataSerializerHook.QUERY_DATA_TYPE] = arg -> new QueryDataType();
+        // SqlDataSerializerHook.QUERY_ID
         constructors[SqlDataSerializerHook.MAPPING] = arg -> new Mapping();
         constructors[SqlDataSerializerHook.MAPPING_FIELD] = arg -> new MappingField();
         constructors[SqlDataSerializerHook.VIEW] = arg -> new View();
         constructors[SqlDataSerializerHook.TYPE] = arg -> new Type();
         constructors[SqlDataSerializerHook.TYPE_FIELD] = arg -> new Type.TypeField();
+        // SqlDataSerializerHook.ROW_VALUE
+        constructors[SqlDataSerializerHook.QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
 
         mapDataFactory.mergeConstructors(constructors);
     }

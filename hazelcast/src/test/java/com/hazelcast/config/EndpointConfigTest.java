@@ -22,6 +22,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,5 +37,29 @@ public class EndpointConfigTest extends HazelcastTestSupport {
                 .usingGetClass()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
+    }
+
+    @Test
+    public void testKeepCountValidation() {
+        EndpointConfig endpointConfig = new EndpointConfig();
+        Assert.assertThrows(IllegalArgumentException.class, () -> endpointConfig.setSocketKeepCount(0));
+        Assert.assertThrows(IllegalArgumentException.class, () -> endpointConfig.setSocketKeepCount(128));
+        Assert.assertThrows(IllegalArgumentException.class, () -> endpointConfig.setSocketKeepCount(-3));
+    }
+
+    @Test
+    public void testKeepIdleSecondsValidation() {
+        EndpointConfig endpointConfig = new EndpointConfig();
+        Assert.assertThrows(IllegalArgumentException.class, () -> endpointConfig.setSocketKeepIdleSeconds(0));
+        Assert.assertThrows(IllegalArgumentException.class, () -> endpointConfig.setSocketKeepIdleSeconds(32768));
+        Assert.assertThrows(IllegalArgumentException.class, () -> endpointConfig.setSocketKeepIdleSeconds(-17));
+    }
+
+    @Test
+    public void testKeepIntervalSecondsValidation() {
+        EndpointConfig endpointConfig = new EndpointConfig();
+        Assert.assertThrows(IllegalArgumentException.class, () -> endpointConfig.setSocketKeepIntervalSeconds(0));
+        Assert.assertThrows(IllegalArgumentException.class, () -> endpointConfig.setSocketKeepIntervalSeconds(32768));
+        Assert.assertThrows(IllegalArgumentException.class, () -> endpointConfig.setSocketKeepIntervalSeconds(-17));
     }
 }

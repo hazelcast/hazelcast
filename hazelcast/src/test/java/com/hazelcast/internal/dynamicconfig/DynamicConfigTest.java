@@ -690,6 +690,20 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         assertConfigurationsEqualOnAllMembers(dataConnectionConfig);
     }
 
+    /**
+     * Reproducer for <a href="https://github.com/hazelcast/hazelcast/issues/24533">GH issue</a>.
+     */
+    @Test
+    public void testDataConnectionConfig_missingType() {
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig();
+
+        Exception ex = assertThrows(IllegalArgumentException.class,
+                () -> driver.getConfig().addDataConnectionConfig(dataConnectionConfig));
+        assertThat(ex.getMessage())
+                .contains("Data connection type must be non-null and contain text")
+                .contains("Data connection name must be non-null and contain text");
+    }
+
     private void assertConfigurationsEqualOnAllMembers(DataConnectionConfig expectedConfig) {
         assertConfigurationsEqualOnAllMembers(expectedConfig, Config::getDataConnectionConfig);
     }

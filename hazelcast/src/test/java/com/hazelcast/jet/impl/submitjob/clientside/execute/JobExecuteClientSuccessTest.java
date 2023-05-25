@@ -168,7 +168,11 @@ public class JobExecuteClientSuccessTest extends JetTestSupport {
 
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
-        assertEqualsEventually(() -> jetService.getJobs().size(), jobLimit);
+        try {
+            assertEqualsEventually(() -> jetService.getJobs().size(), jobLimit);
+        } finally {
+            executorService.shutdownNow();
+        }
     }
 
     @Test

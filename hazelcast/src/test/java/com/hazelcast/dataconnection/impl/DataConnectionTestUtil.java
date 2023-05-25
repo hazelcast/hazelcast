@@ -46,11 +46,21 @@ public final class DataConnectionTestUtil {
     public static void configureJdbcDataConnection(String name, String jdbcUrl, String username, String password, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
-        properties.put("username", username);
+        properties.put("user", username);
         properties.put("password", password);
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName(name)
                 .setType("jdbc")
+                .setProperties(properties);
+        config.getDataConnectionConfigs().put(name, dataConnectionConfig);
+    }
+
+    public static void configureMongoDataConnection(String name, String connectionString, Config config) {
+        Properties properties = new Properties();
+        properties.put("connectionString", connectionString);
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+                .setName(name)
+                .setType("mongo")
                 .setProperties(properties);
         config.getDataConnectionConfigs().put(name, dataConnectionConfig);
     }
@@ -75,8 +85,14 @@ public final class DataConnectionTestUtil {
         public Collection<DataConnectionResource> listResources() {
             return Arrays.asList(
                     new DataConnectionResource("testType1", "testName1"),
-                    new DataConnectionResource("testType2", "testName2")
+                    new DataConnectionResource("testType2", "testPrefix1", "testName2")
             );
+        }
+
+        @Nonnull
+        @Override
+        public Collection<String> resourceTypes() {
+            return Arrays.asList("testType1", "testType2");
         }
 
         @Override

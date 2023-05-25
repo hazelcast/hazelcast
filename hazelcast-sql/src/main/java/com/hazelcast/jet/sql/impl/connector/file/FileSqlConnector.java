@@ -60,20 +60,19 @@ public class FileSqlConnector implements SqlConnector {
         return TYPE_NAME;
     }
 
+    @Nonnull
     @Override
-    public boolean isStream() {
-        return false;
+    public String defaultObjectType() {
+        return "File";
     }
 
     @Nonnull
     @Override
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
-            @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName) {
-        return resolveAndValidateFields(options, userFields);
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull List<MappingField> userFields) {
+        return resolveAndValidateFields(externalResource.options(), userFields);
     }
 
     @Nonnull
@@ -90,11 +89,9 @@ public class FileSqlConnector implements SqlConnector {
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull String[] externalName,
-            @Nullable String dataConnectionName,
-            @Nonnull Map<String, String> options,
+            @Nonnull SqlExternalResource externalResource,
             @Nonnull List<MappingField> resolvedFields) {
-        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, options);
+        Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, externalResource.options());
 
         return new FileTable.SpecificFileTable(
                 INSTANCE,
@@ -102,7 +99,8 @@ public class FileSqlConnector implements SqlConnector {
                 mappingName,
                 metadata.fields(),
                 metadata.processorMetaSupplier(),
-                metadata.queryTargetSupplier()
+                metadata.queryTargetSupplier(),
+                externalResource.objectType()
         );
     }
 
@@ -138,7 +136,7 @@ public class FileSqlConnector implements SqlConnector {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }
 
-        FileTable table = (FileTable) context.getTable();
+        FileTable table = context.getTable();
 
         Vertex vStart = context.getDag().newUniqueVertex(table.toString(), table.processorMetaSupplier());
 
@@ -155,5 +153,10 @@ public class FileSqlConnector implements SqlConnector {
 
         context.getDag().edge(between(vStart, vEnd).isolated());
         return vEnd;
+    }
+
+    @Override
+    public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
+        return true;
     }
 }

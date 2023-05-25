@@ -214,13 +214,14 @@ class FieldResolver {
                 fields.put("operationType", new DocumentField(BsonType.STRING, "operationType"));
                 fields.put("resumeToken", new DocumentField(BsonType.STRING, "resumeToken"));
                 fields.put("wallTime", new DocumentField(BsonType.DATE_TIME, "wallTime"));
-                fields.put("ts", new DocumentField(BsonType.DATE_TIME, "ts"));
+                fields.put("ts", new DocumentField(BsonType.TIMESTAMP, "ts"));
                 fields.put("clusterTime", new DocumentField(BsonType.TIMESTAMP, "clusterTime"));
             }
         }
         return fields;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private Document getIgnoringNulls(@Nonnull Document doc, @Nonnull String... options) {
         Document returned = doc;
         for (String option : options) {

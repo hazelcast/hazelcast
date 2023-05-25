@@ -61,7 +61,7 @@ public class PlanCacheChecker {
             for (Table table : tableMap.values()) {
                 PlanObjectKey objectKey = table.getObjectKey();
 
-                if (objectKey != null) {
+                if (objectKey != null && objectKey != PlanObjectKey.NON_CACHEABLE_OBJECT_KEY) {
                     objectKeys.add(objectKey);
                 }
             }

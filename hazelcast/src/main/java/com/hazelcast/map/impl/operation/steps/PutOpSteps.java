@@ -20,7 +20,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
@@ -57,10 +56,6 @@ public enum PutOpSteps implements IMapOpStep {
 
         @Override
         public void runStep(State state) {
-            if (state.getRecordStore().getMapDataStore() == MapDataStores.EMPTY_MAP_DATA_STORE) {
-                return;
-            }
-
             StaticParams staticParams = state.getStaticParams();
             if (staticParams.isPutVanilla()) {
                 state.setOldValue(((DefaultRecordStore) state.getRecordStore())
@@ -140,7 +135,7 @@ public enum PutOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             if (state.isStopExecution()) {
-                return UtilSteps.SEND_RESPONSE;
+                return UtilSteps.FINAL_STEP;
             }
             return state.getStaticParams().isTransient() ? ON_STORE : STORE;
         }
@@ -201,7 +196,7 @@ public enum PutOpSteps implements IMapOpStep {
 
         @Override
         public Step nextStep(State state) {
-            return UtilSteps.SEND_RESPONSE;
+            return UtilSteps.FINAL_STEP;
         }
     };
 

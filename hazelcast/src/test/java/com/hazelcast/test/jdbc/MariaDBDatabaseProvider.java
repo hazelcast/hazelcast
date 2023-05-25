@@ -16,26 +16,35 @@
 
 package com.hazelcast.test.jdbc;
 
-import org.testcontainers.jdbc.ContainerDatabaseDriver;
+import org.testcontainers.containers.MariaDBContainer;
 
 public class MariaDBDatabaseProvider implements TestDatabaseProvider {
 
+    public static final String TEST_MARIADB_VERSION = System.getProperty("test.mariadb.version", "10.3");
+
     private static final int LOGIN_TIMEOUT = 120;
 
-    private String jdbcUrl;
+    private MariaDBContainer<?> container;
 
     @Override
     public String createDatabase(String dbName) {
-        jdbcUrl = "jdbc:tc:mariadb:10.3:///" + dbName + "?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
+        container = new MariaDBContainer<>("mariadb:" + TEST_MARIADB_VERSION)
+                .withDatabaseName(dbName)
+                .withUsername("user")
+                .withUrlParam("user", "user")
+                .withUrlParam("password", "test");
+
+        container.start();
+        String jdbcUrl = container.getJdbcUrl();
         waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }
 
     @Override
     public void shutdown() {
-        if (jdbcUrl != null) {
-            ContainerDatabaseDriver.killContainer(jdbcUrl);
-            jdbcUrl = null;
+        if (container != null) {
+            container.stop();
+            container = null;
         }
     }
 }

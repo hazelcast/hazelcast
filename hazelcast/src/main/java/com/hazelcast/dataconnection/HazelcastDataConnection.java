@@ -24,11 +24,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionClientConfigBuilder;
 import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionConfigLoader;
 import com.hazelcast.dataconnection.impl.hazelcastdataconnection.HazelcastDataConnectionConfigValidator;
+import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 /**
@@ -62,26 +64,34 @@ public class HazelcastDataConnection extends DataConnectionBase {
      */
     public static final String CLIENT_YML_PATH = "client_yml_path";
 
+    /**
+     * IMap Journal resource type name
+     */
+    public static final String OBJECT_TYPE_IMAP_JOURNAL = "IMapJournal";
+
     private final ClientConfig clientConfig;
 
     /**
      * The cached client instance
      */
-    private volatile HazelcastClientProxy proxy;
+    private ConcurrentMemoizingSupplier<HazelcastClientProxy> proxy;
 
     public HazelcastDataConnection(@Nonnull DataConnectionConfig dataConnectionConfig) {
         super(dataConnectionConfig);
         this.clientConfig = buildClientConfig();
 
         if (dataConnectionConfig.isShared()) {
-            HazelcastClientProxy hazelcastClientProxy = (HazelcastClientProxy) HazelcastClient
-                    .newHazelcastClient(clientConfig);
-            this.proxy = new HazelcastClientProxy(hazelcastClientProxy.client) {
-                @Override
-                public void shutdown() {
-                    release();
-                }
-            };
+
+            this.proxy = new ConcurrentMemoizingSupplier<>(() -> {
+                HazelcastClientProxy hazelcastClientProxy = (HazelcastClientProxy) HazelcastClient
+                        .newHazelcastClient(clientConfig);
+                return new HazelcastClientProxy(hazelcastClientProxy.client) {
+                    @Override
+                    public void shutdown() {
+                        release();
+                    }
+                };
+            });
         }
     }
 
@@ -103,13 +113,19 @@ public class HazelcastDataConnection extends DataConnectionBase {
 
     @Nonnull
     @Override
+    public Collection<String> resourceTypes() {
+        return Collections.singleton(OBJECT_TYPE_IMAP_JOURNAL);
+    }
+
+    @Nonnull
+    @Override
     public Collection<DataConnectionResource> listResources() {
         HazelcastInstance instance = getClient();
         try {
             return instance.getDistributedObjects()
                     .stream()
                     .filter(IMap.class::isInstance)
-                    .map(o -> new DataConnectionResource("IMap", o.getName()))
+                    .map(o -> new DataConnectionResource(OBJECT_TYPE_IMAP_JOURNAL, o.getName()))
                     .collect(Collectors.toList());
         } finally {
             instance.shutdown();
@@ -133,7 +149,7 @@ public class HazelcastDataConnection extends DataConnectionBase {
     public HazelcastInstance getClient() {
         if (getConfig().isShared()) {
             retain();
-            return proxy;
+            return proxy.get();
         } else {
             return HazelcastClient.newHazelcastClient(clientConfig);
         }
@@ -142,8 +158,11 @@ public class HazelcastDataConnection extends DataConnectionBase {
     @Override
     public synchronized void destroy() {
         if (proxy != null) {
-            // the proxy has overridden shutdown method, need to close real client
-            proxy.client.shutdown();
+            HazelcastClientProxy rememberedProxy = proxy.remembered();
+            if (rememberedProxy != null) {
+                // the proxy has overridden shutdown method, need to close real client
+                rememberedProxy.client.shutdown();
+            }
             proxy = null;
         }
     }

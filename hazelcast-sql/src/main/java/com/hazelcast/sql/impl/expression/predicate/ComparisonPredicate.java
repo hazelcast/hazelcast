@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.impl.Comparables;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -59,7 +60,7 @@ public final class ComparisonPredicate extends BiExpression<Boolean> {
         return JetSqlSerializerHook.EXPRESSION_COMPARISON;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({"rawtypes"})
     @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "Any SQL expression may return null")
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
@@ -88,13 +89,12 @@ public final class ComparisonPredicate extends BiExpression<Boolean> {
                 throw QueryException.error(
                         "Cannot compare OBJECT value because " + leftClass + " doesn't implement Comparable interface");
             }
-
         }
 
         Comparable leftComparable = (Comparable) left;
         Comparable rightComparable = (Comparable) right;
 
-        int order = leftComparable.compareTo(rightComparable);
+        int order = Comparables.compare(leftComparable, rightComparable);
 
         switch (mode) {
             case EQUALS:
