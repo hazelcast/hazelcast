@@ -37,7 +37,10 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQ
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
 
-public class StorageDeviceScheduler {
+/**
+ * Todo: The IOScheduler should be a scheduler for all storage devices. Currently it is only for a single device.
+ */
+public class FileIOScheduler {
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
@@ -47,62 +50,63 @@ public class StorageDeviceScheduler {
     private final LongObjectHashMap<CompletionHandler> handlers;
     private final SubmissionQueue sq;
     private final StorageDevice dev;
-    private int concurrent;
+    private int queueDepth;
     // a queue of IoOps that could not be submitted to io_uring because either
     // io_uring was full or because the max number of concurrent IoOps for that
     // device was exceeded.
-    private final CircularQueue<IO> waitQueue;
-    private final SlabAllocator<IO> ioAllocator;
+    private final CircularQueue<FileIO> waitQueue;
+    private final SlabAllocator<FileIO> ioAllocator;
     private long count;
 
-    public StorageDeviceScheduler(StorageDevice dev, IOUringEventloop eventloop) {
+    public FileIOScheduler(StorageDevice dev, IOUringEventloop eventloop) {
         this.dev = dev;
         this.path = dev.path();
         this.maxConcurrent = dev.maxConcurrent();
         this.waitQueue = new CircularQueue<>(dev.maxWaiting());
-        this.ioAllocator = new SlabAllocator<>(dev.maxWaiting(), IO::new);
+        this.ioAllocator = new SlabAllocator<>(dev.maxWaiting(), FileIO::new);
         this.eventloop = eventloop;
         this.handlers = eventloop.handlers;
         this.sq = eventloop.sq;
     }
 
-    public IO allocateIO() {
+    /**
+     * Reserves a single IO. The IO is not submitted to io_uring yet.
+     * <p/>
+     * If a non null value is returned, it is guaranteed that {@link #submit(FileIO)} will complete successfully.
+     *
+     * @return the reserved IO or null if there is no space.
+     */
+    public FileIO reserve() {
+        //todo: not the right condition
+        if(queueDepth >= maxConcurrent) {
+            return null;
+        }
+
         return ioAllocator.allocate();
     }
 
-    public Promise<Integer> submit(IO io) {
-
-        Promise<Integer> promise = eventloop.promiseAllocator.allocate();
-        io.promise = promise;
-
-        if (concurrent < maxConcurrent) {
+    public void submit(FileIO io) {
+        if (queueDepth < maxConcurrent) {
             offerIO(io);
         } else if (!waitQueue.offer(io)) {
-            io.release();
-            // todo: better approach needed
-            promise.completeWithIOException(
-                    "Overload. Max concurrent operations " + maxConcurrent + " dev: [" + dev.path() + "]", null);
+            throw new IllegalStateException("Too many concurrent IOs");
         }
-
-        // System.out.println("Request scheduled");
-
-        return promise;
     }
 
     private void scheduleNext() {
-        if (concurrent < maxConcurrent) {
-            IO io = waitQueue.poll();
+        if (queueDepth < maxConcurrent) {
+            FileIO io = waitQueue.poll();
             if (io != null) {
                 offerIO(io);
             }
         }
     }
 
-    private void offerIO(IO io) {
+    private void offerIO(FileIO io) {
         long userdata = eventloop.nextTmpHandlerId();
         handlers.put(userdata, io);
 
-        concurrent++;
+        queueDepth++;
 
         int index = sq.nextIndex();
         if (index >= 0) {
@@ -124,9 +128,8 @@ public class StorageDeviceScheduler {
         }
     }
 
-    public class IO implements CompletionHandler {
+    public class FileIO implements CompletionHandler {
         public IOBuffer buf;
-        public long writeId;
         public IOUringAsyncFile file;
         public long offset;
         public int len;
@@ -138,7 +141,7 @@ public class StorageDeviceScheduler {
 
         @Override
         public void handle(int res, int flags, long userdata) {
-            concurrent--;
+            queueDepth--;
             if (res < 0) {
                 String message = "I/O error"
                         + ", error-message: [" + Linux.strerror(-res) + "]"
@@ -146,14 +149,8 @@ public class StorageDeviceScheduler {
                         + ", path: [" + file.path() + "]"
                         + ", " + this;
                 promise.completeWithIOException(message, null);
-
-                // todo: if there is trailing fsync
-
             } else {
-                // todo: nasty hack
                 if (buf != null) {
-//                    System.out.println("res:"+res);
-//                    System.out.println(BufferUtil.toDebugString("buf",buf.byteBuffer()));
                     buf.incPosition(res);
                 }
                 // todo: this is where we want to deal with the sync.

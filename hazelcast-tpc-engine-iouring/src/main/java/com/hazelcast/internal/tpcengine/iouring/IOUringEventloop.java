@@ -51,7 +51,7 @@ public class IOUringEventloop extends Eventloop {
 
     private final IOUringReactor ioUringReactor;
     private final StorageDeviceRegistry deviceRegistry;
-    final Map<StorageDevice, StorageDeviceScheduler> deviceSchedulers = new HashMap<>();
+    final Map<StorageDevice, FileIOScheduler> deviceSchedulers = new HashMap<>();
     private final IOUring uring;
 
     final LongObjectHashMap<CompletionHandler> handlers = new LongObjectHashMap<>(4096);

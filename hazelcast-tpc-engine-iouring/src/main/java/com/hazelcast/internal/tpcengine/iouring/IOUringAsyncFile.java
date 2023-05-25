@@ -18,11 +18,12 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 
 import com.hazelcast.internal.tpcengine.Promise;
+import com.hazelcast.internal.tpcengine.PromiseAllocator;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.AsyncFileMetrics;
 import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpcengine.iouring.StorageDeviceScheduler.IO;
+import com.hazelcast.internal.tpcengine.iouring.FileIOScheduler.FileIO;
 
 import java.nio.charset.StandardCharsets;
 import java.util.function.BiConsumer;
@@ -44,30 +45,28 @@ import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIO
 public final class IOUringAsyncFile extends AsyncFile {
     StorageDevice dev;
     int fd;
-    long newestWriteSeq;
-    long[] fences;
 
     private final IOUringEventloop eventloop;
     private final String path;
-    private final StorageDeviceScheduler scheduler;
-
+    private final FileIOScheduler ioScheduler;
+    private final PromiseAllocator promiseAllocator;
 
     // todo: Using path as a string forces creating litter.
     IOUringAsyncFile(String path, IOUringReactor reactor) {
         this.path = path;
         this.eventloop = (IOUringEventloop) reactor.eventloop();
-
+        this.promiseAllocator = eventloop.promiseAllocator;
         this.dev = reactor.deviceRegistry.findStorageDevice(path);
         if (dev == null) {
             throw newUncheckedIOException("Could not find storage device for [" + path() + "]");
         }
 
-        StorageDeviceScheduler scheduler = eventloop.deviceSchedulers.get(dev);
-        if (scheduler == null) {
-            scheduler = new StorageDeviceScheduler(dev, eventloop);
-            eventloop.deviceSchedulers.put(dev, scheduler);
+        FileIOScheduler ioScheduler = eventloop.deviceSchedulers.get(dev);
+        if (ioScheduler == null) {
+            ioScheduler = new FileIOScheduler(dev, eventloop);
+            eventloop.deviceSchedulers.put(dev, ioScheduler);
         }
-        this.scheduler = scheduler;
+        this.ioScheduler = ioScheduler;
     }
 
     @Override
@@ -82,67 +81,113 @@ public final class IOUringAsyncFile extends AsyncFile {
 
     @Override
     public Promise<Integer> nop() {
+        Promise promise = promiseAllocator.allocate();
+
+        FileIO io = ioScheduler.reserve();
+        if (io == null) {
+            return failOnOverload(promise);
+        }
         metrics.incNops();
 
-        IO io = scheduler.allocateIO();
+        io.promise = promise;
         io.file = this;
         io.opcode = IORING_OP_NOP;
-        return scheduler.submit(io);
+
+        ioScheduler.submit(io);
+        return promise;
+    }
+
+    private static Promise failOnOverload(Promise promise) {
+
+//        promise.completeWithIOException(
+//                "Overload. Max concurrent operations " + maxConcurrent + " dev: [" + dev.path() + "]", null);
+
+        promise.completeWithIOException("No more IO available ", null);
+        return promise;
     }
 
     @Override
     public Promise<Integer> pread(long offset, int length, IOBuffer dst) {
-        final AsyncFileMetrics metrics = this.metrics;
+        Promise promise = promiseAllocator.allocate();
+
+        FileIO io = ioScheduler.reserve();
+        if (io == null) {
+            return failOnOverload(promise);
+        }
+        AsyncFileMetrics metrics = this.metrics;
         metrics.incReads();
         metrics.incBytesRead(length);
 
-        IO io = scheduler.allocateIO();
         io.file = this;
+        io.promise = promise;
         io.opcode = IORING_OP_READ;
         io.buf = dst;
         io.addr = dst.address();
         io.len = length;
         io.offset = offset;
-        return scheduler.submit(io);
+
+        ioScheduler.submit(io);
+
+        return promise;
     }
 
     @Override
     public Promise<Integer> pwrite(long offset, int length, IOBuffer src) {
+        Promise promise = promiseAllocator.allocate();
+        FileIO io = ioScheduler.reserve();
+        if (io == null) {
+            return failOnOverload(promise);
+        }
+
         final AsyncFileMetrics metrics = this.metrics;
         metrics.incWrites();
         metrics.incBytesWritten(length);
 
-        IO io = scheduler.allocateIO();
         io.file = this;
+        io.promise = promise;
         io.opcode = IORING_OP_WRITE;
         io.buf = src;
         io.addr = src.address();
         io.len = length;
         io.offset = offset;
 
-        return scheduler.submit(io);
+        ioScheduler.submit(io);
+        return promise;
     }
 
     @Override
     public Promise<Integer> fsync() {
-        metrics.incFsyncs();
+        Promise promise = promiseAllocator.allocate();
+        FileIO io = ioScheduler.reserve();
+        if (io == null) {
+            return failOnOverload(promise);
+        }
 
-        IO io = scheduler.allocateIO();
         io.file = this;
+        io.promise = promise;
         io.opcode = IORING_OP_FSYNC;
-        return scheduler.submit(io);
+        metrics.incFsyncs();
+        ioScheduler.submit(io);
+        return promise;
     }
 
     @Override
     public Promise<Integer> fdatasync() {
+        Promise promise = promiseAllocator.allocate();
+        FileIO io = ioScheduler.reserve();
+        if (io == null) {
+            return failOnOverload(promise);
+        }
+
         metrics.incFdatasyncs();
 
-        IO io = scheduler.allocateIO();
         io.file = this;
+        io.promise = promise;
         io.opcode = IORING_OP_FSYNC;
         // The IOURING_FSYNC_DATASYNC maps to the same position as the rw-flags
         io.rwFlags = IORING_FSYNC_DATASYNC;
-        return scheduler.submit(io);
+        ioScheduler.submit(io);
+        return promise;
     }
 
     @Override
@@ -174,7 +219,8 @@ public final class IOUringAsyncFile extends AsyncFile {
 
     @Override
     public Promise<Integer> open(int flags, int permissions) {
-        Promise<Integer> p = eventloop.promiseAllocator.allocate();
+        Promise<Integer> promise = eventloop.promiseAllocator.allocate();
+        Promise<Integer> openat = eventloop.promiseAllocator.allocate();
 
         // todo: unwanted litter.
         byte[] chars = path.getBytes(StandardCharsets.UTF_8);
@@ -185,41 +231,55 @@ public final class IOUringAsyncFile extends AsyncFile {
         pathBuffer.writeChar('\0');
         pathBuffer.flip();
 
-        IO io = scheduler.allocateIO();
+        FileIO io = ioScheduler.reserve();
+        if (io == null) {
+            return failOnOverload(promise);
+        }
+
+        io.promise = openat;
         io.file = this;
         io.opcode = IORING_OP_OPENAT;
         io.rwFlags = flags;
         io.addr = pathBuffer.address();
+        // todo: we are not going to set the pathBuffer on the io, because we do not want the pathBuffer
+        // to be updated as part of the openat completion. THe returned value is the fd of the opened file
+        // and not the number of bytes read/written
         io.len = permissions;// len field is used for the permissions
 
-        // https://man.archlinux.org/man/io_uring_enter.2.en
-        Promise openat = scheduler.submit(io);
+        ioScheduler.submit(io);
 
-        openat.then((BiConsumer<Integer, Throwable>) (fd, throwable) -> {
+        openat.then((fd, throwable) -> {
             pathBuffer.release();
 
             if (throwable != null) {
-                p.completeWithIOException("Can't open file [" + path + "]", throwable);
+                promise.completeWithIOException("Can't open file [" + path + "]", throwable);
                 return;
             }
 
             IOUringAsyncFile.this.fd = fd;
             if (fd < 0) {
-                p.completeWithIOException("Can't open file [" + path + "]", null);
+                promise.completeWithIOException("Can't open file [" + path + "]", null);
             } else {
-                p.complete(0);
+                promise.complete(0);
             }
         });
 
-        return p;
+        return promise;
     }
 
     @Override
     public Promise<Integer> close() {
-        IO io = scheduler.allocateIO();
+        Promise promise = promiseAllocator.allocate();
+        FileIO io = ioScheduler.reserve();
+        if (io == null) {
+            return failOnOverload(promise);
+        }
+
         io.file = this;
+        io.promise = promise;
         io.opcode = IORING_OP_CLOSE;
-        return scheduler.submit(io);
+        ioScheduler.submit(io);
+        return promise;
     }
 
     @Override
