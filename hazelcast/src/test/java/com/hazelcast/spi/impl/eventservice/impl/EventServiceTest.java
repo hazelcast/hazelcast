@@ -42,7 +42,6 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -74,7 +73,7 @@ public class EventServiceTest extends HazelcastTestSupport {
 
         assertEquals(registrationIds.size(), registrations.size());
         for (EventRegistration registration : registrations) {
-            assertThat(registrationIds, hasItem(registration.getId()));
+            assertThat(registrationIds).contains(registration.getId());
         }
     }
 

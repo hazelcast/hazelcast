@@ -33,7 +33,7 @@ import java.util.Collection;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 /**
@@ -212,10 +212,10 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
 
         // THEN
         if (expected.throwables == null) {
-            assertThat(values, hasSize(expected.objects.length));
+            assertThat(values).hasSize(expected.objects.length);
             if (expected.objects.length > 0) {
                 translate(expected.objects);
-                assertThat(values, containsInAnyOrder(expected.objects));
+                assertThat(values).containsExactlyInAnyOrder(expected.objects);
             }
         }
     }

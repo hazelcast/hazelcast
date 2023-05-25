@@ -31,7 +31,7 @@ import static com.hazelcast.query.impl.predicates.PredicateTestUtils.createMockN
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -50,8 +50,8 @@ public class OrPredicateTest {
         AndPredicate result = (AndPredicate) or.negate();
 
         Predicate[] inners = result.predicates;
-        assertThat(inners, arrayWithSize(1));
-        assertThat(inners, arrayContainingInAnyOrder(negated));
+        assertThat(inners).hasSize(1);
+        assertThat(inners).containsExactlyInAnyOrder(negated);
     }
 
     @Test
@@ -65,10 +65,10 @@ public class OrPredicateTest {
         AndPredicate result = (AndPredicate) or.negate();
 
         Predicate[] inners = result.predicates;
-        assertThat(inners, arrayWithSize(1));
+        assertThat(inners).hasSize(1);
 
         NotPredicate notPredicate = (NotPredicate) inners[0];
-        assertThat(nonNegatable, sameInstance(notPredicate.predicate));
+        assertThat(nonNegatable).isSameAs(notPredicate.predicate);
     }
 
     @Test

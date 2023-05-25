@@ -20,7 +20,7 @@ import static java.lang.String.format;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -71,7 +71,7 @@ public class SmokeModulePathTest {
     public void testModuleNames() {
         Set<String> hazelcastModuleNames = ModuleLayer.boot().modules().stream().map(Module::getName)
                 .filter(s -> s.contains("hazelcast")).collect(Collectors.toSet());
-        assertThat(hazelcastModuleNames, hasItems("com.hazelcast.core", "com.hazelcast.test.modulepath"));
+        assertThat(hazelcastModuleNames).contains("com.hazelcast.core", "com.hazelcast.test.modulepath");
     }
 
     /**

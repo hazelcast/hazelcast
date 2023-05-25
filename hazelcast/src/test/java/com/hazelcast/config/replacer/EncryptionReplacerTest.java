@@ -40,7 +40,7 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assume.assumeNotNull;
 
 /**
@@ -128,7 +128,9 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
         File configFile = createFileWithString(xml);
         hazelcastConfigProperty.setOrClearProperty(configFile.getAbsolutePath());
         String encrypted = encrypt("test");
-        assertThat(encrypted, allOf(startsWith("$ENC{"), endsWith("}")));
+        assertThat(encrypted)
+                .startsWith("$ENC{")
+                .endsWith("}");
     }
 
     @Test
@@ -138,7 +140,9 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
         File configFile = createFileWithString(xml);
         hazelcastConfigProperty.setOrClearProperty(configFile.getAbsolutePath());
         String encrypted = encrypt("test");
-        assertThat(encrypted, allOf(startsWith("$ENC{"), endsWith("}")));
+        assertThat(encrypted)
+                .startsWith("$ENC{")
+                .endsWith("}");
     }
 
     @Test
@@ -149,7 +153,9 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
         File configFile = createFileWithString(xml);
         hazelcastConfigProperty.setOrClearProperty(configFile.getAbsolutePath());
         String encrypted = encrypt("test");
-        assertThat(encrypted, allOf(startsWith("$ENC{"), endsWith("}")));
+        assertThat(encrypted)
+                .startsWith("$ENC{")
+                .endsWith("}");
     }
 
     @Test
@@ -160,7 +166,9 @@ public class EncryptionReplacerTest extends AbstractPbeReplacerTest {
         File configFile = createFileWithString(xml);
         hazelcastConfigProperty.setOrClearProperty(configFile.getAbsolutePath());
         String encrypted = encrypt("test");
-        assertThat(encrypted, allOf(startsWith("$ENC{"), endsWith("}")));
+        assertThat(encrypted)
+                .startsWith("$ENC{")
+                .endsWith("}");
     }
 
     @Override

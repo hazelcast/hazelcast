@@ -65,7 +65,7 @@ import static java.lang.Boolean.TRUE;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -252,7 +252,9 @@ public class PredicatesTest extends HazelcastTestSupport {
     public void testILike_Id() {
         ILikePredicate predicate = (ILikePredicate) ilike(ATTRIBUTE, "Java_World");
 
-        assertThat(predicate.getClassId(), allOf(equalTo(6), equalTo(PredicateDataSerializerHook.ILIKE_PREDICATE)));
+        assertThat(predicate.getClassId())
+                .isEqualTo(6)
+                .isEqualTo(PredicateDataSerializerHook.ILIKE_PREDICATE);
     }
 
     @Test

@@ -68,7 +68,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -445,7 +445,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
                 k++;
             }
         }
-        assertThat(k, greaterThan(0));
+        assertThat(k).isGreaterThan(0);
     }
 
     private static void assertNoPartitionsAssigned(HazelcastInstance instance) {

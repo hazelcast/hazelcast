@@ -144,7 +144,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
         assertTrue(scheduler.schedule(3000, "k", "z"));
         assertEquals(3, scheduler.size());
         ScheduledEntry<String, String> scheduledSample = scheduler.get("k"); // unspecified which one will be returned
-        assertThat(scheduledSample.getValue(), isIn(asList("x", "y", "z")));
+        assertThat(scheduledSample.getValue()).isIn(asList("x", "y", "z"));
     }
 
     @Test
@@ -234,11 +234,11 @@ public class SecondsBasedEntryTaskSchedulerTest {
         verify(entryProcessor, atLeastOnce()).process(same(scheduler), entriesCaptor.capture());
 
         List<String> entriesPassedToProcessor = entriesCaptor.getAllValues().stream()
-                .flatMap(Collection::stream)
-                .map(entry -> entry.getKey() + ":" + entry.getValue())
-                .collect(toList());
+                                                             .flatMap(Collection::stream)
+                                                             .map(entry -> entry.getKey() + ":" + entry.getValue())
+                                                             .collect(toList());
 
-        assertThat(entriesPassedToProcessor, contains("k:z", "j:v"));
+        assertThat(entriesPassedToProcessor).containsExactlyInAnyOrder("k:z", "j:v");
     }
 
     @Test

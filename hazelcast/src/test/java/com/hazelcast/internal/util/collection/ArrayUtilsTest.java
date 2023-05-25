@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -54,8 +54,8 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
         Object[] original = new Object[0];
         Object[] result = ArrayUtils.createCopy(original);
 
-        assertThat(result, not(sameInstance(original)));
-        assertThat(result, emptyArray());
+        assertThat(result).isNotSameAs(original);
+        assertThat(result).isEmpty();
     }
 
     @Test
@@ -65,9 +65,9 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
         original[0] = o;
 
         Object[] result = ArrayUtils.createCopy(original);
-        assertThat(result, not(sameInstance(original)));
-        assertThat(result, arrayWithSize(1));
-        assertThat(result[0], sameInstance(o));
+        assertThat(result).isNotSameAs(original);
+        assertThat(result).hasSize(1);
+        assertThat(result[0]).isSameAs(o);
     }
 
 
@@ -78,7 +78,7 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
         Object[] dst = new Object[0];
 
         ArrayUtils.copyWithoutNulls(src, dst);
-        assertThat(dst, emptyArray());
+        assertThat(dst).isEmpty();
     }
 
     @Test
@@ -89,8 +89,8 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
         Object[] dst = new Object[1];
 
         ArrayUtils.copyWithoutNulls(src, dst);
-        assertThat(dst, arrayWithSize(1));
-        assertThat(dst[0], sameInstance(o));
+        assertThat(dst).hasSize(1);
+        assertThat(dst[0]).isSameAs(o);
     }
 
     @Test

@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -191,7 +191,7 @@ public class LongHashSetTest {
         final LongHashSet other = new LongHashSet(1000, -1);
         other.copy(set);
 
-        assertThat(other, contains(2L, 1L));
+        assertThat(other).containsExactlyInAnyOrder(2L, 1L);
     }
 
     @Test

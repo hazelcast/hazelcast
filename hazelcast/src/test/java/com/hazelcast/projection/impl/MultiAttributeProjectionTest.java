@@ -46,7 +46,7 @@ import java.util.Optional;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -81,7 +81,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
         populateMapWithPersons(map);
 
         Collection<Object[]> result = map.project(Projections.multiAttribute("age", "height"));
-        assertThat(result, containsInAnyOrder(new Object[]{1.0d, 190}, new Object[]{4.0d, 123}));
+        assertThat(result).containsExactlyInAnyOrder(new Object[]{1.0d, 190}, new Object[]{4.0d, 123});
     }
 
     @Test
@@ -100,7 +100,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
         Collection<Object[]> result = map.project(Projections.multiAttribute("__key"));
 
-        assertThat(result, containsInAnyOrder(new Object[]{"key1"}, new Object[]{"key2"}));
+        assertThat(result).containsExactlyInAnyOrder(new Object[]{"key1"}, new Object[]{"key2"});
     }
 
     @Test
@@ -111,7 +111,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
         Collection<Object[]> result = map.project(Projections.multiAttribute("this"));
 
-        assertThat(result, containsInAnyOrder(new Object[]{1}, new Object[]{2}));
+        assertThat(result).containsExactlyInAnyOrder(new Object[]{1}, new Object[]{2});
     }
 
     @Test
@@ -122,7 +122,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
         Collection<Object[]> result = map.project(Projections.multiAttribute("age", "height"));
 
-        assertThat(result, containsInAnyOrder(new Object[]{1.0d, null}, new Object[]{null, 144}));
+        assertThat(result).containsExactlyInAnyOrder(new Object[]{1.0d, null}, new Object[]{null, 144});
     }
 
     @Test
@@ -133,7 +133,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
         Collection<Object[]> result = map.project(Projections.multiAttribute("optionalAge", "optionalHeight"));
 
-        assertThat(result, containsInAnyOrder(new Object[]{1.0d, null}, new Object[]{null, 144}));
+        assertThat(result).containsExactlyInAnyOrder(new Object[]{1.0d, null}, new Object[]{null, 144});
     }
 
     @Test

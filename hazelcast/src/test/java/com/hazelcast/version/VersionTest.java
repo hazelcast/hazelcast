@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -151,11 +151,11 @@ public class VersionTest {
 
     @Test
     public void compareTo() throws Exception {
-        assertEquals(0, Version.of(3, 9).compareTo(Version.of(3, 9)));
-        assertThat(Version.of(3, 10).compareTo(Version.of(3, 9)), greaterThan(0));
-        assertThat(Version.of(4, 0).compareTo(Version.of(3, 9)), greaterThan(0));
-        assertThat(Version.of(3, 9).compareTo(Version.of(3, 10)), lessThan(0));
-        assertThat(Version.of(3, 9).compareTo(Version.of(4, 10)), lessThan(0));
+        assertEquals(0, of(3, 9).compareTo(of(3, 9)));
+        assertThat(of(3, 10).compareTo(of(3, 9))).isGreaterThan(0);
+        assertThat(of(4, 0).compareTo(of(3, 9))).isGreaterThan(0);
+        assertThat(of(3, 9).compareTo(of(3, 10))).isLessThan(0);
+        assertThat(of(3, 9).compareTo(of(4, 10))).isLessThan(0);
     }
 
     @Test

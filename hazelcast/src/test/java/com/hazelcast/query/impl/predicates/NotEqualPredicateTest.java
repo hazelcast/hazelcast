@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -90,7 +90,7 @@ public class NotEqualPredicateTest {
         NotEqualPredicate predicate = new NotEqualPredicate(fieldName, "foo");
 
         String result = predicate.toString();
-        assertThat(result, containsString(fieldName));
+        assertThat(result).contains(fieldName);
     }
 
     @Test

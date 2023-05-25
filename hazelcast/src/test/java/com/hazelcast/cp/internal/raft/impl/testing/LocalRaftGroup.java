@@ -47,7 +47,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Represents a local single Raft group, provides methods to access specific nodes, to terminate nodes,
@@ -498,8 +498,8 @@ public class LocalRaftGroup {
      * Split nodes with these indexes from rest of the cluster.
      */
     public void split(int... indexes) {
-        assertThat(indexes.length, greaterThan(0));
-        assertThat(indexes.length, lessThan(size()));
+        assertThat(indexes.length).isGreaterThan(0);
+        assertThat(indexes.length).isLessThan(size());
         Arrays.sort(indexes);
 
         int runningMemberCount = 0;

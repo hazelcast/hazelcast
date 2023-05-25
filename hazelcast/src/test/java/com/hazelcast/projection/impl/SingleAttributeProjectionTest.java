@@ -46,7 +46,7 @@ import java.util.Optional;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -72,7 +72,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
         Collection<Double> result = map.project(Projections.singleAttribute("age"));
 
-        assertThat(result, containsInAnyOrder(1.0d, 4.0d, 7.0d));
+        assertThat(result).containsExactlyInAnyOrder(1.0d, 4.0d, 7.0d);
     }
 
     @Test
@@ -82,7 +82,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
         Collection<String> result = map.project(Projections.singleAttribute("__key"));
 
-        assertThat(result, containsInAnyOrder("key1", "key2", "key3"));
+        assertThat(result).containsExactlyInAnyOrder("key1", "key2", "key3");
     }
 
     @Test
@@ -93,7 +93,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
         Collection<Integer> result = map.project(Projections.singleAttribute("this"));
 
-        assertThat(result, containsInAnyOrder(1, 2));
+        assertThat(result).containsExactlyInAnyOrder(1, 2);
     }
 
     @Test
@@ -113,7 +113,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
         Collection<Double> result = map.project(Projections.singleAttribute("age"));
 
-        assertThat(result, containsInAnyOrder(null, 1.0d));
+        assertThat(result).containsExactlyInAnyOrder(null, 1.0d);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
         Collection<Double> result = map.project(Projections.singleAttribute("optionalAge"));
 
-        assertThat(result, containsInAnyOrder(null, 1.0d));
+        assertThat(result).containsExactlyInAnyOrder(null, 1.0d);
     }
 
     @Test

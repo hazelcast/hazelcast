@@ -216,8 +216,8 @@ public class AwsDiscoveryStrategyTest {
 
         // 2 instances found
         given(awsClient.getAddresses()).willReturn(ImmutableMap.of(
-            "192.168.1.15", "38.146.24.2",
-            "192.168.1.16", "38.146.28.15"
+                "192.168.1.15", "38.146.24.2",
+                "192.168.1.16", "38.146.28.15"
         ));
 
         // when
@@ -225,7 +225,7 @@ public class AwsDiscoveryStrategyTest {
 
         // then
         // 2 * 8 = 16 addresses found
-        assertThat(toList(nodes), hasSize(16));
+        assertThat(toList(nodes)).hasSize(16);
     }
 
     @Test

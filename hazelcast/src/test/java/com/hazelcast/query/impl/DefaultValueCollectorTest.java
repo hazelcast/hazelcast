@@ -63,8 +63,8 @@ public class DefaultValueCollectorTest {
         collector.addObject(2);
 
         List<Integer> results = assertIsMultiResultAndGetResults(collector.getResult());
-        assertThat(results, hasSize(2));
-        assertThat(results, containsInAnyOrder(1, 2));
+        assertThat(results).hasSize(2);
+        assertThat(results).containsExactlyInAnyOrder(1, 2);
     }
 
     @Test
@@ -74,8 +74,8 @@ public class DefaultValueCollectorTest {
         collector.addObject(3);
 
         List<Integer> results = assertIsMultiResultAndGetResults(collector.getResult());
-        assertThat(results, hasSize(3));
-        assertThat(results, containsInAnyOrder(1, 2, 3));
+        assertThat(results).hasSize(3);
+        assertThat(results).containsExactlyInAnyOrder(1, 2, 3);
     }
 
     @Test
@@ -84,8 +84,8 @@ public class DefaultValueCollectorTest {
         collector.addObject(1);
 
         List<Integer> results = assertIsMultiResultAndGetResults(collector.getResult());
-        assertThat(results, hasSize(2));
-        assertThat(results, containsInAnyOrder(1, 1));
+        assertThat(results).hasSize(2);
+        assertThat(results).containsExactlyInAnyOrder(1, 1);
     }
 
     @Test
@@ -94,8 +94,8 @@ public class DefaultValueCollectorTest {
         collector.addObject(null);
 
         List<Integer> results = assertIsMultiResultAndGetResults(collector.getResult());
-        assertThat(results, hasSize(2));
-        assertThat(results, containsInAnyOrder(1, null));
+        assertThat(results).hasSize(2);
+        assertThat(results).containsExactlyInAnyOrder(1, null);
     }
 
     @SuppressWarnings("unchecked")

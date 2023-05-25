@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -105,9 +105,9 @@ public class MergePolicyConfigTest {
         config.setBatchSize(2342);
 
         String configString = config.toString();
-        assertThat(configString, containsString("MergePolicyConfig"));
-        assertThat(configString, containsString("policy='" + HigherHitsMergePolicy.class.getName() + "'"));
-        assertThat(configString, containsString("batchSize=2342"));
+        assertThat(configString).contains("MergePolicyConfig");
+        assertThat(configString).contains("policy='" + HigherHitsMergePolicy.class.getName() + "'");
+        assertThat(configString).contains("batchSize=2342");
     }
 
     @Test

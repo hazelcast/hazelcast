@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -178,7 +178,7 @@ public class LinearizableQueryTest extends HazelcastTestSupport {
         group.start();
 
         RaftNodeImpl leader = group.waitUntilLeaderElected();
-        assertTrueEventually(() -> assertThat(getCommitIndex(leader), greaterThanOrEqualTo(1L)));
+        assertTrueEventually(() -> assertThat(getCommitIndex(leader)).isGreaterThanOrEqualTo(1L));
 
         RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
         group.dropMessagesToMember(leader.getLocalMember(), followers[0].getLocalMember(), AppendRequest.class);

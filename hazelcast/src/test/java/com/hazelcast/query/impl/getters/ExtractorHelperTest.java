@@ -76,7 +76,7 @@ public class ExtractorHelperTest {
         ValueExtractor extractor = instantiateExtractor(config);
 
         // THEN
-        assertThat(extractor, instanceOf(IqExtractor.class));
+        assertThat(extractor).isInstanceOf(IqExtractor.class);
     }
 
     @Test
@@ -105,8 +105,8 @@ public class ExtractorHelperTest {
                 instantiateExtractors(asList(iqExtractor, nameExtractor));
 
         // THEN
-        assertThat(extractors.get("iq"), instanceOf(IqExtractor.class));
-        assertThat(extractors.get("name"), instanceOf(NameExtractor.class));
+        assertThat(extractors.get("iq")).isInstanceOf(IqExtractor.class);
+        assertThat(extractors.get("name")).isInstanceOf(NameExtractor.class);
     }
 
     @Test
@@ -125,8 +125,8 @@ public class ExtractorHelperTest {
         Map<String, ValueExtractor> extractors = instantiateExtractors(asList(iqExtractor, nameExtractor));
 
         // THEN
-        assertThat(extractors.get("iq"), instanceOf(IqExtractor.class));
-        assertThat(extractors.get("name"), instanceOf(NameExtractor.class));
+        assertThat(extractors.get("iq")).isInstanceOf(IqExtractor.class);
+        assertThat(extractors.get("name")).isInstanceOf(NameExtractor.class);
     }
 
     @Test

@@ -51,7 +51,7 @@ public class ArrayDataSerializableFactoryTest {
 
         assertNull(factory.create(-1));
         assertNull(factory.create(1));
-        assertThat(factory.create(0), instanceOf(SampleIdentifiedDataSerializable.class));
+        assertThat(factory.create(0)).isInstanceOf(SampleIdentifiedDataSerializable.class);
     }
 
     @Test

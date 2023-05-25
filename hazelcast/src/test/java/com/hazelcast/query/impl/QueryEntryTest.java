@@ -198,28 +198,28 @@ public class QueryEntryTest extends HazelcastTestSupport {
     public void getKey_caching() {
         QueryableEntry entry = createEntry("key", "value");
 
-        assertThat(entry.getKey(), not(sameInstance(entry.getKey())));
+        assertThat(entry.getKey()).isNotSameAs(entry.getKey());
     }
 
     @Test
     public void getValue_caching() {
         QueryableEntry entry = createEntry("key", "value");
 
-        assertThat(entry.getValue(), not(sameInstance(entry.getValue())));
+        assertThat(entry.getValue()).isNotSameAs(entry.getValue());
     }
 
     @Test
     public void getKeyData_caching() {
         QueryableEntry entry = createEntry("key", "value");
 
-        assertThat(entry.getKeyData(), sameInstance(entry.getKeyData()));
+        assertThat(entry.getKeyData()).isSameAs(entry.getKeyData());
     }
 
     @Test
     public void getValueData_caching() {
         QueryableEntry entry = createEntry("key", "value");
 
-        assertThat(entry.getValueData(), sameInstance(entry.getValueData()));
+        assertThat(entry.getValueData()).isSameAs(entry.getValueData());
     }
 
     @SuppressWarnings("unused")

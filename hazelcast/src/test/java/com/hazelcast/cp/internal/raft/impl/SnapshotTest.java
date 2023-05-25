@@ -59,7 +59,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -502,11 +502,11 @@ public class SnapshotTest extends HazelcastTestSupport {
             leader.replicate(new ApplyRaftRunnable("val" + i)).get();
         }
 
-        assertTrueEventually(() -> assertThat(getSnapshotEntry(leader).index(), greaterThanOrEqualTo((long) entryCount)));
+        assertTrueEventually(() -> assertThat(getSnapshotEntry(leader).index()).isGreaterThanOrEqualTo(entryCount));
 
         group.allowAllMessagesToMember(leader.getLeader(), slowFollower.getLocalMember());
 
-        assertTrueEventually(() -> assertThat(getSnapshotEntry(slowFollower).index(), greaterThanOrEqualTo((long) entryCount)));
+        assertTrueEventually(() -> assertThat(getSnapshotEntry(slowFollower).index()).isGreaterThanOrEqualTo(entryCount));
 
         assertTrueEventually(() -> {
             assertEquals(getCommittedGroupMembers(leader).index(), getCommittedGroupMembers(slowFollower).index());

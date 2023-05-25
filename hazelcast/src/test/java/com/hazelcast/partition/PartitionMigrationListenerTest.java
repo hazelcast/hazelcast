@@ -55,7 +55,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -139,8 +139,8 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         MigrationEventsPack firstEventsPack = eventsPackList.get(0);
         assertMigrationProcessCompleted(firstEventsPack);
         MigrationState migrationResult = firstEventsPack.migrationProcessCompleted;
-        assertThat(migrationResult.getCompletedMigrations(), lessThan(migrationResult.getPlannedMigrations()));
-        assertThat(migrationResult.getRemainingMigrations(), greaterThan(0));
+        assertThat(migrationResult.getCompletedMigrations()).isLessThan(migrationResult.getPlannedMigrations());
+        assertThat(migrationResult.getRemainingMigrations()).isGreaterThan(0);
         assertMigrationEventsConsistentWithResult(firstEventsPack);
 
         // 2nd migration process finishes by consuming all migration tasks
@@ -188,12 +188,12 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
     public static void assertMigrationProcessEventsConsistent(MigrationEventsPack eventsPack) {
         MigrationState migrationPlan = eventsPack.migrationProcessStarted;
-        assertThat(migrationPlan.getStartTime(), greaterThan(0L));
-        assertThat(migrationPlan.getPlannedMigrations(), greaterThan(0));
+        assertThat(migrationPlan.getStartTime()).isGreaterThan(0L);
+        assertThat(migrationPlan.getPlannedMigrations()).isGreaterThan(0);
 
         MigrationState migrationResult = eventsPack.migrationProcessCompleted;
         assertEquals(migrationPlan.getStartTime(), migrationResult.getStartTime());
-        assertThat(migrationResult.getTotalElapsedTime(), greaterThanOrEqualTo(0L));
+        assertThat(migrationResult.getTotalElapsedTime()).isGreaterThanOrEqualTo(0L);
         assertEquals(migrationPlan.getPlannedMigrations(), migrationResult.getCompletedMigrations());
         assertEquals(0, migrationResult.getRemainingMigrations());
     }
@@ -211,11 +211,11 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
             assertEquals(migrationResult.getStartTime(), progress.getStartTime());
             assertEquals(migrationResult.getPlannedMigrations(), progress.getPlannedMigrations());
 
-            assertThat(progress.getCompletedMigrations(), greaterThan(0));
-            assertThat(progress.getCompletedMigrations(), lessThanOrEqualTo(migrationResult.getPlannedMigrations()));
-            assertThat(progress.getCompletedMigrations(), lessThanOrEqualTo(migrationResult.getCompletedMigrations()));
-            assertThat(progress.getRemainingMigrations(), lessThan(migrationResult.getPlannedMigrations()));
-            assertThat(progress.getRemainingMigrations(), greaterThanOrEqualTo(migrationResult.getRemainingMigrations()));
+            assertThat(progress.getCompletedMigrations()).isGreaterThan(0);
+            assertThat(progress.getCompletedMigrations()).isLessThanOrEqualTo(migrationResult.getPlannedMigrations());
+            assertThat(progress.getCompletedMigrations()).isLessThanOrEqualTo(migrationResult.getCompletedMigrations());
+            assertThat(progress.getRemainingMigrations()).isLessThan(migrationResult.getPlannedMigrations());
+            assertThat(progress.getRemainingMigrations()).isGreaterThanOrEqualTo(migrationResult.getRemainingMigrations());
 
             if (progress.getCompletedMigrations() == migrationResult.getCompletedMigrations()) {
                 completed = progress;
@@ -223,7 +223,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         }
 
         assertNotNull(completed);
-        assertThat(migrationResult.getTotalElapsedTime(), greaterThanOrEqualTo(completed.getTotalElapsedTime()));
+        assertThat(migrationResult.getTotalElapsedTime()).isGreaterThanOrEqualTo(completed.getTotalElapsedTime());
     }
 
     @Test
@@ -338,7 +338,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
     @SuppressWarnings("SameParameterValue")
     private void assertAllLessThanOrEqual(AtomicInteger[] integers, int expected) {
         for (AtomicInteger integer : integers) {
-            assertThat(integer.get(), Matchers.lessThanOrEqualTo(expected));
+            assertThat(integer.get()).isLessThanOrEqualTo(expected);
         }
     }
 
@@ -446,7 +446,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         void awaitEventPacksComplete(int count) {
             assertTrueEventually(() -> {
-                assertThat(allEventPacks.size(), greaterThanOrEqualTo(count));
+                assertThat(allEventPacks.size()).isGreaterThanOrEqualTo(count);
                 assertNull(currentEvents);
             });
         }

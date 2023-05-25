@@ -35,7 +35,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -86,11 +86,11 @@ public class ConsoleAppTest extends HazelcastTestSupport {
         consoleApp.handleCommand("m.put putTestKey testValue");
         assertTextInSystemOut("null"); // original value for the key
         assertEquals("Unexpected map size", 1, map.size());
-        assertThat(map.get("putTestKey"), CoreMatchers.containsString("testValue"));
+        assertThat(map.get("putTestKey")).contains("testValue");
 
         consoleApp.handleCommand("m.put putTestKey testXValue");
         assertTextInSystemOut("testValue"); // original value for the key
-        assertThat(map.get("putTestKey"), CoreMatchers.containsString("testXValue"));
+        assertThat(map.get("putTestKey")).contains("testXValue");
         consoleApp.handleCommand("m.put putTestKey2 testValue");
         assertEquals("Unexpected map size", 2, map.size());
     }
@@ -156,7 +156,7 @@ public class ConsoleAppTest extends HazelcastTestSupport {
      * @param substring a substring that asserted to be in stdout buffer
      */
     private void assertTextInSystemOut(String substring) {
-        assertThat(resetSystemOut(), CoreMatchers.containsString(substring));
+        assertThat(resetSystemOut()).contains(substring);
     }
 
     /**

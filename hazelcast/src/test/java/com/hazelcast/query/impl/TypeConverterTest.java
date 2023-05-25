@@ -41,8 +41,9 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TypeConverterTest {
@@ -68,10 +69,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(stringValue);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigInteger.class)),
-                is(equalTo(expectedBigIntValue))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigInteger.class)
+                .isEqualTo(expectedBigIntValue);
     }
 
     @Test
@@ -81,10 +81,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(doubleValue);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigInteger.class)),
-                is(equalTo(expectedBigIntValue))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigInteger.class)
+                .isEqualTo(expectedBigIntValue);
     }
 
     @Test
@@ -94,10 +93,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(doubleValue);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigInteger.class)),
-                is(equalTo(expectedBigIntValue))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigInteger.class)
+                .isEqualTo(expectedBigIntValue);
     }
 
     @Test
@@ -107,10 +105,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(longValue);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigInteger.class)),
-                is(equalTo(expectedBigIntValue))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigInteger.class)
+                .isEqualTo(expectedBigIntValue);
     }
 
     @Test
@@ -120,10 +117,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(integerValue);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigInteger.class)),
-                is(equalTo(expectedBigIntValue))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigInteger.class)
+                .isEqualTo(expectedBigIntValue);
     }
 
     @Test
@@ -133,10 +129,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(value);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigInteger.class)),
-                is(equalTo(expectedBigIntValue))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigInteger.class)
+                .isEqualTo(expectedBigIntValue);
     }
 
     @Test
@@ -147,10 +142,10 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(value);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigInteger.class)),
-                is(equalTo(expectedBigIntValue))
-        ));
+        
+        assertThat(comparable)
+                .isInstanceOf(BigInteger.class)
+                .isEqualTo(expectedBigIntValue);
     }
 
     @Test
@@ -160,10 +155,10 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(value);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigInteger.class)),
-                is(equalTo(expectedBigIntValue))
-        ));
+        
+        assertThat(comparable)
+                .isInstanceOf(BigInteger.class)
+                .isEqualTo(expectedBigIntValue);
     }
 
     @Test
@@ -174,11 +169,10 @@ public class TypeConverterTest {
         Comparable trueAsNumber = BigInteger.ONE;
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(value);
-
-        assertThat(comparable, allOf(
-                is(instanceOf(BigInteger.class)),
-                is(equalTo(trueAsNumber))
-        ));
+        
+        assertThat(comparable)
+                .isInstanceOf(BigInteger.class)
+                .isEqualTo(trueAsNumber);
     }
 
     @Test
@@ -197,10 +191,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(stringValue);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigDecimal.class)),
-                is(equalTo(expectedDecimal))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigDecimal.class)
+                .isEqualTo(expectedDecimal);
     }
 
     /**
@@ -214,11 +207,10 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(doubleValue);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigDecimal.class)),
-                is(equalTo(expectedDecimal)),
-                not(equalTo(unexpectedDecimal))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigDecimal.class)
+                .isEqualTo(expectedDecimal)
+                .isNotEqualTo(unexpectedDecimal);
     }
 
     /**
@@ -232,11 +224,10 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(floatValue);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigDecimal.class)),
-                is(equalTo(expectedDecimal)),
-                not(equalTo(unexpectedDecimal))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigDecimal.class)
+                .isEqualTo(expectedDecimal)
+                .isNotEqualTo(unexpectedDecimal);
     }
 
     @Test
@@ -246,10 +237,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(longValue);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigDecimal.class)),
-                is(equalTo(expectedDecimal))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigDecimal.class)
+                .isEqualTo(expectedDecimal);
     }
 
     @Test
@@ -259,10 +249,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(integerValue);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigDecimal.class)),
-                is(equalTo(expectedDecimal))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigDecimal.class)
+                .isEqualTo(expectedDecimal);
     }
 
     @Test
@@ -272,10 +261,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(value);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigDecimal.class)),
-                is(equalTo(expectedDecimal))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigDecimal.class)
+                .isEqualTo(expectedDecimal);
     }
 
     @Test
@@ -285,10 +273,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(value);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigDecimal.class)),
-                is(equalTo(expectedDecimal))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigDecimal.class)
+                .isEqualTo(expectedDecimal);
     }
 
     @Test
@@ -300,10 +287,9 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_DECIMAL_CONVERTER.convert(value);
 
-        assertThat(comparable, allOf(
-                is(instanceOf(BigDecimal.class)),
-                is(equalTo(trueAsDecimal))
-        ));
+        assertThat(comparable)
+                .isInstanceOf(BigDecimal.class)
+                .isEqualTo(trueAsDecimal);
     }
 
     @Test
@@ -321,10 +307,9 @@ public class TypeConverterTest {
 
         Comparable actualCharacter = TypeConverters.CHAR_CONVERTER.convert(value);
 
-        assertThat(actualCharacter, allOf(
-                is(instanceOf(Character.class)),
-                is(equalTo(expectedCharacter))
-        ));
+        assertThat(actualCharacter)
+                .isInstanceOf(Character.class)
+                .isEqualTo(expectedCharacter);
     }
 
     @Test
@@ -334,10 +319,9 @@ public class TypeConverterTest {
 
         Comparable actualCharacter = TypeConverters.CHAR_CONVERTER.convert(value);
 
-        assertThat(actualCharacter, allOf(
-                is(instanceOf(Character.class)),
-                is(equalTo(expectedCharacter))
-        ));
+        assertThat(actualCharacter)
+                .isInstanceOf(Character.class)
+                .isEqualTo(expectedCharacter);
     }
 
     @Test
@@ -357,8 +341,8 @@ public class TypeConverterTest {
         java.sql.Date expected = new java.sql.Date(millis);
         Comparable actual = TypeConverters.SQL_DATE_CONVERTER.convert(millis);
 
-        assertThat(actual, instanceOf(java.sql.Date.class));
-        assertThat(actual, CoreMatchers.<Comparable>is(expected));
+        assertThat(actual).isInstanceOf(java.sql.Date.class);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -367,10 +351,9 @@ public class TypeConverterTest {
         Long millis = expected.getTime();
         Comparable actual = TypeConverters.DATE_CONVERTER.convert(millis);
 
-        assertThat(actual, allOf(
-                is(instanceOf(Date.class)),
-                is(equalTo((Comparable) expected))
-        ));
+        assertThat(actual)
+                .isInstanceOf(Date.class)
+                .isEqualTo(expected);
     }
 
     @Test
@@ -380,10 +363,9 @@ public class TypeConverterTest {
 
         Comparable actual = TypeConverters.SHORT_CONVERTER.convert(value);
 
-        assertThat(actual, allOf(
-                is(instanceOf(Short.class)),
-                is(equalTo((Comparable) expected))
-        ));
+        assertThat(actual)
+                .isInstanceOf(Short.class)
+                .isEqualTo(expected);
     }
 
     @Test
@@ -393,10 +375,9 @@ public class TypeConverterTest {
 
         Comparable actual = TypeConverters.BYTE_CONVERTER.convert(value);
 
-        assertThat(actual, allOf(
-                is(instanceOf(Byte.class)),
-                is(equalTo((Comparable) expected))
-        ));
+        assertThat(actual)
+                .isInstanceOf(Byte.class)
+                .isEqualTo(expected);
     }
 
     @Test

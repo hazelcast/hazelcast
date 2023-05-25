@@ -333,7 +333,7 @@ public final class CompactTestUtil {
         Collection<Schema> expectedSchemas = getSchemasFor(classes);
         for (HazelcastInstance instance : instances) {
             Collection<Schema> schemas = getNode(instance).getSchemaService().getAllSchemas();
-            assertThat(schemas, containsInAnyOrder(expectedSchemas.toArray()));
+            assertThat(schemas).containsExactlyInAnyOrder(expectedSchemas.toArray());
         }
     }
 

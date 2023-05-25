@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -137,7 +137,7 @@ public class CPLiteMemberTest extends HazelcastRaftTestSupport {
         assertEquals(4, cpMembers.size());
 
         Set<Address> cpAddresses = cpMembers.stream().map(CPMember::getAddress).collect(Collectors.toSet());
-        assertThat(cpAddresses, hasItem(getAddress(hz_lite)));
+        assertThat(cpAddresses).contains(getAddress(hz_lite));
     }
 
 

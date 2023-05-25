@@ -58,7 +58,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -94,7 +94,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
         assertNotNull(leaderEndpoint);
 
         int leaderIndex = group.getLeaderIndex();
-        assertThat(leaderIndex, greaterThanOrEqualTo(0));
+        assertThat(leaderIndex).isGreaterThanOrEqualTo(0);
 
         RaftNodeImpl leaderNode = group.getLeaderNode();
         assertNotNull(leaderNode);

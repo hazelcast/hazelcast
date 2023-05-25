@@ -96,7 +96,7 @@ public class AwsEcsApiTest {
         List<String> tasksPrivateIps = awsEcsApi.listTaskPrivateAddresses(cluster, CREDENTIALS);
 
         // then
-        assertThat(tasksPrivateIps, hasItems("10.0.1.16", "10.0.1.219"));
+        assertThat(tasksPrivateIps).containsExactlyInAnyOrder("10.0.1.16", "10.0.1.219");
     }
 
     @Test
@@ -104,8 +104,8 @@ public class AwsEcsApiTest {
         // given
         String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
         AwsConfig awsConfig = AwsConfig.builder()
-                .setFamily("family-name")
-                .build();
+                                       .setFamily("family-name")
+                                       .build();
         AwsEcsApi awsEcsApi = new AwsEcsApi(endpoint, awsConfig, requestSigner, CLOCK);
 
         stubListTasks("arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster", "family-name");
@@ -118,7 +118,7 @@ public class AwsEcsApiTest {
         List<String> ips = awsEcsApi.listTaskPrivateAddresses(cluster, CREDENTIALS);
 
         // then
-        assertThat(ips, hasItems("10.0.1.16", "10.0.1.219"));
+        assertThat(ips).containsExactlyInAnyOrder("10.0.1.16", "10.0.1.219");
     }
 
     @Test
@@ -159,10 +159,8 @@ public class AwsEcsApiTest {
 
         // then
         assertEquals(2, result.size());
-        assertThat(
-                result.stream().map(Task::getPrivateAddress).collect(Collectors.toList()), hasItems("10.0.1.16", "10.0.1.219"));
-        assertThat(
-                result.stream().map(Task::getAvailabilityZone).collect(Collectors.toList()), hasItems("eu-central-1a", "eu-central-1a"));
+        assertThat(result.stream().map(Task::getPrivateAddress).collect(Collectors.toList())).containsExactlyInAnyOrder("10.0.1.16", "10.0.1.219");
+        assertThat(result.stream().map(Task::getAvailabilityZone).collect(Collectors.toList())).containsExactlyInAnyOrder("eu-central-1a", "eu-central-1a");
     }
 
     @Test

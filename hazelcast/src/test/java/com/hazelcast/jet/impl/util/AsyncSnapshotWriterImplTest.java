@@ -60,7 +60,7 @@ import static java.util.stream.Stream.generate;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -269,7 +269,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
         // Then
         assertTrueEventually(() ->
-                assertThat(String.valueOf(writer.getError()), StringContains.containsString("Always failing store")));
+                assertThat(String.valueOf(writer.getError())).contains("Always failing store"));
     }
 
     @Test
