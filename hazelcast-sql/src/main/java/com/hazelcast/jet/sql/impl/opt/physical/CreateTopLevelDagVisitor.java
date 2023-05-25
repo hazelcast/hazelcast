@@ -47,6 +47,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.WatermarkThrottlingFrameSizeCalculator;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
@@ -63,12 +64,20 @@ import com.hazelcast.sql.impl.expression.MockExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rel.core.Join;
+import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
+import org.apache.calcite.sql.SqlKind;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -77,6 +86,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
@@ -90,6 +100,7 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSource
 import static com.hazelcast.jet.sql.impl.connector.HazelcastRexNode.wrap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
@@ -610,6 +621,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 (PhysicalRel) rootRel.getInput(), MOCK_EEC);
 
         RelNode input = rootRel.getInput();
+        partitionArgumentIndexes(input);
 
         Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
         Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
@@ -637,6 +649,154 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // allToOne with any key, it goes to a single processor on a single member anyway.
         connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
         return vertex;
+    }
+
+    private List<Integer> partitionArgumentIndexes(RelNode root) {
+        final List<RexNode> filterExpressions = new ArrayList<>();
+        final Map<String, List<RexNode>> extractExpressions = new HashMap<>();
+        boolean isPartitionBound = traverse(root, filterExpressions, new ArrayList<>(), extractExpressions);
+        return emptyList();
+    }
+
+    private boolean traverse(RelNode node, List<RexNode> filters, List<RelNode> relStack, Map<String, List<RexNode>> extractExpressions) {
+        if (node == null) {
+            return false;
+        }
+
+        relStack.add(node);
+
+        if (!(node instanceof TableScan) && !(node instanceof Join)) {
+            for (final RelNode input : node.getInputs()) {
+                traverse(input, filters, relStack, extractExpressions);
+            }
+        }
+
+        boolean isPartitionBound = false;
+        if (node instanceof Join) {
+            isPartitionBound = isPartitionBound((Join) node, filters, extractExpressions);
+        }
+
+        if (node instanceof FullScanPhysicalRel) {
+            isPartitionBound = isPartitionBound((FullScanPhysicalRel) node, filters, extractExpressions);
+        }
+
+        return isPartitionBound;
+    }
+
+    private boolean isPartitionBound(Join join, List<RexNode> filters, Map<String, List<RexNode>> extractExpressions) {
+        for (final RelNode input : join.getInputs()) {
+            if (input instanceof Join) {
+                if (!isPartitionBound((Join) input, filters, extractExpressions)) {
+                    return false;
+                }
+            } else if (input instanceof FullScanPhysicalRel) {
+                if (!isPartitionBound((FullScanPhysicalRel) input, filters, extractExpressions)) {
+                    return false;
+                }
+            } else {
+                throw new RuntimeException("Unknown relation found inside of Join: " + input);
+            }
+        }
+
+        return true;
+    }
+
+    private boolean isPartitionBound(FullScanPhysicalRel rel, List<RexNode> filters, Map<String, List<RexNode>> extractExpressions) {
+        final RexNode filter = rel.filter();
+        if (filter == null) {
+            return false;
+        }
+
+        if (filter instanceof RexCall) {
+            boolean isPartitionBound = isFilterPartitionBound(rel, (RexCall) filter, extractExpressions);
+            if (isPartitionBound) {
+                filters.add(filter);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // TODO: rewrite to handle complex conditionals that constitute key-filter e.g. (comp1 = 1 AND comp2 = 1)
+    private boolean isFilterPartitionBound(FullScanPhysicalRel parent, RexCall node, Map<String, List<RexNode>> extractExpressions) {
+        final HazelcastTable table = parent.getTable().unwrap(HazelcastTable.class);
+        if (table == null || !(table.getTarget() instanceof PartitionedMapTable)) {
+            return false;
+        }
+        String tableName = ((PartitionedMapTable) table.getTarget()).getSqlName();
+        extractExpressions.putIfAbsent(tableName, new ArrayList<>());
+        if (node.isA(SqlKind.AND)) {
+            // __key = 1 AND something else - condition is bound if at least one node is a key filter
+            boolean keyFilterPresent = false;
+            for (final RexNode operand : node.getOperands()) {
+                if (node.isA(SqlKind.AND) || node.isA(SqlKind.OR)) {
+                    // TODO: traverse sub-conditions
+                }
+                final RexNode keyExpr = extractKeyFilterExpression(table, operand);
+                if(keyExpr != null) {
+                    keyFilterPresent = true;
+                }
+                extractExpressions.get(tableName).add(keyExpr);
+            }
+            return keyFilterPresent;
+        } else if (node.isA(SqlKind.OR)) {
+
+            if (node.isA(SqlKind.AND) || node.isA(SqlKind.OR)) {
+                // TODO: traverse sub-conditions
+            }
+            // __key = 1 OR somethingElse - whole condition is now unbound
+            for (final RexNode operand : node.getOperands()) {
+                final RexNode keyExpr = extractKeyFilterExpression(table, operand);
+                if(keyExpr == null) {
+                    return false;
+                }
+                extractExpressions.get(tableName).add(keyExpr);
+            }
+            return true;
+        } else {
+            final RexNode keyExpr = extractKeyFilterExpression(table, node);
+            if (keyExpr == null) {
+                return false;
+            }
+            extractExpressions.get(tableName).add(keyExpr);
+            return true;
+        }
+    }
+
+    private RexNode extractKeyFilterExpression(HazelcastTable table, RexNode node) {
+        final int primaryKeyIndex = OptUtils.findPrimaryKeyIndex(table.getTarget());
+        if (!(node instanceof RexCall)) {
+            return null;
+        }
+        final RexCall call = (RexCall) node;
+        switch (call.getKind()) {
+            case EQUALS:
+                RexInputRef columnRef = null;
+                RexNode constantExpr = null;
+                for (final RexNode operand : call.getOperands()) {
+                    if (operand instanceof RexInputRef) {
+                        columnRef = (RexInputRef) operand;
+                    } else {
+                        constantExpr = operand;
+                    }
+                }
+
+                if (columnRef == null) {
+                    return null;
+                }
+
+                // TODO: Attribute Strategy check, most likely have to pass key column indexes for the table
+                // and check at the caller above whether all Key columns covered (default case should be single element list)
+                // TODO: local vs global column index here
+                if (columnRef.getIndex() != primaryKeyIndex) {
+                    return null;
+                }
+
+                return constantExpr;
+            default:
+                return null;
+        }
     }
 
     public void optimizeFinishedDag() {
