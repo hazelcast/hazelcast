@@ -161,7 +161,7 @@ public class StsMonitorTest {
         expectWatch("1").andReturn(500, null).always();
 
         KubernetesClient.StsMonitor stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
-        Future<Void> runFuture = spawn(stsMonitor::run);
+        var runFuture = spawn(stsMonitor::run);
         sleepSeconds(10);
         stsMonitor.running = false;
         FutureUtil.waitWithDeadline(Collections.singleton(runFuture), 5, TimeUnit.SECONDS);
@@ -175,7 +175,7 @@ public class StsMonitorTest {
         expectStsList().andReturn(500, null).always();
 
         KubernetesClient.StsMonitor stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
-        Future<Void> runFuture = spawn(stsMonitor::run);
+        var runFuture = spawn(stsMonitor::run);
         sleepSeconds(10);
         stsMonitor.running = false;
         FutureUtil.waitWithDeadline(Collections.singleton(runFuture), 5, TimeUnit.SECONDS);

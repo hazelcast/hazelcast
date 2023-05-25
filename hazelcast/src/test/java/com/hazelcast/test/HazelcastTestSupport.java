@@ -1524,7 +1524,7 @@ public abstract class HazelcastTestSupport {
 
     /**
      * Throws {@link AssumptionViolatedException} if two new Objects have the same hashCode (e.g. when running tests
-     * with static hashCode ({@code -XX:hashCode=2})).
+     * with static hashCode ({@code -XX:hashCode=2}).
      */
     public static void assumeDifferentHashCodes() {
         assumeTrue("Hash codes are equal for different objects", EXPECT_DIFFERENT_HASHCODES);
