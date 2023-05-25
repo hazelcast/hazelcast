@@ -37,9 +37,6 @@ import static com.hazelcast.internal.util.scheduler.ScheduleType.POSTPONE;
 import static com.hazelcast.internal.util.scheduler.SecondsBasedEntryTaskScheduler.findRelativeSecond;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -52,6 +49,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Has timing sensitive tests, do not make a {@link ParallelJVMTest}.
@@ -266,7 +264,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
                 .map(entry -> entry.getKey() + ":" + entry.getValue())
                 .collect(toList());
 
-        assertThat(entriesPassedToProcessor, contains("k:x", "k:y", "k:z", "j:v"));
+        assertThat(entriesPassedToProcessor).containsExactlyInAnyOrder("k:x", "k:y", "k:z", "j:v");
     }
 
     @Test

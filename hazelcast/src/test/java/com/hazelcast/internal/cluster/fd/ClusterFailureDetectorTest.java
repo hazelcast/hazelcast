@@ -41,8 +41,6 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.assertj.core.api.Assertions.assertThat;

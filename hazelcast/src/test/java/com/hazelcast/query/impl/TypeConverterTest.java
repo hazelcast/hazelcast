@@ -19,7 +19,6 @@ package com.hazelcast.query.impl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.CoreMatchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,14 +33,9 @@ import java.util.Date;
 import java.util.Locale;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @RunWith(HazelcastParallelClassRunner.class)
@@ -142,7 +136,6 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(value);
 
-        
         assertThat(comparable)
                 .isInstanceOf(BigInteger.class)
                 .isEqualTo(expectedBigIntValue);
@@ -155,7 +148,6 @@ public class TypeConverterTest {
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(value);
 
-        
         assertThat(comparable)
                 .isInstanceOf(BigInteger.class)
                 .isEqualTo(expectedBigIntValue);
@@ -169,7 +161,7 @@ public class TypeConverterTest {
         Comparable trueAsNumber = BigInteger.ONE;
 
         Comparable comparable = TypeConverters.BIG_INTEGER_CONVERTER.convert(value);
-        
+
         assertThat(comparable)
                 .isInstanceOf(BigInteger.class)
                 .isEqualTo(trueAsNumber);

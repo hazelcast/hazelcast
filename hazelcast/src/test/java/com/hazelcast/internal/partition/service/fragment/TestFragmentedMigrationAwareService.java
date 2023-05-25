@@ -35,7 +35,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertNotEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 

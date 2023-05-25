@@ -44,7 +44,6 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;

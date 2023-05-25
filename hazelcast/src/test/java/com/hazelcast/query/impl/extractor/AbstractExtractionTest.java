@@ -16,11 +16,11 @@
 
 package com.hazelcast.query.impl.extractor;
 
+import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
@@ -31,8 +31,7 @@ import org.junit.rules.ExpectedException;
 
 import java.util.Collection;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
@@ -192,7 +191,7 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
         setup(query);
 
         // WHEN
-        Collection<?> values = null;
+        Collection<Object> values = null;
         try {
             doWithMap();
             putTestDataToMap(input.objects);
@@ -215,7 +214,7 @@ public abstract class AbstractExtractionTest extends AbstractExtractionSpecifica
             assertThat(values).hasSize(expected.objects.length);
             if (expected.objects.length > 0) {
                 translate(expected.objects);
-                assertThat(values).containsExactlyInAnyOrder(expected.objects);
+                assertThat(values).containsExactlyInAnyOrderElementsOf(asList(expected.objects));
             }
         }
     }

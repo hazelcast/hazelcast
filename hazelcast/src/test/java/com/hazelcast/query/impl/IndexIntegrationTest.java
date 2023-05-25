@@ -58,7 +58,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.test.Accessors.getNode;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.assertj.core.api.Assertions.assertThat;

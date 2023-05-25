@@ -55,7 +55,6 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getRestoredState;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getTerm;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.Matchers.arrayWithSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -68,7 +67,7 @@ import static org.junit.Assert.assertTrue;
 public class PersistenceTest extends HazelcastTestSupport {
 
     private static final BiFunctionEx<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore> RAFT_STATE_STORE_FACTORY
-            = (BiFunctionEx<RaftEndpoint, RaftAlgorithmConfig, RaftStateStore>) (endpoint, config) -> {
+            = (endpoint, config) -> {
                 int maxUncommittedEntryCount = config.getUncommittedEntryCountToRejectNewAppends();
                 int commitIndexAdvanceCountToSnapshot = config.getCommitIndexAdvanceCountToSnapshot();
                 int maxNumberOfLogsToKeepAfterSnapshot = (int) (commitIndexAdvanceCountToSnapshot * 0.5);

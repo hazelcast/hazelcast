@@ -26,7 +26,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.properties.ClusterProperty.QUERY_OPTIMIZER_TYPE;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

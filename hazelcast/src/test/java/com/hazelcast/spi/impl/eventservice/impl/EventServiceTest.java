@@ -40,7 +40,6 @@ import java.util.concurrent.Future;
 import static com.hazelcast.test.Accessors.getClusterService;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

@@ -335,7 +335,7 @@ public abstract class HazelcastTestSupport {
     /**
      * Note: the {@code cancel()} method on the returned Future has no effect.
      */
-    public static Future<?>spawn(RunnableEx task) {
+    public static Future<?> spawn(RunnableEx task) {
         FutureTask<Runnable> futureTask = new FutureTask<>(task, null);
         new Thread(futureTask).start();
         return futureTask;
@@ -344,7 +344,7 @@ public abstract class HazelcastTestSupport {
     /**
      * Note: the {@code cancel()} method on the returned Future has no effect.
      */
-    public static Future<?>spawn(Runnable task) {
+    public static Future<?> spawn(Runnable task) {
         return spawn(task::run);
     }
 
@@ -945,7 +945,7 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
     }
 
-    public static void assertCompletesEventually(final Future<?>future, long timeoutSeconds) {
+    public static void assertCompletesEventually(final Future<?> future, long timeoutSeconds) {
         assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()), timeoutSeconds);
     }
 

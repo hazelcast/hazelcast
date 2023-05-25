@@ -27,10 +27,6 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 
 import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
-import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.emptyArray;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

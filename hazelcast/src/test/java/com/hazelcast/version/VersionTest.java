@@ -29,8 +29,6 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.version.Version.UNKNOWN;
 import static com.hazelcast.version.Version.UNKNOWN_VERSION;
 import static com.hazelcast.version.Version.of;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.assertj.core.api.Assertions.assertThat;

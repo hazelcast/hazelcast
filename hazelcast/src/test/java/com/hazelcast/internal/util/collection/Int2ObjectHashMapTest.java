@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import static java.lang.Integer.valueOf;

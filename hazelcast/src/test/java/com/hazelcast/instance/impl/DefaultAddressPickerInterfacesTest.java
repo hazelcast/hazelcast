@@ -228,7 +228,7 @@ public class DefaultAddressPickerInterfacesTest {
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
-        assertThat(inetAddress.getHostAddress()).isIn("192.168.1.1","172.172.172.172");
+        assertThat(inetAddress.getHostAddress()).isIn("192.168.1.1", "172.172.172.172");
     }
 
     /**

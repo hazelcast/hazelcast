@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.nio.ascii;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.After;

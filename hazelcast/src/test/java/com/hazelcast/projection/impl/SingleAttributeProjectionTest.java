@@ -44,9 +44,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
-import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
-import static org.junit.Assert.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
