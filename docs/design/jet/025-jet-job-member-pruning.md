@@ -22,7 +22,7 @@ which becomes noticeable in very small batch jobs.
 ## Terminology
 
 - Member pruning - prevention of cluster members without requested data on board to be involved in job execution;
-- Processor pruning - elimination of redundant (it can work only with input) stage processor creation;
+- Processor pruning - elimination of redundant stage processor creation;
 - (IMap) Partition pruning - extract partition condition and assigning only required partition to read by `ReadMapOrCacheP`;
 
 ## Goals
@@ -32,7 +32,7 @@ The goals of that initiative is corresponding with items enumerated in 'Terminol
 - deploy a job only on members with required partitions.
 - prune processors which are not required for job execution - e.g, their input processor doesn't produce data and 
 the processor itself can work only with input.
-- limit count partitions involved in IMap scan.
+- limit number of partitions involved in IMap scan.
 
 Non-goals are :
 - support any kind of pruning for streaming jobs. It may be considered to do later, but now it is not a case.
