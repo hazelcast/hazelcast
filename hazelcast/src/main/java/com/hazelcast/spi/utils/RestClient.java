@@ -164,7 +164,11 @@ public final class RestClient {
         HttpRequest.BodyPublisher publisher = body == null ? HttpRequest.BodyPublishers.noBody()
                 : HttpRequest.BodyPublishers.ofString(body);
 
-        return builder.method(method, publisher)
+        // To emulate HttpURLConnection behaviour, which sets the method to "POST"
+        // if a body is provided, even after the requested method was set to "GET"
+        String finalMethod = body != null && "GET".equals(method) ? "POST" : method;
+
+        return builder.method(finalMethod, publisher)
                 .build();
     }
 
@@ -227,7 +231,7 @@ public final class RestClient {
             String errorMessage = "none, body type: " + response.body().getClass();
             if (response.body() instanceof String) {
                 errorMessage = (String) response.body();
-            } else if(response.body() instanceof InputStream) {
+            } else if (response.body() instanceof InputStream) {
                 Scanner scanner = new Scanner((InputStream) response.body(), StandardCharsets.UTF_8);
                 scanner.useDelimiter("\\Z");
                 errorMessage = scanner.next();
