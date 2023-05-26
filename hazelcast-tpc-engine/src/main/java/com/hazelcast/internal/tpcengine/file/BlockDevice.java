@@ -31,22 +31,22 @@ public class BlockDevice {
 
     /**
      * @param path          the path of the storage device.
-     * @param maxConcurrent the number of concurrent requests on the dev.
+     * @param concurrentLimit the number of concurrent requests on the dev.
      * @param maxWaiting    the maximum number of waiting in case of no space for waiting requests.
      */
     public BlockDevice(String path,
-                       int maxConcurrent,
+                       int concurrentLimit,
                        int maxWaiting) {
         this.path = path;
         File file = new File(path);
         if (!file.isDirectory()) {
             throw new IllegalArgumentException("Path [" + path + "] is not a valid directory.");
         }
-        this.maxConcurrent = maxConcurrent;
+        this.maxConcurrent = concurrentLimit;
         this.maxWaiting = maxWaiting;
     }
 
-    public int maxConcurrent() {
+    public int concurrentLimit() {
         return maxConcurrent;
     }
 

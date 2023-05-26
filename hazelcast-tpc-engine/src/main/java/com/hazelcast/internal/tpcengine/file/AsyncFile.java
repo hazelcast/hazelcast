@@ -21,8 +21,6 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 
-import java.nio.charset.StandardCharsets;
-
 import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_CLOSE;
 import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FALLOCATE;
 import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FDATASYNC;
@@ -31,8 +29,8 @@ import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_NOP;
 import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_OPEN;
 import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_READ;
 import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_WRITE;
-import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
  * A File that can only be accessed asynchronously. So operations are submitted asynchronously
@@ -128,9 +126,9 @@ public abstract class AsyncFile {
         }
         metrics.incNops();
 
+        request.opcode = BLK_REQ_OP_NOP;
         request.promise = promise;
         request.file = this;
-        request.opcode = BLK_REQ_OP_NOP;
 
         scheduler.submit(request);
         return promise;
@@ -162,9 +160,9 @@ public abstract class AsyncFile {
             return failOnOverload(promise);
         }
 
+        request.opcode = BLK_REQ_OP_FSYNC;
         request.file = this;
         request.promise = promise;
-        request.opcode = BLK_REQ_OP_FSYNC;
         scheduler.submit(request);
         return promise;
     }
@@ -202,9 +200,9 @@ public abstract class AsyncFile {
             return failOnOverload(promise);
         }
 
+        request.opcode = BLK_REQ_OP_FDATASYNC;
         request.file = this;
         request.promise = promise;
-        request.opcode = BLK_REQ_OP_FDATASYNC;
         scheduler.submit(request);
         return promise;
     }
@@ -219,13 +217,13 @@ public abstract class AsyncFile {
             return failOnOverload(promise);
         }
 
+        request.opcode = BLK_REQ_OP_FALLOCATE;
         request.file = this;
         request.promise = promise;
-        request.opcode = BLK_REQ_OP_FALLOCATE;
         // The address field is used to store the length of the allocation
-        request.addr = length;
+        //request.addr = length;
         // the length field is used to store the mode of the allocation
-        request.len = mode;
+        request.length = mode;
         request.rwFlags = mode;
         request.offset = offset;
         scheduler.submit(request);
@@ -237,28 +235,16 @@ public abstract class AsyncFile {
     public IntPromise open(int flags, int permissions) {
         IntPromise promise = promiseAllocator.allocate();
 
-        // todo: unwanted litter.
-        byte[] chars = path.getBytes(StandardCharsets.UTF_8);
-
-        IOBuffer pathBuffer = eventloop.blockIOBufferAllocator().allocate(chars.length + SIZEOF_CHAR);
-        pathBuffer.writeBytes(chars);
-        // C strings end with \0
-        pathBuffer.writeChar('\0');
-        pathBuffer.flip();
-
         BlockRequest request = scheduler.reserve();
         if (request == null) {
             return failOnOverload(promise);
         }
 
+        request.opcode = BLK_REQ_OP_OPEN;
         request.promise = promise;
         request.file = this;
-        request.opcode = BLK_REQ_OP_OPEN;
-        request.rwFlags = flags;
-        request.addr = pathBuffer.address();
-        request.buf = pathBuffer;
-        // len field is used for the permissions
-        request.len = permissions;
+        request.flags = flags;
+        request.permissions = permissions;
 
         scheduler.submit(request);
         return promise;
@@ -280,9 +266,9 @@ public abstract class AsyncFile {
             return failOnOverload(promise);
         }
 
+        request.opcode = BLK_REQ_OP_CLOSE;
         request.file = this;
         request.promise = promise;
-        request.opcode = BLK_REQ_OP_CLOSE;
 
         scheduler.submit(request);
         return promise;
@@ -301,6 +287,7 @@ public abstract class AsyncFile {
     public final IntPromise pread(long offset, int length, IOBuffer dst) {
         checkNotNegative(offset, "offset");
         checkNotNegative(length, "length");
+        checkNotNull(dst, "dst");
 
         IntPromise promise = promiseAllocator.allocate();
 
@@ -309,12 +296,11 @@ public abstract class AsyncFile {
             return failOnOverload(promise);
         }
 
+        request.opcode = BLK_REQ_OP_READ;
         request.file = this;
         request.promise = promise;
-        request.opcode = BLK_REQ_OP_READ;
         request.buf = dst;
-        request.addr = dst.address();
-        request.len = length;
+        request.length = length;
         request.offset = offset;
 
         scheduler.submit(request);
@@ -334,6 +320,7 @@ public abstract class AsyncFile {
     public final IntPromise pwrite(long offset, int length, IOBuffer src) {
         checkNotNegative(offset, "offset");
         checkNotNegative(length, "length");
+        checkNotNull(src,"src");
 
         IntPromise promise = promiseAllocator.allocate();
         BlockRequest request = scheduler.reserve();
@@ -341,12 +328,11 @@ public abstract class AsyncFile {
             return failOnOverload(promise);
         }
 
+        request.opcode = BLK_REQ_OP_WRITE;
         request.file = this;
         request.promise = promise;
-        request.opcode = BLK_REQ_OP_WRITE;
         request.buf = src;
-        request.addr = src.address();
-        request.len = length;
+        request.length = length;
         request.offset = offset;
 
         scheduler.submit(request);

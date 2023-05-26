@@ -31,12 +31,12 @@ public class BlockRequest {
     public static final int BLK_REQ_OP_FALLOCATE = 8;
 
     public IOBuffer buf;
+    public int permissions;
     public AsyncFile file;
     public long offset;
-    public int len;
+    public int length;
     public byte opcode;
     public int flags;
     public int rwFlags;
-    public long addr;
     public IntPromise promise;
 }
