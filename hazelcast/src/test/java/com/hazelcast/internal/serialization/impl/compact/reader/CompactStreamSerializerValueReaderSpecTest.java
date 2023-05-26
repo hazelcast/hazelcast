@@ -72,6 +72,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - check the test output - analyse the test scenario
  * - check in which method the scenario is generated - narrow down the scope of the tests run
  */
+@SuppressWarnings("FieldMayBeFinal")
 @RunWith(HazelcastParametrizedRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSupport {
@@ -113,16 +114,15 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void executeTestScenario() throws Exception {
         // handle resultz
         Object resultToMatch = expectedResult;
         if (expectedResult instanceof Class) {
             // expected exception case
-            expected.expect(isA((Class) expectedResult));
+            expected.expect(isA((Class<?>) expectedResult));
         } else if (expectedResult instanceof List) {
             // just convenience -> if result is a list if will be compared to an array, so it has to be converted
-            resultToMatch = ((List) resultToMatch).toArray();
+            resultToMatch = ((List<?>) resultToMatch).toArray();
         }
 
         // print test scenario for debug purposes
@@ -136,14 +136,14 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
 
         Object result = reader.read(pathToRead);
         if (result instanceof MultiResult) {
-            MultiResult multiResult = (MultiResult) result;
+            MultiResult<?> multiResult = (MultiResult<?>) result;
             if (multiResult.getResults().size() == 1
                     && multiResult.getResults().get(0) == null && multiResult.isNullEmptyTarget()) {
                 // explode null in case of a single multi-result target result
                 result = null;
             } else {
                 // in case of multi result while invoking generic "read" method deal with the multi results
-                result = ((MultiResult) result).getResults().toArray();
+                result = ((MultiResult<?>) result).getResults().toArray();
             }
         }
         if (Arrays.isArray(resultToMatch)) {
@@ -281,7 +281,6 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
      * The expected result should be the object that contains the object array - that's the general contract.
      * The result for assertion will be automatically calculated
      */
-    @SuppressWarnings({"unchecked"})
     private static Collection<Object[]> expandObjectArrayPrimitiveScenario(Object input, GroupObject result,
                                                                            String pathToExplode, String parent) {
         List<Object[]> scenarios = new ArrayList<>();
@@ -293,14 +292,14 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 // B. case with [any] operator on object array
                 // expansion of the primitive fields
                 for (CompactValueReaderTestStructure.PrimitiveFields primitiveFields : getPrimitives()) {
-                    List resultToMatch = new ArrayList();
+                    List<Object> resultToMatch = new ArrayList<>();
                     int objectCount = 0;
                     try {
                         objectCount = result.objects.length;
                     } catch (NullPointerException ignored) {
                     }
                     for (int i = 0; i < objectCount; i++) {
-                        PrimitiveObject object = (PrimitiveObject) result.objects[i];
+                        PrimitiveObject object = result.objects[i];
                         resultToMatch.add(object.getPrimitive(primitiveFields));
                     }
                     if (result == null || result.objects == null || result.objects.length == 0) {
@@ -317,8 +316,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                     try {
                         PrimitiveObject object = result.objects[Integer.parseInt(token)];
                         resultToMatch = object.getPrimitive(primitiveFields);
-                    } catch (NullPointerException ignored) {
-                    } catch (IndexOutOfBoundsException ignored) {
+                    } catch (NullPointerException | IndexOutOfBoundsException ignored) {
                     }
 
                     if (result == null || result.objects == null || result.objects.length == 0) {

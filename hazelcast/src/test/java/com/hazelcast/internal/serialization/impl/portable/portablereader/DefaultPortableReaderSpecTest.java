@@ -77,6 +77,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * - check the test output - analyse the test scenario
  * - check in which method the scenario is generated - narrow down the scope of the tests run
  */
+@SuppressWarnings("FieldMayBeFinal")
 @RunWith(HazelcastParametrizedRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
@@ -122,16 +123,15 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void executeTestScenario() throws Exception {
         // handle result
         Object resultToMatch = expectedResult;
         if (expectedResult instanceof Class) {
             // expected exception case
-            expected.expect(isA((Class) expectedResult));
+            expected.expect(isA((Class<?>) expectedResult));
         } else if (expectedResult instanceof List) {
             // just convenience -> if result is a list if will be compared to an array, so it has to be converted
-            resultToMatch = ((List) resultToMatch).toArray();
+            resultToMatch = ((List<?>) resultToMatch).toArray();
         }
 
         // print test scenario for debug purposes
@@ -141,14 +141,14 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         // assert the condition
         Object result = reader(inputObject).read(pathToRead);
         if (result instanceof MultiResult) {
-            MultiResult multiResult = (MultiResult) result;
+            MultiResult<?> multiResult = (MultiResult<?>) result;
             if (multiResult.getResults().size() == 1
                     && multiResult.getResults().get(0) == null && multiResult.isNullEmptyTarget()) {
                 // explode null in case of a single multi-result target result
                 result = null;
             } else {
                 // in case of multi result while invoking generic "read" method deal with the multi results
-                result = ((MultiResult) result).getResults().toArray();
+                result = ((MultiResult<?>) result).getResults().toArray();
             }
 
             if (Arrays.isArray(resultToMatch)) {
@@ -290,7 +290,6 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
      * The expected result should be the object that contains the portable array - that's the general contract.
      * The result for assertion will be automatically calculated
      */
-    @SuppressWarnings({"unchecked"})
     private static Collection<Object[]> expandPortableArrayPrimitiveScenario(Portable input, GroupPortable result,
                                                                              String pathToExplode, String parent) {
         List<Object[]> scenarios = new ArrayList<>();
@@ -302,7 +301,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 // B. case with [any] operator on portable array
                 // expansion of the primitive fields
                 for (PrimitiveFields primitiveFields : getPrimitives()) {
-                    List resultToMatch = new ArrayList();
+                    List<Object> resultToMatch = new ArrayList<>();
                     int portableCount = 0;
                     try {
                         portableCount = result.portables.length;
