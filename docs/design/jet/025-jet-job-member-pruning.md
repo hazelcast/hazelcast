@@ -138,12 +138,30 @@ for `ExecutionPlanBuilder` to choose code path with member pruning during execut
 
 ##### Processor pruning for Scan -> Transform -> Aggregate
 
+1. Single-staged aggregation.
+
 ![Scan + Scan -> HashJoin](https://svgshare.com/i/tTM.svg)
 
 On the picture above we can see optimized example from member pruning case. We can go further and just don't create 
-processors which are not participating in data processing: 
+processors which are not participating in data processing by tuning local parallelism parameter with 
+partition involvement knowledge : 
 
 ![Scan + Scan -> HashJoin](https://svgshare.com/i/tUD.svg)
+
+2. Double-staged aggregation.
+```
+- COMBINE
+  - ACCUMULATE
+    - TRANSFORM
+      - SCAN[map, partitionKey=K]
+```
+![Scan + Scan -> HashJoin](https://jet-start.sh/docs/assets/arch-dag-4.svg)
+
+For 2-stage aggregation, honestly, an author don't see actual processor pruning abilities to optimize that case. 
+Potentially it may be done in another way - if we can translate 2-staged into single-staged on SQL opt phase and 
+then eliminate member(s) via member pruning.
+Even though, lets take a look on the picture above. Here, we can theoretically, eliminate scans and flatmaps. 
+In practice, processor logic is opaque to Jet and may have side-effects which may break the job.
 
 #### Solution design details
 
