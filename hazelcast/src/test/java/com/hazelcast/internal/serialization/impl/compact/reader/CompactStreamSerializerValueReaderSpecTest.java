@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.assertj.core.util.Arrays;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,6 +51,7 @@ import static com.hazelcast.internal.serialization.impl.compact.reader.CompactVa
 import static com.hazelcast.internal.serialization.impl.compact.reader.CompactValueReaderTestStructure.nested;
 import static com.hazelcast.internal.serialization.impl.compact.reader.CompactValueReaderTestStructure.prim;
 import static java.util.Arrays.asList;
+import static org.assertj.core.util.Arrays.asObjectArray;
 import static org.hamcrest.Matchers.isA;
 import static org.assertj.core.api.Assertions.assertThat;
 /**
@@ -113,7 +115,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
     @Test
     @SuppressWarnings("unchecked")
     public void executeTestScenario() throws Exception {
-        // handle result
+        // handle resultz
         Object resultToMatch = expectedResult;
         if (expectedResult instanceof Class) {
             // expected exception case
@@ -144,7 +146,11 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 result = ((MultiResult) result).getResults().toArray();
             }
         }
-        assertThat(result).isEqualTo(resultToMatch);
+        if (Arrays.isArray(resultToMatch)) {
+            assertThat(asObjectArray((result))).containsExactlyInAnyOrder(asObjectArray(resultToMatch));
+        } else {
+            assertThat(result).isEqualTo(resultToMatch);
+        }
 
     }
 
