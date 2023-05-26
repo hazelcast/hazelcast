@@ -32,7 +32,7 @@ public class BlockDeviceRegistry {
     private final BlockDevice defaultDev = new BlockDevice("/", 128, 4096);
     private final List<BlockDevice> devs = new ArrayList<>();
 
-    public BlockDevice findStorageDevice(String path) {
+    public BlockDevice findBlockDevice(String path) {
         checkNotNull(path, "path");
 
         for (BlockDevice dev : devs) {
@@ -77,7 +77,7 @@ public class BlockDeviceRegistry {
             throw new RuntimeException("Storage device [" + path + "] is unreadable.");
         }
 
-        if (findStorageDevice(path) != defaultDev) {
+        if (findBlockDevice(path) != defaultDev) {
             throw new RuntimeException("A storage device [" + path + "] already exists.");
         }
 

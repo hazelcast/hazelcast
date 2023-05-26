@@ -130,7 +130,6 @@ public abstract class Eventloop {
      * @throws UnsupportedOperationException if the operation eventloop doesn't support creating AsyncFile instances.
      */
     public abstract AsyncFile newAsyncFile(String path);
-
     /**
      * Runs the actual eventloop.
      * <p/>

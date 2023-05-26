@@ -109,7 +109,7 @@ public final class AsyncFileMetrics {
     }
 
     public void incFdatasyncs() {
-        FDATASYNCS.setOpaque(this, (long) FSYNCS.getOpaque(this) + 1);
+        FDATASYNCS.setOpaque(this, (long) FDATASYNCS.getOpaque(this) + 1);
     }
 
     /**

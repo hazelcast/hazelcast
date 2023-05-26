@@ -25,6 +25,7 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.NanoClock;
+import com.hazelcast.internal.tpcengine.util.Preconditions;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import org.jctools.queues.MpmcArrayQueue;
 import sun.misc.Unsafe;
@@ -39,20 +40,20 @@ import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMES
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeAllQuietly;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 @SuppressWarnings({"checkstyle:MemberName",
         "checkstyle:DeclarationOrder",
         "checkstyle:NestedIfDepth",
         "checkstyle:MethodName"})
 public class IOUringEventloop extends Eventloop {
-    private  static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
+    private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     protected static final int NANOSECONDS_IN_SECOND = 1_000_000_000;
 
     private final IOUringReactor ioUringReactor;
     private final BlockDeviceRegistry blockDeviceRegistry;
-    final Map<BlockDevice, BlockRequestScheduler> deviceSchedulers = new HashMap<>();
+    final Map<BlockDevice, IOUringBlockRequestScheduler> deviceSchedulers = new HashMap<>();
     private final IOUring uring;
 
     final LongObjectHashMap<CompletionHandler> handlers = new LongObjectHashMap<>(4096);
@@ -76,7 +77,7 @@ public class IOUringEventloop extends Eventloop {
     public IOUringEventloop(IOUringReactor reactor, IOUringReactorBuilder builder) {
         super(reactor, builder);
         this.ioUringReactor = reactor;
-        this.blockDeviceRegistry = reactor.blockDeviceRegistry;
+        this.blockDeviceRegistry = builder.getBlockDeviceRegistry();
 
         // The uring instance needs to be created on the eventloop thread.
         // This is required for some of the setup flags.
@@ -93,7 +94,6 @@ public class IOUringEventloop extends Eventloop {
         handlers.put(userdata_eventRead, new EventFdCompletionHandler());
         handlers.put(userdata_timeout, new TimeoutCompletionHandler());
     }
-
 
     /**
      * Gets the next handler id for a permanent handler. A permanent handler stays registered after receiving
@@ -122,8 +122,20 @@ public class IOUringEventloop extends Eventloop {
 
     @Override
     public AsyncFile newAsyncFile(String path) {
-        checkNotNull(path, "path");
-        return new IOUringAsyncFile(path, ioUringReactor);
+        Preconditions.checkNotNull(path, "path");
+
+        BlockDevice dev = blockDeviceRegistry.findBlockDevice(path);
+        if (dev == null) {
+            throw newUncheckedIOException("Could not find storage device for [" + path + "]");
+        }
+
+        IOUringBlockRequestScheduler blockRequestScheduler = deviceSchedulers.get(dev);
+        if (blockRequestScheduler == null) {
+            blockRequestScheduler = new IOUringBlockRequestScheduler(dev, this);
+            deviceSchedulers.put(dev, blockRequestScheduler);
+        }
+
+        return new IOUringAsyncFile(path, this, blockRequestScheduler);
     }
 
     @Override
