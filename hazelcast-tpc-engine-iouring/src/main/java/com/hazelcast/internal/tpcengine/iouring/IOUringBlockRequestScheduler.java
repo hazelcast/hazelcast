@@ -29,14 +29,7 @@ import sun.misc.Unsafe;
 
 import java.nio.charset.StandardCharsets;
 
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_CLOSE;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FALLOCATE;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FDATASYNC;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FSYNC;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_NOP;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_OPEN;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_READ;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_WRITE;
+import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_FSYNC_DATASYNC;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_CLOSE;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_FALLOCATE;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_FSYNC;
@@ -51,7 +44,6 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQ
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_ioprio;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_len;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_off;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_opcode;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
@@ -126,94 +118,9 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
 
         concurrent++;
 
-        int index = sq.nextIndex();
-        if (index >= 0) {
-            long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
-
-            switch (req.opcode) {
-                case BLK_REQ_OP_NOP:
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_NOP);
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-                    UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, 0);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
-                    break;
-                case BLK_REQ_OP_READ:
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_READ);
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-                    UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, req.file.fd);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, req.offset);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, req.buf.address());
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, req.length);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
-                    break;
-                case BLK_REQ_OP_WRITE:
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_WRITE);
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-                    UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, req.file.fd);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, req.offset);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, req.buf.address());
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, req.length);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
-                    break;
-                case BLK_REQ_OP_FSYNC:
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_FSYNC);
-                    break;
-                case BLK_REQ_OP_FDATASYNC:
-                    // todo: //            request.opcode = IORING_OP_FSYNC;
-                    ////            // The IOURING_FSYNC_DATASYNC maps to the same position as the rw-flags
-                    ////            request.rwFlags = IORING_FSYNC_DATASYNC;
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_FSYNC);
-                    break;
-                case BLK_REQ_OP_OPEN:
-                    req.buf = pathBuffer();
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_OPENAT);
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-                    UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, req.buf.address());
-                    // at the position of the length field, the permissions are stored.
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, req.permissions);
-
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, req.flags);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
-                    break;
-                case BLK_REQ_OP_CLOSE:
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_CLOSE);
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-                    UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, req.file.fd);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, 0);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
-                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
-                    break;
-                case BLK_REQ_OP_FALLOCATE:
-                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_FALLOCATE);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown request type: " + req.opcode);
-            }
-
-//            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) req.flags);
-//            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-//            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, req.file.fd);
-//            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, req.offset);
-//            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, req.addr);
-//            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, req.len);
-//            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, req.rwFlags);
-//            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
-            //System.out.println("SubmissionQueue: userdata:" + userData + " index:" + index + " req:" + opcode);
+        int sqIndex = sq.nextIndex();
+        if (sqIndex >= 0) {
+            req.writeSqe(sqIndex, userdata);
         } else {
             // can't happen
             // todo: we need to find better solution
@@ -221,24 +128,90 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
         }
     }
 
-    private IOBuffer pathBuffer() {
-        // todo: unwanted litter.
-        byte[] chars = path.getBytes(StandardCharsets.UTF_8);
-
-        // todo: we do not need a blockIOBuffer for this; this is just used for passing the name
-        // of the file as a string to the kernel.
-        IOBuffer pathBuffer = eventloop.blockIOBufferAllocator().allocate(chars.length + SIZEOF_CHAR);
-        pathBuffer.writeBytes(chars);
-        // C strings end with \0
-        pathBuffer.writeChar('\0');
-        pathBuffer.flip();
-        return pathBuffer;
-    }
-
     /**
      * Represents a single I/O req on a block device. For example a read or write to disk.
      */
-    class IOUringBlockRequest extends BlockRequest implements CompletionHandler {
+    final class IOUringBlockRequest extends BlockRequest implements CompletionHandler {
+
+        void writeSqe(int sqIndex, long userdata) {
+            long sqeAddr = sq.sqesAddr + sqIndex * SIZEOF_SQE;
+
+            int sqe_fd = 0;
+            long sqe_address = 0;
+            long sqe_offset = 0;
+            int sqe_len = 0;
+            int sqe_rw_flags = 0;
+            byte sqe_opcode;
+            switch (opcode) {
+                case BLK_REQ_OP_NOP:
+                    sqe_opcode = IORING_OP_NOP;
+                    break;
+                case BLK_REQ_OP_READ:
+                    sqe_opcode = IORING_OP_READ;
+                    sqe_fd = file.fd;
+                    sqe_address = buf.address();
+                    sqe_len = length;
+                    break;
+                case BLK_REQ_OP_WRITE:
+                    sqe_opcode = IORING_OP_WRITE;
+                    sqe_fd = file.fd;
+                    sqe_address = buf.address();
+                    sqe_offset = this.offset;
+                    sqe_len = length;
+                    break;
+                case BLK_REQ_OP_FSYNC:
+                    sqe_opcode = IORING_OP_FSYNC;
+                    sqe_fd = file.fd;
+                    break;
+                case BLK_REQ_OP_FDATASYNC:
+                    sqe_opcode = IORING_OP_FSYNC;
+                    sqe_fd = file.fd;
+                    sqe_rw_flags = IORING_FSYNC_DATASYNC;
+                    break;
+                case BLK_REQ_OP_OPEN:
+                    sqe_opcode = IORING_OP_OPENAT;
+                    buf = pathAsIOBuffer();
+                    sqe_fd = file.fd;
+                    sqe_address = buf.address();
+                    // at the position of the length field, the permissions are stored.
+                    sqe_len = permissions;
+                    sqe_address = flags;
+                    break;
+                case BLK_REQ_OP_CLOSE:
+                    sqe_opcode = IORING_OP_CLOSE;
+                    sqe_fd = file.fd;
+                    break;
+                case BLK_REQ_OP_FALLOCATE:
+                    sqe_opcode = IORING_OP_FALLOCATE;
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown request type: " + opcode);
+            }
+
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_fd, sqe_opcode);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, sqe_fd);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_address);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, sqe_offset);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, sqe_len);
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, sqe_rw_flags);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+        }
+
+        IOBuffer pathAsIOBuffer() {
+            // todo: unwanted litter.
+            byte[] chars = file.path().getBytes(StandardCharsets.UTF_8);
+
+            // todo: we do not need a blockIOBuffer for this; this is just used for passing the name
+            // of the file as a string to the kernel.
+            IOBuffer pathBuffer = eventloop.blockIOBufferAllocator().allocate(chars.length + SIZEOF_CHAR);
+            pathBuffer.writeBytes(chars);
+            // C strings end with \0
+            pathBuffer.writeChar('\0');
+            pathBuffer.flip();
+            return pathBuffer;
+        }
 
         @Override
         public void handle(int res, int flags, long userdata) {
@@ -283,7 +256,16 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
             }
 
             scheduleNext();
-            release();
+            rwFlags = 0;
+            flags = 0;
+            opcode = 0;
+            length = 0;
+            offset = 0;
+            permissions = 0;
+            buf = null;
+            file = null;
+            promise = null;
+            requestAllocator.free(this);
         }
 
         private void handleError(int res) {
@@ -336,19 +318,6 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
             promise.completeWithIOException(msgBuilder.toString(), null);
         }
 
-        private void release() {
-            rwFlags = 0;
-            flags = 0;
-            opcode = 0;
-            length = 0;
-            offset = 0;
-            permissions = 0;
-            buf = null;
-            file = null;
-            promise = null;
-
-            requestAllocator.free(this);
-        }
 
         @Override
         public String toString() {
