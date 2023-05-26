@@ -423,6 +423,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         logger.info("Starting third member instance");
         HazelcastInstance hz3 = factory().newHazelcastInstance(memberConfig);
         assertClusterSizeEventually(3, hz3);
+        logger.info("Third member instance started with name " + hz3.getName());
 
         ExceptionRecorder recorder = new ExceptionRecorder(hz3, Level.WARNING);
         // fill the map with some values so each member gets some items
