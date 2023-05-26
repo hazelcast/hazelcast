@@ -42,14 +42,12 @@ import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.ResourceUtil;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlCall;
-import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalLiteral;
-import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlJoin;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -61,7 +59,7 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
-import org.apache.calcite.sql.util.SqlVisitor;
+import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlQualified;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
@@ -552,7 +550,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
      * {@code FROM TABLE(...) JOIN TABLE(...)} → <br>
      * {@code FROM (SELECT * FROM TABLE(...)) JOIN (SELECT * FROM TABLE(...))}
      */
-    private static class TableOperatorWrapper extends SqlIdentityVisitor {
+    private static class TableOperatorWrapper extends SqlShuttle {
         @Override
         public SqlNode visit(@Nonnull SqlCall call) {
             if (call instanceof SqlJoin) {
@@ -576,69 +574,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 }
             }
             return node.accept(this);
-        }
-    }
-
-    /**
-     * An {@link SqlVisitor} that replaces every {@link SqlNode} by itself,
-     * which makes it suitable for implementing {@code SqlNode} transformers.
-     * Note that such a transformer needs to be called in
-     * {@link #performUnconditionalRewrites}.
-     */
-    private static class SqlIdentityVisitor implements SqlVisitor<SqlNode> {
-        @Override
-        public SqlNode visit(@Nonnull SqlCall call) {
-            List<SqlNode> operands = call.getOperandList();
-            int operandCount = operands.size();
-            if (call instanceof SqlSelect) {
-                // In SqlSelect, the last operand is not included in setOperand().
-                SqlSelect select = (SqlSelect) call;
-                if (select.getHints() != null) {
-                    select.setHints((SqlNodeList) visit(select.getHints()));
-                }
-                operandCount--;
-            }
-            for (int i = 0; i < operandCount; i++) {
-                if (operands.get(i) != null) {
-                    call.setOperand(i, operands.get(i).accept(this));
-                }
-            }
-            return call;
-        }
-
-        @Override
-        public SqlNode visit(@Nonnull SqlNodeList nodeList) {
-            for (int i = 0; i < nodeList.size(); i++) {
-                if (nodeList.get(i) != null) {
-                    nodeList.set(i, nodeList.get(i).accept(this));
-                }
-            }
-            return nodeList;
-        }
-
-        @Override
-        public SqlNode visit(SqlLiteral literal) {
-            return literal;
-        }
-
-        @Override
-        public SqlNode visit(SqlIdentifier id) {
-            return id;
-        }
-
-        @Override
-        public SqlNode visit(SqlDataTypeSpec type) {
-            return type;
-        }
-
-        @Override
-        public SqlNode visit(SqlDynamicParam param) {
-            return param;
-        }
-
-        @Override
-        public SqlNode visit(SqlIntervalQualifier intervalQualifier) {
-            return intervalQualifier;
         }
     }
 }
