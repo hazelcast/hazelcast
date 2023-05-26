@@ -97,6 +97,7 @@ public class SqlPartitionPruningSingleTableAggregationTest extends SqlTestSuppor
 
     @Test
     public void test_countMultiplePartitions() {
+        // this needs SEARCH operator support or converting to union?
         test_countPartitioned("customerId in ('C2', 'C3', 'C4')");
     }
 
@@ -105,6 +106,7 @@ public class SqlPartitionPruningSingleTableAggregationTest extends SqlTestSuppor
 
         //TODO: how is distinct different?
         //TODO: order by after aggregation
+        //TODO: test query paramerters
 
         // no grouping
         analyzeQuery("select count(*), sum(amount) from " + mapName + filterText, null);
@@ -114,6 +116,8 @@ public class SqlPartitionPruningSingleTableAggregationTest extends SqlTestSuppor
         analyzeQuery("select count(*), sum(amount), lower(customerId) from " + mapName + filterText + " group by lower(customerId)", null);
         // group by key attr and value (same for attr?)
         analyzeQuery("select count(*), sum(amount), customerId, priority from " + mapName + filterText + " group by customerId, priority", null);
+        // group by value attr
+        analyzeQuery("select count(*), sum(amount), priority from " + mapName + filterText + " group by priority", null);
     }
 
     private void analyzeQuery(String sql, List<Row> rows) {
