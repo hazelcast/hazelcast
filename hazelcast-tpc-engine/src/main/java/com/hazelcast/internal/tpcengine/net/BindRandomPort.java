@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.util;
-
-import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
+package com.hazelcast.internal.tpcengine.net;
 
 import java.io.UncheckedIOException;
 import java.net.BindException;

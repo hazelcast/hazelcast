@@ -19,8 +19,8 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Scheduler;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.StorageDevice;
-import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
+import com.hazelcast.internal.tpcengine.file.BlockDevice;
+import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_TIMEOUT;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMESPEC;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeAllQuietly;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
@@ -50,8 +51,8 @@ public class IOUringEventloop extends Eventloop {
     protected static final int NANOSECONDS_IN_SECOND = 1_000_000_000;
 
     private final IOUringReactor ioUringReactor;
-    private final StorageDeviceRegistry deviceRegistry;
-    final Map<StorageDevice, BlockIOScheduler> deviceSchedulers = new HashMap<>();
+    private final BlockDeviceRegistry blockDeviceRegistry;
+    final Map<BlockDevice, BlockIOScheduler> deviceSchedulers = new HashMap<>();
     private final IOUring uring;
 
     final LongObjectHashMap<CompletionHandler> handlers = new LongObjectHashMap<>(4096);
@@ -64,7 +65,7 @@ public class IOUringEventloop extends Eventloop {
     private final EventloopHandler eventLoopHandler;
     private final long userdata_eventRead;
     private final long userdata_timeout;
-    private final long timeoutSpecAddr = UNSAFE.allocateMemory(Linux.SIZEOF_KERNEL_TIMESPEC);
+    private final long timeoutSpecAddr = UNSAFE.allocateMemory(SIZEOF_KERNEL_TIMESPEC);
 
     final EventFd eventfd = new EventFd();
     private final long eventFdReadBuf = UNSAFE.allocateMemory(SIZEOF_LONG);
@@ -75,7 +76,7 @@ public class IOUringEventloop extends Eventloop {
     public IOUringEventloop(IOUringReactor reactor, IOUringReactorBuilder builder) {
         super(reactor, builder);
         this.ioUringReactor = reactor;
-        this.deviceRegistry = reactor.deviceRegistry;
+        this.blockDeviceRegistry = reactor.blockDeviceRegistry;
 
         // The uring instance needs to be created on the eventloop thread.
         // This is required for some of the setup flags.

@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.Promise;
 import com.hazelcast.internal.tpcengine.file.AsyncFileMetrics;
-import com.hazelcast.internal.tpcengine.file.StorageDevice;
+import com.hazelcast.internal.tpcengine.file.BlockDevice;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
+import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
@@ -58,7 +58,7 @@ public class BlockIOScheduler {
     private final int maxConcurrent;
     private final LongObjectHashMap<CompletionHandler> handlers;
     private final SubmissionQueue sq;
-    private final StorageDevice dev;
+    private final BlockDevice dev;
     private int queueDepth;
     // a queue of IoOps that could not be submitted to io_uring because either
     // io_uring was full or because the max number of concurrent IoOps for that
@@ -70,7 +70,7 @@ public class BlockIOScheduler {
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final StringBuilder msgBuilder = new StringBuilder();
 
-    public BlockIOScheduler(StorageDevice dev, IOUringEventloop eventloop) {
+    public BlockIOScheduler(BlockDevice dev, IOUringEventloop eventloop) {
         this.dev = dev;
         this.path = dev.path();
         this.maxConcurrent = dev.maxConcurrent();
@@ -144,16 +144,16 @@ public class BlockIOScheduler {
     /**
      * Represents a single I/O operation on a block device. For example a read or write to disk.
      */
-    public class BlockIO implements CompletionHandler {
-        public IOBuffer buf;
-        public IOUringAsyncFile file;
-        public long offset;
-        public int len;
-        public byte opcode;
-        public int flags;
-        public int rwFlags;
-        public long addr;
-        public Promise<Integer> promise;
+    class BlockIO implements CompletionHandler {
+        IOBuffer buf;
+        IOUringAsyncFile file;
+        long offset;
+        int len;
+        byte opcode;
+        int flags;
+        int rwFlags;
+        long addr;
+        IntPromise promise;
 
         @Override
         public void handle(int res, int flags, long userdata) {

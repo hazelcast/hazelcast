@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.util;
 
+import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import org.junit.After;
 import org.junit.Before;
@@ -24,7 +25,6 @@ import org.junit.Test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertOpenEventually;
 import static org.junit.Assert.assertEquals;
@@ -33,16 +33,15 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class PromiseTest {
-
+public class IntPromiseTest {
     private Reactor reactor;
-    private PromiseAllocator promiseAllocator;
+    private IntPromiseAllocator promiseAllocator;
 
     @Before
     public void before() {
         reactor = new NioReactorBuilder().build().start();
 
-        promiseAllocator = new PromiseAllocator(reactor.eventloop, 1024);
+        promiseAllocator = new IntPromiseAllocator(reactor.eventloop(), 1024);
     }
 
     @After
@@ -55,7 +54,7 @@ public class PromiseTest {
 
     @Test
     public void test_pooling() {
-        Promise promise = new Promise(reactor.eventloop);
+        IntPromise promise = new IntPromise(reactor.eventloop());
 
         promise.allocator = promiseAllocator;
 
@@ -77,41 +76,41 @@ public class PromiseTest {
 
     @Test
     public void test_thenOnCompletedFuture() {
-        Promise promise = new Promise(reactor.eventloop);
+        IntPromise promise = new IntPromise(reactor.eventloop());
 
-        String result = "foobar";
+        int result = 10;
         promise.complete(result);
 
         CountDownLatch executed = new CountDownLatch(1);
-        AtomicReference valueRef = new AtomicReference();
-        AtomicReference throwableRef = new AtomicReference();
+        AtomicReference<Integer> valueRef = new AtomicReference();
+        AtomicReference<Throwable> throwableRef = new AtomicReference();
 
-        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        promise.then((o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
         });
 
         assertOpenEventually(executed);
-        assertSame(result, valueRef.get());
+        assertEquals(new Integer(result), valueRef.get());
         assertNull(throwableRef.get());
     }
 
     @Test(expected = NullPointerException.class)
     public void test_completeExceptionallyWhenNull() {
-        Promise promise = new Promise(reactor.eventloop);
+        IntPromise promise = new IntPromise(reactor.eventloop());
 
         promise.completeExceptionally(null);
     }
 
     @Test
     public void test_completeExceptionally() {
-        Promise promise = new Promise(reactor.eventloop);
+        IntPromise promise = new IntPromise(reactor.eventloop());
 
         CountDownLatch executed = new CountDownLatch(1);
-        AtomicReference valueRef = new AtomicReference();
-        AtomicReference throwableRef = new AtomicReference();
-        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        AtomicReference<Integer> valueRef = new AtomicReference();
+        AtomicReference<Throwable> throwableRef = new AtomicReference();
+        promise.then((o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
@@ -122,14 +121,14 @@ public class PromiseTest {
 
         assertOpenEventually(executed);
         assertTrue(promise.isCompletedExceptionally());
-        assertNull(valueRef.get());
+        assertEquals(new Integer(0), valueRef.get());
         assertSame(exception, throwableRef.get());
     }
 
 
     @Test(expected = IllegalStateException.class)
     public void test_completeExceptionally_whenAlreadyCompleted() {
-        Promise promise = new Promise(reactor.eventloop);
+        IntPromise promise = new IntPromise(reactor.eventloop());
 
         promise.completeExceptionally(new Throwable());
         promise.completeExceptionally(new Throwable());
@@ -137,18 +136,18 @@ public class PromiseTest {
 
     @Test
     public void test_complete() {
-        Promise promise = new Promise(reactor.eventloop);
+        IntPromise promise = new IntPromise(reactor.eventloop());
 
         CountDownLatch executed = new CountDownLatch(1);
         AtomicReference valueRef = new AtomicReference();
         AtomicReference throwableRef = new AtomicReference();
-        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        promise.then((IntBiConsumer<Throwable>) (o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
         });
 
-        String result = "foobar";
+        int result = 10;
         promise.complete(result);
 
         assertOpenEventually(executed);
@@ -158,9 +157,9 @@ public class PromiseTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_complete_whenAlreadyCompleted() {
-        Promise promise = new Promise(reactor.eventloop);
+        IntPromise promise = new IntPromise(reactor.eventloop());
 
-        promise.complete("first");
-        promise.complete("second");
+        promise.complete(1);
+        promise.complete(2);
     }
 }

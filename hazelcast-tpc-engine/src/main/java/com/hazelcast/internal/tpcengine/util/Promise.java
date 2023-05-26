@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.util;
+
+import com.hazelcast.internal.tpcengine.Eventloop;
+import com.hazelcast.internal.tpcengine.Reactor;
 
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
@@ -37,8 +40,8 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 public class Promise<E> {
     private static final Object EMPTY = new Object();
 
-    int refCount = 1;
     PromiseAllocator allocator;
+    int refCount = 1;
 
     private Object value = EMPTY;
     private final Eventloop eventloop;
@@ -96,7 +99,7 @@ public class Promise<E> {
             try {
                 consumer.accept(null, value);
             } catch (Exception e) {
-                eventloop.logger.warning(e);
+                eventloop.logger().warning(e);
             }
         }
 
@@ -126,7 +129,7 @@ public class Promise<E> {
             try {
                 consumer.accept(value, null);
             } catch (Exception e) {
-                eventloop.logger.warning(e);
+                eventloop.logger().warning(e);
             }
         }
 

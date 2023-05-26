@@ -20,8 +20,8 @@ package com.hazelcast.internal.tpcengine.util;
 import java.util.Arrays;
 import java.util.Map;
 
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.longHash;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 
 /**

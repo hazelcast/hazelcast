@@ -118,7 +118,7 @@ public final class BufferUtil {
         }
     }
 
-     public static void put(ByteBuffer dst, ByteBuffer src) {
+    public static void put(ByteBuffer dst, ByteBuffer src) {
         if (src.remaining() <= dst.remaining()) {
             // there is enough space in the dst buffer to copy the src
             dst.put(src);

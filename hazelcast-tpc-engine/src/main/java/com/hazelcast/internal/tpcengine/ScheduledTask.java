@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.util.Promise;
+
 final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
 
     final Eventloop eventloop;

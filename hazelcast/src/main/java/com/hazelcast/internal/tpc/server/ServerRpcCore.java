@@ -32,7 +32,7 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
-import com.hazelcast.internal.tpcengine.util.BindRandomPort;
+import com.hazelcast.internal.tpcengine.net.BindRandomPort;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 

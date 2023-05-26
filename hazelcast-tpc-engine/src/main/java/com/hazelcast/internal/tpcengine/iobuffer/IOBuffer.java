@@ -408,7 +408,7 @@ public class IOBuffer {
         BufferUtil.compactOrClear(buff);
     }
 
-    public String toDebugString(){
-        return BufferUtil.toDebugString("iobuffer",buff);
+    public String toDebugString() {
+        return BufferUtil.toDebugString("iobuffer", buff);
     }
 }

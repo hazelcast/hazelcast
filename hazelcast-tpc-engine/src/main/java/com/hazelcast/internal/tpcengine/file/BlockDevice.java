@@ -19,12 +19,12 @@ package com.hazelcast.internal.tpcengine.file;
 import java.io.File;
 
 /**
- * Represents some storage device.
+ * Represents some a block device like an NVMe based SSD.
  * <p/>
  * One of the problems is that every eventloop will assume full ownership of this device.
  * So if you have maxConcurrency is 100 and 10 reactors, the total concurrency is 10x100=1000.
  */
-public class StorageDevice {
+public class BlockDevice {
     private final int maxConcurrent;
     private final String path;
     private final int maxWaiting;
@@ -34,9 +34,9 @@ public class StorageDevice {
      * @param maxConcurrent the number of concurrent requests on the dev.
      * @param maxWaiting    the maximum number of waiting in case of no space for waiting requests.
      */
-    public StorageDevice(String path,
-                         int maxConcurrent,
-                         int maxWaiting) {
+    public BlockDevice(String path,
+                       int maxConcurrent,
+                       int maxWaiting) {
         this.path = path;
         File file = new File(path);
         if (!file.isDirectory()) {

@@ -28,14 +28,14 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * <p/>
  * This class isn't thread-safe.
  */
-public class StorageDeviceRegistry {
-    private final StorageDevice defaultDev = new StorageDevice("/", 128, 4096);
-    private final List<StorageDevice> devs = new ArrayList<>();
+public class BlockDeviceRegistry {
+    private final BlockDevice defaultDev = new BlockDevice("/", 128, 4096);
+    private final List<BlockDevice> devs = new ArrayList<>();
 
-    public StorageDevice findStorageDevice(String path) {
+    public BlockDevice findStorageDevice(String path) {
         checkNotNull(path, "path");
 
-        for (StorageDevice dev : devs) {
+        for (BlockDevice dev : devs) {
             if (path.startsWith(dev.path())) {
                 return dev;
             }
@@ -81,7 +81,7 @@ public class StorageDeviceRegistry {
             throw new RuntimeException("A storage device [" + path + "] already exists.");
         }
 
-        StorageDevice dev = new StorageDevice(path, maxConcurrent, maxPending);
+        BlockDevice dev = new BlockDevice(path, maxConcurrent, maxPending);
         devs.add(dev);
     }
 }

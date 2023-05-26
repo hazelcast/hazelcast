@@ -19,13 +19,13 @@ package com.hazelcast.internal.tpcengine.file;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_CREAT;
@@ -151,7 +151,7 @@ public abstract class FileCopyTest {
         assertSameContent(srcTmpFile, dstTmpFile);
     }
 
-    private class CopyFileTask implements Runnable, BiConsumer<Integer, Throwable> {
+    private class CopyFileTask implements Runnable, IntBiConsumer<Throwable> {
         private final IOBuffer buffer;
         private final CompletableFuture future;
         private int block;
@@ -181,7 +181,7 @@ public abstract class FileCopyTest {
         }
 
         @Override
-        public void accept(Integer integer, Throwable throwable) {
+        public void accept(int res, Throwable throwable) {
             if (throwable != null) {
                 future.completeExceptionally(throwable);
                 return;
@@ -190,12 +190,12 @@ public abstract class FileCopyTest {
             if (read) {
                 buffer.flip();
                 read = false;
-                bytesToWrite = integer;
+                bytesToWrite = res;
                 run();
             } else {
                 buffer.clearOrCompact();
                 read = true;
-                bytesWritten += integer;
+                bytesWritten += res;
                 // if we are at the end
                 if (bytesWritten == src.size()) {
                     dst.close().then((integer1, throwable1) -> {

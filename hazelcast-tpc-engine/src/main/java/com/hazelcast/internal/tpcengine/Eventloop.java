@@ -23,7 +23,10 @@ import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.util.BoundPriorityQueue;
 import com.hazelcast.internal.tpcengine.util.CachedNanoClock;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
+import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.NanoClock;
+import com.hazelcast.internal.tpcengine.util.Promise;
+import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -45,11 +48,11 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  */
 @SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityModifier", "rawtypes"})
 public abstract class Eventloop {
-    private static final int INITIAL_ALLOCATOR_CAPACITY = 1024;
+    private static final int INITIAL_PROMISE_ALLOCATOR_CAPACITY = 1024;
 
+    public final CircularQueue localTaskQueue;
     protected final MpmcArrayQueue externalTaskQueue;
     protected final PriorityQueue<ScheduledTask> scheduledTaskQueue;
-    public final CircularQueue localTaskQueue;
     protected final Reactor reactor;
     protected final boolean spin;
     protected final int batchSize;
@@ -57,9 +60,9 @@ public abstract class Eventloop {
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final NanoClock nanoClock;
-    public final PromiseAllocator promiseAllocator;
     protected final Scheduler scheduler;
-
+    protected final PromiseAllocator promiseAllocator;
+    protected final IntPromiseAllocator intPromiseAllocator;
     protected long earliestDeadlineNanos = -1;
     protected boolean stop;
 
@@ -71,7 +74,8 @@ public abstract class Eventloop {
         this.externalTaskQueue = new MpmcArrayQueue(builder.externalTaskQueueCapacity);
         this.spin = builder.spin;
         this.batchSize = builder.batchSize;
-        this.promiseAllocator = new PromiseAllocator(this, INITIAL_ALLOCATOR_CAPACITY);
+        this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
+        this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.nanoClock = builder.clockRefreshPeriod == 0
                 ? new StandardNanoClock()
                 : new CachedNanoClock(builder.clockRefreshPeriod);
@@ -79,8 +83,52 @@ public abstract class Eventloop {
         scheduler.init(this);
     }
 
+    /**
+     * Returns the TpcLogger for this Eventloop.
+     *
+     * @return the TpcLogger.
+     */
+    public final TpcLogger logger() {
+        return logger;
+    }
+
+    /**
+     * Returns the IntPromiseAllocator for this Eventloop.
+     *
+     * @return the IntPromiseAllocator for this Eventloop.
+     */
+    public final IntPromiseAllocator intPromiseAllocator() {
+        return intPromiseAllocator;
+    }
+
+    /**
+     * Returns the PromiseAllocator for this Eventloop.
+     *
+     * @return the PromiseAllocator for this Eventloop.
+     */
+    public final PromiseAllocator promiseAllocator() {
+        return promiseAllocator;
+    }
+
+    /**
+     * Returns the IOBufferAllocator for block device access. The eventloop will ensure
+     * that a compatible IOBuffer is returned that can be used to deal with the {@link AsyncFile}
+     * instances created by this Eventloop.
+     *
+     * @return the block IOBufferAllocator.
+     */
     public abstract IOBufferAllocator blockIOBufferAllocator();
 
+    /**
+     * Creates a new AsyncFile instance for the given path.
+     *
+     * todo: path validity
+     *
+     * @param path the path of the AsyncFile.
+     * @return the created AsyncFile.
+     * @throws NullPointerException if path is null.
+     * @throws UnsupportedOperationException if the operation eventloop doesn't support creating AsyncFile instances.
+     */
     public abstract AsyncFile newAsyncFile(String path);
 
     /**

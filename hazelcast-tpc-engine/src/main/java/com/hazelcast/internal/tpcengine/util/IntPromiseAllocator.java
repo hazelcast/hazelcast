@@ -16,40 +16,42 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
-import java.util.function.Supplier;
+
+import com.hazelcast.internal.tpcengine.Eventloop;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
-/**
- * An allocator that contains an array with pooled object instances of the same type.
- * <p>
- * LIFO would be more cache friendly
- *
- * @param <E>
- */
-public final class SlabAllocator<E> {
+@SuppressWarnings("rawtypes")
+public final class IntPromiseAllocator {
 
-    private final Supplier<E> supplier;
-    private E[] array;
+    private final Eventloop eventloop;
+    private final IntPromise[] array;
     private int index = -1;
 
-    public SlabAllocator(int capacity, Supplier<E> supplier) {
-        this.array = (E[]) new Object[capacity];
-        this.supplier = checkNotNull(supplier);
+    public IntPromiseAllocator(Eventloop eventloop, int capacity) {
+        this.eventloop = checkNotNull(eventloop);
+        this.array = new IntPromise[capacity];
     }
 
-    public E allocate() {
+    public int size() {
+        return index + 1;
+    }
+
+    public IntPromise allocate() {
         if (index == -1) {
-            return supplier.get();
+            IntPromise promise = new IntPromise(eventloop);
+            promise.allocator = this;
+            return promise;
         }
 
-        E object = array[index];
+        IntPromise promise = array[index];
         array[index] = null;
         index--;
-        return object;
+        promise.refCount = 1;
+        return promise;
     }
 
-    public void free(E e) {
+    void free(IntPromise e) {
         checkNotNull(e);
 
         if (index < array.length - 1) {

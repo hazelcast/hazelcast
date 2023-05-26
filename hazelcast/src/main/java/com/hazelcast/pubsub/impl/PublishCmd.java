@@ -18,7 +18,7 @@ package com.hazelcast.pubsub.impl;
 
 import com.hazelcast.internal.tpc.server.Cmd;
 import com.hazelcast.internal.tpc.util.CharVector;
-import com.hazelcast.internal.tpcengine.Promise;
+import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 
@@ -166,7 +166,7 @@ public class PublishCmd extends Cmd {
         String path = topicPartition.dir.getAbsolutePath() + "/" + String.format("%019d", activeSegmentId) + ".log";
         AsyncFile segmentFile = eventloop.newAsyncFile(path);
 
-        Promise<Integer> open = segmentFile.open(O_CREAT | O_DIRECT | O_RDWR, PERMISSIONS_ALL);
+        IntPromise open = segmentFile.open(O_CREAT | O_DIRECT | O_RDWR, PERMISSIONS_ALL);
         //open.releaseOnComplete();
         open.then((result, error) -> {
             if (error != null) {

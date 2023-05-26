@@ -18,7 +18,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
-import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
+import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
@@ -84,7 +84,7 @@ public class IOUringReactorBuilder extends ReactorBuilder {
         this.entries = checkPositive(entries, "entries");
     }
 
-    StorageDeviceRegistry getDeviceRegistry() {
-        return deviceRegistry;
+    BlockDeviceRegistry getBlockDeviceRegistry() {
+        return blockDeviceRegistry;
     }
 }

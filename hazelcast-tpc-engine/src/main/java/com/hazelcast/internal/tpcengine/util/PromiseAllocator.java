@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.util;
 
+
+import com.hazelcast.internal.tpcengine.Eventloop;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 

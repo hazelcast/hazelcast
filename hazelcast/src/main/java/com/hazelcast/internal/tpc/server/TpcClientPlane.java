@@ -27,7 +27,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
-import com.hazelcast.internal.tpcengine.util.BindRandomPort;
+import com.hazelcast.internal.tpcengine.net.BindRandomPort;
 
 import java.util.ArrayList;
 import java.util.List;

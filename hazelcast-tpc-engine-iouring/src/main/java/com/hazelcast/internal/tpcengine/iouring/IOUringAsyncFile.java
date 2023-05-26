@@ -17,10 +17,10 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
-import com.hazelcast.internal.tpcengine.Promise;
-import com.hazelcast.internal.tpcengine.PromiseAllocator;
+import com.hazelcast.internal.tpcengine.util.IntPromise;
+import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.StorageDevice;
+import com.hazelcast.internal.tpcengine.file.BlockDevice;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iouring.BlockIOScheduler.BlockIO;
 
@@ -36,26 +36,27 @@ import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 
 /**
  * IOUring implementation of the {@link AsyncFile}.
  */
 @SuppressWarnings({"checkstyle:TrailingComment"})
 public final class IOUringAsyncFile extends AsyncFile {
-    StorageDevice dev;
-    int fd=-1;
+    BlockDevice dev;
+    int fd = -1;
 
     private final IOUringEventloop eventloop;
     private final String path;
     private final BlockIOScheduler blockIOScheduler;
-    private final PromiseAllocator promiseAllocator;
+    private final IntPromiseAllocator intPromiseAllocator;
 
     // todo: Using path as a string forces creating litter.
     IOUringAsyncFile(String path, IOUringReactor reactor) {
         this.path = path;
         this.eventloop = (IOUringEventloop) reactor.eventloop();
-        this.promiseAllocator = eventloop.promiseAllocator;
-        this.dev = reactor.deviceRegistry.findStorageDevice(path);
+        this.intPromiseAllocator = eventloop.intPromiseAllocator();
+        this.dev = reactor.blockDeviceRegistry.findStorageDevice(path);
         if (dev == null) {
             throw newUncheckedIOException("Could not find storage device for [" + path() + "]");
         }
@@ -79,8 +80,8 @@ public final class IOUringAsyncFile extends AsyncFile {
     }
 
     @Override
-    public Promise<Integer> nop() {
-        Promise<Integer> promise = promiseAllocator.allocate();
+    public IntPromise nop() {
+        IntPromise promise = intPromiseAllocator.allocate();
 
         BlockIO bio = blockIOScheduler.reserve();
         if (bio == null) {
@@ -96,7 +97,7 @@ public final class IOUringAsyncFile extends AsyncFile {
         return promise;
     }
 
-    private static Promise failOnOverload(Promise promise) {
+    private static IntPromise failOnOverload(IntPromise promise) {
 
 //        promise.completeWithIOException(
 //                "Overload. Max concurrent operations " + maxConcurrent + " dev: [" + dev.path() + "]", null);
@@ -106,8 +107,11 @@ public final class IOUringAsyncFile extends AsyncFile {
     }
 
     @Override
-    public Promise<Integer> pread(long offset, int length, IOBuffer dst) {
-        Promise<Integer> promise = promiseAllocator.allocate();
+    public IntPromise pread(long offset, int length, IOBuffer dst) {
+        checkNotNegative(offset, "offset");
+        checkNotNegative(length, "length");
+
+        IntPromise promise = intPromiseAllocator.allocate();
 
         BlockIO bio = blockIOScheduler.reserve();
         if (bio == null) {
@@ -128,8 +132,11 @@ public final class IOUringAsyncFile extends AsyncFile {
     }
 
     @Override
-    public Promise<Integer> pwrite(long offset, int length, IOBuffer src) {
-        Promise<Integer> promise = promiseAllocator.allocate();
+    public IntPromise pwrite(long offset, int length, IOBuffer src) {
+        checkNotNegative(offset, "offset");
+        checkNotNegative(length, "length");
+
+        IntPromise promise = intPromiseAllocator.allocate();
         BlockIO bio = blockIOScheduler.reserve();
         if (bio == null) {
             return failOnOverload(promise);
@@ -148,8 +155,8 @@ public final class IOUringAsyncFile extends AsyncFile {
     }
 
     @Override
-    public Promise<Integer> fsync() {
-        Promise<Integer> promise = promiseAllocator.allocate();
+    public IntPromise fsync() {
+        IntPromise promise = intPromiseAllocator.allocate();
         BlockIO bio = blockIOScheduler.reserve();
         if (bio == null) {
             return failOnOverload(promise);
@@ -163,8 +170,8 @@ public final class IOUringAsyncFile extends AsyncFile {
     }
 
     @Override
-    public Promise<Integer> fdatasync() {
-        Promise<Integer> promise = promiseAllocator.allocate();
+    public IntPromise fdatasync() {
+        IntPromise promise = intPromiseAllocator.allocate();
         BlockIO bio = blockIOScheduler.reserve();
         if (bio == null) {
             return failOnOverload(promise);
@@ -180,7 +187,7 @@ public final class IOUringAsyncFile extends AsyncFile {
     }
 
     @Override
-    public Promise<Integer> barrierFsync() {
+    public IntPromise barrierFsync() {
         throw new RuntimeException("Not implemented yet");
     }
 
@@ -196,8 +203,11 @@ public final class IOUringAsyncFile extends AsyncFile {
 
     // for mapping see: https://patchwork.kernel.org/project/linux-fsdevel/patch/20191213183632.19441-2-axboe@kernel.dk/
     @Override
-    public Promise<Integer> fallocate(int mode, long offset, long len) {
-        Promise<Integer> promise = promiseAllocator.allocate();
+    public IntPromise fallocate(int mode, long offset, long length) {
+        checkNotNegative(offset, "offset");
+        checkNotNegative(length, "length");
+
+        IntPromise promise = intPromiseAllocator.allocate();
         BlockIO bio = blockIOScheduler.reserve();
         if (bio == null) {
             return failOnOverload(promise);
@@ -206,25 +216,24 @@ public final class IOUringAsyncFile extends AsyncFile {
         bio.file = this;
         bio.promise = promise;
         bio.opcode = IORING_OP_FALLOCATE;
-        // The IOURING_FSYNC_DATASYNC maps to the same position as the rw-flags
-        bio.len = len;
+        // The address field is used to store the length of the allocation
+        bio.addr = length;
+        // the length field is used to store the mode of the allocation
+        bio.len = mode;
         bio.rwFlags = mode;
         bio.offset = offset;
         blockIOScheduler.submit(bio);
         return promise;
-
-        throw new RuntimeException();
-        //return scheduler.submit(this, IORING_OP_FALLOCATE, 0, 0, len,  mode, offset);
     }
 
     @Override
-    public Promise<Integer> delete() {
+    public IntPromise delete() {
         throw new RuntimeException("Not yet implemented");
     }
 
     @Override
-    public Promise<Integer> open(int flags, int permissions) {
-        Promise<Integer> promise = promiseAllocator.allocate();
+    public IntPromise open(int flags, int permissions) {
+        IntPromise promise = intPromiseAllocator.allocate();
 
         // todo: unwanted litter.
         byte[] chars = path.getBytes(StandardCharsets.UTF_8);
@@ -253,8 +262,8 @@ public final class IOUringAsyncFile extends AsyncFile {
     }
 
     @Override
-    public Promise<Integer> close() {
-        Promise<Integer> promise = promiseAllocator.allocate();
+    public IntPromise close() {
+        IntPromise promise = intPromiseAllocator.allocate();
         BlockIO bio = blockIOScheduler.reserve();
         if (bio == null) {
             return failOnOverload(promise);

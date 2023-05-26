@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpcengine.file;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.Promise;
+import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 
 /**
@@ -55,7 +55,7 @@ public abstract class AsyncFile {
     /**
      * Returns the file descriptor.
      * <p/>
-     * If {@link #open(int)} hasn't been called, then the value is undefined. todo: perhaps better to return -1?
+     * If {@link #open(int, int)} hasn't been called, then the value is undefined. todo: perhaps better to return -1?
      *
      * @return the file decriptor.
      */
@@ -80,7 +80,7 @@ public abstract class AsyncFile {
      *
      * @return a future.
      */
-    public abstract Promise<Integer> nop();
+    public abstract IntPromise nop();
 
     /**
      * Returns the path to the file.
@@ -97,7 +97,7 @@ public abstract class AsyncFile {
      *
      * @return
      */
-    public abstract Promise<Integer> fsync();
+    public abstract IntPromise fsync();
 
     /**
      * Waits for all prior writes to complete before issuing the fsync. So all earlier writes
@@ -113,19 +113,19 @@ public abstract class AsyncFile {
      *
      * @return
      */
-    public abstract Promise<Integer> barrierFsync();
+    public abstract IntPromise barrierFsync();
 
     public abstract void writeBarrier();
 
     public abstract void writeWriteBarrier();
 
-    public abstract Promise<Integer> fdatasync();
+    public abstract IntPromise fdatasync();
 
-    public abstract Promise<Integer> fallocate(int mode, long offset, long len);
+    public abstract IntPromise fallocate(int mode, long offset, long len);
 
-    public abstract Promise<Integer> delete();
+    public abstract IntPromise delete();
 
-    public abstract Promise<Integer> open(int flags, int permissions);
+    public abstract IntPromise open(int flags, int permissions);
 
     /**
      * Closes the open file.
@@ -136,7 +136,7 @@ public abstract class AsyncFile {
      *
      * @return a Promise holding the result of the close.
      */
-    public abstract Promise<Integer> close();
+    public abstract IntPromise close();
 
     /**
      * Reads data from a file from some offset.
@@ -144,22 +144,22 @@ public abstract class AsyncFile {
      *
      * @param offset the offset within the file
      * @param length the number of bytes to read.
-     * @param dst the IOBuffer to read the data into.
+     * @param dst    the IOBuffer to read the data into.
      * @return a Promise with the response code of the request.
      * @see Eventloop#blockIOBufferAllocator()
      */
-    public abstract Promise<Integer> pread(long offset, int length, IOBuffer dst);
+    public abstract IntPromise pread(long offset, int length, IOBuffer dst);
 
     /**
      * Writes data to a file from the given offset.
      *
      * @param offset the offset within the file.
      * @param length the number of bytes to write
-     * @param src the IOBuffer to read the data from.
+     * @param src    the IOBuffer to read the data from.
      * @return a Promise with the response code of the request.
      * @see Eventloop#blockIOBufferAllocator()
      */
-    public abstract Promise<Integer> pwrite(long offset, int length, IOBuffer src);
+    public abstract IntPromise pwrite(long offset, int length, IOBuffer src);
 
     /**
      * Returns the size of the file in bytes.

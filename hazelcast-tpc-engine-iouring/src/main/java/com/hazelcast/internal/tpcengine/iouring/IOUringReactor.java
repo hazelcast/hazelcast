@@ -20,7 +20,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
+import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
 import com.hazelcast.internal.tpcengine.net.AcceptRequest;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocketBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
@@ -48,7 +48,7 @@ public class IOUringReactor extends Reactor {
 
     //todo: Litter; we need to come up with better solution.
     protected final Set<AutoCloseable> closeables = new CopyOnWriteArraySet<>();
-    protected final StorageDeviceRegistry deviceRegistry;
+    protected final BlockDeviceRegistry blockDeviceRegistry;
     private final EventFd eventFd;
 
     public IOUringReactor() {
@@ -57,7 +57,7 @@ public class IOUringReactor extends Reactor {
 
     public IOUringReactor(IOUringReactorBuilder builder) {
         super(builder);
-        this.deviceRegistry = builder.getDeviceRegistry();
+        this.blockDeviceRegistry = builder.getBlockDeviceRegistry();
         this.eventFd = ((IOUringEventloop) eventloop()).eventfd;
     }
 

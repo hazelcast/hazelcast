@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
+import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.internal.tpcengine.util.Preconditions;
 import com.hazelcast.internal.util.ThreadAffinity;
@@ -72,7 +72,7 @@ public abstract class ReactorBuilder {
         }
     }
 
-    protected StorageDeviceRegistry deviceRegistry = new StorageDeviceRegistry();
+    protected BlockDeviceRegistry blockDeviceRegistry = new BlockDeviceRegistry();
     protected final ReactorType type;
     Supplier<Scheduler> schedulerSupplier = NopScheduler::new;
     Supplier<String> threadNameSupplier;
@@ -261,7 +261,7 @@ public abstract class ReactorBuilder {
         this.schedulerSupplier = checkNotNull(schedulerSupplier);
     }
 
-    public void setStorageDeviceRegistry(StorageDeviceRegistry deviceRegistry) {
-        this.deviceRegistry = checkNotNull(deviceRegistry);
+    public void setStorageDeviceRegistry(BlockDeviceRegistry blockDeviceRegistry) {
+        this.blockDeviceRegistry = checkNotNull(blockDeviceRegistry);
     }
 }
