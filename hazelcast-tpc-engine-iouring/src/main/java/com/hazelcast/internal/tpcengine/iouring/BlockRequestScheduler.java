@@ -49,7 +49,7 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQ
 /**
  * Todo: The IOScheduler should be a scheduler for all storage devices. Currently it is only for a single device.
  */
-public class BlockIOScheduler {
+public class BlockRequestScheduler {
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
@@ -63,19 +63,19 @@ public class BlockIOScheduler {
     // a queue of IoOps that could not be submitted to io_uring because either
     // io_uring was full or because the max number of concurrent IoOps for that
     // device was exceeded.
-    private final CircularQueue<BlockIO> waitQueue;
-    private final SlabAllocator<BlockIO> bioAllocator;
+    private final CircularQueue<BlockRequest> waitQueue;
+    private final SlabAllocator<BlockRequest> requestAllocator;
     private long count;
 
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final StringBuilder msgBuilder = new StringBuilder();
 
-    public BlockIOScheduler(BlockDevice dev, IOUringEventloop eventloop) {
+    public BlockRequestScheduler(BlockDevice dev, IOUringEventloop eventloop) {
         this.dev = dev;
         this.path = dev.path();
         this.maxConcurrent = dev.maxConcurrent();
         this.waitQueue = new CircularQueue<>(dev.maxWaiting());
-        this.bioAllocator = new SlabAllocator<>(dev.maxWaiting(), BlockIO::new);
+        this.requestAllocator = new SlabAllocator<>(dev.maxWaiting(), BlockRequest::new);
         this.eventloop = eventloop;
         this.handlers = eventloop.handlers;
         this.sq = eventloop.sq;
@@ -84,39 +84,39 @@ public class BlockIOScheduler {
     /**
      * Reserves a single IO. The IO is not submitted to io_uring yet.
      * <p/>
-     * If a non null value is returned, it is guaranteed that {@link #submit(BlockIO)} will complete successfully.
+     * If a non null value is returned, it is guaranteed that {@link #submit(BlockRequest)} will complete successfully.
      *
      * @return the reserved IO or null if there is no space.
      */
-    public BlockIO reserve() {
+    public BlockRequest reserve() {
         //todo: not the right condition
         if (queueDepth >= maxConcurrent) {
             return null;
         }
 
-        return bioAllocator.allocate();
+        return requestAllocator.allocate();
     }
 
-    public void submit(BlockIO bio) {
+    public void submit(BlockRequest req) {
         if (queueDepth < maxConcurrent) {
-            offerIO(bio);
-        } else if (!waitQueue.offer(bio)) {
+            offer(req);
+        } else if (!waitQueue.offer(req)) {
             throw new IllegalStateException("Too many concurrent IOs");
         }
     }
 
     private void scheduleNext() {
         if (queueDepth < maxConcurrent) {
-            BlockIO bio = waitQueue.poll();
-            if (bio != null) {
-                offerIO(bio);
+            BlockRequest req = waitQueue.poll();
+            if (req != null) {
+                offer(req);
             }
         }
     }
 
-    private void offerIO(BlockIO bio) {
+    private void offer(BlockRequest req) {
         long userdata = eventloop.nextTmpHandlerId();
-        handlers.put(userdata, bio);
+        handlers.put(userdata, req);
 
         queueDepth++;
 
@@ -124,27 +124,27 @@ public class BlockIOScheduler {
         if (index >= 0) {
             //System.out.println("writeSqe:" + index);
             long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, bio.opcode);
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) bio.flags);
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, req.opcode);
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) req.flags);
             UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, bio.file.fd);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, bio.offset);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, bio.addr);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, bio.len);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, bio.rwFlags);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, req.file.fd);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, req.offset);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, req.addr);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, req.len);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, req.rwFlags);
             UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
-            //System.out.println("SubmissionQueue: userdata:" + userData + " index:" + index + " bio:" + opcode);
+            //System.out.println("SubmissionQueue: userdata:" + userData + " index:" + index + " req:" + opcode);
         } else {
             // can't happen
             // todo: we need to find better solution
-            throw new RuntimeException("Could not offer bio: " + bio);
+            throw new RuntimeException("Could not offer req: " + req);
         }
     }
 
     /**
-     * Represents a single I/O operation on a block device. For example a read or write to disk.
+     * Represents a single I/O req on a block device. For example a read or write to disk.
      */
-    class BlockIO implements CompletionHandler {
+    class BlockRequest implements CompletionHandler {
         IOBuffer buf;
         IOUringAsyncFile file;
         long offset;
@@ -263,7 +263,7 @@ public class BlockIOScheduler {
             buf = null;
             file = null;
             promise = null;
-            bioAllocator.free(this);
+            requestAllocator.free(this);
         }
 
         @Override

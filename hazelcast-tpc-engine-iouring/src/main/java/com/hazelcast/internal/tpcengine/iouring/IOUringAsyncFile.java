@@ -22,7 +22,7 @@ import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.BlockDevice;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpcengine.iouring.BlockIOScheduler.BlockIO;
+import com.hazelcast.internal.tpcengine.iouring.BlockRequestScheduler.BlockRequest;
 
 import java.nio.charset.StandardCharsets;
 
@@ -48,7 +48,7 @@ public final class IOUringAsyncFile extends AsyncFile {
 
     private final IOUringEventloop eventloop;
     private final String path;
-    private final BlockIOScheduler blockIOScheduler;
+    private final BlockRequestScheduler blockRequestScheduler;
     private final IntPromiseAllocator intPromiseAllocator;
 
     // todo: Using path as a string forces creating litter.
@@ -61,12 +61,12 @@ public final class IOUringAsyncFile extends AsyncFile {
             throw newUncheckedIOException("Could not find storage device for [" + path() + "]");
         }
 
-        BlockIOScheduler blockIOScheduler = eventloop.deviceSchedulers.get(dev);
-        if (blockIOScheduler == null) {
-            blockIOScheduler = new BlockIOScheduler(dev, eventloop);
-            eventloop.deviceSchedulers.put(dev, blockIOScheduler);
+        BlockRequestScheduler blockRequestScheduler = eventloop.deviceSchedulers.get(dev);
+        if (blockRequestScheduler == null) {
+            blockRequestScheduler = new BlockRequestScheduler(dev, eventloop);
+            eventloop.deviceSchedulers.put(dev, blockRequestScheduler);
         }
-        this.blockIOScheduler = blockIOScheduler;
+        this.blockRequestScheduler = blockRequestScheduler;
     }
 
     @Override
@@ -83,17 +83,17 @@ public final class IOUringAsyncFile extends AsyncFile {
     public IntPromise nop() {
         IntPromise promise = intPromiseAllocator.allocate();
 
-        BlockIO bio = blockIOScheduler.reserve();
-        if (bio == null) {
+        BlockRequest request = blockRequestScheduler.reserve();
+        if (request == null) {
             return failOnOverload(promise);
         }
         metrics.incNops();
 
-        bio.promise = promise;
-        bio.file = this;
-        bio.opcode = IORING_OP_NOP;
+        request.promise = promise;
+        request.file = this;
+        request.opcode = IORING_OP_NOP;
 
-        blockIOScheduler.submit(bio);
+        blockRequestScheduler.submit(request);
         return promise;
     }
 
@@ -113,20 +113,20 @@ public final class IOUringAsyncFile extends AsyncFile {
 
         IntPromise promise = intPromiseAllocator.allocate();
 
-        BlockIO bio = blockIOScheduler.reserve();
-        if (bio == null) {
+        BlockRequest request = blockRequestScheduler.reserve();
+        if (request == null) {
             return failOnOverload(promise);
         }
 
-        bio.file = this;
-        bio.promise = promise;
-        bio.opcode = IORING_OP_READ;
-        bio.buf = dst;
-        bio.addr = dst.address();
-        bio.len = length;
-        bio.offset = offset;
+        request.file = this;
+        request.promise = promise;
+        request.opcode = IORING_OP_READ;
+        request.buf = dst;
+        request.addr = dst.address();
+        request.len = length;
+        request.offset = offset;
 
-        blockIOScheduler.submit(bio);
+        blockRequestScheduler.submit(request);
 
         return promise;
     }
@@ -137,52 +137,52 @@ public final class IOUringAsyncFile extends AsyncFile {
         checkNotNegative(length, "length");
 
         IntPromise promise = intPromiseAllocator.allocate();
-        BlockIO bio = blockIOScheduler.reserve();
-        if (bio == null) {
+        BlockRequest request = blockRequestScheduler.reserve();
+        if (request == null) {
             return failOnOverload(promise);
         }
 
-        bio.file = this;
-        bio.promise = promise;
-        bio.opcode = IORING_OP_WRITE;
-        bio.buf = src;
-        bio.addr = src.address();
-        bio.len = length;
-        bio.offset = offset;
+        request.file = this;
+        request.promise = promise;
+        request.opcode = IORING_OP_WRITE;
+        request.buf = src;
+        request.addr = src.address();
+        request.len = length;
+        request.offset = offset;
 
-        blockIOScheduler.submit(bio);
+        blockRequestScheduler.submit(request);
         return promise;
     }
 
     @Override
     public IntPromise fsync() {
         IntPromise promise = intPromiseAllocator.allocate();
-        BlockIO bio = blockIOScheduler.reserve();
-        if (bio == null) {
+        BlockRequest request = blockRequestScheduler.reserve();
+        if (request == null) {
             return failOnOverload(promise);
         }
 
-        bio.file = this;
-        bio.promise = promise;
-        bio.opcode = IORING_OP_FSYNC;
-        blockIOScheduler.submit(bio);
+        request.file = this;
+        request.promise = promise;
+        request.opcode = IORING_OP_FSYNC;
+        blockRequestScheduler.submit(request);
         return promise;
     }
 
     @Override
     public IntPromise fdatasync() {
         IntPromise promise = intPromiseAllocator.allocate();
-        BlockIO bio = blockIOScheduler.reserve();
-        if (bio == null) {
+        BlockRequest request = blockRequestScheduler.reserve();
+        if (request == null) {
             return failOnOverload(promise);
         }
 
-        bio.file = this;
-        bio.promise = promise;
-        bio.opcode = IORING_OP_FSYNC;
+        request.file = this;
+        request.promise = promise;
+        request.opcode = IORING_OP_FSYNC;
         // The IOURING_FSYNC_DATASYNC maps to the same position as the rw-flags
-        bio.rwFlags = IORING_FSYNC_DATASYNC;
-        blockIOScheduler.submit(bio);
+        request.rwFlags = IORING_FSYNC_DATASYNC;
+        blockRequestScheduler.submit(request);
         return promise;
     }
 
@@ -208,21 +208,21 @@ public final class IOUringAsyncFile extends AsyncFile {
         checkNotNegative(length, "length");
 
         IntPromise promise = intPromiseAllocator.allocate();
-        BlockIO bio = blockIOScheduler.reserve();
-        if (bio == null) {
+        BlockRequest request = blockRequestScheduler.reserve();
+        if (request == null) {
             return failOnOverload(promise);
         }
 
-        bio.file = this;
-        bio.promise = promise;
-        bio.opcode = IORING_OP_FALLOCATE;
+        request.file = this;
+        request.promise = promise;
+        request.opcode = IORING_OP_FALLOCATE;
         // The address field is used to store the length of the allocation
-        bio.addr = length;
+        request.addr = length;
         // the length field is used to store the mode of the allocation
-        bio.len = mode;
-        bio.rwFlags = mode;
-        bio.offset = offset;
-        blockIOScheduler.submit(bio);
+        request.len = mode;
+        request.rwFlags = mode;
+        request.offset = offset;
+        blockRequestScheduler.submit(request);
         return promise;
     }
 
@@ -244,36 +244,36 @@ public final class IOUringAsyncFile extends AsyncFile {
         pathBuffer.writeChar('\0');
         pathBuffer.flip();
 
-        BlockIO bio = blockIOScheduler.reserve();
-        if (bio == null) {
+        BlockRequest request = blockRequestScheduler.reserve();
+        if (request == null) {
             return failOnOverload(promise);
         }
 
-        bio.promise = promise;
-        bio.file = this;
-        bio.opcode = IORING_OP_OPENAT;
-        bio.rwFlags = flags;
-        bio.addr = pathBuffer.address();
-        bio.buf = pathBuffer;
-        bio.len = permissions; // len field is used for the permissions
+        request.promise = promise;
+        request.file = this;
+        request.opcode = IORING_OP_OPENAT;
+        request.rwFlags = flags;
+        request.addr = pathBuffer.address();
+        request.buf = pathBuffer;
+        request.len = permissions; // len field is used for the permissions
 
-        blockIOScheduler.submit(bio);
+        blockRequestScheduler.submit(request);
         return promise;
     }
 
     @Override
     public IntPromise close() {
         IntPromise promise = intPromiseAllocator.allocate();
-        BlockIO bio = blockIOScheduler.reserve();
-        if (bio == null) {
+        BlockRequest request = blockRequestScheduler.reserve();
+        if (request == null) {
             return failOnOverload(promise);
         }
 
-        bio.file = this;
-        bio.promise = promise;
-        bio.opcode = IORING_OP_CLOSE;
+        request.file = this;
+        request.promise = promise;
+        request.opcode = IORING_OP_CLOSE;
 
-        blockIOScheduler.submit(bio);
+        blockRequestScheduler.submit(request);
         return promise;
     }
 
