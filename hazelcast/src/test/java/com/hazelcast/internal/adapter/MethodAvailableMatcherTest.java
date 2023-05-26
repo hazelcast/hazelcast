@@ -37,7 +37,7 @@ public class MethodAvailableMatcherTest {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
-    private Class<? extends DataStructureAdapter> adapterClass = ReplicatedMapDataStructureAdapter.class;
+    private final Class<? extends DataStructureAdapter> adapterClass = ReplicatedMapDataStructureAdapter.class;
 
     @Test
     public void assertThat_withAvailableMethod() {
@@ -92,12 +92,6 @@ public class MethodAvailableMatcherTest {
 
     @Test
     public void assertThat_withNull() {
-        try {
-
-            methodAvailable(DataStructureMethods.CLEAR).matches(null);
-        }catch (Throwable t) {
-            t.printStackTrace();
-        }
         var ex = assertThrows(AssertionError.class, () -> {
             methodAvailable(DataStructureMethods.CLEAR).matches(null);
         });
