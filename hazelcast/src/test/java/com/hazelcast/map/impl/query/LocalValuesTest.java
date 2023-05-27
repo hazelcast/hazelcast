@@ -75,7 +75,7 @@ public class LocalValuesTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void whenPredicateNull() {
-        map.localKeySet(null);
+        map.localValues(null);
     }
 
     @Test
