@@ -33,7 +33,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegati
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
- * A File that can only be accessed asynchronously. So operations are submitted asynchronously
+ * A File where most operations are asynchronous. So operations are submitted asynchronously
  * to the storage device and do not block.
  * <p/>
  * This class isn't thread-safe. It should only be processed by the owning {@link Eventloop}.

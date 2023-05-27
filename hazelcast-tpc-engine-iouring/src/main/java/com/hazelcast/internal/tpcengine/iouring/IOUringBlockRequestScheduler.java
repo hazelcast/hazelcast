@@ -44,6 +44,7 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQ
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_ioprio;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_len;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_off;
+import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_opcode;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
@@ -136,12 +137,12 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
         void writeSqe(int sqIndex, long userdata) {
             long sqeAddr = sq.sqesAddr + sqIndex * SIZEOF_SQE;
 
+            byte sqe_opcode;
             int sqe_fd = 0;
-            long sqe_address = 0;
-            long sqe_offset = 0;
+            long sqe_addr = 0;
+            long sqe_off = 0;
             int sqe_len = 0;
             int sqe_rw_flags = 0;
-            byte sqe_opcode;
             switch (opcode) {
                 case BLK_REQ_OP_NOP:
                     sqe_opcode = IORING_OP_NOP;
@@ -149,14 +150,14 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                 case BLK_REQ_OP_READ:
                     sqe_opcode = IORING_OP_READ;
                     sqe_fd = file.fd;
-                    sqe_address = buf.address();
+                    sqe_addr = buf.address();
                     sqe_len = length;
                     break;
                 case BLK_REQ_OP_WRITE:
                     sqe_opcode = IORING_OP_WRITE;
                     sqe_fd = file.fd;
-                    sqe_address = buf.address();
-                    sqe_offset = this.offset;
+                    sqe_addr = buf.address();
+                    sqe_off = this.offset;
                     sqe_len = length;
                     break;
                 case BLK_REQ_OP_FSYNC:
@@ -172,10 +173,10 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                     sqe_opcode = IORING_OP_OPENAT;
                     buf = pathAsIOBuffer();
                     sqe_fd = file.fd;
-                    sqe_address = buf.address();
+                    sqe_addr = buf.address();
                     // at the position of the length field, the permissions are stored.
                     sqe_len = permissions;
-                    sqe_address = flags;
+                    sqe_rw_flags = flags;
                     break;
                 case BLK_REQ_OP_CLOSE:
                     sqe_opcode = IORING_OP_CLOSE;
@@ -188,10 +189,10 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                     throw new IllegalStateException("Unknown request type: " + opcode);
             }
 
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_fd, sqe_opcode);
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, sqe_opcode);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, sqe_fd);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_address);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, sqe_offset);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_addr);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, sqe_off);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, sqe_len);
             UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
             UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
@@ -321,7 +322,7 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
 
         @Override
         public String toString() {
-            return "BlockIO{"
+            return "BlockRequest{"
                     + "file=" + file
                     + ", offset=" + offset
                     + ", length=" + length
