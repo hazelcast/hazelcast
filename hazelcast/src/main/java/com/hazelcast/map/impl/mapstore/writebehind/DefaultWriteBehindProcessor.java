@@ -76,55 +76,55 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         }
         final Map<Integer, List<DelayedEntry>> failuresByPartition = new HashMap<>();
 
-		// copied from callHandler() below
-		final DelayedEntry[] delayedEntriesArray = delayedEntries.toArray(new DelayedEntry[0]);
-		final Map<Object, DelayedEntry> batchMap = prepareBatchMap(delayedEntriesArray);
+        // copied from callHandler() below
+        final DelayedEntry[] delayedEntriesArray = delayedEntries.toArray(new DelayedEntry[0]);
+        final Map<Object, DelayedEntry> batchMap = prepareBatchMap(delayedEntriesArray);
 
-		// if there are no duplicate keys, we do not need to preserve order
-		if (batchMap.size() == delayedEntries.size()) {
+        // if there are no duplicate keys, we do not need to preserve order
+        if (batchMap.size() == delayedEntries.size()) {
 
-			// split into delete and write
-			final List<DelayedEntry> entriesToProcessDelete = new ArrayList<>();
-			final List<DelayedEntry> entriesToProcessWrite = new ArrayList<>();
-			for (final DelayedEntry<Data, Object> entry : delayedEntries) {
-				if (entry.getValue() == null) { // delete
-					entriesToProcessDelete.add(entry);
-				} else { // write
-					entriesToProcessWrite.add(entry);
-				}
-			}
-			final List<DelayedEntry> failuresDelete = callHandler(entriesToProcessDelete, StoreOperationType.DELETE);
-			addFailsTo(failuresByPartition, failuresDelete);
-			entriesToProcessDelete.clear();
-			final List<DelayedEntry> failuresWrite = callHandler(entriesToProcessWrite, StoreOperationType.WRITE);
-			addFailsTo(failuresByPartition, failuresWrite);
-			entriesToProcessWrite.clear();
+            // split into delete and write
+            final List<DelayedEntry> entriesToProcessDelete = new ArrayList<>();
+            final List<DelayedEntry> entriesToProcessWrite = new ArrayList<>();
+            for (final DelayedEntry<Data, Object> entry : delayedEntries) {
+                if (entry.getValue() == null) {
+                    entriesToProcessDelete.add(entry);
+                } else {
+                    entriesToProcessWrite.add(entry);
+                }
+            }
+            final List<DelayedEntry> failuresDelete = callHandler(entriesToProcessDelete, StoreOperationType.DELETE);
+            addFailsTo(failuresByPartition, failuresDelete);
+            entriesToProcessDelete.clear();
+            final List<DelayedEntry> failuresWrite = callHandler(entriesToProcessWrite, StoreOperationType.WRITE);
+            addFailsTo(failuresByPartition, failuresWrite);
+            entriesToProcessWrite.clear();
 
-		} else {
+        } else {
 
-			final List<DelayedEntry> entriesToProcess = new ArrayList<>();
-			StoreOperationType operationType = null;
-			StoreOperationType previousOperationType;
+            final List<DelayedEntry> entriesToProcess = new ArrayList<>();
+            StoreOperationType operationType = null;
+            StoreOperationType previousOperationType;
 
-			// process entries by preserving order.
-			for (final DelayedEntry<Data, Object> entry : delayedEntries) {
-				previousOperationType = operationType;
-				if (entry.getValue() == null) {
-					operationType = StoreOperationType.DELETE;
-				} else {
-					operationType = StoreOperationType.WRITE;
-				}
-				if (previousOperationType != null && !previousOperationType.equals(operationType)) {
-					final List<DelayedEntry> failures = callHandler(entriesToProcess, previousOperationType);
-					addFailsTo(failuresByPartition, failures);
-					entriesToProcess.clear();
-				}
-				entriesToProcess.add(entry);
-			}
-			final List<DelayedEntry> failures = callHandler(entriesToProcess, operationType);
-			addFailsTo(failuresByPartition, failures);
-			entriesToProcess.clear();
-		}
+            // process entries by preserving order.
+            for (final DelayedEntry<Data, Object> entry : delayedEntries) {
+                previousOperationType = operationType;
+                if (entry.getValue() == null) {
+                    operationType = StoreOperationType.DELETE;
+                } else {
+                    operationType = StoreOperationType.WRITE;
+                }
+                if (previousOperationType != null && !previousOperationType.equals(operationType)) {
+                    final List<DelayedEntry> failures = callHandler(entriesToProcess, previousOperationType);
+                    addFailsTo(failuresByPartition, failures);
+                    entriesToProcess.clear();
+                }
+                entriesToProcess.add(entry);
+            }
+            final List<DelayedEntry> failures = callHandler(entriesToProcess, operationType);
+            addFailsTo(failuresByPartition, failures);
+            entriesToProcess.clear();
+        }
         return failuresByPartition;
     }
 
