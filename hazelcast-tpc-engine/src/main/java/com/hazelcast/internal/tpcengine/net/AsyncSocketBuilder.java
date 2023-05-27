@@ -16,8 +16,12 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
+import com.hazelcast.internal.TaskQueueHandle;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.nio.NioAsyncSocketBuilder;
+
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
  * A {@link AsyncSocket} builder. Can only be used once.
@@ -50,6 +54,8 @@ public interface AsyncSocketBuilder {
             throw new UnsupportedOperationException("'" + option.name() + "' not supported");
         }
     }
+
+    AsyncSocketBuilder setTaskQueueHandle(TaskQueueHandle taskQueueHandle);
 
     /**
      * Sets the option on the underlying if that option is supported.

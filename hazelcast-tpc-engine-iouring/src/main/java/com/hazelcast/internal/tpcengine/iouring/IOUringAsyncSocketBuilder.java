@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
+import com.hazelcast.internal.TaskQueueHandle;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
@@ -33,6 +34,7 @@ public class IOUringAsyncSocketBuilder implements AsyncSocketBuilder {
     final IOUringAcceptRequest acceptRequest;
     final boolean clientSide;
     AsyncSocketReader reader;
+    TaskQueueHandle taskQueueHandle;
     IOUringAsyncSocketOptions options;
     private boolean build;
 
@@ -47,6 +49,14 @@ public class IOUringAsyncSocketBuilder implements AsyncSocketBuilder {
             this.clientSide = false;
         }
         this.options = new IOUringAsyncSocketOptions(nativeSocket);
+        this.taskQueueHandle = reactor.eventloop().localTaskQueueHandle;
+    }
+
+    @Override
+    public AsyncSocketBuilder setTaskQueueHandle(TaskQueueHandle taskQueueHandle) {
+        verifyNotBuild();
+        this.taskQueueHandle = checkNotNull(taskQueueHandle, "taskQueueHandle");
+        return this;
     }
 
     @Override

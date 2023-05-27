@@ -146,7 +146,6 @@ public class IOUringEventloop extends Eventloop {
         final CompletionQueue cq = this.cq;
         final boolean spin = this.spin;
         final SubmissionQueue sq = this.sq;
-        final MpmcArrayQueue externalTaskQueue = this.externalTaskQueue;
         final Scheduler scheduler = this.scheduler;
 
         sq_offerEventFdRead();
@@ -161,7 +160,9 @@ public class IOUringEventloop extends Eventloop {
                     sq.submit();
                 } else {
                     wakeupNeeded.set(true);
-                    if (externalTaskQueue.isEmpty()) {
+                    if (hasConcurrentTask()) {
+                        sq.submit();
+                    } else {
                         if (earliestDeadlineNanos != -1) {
                             long timeoutNanos = earliestDeadlineNanos - nanoClock.nanoTime();
                             if (timeoutNanos > 0) {
@@ -175,8 +176,6 @@ public class IOUringEventloop extends Eventloop {
                             sq.submitAndWait();
                             nanoClock.update();
                         }
-                    } else {
-                        sq.submit();
                     }
                     wakeupNeeded.set(false);
                 }
@@ -189,10 +188,9 @@ public class IOUringEventloop extends Eventloop {
             // 4: local task queue
             // 5: scheduler task queue
 
-            moreWork = runExternalTasks();
+            moreWork = runTasks();
             moreWork |= scheduler.tick();
             moreWork |= runScheduledTasks();
-            moreWork |= runLocalTasks();
         } while (!stop);
     }
 

@@ -72,9 +72,9 @@ public abstract class Reactor implements Executor {
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    protected final MpmcArrayQueue externalTaskQueue;
+    protected final TaskQueue externalTaskQueue;
     protected final Eventloop eventloop;
-    protected final CircularQueue localTaskQueue;
+    protected final TaskQueue localTaskQueue;
     protected final boolean spin;
     protected final Thread eventloopThread;
     protected final String name;
@@ -115,8 +115,8 @@ public abstract class Reactor implements Executor {
         // There is a happens-before edge between writing to the eventloopFuture and
         // the join. So at this point we can safely read the fields that have been
         // set in the constructor of the eventloop.
-        this.externalTaskQueue = eventloop.externalTaskQueue;
-        this.localTaskQueue = eventloop.localTaskQueue;
+        this.externalTaskQueue = eventloop.getTaskQueue(eventloop.externalTaskQueueHandle);
+        this.localTaskQueue = eventloop.getTaskQueue(eventloop.localTaskQueueHandle);
         this.wakeupNeeded = eventloop.wakeupNeeded;
         this.scheduler = eventloop.scheduler;
     }
@@ -322,6 +322,7 @@ public abstract class Reactor implements Executor {
      */
     public abstract void wakeup();
 
+    // todo: task queue id?
     @Override
     public void execute(Runnable command) {
         if (!offer(command)) {
@@ -339,6 +340,7 @@ public abstract class Reactor implements Executor {
      * @return true if the task was accepted, false otherwise.
      * @throws NullPointerException if task is null.
      */
+    // todo: task queue id?
     public final boolean offer(Runnable task) {
         return offer((Object) task);
     }
@@ -352,10 +354,11 @@ public abstract class Reactor implements Executor {
      * @return true if the task was accepted, false otherwise.
      * @throws NullPointerException if task is null.
      */
+    // todo: task queue id?
     public final boolean offer(Object task) {
         if (Thread.currentThread() == eventloopThread) {
-            return localTaskQueue.offer(task);
-        } else if (externalTaskQueue.offer(task)) {
+            return localTaskQueue.queue.offer(task);
+        } else if (externalTaskQueue.queue.offer(task)) {
             wakeup();
             return true;
         } else {

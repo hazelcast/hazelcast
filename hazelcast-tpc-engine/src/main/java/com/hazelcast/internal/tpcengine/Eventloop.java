@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.TaskQueueHandle;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
@@ -28,9 +29,10 @@ import com.hazelcast.internal.tpcengine.util.NanoClock;
 import com.hazelcast.internal.tpcengine.util.Promise;
 import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
-import org.jctools.queues.MpmcArrayQueue;
+import org.jctools.queues.MpscArrayQueue;
 
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -50,8 +52,6 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 public abstract class Eventloop {
     private static final int INITIAL_PROMISE_ALLOCATOR_CAPACITY = 1024;
 
-    public final CircularQueue localTaskQueue;
-    protected final MpmcArrayQueue externalTaskQueue;
     protected final PriorityQueue<ScheduledTask> scheduledTaskQueue;
     protected final Reactor reactor;
     protected final boolean spin;
@@ -63,15 +63,27 @@ public abstract class Eventloop {
     protected final Scheduler scheduler;
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
+    public final TaskQueueHandle externalTaskQueueHandle;
+    public final TaskQueueHandle localTaskQueueHandle;
     protected long earliestDeadlineNanos = -1;
     protected boolean stop;
+    protected TaskQueue[] taskQueues = new TaskQueue[0];
+    protected TaskQueue[] concurrentTaskQueues = new TaskQueue[0];
 
     protected Eventloop(Reactor reactor, ReactorBuilder builder) {
         this.reactor = reactor;
         this.builder = builder;
         this.scheduledTaskQueue = new BoundPriorityQueue<>(builder.scheduledTaskQueueCapacity);
-        this.localTaskQueue = new CircularQueue<>(builder.localTaskQueueCapacity);
-        this.externalTaskQueue = new MpmcArrayQueue(builder.externalTaskQueueCapacity);
+        this.externalTaskQueueHandle = new TaskQueueBuilder(this)
+                .setQueue(new MpscArrayQueue<>(builder.externalTaskQueueCapacity))
+                .setConcurrent(true)
+                .setShares(1)
+                .build();
+        this.localTaskQueueHandle = new TaskQueueBuilder(this)
+                .setQueue(new CircularQueue<>(builder.localTaskQueueCapacity))
+                .setConcurrent(false)
+                .setShares(1)
+                .build();
         this.spin = builder.spin;
         this.batchSize = builder.batchSize;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
@@ -81,6 +93,26 @@ public abstract class Eventloop {
                 : new CachedNanoClock(builder.clockRefreshPeriod);
         this.scheduler = builder.schedulerSupplier.get();
         scheduler.init(this);
+    }
+
+    protected boolean hasConcurrentTask() {
+        TaskQueue[] concurrentTaskQueues0 = concurrentTaskQueues;
+        int count = concurrentTaskQueues0.length;
+        for (int k = 0; k < count; k++) {
+            if (!concurrentTaskQueues0[k].queue.isEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public TaskQueue getTaskQueue(TaskQueueHandle handle) {
+        return taskQueues[handle.id];
+    }
+
+    public TaskQueueBuilder newTaskQueueBuilder() {
+        return new TaskQueueBuilder(this);
     }
 
     /**
@@ -121,15 +153,16 @@ public abstract class Eventloop {
 
     /**
      * Creates a new AsyncFile instance for the given path.
-     *
+     * <p>
      * todo: path validity
      *
      * @param path the path of the AsyncFile.
      * @return the created AsyncFile.
-     * @throws NullPointerException if path is null.
+     * @throws NullPointerException          if path is null.
      * @throws UnsupportedOperationException if the operation eventloop doesn't support creating AsyncFile instances.
      */
     public abstract AsyncFile newAsyncFile(String path);
+
     /**
      * Runs the actual eventloop.
      * <p/>
@@ -180,57 +213,42 @@ public abstract class Eventloop {
         return !scheduledTaskQueue0.isEmpty();
     }
 
-    protected final boolean runLocalTasks() {
-        final int batchSize0 = batchSize;
-        final CircularQueue localTaskQueue0 = localTaskQueue;
-        for (int k = 0; k < batchSize0; k++) {
-            Object task = localTaskQueue0.poll();
-            if (task == null) {
-                // there are no more tasks.
-                return false;
-            } else if (task instanceof Runnable) {
-                try {
-                    ((Runnable) task).run();
-                } catch (Exception e) {
-                    logger.warning(e);
-                }
-            } else {
-                try {
-                    scheduler.schedule(task);
-                } catch (Exception e) {
-                    logger.warning(e);
-                }
-            }
-        }
-
-        return !localTaskQueue0.isEmpty();
-    }
-
-    protected final boolean runExternalTasks() {
-        final int batchSize0 = batchSize;
-        final MpmcArrayQueue externalTaskQueue0 = externalTaskQueue;
+    protected final boolean runTasks() {
+        final TaskQueue[] taskQueues0 = this.taskQueues;
         final Scheduler scheduler0 = scheduler;
-        for (int k = 0; k < batchSize0; k++) {
-            Object task = externalTaskQueue0.poll();
-            if (task == null) {
-                // there are no more tasks
-                return false;
-            } else if (task instanceof Runnable) {
-                try {
-                    ((Runnable) task).run();
-                } catch (Exception e) {
-                    logger.warning(e);
+        boolean moreWork = false;
+
+        // todo: what if there are too many tasks
+        // todo: should the io be scheduled through a task queue
+        for (TaskQueue taskQueue : taskQueues0) {
+            int shares = taskQueue.shares;
+            Queue queue = taskQueue.queue;
+            for (int l = 0; l < shares; l++) {
+                Object task = queue.poll();
+                if (task == null) {
+                    // there are no more tasks
+                    break;
+                } else if (task instanceof Runnable) {
+                    try {
+                        ((Runnable) task).run();
+                    } catch (Exception e) {
+                        logger.warning(e);
+                    }
+                } else {
+                    try {
+                        scheduler0.schedule(task);
+                    } catch (Exception e) {
+                        logger.warning(e);
+                    }
                 }
-            } else {
-                try {
-                    scheduler0.schedule(task);
-                } catch (Exception e) {
-                    logger.warning(e);
-                }
+            }
+
+            if (!moreWork && !queue.isEmpty()) {
+                moreWork = true;
             }
         }
 
-        return !externalTaskQueue0.isEmpty();
+        return moreWork;
     }
 
     /**

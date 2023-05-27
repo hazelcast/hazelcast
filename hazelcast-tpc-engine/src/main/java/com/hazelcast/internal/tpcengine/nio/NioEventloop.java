@@ -26,6 +26,7 @@ import org.jctools.queues.MpmcArrayQueue;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
@@ -59,7 +60,6 @@ class NioEventloop extends Eventloop {
         final boolean spin0 = spin;
         final Selector selector0 = selector;
         final AtomicBoolean wakeupNeeded0 = wakeupNeeded;
-        final MpmcArrayQueue externalTaskQueue0 = externalTaskQueue;
         final Scheduler scheduler0 = scheduler;
 
         boolean moreWork = false;
@@ -69,7 +69,10 @@ class NioEventloop extends Eventloop {
                 keyCount = selector0.selectNow();
             } else {
                 wakeupNeeded0.set(true);
-                if (externalTaskQueue0.isEmpty()) {
+
+                if (hasConcurrentTask()) {
+                    keyCount = selector0.selectNow();
+                } else {
                     if (earliestDeadlineNanos == -1) {
                         keyCount = selector0.select();
                     } else {
@@ -81,8 +84,6 @@ class NioEventloop extends Eventloop {
                     // we need to update the clock because we could have been blocked for quite
                     // some time and clock could be very much out of sync.
                     nanoClock0.update();
-                } else {
-                    keyCount = selector0.selectNow();
                 }
                 wakeupNeeded0.set(false);
             }
@@ -102,10 +103,10 @@ class NioEventloop extends Eventloop {
                 }
             }
 
-            moreWork = runExternalTasks();
+            moreWork = runTasks();
+            // we don't need scheduler. It can just be a
             moreWork |= scheduler0.tick();
             moreWork |= runScheduledTasks();
-            moreWork |= runLocalTasks();
         } while (!stop);
     }
 

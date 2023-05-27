@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
+import com.hazelcast.internal.TaskQueueHandle;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
@@ -47,9 +48,11 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     AsyncSocketReader reader;
     NioAsyncSocketOptions options;
     private boolean built;
+     TaskQueueHandle taskQueueHandle;
 
     NioAsyncSocketBuilder(NioReactor reactor, NioAcceptRequest acceptRequest) {
         try {
+            this.taskQueueHandle = reactor.eventloop().localTaskQueueHandle;
             this.reactor = reactor;
             this.acceptRequest = acceptRequest;
             if (acceptRequest == null) {
@@ -64,6 +67,13 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public NioAsyncSocketBuilder setTaskQueueHandle(TaskQueueHandle taskQueueHandle) {
+        verifyNotBuilt();
+        this.taskQueueHandle = checkNotNull(taskQueueHandle, "taskQueueHandle");
+        return this;
     }
 
     @Override

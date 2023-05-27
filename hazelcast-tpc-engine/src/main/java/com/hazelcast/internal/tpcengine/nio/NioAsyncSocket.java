@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
+import com.hazelcast.internal.tpcengine.TaskQueue;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
@@ -34,6 +35,7 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -64,7 +66,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final boolean regularSchedule;
     private final boolean writeThrough;
     private final AsyncSocketReader reader;
-    private final CircularQueue localTaskQueue;
+    private final TaskQueue localTaskQueue;
 
     // only accessed from eventloop thread
     private boolean started;
@@ -79,7 +81,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         try {
             this.reactor = builder.reactor;
-            this.localTaskQueue = builder.reactor.eventloop().localTaskQueue;
+            this.localTaskQueue = reactor.eventloop().getTaskQueue(builder.taskQueueHandle);
             this.options = builder.options;
             this.eventloopThread = reactor.eventloopThread();
             this.socketChannel = builder.socketChannel;
@@ -272,7 +274,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         Thread currentThread = currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
-                localTaskQueue.add(handler);
+                localTaskQueue.queue.add(handler);
             } else if (writeThrough) {
                 handler.run();
             } else if (regularSchedule) {
@@ -325,7 +327,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         boolean result;
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                localTaskQueue.add(handler);
+                localTaskQueue.queue.add(handler);
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {

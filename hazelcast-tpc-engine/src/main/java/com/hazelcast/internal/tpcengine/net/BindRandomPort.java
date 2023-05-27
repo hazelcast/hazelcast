@@ -32,7 +32,6 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkValidPort
  * To bind on a random port, the port=0 can be passed when using
  * {@link java.net.Socket#bind(SocketAddress)} when you want to to bind to any free port.
  * But this approach can't be used to if the port needs to be constrained within a range.
- * This is why this class exists.
  */
 public class BindRandomPort {
 
