@@ -58,7 +58,7 @@ public final class AsyncFileMetrics {
 
 
     /**
-     * Returns the number of read operations that have been performed on the file.
+     * Returns the number of read operations that have been successfully performed on the file.
      */
     public long reads() {
         return (long) READS.getOpaque(this);
@@ -69,7 +69,7 @@ public final class AsyncFileMetrics {
     }
 
     /**
-     * Returns the number of write operations that have been performed on the file.
+     * Returns the number of write operations that have been successfully performed on the file.
      */
     public long writes() {
         return (long) WRITES.getOpaque(this);
@@ -80,7 +80,7 @@ public final class AsyncFileMetrics {
     }
 
     /**
-     * Returns the number of nop operations that have been performed on the file.
+     * Returns the number of nop operations that have been successfully performed on the file.
      */
     public long nops() {
         return (long) NOPS.getOpaque(this);
@@ -91,7 +91,7 @@ public final class AsyncFileMetrics {
     }
 
     /**
-     * Returns the number of fsyncs that have been called on the file.
+     * Returns the number of fsyncs that have been successfully called on the file.
      */
     public long fsyncs() {
         return (long) FSYNCS.getOpaque(this);
@@ -102,7 +102,7 @@ public final class AsyncFileMetrics {
     }
 
     /**
-     * Returns the number of fdatasyncs that have been called on the file.
+     * Returns the number of fdatasyncs that have been successfully called on the file.
      */
     public long fdatasyncs() {
         return (long) FDATASYNCS.getOpaque(this);
@@ -113,7 +113,7 @@ public final class AsyncFileMetrics {
     }
 
     /**
-     * Returns the number bytes that have been written to the file.
+     * Returns the number bytes that have been successfully written to the file.
      */
     public long bytesWritten() {
         return (long) BYTES_WRITTEN.getOpaque(this);
@@ -124,7 +124,7 @@ public final class AsyncFileMetrics {
     }
 
     /**
-     * Returns the number of bytes that have bee read from the file.
+     * Returns the number of bytes that have been successfully read from the file.
      */
     public long bytesRead() {
         return (long) BYTES_READ.getOpaque(this);

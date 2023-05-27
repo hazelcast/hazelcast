@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.file;
 
+/**
+ * The scheduler for {@link BlockRequest}s.
+ */
 public interface BlockRequestScheduler {
 
     /**

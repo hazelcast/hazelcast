@@ -150,13 +150,13 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                 case BLK_REQ_OP_READ:
                     sqe_opcode = IORING_OP_READ;
                     sqe_fd = file.fd;
-                    sqe_addr = buf.address();
+                    sqe_addr = buffer.address();
                     sqe_len = length;
                     break;
                 case BLK_REQ_OP_WRITE:
                     sqe_opcode = IORING_OP_WRITE;
                     sqe_fd = file.fd;
-                    sqe_addr = buf.address();
+                    sqe_addr = buffer.address();
                     sqe_off = this.offset;
                     sqe_len = length;
                     break;
@@ -171,9 +171,9 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                     break;
                 case BLK_REQ_OP_OPEN:
                     sqe_opcode = IORING_OP_OPENAT;
-                    buf = pathAsIOBuffer();
+                    buffer = pathAsIOBuffer();
                     sqe_fd = file.fd;
-                    sqe_addr = buf.address();
+                    sqe_addr = buffer.address();
                     // at the position of the length field, the permissions are stored.
                     sqe_len = permissions;
                     sqe_rw_flags = flags;
@@ -184,6 +184,7 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                     break;
                 case BLK_REQ_OP_FALLOCATE:
                     sqe_opcode = IORING_OP_FALLOCATE;
+                    //todo:
                     break;
                 default:
                     throw new IllegalStateException("Unknown request type: " + opcode);
@@ -224,12 +225,12 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                         metrics.incNops();
                         break;
                     case BLK_REQ_OP_READ:
-                        buf.incPosition(res);
+                        buffer.incPosition(res);
                         metrics.incReads();
                         metrics.incBytesRead(res);
                         break;
                     case BLK_REQ_OP_WRITE:
-                        buf.incPosition(res);
+                        buffer.incPosition(res);
                         metrics.incWrites();
                         metrics.incBytesWritten(res);
                         break;
@@ -240,7 +241,7 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                         metrics.incFdatasyncs();
                         break;
                     case BLK_REQ_OP_OPEN:
-                        buf.release();
+                        buffer.release();
                         file.fd = res;
                         break;
                     case BLK_REQ_OP_CLOSE:
@@ -263,7 +264,7 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
             length = 0;
             offset = 0;
             permissions = 0;
-            buf = null;
+            buffer = null;
             file = null;
             promise = null;
             requestAllocator.free(this);
@@ -293,7 +294,7 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                     manUrl = "https://man7.org/linux/man-pages/man2/fsync.2.html";
                     break;
                 case BLK_REQ_OP_OPEN:
-                    buf.release();
+                    buffer.release();
                     msgBuilder.append("Failed to open file ").append(file.path()).append(". ");
                     manUrl = "https://man7.org/linux/man-pages/man2/open.2.html";
                     break;
@@ -330,7 +331,7 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                     + ", flags=" + flags
                     + ", permissions=" + permissions
                     + ", rwFlags=" + rwFlags
-                    + ", buf=" + (buf == null ? "null" : buf.toDebugString())
+                    + ", buf=" + (buffer == null ? "null" : buffer.toDebugString())
                     + "}";
         }
     }

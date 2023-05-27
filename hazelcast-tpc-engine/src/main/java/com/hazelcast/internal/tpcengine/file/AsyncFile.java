@@ -108,6 +108,17 @@ public abstract class AsyncFile {
     }
 
     /**
+     * Returns the size of the file in bytes.
+     * <p/>
+     * The AsyncFile must be opened for this method to be called successfully.
+     * <p>
+     * todo: What happens when the file is not open.
+     *
+     * @return the size of the file in bytes.
+     */
+    public abstract long size();
+
+    /**
      * Executes a nop asynchronously. This method exists purely for benchmarking
      * purposes and is made for the IORING_OP_NOP.
      * </p>
@@ -299,7 +310,7 @@ public abstract class AsyncFile {
         request.opcode = BLK_REQ_OP_READ;
         request.file = this;
         request.promise = promise;
-        request.buf = dst;
+        request.buffer = dst;
         request.length = length;
         request.offset = offset;
 
@@ -331,7 +342,7 @@ public abstract class AsyncFile {
         request.opcode = BLK_REQ_OP_WRITE;
         request.file = this;
         request.promise = promise;
-        request.buf = src;
+        request.buffer = src;
         request.length = length;
         request.offset = offset;
 
@@ -339,16 +350,6 @@ public abstract class AsyncFile {
         return promise;
     }
 
-    /**
-     * Returns the size of the file in bytes.
-     * <p/>
-     * The AsyncFile must be opened for this method to be called successfully.
-     * <p>
-     * todo: What happens when the file is not open.
-     *
-     * @return the size of the file in bytes.
-     */
-    public abstract long size();
 
     @Override
     public final String toString() {
