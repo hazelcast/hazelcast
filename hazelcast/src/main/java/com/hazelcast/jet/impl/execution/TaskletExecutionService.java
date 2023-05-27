@@ -227,11 +227,13 @@ public class TaskletExecutionService {
             }
         }
         if (firstFailure != null) {
-            throw new JetException(String.format(
+            String message = String.format(
                     "%,d of %,d tasklets failed to initialize." +
                             " One of the failures is attached as the cause and its summary is %s",
                     failureCount, futures.size(), firstFailure
-            ), firstFailure);
+            );
+            TaskletExecutionException silencingException = new TaskletExecutionException(message, firstFailure);
+            throw new JetException(message, silencingException);
         }
     }
 
@@ -283,7 +285,9 @@ public class TaskletExecutionService {
             t.executionTracker.exception(e);
         } else {
             logger.info("Exception in " + t.tasklet, e);
-            t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
+            String message = "Exception in " + t.tasklet + ": " + e;
+            Exception silencingException = new TaskletExecutionException(message, e);
+            t.executionTracker.exception(new JetException(message, silencingException));
         }
     }
 

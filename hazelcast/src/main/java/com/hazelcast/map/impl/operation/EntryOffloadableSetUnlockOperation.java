@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
@@ -163,11 +162,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         out.writeLong(begin);
         out.writeObject(entryBackupProcessor);
         out.writeLong(newTtl);
-
-        // RU_COMPAT 5.1
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_2)) {
-            out.writeBoolean(changeExpiryOnUpdate);
-        }
+        out.writeBoolean(changeExpiryOnUpdate);
     }
 
     @Override
@@ -182,10 +177,6 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         begin = in.readLong();
         entryBackupProcessor = in.readObject();
         newTtl = in.readLong();
-
-        // RU_COMPAT 5.1
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_2)) {
-            changeExpiryOnUpdate = in.readBoolean();
-        }
+        changeExpiryOnUpdate = in.readBoolean();
     }
 }

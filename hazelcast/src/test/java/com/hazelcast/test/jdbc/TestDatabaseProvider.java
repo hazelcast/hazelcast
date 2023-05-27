@@ -38,6 +38,27 @@ public interface TestDatabaseProvider {
     String createDatabase(String dbName);
 
     /**
+     * Return jdbc url without authentication parameters, so they need to be provided separately in properties
+     */
+    default String noAuthJdbcUrl() {
+        throw new RuntimeException("Not supported");
+    }
+
+    /**
+     * A username to authenticate
+     */
+    default String user() {
+        throw new RuntimeException("Not supported");
+    }
+
+    /**
+     * Password to authenticate
+     */
+    default String password() {
+        throw new RuntimeException("Not supported");
+    }
+
+    /**
      * Waits for a connection to the database.
      * @param jdbcUrl JDBC url returned by {@link #createDatabase(String)}.
      * @param timeout wait timeout in seconds

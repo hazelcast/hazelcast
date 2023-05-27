@@ -26,12 +26,17 @@ import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapEventJournalBasicTest extends MapEventJournalBasicTest {
 
     private TestHazelcastFactory factory;
     private HazelcastInstance client;
+
+    private final AtomicBoolean isPredicateContextInjected = new AtomicBoolean(false);
+    private final AtomicBoolean isProjectionContextInjected = new AtomicBoolean(false);
 
     @Override
     protected HazelcastInstance getRandomInstance() {
@@ -45,6 +50,26 @@ public class ClientMapEventJournalBasicTest extends MapEventJournalBasicTest {
         client = factory.newHazelcastClient();
         return instances;
     }
+
+    @Override
+    public void setPredicate(boolean value) {
+        this.isPredicateContextInjected.set(value);
+    }
+
+    @Override
+    public void setProjection(boolean value) {
+        this.isProjectionContextInjected.set(value);
+    }
+    @Override
+    public AtomicBoolean getPredicate() {
+        return this.isPredicateContextInjected;
+    }
+
+    @Override
+    public AtomicBoolean getProjection() {
+        return this.isProjectionContextInjected;
+    }
+
 
     @After
     public final void terminate() {

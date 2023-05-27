@@ -15,6 +15,10 @@
  */
 package com.hazelcast.test;
 
+import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.TestDatabaseProvider;
+
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assume.assumeTrue;
 
 public class DockerTestUtil {
@@ -24,5 +28,17 @@ public class DockerTestUtil {
 
     public static void assumeDockerEnabled() {
         assumeTrue(DockerTestUtil.dockerEnabled());
+    }
+
+    // Currently, Windows can not launch some providers
+    public static void assumeTestDatabaseProviderCanLaunch(TestDatabaseProvider provider) {
+        // If docker is not enabled
+        if (!dockerEnabled()) {
+            // Only in-memory providers can run
+            assumeThat(provider)
+                    .isInstanceOfAny(
+                            H2DatabaseProvider.class
+                    );
+        }
     }
 }

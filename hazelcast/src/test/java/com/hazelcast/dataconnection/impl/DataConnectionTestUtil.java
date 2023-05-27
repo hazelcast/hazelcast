@@ -46,11 +46,21 @@ public final class DataConnectionTestUtil {
     public static void configureJdbcDataConnection(String name, String jdbcUrl, String username, String password, Config config) {
         Properties properties = new Properties();
         properties.put("jdbcUrl", jdbcUrl);
-        properties.put("username", username);
+        properties.put("user", username);
         properties.put("password", password);
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
                 .setName(name)
                 .setType("jdbc")
+                .setProperties(properties);
+        config.getDataConnectionConfigs().put(name, dataConnectionConfig);
+    }
+
+    public static void configureMongoDataConnection(String name, String connectionString, Config config) {
+        Properties properties = new Properties();
+        properties.put("connectionString", connectionString);
+        DataConnectionConfig dataConnectionConfig = new DataConnectionConfig()
+                .setName(name)
+                .setType("mongo")
                 .setProperties(properties);
         config.getDataConnectionConfigs().put(name, dataConnectionConfig);
     }

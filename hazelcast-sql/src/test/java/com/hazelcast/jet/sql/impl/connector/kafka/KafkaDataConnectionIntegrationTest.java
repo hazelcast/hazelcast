@@ -100,8 +100,6 @@ public class KafkaDataConnectionIntegrationTest extends KafkaSqlTestSupport {
         try (SqlResult r = sqlService.execute("INSERT INTO " + name + " VALUES (0, 'value-0')")) {
             assertThat(r.updateCount()).isZero();
         }
-
-        assertTipOfStream("SELECT * FROM " + name, singletonList(new Row(0, "value-0")));
     }
 
     @Test

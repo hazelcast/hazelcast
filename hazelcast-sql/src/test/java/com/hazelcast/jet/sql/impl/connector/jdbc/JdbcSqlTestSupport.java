@@ -185,6 +185,11 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
+    protected static void assertJdbcQueryRowsAnyOrder(String query, Row... rows) {
+        List<Row> actualRows = jdbcRows(query);
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
+    }
+
     protected static List<Row> jdbcRowsTable(String tableName) {
         return jdbcRows("SELECT * FROM " + tableName);
     }

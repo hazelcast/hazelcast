@@ -117,7 +117,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         Job job = hz().getJet().newJob(dag, jobConfig);
         assertJobStatusEventually(job, RUNNING);
         job.suspend();
-        assertJobStatusEventually(job, SUSPENDED);
+        assertJobSuspendedEventually(job);
         assertThat(job.getSuspensionCause()).matches(JobSuspensionCause::requestedByUser);
         assertThat(job.getSuspensionCause().description()).isEqualTo("Requested by user");
         assertThatThrownBy(job.getSuspensionCause()::errorCause)
@@ -138,7 +138,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         Job job = hz().getJet().newJob(dag, jobConfig);
 
         // Then
-        assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        assertJobSuspendedEventually(job);
 
         assertThat(job.getSuspensionCause()).matches(JobSuspensionCause::dueToError);
         assertThat(job.getSuspensionCause().errorCause())

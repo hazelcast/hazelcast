@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.JobSuspensionCauseImpl;
 import com.hazelcast.jet.impl.SnapshotValidationRecord;
 import com.hazelcast.jet.impl.connector.WriteFileP;
+import com.hazelcast.jet.impl.operation.AddJobStatusListenerOperation;
 import com.hazelcast.jet.impl.operation.CheckLightJobsOperation;
 import com.hazelcast.jet.impl.operation.GetJobAndSqlSummaryListOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
@@ -104,6 +105,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int SNAPSHOT_STATS = 30;
     public static final int PREPARE_FOR_PASSIVE_CLUSTER_OP = 31;
     public static final int SNAPSHOT_VALIDATION_RECORD = 32;
+    public static final int ADD_JOB_STATUS_LISTENER_OP = 33;
     public static final int GET_JOB_METRICS_OP = 34;
     public static final int GET_LOCAL_JOB_METRICS_OP = 35;
     public static final int SNAPSHOT_PHASE2_OPERATION = 36;
@@ -204,6 +206,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new PrepareForPassiveClusterOperation();
                 case SNAPSHOT_VALIDATION_RECORD:
                     return new SnapshotValidationRecord();
+                case ADD_JOB_STATUS_LISTENER_OP:
+                    return new AddJobStatusListenerOperation();
                 case UPDATE_JOB_CONFIG_OP:
                     return new UpdateJobConfigOperation();
                 case GET_JOB_METRICS_OP:

@@ -27,16 +27,23 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
+import static java.lang.Integer.parseInt;
 import static java.util.Collections.unmodifiableList;
 
 public class JdbcTable extends JetTable {
+
+    public static final String OPTION_JDBC_BATCH_LIMIT = "jdbc.batch-limit";
+    public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
 
     private final List<String> dbFieldNames;
     private final List<String> primaryKeyFieldNames;
     private final String[] externalName;
     private final List<String> externalNameList;
     private final String dataConnectionName;
+    private final Map<String, String> options;
     private final int batchLimit;
 
     public JdbcTable(
@@ -44,11 +51,10 @@ public class JdbcTable extends JetTable {
             @Nonnull List<TableField> fields,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
-            @Nonnull SqlExternalResource ctx,
-            @Nonnull TableStatistics statistics,
-            int batchLimit) {
+            @Nonnull SqlExternalResource externalResource,
+            @Nonnull TableStatistics statistics) {
 
-        super(sqlConnector, fields, schemaName, mappingName, statistics, ctx.objectType(), false);
+        super(sqlConnector, fields, schemaName, mappingName, statistics, externalResource.objectType(), false);
 
         List<String> dbFieldNames = new ArrayList<>(fields.size());
         List<String> primaryKeyFieldNames = new ArrayList<>(1);
@@ -63,10 +69,11 @@ public class JdbcTable extends JetTable {
 
         this.dbFieldNames = unmodifiableList(dbFieldNames);
         this.primaryKeyFieldNames = unmodifiableList(primaryKeyFieldNames);
-        this.externalName = ctx.externalName();
+        this.externalName = externalResource.externalName();
         this.externalNameList = Arrays.asList(externalName);
-        this.dataConnectionName = ctx.dataConnection();
-        this.batchLimit = batchLimit;
+        this.dataConnectionName = externalResource.dataConnection();
+        this.options = externalResource.options();
+        this.batchLimit = parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE));
     }
 
     public List<String> dbFieldNames() {
@@ -117,10 +124,52 @@ public class JdbcTable extends JetTable {
 
     @Override
     public PlanObjectKey getObjectKey() {
-        return new JdbcPlanObjectKey();
+        return new JdbcPlanObjectKey(getSchemaName(), getSqlName(), externalName, dataConnectionName, getFields(),
+                options);
     }
 
     static final class JdbcPlanObjectKey implements PlanObjectKey {
 
+        private final String schemaName;
+        private final String tableName;
+        private final String[] externalName;
+        private final String dataConnectionName;
+        private final List<TableField> fields;
+        private final Map<String, String> options;
+
+
+        JdbcPlanObjectKey(String schemaName, String tableName, String[] externalName, String dataConnectionName,
+                          List<TableField> fields, Map<String, String> options) {
+            this.schemaName = schemaName;
+            this.tableName = tableName;
+            this.externalName = externalName;
+            this.dataConnectionName = dataConnectionName;
+            this.fields = fields;
+            this.options = options;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            JdbcPlanObjectKey that = (JdbcPlanObjectKey) o;
+            return Objects.equals(schemaName, that.schemaName)
+                    && Objects.equals(tableName, that.tableName)
+                    && Arrays.equals(externalName, that.externalName)
+                    && Objects.equals(dataConnectionName, that.dataConnectionName)
+                    && Objects.equals(fields, that.fields)
+                    && Objects.equals(options, that.options);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(schemaName, tableName, dataConnectionName, fields, options);
+            result = 31 * result + Arrays.hashCode(externalName);
+            return result;
+        }
     }
 }

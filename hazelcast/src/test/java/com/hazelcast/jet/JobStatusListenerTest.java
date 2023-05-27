@@ -57,13 +57,12 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.client.impl.clientside.ClientTestUtil.getHazelcastClientInstanceImpl;
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -114,11 +113,11 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     public void testListener_suspend_resume_restart_cancelJob() {
         testListener(streamSource(),
                 (job, listener) -> {
-                    assertJobStatusEventually(job, RUNNING);
+                    assertEqualsEventually(listener::runCount, 1);
                     job.suspend();
                     assertJobStatusEventually(job, SUSPENDED);
                     job.resume();
-                    assertJobStatusEventually(job, RUNNING);
+                    assertEqualsEventually(listener::runCount, 2);
                     job.restart();
                     assertEqualsEventually(listener::runCount, 3);
                     cancelAndJoin(job);
@@ -182,15 +181,13 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                     throw new JetException("mock error");
                 }),
                 (job, listener) -> {
-                    assertJobStatusEventually(job, SUSPENDED);
-                    String[] failure = new String[1];
-                    assertTrueEventually(() ->
-                            failure[0] = job.getSuspensionCause().errorCause().split("\n", 3)[1]);
+                    assertJobSuspendedEventually(job);
+                    String failure = job.getSuspensionCause().errorCause().split("\n", 3)[1];
                     cancelAndJoin(job);
                     assertTailEqualsEventually(listener.log,
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
-                            "Jet: RUNNING -> SUSPENDED (" + failure[0] + ")",
+                            "Jet: RUNNING -> SUSPENDED (" + failure + ")",
                             "User: SUSPENDED -> FAILED (Cancel)");
                 });
     }
@@ -199,7 +196,9 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     public void testListenerDeregistration() {
         testListener(streamSource(),
                 (job, listener) -> {
-                    assertJobStatusEventually(job, RUNNING);
+                    assertTailEqualsEventually(listener.log,
+                            "Jet: NOT_RUNNING -> STARTING",
+                            "Jet: STARTING -> RUNNING");
                     listener.deregister();
                     cancelAndJoin(job);
                     assertHasNoListenerEventually(job.getIdString(), listener.registrationId);
@@ -207,6 +206,11 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING");
                 });
+    }
+
+    @Test
+    public void testListenerLateRegistration() {
+        testListenerLateRegistration(JetService::newJob);
     }
 
     @Test
@@ -252,6 +256,24 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
                 });
     }
 
+    @Test
+    public void testLightListenerLateRegistration() {
+        testListenerLateRegistration(JetService::newLightJob);
+    }
+
+    private void testListenerLateRegistration(BiFunction<JetService, Pipeline, Job> submit) {
+        Pipeline p = Pipeline.create();
+        p.readFrom(batchSource())
+                .writeTo(Sinks.noop());
+
+        Job job = submit.apply(instance.get().getJet(), p);
+        advance(job.getId(), 1);
+        jobIdString = job.getIdString();
+        job.join();
+        assertThatThrownBy(() -> job.addStatusListener(e -> { }))
+                .hasMessage("Cannot add status listener to a COMPLETED job");
+    }
+
     @After
     public void testListenerDeregistration_onCompletion() {
         assertHasNoListenerEventually(jobIdString, registrationId);
@@ -261,8 +283,9 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         assertTrueEventually(() -> {
             assertTrue(Arrays.stream(instances()).allMatch(hz ->
                     getEventService(hz).getRegistrations(JobEventService.SERVICE_NAME, jobIdString).isEmpty()));
-            assertFalse(((ClientListenerServiceImpl) getHazelcastClientInstanceImpl(client()).getListenerService())
-                    .getRegistrations().containsKey(registrationId));
+            assertTrue(registrationId == null
+                    || !((ClientListenerServiceImpl) getHazelcastClientInstanceImpl(client()).getListenerService())
+                        .getRegistrations().containsKey(registrationId));
         });
     }
 
@@ -282,7 +305,11 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
     }
 
     protected void testLightListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
-        testListener(source, JetService::newLightJob, test);
+        testListener(source, (jet, p) -> {
+            Job job = jet.newLightJob(p);
+            assertJobVisible(instance.get(), job, job.getIdString());
+            return job;
+        }, test);
     }
 
     protected void testLightListener(Object source, Consumer<Job> test, String log) {
