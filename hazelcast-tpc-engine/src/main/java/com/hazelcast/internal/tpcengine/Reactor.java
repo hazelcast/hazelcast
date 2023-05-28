@@ -357,8 +357,8 @@ public abstract class Reactor implements Executor {
     // todo: task queue id?
     public final boolean offer(Object task) {
         if (Thread.currentThread() == eventloopThread) {
-            return localTaskQueue.queue.offer(task);
-        } else if (externalTaskQueue.queue.offer(task)) {
+            return localTaskQueue.offer(task);
+        } else if (externalTaskQueue.offer(task)) {
             wakeup();
             return true;
         } else {

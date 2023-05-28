@@ -58,7 +58,16 @@ public class TaskQueueBuilder {
         // todo: already build check
         // todo: loop active check
 
-        TaskQueue taskQueue = new TaskQueue(name, shares, queue);
+        TaskQueue taskQueue =eventloop.taskQueueAllocator.allocate();
+        taskQueue.queue = queue;
+        if(taskQueue.queue == null){
+            throw new RuntimeException();
+        }
+        taskQueue.concurrent = concurrent;
+        taskQueue.shares = shares;
+        taskQueue.name = name;
+        taskQueue.eventloop = eventloop;
+        taskQueue.state = TaskQueue.STATE_BLOCKED;
 
         eventloop.taskQueues = add(taskQueue, eventloop.taskQueues);
         if (concurrent) {

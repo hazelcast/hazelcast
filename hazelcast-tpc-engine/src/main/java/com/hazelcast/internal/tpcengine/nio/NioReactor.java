@@ -65,6 +65,8 @@ public final class NioReactor extends Reactor {
 
     @Override
     public void wakeup() {
+        //System.out.println("wakeup called");
+
         if (spin || Thread.currentThread() == eventloopThread) {
             return;
         }

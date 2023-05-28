@@ -98,6 +98,7 @@ public class IntPromise {
         this.throwable = throwable;
 
         for (IntBiConsumer<Throwable> consumer : consumers) {
+            // todo: this should be scheduled as a task
             try {
                 consumer.accept(0, throwable);
             } catch (Exception e) {
@@ -128,6 +129,7 @@ public class IntPromise {
         this.value = value;
 
         for (IntBiConsumer<Throwable> consumer : consumers) {
+            // todo: this should be scheduled as a task
             try {
                 consumer.accept(value, null);
             } catch (Exception e) {

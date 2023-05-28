@@ -17,22 +17,19 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.Scheduler;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.BlockDevice;
 import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
-import com.hazelcast.internal.tpcengine.util.NanoClock;
 import com.hazelcast.internal.tpcengine.util.Preconditions;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
-import org.jctools.queues.MpmcArrayQueue;
 import sun.misc.Unsafe;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_TIMEOUT;
@@ -139,60 +136,104 @@ public class IOUringEventloop extends Eventloop {
     }
 
     @Override
-    protected void run() throws Exception {
-        final NanoClock nanoClock = this.nanoClock;
-        final EventloopHandler eventLoopHandler = this.eventLoopHandler;
-        final AtomicBoolean wakeupNeeded = this.wakeupNeeded;
-        final CompletionQueue cq = this.cq;
-        final boolean spin = this.spin;
-        final SubmissionQueue sq = this.sq;
-        final Scheduler scheduler = this.scheduler;
-
-        sq_offerEventFdRead();
-
-        boolean moreWork = false;
-        do {
-            if (cq.hasCompletions()) {
-                // todo: do we want to control number of events being processed.
-                cq.process(eventLoopHandler);
+    protected void park() throws IOException {
+        if (spin) {
+            sq.submit();
+        } else {
+            wakeupNeeded.set(true);
+            if (hasConcurrentTask()) {
+                sq.submit();
             } else {
-                if (spin || moreWork) {
-                    sq.submit();
-                } else {
-                    wakeupNeeded.set(true);
-                    if (hasConcurrentTask()) {
-                        sq.submit();
+                if (earliestDeadlineNanos != -1) {
+                    long timeoutNanos = earliestDeadlineNanos - nanoClock.nanoTime();
+                    if (timeoutNanos > 0) {
+                        sq_offerTimeout(timeoutNanos);
+                        sq.submitAndWait();
                     } else {
-                        if (earliestDeadlineNanos != -1) {
-                            long timeoutNanos = earliestDeadlineNanos - nanoClock.nanoTime();
-                            if (timeoutNanos > 0) {
-                                sq_offerTimeout(timeoutNanos);
-                                sq.submitAndWait();
-                                nanoClock.update();
-                            } else {
-                                sq.submit();
-                            }
-                        } else {
-                            sq.submitAndWait();
-                            nanoClock.update();
-                        }
+                        sq.submit();
                     }
-                    wakeupNeeded.set(false);
+                } else {
+                    sq.submitAndWait();
                 }
             }
-
-            // what are the queues that are available for processing
-            // 1: completion events
-            // 2: concurrent task queue
-            // 3: timed task queue
-            // 4: local task queue
-            // 5: scheduler task queue
-
-            moreWork = runTasks();
-            moreWork |= scheduler.tick();
-            moreWork |= runScheduledTasks();
-        } while (!stop);
+            wakeupNeeded.set(false);
+        }
     }
+
+    @Override
+    protected boolean ioSchedulerTick() {
+        boolean worked = false;
+
+        // todo: this is where we want to iterate over the dev schedulers and submit
+        // the pending BlockRequests to the sq.
+
+        if(sq.submit()>0){
+            worked = true;
+        }
+
+        if(cq.hasCompletions()){
+            cq.process(eventLoopHandler);
+            worked = true;
+        }
+
+        return worked;
+    }
+
+//    @Override
+//    protected void run() throws Exception {
+//        final NanoClock nanoClock = this.nanoClock;
+//        final EventloopHandler eventLoopHandler = this.eventLoopHandler;
+//        final AtomicBoolean wakeupNeeded = this.wakeupNeeded;
+//        final CompletionQueue cq = this.cq;
+//        final boolean spin = this.spin;
+//        final SubmissionQueue sq = this.sq;
+//        final Scheduler scheduler = this.scheduler;
+//
+//        sq_offerEventFdRead();
+//
+//        boolean moreWork = false;
+//        do {
+//            if (cq.hasCompletions()) {
+//                // todo: do we want to control number of events being processed.
+//                cq.process(eventLoopHandler);
+//            } else {
+//                if (spin || moreWork) {
+//                    sq.submit();
+//                } else {
+//                    wakeupNeeded.set(true);
+//                    if (hasConcurrentTask()) {
+//                        sq.submit();
+//                    } else {
+//                        if (earliestDeadlineNanos != -1) {
+//                            long timeoutNanos = earliestDeadlineNanos - nanoClock.nanoTime();
+//                            if (timeoutNanos > 0) {
+//                                sq_offerTimeout(timeoutNanos);
+//                                sq.submitAndWait();
+//                                nanoClock.update();
+//                            } else {
+//                                sq.submit();
+//                            }
+//                        } else {
+//                            sq.submitAndWait();
+//                            nanoClock.update();
+//                        }
+//                    }
+//                    wakeupNeeded.set(false);
+//                }
+//            }
+//
+//            // what are the queues that are available for processing
+//            // 1: completion events
+//            // 2: concurrent task queue
+//            // 3: timed task queue
+//            // 4: local task queue
+//            // 5: scheduler task queue
+//
+//            moreWork = tasksTick();
+//            moreWork |= scheduler.tick();
+//            moreWork |= scheduledTaskTick();
+//        } while (!stop);
+//    }
 
     @Override
     protected void destroy() {

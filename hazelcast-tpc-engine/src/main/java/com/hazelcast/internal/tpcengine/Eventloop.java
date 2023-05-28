@@ -21,19 +21,21 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.util.BoundPriorityQueue;
-import com.hazelcast.internal.tpcengine.util.CachedNanoClock;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.NanoClock;
 import com.hazelcast.internal.tpcengine.util.Promise;
 import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
+import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
 import org.jctools.queues.MpscArrayQueue;
 
+import java.io.IOException;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.tpcengine.TaskQueue.STATE_BLOCKED;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
@@ -50,7 +52,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 public abstract class Eventloop {
     private static final int INITIAL_PROMISE_ALLOCATOR_CAPACITY = 1024;
 
-    protected final PriorityQueue<ScheduledTask> scheduledTaskQueue;
+    protected final PriorityQueue<DeadlineTask> deadlineTaskQueue;
     protected final Reactor reactor;
     protected final boolean spin;
     protected final int batchSize;
@@ -66,12 +68,19 @@ public abstract class Eventloop {
     protected long earliestDeadlineNanos = -1;
     protected boolean stop;
     protected TaskQueue[] taskQueues = new TaskQueue[0];
+
+    // todo: when a concurrent run queue gets blocked, it should be added to this list.
     protected TaskQueue[] concurrentTaskQueues = new TaskQueue[0];
+    protected long taskStartNanos;
+    protected long ioDeadlineNanos;
+    protected final SlabAllocator<TaskQueue> taskQueueAllocator = new SlabAllocator<>(1024, TaskQueue::new);
+    private final long ioIntervalNanos = TimeUnit.MICROSECONDS.toNanos(10);
+    TaskTree taskTree = new TaskTree();
 
     protected Eventloop(Reactor reactor, ReactorBuilder builder) {
         this.reactor = reactor;
         this.builder = builder;
-        this.scheduledTaskQueue = new BoundPriorityQueue<>(builder.scheduledTaskQueueCapacity);
+        this.deadlineTaskQueue = new BoundPriorityQueue<>(builder.scheduledTaskQueueCapacity);
         this.externalTaskQueueHandle = new TaskQueueBuilder(this)
                 .setQueue(new MpscArrayQueue<>(builder.externalTaskQueueCapacity))
                 .setConcurrent(true)
@@ -86,9 +95,9 @@ public abstract class Eventloop {
         this.batchSize = builder.batchSize;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
-        this.nanoClock = builder.clockRefreshPeriod == 0
-                ? new StandardNanoClock()
-                : new CachedNanoClock(builder.clockRefreshPeriod);
+        this.nanoClock = new StandardNanoClock();
+        this.taskStartNanos = nanoClock.nanoTime();
+        this.ioDeadlineNanos = taskStartNanos + ioIntervalNanos;
         this.scheduler = builder.schedulerSupplier.get();
         scheduler.init(this);
     }
@@ -96,7 +105,7 @@ public abstract class Eventloop {
     protected final boolean hasConcurrentTask() {
         TaskQueue[] concurrentTaskQueues0 = concurrentTaskQueues;
         for (TaskQueue taskQueue : concurrentTaskQueues0) {
-            if (!taskQueue.isEmpty()) {
+            if (!taskQueue.queue.isEmpty()) {
                 return true;
             }
         }
@@ -167,16 +176,16 @@ public abstract class Eventloop {
      */
     public abstract AsyncFile newAsyncFile(String path);
 
-    /**
-     * Runs the actual eventloop.
-     * <p/>
-     * Is called from the reactor thread.
-     *
-     * @throws Exception if something fails while running the eventloop. The reactor
-     *                   terminates when this happens.
-     */
-    @SuppressWarnings("java:S112")
-    protected abstract void run() throws Exception;
+//    /**
+//     * Runs the actual eventloop.
+//     * <p/>
+//     * Is called from the reactor thread.
+//     *
+//     * @throws Exception if something fails while running the eventloop. The reactor
+//     *                   terminates when this happens.
+//     */
+//    @SuppressWarnings("java:S112")
+//    protected abstract void run() throws Exception;
 
     /**
      * Destroys the resources of this Eventloop. Is called after the {@link #run()}.
@@ -187,93 +196,169 @@ public abstract class Eventloop {
     protected void destroy() throws Exception {
     }
 
-    protected final boolean runScheduledTasks() {
-        final PriorityQueue<ScheduledTask> scheduledTaskQueue0 = scheduledTaskQueue;
-        final NanoClock nanoClock0 = nanoClock;
-        final int batchSize0 = batchSize;
-        for (int k = 0; k < batchSize0; k++) {
-            ScheduledTask scheduledTask = scheduledTaskQueue0.peek();
-            if (scheduledTask == null) {
-                return false;
+    public void run() throws Exception {
+        long beforeNanos = nanoClock.nanoTime();
+
+        while (!stop) {
+           // Thread.sleep(100);
+
+            for (TaskQueue taskQueue : concurrentTaskQueues) {
+                if (taskQueue.state == TaskQueue.STATE_BLOCKED && !taskQueue.queue.isEmpty()) {
+                    taskQueue.state = TaskQueue.STATE_RUNNING;
+                    taskTree.insert(taskQueue);
+                }
             }
 
-            if (scheduledTask.deadlineNanos > nanoClock0.nanoTime()) {
-                // Task should not yet be executed.
-                earliestDeadlineNanos = scheduledTask.deadlineNanos;
-                // we are done since all other tasks have a larger deadline.
-                return false;
-            }
+            //Thread.sleep(100);
 
-            // the task first needs to be removed from the task queue.
-            scheduledTaskQueue0.poll();
-            earliestDeadlineNanos = -1;
-            try {
-                scheduledTask.run();
-            } catch (Exception e) {
-                logger.warning(e);
+            TaskQueue taskQueue = taskTree.next();
+            //System.out.println("taskQueue: "+taskQueue);
+            if (taskQueue == null) {
+                // todo: the problem is that tasks are added to the concurrent runqueue,
+                // but the runqueue isn't added to the taskTree.
+
+                park();
+                beforeNanos = nanoClock.nanoTime();
+                // todo: check if there is any scheduled work
+
+            } else {
+                Object cmd = taskQueue.queue.poll();
+                if (cmd instanceof Runnable) {
+                    ((Runnable) cmd).run();
+                } else {
+                    throw new RuntimeException();
+                }
+
+                long afterNanos = nanoClock.nanoTime();
+                long runDurationNanos = afterNanos - beforeNanos;
+                taskQueue.vruntimeNanos += runDurationNanos;
+
+                if (taskQueue.queue.isEmpty()) {
+                    taskQueue.state = STATE_BLOCKED;
+
+                    // todo: if concurrent, then add to concurrent
+                //    System.out.println(taskQueue+" BLOCKED");
+                } else {
+                 //   System.out.println(taskQueue+" AGAIN");
+                    taskTree.insert(taskQueue);
+                }
+
+                // todo: report duration violations.
+                if (afterNanos >= ioDeadlineNanos) {
+                    if (ioSchedulerTick()) {
+                        ioDeadlineNanos = afterNanos += ioIntervalNanos;
+                    }
+                }
+
+                deadlineSchedulerTick(afterNanos);
+
+                beforeNanos = afterNanos;
             }
         }
-
-        return !scheduledTaskQueue0.isEmpty();
     }
 
-    protected final boolean runTasks() {
-        final TaskQueue[] taskQueues0 = this.taskQueues;
-        boolean moreWork = false;
+    protected void deadlineSchedulerTick(long nowNanos) {
+        while (true) {
+            DeadlineTask deadlineTask = deadlineTaskQueue.peek();
 
-        // todo: what if there are too many tasks
-        // todo: should the io be scheduled through a task queue
-        for (TaskQueue taskQueue : taskQueues0) {
-            moreWork |= taskQueue.process();
+            if (deadlineTask == null) {
+                return;
+            }
+
+            if (deadlineTask.deadlineNanos > nowNanos) {
+                // Task should not yet be executed.
+                earliestDeadlineNanos = deadlineTask.deadlineNanos;
+                // we are done since all other tasks have a larger deadline.
+                return;
+            }
+
+            // the deadlineTask first needs to be removed from the deadlineTask queue.
+            deadlineTaskQueue.poll();
+            earliestDeadlineNanos = -1;
+
+            // offer the ScheduledTask to the task queue.
+            TaskQueue taskQueue = deadlineTask.taskQueue;
+            // todo: return value
+            taskQueue.queue.offer(deadlineTask);
+
+            switch (taskQueue.state) {
+                case STATE_BLOCKED:
+                    taskQueue.state = TaskQueue.STATE_RUNNING;
+                    // and now we insert the deadlineTask into the tree.
+                    taskTree.insert(taskQueue);
+                    break;
+                case TaskQueue.STATE_RUNNING:
+                    // task queue is already running, so we don't need to do anything
+                    break;
+                default:
+                    throw new IllegalStateException();
+            }
         }
+    }
 
-        return moreWork;
+    protected abstract boolean ioSchedulerTick();
+
+    protected abstract void park() throws IOException;
+
+    public final boolean schedule(Runnable cmd,
+                                  long delay,
+                                  TimeUnit unit) {
+        return schedule(cmd, delay, unit, localTaskQueueHandle);
     }
 
     /**
      * Schedules a one shot action with the given delay.
      *
-     * @param task  the task to execute.
+     * @param cmd   the cmd to execute.
      * @param delay the delay
      * @param unit  the unit of the delay
-     * @return true if the task was successfully scheduled.
-     * @throws NullPointerException     if task or unit is null
+     * @return true if the cmd was successfully scheduled.
+     * @throws NullPointerException     if cmd or unit is null
      * @throws IllegalArgumentException when delay smaller than 0.
      */
-    public final boolean schedule(Runnable task, long delay, TimeUnit unit) {
-        checkNotNull(task);
+    public final boolean schedule(Runnable cmd,
+                                  long delay,
+                                  TimeUnit unit,
+                                  TaskQueueHandle taskQueueHandle) {
+        checkNotNull(cmd);
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
 
-        ScheduledTask scheduledTask = new ScheduledTask(this);
-        scheduledTask.task = task;
+        DeadlineTask scheduledTask = new DeadlineTask(this);
+        scheduledTask.cmd = cmd;
+        scheduledTask.taskQueue = taskQueues[taskQueueHandle.id];
         long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
         if (deadlineNanos < 0) {
             // protection against overflow
             deadlineNanos = Long.MAX_VALUE;
         }
         scheduledTask.deadlineNanos = deadlineNanos;
-        return scheduledTaskQueue.offer(scheduledTask);
+        return deadlineTaskQueue.offer(scheduledTask);
     }
 
     /**
-     * Creates a periodically executing task with a fixed delay between the completion and start of
-     * the task.
+     * Creates a periodically executing cmd with a fixed delay between the completion and start of
+     * the cmd.
      *
-     * @param task         the task to periodically execute.
+     * @param cmd          the cmd to periodically execute.
      * @param initialDelay the initial delay
      * @param delay        the delay between executions.
      * @param unit         the unit of the initial delay and delay
-     * @return true if the task was successfully executed.
+     * @return true if the cmd was successfully executed.
      */
-    public final boolean scheduleWithFixedDelay(Runnable task, long initialDelay, long delay, TimeUnit unit) {
-        checkNotNull(task);
+    public final boolean scheduleWithFixedDelay(Runnable cmd,
+                                                long initialDelay,
+                                                long delay,
+                                                TimeUnit unit,
+                                                TaskQueueHandle taskQueueHandle) {
+        checkNotNull(cmd);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
 
-        ScheduledTask scheduledTask = new ScheduledTask(this);
-        scheduledTask.task = task;
+        DeadlineTask scheduledTask = new DeadlineTask(this);
+        scheduledTask.taskQueue = taskQueues[taskQueueHandle.id];
+        scheduledTask.cmd = cmd;
         long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
         if (deadlineNanos < 0) {
             // protection against overflow
@@ -281,26 +366,32 @@ public abstract class Eventloop {
         }
         scheduledTask.deadlineNanos = deadlineNanos;
         scheduledTask.delayNanos = unit.toNanos(delay);
-        return scheduledTaskQueue.offer(scheduledTask);
+        return deadlineTaskQueue.offer(scheduledTask);
+        //throw new UnsupportedOperationException();
     }
 
     /**
-     * Creates a periodically executing task with a fixed delay between the start of the task.
+     * Creates a periodically executing cmd with a fixed delay between the start of the cmd.
      *
-     * @param task         the task to periodically execute.
+     * @param cmd          the cmd to periodically execute.
      * @param initialDelay the initial delay
      * @param period       the period between executions.
      * @param unit         the unit of the initial delay and delay
-     * @return true if the task was successfully executed.
+     * @return true if the cmd was successfully executed.
      */
-    public final boolean scheduleAtFixedRate(Runnable task, long initialDelay, long period, TimeUnit unit) {
-        checkNotNull(task);
+    public final boolean scheduleAtFixedRate(Runnable cmd,
+                                             long initialDelay,
+                                             long period,
+                                             TimeUnit unit,
+                                             TaskQueueHandle taskQueueHandle) {
+        checkNotNull(cmd);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(period, "period");
         checkNotNull(unit);
 
-        ScheduledTask scheduledTask = new ScheduledTask(this);
-        scheduledTask.task = task;
+        DeadlineTask scheduledTask = new DeadlineTask(this);
+        scheduledTask.taskQueue = taskQueues[taskQueueHandle.id];
+        scheduledTask.cmd = cmd;
         long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
         if (deadlineNanos < 0) {
             // protection against overflow
@@ -308,7 +399,7 @@ public abstract class Eventloop {
         }
         scheduledTask.deadlineNanos = deadlineNanos;
         scheduledTask.periodNanos = unit.toNanos(period);
-        return scheduledTaskQueue.offer(scheduledTask);
+        return deadlineTaskQueue.offer(scheduledTask);
     }
 
     public final Promise sleep(long delay, TimeUnit unit) {
@@ -316,7 +407,7 @@ public abstract class Eventloop {
         checkNotNull(unit, "unit");
 
         Promise promise = promiseAllocator.allocate();
-        ScheduledTask scheduledTask = new ScheduledTask(this);
+        DeadlineTask scheduledTask = new DeadlineTask(this);
         scheduledTask.promise = promise;
         long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
         if (deadlineNanos < 0) {
@@ -324,7 +415,7 @@ public abstract class Eventloop {
             deadlineNanos = Long.MAX_VALUE;
         }
         scheduledTask.deadlineNanos = deadlineNanos;
-        scheduledTaskQueue.add(scheduledTask);
+        deadlineTaskQueue.add(scheduledTask);
         return promise;
     }
 }

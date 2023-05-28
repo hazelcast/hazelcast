@@ -22,7 +22,6 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
-import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.EOFException;
@@ -274,10 +273,12 @@ public final class NioAsyncSocket extends AsyncSocket {
         Thread currentThread = currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
-                localTaskQueue.queue.add(handler);
+                // todo: return value
+                localTaskQueue.offer(handler);
             } else if (writeThrough) {
                 handler.run();
             } else if (regularSchedule) {
+                // todo: should we make use of custom run queue.
                 // todo: return value
                 reactor.offer(handler);
             } else {
@@ -327,7 +328,8 @@ public final class NioAsyncSocket extends AsyncSocket {
         boolean result;
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                localTaskQueue.queue.add(handler);
+                // todo: return value
+                localTaskQueue.offer(handler);
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {
@@ -414,14 +416,18 @@ public final class NioAsyncSocket extends AsyncSocket {
             metrics.incReadEvents();
 
             int read = socketChannel.read(rcvBuffer);
-            //System.out.println(NioAsyncSocket.this + " bytes read: " + read);
+            System.out.println(NioAsyncSocket.this + " bytes read: " + read);
 
             if (read == -1) {
                 throw new EOFException("Socket closed by peer");
             }
 
             metrics.incBytesRead(read);
+
             rcvBuffer.flip();
+            // todo: do we want to schedule this as a task or run it directly?
+            // Because currently it is running as consequence of an I/O event
+            // and not managed as a task.
             reader.onRead(rcvBuffer);
             compactOrClear(rcvBuffer);
         }
@@ -445,7 +451,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             ioVector.compact(written);
 
             metrics.incBytesWritten(written);
-            //System.out.println(NioAsyncSocket.this + " bytes written:" + written);
+            System.out.println(NioAsyncSocket.this + " bytes written:" + written);
 
             if (ioVector.isEmpty()) {
                 // everything got written

@@ -1,19 +1,3 @@
-/*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
@@ -21,57 +5,126 @@ import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 import java.util.Queue;
 
-/**
- * Should the scheduler be tied to the task queue?
- */
-public class TaskQueue {
+// comparable for the PriorityQueue
+public class TaskQueue implements Comparable<TaskQueue>{
+    public static final int STATE_RUNNING = 0;
+    public static final int STATE_BLOCKED = 1;
+
+    // the total number of nanoseconds this task has spend on the CPU
+    public long vruntimeNanos = 0;
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
-    public final String name;
-    public final int shares;
-    public final Queue<Object> queue;
+    public int state;
+    public String name;
+    public int shares;
+    public Queue<Object> queue;
     public Scheduler scheduler;
+    public int size;
+    public boolean concurrent;
+    public Eventloop eventloop;
 
-    public TaskQueue(String name, int shares, Queue queue, Scheduler scheduler) {
-        this.name = name;
-        this.shares = shares;
-        this.queue = queue;
-        this.scheduler = scheduler;
-    }
-
-    // todo: keep?
-    public boolean offer(Object task) {
-        return queue.offer(task);
-    }
-
-    // todo: keep?
-    public boolean isEmpty() {
-        return queue.isEmpty() && scheduler.queue().isEmpty();
-    }
-
-    public boolean process() {
-        // todo: we are ignoring the scheduler
-        // todo: we should prevent running the same task in the same cycle.
-        for (int l = 0; l < shares; l++) {
-            Object task = queue.poll();
-            if (task == null) {
-                // there are no more tasks
-                break;
-            } else if (task instanceof Runnable) {
-                try {
-                    ((Runnable) task).run();
-                } catch (Exception e) {
-                    logger.warning(e);
-                }
-            } else {
-                try {
-                    scheduler.schedule(task);
-                } catch (Exception e) {
-                    logger.warning(e);
-                }
-            }
+    @Override
+    public int compareTo(TaskQueue that) {
+        if (that.vruntimeNanos == this.vruntimeNanos) {
+            return 0;
         }
 
-        return !queue.isEmpty();
+        return this.vruntimeNanos > that.vruntimeNanos ? 1 : -1;
     }
+
+    public boolean offer(Object task){
+        if(!queue.offer(task)){
+            return false;
+        }
+
+        if(!concurrent && state== STATE_BLOCKED){
+            state = STATE_RUNNING;
+            eventloop.taskTree.insert(this);
+        }
+
+        return true;
+    }
+
+//
+//    public boolean offer(Object task) {
+//        return queue.offer(task);
+//    }
+//
+//    // todo: problem is that empty is used for concurrent not sleeping
+//    // and now the scheduler queue will trigger the wakeup as well even though it
+//    // isn't concurrent
+//    public boolean isEmpty() {
+//        return queue.isEmpty() && scheduler.queue().isEmpty();
+//    }
+//
+//    public boolean process() {
+//        // todo: we are ignoring the scheduler
+//        // todo: we should prevent running the same task in the same cycle.
+//        for (int l = 0; l < shares; l++) {
+//            Object task = queue.poll();
+//            if (task == null) {
+//                // there are no more tasks
+//                break;
+//            } else if (task instanceof Runnable) {
+//                try {
+//                    ((Runnable) task).run();
+//                } catch (Exception e) {
+//                    logger.warning(e);
+//                }
+//            } else {
+//                try {
+//                    scheduler.schedule(task);
+//                } catch (Exception e) {
+//                    logger.warning(e);
+//                }
+//            }
+//        }
+//
+//        return !queue.isEmpty();
+//    }
+
+    TaskQueue left, right, parent;
+    int color;
+//
+//    //constructor to set the value of a node having no left and right child
+//    public Task(int element) {
+//        this(element, null, null);
+//    }
+//
+//    //constructor to set value of element, leftChild, rightChild and color
+//    public Task(int element, Task leftChild, Task rightChild) {
+//        this.element = element;
+//        this.left = leftChild;
+//        this.right = rightChild;
+//        color = 1;
+//    }
+
+//
+//    @Override
+//    public void run() {
+//        if (task != null) {
+//            task.run();
+//        }
+//
+//        if (periodNanos != -1 || delayNanos != -1) {
+//            if (periodNanos != -1) {
+//                deadlineNanos += periodNanos;
+//            } else {
+//                deadlineNanos = eventloop.nanoClock.nanoTime() + delayNanos;
+//            }
+//
+//            if (deadlineNanos < 0) {
+//                deadlineNanos = Long.MAX_VALUE;
+//            }
+//
+//            if (!eventloop.scheduledTaskQueue.offer(this)) {
+//                eventloop.logger.warning("Failed schedule task: " + this + " because there is no space in scheduledTaskQueue");
+//            }
+//        } else {
+//            if (promise != null) {
+//                promise.complete(null);
+//            }
+//        }
+//    }
+
 }

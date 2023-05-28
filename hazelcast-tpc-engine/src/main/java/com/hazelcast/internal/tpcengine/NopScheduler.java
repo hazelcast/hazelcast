@@ -18,6 +18,8 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 
+import java.util.Queue;
+
 /**
  * A {@link Scheduler} that doesn't do anything.
  */
@@ -25,6 +27,11 @@ public class NopScheduler implements Scheduler {
 
     @Override
     public void init(Eventloop eventloop) {
+    }
+
+    @Override
+    public Queue queue() {
+        return null;
     }
 
     @Override

@@ -18,23 +18,25 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.util.Promise;
 
-final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
+final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
 
     final Eventloop eventloop;
     Promise promise;
     long deadlineNanos;
-    Runnable task;
+    Runnable cmd;
     long periodNanos = -1;
     long delayNanos = -1;
 
-    ScheduledTask(Eventloop eventloop) {
+    TaskQueue taskQueue;
+
+    DeadlineTask(Eventloop eventloop) {
         this.eventloop = eventloop;
     }
 
     @Override
     public void run() {
-        if (task != null) {
-            task.run();
+        if (cmd != null) {
+            cmd.run();
         }
 
         if (periodNanos != -1 || delayNanos != -1) {
@@ -48,7 +50,7 @@ final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
                 deadlineNanos = Long.MAX_VALUE;
             }
 
-            if (!eventloop.scheduledTaskQueue.offer(this)) {
+            if (!eventloop.deadlineTaskQueue.offer(this)) {
                 eventloop.logger.warning("Failed schedule task: " + this + " because there is no space in scheduledTaskQueue");
             }
         } else {
@@ -59,7 +61,7 @@ final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
     }
 
     @Override
-    public int compareTo(ScheduledTask that) {
+    public int compareTo(DeadlineTask that) {
         if (that.deadlineNanos == this.deadlineNanos) {
             return 0;
         }
@@ -72,7 +74,7 @@ final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
         return "ScheduledTask{"
                 + "promise=" + promise
                 + ", deadlineNanos=" + deadlineNanos
-                + ", task=" + task
+                + ", task=" + cmd
                 + ", periodNanos=" + periodNanos
                 + ", delayNanos=" + delayNanos
                 + '}';

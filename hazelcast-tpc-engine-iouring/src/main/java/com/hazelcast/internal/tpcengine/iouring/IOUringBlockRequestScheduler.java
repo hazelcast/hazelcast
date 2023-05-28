@@ -252,6 +252,7 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                     default:
                         throw new IllegalStateException("Unknown opcode: " + opcode);
                 }
+
                 promise.complete(res);
             } else {
                 handleError(res);

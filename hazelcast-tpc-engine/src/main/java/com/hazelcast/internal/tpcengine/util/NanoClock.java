@@ -37,11 +37,4 @@ public interface NanoClock {
      * @return the time in nanoseconds.
      */
     long nanoTime();
-
-    /**
-     * Forces the nanoclock to update the time. The time can be cached. This
-     * method should be made after some blocking is done on e.g. a Selector so
-     * that the clock remains reasonably up to date.
-     */
-    void update();
 }
