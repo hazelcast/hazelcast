@@ -18,6 +18,8 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 
+import java.util.Queue;
+
 /**
  * Every Reactor has a scheduler. So incoming work (IOBuffers) can be scheduled
  * and it is up to the Scheduler to process these tasks. The Scheduler gets a frequent
@@ -40,6 +42,8 @@ public interface Scheduler {
      * @param eventloop the Eventloop.
      */
     void init(Eventloop eventloop);
+
+    Queue queue();
 
     /**
      * Gives the scheduler a tick. In this tick the scheduler can do a bit of work.

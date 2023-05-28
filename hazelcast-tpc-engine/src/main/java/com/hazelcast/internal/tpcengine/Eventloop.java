@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.TaskQueueHandle;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
@@ -32,7 +31,6 @@ import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
 import org.jctools.queues.MpscArrayQueue;
 
 import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -95,11 +93,10 @@ public abstract class Eventloop {
         scheduler.init(this);
     }
 
-    protected boolean hasConcurrentTask() {
+    protected final boolean hasConcurrentTask() {
         TaskQueue[] concurrentTaskQueues0 = concurrentTaskQueues;
-        int count = concurrentTaskQueues0.length;
-        for (int k = 0; k < count; k++) {
-            if (!concurrentTaskQueues0[k].queue.isEmpty()) {
+        for (TaskQueue taskQueue : concurrentTaskQueues0) {
+            if (!taskQueue.isEmpty()) {
                 return true;
             }
         }
@@ -107,11 +104,18 @@ public abstract class Eventloop {
         return false;
     }
 
-    public TaskQueue getTaskQueue(TaskQueueHandle handle) {
+    /**
+     * @param handle
+     * @return
+     */
+    public final TaskQueue getTaskQueue(TaskQueueHandle handle) {
         return taskQueues[handle.id];
     }
 
-    public TaskQueueBuilder newTaskQueueBuilder() {
+    /**
+     * @return
+     */
+    public final TaskQueueBuilder newTaskQueueBuilder() {
         return new TaskQueueBuilder(this);
     }
 
@@ -215,37 +219,12 @@ public abstract class Eventloop {
 
     protected final boolean runTasks() {
         final TaskQueue[] taskQueues0 = this.taskQueues;
-        final Scheduler scheduler0 = scheduler;
         boolean moreWork = false;
 
         // todo: what if there are too many tasks
         // todo: should the io be scheduled through a task queue
         for (TaskQueue taskQueue : taskQueues0) {
-            int shares = taskQueue.shares;
-            Queue queue = taskQueue.queue;
-            for (int l = 0; l < shares; l++) {
-                Object task = queue.poll();
-                if (task == null) {
-                    // there are no more tasks
-                    break;
-                } else if (task instanceof Runnable) {
-                    try {
-                        ((Runnable) task).run();
-                    } catch (Exception e) {
-                        logger.warning(e);
-                    }
-                } else {
-                    try {
-                        scheduler0.schedule(task);
-                    } catch (Exception e) {
-                        logger.warning(e);
-                    }
-                }
-            }
-
-            if (!moreWork && !queue.isEmpty()) {
-                moreWork = true;
-            }
+            moreWork |= taskQueue.process();
         }
 
         return moreWork;

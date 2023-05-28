@@ -16,10 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.TaskQueueHandle;
+import com.hazelcast.internal.tpcengine.TaskQueueHandle;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.nio.NioAsyncSocketBuilder;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 

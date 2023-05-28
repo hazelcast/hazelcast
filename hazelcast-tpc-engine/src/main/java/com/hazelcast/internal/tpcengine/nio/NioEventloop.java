@@ -88,6 +88,16 @@ class NioEventloop extends Eventloop {
                 wakeupNeeded0.set(false);
             }
 
+            // the handlers should be be put into the scheduler so that tasks that
+            // are purely i/o activated do not bypass scheduling policies
+            // So the 'process' should be looked up; put in the 'running' state
+            // and then inserted into the scheduler.
+            // One is is that because the handler remains 'triggered' you could
+            // get many ready events. E.g. you could have a sequence of ready events
+            // from the socket?
+            // Write events should be fast since on extra processing is tied to that
+            // But read events can be expensive because the trigger the execution
+            // of the socketreadhandler
             if (keyCount > 0) {
                 Iterator<SelectionKey> it = selector0.selectedKeys().iterator();
                 while (it.hasNext()) {
@@ -104,7 +114,7 @@ class NioEventloop extends Eventloop {
             }
 
             moreWork = runTasks();
-            // we don't need scheduler. It can just be a
+            // todo: we don't need scheduler. It should be modelled as a task queue?
             moreWork |= scheduler0.tick();
             moreWork |= runScheduledTasks();
         } while (!stop);

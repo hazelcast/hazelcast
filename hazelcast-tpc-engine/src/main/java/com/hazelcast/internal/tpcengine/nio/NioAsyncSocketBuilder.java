@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.TaskQueueHandle;
+import com.hazelcast.internal.tpcengine.TaskQueueHandle;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;

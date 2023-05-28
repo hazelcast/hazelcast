@@ -121,9 +121,7 @@ public abstract class ReactorBuilder {
 
                 try {
                     return IO_URING_REACTOR_BUILDER_CONSTRUCTOR.newInstance();
-                } catch (InvocationTargetException
-                         | InstantiationException
-                         | IllegalAccessException e) {
+                } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
             default:
