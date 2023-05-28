@@ -6,7 +6,7 @@ import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import java.util.Queue;
 
 // comparable for the PriorityQueue
-public class TaskQueue implements Comparable<TaskQueue>{
+public class SchedulingGroup implements Comparable<SchedulingGroup> {
     public static final int STATE_RUNNING = 0;
     public static final int STATE_BLOCKED = 1;
 
@@ -24,7 +24,7 @@ public class TaskQueue implements Comparable<TaskQueue>{
     public Eventloop eventloop;
 
     @Override
-    public int compareTo(TaskQueue that) {
+    public int compareTo(SchedulingGroup that) {
         if (that.vruntimeNanos == this.vruntimeNanos) {
             return 0;
         }
@@ -32,14 +32,13 @@ public class TaskQueue implements Comparable<TaskQueue>{
         return this.vruntimeNanos > that.vruntimeNanos ? 1 : -1;
     }
 
-    public boolean offer(Object task){
-        if(!queue.offer(task)){
+    public boolean offer(Object task) {
+        if (!queue.offer(task)) {
             return false;
         }
 
-        if(!concurrent && state== STATE_BLOCKED){
-            state = STATE_RUNNING;
-            eventloop.taskTree.insert(this);
+        if (!concurrent && state == STATE_BLOCKED) {
+            eventloop.insertRunQueue(this);
         }
 
         return true;
@@ -83,23 +82,9 @@ public class TaskQueue implements Comparable<TaskQueue>{
 //        return !queue.isEmpty();
 //    }
 
-    TaskQueue left, right, parent;
+    SchedulingGroup left, right, parent;
     int color;
-//
-//    //constructor to set the value of a node having no left and right child
-//    public Task(int element) {
-//        this(element, null, null);
-//    }
-//
-//    //constructor to set value of element, leftChild, rightChild and color
-//    public Task(int element, Task leftChild, Task rightChild) {
-//        this.element = element;
-//        this.left = leftChild;
-//        this.right = rightChild;
-//        color = 1;
-//    }
 
-//
 //    @Override
 //    public void run() {
 //        if (task != null) {

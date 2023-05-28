@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.TaskQueueHandle;
+import com.hazelcast.internal.tpcengine.SchedulingGroupHandle;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
 
@@ -54,7 +54,7 @@ public interface AsyncSocketBuilder {
         }
     }
 
-    AsyncSocketBuilder setTaskQueueHandle(TaskQueueHandle taskQueueHandle);
+    AsyncSocketBuilder setTaskQueueHandle(SchedulingGroupHandle taskQueueHandle);
 
     /**
      * Sets the option on the underlying if that option is supported.

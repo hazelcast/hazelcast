@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.TaskQueue;
+import com.hazelcast.internal.tpcengine.SchedulingGroup;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
@@ -34,7 +34,6 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -65,7 +64,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final boolean regularSchedule;
     private final boolean writeThrough;
     private final AsyncSocketReader reader;
-    private final TaskQueue localTaskQueue;
+    private final SchedulingGroup localTaskQueue;
 
     // only accessed from eventloop thread
     private boolean started;

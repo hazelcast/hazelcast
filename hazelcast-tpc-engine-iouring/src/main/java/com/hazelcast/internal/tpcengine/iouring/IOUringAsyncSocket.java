@@ -17,12 +17,11 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
-import com.hazelcast.internal.tpcengine.TaskQueue;
+import com.hazelcast.internal.tpcengine.SchedulingGroup;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
-import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import org.jctools.queues.MpmcArrayQueue;
 import sun.misc.Unsafe;
@@ -88,7 +87,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     private final long userdata_OP_WRITEV;
 
     private final LinuxSocket linuxSocket;
-    private final TaskQueue localTaskQueue;
+    private final SchedulingGroup localTaskQueue;
 
     // ======================================================
     // For the reading side of the socket

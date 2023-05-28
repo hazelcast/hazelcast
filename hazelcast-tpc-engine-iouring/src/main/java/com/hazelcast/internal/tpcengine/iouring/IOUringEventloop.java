@@ -141,7 +141,7 @@ public class IOUringEventloop extends Eventloop {
             sq.submit();
         } else {
             wakeupNeeded.set(true);
-            if (hasConcurrentTask()) {
+            if (scheduleConcurrent()) {
                 sq.submit();
             } else {
                 if (earliestDeadlineNanos != -1) {

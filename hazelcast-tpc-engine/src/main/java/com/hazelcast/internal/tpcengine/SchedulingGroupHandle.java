@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.tpcengine;
 
-public class TaskQueueHandle {
-    public int id;
+public class SchedulingGroupHandle {
+    public SchedulingGroup schedulingGroup;
 
-    public TaskQueueHandle(int id) {
-        this.id = id;
+    public SchedulingGroupHandle(SchedulingGroup schedulingGroup) {
+        this.schedulingGroup = schedulingGroup;
     }
 }

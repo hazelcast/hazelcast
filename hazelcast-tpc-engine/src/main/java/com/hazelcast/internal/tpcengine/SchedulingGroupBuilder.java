@@ -21,7 +21,7 @@ import java.util.Queue;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
-public class TaskQueueBuilder {
+public class SchedulingGroupBuilder {
 
     private final Eventloop eventloop;
     private String name;
@@ -29,36 +29,36 @@ public class TaskQueueBuilder {
     private Queue<Object> queue;
     private boolean concurrent;
 
-    public TaskQueueBuilder(Eventloop eventloop) {
+    public SchedulingGroupBuilder(Eventloop eventloop) {
         this.eventloop = eventloop;
     }
 
-    public TaskQueueBuilder setName(String name) {
+    public SchedulingGroupBuilder setName(String name) {
         this.name = checkNotNull(name, name);
         return this;
     }
 
-    public TaskQueueBuilder setShares(int shares) {
+    public SchedulingGroupBuilder setShares(int shares) {
         this.shares = checkPositive(shares, "shares");
         return this;
     }
 
-    public TaskQueueBuilder setConcurrent(boolean concurrent) {
+    public SchedulingGroupBuilder setConcurrent(boolean concurrent) {
         this.concurrent = concurrent;
         return this;
     }
 
-    public TaskQueueBuilder setQueue(Queue<Object> queue) {
+    public SchedulingGroupBuilder setQueue(Queue<Object> queue) {
         this.queue = checkNotNull(queue, "queue");
         return this;
     }
 
-    public TaskQueueHandle build() {
+    public SchedulingGroupHandle build() {
         // todo: name check
         // todo: already build check
         // todo: loop active check
 
-        TaskQueue taskQueue =eventloop.taskQueueAllocator.allocate();
+        SchedulingGroup taskQueue =eventloop.taskQueueAllocator.allocate();
         taskQueue.queue = queue;
         if(taskQueue.queue == null){
             throw new RuntimeException();
@@ -67,18 +67,17 @@ public class TaskQueueBuilder {
         taskQueue.shares = shares;
         taskQueue.name = name;
         taskQueue.eventloop = eventloop;
-        taskQueue.state = TaskQueue.STATE_BLOCKED;
+        taskQueue.state = SchedulingGroup.STATE_BLOCKED;
 
-        eventloop.taskQueues = add(taskQueue, eventloop.taskQueues);
         if (concurrent) {
-            eventloop.concurrentTaskQueues = add(taskQueue, eventloop.concurrentTaskQueues);
+            eventloop.concurrentSchedGroups.add(taskQueue);
         }
 
-        return new TaskQueueHandle(eventloop.taskQueues.length - 1);
+        return new SchedulingGroupHandle(taskQueue);
     }
 
-    private TaskQueue[] add(TaskQueue taskQueue, TaskQueue[] oldArray) {
-        TaskQueue[] newArray = new TaskQueue[oldArray.length + 1];
+    private SchedulingGroup[] add(SchedulingGroup taskQueue, SchedulingGroup[] oldArray) {
+        SchedulingGroup[] newArray = new SchedulingGroup[oldArray.length + 1];
         System.arraycopy(oldArray, 0, newArray, 0, oldArray.length);
         newArray[oldArray.length] = taskQueue;
         return newArray;

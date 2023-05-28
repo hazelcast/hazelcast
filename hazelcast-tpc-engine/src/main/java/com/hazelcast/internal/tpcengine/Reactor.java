@@ -24,10 +24,8 @@ import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocketBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
-import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
-import org.jctools.queues.MpmcArrayQueue;
 
 import java.util.BitSet;
 import java.util.concurrent.CompletableFuture;
@@ -72,9 +70,9 @@ public abstract class Reactor implements Executor {
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    protected final TaskQueue externalTaskQueue;
+    protected final SchedulingGroup externalTaskQueue;
     protected final Eventloop eventloop;
-    protected final TaskQueue localTaskQueue;
+    protected final SchedulingGroup localTaskQueue;
     protected final boolean spin;
     protected final Thread eventloopThread;
     protected final String name;

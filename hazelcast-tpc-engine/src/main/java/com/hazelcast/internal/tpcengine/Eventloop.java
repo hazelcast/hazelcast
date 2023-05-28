@@ -31,13 +31,15 @@ import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
 import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.tpcengine.TaskQueue.STATE_BLOCKED;
+import static com.hazelcast.internal.tpcengine.SchedulingGroup.STATE_BLOCKED;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static java.lang.Math.max;
 
 /**
  * Contains the actual eventloop run by a Reactor.
@@ -63,30 +65,28 @@ public abstract class Eventloop {
     protected final Scheduler scheduler;
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
-    public final TaskQueueHandle externalTaskQueueHandle;
-    public final TaskQueueHandle localTaskQueueHandle;
+    public final SchedulingGroupHandle externalTaskQueueHandle;
+    public final SchedulingGroupHandle localTaskQueueHandle;
     protected long earliestDeadlineNanos = -1;
     protected boolean stop;
-    protected TaskQueue[] taskQueues = new TaskQueue[0];
 
-    // todo: when a concurrent run queue gets blocked, it should be added to this list.
-    protected TaskQueue[] concurrentTaskQueues = new TaskQueue[0];
+
     protected long taskStartNanos;
     protected long ioDeadlineNanos;
-    protected final SlabAllocator<TaskQueue> taskQueueAllocator = new SlabAllocator<>(1024, TaskQueue::new);
+    protected final SlabAllocator<SchedulingGroup> taskQueueAllocator = new SlabAllocator<>(1024, SchedulingGroup::new);
     private final long ioIntervalNanos = TimeUnit.MICROSECONDS.toNanos(10);
-    TaskTree taskTree = new TaskTree();
+    CfsScheduler runQueue = new CfsScheduler();
 
     protected Eventloop(Reactor reactor, ReactorBuilder builder) {
         this.reactor = reactor;
         this.builder = builder;
         this.deadlineTaskQueue = new BoundPriorityQueue<>(builder.scheduledTaskQueueCapacity);
-        this.externalTaskQueueHandle = new TaskQueueBuilder(this)
+        this.externalTaskQueueHandle = new SchedulingGroupBuilder(this)
                 .setQueue(new MpscArrayQueue<>(builder.externalTaskQueueCapacity))
                 .setConcurrent(true)
                 .setShares(1)
                 .build();
-        this.localTaskQueueHandle = new TaskQueueBuilder(this)
+        this.localTaskQueueHandle = new SchedulingGroupBuilder(this)
                 .setQueue(new CircularQueue<>(builder.localTaskQueueCapacity))
                 .setConcurrent(false)
                 .setShares(1)
@@ -102,30 +102,19 @@ public abstract class Eventloop {
         scheduler.init(this);
     }
 
-    protected final boolean hasConcurrentTask() {
-        TaskQueue[] concurrentTaskQueues0 = concurrentTaskQueues;
-        for (TaskQueue taskQueue : concurrentTaskQueues0) {
-            if (!taskQueue.queue.isEmpty()) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /**
      * @param handle
      * @return
      */
-    public final TaskQueue getTaskQueue(TaskQueueHandle handle) {
-        return taskQueues[handle.id];
+    public final SchedulingGroup getTaskQueue(SchedulingGroupHandle handle) {
+        return handle.schedulingGroup;
     }
 
     /**
      * @return
      */
-    public final TaskQueueBuilder newTaskQueueBuilder() {
-        return new TaskQueueBuilder(this);
+    public final SchedulingGroupBuilder newTaskQueueBuilder() {
+        return new SchedulingGroupBuilder(this);
     }
 
     /**
@@ -196,63 +185,81 @@ public abstract class Eventloop {
     protected void destroy() throws Exception {
     }
 
+    // todo: when a concurrent run queue gets blocked, it should be added to this list.
+    protected ArrayList<SchedulingGroup> concurrentSchedGroups = new ArrayList<>();
+
+    protected final boolean scheduleConcurrent() {
+        boolean scheduled = false;
+        // make use of hasConcurrentTasks
+        for (int k = 0; k < concurrentSchedGroups.size(); k++) {
+            SchedulingGroup schedGroup = concurrentSchedGroups.get(k);
+
+            if (!schedGroup.queue.isEmpty()) {
+                scheduled = true;
+                insertRunQueue(schedGroup);
+
+                concurrentSchedGroups.remove(k);
+                k--;
+                // todo: the concurrent schedGroup needs to be removed from the concurrentTaskQueue
+            }
+        }
+        return scheduled;
+
+    }
+
+    void insertRunQueue(SchedulingGroup schedGroup) {
+        schedGroup.state = SchedulingGroup.STATE_RUNNING;
+        schedGroup.vruntimeNanos = max(schedGroup.vruntimeNanos, runQueue.min_vruntime());
+        runQueue.insert(schedGroup);
+    }
+
     public void run() throws Exception {
-        long beforeNanos = nanoClock.nanoTime();
+        long cycleStartNanos = nanoClock.nanoTime();
 
         while (!stop) {
-           // Thread.sleep(100);
+            // Thread.sleep(100);
 
-            for (TaskQueue taskQueue : concurrentTaskQueues) {
-                if (taskQueue.state == TaskQueue.STATE_BLOCKED && !taskQueue.queue.isEmpty()) {
-                    taskQueue.state = TaskQueue.STATE_RUNNING;
-                    taskTree.insert(taskQueue);
-                }
-            }
+            scheduleConcurrent();
 
-            //Thread.sleep(100);
-
-            TaskQueue taskQueue = taskTree.next();
-            //System.out.println("taskQueue: "+taskQueue);
-            if (taskQueue == null) {
-                // todo: the problem is that tasks are added to the concurrent runqueue,
-                // but the runqueue isn't added to the taskTree.
-
+            SchedulingGroup schedGroup = runQueue.next();
+            if (schedGroup == null) {
                 park();
-                beforeNanos = nanoClock.nanoTime();
-                // todo: check if there is any scheduled work
-
+                cycleStartNanos = nanoClock.nanoTime();
             } else {
-                Object cmd = taskQueue.queue.poll();
+                Object cmd = schedGroup.queue.poll();
                 if (cmd instanceof Runnable) {
                     ((Runnable) cmd).run();
                 } else {
                     throw new RuntimeException();
                 }
 
-                long afterNanos = nanoClock.nanoTime();
-                long runDurationNanos = afterNanos - beforeNanos;
-                taskQueue.vruntimeNanos += runDurationNanos;
+                long cycleEndNanos = nanoClock.nanoTime();
+                long runtimeDelta = cycleEndNanos - cycleStartNanos;
 
-                if (taskQueue.queue.isEmpty()) {
-                    taskQueue.state = STATE_BLOCKED;
+                // todo * include weight
+                long vruntimeNanosDelta = runtimeDelta;
 
-                    // todo: if concurrent, then add to concurrent
-                //    System.out.println(taskQueue+" BLOCKED");
+                schedGroup.vruntimeNanos += vruntimeNanosDelta;
+
+                if (schedGroup.queue.isEmpty()) {
+                    schedGroup.state = STATE_BLOCKED;
+
+                    if (schedGroup.concurrent) {
+                        concurrentSchedGroups.add(schedGroup);
+                    }
                 } else {
-                 //   System.out.println(taskQueue+" AGAIN");
-                    taskTree.insert(taskQueue);
+                    insertRunQueue(schedGroup);
                 }
 
                 // todo: report duration violations.
-                if (afterNanos >= ioDeadlineNanos) {
+                if (cycleEndNanos >= ioDeadlineNanos) {
                     if (ioSchedulerTick()) {
-                        ioDeadlineNanos = afterNanos += ioIntervalNanos;
+                        ioDeadlineNanos = cycleEndNanos += ioIntervalNanos;
                     }
                 }
 
-                deadlineSchedulerTick(afterNanos);
-
-                beforeNanos = afterNanos;
+                deadlineSchedulerTick(cycleEndNanos);
+                cycleStartNanos = cycleEndNanos;
             }
         }
     }
@@ -277,22 +284,7 @@ public abstract class Eventloop {
             earliestDeadlineNanos = -1;
 
             // offer the ScheduledTask to the task queue.
-            TaskQueue taskQueue = deadlineTask.taskQueue;
-            // todo: return value
-            taskQueue.queue.offer(deadlineTask);
-
-            switch (taskQueue.state) {
-                case STATE_BLOCKED:
-                    taskQueue.state = TaskQueue.STATE_RUNNING;
-                    // and now we insert the deadlineTask into the tree.
-                    taskTree.insert(taskQueue);
-                    break;
-                case TaskQueue.STATE_RUNNING:
-                    // task queue is already running, so we don't need to do anything
-                    break;
-                default:
-                    throw new IllegalStateException();
-            }
+            deadlineTask.schedGroup.offer(deadlineTask);
         }
     }
 
@@ -319,14 +311,14 @@ public abstract class Eventloop {
     public final boolean schedule(Runnable cmd,
                                   long delay,
                                   TimeUnit unit,
-                                  TaskQueueHandle taskQueueHandle) {
+                                  SchedulingGroupHandle taskQueueHandle) {
         checkNotNull(cmd);
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
 
         DeadlineTask scheduledTask = new DeadlineTask(this);
         scheduledTask.cmd = cmd;
-        scheduledTask.taskQueue = taskQueues[taskQueueHandle.id];
+        scheduledTask.schedGroup = taskQueueHandle.schedulingGroup;
         long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
         if (deadlineNanos < 0) {
             // protection against overflow
@@ -350,14 +342,14 @@ public abstract class Eventloop {
                                                 long initialDelay,
                                                 long delay,
                                                 TimeUnit unit,
-                                                TaskQueueHandle taskQueueHandle) {
+                                                SchedulingGroupHandle taskQueueHandle) {
         checkNotNull(cmd);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
 
         DeadlineTask scheduledTask = new DeadlineTask(this);
-        scheduledTask.taskQueue = taskQueues[taskQueueHandle.id];
+        scheduledTask.schedGroup = taskQueueHandle.schedulingGroup;
         scheduledTask.cmd = cmd;
         long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
         if (deadlineNanos < 0) {
@@ -383,14 +375,14 @@ public abstract class Eventloop {
                                              long initialDelay,
                                              long period,
                                              TimeUnit unit,
-                                             TaskQueueHandle taskQueueHandle) {
+                                             SchedulingGroupHandle taskQueueHandle) {
         checkNotNull(cmd);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(period, "period");
         checkNotNull(unit);
 
         DeadlineTask scheduledTask = new DeadlineTask(this);
-        scheduledTask.taskQueue = taskQueues[taskQueueHandle.id];
+        scheduledTask.schedGroup = taskQueueHandle.schedulingGroup;
         scheduledTask.cmd = cmd;
         long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
         if (deadlineNanos < 0) {

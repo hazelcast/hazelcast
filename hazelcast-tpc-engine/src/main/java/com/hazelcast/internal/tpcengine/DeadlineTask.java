@@ -27,7 +27,7 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
     long periodNanos = -1;
     long delayNanos = -1;
 
-    TaskQueue taskQueue;
+    SchedulingGroup schedGroup;
 
     DeadlineTask(Eventloop eventloop) {
         this.eventloop = eventloop;
