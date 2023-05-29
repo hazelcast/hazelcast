@@ -26,11 +26,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @Fork(value = 1)
 @Warmup(iterations = 1)
 @Threads(value = 1)
-public class EventloopBenchmark {
+public class ContextSwitchBenchmark {
 
     public static final int OPERATIONS = 100 * 1000 * 1000;
     private static final int concurrency = 10;
-    private static final boolean useEventloopDirectly = true;
+    private static final boolean useEventloopDirectly = false;
     private Reactor reactor;
 
     @Setup
