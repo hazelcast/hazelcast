@@ -87,7 +87,6 @@ import static org.junit.Assert.assertTrue;
 public class KubernetesClientTest {
     private static final String KUBERNETES_MASTER_IP = "localhost";
     private static final String TOKEN = "sample-token";
-    private static final String CA_CERTIFICATE = "sample-ca-certificate";
     private static final String NAMESPACE = "sample-namespace";
     private static final int RETRIES = 3;
     private static final ObjectWriter WRITER = new ObjectMapper().writer();
@@ -794,7 +793,7 @@ public class KubernetesClientTest {
 
     private KubernetesClient newKubernetesClient(KubernetesTokenProvider tokenProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, tokenProvider, CA_CERTIFICATE, RETRIES,
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, tokenProvider, null, RETRIES,
                 ExposeExternallyMode.AUTO, true, null, null, (ClusterTopologyIntentTracker) null);
     }
 
@@ -812,7 +811,7 @@ public class KubernetesClientTest {
 
     private KubernetesClient newKubernetesClient(ExposeExternallyMode exposeExternally, boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue, KubernetesApiProvider urlProvider) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, new StaticTokenProvider(TOKEN), CA_CERTIFICATE, RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue, urlProvider);
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, new StaticTokenProvider(TOKEN), null, RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue, urlProvider);
     }
 
     private static List<String> formatPrivate(List<Endpoint> addresses) {
