@@ -4,7 +4,7 @@ package com.hazelcast;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
+import com.hazelcast.internal.tpcengine.ReactorType;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -31,29 +31,30 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @Threads(value = 1)
 public class ContextSwitchBenchmark {
 
-    public static final int OPERATIONS = 100 * 1000 * 1000;
-    private static final int concurrency = 10;
-    private static final boolean useEventloopDirectly = false;
+    public static final int operations = 100 * 1000 * 1000;
+    public static final int concurrency = 10;
+    public static final boolean useEventloopDirectly = false;
+    public static final ReactorType reactorType = ReactorType.NIO;
+
     private Reactor reactor;
 
     @Setup
     public void setup() {
-        ReactorBuilder reactorBuilder = new NioReactorBuilder();
-        //Eventloop.Configuration reactorBuilder = new NioEventloop.NioConfiguration();
-        reactorBuilder.setBatchSize(16);
-        reactorBuilder.setClockRefreshPeriod(16);
+        ReactorBuilder reactorBuilder = ReactorBuilder.newReactorBuilder(reactorType);
+        reactorBuilder.setBatchSize(1);
+        reactorBuilder.setClockRefreshPeriod(1);
         reactor = reactorBuilder.build();
         reactor.start();
     }
 
     @TearDown
-    public void teardown() throws InterruptedException {
+    public void tearDown() throws InterruptedException {
         reactor.shutdown();
         reactor.awaitTermination(5, SECONDS);
     }
 
     @Benchmark
-    @OperationsPerInvocation(value = OPERATIONS)
+    @OperationsPerInvocation(value = operations)
     public void run() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(concurrency);
         reactor.execute(() -> {
@@ -61,7 +62,7 @@ public class ContextSwitchBenchmark {
 //            }, 1000, SECONDS);
 
             for (int k = 0; k < concurrency; k++) {
-                Task task = new Task(reactor, OPERATIONS / concurrency, latch, useEventloopDirectly);
+                Task task = new Task(reactor, operations / concurrency, latch, useEventloopDirectly);
                 if (useEventloopDirectly) {
                     reactor.eventloop().localTaskQueue.offer(task);
                 } else {
