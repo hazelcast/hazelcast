@@ -64,7 +64,7 @@ public class ContextSwitchBenchmark {
             for (int k = 0; k < concurrency; k++) {
                 Task task = new Task(reactor, operations / concurrency, latch, useEventloopDirectly);
                 if (useEventloopDirectly) {
-                    //reactor.eventloop().localTaskQueue.offer(task);
+                    reactor.eventloop().offer(task);
                 } else {
                     reactor.offer(task);
                 }
@@ -96,7 +96,7 @@ public class ContextSwitchBenchmark {
             if (operations == iteration) {
                 latch.countDown();
             } else if (useEventloopDirectly) {
-                eventloop.localTaskQueue.offer(this);
+                eventloop.offer(this);
             } else {
                 reactor.offer(this);
             }

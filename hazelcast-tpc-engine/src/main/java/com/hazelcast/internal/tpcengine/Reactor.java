@@ -113,8 +113,8 @@ public abstract class Reactor implements Executor {
         // There is a happens-before edge between writing to the eventloopFuture and
         // the join. So at this point we can safely read the fields that have been
         // set in the constructor of the eventloop.
-        this.externalTaskQueue = eventloop.getTaskQueue(eventloop.externalTaskQueueHandle);
-        this.localTaskQueue = eventloop.getTaskQueue(eventloop.localTaskQueueHandle);
+        this.externalTaskQueue = eventloop.getSchedulingGroup(eventloop.externalTaskQueueHandle);
+        this.localTaskQueue = eventloop.getSchedulingGroup(eventloop.localTaskQueueHandle);
         this.wakeupNeeded = eventloop.wakeupNeeded;
         this.scheduler = eventloop.scheduler;
     }

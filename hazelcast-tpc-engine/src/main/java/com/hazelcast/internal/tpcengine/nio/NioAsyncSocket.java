@@ -79,7 +79,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         try {
             this.reactor = builder.reactor;
-            this.localTaskQueue = reactor.eventloop().getTaskQueue(builder.taskQueueHandle);
+            this.localTaskQueue = reactor.eventloop().getSchedulingGroup(builder.taskQueueHandle);
             this.options = builder.options;
             this.eventloopThread = reactor.eventloopThread();
             this.socketChannel = builder.socketChannel;

@@ -16,11 +16,16 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.logging.TpcLogger;
+import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpcengine.util.EpochClock;
 import com.hazelcast.internal.tpcengine.util.Promise;
 
 final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
+    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
-    final Eventloop eventloop;
+    private final DeadlineScheduler deadlineScheduler;
+    private final EpochClock epochClock;
     Promise promise;
     long deadlineNanos;
     Runnable cmd;
@@ -29,8 +34,9 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
 
     SchedulingGroup schedGroup;
 
-    DeadlineTask(Eventloop eventloop) {
-        this.eventloop = eventloop;
+    DeadlineTask(EpochClock epochClock, DeadlineScheduler deadlineScheduler) {
+        this.epochClock = epochClock;
+        this.deadlineScheduler = deadlineScheduler;
     }
 
     @Override
@@ -43,15 +49,15 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
             if (periodNanos != -1) {
                 deadlineNanos += periodNanos;
             } else {
-                deadlineNanos = eventloop.nanoClock.nanoTime() + delayNanos;
+                deadlineNanos = epochClock.nanoTime() + delayNanos;
             }
 
             if (deadlineNanos < 0) {
                 deadlineNanos = Long.MAX_VALUE;
             }
 
-            if (!eventloop.deadlineTaskQueue.offer(this)) {
-                eventloop.logger.warning("Failed schedule task: " + this + " because there is no space in scheduledTaskQueue");
+            if (!deadlineScheduler.offer(this)) {
+                logger.warning("Failed schedule task: " + this + " because there is no space in scheduledTaskQueue");
             }
         } else {
             if (promise != null) {

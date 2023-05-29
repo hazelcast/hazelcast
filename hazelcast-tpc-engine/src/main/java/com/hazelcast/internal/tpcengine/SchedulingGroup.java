@@ -38,7 +38,7 @@ public class SchedulingGroup implements Comparable<SchedulingGroup> {
         }
 
         if (!concurrent && state == STATE_BLOCKED) {
-            eventloop.insertRunQueue(this);
+            eventloop.runQueue.insert(this);
         }
 
         return true;

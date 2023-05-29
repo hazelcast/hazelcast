@@ -17,11 +17,11 @@
 package com.hazelcast.internal.tpcengine.util;
 
 /**
- * A {@link NanoClock} that calls {@link System#nanoTime()} on every invocation.
+ * A {@link EpochClock} that calls {@link System#nanoTime()} on every invocation.
  * <p>
  * This class is thread-safe.
  */
-public class StandardNanoClock implements NanoClock {
+public class StandardNanoClock implements EpochClock {
 
     private static final long START_TIME = System.nanoTime();
 

@@ -23,6 +23,7 @@ import com.hazelcast.internal.tpcengine.Scheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.Queue;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -45,6 +46,11 @@ public class OperationScheduler implements Scheduler {
     public OperationScheduler(int batchSize, Node node) {
         this.batchSize = checkPositive("batchSize", batchSize);
         this.node = node;
+    }
+
+    @Override
+    public Queue queue() {
+        return null;
     }
 
     @Override

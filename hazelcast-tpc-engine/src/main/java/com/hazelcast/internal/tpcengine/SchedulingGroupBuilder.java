@@ -70,7 +70,7 @@ public class SchedulingGroupBuilder {
         taskQueue.state = SchedulingGroup.STATE_BLOCKED;
 
         if (concurrent) {
-            eventloop.concurrentSchedGroups.add(taskQueue);
+            eventloop.blockedConcurrentSchedGroups.add(taskQueue);
         }
 
         return new SchedulingGroupHandle(taskQueue);

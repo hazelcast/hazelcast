@@ -24,6 +24,7 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.util.counters.SwCounter;
 
+import java.util.Queue;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpc.FrameCodec.FLAG_PRIORITY;
@@ -93,6 +94,12 @@ public final class RequestScheduler implements Scheduler {
                 super.init(cmd);
             }
         };
+    }
+
+
+    @Override
+    public Queue queue() {
+        return null;
     }
 
     public long getScheduled() {

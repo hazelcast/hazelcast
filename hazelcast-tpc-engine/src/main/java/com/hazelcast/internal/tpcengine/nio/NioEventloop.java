@@ -50,8 +50,26 @@ class NioEventloop extends Eventloop {
     }
 
     @Override
-    protected boolean ioSchedulerTick() {
-        return false;
+    protected boolean ioSchedulerTick() throws IOException {
+        int keyCount = selector.selectNow();
+
+        if (keyCount == 0) {
+            return false;
+        } else {
+            Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+            while (it.hasNext()) {
+                SelectionKey key = it.next();
+                it.remove();
+
+                NioHandler handler = (NioHandler) key.attachment();
+                try {
+                    handler.handle();
+                } catch (Exception e) {
+                    handler.close(null, e);
+                }
+            }
+            return true;
+        }
     }
 
     @Override
@@ -65,6 +83,7 @@ class NioEventloop extends Eventloop {
             if (scheduleConcurrent()) {
                 keyCount = selector.selectNow();
             } else {
+                long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
                 if (earliestDeadlineNanos == -1) {
                     keyCount = selector.select();
                 } else {
@@ -93,70 +112,6 @@ class NioEventloop extends Eventloop {
             }
         }
     }
-
-    @SuppressWarnings("java:S3776")
-//    @Override
-//    protected void run() throws Exception {
-//        final NanoClock nanoClock0 = nanoClock;
-//        final boolean spin0 = spin;
-//        final Selector selector0 = selector;
-//        final AtomicBoolean wakeupNeeded0 = wakeupNeeded;
-//        final Scheduler scheduler0 = scheduler;
-//
-//        boolean moreWork = false;
-//        do {
-//            int keyCount;
-//            if (spin0 || moreWork) {
-//                keyCount = selector0.selectNow();
-//            } else {
-//                wakeupNeeded0.set(true);
-//
-//                if (hasConcurrentTask()) {
-//                    keyCount = selector0.selectNow();
-//                } else {
-//                    if (earliestDeadlineNanos == -1) {
-//                        keyCount = selector0.select();
-//                    } else {
-//                        long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineNanos - nanoClock0.nanoTime());
-//                        keyCount = timeoutMillis <= 0
-//                                ? selector0.selectNow()
-//                                : selector0.select(timeoutMillis);
-//                    }
-//                }
-//                wakeupNeeded0.set(false);
-//            }
-//
-//            // the handlers should be be put into the scheduler so that tasks that
-//            // are purely i/o activated do not bypass scheduling policies
-//            // So the 'process' should be looked up; put in the 'running' state
-//            // and then inserted into the scheduler.
-//            // One is is that because the handler remains 'triggered' you could
-//            // get many ready events. E.g. you could have a sequence of ready events
-//            // from the socket?
-//            // Write events should be fast since on extra processing is tied to that
-//            // But read events can be expensive because the trigger the execution
-//            // of the socketreadhandler
-//            if (keyCount > 0) {
-//                Iterator<SelectionKey> it = selector0.selectedKeys().iterator();
-//                while (it.hasNext()) {
-//                    SelectionKey key = it.next();
-//                    it.remove();
-//
-//                    NioHandler handler = (NioHandler) key.attachment();
-//                    try {
-//                        handler.handle();
-//                    } catch (Exception e) {
-//                        handler.close(null, e);
-//                    }
-//                }
-//            }
-//
-//            moreWork = tasksTick();
-//            // todo: we don't need scheduler. It should be modelled as a task queue?
-//            moreWork |= scheduler0.tick();
-//            moreWork |= scheduledTaskTick();
-//        } while (!stop);
-//    }
 
     @Override
     protected void destroy() {

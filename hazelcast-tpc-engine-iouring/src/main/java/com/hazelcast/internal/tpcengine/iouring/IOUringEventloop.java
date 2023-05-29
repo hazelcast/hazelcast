@@ -144,6 +144,7 @@ public class IOUringEventloop extends Eventloop {
             if (scheduleConcurrent()) {
                 sq.submit();
             } else {
+                long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
                 if (earliestDeadlineNanos != -1) {
                     long timeoutNanos = earliestDeadlineNanos - nanoClock.nanoTime();
                     if (timeoutNanos > 0) {

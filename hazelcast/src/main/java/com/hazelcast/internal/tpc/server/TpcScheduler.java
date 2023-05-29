@@ -22,6 +22,8 @@ import com.hazelcast.internal.tpcengine.Scheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationScheduler;
 
+import java.util.Queue;
+
 /**
  * The TpcScheduler effectively is chain 2 schedulers:
  * - The OpScheduler for next generation operations
@@ -35,6 +37,11 @@ public class TpcScheduler implements Scheduler {
     public TpcScheduler(RequestScheduler requestScheduler, OperationScheduler operationScheduler) {
         this.requestScheduler = requestScheduler;
         this.operationScheduler = operationScheduler;
+    }
+
+    @Override
+    public Queue queue() {
+        return null;
     }
 
     @Override

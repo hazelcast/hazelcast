@@ -1,6 +1,7 @@
 package com.hazelcast.iouring;
 
 
+import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iouring.IOUringReactorBuilder;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
@@ -66,7 +67,7 @@ public class IOUringEventloopBenchmark {
         reactor.execute(() -> {
             for (int k = 0; k < concurrency; k++) {
                 Task task = new Task(reactor, OPERATIONS / concurrency, latch, theMethod);
-                reactor.eventloop().localTaskQueue.add(task);
+                reactor.eventloop().offer(task);
             }
         });
 
@@ -84,7 +85,7 @@ public class IOUringEventloopBenchmark {
 
             for (int k = 0; k < concurrency; k++) {
                 Task task = new Task(reactor, OPERATIONS / concurrency, latch, TheMethod.unsafeOffer);
-                reactor.eventloop().localTaskQueue.offer(task);
+                reactor.eventloop().offer(task);
             }
         });
 
@@ -112,13 +113,13 @@ public class IOUringEventloopBenchmark {
         private final CountDownLatch latch;
         private final Reactor reactor;
         private final TheMethod theMethod;
-        private final CircularQueue<Runnable> localTaskQueue;
+        private final Eventloop eventloop;
         private long iteration = 0;
         private final long operations;
 
         public Task(Reactor reactor, long operations, CountDownLatch latch, TheMethod theMethod) {
             this.reactor = reactor;
-            this.localTaskQueue = this.reactor.eventloop().localTaskQueue;
+            this.eventloop = this.reactor.eventloop();
             this.operations = operations;
             this.latch = latch;
             this.theMethod = theMethod;
@@ -138,7 +139,7 @@ public class IOUringEventloopBenchmark {
                         break;
                     case unsafeOffer:
                         //if (!unsafe.offer(this)) {
-                        if (!localTaskQueue.offer(this)) {
+                        if (!eventloop.offer(this)) {
                             throw new RuntimeException();
                         }
                         break;

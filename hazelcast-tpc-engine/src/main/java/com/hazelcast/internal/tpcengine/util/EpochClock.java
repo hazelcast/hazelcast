@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpcengine.util;
 /**
  * Returns the time in nanoseconds from when this clock was created.
  * <p/>
- * The difference between {@link NanoClock} and {@link System#nanoTime()} is that
+ * The difference between {@link EpochClock} and {@link System#nanoTime()} is that
  * with NanoClock, the start time is very recent, so there is a huge period between now
  * and overflowing. With the System.nanoTime, it could be close to overflowing all the time
  * and this is problematic when dealing with deadlines because they could become negative
@@ -29,7 +29,7 @@ package com.hazelcast.internal.tpcengine.util;
  * <p/>
  * The time from different NanoClock can't be compared with each other.
  */
-public interface NanoClock {
+public interface EpochClock {
 
     /**
      * Returns the time in nanoseconds from when this NanoClock was created.

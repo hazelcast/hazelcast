@@ -125,7 +125,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         this.reactor = builder.reactor;
         this.eventloop = (IOUringEventloop) reactor.eventloop();
         this.sq = eventloop.sq;
-        this.localTaskQueue = eventloop.getTaskQueue(builder.taskQueueHandle);
+        this.localTaskQueue = eventloop.getSchedulingGroup(builder.taskQueueHandle);
         this.eventloopThread = reactor.eventloopThread();
         this.rcvBuff = ByteBuffer.allocateDirect(options.get(AsyncSocketOptions.SO_RCVBUF));
 

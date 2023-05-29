@@ -3,6 +3,8 @@ package com.hazelcast.internal.tpcengine;
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 
+import static java.lang.Math.max;
+
 class CfsScheduler {
 
     private PriorityQueue<SchedulingGroup> priorityQueue = new PriorityQueue();
@@ -17,8 +19,10 @@ class CfsScheduler {
         return priorityQueue.poll();
     }
 
-    public void insert(SchedulingGroup taskQueue) {
-        priorityQueue.add(taskQueue);
+    public void insert(SchedulingGroup schedGroup) {
+        schedGroup.state = SchedulingGroup.STATE_RUNNING;
+        schedGroup.vruntimeNanos = max(schedGroup.vruntimeNanos, min_vruntime());
+        priorityQueue.add(schedGroup);
     }
 
 }
