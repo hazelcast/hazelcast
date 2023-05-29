@@ -586,7 +586,8 @@ class KubernetesClient {
      */
     private JsonObject callGet(final String urlString) {
         return RetryUtils.retry(() -> Json
-                .parse(RestClient.createWithSSL(urlString, caCertificate)
+                .parse((caCertificate == null ? RestClient.create(urlString)
+                        : RestClient.createWithSSL(urlString, caCertificate))
                         .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
                         .get()
                         .getBody())
@@ -865,7 +866,8 @@ class KubernetesClient {
          */
         @Nonnull
         RestClient.WatchResponse sendWatchRequest() {
-            RestClient restClient = RestClient.createWithSSL(stsUrlString, caCertificate)
+            RestClient restClient = (caCertificate == null ? RestClient.create(stsUrlString)
+                    : RestClient.createWithSSL(stsUrlString, caCertificate))
                     .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()));
             return restClient.watch(latestResourceVersion);
         }
