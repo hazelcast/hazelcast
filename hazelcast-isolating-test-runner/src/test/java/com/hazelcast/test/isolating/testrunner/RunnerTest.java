@@ -115,7 +115,7 @@ public class RunnerTest {
 
     private static Path generateSeedFile() {
         String sortSeed = Optional.ofNullable(System.getProperty("sortSeed"))
-                .orElse(UUID.randomUUID().toString());
+                .orElse(UUID.randomUUID().toString()).substring(0, 32);
         LOGGER.info("Sorting seed: " + sortSeed);
         byte[] bytes = sortSeed.getBytes(StandardCharsets.UTF_8);
         try {
