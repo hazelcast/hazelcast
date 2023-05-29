@@ -16,14 +16,26 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
+
 /**
- * A {@link EpochClock} that calls {@link System#nanoTime()} on every invocation.
- * <p>
+ * A clock that returns the current time in nanoseconds from an arbitrary epoch.
+ *
  * This class is thread-safe.
  */
-public class StandardNanoClock implements EpochClock {
+public class StandardNanoClock implements Clock {
 
     private static final long START_TIME = System.nanoTime();
+//
+//    static {
+//        for(;;){
+//            Instant instant = Instant.now();
+//            long secondsSinceEpoch = instant.getEpochSecond();
+//            int nanoSeconds = instant.getNano();
+//            long nanos = nanoSeconds * TimeUnit.SECONDS.toNanos(secondsSinceEpoch);
+//        }
+//    }
 
     @Override
     public long nanoTime() {

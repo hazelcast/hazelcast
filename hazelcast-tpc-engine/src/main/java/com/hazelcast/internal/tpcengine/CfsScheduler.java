@@ -13,6 +13,15 @@ class CfsScheduler {
 
     private long min_vruntime;
 
+    /**
+     * Returns the number of items in the runQueue.
+     *
+     * @return the size of the runQueue.
+     */
+    public int size() {
+        return runQueue.size();
+    }
+
     public TaskGroup pickNext() {
         TaskGroup group = runQueue.poll();
         if (group == null) {

@@ -4,6 +4,7 @@ import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * vruntime/pruntime
@@ -31,6 +32,12 @@ public class TaskGroup implements Comparable<TaskGroup> {
     public long pruntimeNanos;
     public long tasksProcessed;
     public long blockedCount;
+
+    /**
+     * The maximum amount of time the tasks in this group can run before they are
+     * context switched.
+     */
+    public long taskQuotaNanos = TimeUnit.MICROSECONDS.toNanos(500);
 
     @Override
     public int compareTo(TaskGroup that) {

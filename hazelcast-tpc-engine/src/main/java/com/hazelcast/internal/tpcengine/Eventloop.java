@@ -21,7 +21,7 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
-import com.hazelcast.internal.tpcengine.util.EpochClock;
+import com.hazelcast.internal.tpcengine.util.Clock;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.Promise;
 import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
@@ -57,7 +57,7 @@ public abstract class Eventloop {
     protected final ReactorBuilder builder;
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
-    protected final EpochClock nanoClock;
+    protected final Clock nanoClock;
     protected final Scheduler crappyScheduler;
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
@@ -103,7 +103,7 @@ public abstract class Eventloop {
         crappyScheduler.init(this);
     }
 
-    public final long cycleStartNanos(){
+    public final long cycleStartNanos() {
         return cycleStartNanos;
     }
 
@@ -208,12 +208,14 @@ public abstract class Eventloop {
      * @throws Exception if something fails while running the eventloop. The reactor
      *                   terminates when this happens.
      */
-     public void run() throws Exception {
+    public void run() throws Exception {
         this.cycleStartNanos = nanoClock.nanoTime();
 
         int clockSkip = 0;
 
         while (!stop) {
+            // a single iteration of processing the tasks is called a cycle.
+
             // Thread.sleep(100);
 
             scheduleConcurrent();
@@ -224,29 +226,48 @@ public abstract class Eventloop {
                 cycleStartNanos = nanoClock.nanoTime();
             } else {
                 tasksProcess++;
+
                 taskGroup.tasksProcessed++;
-                Object cmd = taskGroup.queue.poll();
-                if (cmd instanceof Runnable) {
-                    try {
-                        ((Runnable) cmd).run();
-                    } catch (Exception e) {
-                        logger.warning(e);
+                long deadlineNanos = cycleStartNanos + taskGroup.taskQuotaNanos;
+
+                long taskStartNanos = cycleStartNanos;
+                boolean taskQueueEmpty = false;
+                long cycleEndNanos = taskStartNanos;
+                for (; ; ) {
+                    Object cmd = taskGroup.queue.poll();
+                    if (cmd == null) {
+                        taskQueueEmpty = true;
+                        break;
+                    } else if (cmd instanceof Runnable) {
+                        try {
+                            ((Runnable) cmd).run();
+                        } catch (Exception e) {
+                            logger.warning(e);
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Unsupported command type: " + cmd.getClass().getName());
                     }
-                } else {
-                    throw new RuntimeException();
+
+                    long taskEndNanos = nanoClock.nanoTime();
+                    long taskDeltaNanos = taskStartNanos - taskEndNanos;
+                    // todo: record violators
+
+                    cycleEndNanos = taskEndNanos;
+                    if (cycleEndNanos >= deadlineNanos) {
+                        // enough time was spend on this task group, stop processing
+                        break;
+                    }
                 }
 
-                long cycleEndNanos = nanoClock.nanoTime();
-
                 long deltaNanos = cycleEndNanos - cycleStartNanos;
-
                 // todo * include weight
                 long deltaWeightedNanos = deltaNanos;// / taskGroup.weight;
+
 
                 taskGroup.pruntimeNanos += deltaNanos;
                 taskGroup.vruntimeNanos += deltaWeightedNanos;
 
-                if (taskGroup.queue.isEmpty()) {
+                if (taskQueueEmpty) {
                     taskGroup.state = STATE_BLOCKED;
                     taskGroup.blockedCount++;
 

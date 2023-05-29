@@ -18,14 +18,14 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpcengine.util.EpochClock;
+import com.hazelcast.internal.tpcengine.util.Clock;
 import com.hazelcast.internal.tpcengine.util.Promise;
 
 final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
     private final DeadlineScheduler deadlineScheduler;
-    private final EpochClock epochClock;
+    private final Clock epochClock;
     Promise promise;
     long deadlineNanos;
     Runnable cmd;
@@ -34,7 +34,7 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
 
     TaskGroup taskGroup;
 
-    DeadlineTask(EpochClock epochClock, DeadlineScheduler deadlineScheduler) {
+    DeadlineTask(Clock epochClock, DeadlineScheduler deadlineScheduler) {
         this.epochClock = epochClock;
         this.deadlineScheduler = deadlineScheduler;
     }
