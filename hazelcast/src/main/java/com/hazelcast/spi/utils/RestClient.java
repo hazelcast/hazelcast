@@ -234,7 +234,9 @@ public final class RestClient {
             } else if (response.body() instanceof InputStream) {
                 Scanner scanner = new Scanner((InputStream) response.body(), StandardCharsets.UTF_8);
                 scanner.useDelimiter("\\Z");
-                errorMessage = scanner.next();
+                if (scanner.hasNext()) {
+                    errorMessage = scanner.next();
+                }
             }
             throw new RestClientException(
                     String.format("Failure executing: %s at: %s. Message: %s", method, url, errorMessage),
@@ -271,7 +273,7 @@ public final class RestClient {
             return context;
 
         } catch (Exception e) {
-            throw new RestClientException("Failure in generating SSLSocketFactory", e);
+            throw new RestClientException("Failure in generating SSLSocketFactory for certificate " + caCertificate, e);
         }
     }
 
