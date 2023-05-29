@@ -1,28 +1,35 @@
 package com.hazelcast.internal.tpcengine;
 
-import java.util.ArrayList;
 import java.util.PriorityQueue;
 
 import static java.lang.Math.max;
 
+/**
+ * https://docs.kernel.org/scheduler/sched-design-CFS.html
+ */
 class CfsScheduler {
 
-    private PriorityQueue<SchedulingGroup> priorityQueue = new PriorityQueue();
+    private PriorityQueue<TaskGroup> runQueue = new PriorityQueue();
 
     private long min_vruntime;
 
-    public long min_vruntime() {
-        return min_vruntime;
+    public TaskGroup pickNext() {
+        TaskGroup group = runQueue.poll();
+        if (group == null) {
+            return null;
+        }
+
+        TaskGroup peek = runQueue.peek();
+        if (peek != null) {
+            min_vruntime = peek.vruntimeNanos;
+        }
+
+        return group;
     }
 
-    public SchedulingGroup next(){
-        return priorityQueue.poll();
+    public void enqueue(TaskGroup taskGroup) {
+        taskGroup.state = TaskGroup.STATE_RUNNING;
+        taskGroup.vruntimeNanos = max(taskGroup.vruntimeNanos, min_vruntime);
+        runQueue.add(taskGroup);
     }
-
-    public void insert(SchedulingGroup schedGroup) {
-        schedGroup.state = SchedulingGroup.STATE_RUNNING;
-        schedGroup.vruntimeNanos = max(schedGroup.vruntimeNanos, min_vruntime());
-        priorityQueue.add(schedGroup);
-    }
-
 }

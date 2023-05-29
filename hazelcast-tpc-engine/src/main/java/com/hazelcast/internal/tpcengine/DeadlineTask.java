@@ -32,7 +32,7 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
     long periodNanos = -1;
     long delayNanos = -1;
 
-    SchedulingGroup schedGroup;
+    TaskGroup taskGroup;
 
     DeadlineTask(EpochClock epochClock, DeadlineScheduler deadlineScheduler) {
         this.epochClock = epochClock;

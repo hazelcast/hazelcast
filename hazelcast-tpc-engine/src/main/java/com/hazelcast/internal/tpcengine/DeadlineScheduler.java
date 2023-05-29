@@ -40,7 +40,7 @@ public class DeadlineScheduler {
             earliestDeadlineNanos = -1;
 
             // offer the ScheduledTask to the task queue.
-            deadlineTask.schedGroup.offer(deadlineTask);
+            deadlineTask.taskGroup.offer(deadlineTask);
         }
     }
 }

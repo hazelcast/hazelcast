@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.SchedulingGroup;
+import com.hazelcast.internal.tpcengine.TaskGroup;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
@@ -64,7 +64,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final boolean regularSchedule;
     private final boolean writeThrough;
     private final AsyncSocketReader reader;
-    private final SchedulingGroup localTaskQueue;
+    private final TaskGroup localTaskQueue;
 
     // only accessed from eventloop thread
     private boolean started;
@@ -79,7 +79,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         try {
             this.reactor = builder.reactor;
-            this.localTaskQueue = reactor.eventloop().getSchedulingGroup(builder.taskQueueHandle);
+            this.localTaskQueue = reactor.eventloop().getTaskGroup(builder.taskQueueHandle);
             this.options = builder.options;
             this.eventloopThread = reactor.eventloopThread();
             this.socketChannel = builder.socketChannel;

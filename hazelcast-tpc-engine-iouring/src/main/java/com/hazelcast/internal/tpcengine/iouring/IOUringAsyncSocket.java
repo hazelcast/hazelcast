@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
-import com.hazelcast.internal.tpcengine.SchedulingGroup;
+import com.hazelcast.internal.tpcengine.TaskGroup;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
@@ -87,7 +87,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     private final long userdata_OP_WRITEV;
 
     private final LinuxSocket linuxSocket;
-    private final SchedulingGroup localTaskQueue;
+    private final TaskGroup localTaskQueue;
 
     // ======================================================
     // For the reading side of the socket
@@ -125,7 +125,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         this.reactor = builder.reactor;
         this.eventloop = (IOUringEventloop) reactor.eventloop();
         this.sq = eventloop.sq;
-        this.localTaskQueue = eventloop.getSchedulingGroup(builder.taskQueueHandle);
+        this.localTaskQueue = eventloop.getTaskGroup(builder.taskQueueHandle);
         this.eventloopThread = reactor.eventloopThread();
         this.rcvBuff = ByteBuffer.allocateDirect(options.get(AsyncSocketOptions.SO_RCVBUF));
 

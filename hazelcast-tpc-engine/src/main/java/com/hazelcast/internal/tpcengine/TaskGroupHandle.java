@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.tpcengine;
 
-public class SchedulingGroupHandle {
-    public SchedulingGroup schedulingGroup;
+public class TaskGroupHandle {
+    public TaskGroup taskGroup;
 
-    public SchedulingGroupHandle(SchedulingGroup schedulingGroup) {
-        this.schedulingGroup = schedulingGroup;
+    public TaskGroupHandle(TaskGroup taskGroup) {
+        this.taskGroup = taskGroup;
     }
 }

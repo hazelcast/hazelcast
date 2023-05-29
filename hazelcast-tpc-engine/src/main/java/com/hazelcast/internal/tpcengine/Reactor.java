@@ -70,9 +70,9 @@ public abstract class Reactor implements Executor {
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    protected final SchedulingGroup externalTaskQueue;
+    protected final TaskGroup externalTaskQueue;
     protected final Eventloop eventloop;
-    protected final SchedulingGroup localTaskQueue;
+    protected final TaskGroup localTaskQueue;
     protected final boolean spin;
     protected final Thread eventloopThread;
     protected final String name;
@@ -113,10 +113,10 @@ public abstract class Reactor implements Executor {
         // There is a happens-before edge between writing to the eventloopFuture and
         // the join. So at this point we can safely read the fields that have been
         // set in the constructor of the eventloop.
-        this.externalTaskQueue = eventloop.getSchedulingGroup(eventloop.externalTaskQueueHandle);
-        this.localTaskQueue = eventloop.getSchedulingGroup(eventloop.localTaskQueueHandle);
+        this.externalTaskQueue = eventloop.getTaskGroup(eventloop.externalTaskQueueHandle);
+        this.localTaskQueue = eventloop.getTaskGroup(eventloop.localTaskQueueHandle);
         this.wakeupNeeded = eventloop.wakeupNeeded;
-        this.scheduler = eventloop.scheduler;
+        this.scheduler = eventloop.crappyScheduler;
     }
 
     /**
