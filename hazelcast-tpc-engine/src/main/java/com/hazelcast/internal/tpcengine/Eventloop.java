@@ -73,7 +73,7 @@ public abstract class Eventloop {
     protected final SlabAllocator<TaskGroup> taskQueueAllocator = new SlabAllocator<>(1024, TaskGroup::new);
     private final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
-    protected final ArrayList<TaskGroup> externalTaskGroups = new ArrayList<>();
+    protected final ArrayList<TaskGroup> blockedSharedTaskGroups = new ArrayList<>();
     private final long hogThresholdNanos;
     CfsScheduler scheduler = new CfsScheduler();
     private long cycleStartNanos;
@@ -187,16 +187,16 @@ public abstract class Eventloop {
     protected void destroy() throws Exception {
     }
 
-    protected final boolean scheduleExternalTaskGroups() {
+    protected final boolean scheduleBlockedSharedTaskGroups() {
         boolean scheduled = false;
-        for (int k = 0; k < externalTaskGroups.size(); k++) {
-            TaskGroup taskGroups = externalTaskGroups.get(k);
+        for (int k = 0; k < blockedSharedTaskGroups.size(); k++) {
+            TaskGroup taskGroups = blockedSharedTaskGroups.get(k);
 
             if (!taskGroups.queue.isEmpty()) {
                 scheduled = true;
                 scheduler.enqueue(taskGroups);
 
-                externalTaskGroups.remove(k);
+                blockedSharedTaskGroups.remove(k);
                 k--;
             }
         }
@@ -223,7 +223,7 @@ public abstract class Eventloop {
 
             // a single iteration of processing a task is called a cycle.
 
-            scheduleExternalTaskGroups();
+            scheduleBlockedSharedTaskGroups();
 
             TaskGroup taskGroup = scheduler.pickNext();
             if (taskGroup == null) {
@@ -288,8 +288,8 @@ public abstract class Eventloop {
 
                 // we also need to add it to the concurrentBlockedTaskGroups so we
                 // see any items that are published.
-                if (taskGroup.external) {
-                    externalTaskGroups.add(taskGroup);
+                if (taskGroup.shared) {
+                    blockedSharedTaskGroups.add(taskGroup);
                 }
             } else {
                 // the taskQueue wasn't drained, so we need to insert it back into the scheduler.

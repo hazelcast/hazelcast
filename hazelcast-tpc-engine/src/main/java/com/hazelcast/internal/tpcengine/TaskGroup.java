@@ -29,21 +29,30 @@ public class TaskGroup implements Comparable<TaskGroup> {
     public static final int STATE_RUNNING = 0;
     public static final int STATE_BLOCKED = 1;
 
-    // the total number of nanoseconds this task has spend on the CPU
-    public long vruntimeNanos;
-
     public int state;
     public String name;
     public int shares;
     public Queue<Object> queue;
     public Scheduler scheduler;
     public int size;
-    public boolean external;
+    public boolean shared;
     public Eventloop eventloop;
+    // the physical runtime
     // the actual amount of time this task has spend on the CPU
+    // If there are other threads running on the same processor, pruntime can be destored because these tasks
+    // can contribute to the pruntime of this taskGroup.
     public long pruntimeNanos;
+    // the virtual runtime. The vruntime is weighted + also when reinserted into the tree, the vruntime
+    // is always updated to the min_vruntime. So the vruntime isn't the actual amount of time spend on the CPU
+    public long vruntimeNanos;
     public long tasksProcessed;
+    // the number of times this taskGroup has been blocked
     public long blockedCount;
+    // the number of times this taskGroup has been context switched.
+    public boolean contextSwitchCount;
+
+    // the start time of this TaskGroup
+    public long startNanos;
 
     /**
      * The maximum amount of time the tasks in this group can run before they are
@@ -65,7 +74,7 @@ public class TaskGroup implements Comparable<TaskGroup> {
             return false;
         }
 
-        if (!external && state == STATE_BLOCKED) {
+        if (!shared && state == STATE_BLOCKED) {
             eventloop.scheduler.enqueue(this);
         }
 
