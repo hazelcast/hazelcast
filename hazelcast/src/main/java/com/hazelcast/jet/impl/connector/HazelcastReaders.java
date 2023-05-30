@@ -184,6 +184,20 @@ public final class HazelcastReaders {
         };
     }
 
+    @Nonnull
+    public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName, int[] partitions) {
+        return new LocalProcessorMetaSupplier<
+                InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>(
+                new LocalMapReaderFunction(mapName),
+                partitions
+        ) {
+            @Override
+            public Permission getRequiredPermission() {
+                return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
+            }
+        };
+    }
+
     public static class LocalMapReaderFunction implements BiFunctionEx<HazelcastInstance, InternalSerializationService,
             ReadMapOrCacheP.Reader<InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>>,
             IdentifiedDataSerializable {
