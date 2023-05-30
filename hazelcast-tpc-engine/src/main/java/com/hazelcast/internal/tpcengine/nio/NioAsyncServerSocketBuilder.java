@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
+import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.net.AcceptRequest;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocketBuilder;
-import com.hazelcast.internal.tpcengine.Option;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

@@ -16,11 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.TaskGroupHandle;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
-
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import com.hazelcast.internal.tpcengine.TaskGroupHandle;
 
 /**
  * A {@link AsyncSocket} builder. Can only be used once.
@@ -63,10 +61,10 @@ public interface AsyncSocketBuilder {
      * @param value  the value
      * @param <T>    the type of the option/value
      * @return true if the option was supported, false otherwise.
-     * @throws NullPointerException          when option or value is null.
-     * @throws IllegalStateException         when build already has been called
-     * @throws java.io.UncheckedIOException  when something failed while configuring
-     *                                       the underlying socket.
+     * @throws NullPointerException         when option or value is null.
+     * @throws IllegalStateException        when build already has been called
+     * @throws java.io.UncheckedIOException when something failed while configuring
+     *                                      the underlying socket.
      */
     <T> boolean setIfSupported(Option<T> option, T value);
 

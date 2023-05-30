@@ -20,6 +20,8 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +36,19 @@ import java.util.concurrent.CompletableFuture;
  */
 @SuppressWarnings({"checkstyle:MethodCount", "checkstyle:VisibilityModifier"})
 public abstract class AsyncSocket extends AbstractAsyncSocket {
+
+    protected static final VarHandle LAST_READ_TIME_NANOS;
+
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            LAST_READ_TIME_NANOS = l.findVarHandle(AsyncSocket.class, "lastReadTimeNanos", long.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    protected volatile long lastReadTimeNanos = -1;
 
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
@@ -93,6 +108,19 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      */
     public final SocketAddress getLocalAddress() {
         return localAddress;
+    }
+
+    /**
+     * Returns the last time in nanoseconds after the epoch this socket has read something
+     * from the network.
+     * <p/>
+     * This method is thread-safe.
+     *
+     * @return the last time in nanoseconds after the epoch this socket has read something.
+     * If nothing has been read before, -1 is returned.
+     */
+    public final long lastReadTimeNanos() {
+        return (long) LAST_READ_TIME_NANOS.getOpaque(this);
     }
 
     /**
@@ -195,13 +223,14 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      */
     public abstract boolean unsafeWriteAndFlush(IOBuffer buf);
 
+
     /**
      * Connects asynchronously to some address.
      * <p/>
      * This method is not thread-safe.
      * <p/>
      * This method should be called after {@link #start()}.
-     *
+     * <p>
      * todo: Instead of returning a CompletableFuture, a promise should be returned.
      *
      * @param address the address to connect to.

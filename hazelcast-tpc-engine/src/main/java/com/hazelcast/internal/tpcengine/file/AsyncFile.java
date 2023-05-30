@@ -331,7 +331,7 @@ public abstract class AsyncFile {
     public final IntPromise pwrite(long offset, int length, IOBuffer src) {
         checkNotNegative(offset, "offset");
         checkNotNegative(length, "length");
-        checkNotNull(src,"src");
+        checkNotNull(src, "src");
 
         IntPromise promise = promiseAllocator.allocate();
         BlockRequest request = scheduler.reserve();

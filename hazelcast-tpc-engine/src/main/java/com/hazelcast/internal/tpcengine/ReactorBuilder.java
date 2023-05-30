@@ -24,6 +24,7 @@ import com.hazelcast.internal.util.ThreadAffinity;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -39,7 +40,7 @@ public abstract class ReactorBuilder {
 
     public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.localTaskQueue.capacity";
     public static final String NAME_EXTERNAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.externalTaskQueue.capacity";
-    public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.scheduledTaskQueue.capacity";
+    public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.deadlineTaskQueue.capacity";
     public static final String NAME_BATCH_SIZE = "hazelcast.tpc.batch.size";
     public static final String NAME_CLOCK_REFRESH_PERIOD = "hazelcast.tpc.clock.refreshPeriod";
     public static final String NAME_REACTOR_SPIN = "hazelcast.tpc.reactor.spin";
@@ -50,6 +51,9 @@ public abstract class ReactorBuilder {
     private static final int DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY = 4096;
     private static final int DEFAULT_BATCH_SIZE = 64;
     private static final int DEFAULT_CLOCK_REFRESH_INTERVAL = 16;
+    private static final int DEFAULT_TASK_QUOTA_NANOS = 500;
+    private static final int DEFAULT_HOG_THRESHOLD_NANOS = 500;
+    private static final int DEFAULT_IO_INTERVAL_NANOS = 10;
     private static final boolean DEFAULT_SPIN = false;
 
     private static final Constructor<ReactorBuilder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
@@ -91,10 +95,13 @@ public abstract class ReactorBuilder {
     boolean spin;
     int localTaskQueueCapacity;
     int externalTaskQueueCapacity;
-    int scheduledTaskQueueCapacity;
+    int deadlineTaskQueueCapacity;
     int batchSize;
     int clockRefreshPeriod;
     TpcEngine engine;
+    long taskQuotaNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_TASK_QUOTA_NANOS);
+    long hogThresholdNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_HOG_THRESHOLD_NANOS);
+    long ioIntervalNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_IO_INTERVAL_NANOS);
 
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
@@ -102,7 +109,7 @@ public abstract class ReactorBuilder {
                 NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_TASK_QUEUE_CAPACITY);
         this.externalTaskQueueCapacity = Integer.getInteger(
                 NAME_EXTERNAL_TASK_QUEUE_CAPACITY, DEFAULT_EXTERNAL_TASK_QUEUE_CAPACITY);
-        this.scheduledTaskQueueCapacity = Integer.getInteger(
+        this.deadlineTaskQueueCapacity = Integer.getInteger(
                 NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
         this.batchSize = Integer.getInteger(NAME_BATCH_SIZE, DEFAULT_BATCH_SIZE);
         this.clockRefreshPeriod = Integer.getInteger(NAME_CLOCK_REFRESH_PERIOD, DEFAULT_CLOCK_REFRESH_INTERVAL);
@@ -138,6 +145,25 @@ public abstract class ReactorBuilder {
      * @return the created Reactor.
      */
     public abstract Reactor build();
+
+    public void setTaskQuota(long taskQuota, TimeUnit unit) {
+        checkPositive(taskQuota, "taskQuota");
+        checkNotNull(unit, "unit");
+        this.taskQuotaNanos = unit.toNanos(taskQuota);
+    }
+
+    public void setHogThreshold(long hogThreshold, TimeUnit unit) {
+        checkPositive(hogThreshold, "hogThreshold");
+        checkNotNull(unit, "unit");
+        this.hogThresholdNanos = unit.toNanos(hogThreshold);
+    }
+
+
+    public void setIoInterval(long ioInterval, TimeUnit unit) {
+        checkPositive(ioInterval, "ioInterval");
+        checkNotNull(unit, "unit");
+        this.ioIntervalNanos = unit.toNanos(ioInterval);
+    }
 
     /**
      * Sets the reactor name supplier.
@@ -236,11 +262,11 @@ public abstract class ReactorBuilder {
     /**
      * Sets the capacity of the scheduled task queue.
      *
-     * @param scheduledTaskQueueCapacity the capacity
+     * @param deadlineTaskQueueCapacity the capacity
      * @throws IllegalArgumentException if scheduledTaskQueueCapacity not positive.
      */
-    public void setScheduledTaskQueueCapacity(int scheduledTaskQueueCapacity) {
-        this.scheduledTaskQueueCapacity = checkPositive(scheduledTaskQueueCapacity, "scheduledTaskQueueCapacity");
+    public void setDeadlineTaskQueueCapacity(int deadlineTaskQueueCapacity) {
+        this.deadlineTaskQueueCapacity = checkPositive(deadlineTaskQueueCapacity, "deadlineTaskQueueCapacity");
     }
 
     // In the future we want to have better policies than only spinning.

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine;
 
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
@@ -24,6 +25,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 public class TaskGroupBuilder {
 
     private final Eventloop eventloop;
+    private long taskQuotaNanos;
     private String name;
     private int shares;
     private Queue<Object> queue;
@@ -31,6 +33,14 @@ public class TaskGroupBuilder {
 
     public TaskGroupBuilder(Eventloop eventloop) {
         this.eventloop = eventloop;
+        this.taskQuotaNanos = eventloop.taskQuotaNanos;
+    }
+
+    public TaskGroupBuilder setTaskQuota(long taskQuota, TimeUnit unit) {
+        checkPositive(taskQuota, "taskQuota");
+        checkNotNull(unit, "unit");
+        this.taskQuotaNanos = unit.toNanos(taskQuota);
+        return this;
     }
 
     public TaskGroupBuilder setName(String name) {
@@ -58,15 +68,16 @@ public class TaskGroupBuilder {
         // todo: already build check
         // todo: loop active check
 
-        TaskGroup taskQueue =eventloop.taskQueueAllocator.allocate();
+        TaskGroup taskQueue = eventloop.taskQueueAllocator.allocate();
         taskQueue.queue = queue;
-        if(taskQueue.queue == null){
+        if (taskQueue.queue == null) {
             throw new RuntimeException();
         }
         taskQueue.concurrent = concurrent;
         taskQueue.shares = shares;
         taskQueue.name = name;
         taskQueue.eventloop = eventloop;
+        taskQueue.taskQuotaNanos = taskQuotaNanos;
         taskQueue.state = TaskGroup.STATE_BLOCKED;
 
         if (concurrent) {
@@ -74,12 +85,5 @@ public class TaskGroupBuilder {
         }
 
         return new TaskGroupHandle(taskQueue);
-    }
-
-    private TaskGroup[] add(TaskGroup taskQueue, TaskGroup[] oldArray) {
-        TaskGroup[] newArray = new TaskGroup[oldArray.length + 1];
-        System.arraycopy(oldArray, 0, newArray, 0, oldArray.length);
-        newArray[oldArray.length] = taskQueue;
-        return newArray;
     }
 }

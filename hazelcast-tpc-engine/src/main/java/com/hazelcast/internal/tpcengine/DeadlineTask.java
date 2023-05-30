@@ -24,18 +24,17 @@ import com.hazelcast.internal.tpcengine.util.Promise;
 final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
-    private final DeadlineScheduler deadlineScheduler;
-    private final Clock epochClock;
     Promise promise;
     long deadlineNanos;
     Runnable cmd;
     long periodNanos = -1;
     long delayNanos = -1;
-
     TaskGroup taskGroup;
+    private final DeadlineScheduler deadlineScheduler;
+    private final Clock clock;
 
-    DeadlineTask(Clock epochClock, DeadlineScheduler deadlineScheduler) {
-        this.epochClock = epochClock;
+    DeadlineTask(Clock clock, DeadlineScheduler deadlineScheduler) {
+        this.clock = clock;
         this.deadlineScheduler = deadlineScheduler;
     }
 
@@ -49,7 +48,7 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
             if (periodNanos != -1) {
                 deadlineNanos += periodNanos;
             } else {
-                deadlineNanos = epochClock.nanoTime() + delayNanos;
+                deadlineNanos = clock.nanoTime() + delayNanos;
             }
 
             if (deadlineNanos < 0) {
@@ -57,7 +56,7 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
             }
 
             if (!deadlineScheduler.offer(this)) {
-                logger.warning("Failed schedule task: " + this + " because there is no space in scheduledTaskQueue");
+                logger.warning("Failed schedule task: " + this + " because there is no space in deadlineScheduler");
             }
         } else {
             if (promise != null) {
@@ -77,7 +76,7 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
 
     @Override
     public String toString() {
-        return "ScheduledTask{"
+        return "DeadlineTask{"
                 + "promise=" + promise
                 + ", deadlineNanos=" + deadlineNanos
                 + ", task=" + cmd

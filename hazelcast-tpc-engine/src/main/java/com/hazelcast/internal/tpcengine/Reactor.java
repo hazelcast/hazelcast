@@ -85,6 +85,7 @@ public abstract class Reactor implements Executor {
 
     @SuppressWarnings("java:S1845")
     protected volatile State state = NEW;
+    protected final ReactorMetrics metrics = new ReactorMetrics();
 
     /**
      * Creates a new {@link Reactor}.
@@ -127,6 +128,10 @@ public abstract class Reactor implements Executor {
      */
     public final ConcurrentMap<?, ?> context() {
         return context;
+    }
+
+    public final ReactorMetrics metrics() {
+        return metrics;
     }
 
     /**
@@ -222,7 +227,7 @@ public abstract class Reactor implements Executor {
      * @param acceptRequest a wrapper around a lower level socket implemented that needs
      *                      to be accepted.
      * @return the created AsyncSocketBuilder.
-     * @throws NullPointerException if acceptRequest is null.
+     * @throws NullPointerException  if acceptRequest is null.
      * @throws IllegalStateException if the reactor isn't running.
      */
     public abstract AsyncSocketBuilder newAsyncSocketBuilder(AcceptRequest acceptRequest);

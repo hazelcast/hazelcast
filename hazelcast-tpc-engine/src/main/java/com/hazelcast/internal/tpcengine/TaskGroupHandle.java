@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpcengine;
 
 public class TaskGroupHandle {
-    public TaskGroup taskGroup;
+    TaskGroup taskGroup;
 
     public TaskGroupHandle(TaskGroup taskGroup) {
         this.taskGroup = taskGroup;

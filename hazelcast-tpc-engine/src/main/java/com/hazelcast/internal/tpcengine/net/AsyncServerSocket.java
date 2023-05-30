@@ -137,8 +137,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * This method should only be called once and isn't threadsafe.
      * <p/>
      * Before accept is called, {@link #bind(SocketAddress, int)} needs to be called.
-     *
-      */
+     */
     public abstract void start();
 
     @Override

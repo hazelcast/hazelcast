@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
+import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.TaskGroup;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
@@ -65,6 +66,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final boolean writeThrough;
     private final AsyncSocketReader reader;
     private final TaskGroup localTaskQueue;
+    private final Eventloop eventloop;
 
     // only accessed from eventloop thread
     private boolean started;
@@ -82,6 +84,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             this.localTaskQueue = reactor.eventloop().getTaskGroup(builder.taskQueueHandle);
             this.options = builder.options;
             this.eventloopThread = reactor.eventloopThread();
+            this.eventloop = reactor.eventloop();
             this.socketChannel = builder.socketChannel;
             if (!clientSide) {
                 this.localAddress = socketChannel.getLocalAddress();
@@ -413,6 +416,8 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         private void handleRead() throws IOException {
             metrics.incReadEvents();
+
+            LAST_READ_TIME_NANOS.setOpaque(NioAsyncSocket.this, eventloop.cycleStartNanos());
 
             int read = socketChannel.read(rcvBuffer);
             System.out.println(NioAsyncSocket.this + " bytes read: " + read);

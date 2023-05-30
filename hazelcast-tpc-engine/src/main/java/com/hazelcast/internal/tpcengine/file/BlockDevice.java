@@ -30,9 +30,9 @@ public class BlockDevice {
     private final int maxWaiting;
 
     /**
-     * @param path          the path of the storage device.
+     * @param path            the path of the storage device.
      * @param concurrentLimit the number of concurrent requests on the dev.
-     * @param maxWaiting    the maximum number of waiting in case of no space for waiting requests.
+     * @param maxWaiting      the maximum number of waiting in case of no space for waiting requests.
      */
     public BlockDevice(String path,
                        int concurrentLimit,

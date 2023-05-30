@@ -471,6 +471,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             try {
                 if (res > 0) {
                     int bytesRead = res;
+                    LAST_READ_TIME_NANOS.setOpaque(IOUringAsyncSocket.this, eventloop.cycleStartNanos());
                     metrics.incReadEvents();
                     metrics.incBytesRead(bytesRead);
 

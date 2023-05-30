@@ -39,6 +39,7 @@ import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeAllQuietly;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 @SuppressWarnings({"checkstyle:MemberName",
         "checkstyle:DeclarationOrder",
@@ -119,7 +120,7 @@ public class IOUringEventloop extends Eventloop {
 
     @Override
     public AsyncFile newAsyncFile(String path) {
-        Preconditions.checkNotNull(path, "path");
+        checkNotNull(path, "path");
 
         BlockDevice dev = blockDeviceRegistry.findBlockDevice(path);
         if (dev == null) {
@@ -136,7 +137,7 @@ public class IOUringEventloop extends Eventloop {
     }
 
     @Override
-    protected void park() throws IOException {
+    protected void park(long nowNanos) throws IOException {
         if (spin) {
             sq.submit();
         } else {
@@ -146,7 +147,7 @@ public class IOUringEventloop extends Eventloop {
             } else {
                 long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
                 if (earliestDeadlineNanos != -1) {
-                    long timeoutNanos = earliestDeadlineNanos - nanoClock.nanoTime();
+                    long timeoutNanos = earliestDeadlineNanos - nowNanos;
                     if (timeoutNanos > 0) {
                         sq_offerTimeout(timeoutNanos);
                         sq.submitAndWait();

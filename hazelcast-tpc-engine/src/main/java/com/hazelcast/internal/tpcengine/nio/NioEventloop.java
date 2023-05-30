@@ -73,7 +73,7 @@ class NioEventloop extends Eventloop {
     }
 
     @Override
-    protected void park() throws IOException {
+    protected void park(long nowNanos) throws IOException {
         int keyCount;
         if (spin) {
             keyCount = selector.selectNow();
@@ -87,8 +87,7 @@ class NioEventloop extends Eventloop {
                 if (earliestDeadlineNanos == -1) {
                     keyCount = selector.select();
                 } else {
-                    // todo: this could lead to longer waiting due to not respect nanos?
-                    long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineNanos - nanoClock.nanoTime());
+                    long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineNanos - nowNanos);
                     keyCount = timeoutMillis <= 0
                             ? selector.selectNow()
                             : selector.select(timeoutMillis);

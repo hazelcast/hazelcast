@@ -16,12 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
-import java.time.Instant;
-import java.util.concurrent.TimeUnit;
-
 /**
  * A clock that returns the current time in nanoseconds from an arbitrary epoch.
- *
+ * <p>
  * This class is thread-safe.
  */
 public class StandardNanoClock implements Clock {

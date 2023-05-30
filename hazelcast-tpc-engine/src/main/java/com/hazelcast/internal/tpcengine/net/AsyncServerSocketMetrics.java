@@ -51,6 +51,6 @@ public class AsyncServerSocketMetrics {
      * Increases the number of accepted sockets by 1.
      */
     public void incAccepted() {
-         ACCEPTED.setOpaque(this, (long) ACCEPTED.getOpaque(this) + 1);
+        ACCEPTED.setOpaque(this, (long) ACCEPTED.getOpaque(this) + 1);
     }
 }

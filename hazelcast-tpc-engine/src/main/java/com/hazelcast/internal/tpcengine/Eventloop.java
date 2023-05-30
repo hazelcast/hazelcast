@@ -63,25 +63,26 @@ public abstract class Eventloop {
     protected final IntPromiseAllocator intPromiseAllocator;
     public final TaskGroupHandle externalTaskQueueHandle;
     public final TaskGroupHandle localTaskQueueHandle;
+    final long taskQuotaNanos;
+    private final ReactorMetrics metrics;
     protected boolean stop;
 
 
     protected long taskStartNanos;
     protected long ioDeadlineNanos;
     protected final SlabAllocator<TaskGroup> taskQueueAllocator = new SlabAllocator<>(1024, TaskGroup::new);
-    private final long ioIntervalNanos = TimeUnit.MICROSECONDS.toNanos(10);
+    private final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
     protected final ArrayList<TaskGroup> concurrentBlockedTaskGroups = new ArrayList<>();
-    protected final
-
+    private final long hogThresholdNanos;
     CfsScheduler scheduler = new CfsScheduler();
     private long cycleStartNanos;
-    private long tasksProcess;
 
     protected Eventloop(Reactor reactor, ReactorBuilder builder) {
         this.reactor = reactor;
         this.builder = builder;
-        this.deadlineScheduler = new DeadlineScheduler(builder.scheduledTaskQueueCapacity);
+        this.metrics = reactor.metrics;
+        this.deadlineScheduler = new DeadlineScheduler(builder.deadlineTaskQueueCapacity);
         this.externalTaskQueueHandle = new TaskGroupBuilder(this)
                 .setQueue(new MpscArrayQueue<>(builder.externalTaskQueueCapacity))
                 .setConcurrent(true)
@@ -98,8 +99,11 @@ public abstract class Eventloop {
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.nanoClock = new StandardNanoClock();
         this.taskStartNanos = nanoClock.nanoTime();
-        this.ioDeadlineNanos = taskStartNanos + ioIntervalNanos;
         this.crappyScheduler = builder.schedulerSupplier.get();
+        this.taskQuotaNanos = builder.taskQuotaNanos;
+        this.hogThresholdNanos = builder.hogThresholdNanos;
+        this.ioIntervalNanos = builder.ioIntervalNanos;
+        this.ioDeadlineNanos = taskStartNanos + ioIntervalNanos;
         crappyScheduler.init(this);
     }
 
@@ -199,7 +203,6 @@ public abstract class Eventloop {
         return scheduled;
     }
 
-
     /**
      * Runs the actual eventloop.
      * <p/>
@@ -208,91 +211,125 @@ public abstract class Eventloop {
      * @throws Exception if something fails while running the eventloop. The reactor
      *                   terminates when this happens.
      */
+    @SuppressWarnings({"checkstyle:NPathComplexity",
+            "checkstyle:MethodLength",
+            "checkstyle:CyclomaticComplexity",
+            "checkstyle:InnerAssignment"})
     public void run() throws Exception {
         this.cycleStartNanos = nanoClock.nanoTime();
 
-        int clockSkip = 0;
-
         while (!stop) {
-            // a single iteration of processing the tasks is called a cycle.
+            deadlineScheduler.tick(cycleStartNanos);
 
-            // Thread.sleep(100);
+            // a single iteration of processing the a task is called a cycle.
 
             scheduleConcurrent();
 
             TaskGroup taskGroup = scheduler.pickNext();
             if (taskGroup == null) {
-                park();
+                park(cycleStartNanos);
                 cycleStartNanos = nanoClock.nanoTime();
-            } else {
-                tasksProcess++;
+                continue;
+            }
 
-                taskGroup.tasksProcessed++;
-                long deadlineNanos = cycleStartNanos + taskGroup.taskQuotaNanos;
+            taskGroup.tasksProcessed++;
+            long quotaDeadlineNanos = cycleStartNanos + taskGroup.taskQuotaNanos;
+            long cycleEndNanos = cycleStartNanos;
+            long taskStartNanos = cycleStartNanos;
+            boolean taskQueueEmpty = false;
+            long deltaNanos = 0;
+            int taskCount = 0;
 
-                long taskStartNanos = cycleStartNanos;
-                boolean taskQueueEmpty = false;
-                long cycleEndNanos = taskStartNanos;
-                for (; ; ) {
-                    Object cmd = taskGroup.queue.poll();
-                    if (cmd == null) {
-                        taskQueueEmpty = true;
-                        break;
-                    } else if (cmd instanceof Runnable) {
-                        try {
-                            ((Runnable) cmd).run();
-                        } catch (Exception e) {
-                            logger.warning(e);
-                        }
-                    } else {
-                        throw new IllegalArgumentException("Unsupported command type: " + cmd.getClass().getName());
-                    }
-
-                    long taskEndNanos = nanoClock.nanoTime();
-                    long taskDeltaNanos = taskStartNanos - taskEndNanos;
-                    // todo: record violators
-
-                    cycleEndNanos = taskEndNanos;
-                    if (cycleEndNanos >= deadlineNanos) {
-                        // enough time was spend on this task group, stop processing
-                        break;
-                    }
+            // Process the tasks in a taskQueue as long as the taskQuota is not exceeded.
+            for (; ; ) {
+                Object task = taskGroup.queue.poll();
+                if (task == null) {
+                    // taskQueue is empty, we are done.
+                    taskQueueEmpty = true;
+                    break;
                 }
 
-                long deltaNanos = cycleEndNanos - cycleStartNanos;
-                // todo * include weight
-                long deltaWeightedNanos = deltaNanos;// / taskGroup.weight;
+                processTask(task);
 
+                taskCount++;
+                long taskEndNanos = nanoClock.nanoTime();
+                long taskDurationNanos = taskStartNanos - taskEndNanos;
+                deltaNanos += taskDurationNanos;
 
-                taskGroup.pruntimeNanos += deltaNanos;
-                taskGroup.vruntimeNanos += deltaWeightedNanos;
-
-                if (taskQueueEmpty) {
-                    taskGroup.state = STATE_BLOCKED;
-                    taskGroup.blockedCount++;
-
-                    if (taskGroup.concurrent) {
-                        concurrentBlockedTaskGroups.add(taskGroup);
-                    }
-                } else {
-                    scheduler.enqueue(taskGroup);
+                if (taskDurationNanos > hogThresholdNanos) {
+                    onHoggingTask(task, taskDurationNanos);
                 }
 
-                // todo: report duration violations.
+                cycleEndNanos = taskEndNanos;
+
                 if (cycleEndNanos >= ioDeadlineNanos) {
                     ioSchedulerTick();
                     ioDeadlineNanos = cycleEndNanos += ioIntervalNanos;
                 }
 
-                deadlineScheduler.tick(cycleEndNanos);
-                cycleStartNanos = cycleEndNanos;
+                if (cycleEndNanos >= quotaDeadlineNanos) {
+                    // enough time was spend on this task group, stop processing
+                    break;
+                }
+            }
+
+            // todo * include weight
+            long deltaWeightedNanos = deltaNanos;
+
+            metrics.incTasksProcessedCount(taskCount);
+            metrics.incCpuTimeNanos(deltaNanos);
+
+            taskGroup.pruntimeNanos += deltaNanos;
+            taskGroup.vruntimeNanos += deltaWeightedNanos;
+
+            if (taskQueueEmpty) {
+                // the taskQueue is empty, so we mark this taskQueue is blocked.
+                taskGroup.state = STATE_BLOCKED;
+                taskGroup.blockedCount++;
+
+                // we also need to add it to the concurrentBlockedTaskGroups so we
+                // see any items that are published.
+                if (taskGroup.concurrent) {
+                    concurrentBlockedTaskGroups.add(taskGroup);
+                }
+            } else {
+                // the taskQueue wasn't drained, so we need to insert it back into the scheduler.
+                scheduler.enqueue(taskGroup);
+            }
+
+            // There is no point in doing the deadlineScheduler tick in the taskQueue processing loop
+            // because the taskQueue is going to be processed till it is empty (or the deadline is reached).
+            deadlineScheduler.tick(cycleEndNanos);
+            cycleStartNanos = cycleEndNanos;
+        }
+    }
+
+    private void onHoggingTask(Object task, long taskDurationNanos) {
+        // todo: we need to come up with a better approach
+        if (logger.isSevereEnabled()) {
+            logger.severe(reactor + " detected hogging task: " + task.getClass().getName()
+                    + " task-duration " + taskDurationNanos + "ns.");
+        }
+    }
+
+    private void processTask(Object task) {
+        // process the task.
+        if (task instanceof Runnable) {
+            try {
+                ((Runnable) task).run();
+            } catch (Exception e) {
+                logger.warning(e);
+            }
+        } else {
+            if (logger.isSevereEnabled()) {
+                logger.severe("Unsupported command type: " + task.getClass().getName());
             }
         }
     }
 
     protected abstract boolean ioSchedulerTick() throws IOException;
 
-    protected abstract void park() throws IOException;
+    protected abstract void park(long nowNanos) throws IOException;
 
     public final boolean schedule(Runnable cmd,
                                   long delay,
@@ -321,12 +358,7 @@ public abstract class Eventloop {
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
         task.cmd = cmd;
         task.taskGroup = taskGroupHandle.taskGroup;
-        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
-        if (deadlineNanos < 0) {
-            // protection against overflow
-            deadlineNanos = Long.MAX_VALUE;
-        }
-        task.deadlineNanos = deadlineNanos;
+        task.deadlineNanos = toDeadlineNanos(delay, unit);
         return deadlineScheduler.offer(task);
     }
 
@@ -351,14 +383,9 @@ public abstract class Eventloop {
         checkNotNull(unit);
 
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
-        task.taskGroup = taskGroupHandle.taskGroup;
         task.cmd = cmd;
-        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
-        if (deadlineNanos < 0) {
-            // protection against overflow
-            deadlineNanos = Long.MAX_VALUE;
-        }
-        task.deadlineNanos = deadlineNanos;
+        task.taskGroup = taskGroupHandle.taskGroup;
+        task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
         task.delayNanos = unit.toNanos(delay);
         return deadlineScheduler.offer(task);
         //throw new UnsupportedOperationException();
@@ -384,14 +411,9 @@ public abstract class Eventloop {
         checkNotNull(unit);
 
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
-        task.taskGroup = taskGroupHandle.taskGroup;
         task.cmd = cmd;
-        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(initialDelay);
-        if (deadlineNanos < 0) {
-            // protection against overflow
-            deadlineNanos = Long.MAX_VALUE;
-        }
-        task.deadlineNanos = deadlineNanos;
+        task.taskGroup = taskGroupHandle.taskGroup;
+        task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
         task.periodNanos = unit.toNanos(period);
         return deadlineScheduler.offer(task);
     }
@@ -403,13 +425,18 @@ public abstract class Eventloop {
         Promise promise = promiseAllocator.allocate();
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
         task.promise = promise;
+        task.deadlineNanos = toDeadlineNanos(delay, unit);
+        task.taskGroup = localTaskQueueHandle.taskGroup;
+        deadlineScheduler.offer(task);
+        return promise;
+    }
+
+    private long toDeadlineNanos(long delay, TimeUnit unit) {
         long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
         if (deadlineNanos < 0) {
             // protection against overflow
             deadlineNanos = Long.MAX_VALUE;
         }
-        task.deadlineNanos = deadlineNanos;
-        deadlineScheduler.offer(task);
-        return promise;
+        return deadlineNanos;
     }
 }

@@ -50,7 +50,7 @@ public abstract class EventloopTest {
     public void test_schedule() {
         Task task = new Task();
 
-        reactor.offer(() -> reactor.eventloop.schedule(task, 1, SECONDS));
+        reactor.offer(() -> reactor.eventloop.schedule(task, 5, SECONDS));
 
         assertTrueEventually(() -> assertEquals(1, task.count.get()));
     }
