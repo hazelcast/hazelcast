@@ -568,18 +568,20 @@ public interface ProcessorMetaSupplier extends Serializable {
     @Nonnull
     static ProcessorMetaSupplier forceTotalParallelismOne(
             @Nonnull ProcessorSupplier supplier,
-            @Nonnull Address memberAddress
+            @Nonnull Address memberAddress,
+            @Nonnull SupplierEx<?> partitionKeySupplier
     ) {
         return new SpecificMemberPms(supplier, memberAddress);
     }
 
+    // TODO: create with PMS.
     static ProcessorMetaSupplier memberPruningMetaSupplier(
             @Nonnull ProcessorSupplier supplier
     ) {
         return new ProcessorMetaSupplier() {
             @Override
             public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-                return addr -> addresses.contains(addr) ? supplier : null;
+                return addr -> supplier;
             }
 
             @Override
@@ -595,6 +597,65 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Override
             public boolean closeIsCooperative() {
                 return true;
+            }
+        };
+    }
+
+    static ProcessorMetaSupplier memberPruningMetaSupplier(
+            @Nonnull ProcessorMetaSupplier processorMetaSupplier
+    ) {
+        return new ProcessorMetaSupplier() {
+            @Nullable
+            @Override
+            public Permission getRequiredPermission() {
+                return processorMetaSupplier.getRequiredPermission();
+            }
+
+            @Nonnull
+            @Override
+            public Map<String, String> getTags() {
+                return processorMetaSupplier.getTags();
+            }
+
+            @Override
+            public int preferredLocalParallelism() {
+                return processorMetaSupplier.preferredLocalParallelism();
+            }
+
+            @Override
+            public void init(@Nonnull Context context) throws Exception {
+                processorMetaSupplier.init(context);
+            }
+
+            @Override
+            public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+                return processorMetaSupplier.get(addresses);
+            }
+
+
+            @Override
+            public void close(@Nullable Throwable error) throws Exception {
+                processorMetaSupplier.close(error);
+            }
+
+            @Override
+            public boolean isReusable() {
+                return processorMetaSupplier.isReusable();
+            }
+
+            @Override
+            public boolean initIsCooperative() {
+                return processorMetaSupplier.initIsCooperative();
+            }
+
+            @Override
+            public boolean closeIsCooperative() {
+                return processorMetaSupplier.closeIsCooperative();
+            }
+
+            @Override
+            public boolean doesWorkWithoutInput() {
+                return false;
             }
         };
     }
@@ -645,7 +706,6 @@ public interface ProcessorMetaSupplier extends Serializable {
             }
         }
 
-        @Nonnull
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             if (!addresses.contains(memberAddress)) {
@@ -792,6 +852,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         /**
          * Returns the current Hazelcast instance.
+         *
          * @since 5.0
          */
         @Nonnull

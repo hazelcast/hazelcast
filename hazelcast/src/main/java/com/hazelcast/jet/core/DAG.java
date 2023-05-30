@@ -326,7 +326,6 @@ public class DAG implements IdentifiedDataSerializable, Versioned, Iterable<Vert
         }
 
         // Check each meta-supplier if it is possible to eliminate processor creation.
-        //
         for (Vertex v : this) {
             if (v.getMetaSupplier().doesWorkWithoutInput()) {
                 return false;

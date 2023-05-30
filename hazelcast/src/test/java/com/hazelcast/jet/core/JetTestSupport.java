@@ -51,6 +51,7 @@ import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.version.Version;
+import org.apache.commons.collections.map.HashedMap;
 import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.ClassRule;
@@ -85,6 +86,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.in;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -359,6 +361,18 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 .entrySet()
                 .stream()
                 .collect(toMap(en -> en.getKey().getAddress(), Map.Entry::getValue));
+    }
+
+    public Address getAddressForPartitionId(HazelcastInstance instance, int partitionId) {
+        Map<Address, int[]> partitionAssignment = getPartitionAssignment(instance);
+        for (Entry<Address, int[]> entry : partitionAssignment.entrySet()) {
+            for (int pId : entry.getValue()) {
+                if (pId == partitionId) {
+                    return entry.getKey();
+                }
+            }
+        }
+        throw new AssertionError("Partition " + partitionId + " is not present in cluster.");
     }
 
     public Address nextAddress() {
