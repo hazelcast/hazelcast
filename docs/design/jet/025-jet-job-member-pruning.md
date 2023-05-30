@@ -75,7 +75,7 @@ Prune members without any connections, so, only Member 1 and Member K left in cl
     - SCAN[map2, partitionKey=K]
 ```
 
-![Scan + Scan -> HashJoin](https://svgshare.com/i/tTX.svg)
+![Scan + Scan -> HashJoin](https://svgshare.com/i/tfk.svg)
 
 ##### Member pruning for Scan -> Transform -> Aggregate
 ```
@@ -105,6 +105,10 @@ interface ProcessorMetaSupplier extends IdentifiedDataSerializable {
 The default return value is `true` for backwards compatibility. This means that all current and new processors that
 do no work without an input will have to override this method.
 
+We propose to change the contract of `ProcessorMetaSupplier#get` return function so that it will be
+allowed to return `null` for addresses for which it does not want to deploy processors. But this will not be enough
+to completely eliminate a member from the execution.
+
 Next, we need to determine exact scope of the change : there are two main approaches were considered, 
 to shorten their meaning we mark them as 'heavyweight' and 'lightweight'. The difference between these two approaches 
 is an exact stage when we understand that some member may be pruned from job execution: 'heavyweight' approach tries 
@@ -131,8 +135,14 @@ where `PartitionPredicate` is available for partitioned data querying.
 For that, we can use SQL optimization phase also for determining partitions and for all relations: we extract information
 about required partitions to run to JobConfig, and then mark DAG as 'ableToPruneMembers'. This mark is an indicator
 for `ExecutionPlanBuilder` to choose code path with member pruning during execution plans creation.
+As a helpful API for SQL's `CreateDagVisitor`, we introduced new wrapper for both `ProcessorMetaSupplier` and
+`ProcessorSupplier` - `memberPruningProcessorMetaSupplier`, where `doesWorkWithoutInput` method returns `false`. This PMS
+make easier and more precise choosing members to prune.
 
 ### Processor pruning
+
+For processor pruning we would like to separate two kinds of pruning: **intra-member** processor pruning, which
+is applicable only for processor creation elimination inside one member, and **inter-member** processor pruning.
 
 #### Use cases for processor pruning
 
@@ -148,6 +158,8 @@ partition involvement knowledge :
 
 ![Scan + Scan -> HashJoin](https://svgshare.com/i/tUD.svg)
 
+So, it's a good target for **intra-member** processor pruning.
+
 2. Double-staged aggregation.
 ```
 - COMBINE
@@ -160,16 +172,28 @@ partition involvement knowledge :
 For 2-stage aggregation, honestly, an author don't see actual processor pruning abilities to optimize that case. 
 Potentially it may be done in another way - if we can translate 2-staged into single-staged on SQL opt phase and 
 then eliminate member(s) via member pruning.
-Even though, lets take a look on the picture above. Here, we can theoretically, eliminate scans and flatmaps. 
-In practice, processor logic is opaque to Jet and may have side-effects which may break the job.
+Even though, lets take a look on the picture above. Here, we can theoretically, eliminate scan and flatmap nodes. 
+In practice, processor logic is opaque to Jet and may have side effects which may break the job. 
+This example illustrates **inter-member** processor pruning.
 
 #### Solution design details
 
-We propose to change the contract of `ProcessorMetaSupplier#get` return function so that it will be
-allowed to return `null` for addresses for which it does not want to deploy processors. But this will not be enough 
-to completely eliminate a member from the execution.
+##### Intra-member processor pruning
+To control processor creation and parallelism within one member, we would like to use various processor suppliers
+(`ProcessorMetaSupplier` or `ProcessorSupplier`). The correctness of this method will totally rely on how DAG constructor.
+Since Partition Pruning initiative was introduced to align PredicateAPI and SQL functionality and performance, we will
+rely on SQL optimizer input and DAG construction phase in `CreateDagVisitor`. Here we describe Jet API to support processor
+pruning :
+- create new `lazyForceTotalParallelismOne` (or override old `forceTotalParallelismOne`) PMS builder which does not 
+- cache member address to prevent wrong usage of cached plan;
+- new smart `_insert_this_name` PMS wrapper which computes preferred local parallelism based on input from SQL optimizer;
 
-TODO: finish it
+##### Inter-member processor pruning
+
+After long discussions, we decided NOT support this kind of processor pruning, because it
+- relatively ineffective, because most of DAGs with broadcast edges were created with algorithm correctness in mind
+- hard to implement solution which fits most use cases;
+- doesn't fit the goal of general effort.
 
 ### Scan processor partition pruning
 
@@ -179,37 +203,3 @@ pass it to specialized processor supplier which will spawn `ReadMapOrCacheP` wit
 ### Notes
 
 ### Acceptance Criteria
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
