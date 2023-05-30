@@ -70,7 +70,7 @@ public abstract class Eventloop {
     protected boolean stop;
     protected long taskStartNanos;
     protected long ioDeadlineNanos;
-    protected final SlabAllocator<TaskGroup> taskQueueAllocator = new SlabAllocator<>(1024, TaskGroup::new);
+    protected final SlabAllocator<TaskGroup> taskGroupAllocator = new SlabAllocator<>(1024, TaskGroup::new);
     private final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
     protected final ArrayList<TaskGroup> blockedSharedTaskGroups = new ArrayList<>();
@@ -85,12 +85,12 @@ public abstract class Eventloop {
         this.deadlineScheduler = new DeadlineScheduler(builder.deadlineTaskQueueCapacity);
         this.externalTaskQueueHandle = new TaskGroupBuilder(this)
                 .setQueue(new MpscArrayQueue<>(builder.externalTaskQueueCapacity))
-                .setConcurrent(true)
+                .setShared(true)
                 .setShares(1)
                 .build();
         this.localTaskQueueHandle = new TaskGroupBuilder(this)
                 .setQueue(new CircularQueue<>(builder.localTaskQueueCapacity))
-                .setConcurrent(false)
+                .setShared(false)
                 .setShares(1)
                 .build();
         this.spin = builder.spin;

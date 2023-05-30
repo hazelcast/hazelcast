@@ -29,7 +29,7 @@ public class TaskGroupBuilder {
     private String name;
     private int shares;
     private Queue<Object> queue;
-    private boolean concurrent;
+    private boolean shared;
 
     public TaskGroupBuilder(Eventloop eventloop) {
         this.eventloop = eventloop;
@@ -53,8 +53,8 @@ public class TaskGroupBuilder {
         return this;
     }
 
-    public TaskGroupBuilder setConcurrent(boolean concurrent) {
-        this.concurrent = concurrent;
+    public TaskGroupBuilder setShared(boolean shared) {
+        this.shared = shared;
         return this;
     }
 
@@ -64,23 +64,25 @@ public class TaskGroupBuilder {
     }
 
     public TaskGroupHandle build() {
+        // todo: check thread
         // todo: name check
         // todo: already build check
         // todo: loop active check
 
-        TaskGroup taskQueue = eventloop.taskQueueAllocator.allocate();
+        TaskGroup taskQueue = eventloop.taskGroupAllocator.allocate();
         taskQueue.queue = queue;
         if (taskQueue.queue == null) {
             throw new RuntimeException();
         }
-        taskQueue.shared = concurrent;
+        taskQueue.shared = shared;
         taskQueue.shares = shares;
         taskQueue.name = name;
         taskQueue.eventloop = eventloop;
         taskQueue.taskQuotaNanos = taskQuotaNanos;
+        //taskQueue.taskQuotaNanos =
         taskQueue.state = TaskGroup.STATE_BLOCKED;
 
-        if (concurrent) {
+        if (shared) {
             eventloop.blockedSharedTaskGroups.add(taskQueue);
         }
 
