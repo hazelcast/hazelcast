@@ -85,6 +85,7 @@ public class RunnerTest {
                 .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withCpuCount(8L))
                 .withFileSystemBind("..", "/usr/src/maven", BindMode.READ_WRITE)
                 .withFileSystemBind(System.getProperty("user.home") + "/.m2", "/root/.m2", BindMode.READ_WRITE)
+                .withFileSystemBind("/var/run/docker.sock", "/var/run/docker.sock", BindMode.READ_WRITE)
                 .withWorkingDirectory("/usr/src/maven")
                 .withNetwork(newNetwork(name))
                 .withCommand("bash", "-x", "-c", mvnCommandForBatch(containerIdx));
