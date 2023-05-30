@@ -32,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -41,13 +40,15 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 public class RunnerTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunnerTest.class);
     private static final int DEFAULT_RUNNERS_COUNT = Runtime.getRuntime().availableProcessors() / 2;
-    private static final String SORT_SEED_FILENAME = "target/sort-seed";
+    private static final Path SORT_SEED_FILENAME = Paths.get("target/sort-seed");
     private final String testRunId = UUID.randomUUID().toString();
 
     @Test
@@ -86,7 +87,7 @@ public class RunnerTest {
                 .withFileSystemBind(System.getProperty("user.home") + "/.m2", "/root/.m2", BindMode.READ_WRITE)
                 .withWorkingDirectory("/usr/src/maven")
                 .withNetwork(newNetwork(name))
-                .withCommand(mvnCommandForBatch(containerIdx));
+                .withCommand("bash", "-x", "-c", mvnCommandForBatch(containerIdx));
         mavenContainer.start();
         mavenContainer.followOutput(new Slf4jLogConsumer(LOGGER).withPrefix(shortName));
         return mavenContainer;
@@ -100,12 +101,18 @@ public class RunnerTest {
 
     private static String mvnCommandForBatch(char batchSuffix) {
         String listOfTests = "/usr/src/maven/hazelcast-isolating-test-runner/target/test-batch-" + batchSuffix;
-        return "mvn --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast -Dsurefire.includesFile="
-                + listOfTests + " -Dbasedir=test-batch-" + batchSuffix + "-dir";
+        String sharedProjectDir = "/usr/src/maven";
+        String isolatedProjectDir = "/usr/src/maven-isolated";
+        String sharedSurefireReports = sharedProjectDir + "/hazelcast/target/surefire-reports";
+        return "cp -R " + sharedProjectDir + "/ " + isolatedProjectDir + "; cd " + isolatedProjectDir + ";"
+                + "mvn --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
+                + "-Dsurefire.includesFile=" + listOfTests + " -Dbasedir=test-batch-" + batchSuffix + "-dir;"
+                + "mkdir -p " + sharedSurefireReports + ";"
+                + "cp -v " + isolatedProjectDir + "/hazelcast/target/surefire-reports/* " + sharedSurefireReports;
     }
 
     private static void prepareTestBatches(int runnersCount) {
-        String listAllTestClassesCommand = "find ../hazelcast/src/test/java -name '*.java' | cut -sd / -f 6-";
+        String listAllTestClassesCommand = "find ../hazelcast/src/test/java -name '*.java' | sort | cut -sd / -f 6-";
         int totalNumberOfTests = countOutputLines(listAllTestClassesCommand);
         LOGGER.info("Found " + totalNumberOfTests + " tests to run");
         int testCountInBatch = totalNumberOfTests / runnersCount + (totalNumberOfTests % runnersCount == 0 ? 0 : 1);
@@ -116,14 +123,13 @@ public class RunnerTest {
     private static Path generateSeedFile() {
         String sortSeed = Optional.ofNullable(System.getProperty("sortSeed"))
                 .orElse(UUID.randomUUID().toString()).substring(0, 32);
-        LOGGER.info("Sorting seed: " + sortSeed);
+        LOGGER.info("Sorting seed: " + sortSeed + ". Use -DsortSeed=" + sortSeed + " to re-run tests with the same order");
         byte[] bytes = sortSeed.getBytes(StandardCharsets.UTF_8);
         try {
-            Files.write(Paths.get(SORT_SEED_FILENAME), bytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+            return Files.write(SORT_SEED_FILENAME, bytes, TRUNCATE_EXISTING, CREATE);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return Paths.get(SORT_SEED_FILENAME);
     }
 
     private static Process exec(String command) {
