@@ -73,7 +73,7 @@ public class TaskGroupBuilder {
         if (taskQueue.queue == null) {
             throw new RuntimeException();
         }
-        taskQueue.concurrent = concurrent;
+        taskQueue.external = concurrent;
         taskQueue.shares = shares;
         taskQueue.name = name;
         taskQueue.eventloop = eventloop;
@@ -81,7 +81,7 @@ public class TaskGroupBuilder {
         taskQueue.state = TaskGroup.STATE_BLOCKED;
 
         if (concurrent) {
-            eventloop.concurrentBlockedTaskGroups.add(taskQueue);
+            eventloop.externalTaskGroups.add(taskQueue);
         }
 
         return new TaskGroupHandle(taskQueue);

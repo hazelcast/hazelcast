@@ -38,7 +38,7 @@ public class TaskGroup implements Comparable<TaskGroup> {
     public Queue<Object> queue;
     public Scheduler scheduler;
     public int size;
-    public boolean concurrent;
+    public boolean external;
     public Eventloop eventloop;
     // the actual amount of time this task has spend on the CPU
     public long pruntimeNanos;
@@ -65,11 +65,10 @@ public class TaskGroup implements Comparable<TaskGroup> {
             return false;
         }
 
-        if (!concurrent && state == STATE_BLOCKED) {
+        if (!external && state == STATE_BLOCKED) {
             eventloop.scheduler.enqueue(this);
         }
 
         return true;
     }
-
 }

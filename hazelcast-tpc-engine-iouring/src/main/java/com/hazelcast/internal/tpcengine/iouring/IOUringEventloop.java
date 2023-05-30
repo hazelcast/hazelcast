@@ -23,7 +23,6 @@ import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
-import com.hazelcast.internal.tpcengine.util.Preconditions;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -142,7 +141,7 @@ public class IOUringEventloop extends Eventloop {
             sq.submit();
         } else {
             wakeupNeeded.set(true);
-            if (scheduleConcurrent()) {
+            if (scheduleExternalTaskGroups()) {
                 sq.submit();
             } else {
                 long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();

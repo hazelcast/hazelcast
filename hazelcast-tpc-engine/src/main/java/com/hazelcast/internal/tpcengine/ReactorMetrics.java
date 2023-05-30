@@ -27,13 +27,13 @@ public final class ReactorMetrics {
     private static final VarHandle TASKS_PROCESSED_COUNT;
     private static final VarHandle CPU_TIME_NANOS;
 
-    private volatile long taskProcessCount;
+    private volatile long taskCompletedCount;
     private volatile long cpuTimeNanos;
 
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
-            TASKS_PROCESSED_COUNT = l.findVarHandle(ReactorMetrics.class, "taskProcessCount", long.class);
+            TASKS_PROCESSED_COUNT = l.findVarHandle(ReactorMetrics.class, "taskCompletedCount", long.class);
             CPU_TIME_NANOS = l.findVarHandle(ReactorMetrics.class, "cpuTimeNanos", long.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);

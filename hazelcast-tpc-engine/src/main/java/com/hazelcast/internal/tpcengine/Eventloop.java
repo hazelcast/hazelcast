@@ -39,7 +39,9 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegati
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
- * Contains the actual eventloop run by a Reactor.
+ * Contains the actual eventloop run by a Reactor. The effentloop is a responsible for scheduling
+ * tasks that are waiting to be processed and deal with I/O. So both submitting and receiving I/O
+ * requests.
  * <p/>
  * The Eventloop should only be touched by the Reactor-thread.
  * <p/>
@@ -66,14 +68,12 @@ public abstract class Eventloop {
     final long taskQuotaNanos;
     private final ReactorMetrics metrics;
     protected boolean stop;
-
-
     protected long taskStartNanos;
     protected long ioDeadlineNanos;
     protected final SlabAllocator<TaskGroup> taskQueueAllocator = new SlabAllocator<>(1024, TaskGroup::new);
     private final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
-    protected final ArrayList<TaskGroup> concurrentBlockedTaskGroups = new ArrayList<>();
+    protected final ArrayList<TaskGroup> externalTaskGroups = new ArrayList<>();
     private final long hogThresholdNanos;
     CfsScheduler scheduler = new CfsScheduler();
     private long cycleStartNanos;
@@ -187,16 +187,16 @@ public abstract class Eventloop {
     protected void destroy() throws Exception {
     }
 
-    protected final boolean scheduleConcurrent() {
+    protected final boolean scheduleExternalTaskGroups() {
         boolean scheduled = false;
-        for (int k = 0; k < concurrentBlockedTaskGroups.size(); k++) {
-            TaskGroup taskGroups = concurrentBlockedTaskGroups.get(k);
+        for (int k = 0; k < externalTaskGroups.size(); k++) {
+            TaskGroup taskGroups = externalTaskGroups.get(k);
 
             if (!taskGroups.queue.isEmpty()) {
                 scheduled = true;
                 scheduler.enqueue(taskGroups);
 
-                concurrentBlockedTaskGroups.remove(k);
+                externalTaskGroups.remove(k);
                 k--;
             }
         }
@@ -221,9 +221,9 @@ public abstract class Eventloop {
         while (!stop) {
             deadlineScheduler.tick(cycleStartNanos);
 
-            // a single iteration of processing the a task is called a cycle.
+            // a single iteration of processing a task is called a cycle.
 
-            scheduleConcurrent();
+            scheduleExternalTaskGroups();
 
             TaskGroup taskGroup = scheduler.pickNext();
             if (taskGroup == null) {
@@ -261,7 +261,6 @@ public abstract class Eventloop {
                 }
 
                 cycleEndNanos = taskEndNanos;
-
                 if (cycleEndNanos >= ioDeadlineNanos) {
                     ioSchedulerTick();
                     ioDeadlineNanos = cycleEndNanos += ioIntervalNanos;
@@ -289,8 +288,8 @@ public abstract class Eventloop {
 
                 // we also need to add it to the concurrentBlockedTaskGroups so we
                 // see any items that are published.
-                if (taskGroup.concurrent) {
-                    concurrentBlockedTaskGroups.add(taskGroup);
+                if (taskGroup.external) {
+                    externalTaskGroups.add(taskGroup);
                 }
             } else {
                 // the taskQueue wasn't drained, so we need to insert it back into the scheduler.
@@ -343,6 +342,7 @@ public abstract class Eventloop {
      * @param cmd   the cmd to execute.
      * @param delay the delay
      * @param unit  the unit of the delay
+     * @param taskGroupHandle the handle of this TaskGroup the cmd belongs to.
      * @return true if the cmd was successfully scheduled.
      * @throws NullPointerException     if cmd or unit is null
      * @throws IllegalArgumentException when delay smaller than 0.
@@ -354,6 +354,7 @@ public abstract class Eventloop {
         checkNotNull(cmd);
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
+        checkNotNull(taskGroupHandle);
 
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
         task.cmd = cmd;
@@ -381,6 +382,7 @@ public abstract class Eventloop {
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
+        checkNotNull(taskGroupHandle);
 
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
         task.cmd = cmd;
@@ -409,6 +411,7 @@ public abstract class Eventloop {
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(period, "period");
         checkNotNull(unit);
+        checkNotNull(taskGroupHandle);
 
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
         task.cmd = cmd;

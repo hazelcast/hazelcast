@@ -80,7 +80,7 @@ class NioEventloop extends Eventloop {
         } else {
             wakeupNeeded.set(true);
 
-            if (scheduleConcurrent()) {
+            if (scheduleExternalTaskGroups()) {
                 keyCount = selector.selectNow();
             } else {
                 long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
