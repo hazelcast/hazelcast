@@ -53,12 +53,12 @@ public class RunnerTest {
 
     @Test
     public void runHazelcastTestsInParallel() {
-        int runnersCount = calculateRunnersCount();
+        int runnersCount = getRunnersCount();
         prepareTestBatches(runnersCount);
         runTestInDockerInstances(runnersCount);
     }
 
-    private static int calculateRunnersCount() {
+    private static int getRunnersCount() {
         return Optional.ofNullable(System.getProperty("runnersCount"))
                 .map(Integer::parseInt)
                 .orElse(DEFAULT_RUNNERS_COUNT);
@@ -119,8 +119,9 @@ public class RunnerTest {
         String sharedProjectDir = "/usr/src/maven";
         String isolatedProjectDir = "/usr/src/maven-isolated";
         String sharedSurefireReports = sharedProjectDir + "/hazelcast/target/surefire-reports";
+        int forkCount = Runtime.getRuntime().availableProcessors() / getRunnersCount() / 3;
         return "cp -R " + sharedProjectDir + "/ " + isolatedProjectDir + "; cd " + isolatedProjectDir + ";"
-                + "mvn -Duser.home=/var/maven --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
+                + "mvn -Duser.home=/var/maven -DforkCount=" + forkCount + " --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
                 + "-Dsurefire.includesFile=" + listOfTests + " -Dbasedir=test-batch-" + batchSuffix + "-dir;"
                 + "mkdir -p " + sharedSurefireReports + ";"
                 + "cp -v " + isolatedProjectDir + "/hazelcast/target/surefire-reports/* " + sharedSurefireReports;
