@@ -55,8 +55,17 @@ public class RunnerTest {
     @Test
     public void runHazelcastTestsInParallel() {
         int runnersCount = getRunnersCount();
-        prepareTestBatches(runnersCount);
-        runTestInDockerInstances(runnersCount);
+        String projectName = "hazelcast";
+        prepareTestBatches(runnersCount, projectName);
+        runTestInDockerInstances(runnersCount, projectName);
+    }
+
+    @Test
+    public void runHazelcastSqlTestsInParallel() {
+        int runnersCount = getRunnersCount();
+        String projectName = "hazelcast-sql";
+        prepareTestBatches(runnersCount, projectName);
+        runTestInDockerInstances(runnersCount, projectName);
     }
 
     private static int getRunnersCount() {
@@ -65,11 +74,11 @@ public class RunnerTest {
                 .orElse(DEFAULT_RUNNERS_COUNT);
     }
 
-    private void runTestInDockerInstances(int runnersCount) {
+    private void runTestInDockerInstances(int runnersCount, String projectName) {
         LOGGER.info("Starting " + runnersCount + " docker instances");
 
         List<GenericContainer<?>> containers = IntStream.range(0, runnersCount)
-                .mapToObj(this::createContainer)
+                .mapToObj(i -> createContainer(i, projectName))
                 .collect(Collectors.toList());
         await("docker instances have finished").atMost(Duration.ofMinutes(60))
                 .until(() -> containers.stream().noneMatch(ContainerState::isRunning));
@@ -77,7 +86,7 @@ public class RunnerTest {
                 .allMatch(c -> Objects.equals(c.getCurrentContainerInfo().getState().getExitCodeLong(), 0L));
     }
 
-    private GenericContainer<?> createContainer(int i) {
+    private GenericContainer<?> createContainer(int i, String projectName) {
         char containerIdx = (char) ('a' + i);
         String shortName = "builder-" + containerIdx;
         String name = shortName + "-" + testRunId;
@@ -90,7 +99,7 @@ public class RunnerTest {
                 .withFileSystemBind("/var/run/docker.sock", "/var/run/docker.sock", BindMode.READ_WRITE)
                 .withWorkingDirectory("/usr/src/maven")
                 .withNetwork(newNetwork(name))
-                .withCommand("bash", "-x", "-c", mvnCommandForBatch(containerIdx))
+                .withCommand("bash", "-x", "-c", mvnCommandForBatch(containerIdx, projectName))
                 .withEnv("MAVEN_CONFIG", MAVEN_HOME + "/.m2");
         if (userId != null) {
             mavenContainer.withCreateContainerCmdModifier(cmd -> cmd.withUser(userId));
@@ -116,21 +125,21 @@ public class RunnerTest {
                 .build();
     }
 
-    private static String mvnCommandForBatch(char batchSuffix) {
+    private static String mvnCommandForBatch(char batchSuffix, String projectName) {
         String listOfTests = "/usr/src/maven/hazelcast-isolating-test-runner/target/test-batch-" + batchSuffix;
         String sharedProjectDir = "/usr/src/maven";
         String isolatedProjectDir = "/tmp/maven-isolated";
-        String sharedSurefireReports = sharedProjectDir + "/hazelcast/target/surefire-reports";
+        String sharedSurefireReports = sharedProjectDir + "/" + projectName + "/target/surefire-reports";
         int forkCount = Math.max(1, Runtime.getRuntime().availableProcessors() / getRunnersCount() / 3);
         return "cp -R " + sharedProjectDir + "/ " + isolatedProjectDir + "; cd " + isolatedProjectDir + ";"
-                + "mvn -Duser.home=" + MAVEN_HOME + " -DforkCount=" + forkCount + " --errors test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
+                + "mvn -Duser.home=" + MAVEN_HOME + " -DforkCount=" + forkCount + " --errors test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl " + projectName + " "
                 + "-Dsurefire.includesFile=" + listOfTests + " -Dbasedir=test-batch-" + batchSuffix + "-dir;"
                 + "mkdir -p " + sharedSurefireReports + ";"
-                + "cp -v " + isolatedProjectDir + "/hazelcast/target/surefire-reports/* " + sharedSurefireReports;
+                + "cp -v " + isolatedProjectDir + "/" + projectName + "/target/surefire-reports/* " + sharedSurefireReports;
     }
 
-    private static void prepareTestBatches(int runnersCount) {
-        String listAllTestClassesCommand = "find ../hazelcast/src/test/java -name '*.java' | sort | cut -sd / -f 6-";
+    private static void prepareTestBatches(int runnersCount, String projectName) {
+        String listAllTestClassesCommand = "find ../" + projectName + "/src/test/java -name '*.java' | sort | cut -sd / -f 6-";
         int totalNumberOfTests = countOutputLines(listAllTestClassesCommand);
         LOGGER.info("Found " + totalNumberOfTests + " tests to run");
         int testCountInBatch = totalNumberOfTests / runnersCount + (totalNumberOfTests % runnersCount == 0 ? 0 : 1);
