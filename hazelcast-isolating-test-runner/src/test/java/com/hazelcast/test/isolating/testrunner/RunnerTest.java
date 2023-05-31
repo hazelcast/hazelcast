@@ -119,7 +119,7 @@ public class RunnerTest {
         String isolatedProjectDir = "/usr/src/maven-isolated";
         String sharedSurefireReports = sharedProjectDir + "/hazelcast/target/surefire-reports";
         return "cp -R " + sharedProjectDir + "/ " + isolatedProjectDir + "; cd " + isolatedProjectDir + ";"
-                + "mvn --errors test -Dcheckstyle.skip=true -Dmaven.test.failure.ignore=true -PparallelTest -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
+                + "mvn --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
                 + "-Dsurefire.includesFile=" + listOfTests + " -Dbasedir=test-batch-" + batchSuffix + "-dir;"
                 + "mkdir -p " + sharedSurefireReports + ";"
                 + "cp -v " + isolatedProjectDir + "/hazelcast/target/surefire-reports/* " + sharedSurefireReports;
