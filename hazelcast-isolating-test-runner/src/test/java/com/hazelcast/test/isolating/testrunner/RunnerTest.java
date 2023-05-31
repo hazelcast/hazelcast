@@ -102,7 +102,8 @@ public class RunnerTest {
     private static String getUserId() {
         try {
             Process exec = exec("id -u");
-            return new BufferedReader(new InputStreamReader(exec.getInputStream())).readLine();
+            String userId = new BufferedReader(new InputStreamReader(exec.getInputStream())).readLine();
+            return userId + ":989";
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -119,7 +120,7 @@ public class RunnerTest {
         String sharedProjectDir = "/usr/src/maven";
         String isolatedProjectDir = "/usr/src/maven-isolated";
         String sharedSurefireReports = sharedProjectDir + "/hazelcast/target/surefire-reports";
-        int forkCount = Runtime.getRuntime().availableProcessors() / getRunnersCount() / 3;
+        int forkCount = Math.max(1, Runtime.getRuntime().availableProcessors() / getRunnersCount() / 3);
         return "cp -R " + sharedProjectDir + "/ " + isolatedProjectDir + "; cd " + isolatedProjectDir + ";"
                 + "mvn -Duser.home=/var/maven -DforkCount=" + forkCount + " --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
                 + "-Dsurefire.includesFile=" + listOfTests + " -Dbasedir=test-batch-" + batchSuffix + "-dir;"
