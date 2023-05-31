@@ -420,7 +420,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             LAST_READ_TIME_NANOS.setOpaque(NioAsyncSocket.this, eventloop.cycleStartNanos());
 
             int read = socketChannel.read(rcvBuffer);
-            System.out.println(NioAsyncSocket.this + " bytes read: " + read);
+            //System.out.println(NioAsyncSocket.this + " bytes read: " + read);
 
             if (read == -1) {
                 throw new EOFException("Socket closed by peer");
@@ -455,7 +455,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             ioVector.compact(written);
 
             metrics.incBytesWritten(written);
-            System.out.println(NioAsyncSocket.this + " bytes written:" + written);
+            //System.out.println(NioAsyncSocket.this + " bytes written:" + written);
 
             if (ioVector.isEmpty()) {
                 // everything got written

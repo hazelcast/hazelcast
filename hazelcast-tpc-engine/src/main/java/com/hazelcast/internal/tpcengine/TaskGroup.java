@@ -23,6 +23,8 @@ import java.util.Queue;
  * This number could be distorted when there are other threads running on the same CPU because
  * If a different task would be executed while a task is running on the CPU, the measured time
  * will include the time of that task as well.
+ *
+ * idea: TaskGroup without time tracking to prevent the overhead of System.nanotime.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public class TaskGroup implements Comparable<TaskGroup> {
@@ -33,7 +35,11 @@ public class TaskGroup implements Comparable<TaskGroup> {
     public String name;
     public int shares;
     public Queue<Object> queue;
-    public Processor processor;
+
+    // any runnable on the queue will be processed as is.
+    // any Task on the queue will also be processed according to the contract of the task.
+    // anything else is offered to the taskFactory to be wrapped inside a task.
+    public TaskFactory taskFactory;
     public int size;
     public boolean shared;
     public Eventloop eventloop;

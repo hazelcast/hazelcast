@@ -17,13 +17,15 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * A {@link Processor} that doesn't do anything.
+ * A {@link TaskFactory} that doesn't do anything.
  */
-public class NopProcessor implements Processor {
+public class NopTaskFactory implements TaskFactory {
+
+    public static final NopTaskFactory INSTANCE = new NopTaskFactory();
 
     @Override
-    public int process(Object cmd) {
-        return PROCESS_STATUS_COMPLETED;
+    public Task toTask(Object cmd) {
+        return null;
     }
 
     @Override

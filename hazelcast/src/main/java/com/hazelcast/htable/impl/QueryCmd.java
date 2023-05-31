@@ -46,12 +46,12 @@ public class QueryCmd extends Cmd {
     }
 
     @Override
-    public int run() throws Exception {
+    public int runit() throws Exception {
         OffheapMap map = tableManager.getOffheapMap(partitionId, null);
 
         map.execute(query);
 
         response.writeLong(query.result);
-        return COMPLETED;
+        return CMD_COMPLETED;
     }
 }

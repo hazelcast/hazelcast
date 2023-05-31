@@ -28,7 +28,7 @@ public class PipelineCmd extends Cmd {
     }
 
     @Override
-    public int run() throws Exception {
+    public int runit() throws Exception {
         // Processing is done in the RequestScheduler.
         throw new UnsupportedOperationException();
     }

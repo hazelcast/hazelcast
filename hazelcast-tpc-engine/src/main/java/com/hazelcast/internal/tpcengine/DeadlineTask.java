@@ -21,8 +21,13 @@ import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.util.Clock;
 import com.hazelcast.internal.tpcengine.util.Promise;
 
+/**
+ * Represents a task that is going to be scheduled once or multiple times at some point in the future.
+ *
+ * todo: Should the DeadlineTask be a Task implementation? Or should the DeadlineTask allow for executing
+ * a Task?
+ */
 final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
-    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
     Promise promise;
     long deadlineNanos;
@@ -32,6 +37,7 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
     TaskGroup taskGroup;
     private final DeadlineScheduler deadlineScheduler;
     private final Clock clock;
+    private final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
     DeadlineTask(Clock clock, DeadlineScheduler deadlineScheduler) {
         this.clock = clock;

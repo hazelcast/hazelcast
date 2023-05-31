@@ -78,7 +78,8 @@ public abstract class ReactorBuilder {
 
     protected BlockDeviceRegistry blockDeviceRegistry = new BlockDeviceRegistry();
     protected final ReactorType type;
-    Supplier<Processor> schedulerSupplier = NopProcessor::new;
+    Supplier<TaskFactory> taskFactorySupplier = () -> NopTaskFactory.INSTANCE;
+
     Supplier<String> threadNameSupplier;
     Supplier<String> reactorNameSupplier = new Supplier<>() {
         private final AtomicInteger idGenerator = new AtomicInteger();
@@ -157,7 +158,6 @@ public abstract class ReactorBuilder {
         checkNotNull(unit, "unit");
         this.hogThresholdNanos = unit.toNanos(hogThreshold);
     }
-
 
     public void setIoInterval(long ioInterval, TimeUnit unit) {
         checkPositive(ioInterval, "ioInterval");
@@ -276,16 +276,16 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the supplier function for {@link Processor} instances.
+     * Sets the supplier function for {@link TaskFactory} instances.
      *
-     * @param schedulerSupplier the supplier
-     * @throws NullPointerException if schedulerSupplier is <code>null</code>.
+     * @param taskFactorySupplier the supplier
+     * @throws NullPointerException if taskFactorySupplier is <code>null</code>.
      */
-    public final void setSchedulerSupplier(Supplier<Processor> schedulerSupplier) {
-        this.schedulerSupplier = checkNotNull(schedulerSupplier);
+    public final void setTaskFactorySupplier(Supplier<TaskFactory> taskFactorySupplier) {
+        this.taskFactorySupplier = checkNotNull(taskFactorySupplier, "taskFactorySupplier");
     }
 
     public void setStorageDeviceRegistry(BlockDeviceRegistry blockDeviceRegistry) {
-        this.blockDeviceRegistry = checkNotNull(blockDeviceRegistry);
+        this.blockDeviceRegistry = checkNotNull(blockDeviceRegistry, "blockDeviceRegistry");
     }
 }

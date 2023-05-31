@@ -19,9 +19,8 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.Processor;
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.internal.tpcengine.Task;
+import com.hazelcast.internal.tpcengine.TaskFactory;
 
 import java.util.function.Consumer;
 
@@ -34,7 +33,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * case of the TPC, we process of a batch of operations from the operation-queue
  * and then hand control back to the eventloop.
  */
-public class OperationProcessor implements Processor {
+public class OperationTaskFactory implements TaskFactory {
 
     private final int batchSize;
     private Consumer<Packet> packetDispatcher;
@@ -42,7 +41,7 @@ public class OperationProcessor implements Processor {
     private OperationQueue queue;
     private Node node;
 
-    public OperationProcessor(int batchSize, Node node) {
+    public OperationTaskFactory(int batchSize, Node node) {
         this.batchSize = checkPositive("batchSize", batchSize);
         this.node = node;
     }
@@ -56,44 +55,49 @@ public class OperationProcessor implements Processor {
     }
 
     @Override
-    public boolean tick() {
-        final TpcPartitionOperationThread operationThread0 = operationThread;
-        final OperationQueue queue0 = queue;
-        final int batchSize0 = batchSize;
-
-        for (int k = 0; k < batchSize0; k++) {
-            if (operationThread0.isShutdown()) {
-                return false;
-            }
-
-            Object task = queue0.poll();
-            if (task == null) {
-                return false;
-            }
-
-            operationThread0.process(task);
-        }
-
-        return !queue0.isEmpty();
+    public Task toTask(Object cmd) {
+        return null;
     }
-
-    @Override
-    public void schedule(IOBuffer task) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void schedule(Object task) {
-        if (task instanceof Operation) {
-            Operation op = (Operation) task;
-            queue.add(op, op.isUrgent());
-        } else if (task instanceof Packet) {
-            if (packetDispatcher == null) {
-                packetDispatcher = node.nodeEngine.getPacketDispatcher();
-            }
-            packetDispatcher.accept((Packet) task);
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
+//
+//    @Override
+//    public boolean tick() {
+//        final TpcPartitionOperationThread operationThread0 = operationThread;
+//        final OperationQueue queue0 = queue;
+//        final int batchSize0 = batchSize;
+//
+//        for (int k = 0; k < batchSize0; k++) {
+//            if (operationThread0.isShutdown()) {
+//                return false;
+//            }
+//
+//            Object task = queue0.poll();
+//            if (task == null) {
+//                return false;
+//            }
+//
+//            operationThread0.process(task);
+//        }
+//
+//        return !queue0.isEmpty();
+//    }
+//
+//    @Override
+//    public void schedule(IOBuffer task) {
+//        throw new UnsupportedOperationException();
+//    }
+//
+//    @Override
+//    public void schedule(Object task) {
+//        if (task instanceof Operation) {
+//            Operation op = (Operation) task;
+//            queue.add(op, op.isUrgent());
+//        } else if (task instanceof Packet) {
+//            if (packetDispatcher == null) {
+//                packetDispatcher = node.nodeEngine.getPacketDispatcher();
+//            }
+//            packetDispatcher.accept((Packet) task);
+//        } else {
+//            throw new UnsupportedOperationException();
+//        }
+//    }
 }

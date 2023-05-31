@@ -16,22 +16,19 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import org.junit.Test;
+/**
+ * A {@link TaskGroup} can have a processor. Any 'task' that is offered to a TaskGroup
+ * that isn't a runnable, will be offered to the processor. The processor should try to
+ * process that task.
+ */
+public interface TaskFactory {
 
-import static org.junit.Assert.assertFalse;
+    /**
+     * Initializes the scheduler with the given eventloop.
+     *
+     * @param eventloop the Eventloop.
+     */
+    void init(Eventloop eventloop);
 
-public class NopProcessorTest {
-
-    @Test
-    public void test() {
-        NopProcessor scheduler = new NopProcessor();
-        scheduler.schedule(new IOBuffer(64));
-    }
-
-    @Test
-    public void test_tick() {
-        NopProcessor scheduler = new NopProcessor();
-        assertFalse(scheduler.tick());
-    }
+    Task toTask(Object cmd);
 }

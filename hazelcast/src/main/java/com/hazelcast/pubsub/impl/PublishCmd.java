@@ -69,7 +69,7 @@ public class PublishCmd extends Cmd {
     }
 
     @Override
-    public int run() throws Exception {
+    public int runit() throws Exception {
         for (; ; ) {
             switch (state) {
                 case STATE_INIT: {
@@ -80,7 +80,7 @@ public class PublishCmd extends Cmd {
                     if (topicPartition.activeSegment == null) {
                         roll(topicPartition);
                         state = STATE_CREATING_ACTIVE_SEGMENT;
-                        return BLOCKED;
+                        return CMD_BLOCKED;
                     }
 
                     if (topicPartition.activeSegment.buffer == null) {
@@ -101,7 +101,7 @@ public class PublishCmd extends Cmd {
                         //partition.activeSegment.file
                         roll(topicPartition);
                         state = STATE_CREATING_ACTIVE_SEGMENT;
-                        return BLOCKED;
+                        return CMD_BLOCKED;
                     } else {
                         IOBuffer diskBuffer = topicPartition.activeSegment.buffer;
                         for (; ; ) {
@@ -120,7 +120,7 @@ public class PublishCmd extends Cmd {
                             }
                         }
                         topicPartition.activeSegment.offset += totalSize;
-                        return COMPLETED;
+                        return CMD_COMPLETED;
                     }
                 case STATE_CREATING_ACTIVE_SEGMENT:
                     // the segment has been created, so lets try to run
@@ -193,7 +193,8 @@ public class PublishCmd extends Cmd {
             topicPartition.activeSegment.offset = SIZEOF_SEGMENT_HEADER;
             topicPartition.activeSegment.fileOffset = SIZEOF_SEGMENT_HEADER;
             topicPartition.activeSegment.buffer = eventloop.blockIOBufferAllocator().allocate(topicPartition.activeBufferLength);
-            scheduler.schedule(PublishCmd.this);
+            //todo
+            //scheduler.schedule(PublishCmd.this);
             //    });
         });
     }

@@ -53,7 +53,7 @@ public final class DeadlineScheduler {
     public boolean offer(DeadlineTask task) {
         assert task.deadlineNanos >= 0;
 
-        if(task.deadlineNanos < earliestDeadlineNanos) {
+        if (task.deadlineNanos < earliestDeadlineNanos) {
             earliestDeadlineNanos = task.deadlineNanos;
         }
 
@@ -64,7 +64,7 @@ public final class DeadlineScheduler {
         assert nowNanos >= 0;
 
         // We keep removing items from the runQueue until we find a task that is not ready to be scheduled
-        for(;;){
+        for (; ; ) {
             DeadlineTask task = runQueue.peek();
 
             if (task == null) {

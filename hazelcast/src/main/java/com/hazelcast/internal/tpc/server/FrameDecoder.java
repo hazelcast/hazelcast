@@ -21,7 +21,8 @@ import com.hazelcast.internal.nio.PacketIOHelper;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.tpc.FrameCodec;
-import com.hazelcast.internal.tpcengine.Processor;
+import com.hazelcast.internal.tpcengine.TaskFactory;
+import com.hazelcast.internal.tpcengine.TaskGroup;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
@@ -49,9 +50,10 @@ public class FrameDecoder extends AsyncSocketReader {
 
     public IOBufferAllocator requestAllocator;
     public IOBufferAllocator responseAllocator;
-    public Processor processor;
+    public TaskFactory taskFactory;
     public Consumer<IOBuffer> responseHandler;
     public ServerConnectionManager connectionManager;
+    public TaskGroup taskGroup;
 
     private final PacketIOHelper packetIOHelper = new PacketIOHelper();
     private IOBuffer frame;
@@ -111,7 +113,9 @@ public class FrameDecoder extends AsyncSocketReader {
                     frame.next = responseChain;
                     responseChain = frame;
                 } else {
-                    processor.schedule(frame);
+                    // todo: return
+                    taskGroup.offer(frame);
+                    //taskFactory.schedule(frame);
                 }
                 frame = null;
             } else {
@@ -121,7 +125,9 @@ public class FrameDecoder extends AsyncSocketReader {
                     break;
                 }
                 packet.setConn(connection);
-                processor.schedule(packet);
+                // todo: return
+                taskGroup.offer(packet);
+                //taskFactory.schedule(packet);
             }
 
             state = STATE_READING_NOTHING;

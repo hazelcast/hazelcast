@@ -30,10 +30,16 @@ public class TaskGroupBuilder {
     private int shares;
     private Queue<Object> queue;
     private boolean shared;
+    private TaskFactory taskFactory = NopTaskFactory.INSTANCE;
 
     public TaskGroupBuilder(Eventloop eventloop) {
         this.eventloop = eventloop;
         this.taskQuotaNanos = eventloop.taskQuotaNanos;
+    }
+
+    public TaskGroupBuilder setTaskFactory(TaskFactory taskFactory) {
+        this.taskFactory = checkNotNull(taskFactory, "taskFactory");
+        return this;
     }
 
     public TaskGroupBuilder setTaskQuota(long taskQuota, TimeUnit unit) {
@@ -74,6 +80,7 @@ public class TaskGroupBuilder {
         if (taskQueue.queue == null) {
             throw new RuntimeException();
         }
+        taskQueue.taskFactory = taskFactory;
         taskQueue.shared = shared;
         taskQueue.shares = shares;
         taskQueue.name = name;

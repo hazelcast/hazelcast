@@ -152,7 +152,7 @@ public abstract class ReactorBuilderTest {
     @Test
     public void test_setSchedulerSupplier_whenNull() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setSchedulerSupplier(null));
+        assertThrows(NullPointerException.class, () -> builder.setTaskFactorySupplier(null));
     }
 
     @Test

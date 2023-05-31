@@ -45,13 +45,13 @@ public final class HGetCmd extends Cmd {
     }
 
     @Override
-    public int run() throws Exception {
+    public int runit() throws Exception {
         OffheapMap map = tableManager.getOffheapMap(partitionId, null);
 
         key.init(request);
 
         value.init(response);
         map.get(key, value);
-        return COMPLETED;
+        return CMD_COMPLETED;
     }
 }

@@ -28,7 +28,7 @@ public final class NopCmd extends Cmd {
     }
 
     @Override
-    public int run() throws Exception {
-        return COMPLETED;
+    public int runit() throws Exception {
+        return CMD_COMPLETED;
     }
 }

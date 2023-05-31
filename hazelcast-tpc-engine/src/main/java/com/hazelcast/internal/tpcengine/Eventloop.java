@@ -60,7 +60,6 @@ public abstract class Eventloop {
     // todo:padding to prevent false sharing
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final Clock nanoClock;
-    protected final Processor crappyProcessor;
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
     public final TaskGroupHandle externalTaskQueueHandle;
@@ -85,15 +84,19 @@ public abstract class Eventloop {
         this.builder = builder;
         this.metrics = reactor.metrics;
         this.deadlineScheduler = new DeadlineScheduler(builder.deadlineTaskQueueCapacity);
+
+        TaskFactory taskFactory = builder.taskFactorySupplier.get();
         this.externalTaskQueueHandle = new TaskGroupBuilder(this)
                 .setQueue(new MpscArrayQueue<>(builder.externalTaskQueueCapacity))
                 .setShared(true)
                 .setShares(1)
+                .setTaskFactory(taskFactory)
                 .build();
         this.localTaskQueueHandle = new TaskGroupBuilder(this)
                 .setQueue(new CircularQueue<>(builder.localTaskQueueCapacity))
                 .setShared(false)
                 .setShares(1)
+                .setTaskFactory(taskFactory)
                 .build();
         this.spin = builder.spin;
         this.batchSize = builder.batchSize;
@@ -101,12 +104,10 @@ public abstract class Eventloop {
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.nanoClock = new StandardNanoClock();
         this.taskStartNanos = nanoClock.nanoTime();
-        this.crappyProcessor = builder.schedulerSupplier.get();
         this.taskQuotaNanos = builder.taskQuotaNanos;
         this.hogThresholdNanos = builder.hogThresholdNanos;
         this.ioIntervalNanos = builder.ioIntervalNanos;
         this.ioDeadlineNanos = taskStartNanos + ioIntervalNanos;
-        crappyProcessor.init(this);
     }
 
     public final long cycleStartNanos() {
@@ -357,20 +358,16 @@ public abstract class Eventloop {
             } catch (Exception e) {
                 logger.warning(e);
             }
-        } else{
-            Processor processor = taskGroup.processor;
-            // the processor should convert the 'task' to a runnable that can be
-            // scheduled on the task queue
-            if(processor != null) {
-                // todo: exception handling
-                return processor.process(task);
-            }else {
-                // we need to offer the task to the registered processor.
-
-                if (logger.isSevereEnabled()) {
-                    logger.severe("Unsupported command type: " + task.getClass().getName());
-                }
+        } else {
+            Task taskWrapper = taskGroup.taskFactory.toTask(task);
+            if (taskWrapper == null) {
+                //todo:
+                logger.severe("Unhandled command type: " + task.getClass().getName());
+                return;
             }
+
+            taskWrapper.taskGroup = taskGroup;
+            taskWrapper.run();
         }
     }
 
