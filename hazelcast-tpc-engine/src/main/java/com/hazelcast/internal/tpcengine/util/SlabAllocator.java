@@ -38,6 +38,7 @@ public final class SlabAllocator<E> {
         this.supplier = checkNotNull(supplier);
     }
 
+    // todo: an allocator should be able to return null. Currently the capacity isn't respected.
     public E allocate() {
         if (index == -1) {
             return supplier.get();

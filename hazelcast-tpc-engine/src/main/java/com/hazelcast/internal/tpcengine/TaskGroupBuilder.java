@@ -82,8 +82,10 @@ public class TaskGroupBuilder {
         //taskQueue.taskQuotaNanos =
         taskQueue.state = TaskGroup.STATE_BLOCKED;
 
+        // todo: we should only allow for taskGroups to be created as many of them fit into the CFS scheduler.
+
         if (shared) {
-            eventloop.blockedSharedTaskGroups.add(taskQueue);
+            eventloop.addLastBlockedShared(taskQueue);
         }
 
         return new TaskGroupHandle(taskQueue);

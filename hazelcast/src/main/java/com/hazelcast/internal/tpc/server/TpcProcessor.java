@@ -18,30 +18,23 @@ package com.hazelcast.internal.tpc.server;
 
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.Scheduler;
+import com.hazelcast.internal.tpcengine.Processor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import com.hazelcast.spi.impl.operationexecutor.impl.OperationScheduler;
-
-import java.util.Queue;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationProcessor;
 
 /**
  * The TpcScheduler effectively is chain 2 schedulers:
  * - The OpScheduler for next generation operations
  * - The OperationScheduler for classic operations.
  */
-public class TpcScheduler implements Scheduler {
+public class TpcProcessor implements Processor {
 
-    private final RequestScheduler requestScheduler;
-    private final OperationScheduler operationScheduler;
+    private final RequestProcessor requestScheduler;
+    private final OperationProcessor operationScheduler;
 
-    public TpcScheduler(RequestScheduler requestScheduler, OperationScheduler operationScheduler) {
+    public TpcProcessor(RequestProcessor requestScheduler, OperationProcessor operationScheduler) {
         this.requestScheduler = requestScheduler;
         this.operationScheduler = operationScheduler;
-    }
-
-    @Override
-    public Queue queue() {
-        return null;
     }
 
     @Override

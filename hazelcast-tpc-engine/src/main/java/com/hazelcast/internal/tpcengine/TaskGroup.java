@@ -33,7 +33,7 @@ public class TaskGroup implements Comparable<TaskGroup> {
     public String name;
     public int shares;
     public Queue<Object> queue;
-    public Scheduler scheduler;
+    public Processor processor;
     public int size;
     public boolean shared;
     public Eventloop eventloop;
@@ -54,8 +54,13 @@ public class TaskGroup implements Comparable<TaskGroup> {
     // the start time of this TaskGroup
     public long startNanos;
 
+    // The TakGroup is an intrusive double-linked-list-node. This is used to keep track
+    // of blocked shared tasksGroups.
+    public TaskGroup prev;
+    public TaskGroup next;
+
     /**
-     * The maximum amount of time the tasks in this group can run before they are
+     * The maximum amount of time the tasks in this group can run before the taskGroup is
      * context switched.
      */
     public long taskQuotaNanos;

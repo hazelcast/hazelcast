@@ -35,7 +35,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.pubsub.impl.TopicDataManager;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
-import com.hazelcast.spi.impl.operationexecutor.impl.OperationScheduler;
+import com.hazelcast.spi.impl.operationexecutor.impl.OperationProcessor;
 import com.hazelcast.spi.impl.operationexecutor.impl.TpcPartitionOperationThread;
 import com.hazelcast.spi.properties.ClusterProperty;
 
@@ -91,7 +91,7 @@ public class ServerTpcRuntime implements TpcRuntime {
     private final int eventloopCount;
     private TpcEngine tpcEngine;
     private ServerRpcCore rpcCore;
-    private ArrayList<RequestScheduler> schedulers = new ArrayList<>();
+    private ArrayList<RequestProcessor> schedulers = new ArrayList<>();
     private boolean enabled;
     private final Config config;
     private TpcClientPlane clientPlane;
@@ -190,7 +190,7 @@ public class ServerTpcRuntime implements TpcRuntime {
             // So a concurrent allocator is needed.
             IOBufferAllocator localResponseAllocator = new ConcurrentIOBufferAllocator(128, true);
 
-            RequestScheduler requestScheduler = new RequestScheduler(
+            RequestProcessor requestScheduler = new RequestProcessor(
                     cmdRegistry,
                     managerRegistry,
                     32768,
@@ -201,8 +201,8 @@ public class ServerTpcRuntime implements TpcRuntime {
             );
             schedulers.add(requestScheduler);
 
-            OperationScheduler operationScheduler = new OperationScheduler(1, node);
-            return new TpcScheduler(requestScheduler, operationScheduler);
+            OperationProcessor operationScheduler = new OperationProcessor(1, node);
+            return new TpcProcessor(requestScheduler, operationScheduler);
         });
 
         this.tpcEngine = new TpcEngineBuilder()
@@ -240,7 +240,7 @@ public class ServerTpcRuntime implements TpcRuntime {
         @Override
         public AsyncSocketReader apply(Reactor reactor) {
             FrameDecoder reader = new FrameDecoder();
-            reader.scheduler = reactor.scheduler();
+            reader.processor = reactor.scheduler();
             reader.responseHandler = rpcCore;
             reader.requestAllocator = poolRequests
                     ? new NonConcurrentIOBufferAllocator(128, true)
@@ -280,13 +280,13 @@ public class ServerTpcRuntime implements TpcRuntime {
         }
 
         long totalScheduled = 0;
-        for (RequestScheduler scheduler : schedulers) {
+        for (RequestProcessor scheduler : schedulers) {
             totalScheduled += scheduler.getScheduled();
         }
 
         System.out.println("----------- distribution of processed operations -----------------------------");
         for (int k = 0; k < schedulers.size(); k++) {
-            RequestScheduler scheduler = schedulers.get(k);
+            RequestProcessor scheduler = schedulers.get(k);
             double percentage = (100d * scheduler.getScheduled()) / totalScheduled;
             System.out.println("OpScheduler[" + k + "] percentage:" + percentage + "%, total:" + scheduler.getScheduled());
         }

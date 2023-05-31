@@ -81,7 +81,7 @@ public abstract class Reactor implements Executor {
     private final ReactorType type;
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
     private final CountDownLatch startLatch = new CountDownLatch(1);
-    private final Scheduler scheduler;
+    private final Processor processor;
 
     @SuppressWarnings("java:S1845")
     protected volatile State state = NEW;
@@ -117,7 +117,7 @@ public abstract class Reactor implements Executor {
         this.externalTaskQueue = eventloop.getTaskGroup(eventloop.externalTaskQueueHandle);
         this.localTaskQueue = eventloop.getTaskGroup(eventloop.localTaskQueueHandle);
         this.wakeupNeeded = eventloop.wakeupNeeded;
-        this.scheduler = eventloop.crappyScheduler;
+        this.processor = eventloop.crappyProcessor;
     }
 
     /**
@@ -163,8 +163,8 @@ public abstract class Reactor implements Executor {
      *
      * @return the scheduler for this reactor.
      */
-    public final Scheduler scheduler() {
-        return scheduler;
+    public final Processor scheduler() {
+        return processor;
     }
 
     /**

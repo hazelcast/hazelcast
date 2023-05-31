@@ -18,13 +18,12 @@ package com.hazelcast.internal.tpc.server;
 
 import com.hazelcast.internal.tpc.FrameCodec;
 import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.Scheduler;
+import com.hazelcast.internal.tpcengine.Processor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.util.counters.SwCounter;
 
-import java.util.Queue;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpc.FrameCodec.FLAG_PRIORITY;
@@ -57,49 +56,35 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * other data.
  */
 @SuppressWarnings("checkstyle:MagicNumber")
-public final class RequestScheduler implements Scheduler {
+public final class RequestProcessor implements Processor {
 
     private final SwCounter scheduled = newSwCounter();
     private final SwCounter ticks = newSwCounter();
     private final SwCounter completed = newSwCounter();
     private final SwCounter exceptions = newSwCounter();
-    private final CircularQueue<Cmd> runQueue;
-    private final CircularQueue<Cmd> priorityRunQueue;
-    private final int batchSize;
     private final IOBufferAllocator localResponseAllocator;
     private final IOBufferAllocator remoteResponseAllocator;
     private final CmdAllocator cmdAllocator;
     private Eventloop eventloop;
     private Consumer<IOBuffer> responseHandler;
 
-    public RequestScheduler(CmdRegistry cmdRegistry,
+    public RequestProcessor(CmdRegistry cmdRegistry,
                             ManagerRegistry managerRegistry,
-                            int capacity,
-                            int batchSize,
                             IOBufferAllocator localResponseAllocator,
                             IOBufferAllocator remoteResponseAllocator,
                             Consumer<IOBuffer> responseHandler) {
-        this.runQueue = new CircularQueue<>(capacity);
-        this.priorityRunQueue = new CircularQueue<>(capacity);
-        this.batchSize = batchSize;
         this.localResponseAllocator = localResponseAllocator;
         this.remoteResponseAllocator = remoteResponseAllocator;
         this.responseHandler = responseHandler;
         this.cmdAllocator = new CmdAllocator(cmdRegistry, 16384) {
             @Override
             public void init(Cmd cmd) {
-                cmd.scheduler = RequestScheduler.this;
-                cmd.eventloop = RequestScheduler.this.getEventloop();
+                cmd.scheduler = RequestProcessor.this;
+                cmd.eventloop = RequestProcessor.this.getEventloop();
                 cmd.managerRegistry = managerRegistry;
                 super.init(cmd);
             }
         };
-    }
-
-
-    @Override
-    public Queue queue() {
-        return null;
     }
 
     public long getScheduled() {

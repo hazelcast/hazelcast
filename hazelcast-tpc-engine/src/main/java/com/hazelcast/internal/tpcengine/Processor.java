@@ -16,34 +16,27 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-
-import java.util.Queue;
-
 /**
- * A {@link Scheduler} that doesn't do anything.
+ * A {@link TaskGroup} can have a processor. Any 'task' that is offered to a TaskGroup
+ * that isn't a runnable, will be offered to the processor. The processor should try to
+ * process that task.
  */
-public class NopScheduler implements Scheduler {
+public interface Processor {
 
-    @Override
-    public void init(Eventloop eventloop) {
-    }
+    int PROCESS_STATUS_COMPLETED = 0;
+    int PROCESS_STATUS_BLOCKED = 1;
 
-    @Override
-    public Queue queue() {
-        return null;
-    }
+    /**
+     * Initializes the scheduler with the given eventloop.
+     *
+     * @param eventloop the Eventloop.
+     */
+    void init(Eventloop eventloop);
 
-    @Override
-    public boolean tick() {
-        return false;
-    }
-
-    @Override
-    public void schedule(Object task) {
-    }
-
-    @Override
-    public void schedule(IOBuffer task) {
-    }
+    /**
+     * Gives the scheduler a tick. In this tick the scheduler can do a bit of work.
+     *
+     * @return true if there is more work, false otherwise.
+     */
+    int process(Object cmd);
 }

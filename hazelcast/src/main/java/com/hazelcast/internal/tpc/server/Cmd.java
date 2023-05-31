@@ -41,7 +41,7 @@ public abstract class Cmd {
     public IOBuffer request;
     public IOBuffer response;
     public CmdAllocator allocator;
-    public RequestScheduler scheduler;
+    public RequestProcessor scheduler;
     public Eventloop eventloop;
 
     public Cmd(int id) {

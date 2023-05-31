@@ -78,7 +78,7 @@ public abstract class ReactorBuilder {
 
     protected BlockDeviceRegistry blockDeviceRegistry = new BlockDeviceRegistry();
     protected final ReactorType type;
-    Supplier<Scheduler> schedulerSupplier = NopScheduler::new;
+    Supplier<Processor> schedulerSupplier = NopProcessor::new;
     Supplier<String> threadNameSupplier;
     Supplier<String> reactorNameSupplier = new Supplier<>() {
         private final AtomicInteger idGenerator = new AtomicInteger();
@@ -276,12 +276,12 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the supplier function for {@link Scheduler} instances.
+     * Sets the supplier function for {@link Processor} instances.
      *
      * @param schedulerSupplier the supplier
      * @throws NullPointerException if schedulerSupplier is <code>null</code>.
      */
-    public final void setSchedulerSupplier(Supplier<Scheduler> schedulerSupplier) {
+    public final void setSchedulerSupplier(Supplier<Processor> schedulerSupplier) {
         this.schedulerSupplier = checkNotNull(schedulerSupplier);
     }
 

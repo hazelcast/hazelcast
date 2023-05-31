@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SecondsBasedEntryTaskSchedulerStressTest {
+public class SecondsBasedEntryTaskProcessorStressTest {
 
     private static final int NUMBER_OF_THREADS = 4;
     private static final int NUMBER_OF_EVENTS_PER_THREAD = 10000;

@@ -20,6 +20,12 @@ import com.hazelcast.internal.tpcengine.util.BoundPriorityQueue;
 
 import java.util.PriorityQueue;
 
+/**
+ * A scheduler that schedules tasks based on their deadline. The scheduler is not thread-safe.
+ * <p/>
+ * The scheduler contains a run queue with tasks ordered by their deadline. So the task with the
+ * earliest deadline, is at the beginning of the queue.
+ */
 public final class DeadlineScheduler {
     private long earliestDeadlineNanos = -1;
     private final PriorityQueue<DeadlineTask> runQueue;
@@ -28,35 +34,60 @@ public final class DeadlineScheduler {
         this.runQueue = new BoundPriorityQueue<>(capacity);
     }
 
+    /**
+     * Returns the epoch time in nanos of the earliest deadline. If no task exist with a deadline,
+     * -1 returned.
+     *
+     * @return the epoch time in nanos of the earliest deadline.
+     */
     public long earliestDeadlineNanos() {
         return earliestDeadlineNanos;
     }
 
+    /**
+     * Offers a DeadlineTask to the scheduler. The task will be scheduled based on its deadline.
+     *
+     * @param task the task to schedule
+     * @return true if the task was added to the scheduler, false otherwise.
+     */
     public boolean offer(DeadlineTask task) {
+        assert task.deadlineNanos >= 0;
+
+        if(task.deadlineNanos < earliestDeadlineNanos) {
+            earliestDeadlineNanos = task.deadlineNanos;
+        }
+
         return runQueue.offer(task);
     }
 
     public void tick(long nowNanos) {
-        while (true) {
+        assert nowNanos >= 0;
+
+        // We keep removing items from the runQueue until we find a task that is not ready to be scheduled
+        for(;;){
             DeadlineTask task = runQueue.peek();
 
             if (task == null) {
+                // run queue is empty. Since the runQueue is empty, the earlierDeadlineNanos is reset to -1.
+                earliestDeadlineNanos = -1;
                 return;
             }
 
             if (task.deadlineNanos > nowNanos) {
-                // Task should not yet be executed.
+                // the first item on the run queue should not be scheduled yet
                 earliestDeadlineNanos = task.deadlineNanos;
-                // we are done since all other tasks have a larger deadline.
+                // we are done since all other tasks have even a larger deadline.
                 return;
             }
 
-            // the task first needs to be removed from the run queue.
+            // the task first needs to be removed from the run queue since we peeked it.
             runQueue.poll();
-            earliestDeadlineNanos = -1;
 
-            // offer the ScheduledTask to the task queue.
+            // offer the task to its task group.
+            // this will trigger to taskGroup to schedule itself if needed.
             task.taskGroup.offer(task);
+
+            // and go to the next task.
         }
     }
 }

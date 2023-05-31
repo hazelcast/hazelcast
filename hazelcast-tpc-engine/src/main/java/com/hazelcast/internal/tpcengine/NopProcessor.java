@@ -16,22 +16,18 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import org.junit.Test;
+/**
+ * A {@link Processor} that doesn't do anything.
+ */
+public class NopProcessor implements Processor {
 
-import static org.junit.Assert.assertFalse;
-
-public class NopSchedulerTest {
-
-    @Test
-    public void test() {
-        NopScheduler scheduler = new NopScheduler();
-        scheduler.schedule(new IOBuffer(64));
+    @Override
+    public int process(Object cmd) {
+        return PROCESS_STATUS_COMPLETED;
     }
 
-    @Test
-    public void test_tick() {
-        NopScheduler scheduler = new NopScheduler();
-        assertFalse(scheduler.tick());
+    @Override
+    public void init(Eventloop eventloop) {
     }
+
 }

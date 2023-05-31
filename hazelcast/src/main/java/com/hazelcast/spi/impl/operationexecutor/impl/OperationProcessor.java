@@ -19,11 +19,10 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.Scheduler;
+import com.hazelcast.internal.tpcengine.Processor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.util.Queue;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -35,7 +34,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * case of the TPC, we process of a batch of operations from the operation-queue
  * and then hand control back to the eventloop.
  */
-public class OperationScheduler implements Scheduler {
+public class OperationProcessor implements Processor {
 
     private final int batchSize;
     private Consumer<Packet> packetDispatcher;
@@ -43,14 +42,9 @@ public class OperationScheduler implements Scheduler {
     private OperationQueue queue;
     private Node node;
 
-    public OperationScheduler(int batchSize, Node node) {
+    public OperationProcessor(int batchSize, Node node) {
         this.batchSize = checkPositive("batchSize", batchSize);
         this.node = node;
-    }
-
-    @Override
-    public Queue queue() {
-        return null;
     }
 
     @Override

@@ -59,7 +59,7 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 @SuppressWarnings("ConstantConditions")
-public class SecondsBasedEntryTaskSchedulerTest {
+public class SecondsBasedEntryTaskProcessorTest {
 
     @Mock
     private TaskScheduler taskScheduler = mock(TaskScheduler.class);

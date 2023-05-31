@@ -30,7 +30,6 @@ import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
 import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -58,9 +57,10 @@ public abstract class Eventloop {
     protected final int batchSize;
     protected final ReactorBuilder builder;
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    // todo:padding to prevent false sharing
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final Clock nanoClock;
-    protected final Scheduler crappyScheduler;
+    protected final Processor crappyProcessor;
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
     public final TaskGroupHandle externalTaskQueueHandle;
@@ -73,7 +73,9 @@ public abstract class Eventloop {
     protected final SlabAllocator<TaskGroup> taskGroupAllocator = new SlabAllocator<>(1024, TaskGroup::new);
     private final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
-    protected final ArrayList<TaskGroup> blockedSharedTaskGroups = new ArrayList<>();
+    protected TaskGroup sharedHead;
+    protected TaskGroup sharedTail;
+    //protected final ArrayList<TaskGroup> blockedSharedTaskGroups = new ArrayList<>();
     private final long hogThresholdNanos;
     CfsScheduler scheduler = new CfsScheduler();
     private long cycleStartNanos;
@@ -99,12 +101,12 @@ public abstract class Eventloop {
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.nanoClock = new StandardNanoClock();
         this.taskStartNanos = nanoClock.nanoTime();
-        this.crappyScheduler = builder.schedulerSupplier.get();
+        this.crappyProcessor = builder.schedulerSupplier.get();
         this.taskQuotaNanos = builder.taskQuotaNanos;
         this.hogThresholdNanos = builder.hogThresholdNanos;
         this.ioIntervalNanos = builder.ioIntervalNanos;
         this.ioDeadlineNanos = taskStartNanos + ioIntervalNanos;
-        crappyScheduler.init(this);
+        crappyProcessor.init(this);
     }
 
     public final long cycleStartNanos() {
@@ -189,18 +191,53 @@ public abstract class Eventloop {
 
     protected final boolean scheduleBlockedSharedTaskGroups() {
         boolean scheduled = false;
-        for (int k = 0; k < blockedSharedTaskGroups.size(); k++) {
-            TaskGroup taskGroups = blockedSharedTaskGroups.get(k);
+        TaskGroup taskGroup = sharedHead;
 
-            if (!taskGroups.queue.isEmpty()) {
+        while (taskGroup != null) {
+            assert taskGroup.state == STATE_BLOCKED;
+
+            if (!taskGroup.queue.isEmpty()) {
+                TaskGroup next = taskGroup.next;
+                TaskGroup prev = taskGroup.prev;
+
+                if (prev == null) {
+                    sharedHead = next;
+                } else {
+                    prev.next = next;
+                    taskGroup.prev = null;
+                }
+
+                if (next == null) {
+                    sharedTail = prev;
+                } else {
+                    next.prev = prev;
+                    taskGroup.next = null;
+                }
+
                 scheduled = true;
-                scheduler.enqueue(taskGroups);
-
-                blockedSharedTaskGroups.remove(k);
-                k--;
+                scheduler.enqueue(taskGroup);
             }
+
+            taskGroup = taskGroup.next;
         }
+
         return scheduled;
+    }
+
+    void addLastBlockedShared(TaskGroup taskGroup) {
+        assert taskGroup.shared;
+        assert taskGroup.state == STATE_BLOCKED;
+        assert taskGroup.prev == null;
+        assert taskGroup.next == null;
+
+        TaskGroup l = sharedTail;
+        taskGroup.prev = l;
+        sharedTail = taskGroup;
+        if (l == null) {
+            sharedHead = taskGroup;
+        } else {
+            l.next = taskGroup;
+        }
     }
 
     /**
@@ -219,20 +256,22 @@ public abstract class Eventloop {
         this.cycleStartNanos = nanoClock.nanoTime();
 
         while (!stop) {
-            deadlineScheduler.tick(cycleStartNanos);
-
             // a single iteration of processing a task is called a cycle.
+
+            // There is no point in doing the deadlineScheduler tick in the taskQueue processing loop
+            // because the taskQueue is going to be processed till it is empty (or the deadline is reached).
+            deadlineScheduler.tick(cycleStartNanos);
 
             scheduleBlockedSharedTaskGroups();
 
             TaskGroup taskGroup = scheduler.pickNext();
             if (taskGroup == null) {
                 park(cycleStartNanos);
+                // todo: we should only need to update the clock if real parking happened and not when work was detected
                 cycleStartNanos = nanoClock.nanoTime();
                 continue;
             }
 
-            taskGroup.tasksProcessed++;
             long quotaDeadlineNanos = cycleStartNanos + taskGroup.taskQuotaNanos;
             long cycleEndNanos = cycleStartNanos;
             long taskStartNanos = cycleStartNanos;
@@ -249,7 +288,8 @@ public abstract class Eventloop {
                     break;
                 }
 
-                processTask(task);
+                processTask(taskGroup, task);
+                taskGroup.tasksProcessed++;
 
                 taskCount++;
                 long taskEndNanos = nanoClock.nanoTime();
@@ -267,7 +307,7 @@ public abstract class Eventloop {
                 }
 
                 if (cycleEndNanos >= quotaDeadlineNanos) {
-                    // enough time was spend on this task group, stop processing
+                    // quota exceeded, we are done
                     break;
                 }
             }
@@ -282,23 +322,21 @@ public abstract class Eventloop {
             taskGroup.vruntimeNanos += deltaWeightedNanos;
 
             if (taskQueueEmpty) {
-                // the taskQueue is empty, so we mark this taskQueue is blocked.
+                // the taskQueue is empty, so we mark this taskQueue as blocked.
                 taskGroup.state = STATE_BLOCKED;
                 taskGroup.blockedCount++;
 
-                // we also need to add it to the concurrentBlockedTaskGroups so we
-                // see any items that are published.
+                // we also need to add it to the shared taskGroups so the eventloop will
+                // see any items that are written to its queue.
                 if (taskGroup.shared) {
-                    blockedSharedTaskGroups.add(taskGroup);
+                    addLastBlockedShared(taskGroup);
                 }
             } else {
-                // the taskQueue wasn't drained, so we need to insert it back into the scheduler.
+                // the taskQueue wasn't drained, so we need to insert it back into the scheduler because
+                // there is more work to be done.
                 scheduler.enqueue(taskGroup);
             }
 
-            // There is no point in doing the deadlineScheduler tick in the taskQueue processing loop
-            // because the taskQueue is going to be processed till it is empty (or the deadline is reached).
-            deadlineScheduler.tick(cycleEndNanos);
             cycleStartNanos = cycleEndNanos;
         }
     }
@@ -311,7 +349,7 @@ public abstract class Eventloop {
         }
     }
 
-    private void processTask(Object task) {
+    private void processTask(TaskGroup taskGroup, Object task) {
         // process the task.
         if (task instanceof Runnable) {
             try {
@@ -319,9 +357,19 @@ public abstract class Eventloop {
             } catch (Exception e) {
                 logger.warning(e);
             }
-        } else {
-            if (logger.isSevereEnabled()) {
-                logger.severe("Unsupported command type: " + task.getClass().getName());
+        } else{
+            Processor processor = taskGroup.processor;
+            // the processor should convert the 'task' to a runnable that can be
+            // scheduled on the task queue
+            if(processor != null) {
+                // todo: exception handling
+                return processor.process(task);
+            }else {
+                // we need to offer the task to the registered processor.
+
+                if (logger.isSevereEnabled()) {
+                    logger.severe("Unsupported command type: " + task.getClass().getName());
+                }
             }
         }
     }
@@ -339,9 +387,9 @@ public abstract class Eventloop {
     /**
      * Schedules a one shot action with the given delay.
      *
-     * @param cmd   the cmd to execute.
-     * @param delay the delay
-     * @param unit  the unit of the delay
+     * @param cmd             the cmd to execute.
+     * @param delay           the delay
+     * @param unit            the unit of the delay
      * @param taskGroupHandle the handle of this TaskGroup the cmd belongs to.
      * @return true if the cmd was successfully scheduled.
      * @throws NullPointerException     if cmd or unit is null
