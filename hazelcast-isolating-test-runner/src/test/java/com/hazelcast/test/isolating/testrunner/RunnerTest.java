@@ -49,6 +49,7 @@ public class RunnerTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunnerTest.class);
     private static final int DEFAULT_RUNNERS_COUNT = Runtime.getRuntime().availableProcessors() / 2;
     private static final Path SORT_SEED_FILENAME = Paths.get("target/sort-seed");
+    public static final String MAVEN_HOME = "/tmp/maven";
     private final String testRunId = UUID.randomUUID().toString();
 
     @Test
@@ -85,12 +86,12 @@ public class RunnerTest {
                 .withCreateContainerCmdModifier(cmd -> cmd.withName(name))
                 .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withCpuCount(8L))
                 .withFileSystemBind("..", "/usr/src/maven", BindMode.READ_WRITE)
-                .withFileSystemBind(System.getProperty("user.home") + "/.m2", "/var/maven/.m2", BindMode.READ_WRITE)
+                .withFileSystemBind(System.getProperty("user.home") + "/.m2", MAVEN_HOME + "/.m2", BindMode.READ_WRITE)
                 .withFileSystemBind("/var/run/docker.sock", "/var/run/docker.sock", BindMode.READ_WRITE)
                 .withWorkingDirectory("/usr/src/maven")
                 .withNetwork(newNetwork(name))
                 .withCommand("bash", "-x", "-c", mvnCommandForBatch(containerIdx))
-                .withEnv("MAVEN_CONFIG", "/var/maven/.m2");
+                .withEnv("MAVEN_CONFIG", MAVEN_HOME + "/.m2");
         if (userId != null) {
             mavenContainer.withCreateContainerCmdModifier(cmd -> cmd.withUser(userId));
         }
@@ -122,7 +123,7 @@ public class RunnerTest {
         String sharedSurefireReports = sharedProjectDir + "/hazelcast/target/surefire-reports";
         int forkCount = Math.max(1, Runtime.getRuntime().availableProcessors() / getRunnersCount() / 3);
         return "cp -R " + sharedProjectDir + "/ " + isolatedProjectDir + "; cd " + isolatedProjectDir + ";"
-                + "mvn -Duser.home=/var/maven -DforkCount=" + forkCount + " --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
+                + "mvn -Duser.home=" + MAVEN_HOME + " -DforkCount=" + forkCount + " --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
                 + "-Dsurefire.includesFile=" + listOfTests + " -Dbasedir=test-batch-" + batchSuffix + "-dir;"
                 + "mkdir -p " + sharedSurefireReports + ";"
                 + "cp -v " + isolatedProjectDir + "/hazelcast/target/surefire-reports/* " + sharedSurefireReports;
