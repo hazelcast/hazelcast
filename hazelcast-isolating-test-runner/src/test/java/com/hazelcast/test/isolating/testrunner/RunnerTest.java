@@ -85,11 +85,12 @@ public class RunnerTest {
                 .withCreateContainerCmdModifier(cmd -> cmd.withName(name))
                 .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withCpuCount(8L))
                 .withFileSystemBind("..", "/usr/src/maven", BindMode.READ_WRITE)
-                .withFileSystemBind(System.getProperty("user.home") + "/.m2", "/root/.m2", BindMode.READ_WRITE)
+                .withFileSystemBind(System.getProperty("user.home") + "/.m2", "/var/maven/.m2", BindMode.READ_WRITE)
                 .withFileSystemBind("/var/run/docker.sock", "/var/run/docker.sock", BindMode.READ_WRITE)
                 .withWorkingDirectory("/usr/src/maven")
                 .withNetwork(newNetwork(name))
-                .withCommand("bash", "-x", "-c", mvnCommandForBatch(containerIdx));
+                .withCommand("bash", "-x", "-c", mvnCommandForBatch(containerIdx))
+                .withEnv("MAVEN_CONFIG", "/var/maven/.m2");
         if (userId != null) {
             mavenContainer.withCreateContainerCmdModifier(cmd -> cmd.withUser(userId));
         }
@@ -119,7 +120,7 @@ public class RunnerTest {
         String isolatedProjectDir = "/usr/src/maven-isolated";
         String sharedSurefireReports = sharedProjectDir + "/hazelcast/target/surefire-reports";
         return "cp -R " + sharedProjectDir + "/ " + isolatedProjectDir + "; cd " + isolatedProjectDir + ";"
-                + "mvn --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
+                + "mvn -Duser.home=/var/maven --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
                 + "-Dsurefire.includesFile=" + listOfTests + " -Dbasedir=test-batch-" + batchSuffix + "-dir;"
                 + "mkdir -p " + sharedSurefireReports + ";"
                 + "cp -v " + isolatedProjectDir + "/hazelcast/target/surefire-reports/* " + sharedSurefireReports;
