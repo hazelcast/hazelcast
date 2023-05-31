@@ -96,6 +96,7 @@ public class PMSTest extends SimpleTestInClusterSupport {
 
         dag.markAsPrunable();
 
+
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(1));
 
