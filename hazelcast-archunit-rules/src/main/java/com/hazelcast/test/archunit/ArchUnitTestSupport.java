@@ -16,11 +16,9 @@
 
 package com.hazelcast.test.archunit;
 
-import org.hamcrest.Matchers;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 
-import java.lang.reflect.Method;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 public abstract class ArchUnitTestSupport {
 
@@ -29,19 +27,13 @@ public abstract class ArchUnitTestSupport {
     // ArchUnit releases lag behind the JDK releases.
     // Skip the test if JDK version is higher than the specified assumption
     @BeforeClass
-    public static void beforeClass() throws Throwable {
-        Assume.assumeThat("Skipping as ASM shaded within ArchUnit 1.0.1 doesn't support Java 21", getCurrentJavaVersion(),
-                Matchers.is(Matchers.lessThan(HIGHEST_JDK)));
+    public static void beforeClass() {
+        assumeThat(getMajorJavaVersion())
+                .as("Skipping as ASM shaded within ArchUnit 1.0.1 doesn't support Java 21")
+                .isLessThan(HIGHEST_JDK);
     }
 
-    private static int getCurrentJavaVersion() throws Throwable {
-        Class runtimeClass = Runtime.class;
-
-        Class versionClass = Class.forName("java.lang.Runtime$Version");
-        Method versionMethod = runtimeClass.getDeclaredMethod("version");
-        Object versionObj = versionMethod.invoke(Runtime.getRuntime());
-        Method majorMethod = versionClass.getDeclaredMethod("major");
-        return (int) majorMethod.invoke(versionObj);
-
+    private static int getMajorJavaVersion() {
+        return Runtime.version().feature();
     }
 }
