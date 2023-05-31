@@ -59,6 +59,14 @@ public class Sha256UtilTest {
     }
 
     @Test
+    public void testTwoLeadingZeros() throws Exception {
+        byte[] data = {-67, 65, -32, -95, 16, 21, -123, 112, -40, -40, -58, -97, -59, 48, 100, 79, 67, -86, 68, 119,
+                -104, 77, -63, 9, -55, -74, -27, 123, -125, 64, 85, -7};
+        String result = Sha256Util.calculateSha256Hex(data);
+        assertEquals("0078723ef3412533bfc5f362ce0de7d9e18b847a0360dfa4d9a37c3923585097", result);
+    }
+
+    @Test
     public void test_exception_whenDirectory() {
         Path path = Paths.get("src", "test", "resources");
         assertThrows(IOException.class, () -> Sha256Util.calculateSha256Hex(path));
