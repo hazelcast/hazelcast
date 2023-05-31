@@ -80,6 +80,7 @@ public class RunnerTest {
         char containerIdx = (char) ('a' + i);
         String shortName = "builder-" + containerIdx;
         String name = shortName + "-" + testRunId;
+        String userId = getUserId();
         GenericContainer<?> mavenContainer = new GenericContainer<>("maven:3.9.2-eclipse-temurin-11")
                 .withCreateContainerCmdModifier(cmd -> cmd.withName(name))
                 .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig().withCpuCount(8L))
@@ -89,9 +90,21 @@ public class RunnerTest {
                 .withWorkingDirectory("/usr/src/maven")
                 .withNetwork(newNetwork(name))
                 .withCommand("bash", "-x", "-c", mvnCommandForBatch(containerIdx));
+        if (userId != null) {
+            mavenContainer.withCreateContainerCmdModifier(cmd -> cmd.withUser(userId));
+        }
         mavenContainer.start();
         mavenContainer.followOutput(new Slf4jLogConsumer(LOGGER).withPrefix(shortName));
         return mavenContainer;
+    }
+
+    private static String getUserId() {
+        try {
+            Process exec = exec("id -u");
+            return new BufferedReader(new InputStreamReader(exec.getInputStream())).readLine();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static Network newNetwork(String name) {
