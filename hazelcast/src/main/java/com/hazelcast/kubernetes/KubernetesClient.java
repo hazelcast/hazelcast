@@ -25,6 +25,7 @@ import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.util.HostnameUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -45,6 +46,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
 import static java.util.Arrays.asList;
@@ -69,6 +72,8 @@ class KubernetesClient {
             "\"reason\":\"NotFound\"",
             "Failure in generating SSLSocketFactory");
 
+    private static final int STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS = 1000;
+
     private final String stsName;
     private final String namespace;
     private final String kubernetesMaster;
@@ -80,7 +85,7 @@ class KubernetesClient {
     private final String servicePerPodLabelName;
     private final String servicePerPodLabelValue;
     @Nullable
-    private final Thread stsMonitorThread;
+    private final StsMonitorThread stsMonitorThread;
 
     private final KubernetesTokenProvider tokenProvider;
 
@@ -110,7 +115,7 @@ class KubernetesClient {
         this.apiProvider =  buildKubernetesApiUrlProvider();
         this.stsName = extractStsName();
         this.stsMonitorThread = (clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled())
-                ? new Thread(new StsMonitor(), "hz-k8s-sts-monitor") : null;
+                ? new StsMonitorThread() : null;
     }
 
     // constructor that allows overriding detected statefulset name for usage in tests
@@ -136,7 +141,7 @@ class KubernetesClient {
         this.apiProvider =  buildKubernetesApiUrlProvider();
         this.stsName = stsName;
         this.stsMonitorThread = (clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled())
-                ? new Thread(new StsMonitor(), "hz-k8s-sts-monitor") : null;
+                ? new StsMonitorThread() : null;
     }
 
     // test usage only
@@ -166,12 +171,26 @@ class KubernetesClient {
     }
 
     public void destroy() {
-        if (clusterTopologyIntentTracker != null) {
-            clusterTopologyIntentTracker.destroy();
-        }
+        // It's important we interrupt the StsMonitorThread first, as the ClusterTopologyIntentTracker
+        // receives messages from this thread, and we want to let it process all available messages
+        // before the intent tracker is shutdown
         if (stsMonitorThread != null) {
             LOGGER.info("Interrupting StatefulSet monitor thread");
             stsMonitorThread.interrupt();
+        }
+
+        if (clusterTopologyIntentTracker != null) {
+            // Join the StsMonitor thread to ensure it has completed processing all messages
+            // before shutting down our ClusterTopologyIntentTracker (which processes messages)
+            if (stsMonitorThread != null) {
+                try {
+                    stsMonitorThread.join(STS_MONITOR_SHUTDOWN_AWAIT_TIMEOUT_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            clusterTopologyIntentTracker.destroy();
         }
     }
 
@@ -722,7 +741,7 @@ class KubernetesClient {
         }
     }
 
-    final class StsMonitor implements Runnable {
+    final class StsMonitorThread extends Thread {
 
         // backoff properties when retrying
         private static final int MAX_SPINS = 3;
@@ -736,14 +755,24 @@ class KubernetesClient {
         String latestResourceVersion;
         RuntimeContext latestRuntimeContext;
         int idleCount;
+        RestClient.WatchResponse watchResponse;
 
         private final String stsUrlString;
         private final BackoffIdleStrategy backoffIdleStrategy;
 
-        StsMonitor() {
+        // We offload reading to a separate Thread to allow us to interrupt the reading operation
+        // when this Thread needs to be shutdown, avoiding the need to terminate this thread in a
+        // non-graceful manner, which could lead to uncompleted message handling - without using a
+        // separate thread, BufferedReader#readLine() blocks until data is received and does not
+        // handle Thread#interrupt()
+        private final ExecutorService readExecutor;
+
+        StsMonitorThread() {
+            super("hz-k8s-sts-monitor");
             stsUrlString = formatStsListUrl();
             backoffIdleStrategy = new BackoffIdleStrategy(MAX_SPINS, MAX_YIELDS,
                     MILLISECONDS.toNanos(MIN_PARK_PERIOD_MILLIS), SECONDS.toNanos(MAX_PARK_PERIOD_SECONDS));
+            readExecutor = Executors.newSingleThreadExecutor(new ThreadFactoryImpl("hz-k8s-sts-monitor-reader"));
         }
 
         /**
@@ -756,7 +785,6 @@ class KubernetesClient {
          */
         @Override
         public void run() {
-            RestClient.WatchResponse watchResponse;
             String message;
 
             while (running) {
@@ -837,7 +865,7 @@ class KubernetesClient {
             RestClient restClient = RestClient.create(stsUrlString)
                     .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
                     .withCaCertificates(caCertificate);
-            return restClient.watch(latestResourceVersion);
+            return restClient.watch(latestResourceVersion, readExecutor);
         }
 
         @Nullable
