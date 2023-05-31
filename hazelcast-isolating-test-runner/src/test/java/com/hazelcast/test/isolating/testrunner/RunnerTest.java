@@ -123,7 +123,7 @@ public class RunnerTest {
         String sharedSurefireReports = sharedProjectDir + "/hazelcast/target/surefire-reports";
         int forkCount = Math.max(1, Runtime.getRuntime().availableProcessors() / getRunnersCount() / 3);
         return "cp -R " + sharedProjectDir + "/ " + isolatedProjectDir + "; cd " + isolatedProjectDir + ";"
-                + "mvn -Duser.home=" + MAVEN_HOME + " -DforkCount=" + forkCount + " --errors surefire:test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
+                + "mvn -Duser.home=" + MAVEN_HOME + " -DforkCount=" + forkCount + " --errors test --fail-at-end -Ppr-builder -Ponly-explicit-tests -pl hazelcast "
                 + "-Dsurefire.includesFile=" + listOfTests + " -Dbasedir=test-batch-" + batchSuffix + "-dir;"
                 + "mkdir -p " + sharedSurefireReports + ";"
                 + "cp -v " + isolatedProjectDir + "/hazelcast/target/surefire-reports/* " + sharedSurefireReports;
