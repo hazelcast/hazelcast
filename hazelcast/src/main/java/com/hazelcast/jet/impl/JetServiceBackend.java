@@ -135,8 +135,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobClassLoaderService);
 
         MetricsService metricsService = nodeEngine.getService(MetricsService.SERVICE_NAME);
-        metricsService.registerPublisher(nodeEngine -> new JobMetricsPublisher(jobExecutionService,
-                nodeEngine.getLocalMember()));
+        metricsService.registerPublisher(nodeEngine ->
+                new JobMetricsPublisher(jobExecutionService, nodeEngine.getLocalMember()));
+        nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(jobCoordinationService);
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(jobExecutionService);
         networking = new Networking(engine, jobExecutionService, jetConfig.getFlowControlPeriodMs());
 

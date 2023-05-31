@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core.metrics;
 
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Vertex;
 
@@ -192,6 +193,13 @@ public final class MetricNames {
      * {@link MetricTags#VERTEX} & {@link MetricTags#PROCESSOR} tags of the metric.
      */
     public static final String DISTRIBUTED_BYTES_OUT = "distributedBytesOut";
+
+    /**
+     * Ordinal of {@linkplain JobStatus the job's status}.
+     *
+     * @since 5.4
+     */
+    public static final String JOB_STATUS = "status";
 
     /**
      * Number of jobs submitted to the Jet cluster.

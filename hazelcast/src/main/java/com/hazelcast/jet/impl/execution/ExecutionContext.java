@@ -123,7 +123,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private JobConfig jobConfig;
 
     private boolean metricsEnabled;
-    private volatile RawJobMetrics jobMetrics = RawJobMetrics.empty();
+    private volatile RawJobMetrics metrics = RawJobMetrics.empty();
 
     private InternalSerializationService serializationService;
     private final AtomicBoolean executionCompleted = new AtomicBoolean();
@@ -406,12 +406,12 @@ public class ExecutionContext implements DynamicMetricsProvider {
         return jobName;
     }
 
-    public RawJobMetrics getJobMetrics() {
-        return jobMetrics;
+    public RawJobMetrics getMetrics() {
+        return metrics;
     }
 
-    public void setJobMetrics(RawJobMetrics jobMetrics) {
-        this.jobMetrics = jobMetrics;
+    public void setMetrics(RawJobMetrics metrics) {
+        this.metrics = metrics;
     }
 
     @Override
@@ -419,9 +419,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
         if (!metricsEnabled) {
             return;
         }
-        descriptor = descriptor.withTag(MetricTags.JOB, idToString(jobId))
-                               .withTag(MetricTags.JOB_NAME, jobName)
-                               .withTag(MetricTags.EXECUTION, idToString(executionId));
+        descriptor.withTag(MetricTags.JOB, idToString(jobId))
+                  .withTag(MetricTags.JOB_NAME, jobName)
+                  .withTag(MetricTags.EXECUTION, idToString(executionId));
 
         context.collect(descriptor, EXECUTION_START_TIME, ProbeLevel.INFO, ProbeUnit.MS, startTime.get());
         context.collect(descriptor, EXECUTION_COMPLETION_TIME, ProbeLevel.INFO, ProbeUnit.MS, completionTime.get());

@@ -547,7 +547,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     public void updateMetrics(@Nonnull Long executionId, RawJobMetrics metrics) {
         ExecutionContext executionContext = executionContexts.get(executionId);
         if (executionContext != null) {
-            executionContext.setJobMetrics(metrics);
+            executionContext.setMetrics(metrics);
         }
     }
 

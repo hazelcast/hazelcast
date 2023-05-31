@@ -110,7 +110,7 @@ public class JobSnapshotMetricsTest extends SimpleTestInClusterSupport {
 
     private void assertSnapshotMBeans(Job job, String vertex, long expectedSnapshotKeys, boolean snapshotBytesExists)
             throws Exception {
-        JmxMetricsChecker checker = new JmxMetricsChecker(instance().getName(), job, "vertex=" + vertex);
+        JmxMetricsChecker checker = JmxMetricsChecker.forExecution(instance(), job, "vertex=" + vertex);
         checker.assertMetricValue(MetricNames.SNAPSHOT_KEYS, expectedSnapshotKeys);
 
         if (snapshotBytesExists) {

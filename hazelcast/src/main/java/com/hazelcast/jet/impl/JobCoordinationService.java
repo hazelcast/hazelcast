@@ -23,7 +23,9 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -137,7 +139,7 @@ import static java.util.stream.Collectors.toList;
  * A service that handles MasterContexts on the coordinator member.
  * Job-control operations from client are handled here.
  */
-public class JobCoordinationService {
+public class JobCoordinationService implements DynamicMetricsProvider {
 
     private static final String COORDINATOR_EXECUTOR_NAME = "jet:coordinator";
 
@@ -684,6 +686,18 @@ public class JobCoordinationService {
         );
     }
 
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        try {
+            descriptor.withTag(MetricTags.MODULE, "jet");
+            masterContexts.forEach((id, ctx) ->
+                    ctx.provideDynamicMetrics(descriptor.copy(), context));
+        } catch (Throwable t) {
+            logger.warning("Dynamic metric collection failed", t);
+            throw t;
+        }
+    }
+
     /**
      * Returns the latest metrics for a job or fails with {@link JobNotFoundException}
      * if the requested job is not found.
@@ -1090,7 +1104,7 @@ public class JobCoordinationService {
             // the order of operations is important.
             List<RawJobMetrics> jobMetrics =
                     masterContext.jobConfig().isStoreMetricsAfterJobCompletion()
-                            ? masterContext.jobContext().jobMetrics()
+                            ? masterContext.jobContext().metrics()
                             : null;
             jobRepository.completeJob(masterContext, jobMetrics, error, completionTime, userCancelled);
             if (removeMasterContext(masterContext)) {

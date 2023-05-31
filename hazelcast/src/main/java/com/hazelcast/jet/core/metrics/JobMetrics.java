@@ -115,6 +115,16 @@ public final class JobMetrics implements IdentifiedDataSerializable {
     }
 
     /**
+     * Returns true if there is any {@link Measurement} that has the specified tag.
+     *
+     * @since 5.4
+     */
+    public boolean containsTag(@Nonnull String tagName) {
+        return metrics.values().stream().flatMap(List::stream)
+                .anyMatch(MeasurementPredicates.containsTag(tagName));
+    }
+
+    /**
      * Returns a new {@link JobMetrics} instance containing a subset of
      * the {@link Measurement}s found in the current one. The subset is
      * formed by those {@link Measurement}s which match the provided

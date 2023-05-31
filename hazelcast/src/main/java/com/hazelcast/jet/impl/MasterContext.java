@@ -20,10 +20,18 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.metrics.DynamicMetricsProvider;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsCollectionContext;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.internal.metrics.jmx.JmxPublisher;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -49,9 +57,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
+import static com.hazelcast.jet.core.metrics.MetricNames.JOB_STATUS;
 import static com.hazelcast.jet.impl.AbstractJobProxy.cannotAddStatusListener;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -65,7 +75,7 @@ import static java.util.stream.Collectors.toConcurrentMap;
  *      <li>{@link MasterSnapshotContext}
  * </ul>
  */
-public class MasterContext {
+public class MasterContext implements DynamicMetricsProvider {
 
     private static final Object NULL_OBJECT = new Object() {
         @Override
@@ -200,6 +210,26 @@ public class MasterContext {
         } finally {
             unlock();
         }
+    }
+
+    boolean metricsEnabled() {
+        return jobConfig().isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
+    }
+
+    /**
+     * Dynamic metrics are only provided for {@link JmxPublisher}. They are ignored by
+     * {@link JobMetricsPublisher}, which checks execution ID, and so not persistent.
+     * Persistent metrics are generated on demand by {@link MasterJobContext#setJobMetrics}.
+     */
+    @Override
+    public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
+        if (!metricsEnabled()) {
+            return;
+        }
+        descriptor.withTag(MetricTags.JOB, idToString(jobId))
+                  .withTag(MetricTags.JOB_NAME, jobName);
+
+        context.collect(descriptor, JOB_STATUS, ProbeLevel.INFO, ProbeUnit.ENUM, jobStatus.getId());
     }
 
     public JobRecord jobRecord() {
