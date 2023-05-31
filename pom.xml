@@ -71,20 +71,20 @@
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
-        <maven.dependency.plugin.version>3.5.0</maven.dependency.plugin.version>
+        <maven.dependency.plugin.version>3.6.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
         <maven.surefire.plugin.version>3.1.0</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>3.2.2</maven.checkstyle.plugin.version>
+        <maven.checkstyle.plugin.version>3.3.0</maven.checkstyle.plugin.version>
         <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>3.0.0</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.3.0</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
-        <maven.resources.plugin.version>3.3.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>8.1.2</owasp.dependency-check.version>
+        <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
+        <owasp.dependency-check.version>8.2.1</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.1</codehause.license.plugin.version>
 
@@ -95,13 +95,13 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.472</aws.sdk.version>
+        <aws.sdk.version>1.12.475</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
-        <classgraph.version>4.8.158</classgraph.version>
+        <classgraph.version>4.8.160</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
         <guava.version>31.1-jre</guava.version>
-        <hadoop.version>3.3.4</hadoop.version>
+        <hadoop.version>3.3.5</hadoop.version>
         <h2.version>2.1.214</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
         <jackson.version>2.14.2</jackson.version>
@@ -114,7 +114,7 @@
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>3.4.0</kafka.version>
         <kotlin.version>1.8.21</kotlin.version>
-        <reload4j.version>1.2.24</reload4j.version>
+        <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
         <netty.version>4.1.92.Final</netty.version>
@@ -122,7 +122,7 @@
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
         <picocli.version>4.7.3</picocli.version>
-        <postgresql.version>42.5.4</postgresql.version>
+        <postgresql.version>42.6.0</postgresql.version>
         <prometheus.version>0.18.0</prometheus.version>
 
         <!--
@@ -1725,7 +1725,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.22</version>
+                <version>1.23.0</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
@@ -1876,7 +1876,7 @@
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-iam-v1</artifactId>
-                <version>1.9.3</version>
+                <version>1.14.0</version>
             </dependency>
             <!-- Force higher version, compatible with M1 -->
             <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
