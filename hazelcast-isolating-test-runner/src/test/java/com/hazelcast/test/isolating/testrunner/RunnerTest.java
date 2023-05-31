@@ -118,7 +118,7 @@ public class RunnerTest {
     private static String mvnCommandForBatch(char batchSuffix) {
         String listOfTests = "/usr/src/maven/hazelcast-isolating-test-runner/target/test-batch-" + batchSuffix;
         String sharedProjectDir = "/usr/src/maven";
-        String isolatedProjectDir = "/usr/src/maven-isolated";
+        String isolatedProjectDir = "/tmp/maven-isolated";
         String sharedSurefireReports = sharedProjectDir + "/hazelcast/target/surefire-reports";
         int forkCount = Math.max(1, Runtime.getRuntime().availableProcessors() / getRunnersCount() / 3);
         return "cp -R " + sharedProjectDir + "/ " + isolatedProjectDir + "; cd " + isolatedProjectDir + ";"
