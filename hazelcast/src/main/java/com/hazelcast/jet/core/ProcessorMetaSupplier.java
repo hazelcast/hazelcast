@@ -36,7 +36,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.spi.annotation.Beta;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -50,11 +49,9 @@ import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -568,10 +565,17 @@ public interface ProcessorMetaSupplier extends Serializable {
     @Nonnull
     static ProcessorMetaSupplier forceTotalParallelismOne(
             @Nonnull ProcessorSupplier supplier,
-            @Nonnull Address memberAddress,
-            @Nonnull SupplierEx<?> partitionKeySupplier
+            @Nonnull Address memberAddress
     ) {
         return new SpecificMemberPms(supplier, memberAddress);
+    }
+
+    static ProcessorMetaSupplier forceTotalParallelismOne(
+            @Nonnull ProcessorSupplier supplier,
+            @Nonnull Address memberAddress,
+            boolean doesWorkWithoutInput
+    ) {
+        return new SpecificMemberPms(supplier, memberAddress, doesWorkWithoutInput);
     }
 
     // TODO: create with PMS.
@@ -687,13 +691,22 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         private ProcessorSupplier supplier;
         private Address memberAddress;
+        private boolean doesWorkWithoutInput;
 
         SpecificMemberPms() {
+            this.doesWorkWithoutInput = true;
         }
 
         private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
             this.supplier = supplier;
             this.memberAddress = memberAddress;
+            this.doesWorkWithoutInput = true;
+        }
+
+        private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress, boolean doesWorkWithoutInput) {
+            this.supplier = supplier;
+            this.memberAddress = memberAddress;
+            this.doesWorkWithoutInput = doesWorkWithoutInput;
         }
 
         @Override
@@ -735,15 +748,22 @@ public interface ProcessorMetaSupplier extends Serializable {
         }
 
         @Override
+        public boolean doesWorkWithoutInput() {
+            return doesWorkWithoutInput;
+        }
+
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(supplier);
             out.writeObject(memberAddress);
+            out.writeBoolean(doesWorkWithoutInput);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             supplier = in.readObject();
             memberAddress = in.readObject();
+            doesWorkWithoutInput = in.readBoolean();
         }
 
         @Override
