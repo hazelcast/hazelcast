@@ -36,7 +36,9 @@ import java.util.Map;
 
 import static com.hazelcast.test.Accessors.getSerializationService;
 import static com.hazelcast.test.TestCollectionUtils.setOf;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
