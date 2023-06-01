@@ -25,7 +25,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.junit.After;
-import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,14 +37,12 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.net.ssl.SSLContext;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import java.io.InputStream;
 import java.net.URL;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -85,8 +82,6 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
 
     @Test
     public void testSchemaLocationsExist() throws Exception {
-        assumeTls12Available();
-
         ResourcesScanner scanner = new ResourcesScanner();
         Reflections reflections = new Reflections(scanner);
         Set<String> resources = reflections.getResources(Pattern.compile(".*\\.xml"));
@@ -171,16 +166,6 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
             return response.getStatusLine().getStatusCode();
         } finally {
             IOUtil.closeResource(response);
-        }
-    }
-
-    private void assumeTls12Available() {
-        try {
-            SSLContext.getInstance("TLSv1.2");
-        } catch (NoSuchAlgorithmException e) {
-            throw new AssumptionViolatedException("TLS1.2 unavailable, cannot run " + testName.getMethodName()
-                    + " The test uses HTTPS to fetch XML schemas. Current Java does not support TLS1.2."
-                    + " Most web servers no longer works with TLS1.1 and older so ignoring the test.", e);
         }
     }
 }

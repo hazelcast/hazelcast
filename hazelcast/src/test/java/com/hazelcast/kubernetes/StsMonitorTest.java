@@ -83,7 +83,7 @@ public class StsMonitorTest {
     public void testInitialStsList() {
         expectAndReturnStsList("1", "2").always();
 
-        KubernetesClient.StsMonitor stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
+        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
 
         stsMonitor.readInitialStsList();
         RuntimeContext runtimeContext = stsMonitor.latestRuntimeContext;
@@ -103,7 +103,7 @@ public class StsMonitorTest {
                 .andReturn(200, new WatchEvent(buildDefaultSts("4"), "MODIFIED"))
                 .always();
 
-        KubernetesClient.StsMonitor stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
+        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
         stsMonitor.readInitialStsList();
         RestClient.WatchResponse watchResponse = stsMonitor.sendWatchRequest();
         String nextLine = watchResponse.nextLine();
@@ -119,7 +119,7 @@ public class StsMonitorTest {
     @Test
     public void testWatchResumesAfter410Gone() {
         ClusterTopologyIntentTracker tracker = Mockito.mock(ClusterTopologyIntentTracker.class);
-        KubernetesClient.StsMonitor stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token, tracker);
+        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token, tracker);
 
         // initial STS list
         expectAndReturnStsList("1", "2").once();
@@ -160,8 +160,8 @@ public class StsMonitorTest {
         expectAndReturnStsList("1", "2").always();
         expectWatch("1").andReturn(500, null).always();
 
-        KubernetesClient.StsMonitor stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
-        Future<Void> runFuture = spawn(stsMonitor::run);
+        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
+        Future<Void> runFuture = spawn(stsMonitor);
         sleepSeconds(10);
         stsMonitor.running = false;
         FutureUtil.waitWithDeadline(Collections.singleton(runFuture), 5, TimeUnit.SECONDS);
@@ -174,8 +174,8 @@ public class StsMonitorTest {
         // sts list fails
         expectStsList().andReturn(500, null).always();
 
-        KubernetesClient.StsMonitor stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
-        Future<Void> runFuture = spawn(stsMonitor::run);
+        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
+        Future<Void> runFuture = spawn(stsMonitor);
         sleepSeconds(10);
         stsMonitor.running = false;
         FutureUtil.waitWithDeadline(Collections.singleton(runFuture), 5, TimeUnit.SECONDS);
@@ -240,17 +240,17 @@ public class StsMonitorTest {
         return builder.build();
     }
 
-    KubernetesClient.StsMonitor buildStsMonitor(String namespace, String masterUrl,
+    KubernetesClient.StsMonitorThread buildStsMonitor(String namespace, String masterUrl,
                                                 String oauthToken) {
         return buildStsMonitor(namespace, masterUrl, oauthToken, new NoOpClusterTopologyIntentTracker());
     }
 
-    KubernetesClient.StsMonitor buildStsMonitor(String namespace, String masterUrl,
+    KubernetesClient.StsMonitorThread buildStsMonitor(String namespace, String masterUrl,
                                                       String oauthToken, ClusterTopologyIntentTracker tracker) {
         StaticTokenProvider tokenProvider = new StaticTokenProvider(oauthToken);
         return new KubernetesClient(namespace, masterUrl,
                 tokenProvider, null, 3,
                 KubernetesConfig.ExposeExternallyMode.DISABLED, false,
-                null, null, tracker, DEFAULT_STS_NAME).new StsMonitor();
+                null, null, tracker, DEFAULT_STS_NAME).new StsMonitorThread();
     }
 }

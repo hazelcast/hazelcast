@@ -152,7 +152,7 @@ public abstract class AsyncSocketTest {
                 .build();
         clientSocket.start();
 
-        CompletableFuture<Void> future = clientSocket.connect(new InetSocketAddress("127.0.0.1", 5000));
+        CompletableFuture<Void> future = clientSocket.connect(new InetSocketAddress("127.0.0.1", 5001));
 
         assertThrows(CompletionException.class, () -> future.join());
     }

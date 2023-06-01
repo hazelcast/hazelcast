@@ -15,7 +15,6 @@
  */
 
 /**
- * Contains Json interface
- *
+ * Package to test module path.
  */
-package com.hazelcast.json;
+package com.hazelcast.test.modulepath;

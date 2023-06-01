@@ -810,6 +810,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, hz1, hz2);
 
         IMap<Object, Object> map = hz1.getMap("test");
+        // explicitly obtaining map proxy to ensure of ListenerAdapter registration
+        hz2.getMap("test");
         map.put(1, 1);
 
         //Let post join continue only after put happened

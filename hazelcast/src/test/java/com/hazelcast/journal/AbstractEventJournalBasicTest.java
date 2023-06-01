@@ -713,7 +713,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
      *                      if the projection is {@code null} or it is the identity projection
      * @return the future with the filtered and projected journal items
      */
-    private <K, V, PROJ_TYPE> CompletionStage<ReadResultSet<PROJ_TYPE>> readFromEventJournal(
+    protected <K, V, PROJ_TYPE> CompletionStage<ReadResultSet<PROJ_TYPE>> readFromEventJournal(
             EventJournalDataStructureAdapter<K, V, EJ_TYPE> adapter,
             long startSequence,
             int maxSize,
