@@ -103,6 +103,7 @@ public class PMSTest extends SimpleTestInClusterSupport {
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
 
+        // should print 2.
         assertJobStatusEventually(job, JobStatus.COMPLETED);
     }
 

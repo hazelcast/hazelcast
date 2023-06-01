@@ -582,7 +582,7 @@ public interface ProcessorMetaSupplier extends Serializable {
     static ProcessorMetaSupplier memberPruningMetaSupplier(
             @Nonnull ProcessorSupplier supplier
     ) {
-        return new ProcessorMetaSupplier() {
+        return new ProcessorMetaSupplier () {
             @Override
             public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return addr -> supplier;
