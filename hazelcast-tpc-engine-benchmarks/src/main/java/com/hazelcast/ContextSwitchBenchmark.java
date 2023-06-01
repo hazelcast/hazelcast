@@ -41,8 +41,8 @@ public class ContextSwitchBenchmark {
     @Setup
     public void setup() {
         ReactorBuilder reactorBuilder = ReactorBuilder.newReactorBuilder(reactorType);
-        reactorBuilder.setBatchSize(1);
-        reactorBuilder.setClockRefreshPeriod(1);
+        //reactorBuilder.setBatchSize(1);
+        //reactorBuilder.setClockRefreshPeriod(1);
         reactor = reactorBuilder.build();
         reactor.start();
     }

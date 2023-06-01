@@ -26,9 +26,15 @@ import static java.lang.Math.max;
 @SuppressWarnings({"checkstyle:MemberName"})
 class CfsScheduler {
 
-    private final PriorityQueue<TaskGroup> runQueue = new PriorityQueue();
+    private final PriorityQueue<TaskGroup> runQueue;
+    private final int capacity;
+    private long min_vruntimeNanos;
+    private int size;
 
-    private long min_vruntime;
+    CfsScheduler(int runQueueCapacity) {
+        this.runQueue = new PriorityQueue<>(runQueueCapacity);
+        this.capacity = runQueueCapacity;
+    }
 
     /**
      * Returns the number of items in the runQueue.
@@ -36,7 +42,7 @@ class CfsScheduler {
      * @return the size of the runQueue.
      */
     public int size() {
-        return runQueue.size();
+        return size;
     }
 
     public TaskGroup pickNext() {
@@ -47,15 +53,19 @@ class CfsScheduler {
 
         TaskGroup peek = runQueue.peek();
         if (peek != null) {
-            min_vruntime = peek.vruntimeNanos;
+            min_vruntimeNanos = peek.vruntimeNanos;
         }
-
+        size--;
         return group;
     }
 
     public void enqueue(TaskGroup taskGroup) {
+        if (size == capacity) {
+            throw new IllegalStateException();
+        }
+        size++;
         taskGroup.state = TaskGroup.STATE_RUNNING;
-        taskGroup.vruntimeNanos = max(taskGroup.vruntimeNanos, min_vruntime);
+        taskGroup.vruntimeNanos = max(taskGroup.vruntimeNanos, min_vruntimeNanos);
         runQueue.add(taskGroup);
     }
 }

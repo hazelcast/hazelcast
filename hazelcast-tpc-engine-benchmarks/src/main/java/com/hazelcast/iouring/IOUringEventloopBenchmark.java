@@ -4,7 +4,6 @@ package com.hazelcast.iouring;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iouring.IOUringReactorBuilder;
-import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -39,7 +38,7 @@ public class IOUringEventloopBenchmark {
     public void setup() {
         IOUringReactorBuilder reactorBuilder = new IOUringReactorBuilder();
         //reactorBuilder.setClockRefreshPeriod(-1);
-        reactorBuilder.setBatchSize(512);// 1024 gives very good performance
+        //reactorBuilder.setBatchSize(512);// 1024 gives very good performance
         reactor = reactorBuilder.build();
         reactor.start();
     }

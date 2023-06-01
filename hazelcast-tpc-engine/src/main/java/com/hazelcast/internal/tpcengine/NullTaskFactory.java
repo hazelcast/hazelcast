@@ -16,17 +16,20 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import org.junit.Test;
+/**
+ * A {@link TaskFactory} that returns null.
+ */
+public class NullTaskFactory implements TaskFactory {
 
-import static org.junit.Assert.assertNull;
+    public static final NullTaskFactory INSTANCE = new NullTaskFactory();
 
-public class NopTaskFactoryTest {
+    @Override
+    public Task toTask(Object cmd) {
+        return null;
+    }
 
-    @Test
-    public void test() {
-        NopTaskFactory factory = new NopTaskFactory();
-        assertNull(factory.toTask(new IOBuffer(64)));
+    @Override
+    public void init(Eventloop eventloop) {
     }
 
 }

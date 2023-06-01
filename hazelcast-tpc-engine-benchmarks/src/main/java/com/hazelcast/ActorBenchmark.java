@@ -50,8 +50,8 @@ public class ActorBenchmark {
     public void setup() {
         ReactorBuilder builder = new IOUringReactorBuilder();
         //Eventloop.Configuration builder = new NioEventloop.NioConfiguration();
-        builder.setBatchSize(16);
-        builder.setClockRefreshPeriod(16);
+        //builder.setBatchSize(16);
+        //builder.setClockRefreshPeriod(16);
         eventloop = builder.build();
         eventloop.start();
     }

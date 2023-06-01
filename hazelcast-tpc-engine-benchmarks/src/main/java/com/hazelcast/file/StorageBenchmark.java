@@ -225,7 +225,7 @@ public class StorageBenchmark {
             //builder.setFlags(IORING_SETUP_IOPOLL);
             builder.setThreadAffinity(threadAffinity);
             builder.setSpin(spin);
-            builder.setStorageDeviceRegistry(blockDeviceRegistry);
+            builder.setBlockDeviceRegistry(blockDeviceRegistry);
 
             Reactor reactor = builder.build();
             reactors.add(reactor);

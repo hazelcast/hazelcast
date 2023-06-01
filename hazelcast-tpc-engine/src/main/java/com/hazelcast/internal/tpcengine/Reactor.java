@@ -331,20 +331,6 @@ public abstract class Reactor implements Executor {
      * @throws NullPointerException if task is null.
      */
     // todo: task queue id?
-    public final boolean offer(Runnable task) {
-        return offer((Object) task);
-    }
-
-    /**
-     * Offers a task to be executed on this {@link Reactor}.
-     * <p/>
-     * This method is thread-safe.
-     *
-     * @param task the task to execute.
-     * @return true if the task was accepted, false otherwise.
-     * @throws NullPointerException if task is null.
-     */
-    // todo: task queue id?
     public final boolean offer(Object task) {
         if (Thread.currentThread() == eventloopThread) {
             return localTaskQueue.offer(task);
@@ -355,6 +341,7 @@ public abstract class Reactor implements Executor {
             return false;
         }
     }
+
 
     @Override
     public String toString() {

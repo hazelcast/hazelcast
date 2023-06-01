@@ -69,7 +69,7 @@ public class TaskGroup implements Comparable<TaskGroup> {
      * The maximum amount of time the tasks in this group can run before the taskGroup is
      * context switched.
      */
-    public long taskQuotaNanos;
+    public long quotaNanos;
 
     @Override
     public int compareTo(TaskGroup that) {

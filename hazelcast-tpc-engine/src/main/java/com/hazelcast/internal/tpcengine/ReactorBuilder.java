@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
@@ -41,19 +40,17 @@ public abstract class ReactorBuilder {
     public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.localTaskQueue.capacity";
     public static final String NAME_EXTERNAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.externalTaskQueue.capacity";
     public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.deadlineTaskQueue.capacity";
-    public static final String NAME_BATCH_SIZE = "hazelcast.tpc.batch.size";
-    public static final String NAME_CLOCK_REFRESH_PERIOD = "hazelcast.tpc.clock.refreshPeriod";
     public static final String NAME_REACTOR_SPIN = "hazelcast.tpc.reactor.spin";
     public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
+    public static final String NAME_TASK_GROUP_LIMIT = "hazelcast.tpc.taskGroup.limit";
 
     private static final int DEFAULT_LOCAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_EXTERNAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY = 4096;
-    private static final int DEFAULT_BATCH_SIZE = 64;
-    private static final int DEFAULT_CLOCK_REFRESH_INTERVAL = 16;
     private static final int DEFAULT_TASK_QUOTA_NANOS = 500;
     private static final int DEFAULT_HOG_THRESHOLD_NANOS = 500;
     private static final int DEFAULT_IO_INTERVAL_NANOS = 10;
+    private static final int DEFAULT_TASK_GROUP_LIMIT = 1024;
     private static final boolean DEFAULT_SPIN = false;
 
     private static final Constructor<ReactorBuilder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
@@ -78,7 +75,7 @@ public abstract class ReactorBuilder {
 
     protected BlockDeviceRegistry blockDeviceRegistry = new BlockDeviceRegistry();
     protected final ReactorType type;
-    Supplier<TaskFactory> taskFactorySupplier = () -> NopTaskFactory.INSTANCE;
+    Supplier<TaskFactory> taskFactorySupplier = () -> NullTaskFactory.INSTANCE;
 
     Supplier<String> threadNameSupplier;
     Supplier<String> reactorNameSupplier = new Supplier<>() {
@@ -97,12 +94,11 @@ public abstract class ReactorBuilder {
     int localTaskQueueCapacity;
     int externalTaskQueueCapacity;
     int deadlineTaskQueueCapacity;
-    int batchSize;
-    int clockRefreshPeriod;
     TpcEngine engine;
-    long taskQuotaNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_TASK_QUOTA_NANOS);
+    long taskGroupQuotaNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_TASK_QUOTA_NANOS);
     long hogThresholdNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_HOG_THRESHOLD_NANOS);
     long ioIntervalNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_IO_INTERVAL_NANOS);
+    int taskGroupLimit;
 
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
@@ -112,8 +108,7 @@ public abstract class ReactorBuilder {
                 NAME_EXTERNAL_TASK_QUEUE_CAPACITY, DEFAULT_EXTERNAL_TASK_QUEUE_CAPACITY);
         this.deadlineTaskQueueCapacity = Integer.getInteger(
                 NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
-        this.batchSize = Integer.getInteger(NAME_BATCH_SIZE, DEFAULT_BATCH_SIZE);
-        this.clockRefreshPeriod = Integer.getInteger(NAME_CLOCK_REFRESH_PERIOD, DEFAULT_CLOCK_REFRESH_INTERVAL);
+        this.taskGroupLimit = Integer.getInteger(NAME_TASK_GROUP_LIMIT, DEFAULT_TASK_GROUP_LIMIT);
         this.spin = Boolean.parseBoolean(getProperty(NAME_REACTOR_SPIN, Boolean.toString(DEFAULT_SPIN)));
     }
 
@@ -147,18 +142,43 @@ public abstract class ReactorBuilder {
      */
     public abstract Reactor build();
 
-    public void setTaskQuota(long taskQuota, TimeUnit unit) {
-        checkPositive(taskQuota, "taskQuota");
+    /**
+     * The maximum amount of time tasks from a single TaskGroup can run before the TaskGroup needs to
+     * be 'context switched'.
+     *
+     * @param taskGroupQuota
+     * @param unit
+     */
+    public void setTaskGroupQuota(long taskGroupQuota, TimeUnit unit) {
+        checkPositive(taskGroupQuota, "taskGroupQuota");
         checkNotNull(unit, "unit");
-        this.taskQuotaNanos = unit.toNanos(taskQuota);
+        this.taskGroupQuotaNanos = unit.toNanos(taskGroupQuota);
     }
 
+    public void setNameTaskGroupLimit(int taskGroupLimit) {
+        this.taskGroupLimit = checkPositive(taskGroupLimit, "taskGroupLimit");
+    }
+
+
+    /**
+     * The maximum amount of time a task is allowed to run before being considered a hog.
+     *
+     * @param hogThreshold
+     * @param unit
+     */
     public void setHogThreshold(long hogThreshold, TimeUnit unit) {
         checkPositive(hogThreshold, "hogThreshold");
         checkNotNull(unit, "unit");
         this.hogThresholdNanos = unit.toNanos(hogThreshold);
     }
 
+    /**
+     * The interval the I/O scheduler should be checked if there if any I/O activity (either
+     * submitting work or there are any completed events.
+     *
+     * @param ioInterval
+     * @param unit
+     */
     public void setIoInterval(long ioInterval, TimeUnit unit) {
         checkPositive(ioInterval, "ioInterval");
         checkNotNull(unit, "unit");
@@ -176,18 +196,6 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the clock refresh period.
-     *
-     * @param clockRefreshPeriod the period to refresh the time. A clockRefreshPeriod of 0 means
-     *                           that always the newest time is obtained. There will be more overhead,
-     *                           but you get better granularity.
-     * @throws IllegalArgumentException when clockRefreshPeriod smaller than 0.
-     */
-    public void setClockRefreshPeriod(int clockRefreshPeriod) {
-        this.clockRefreshPeriod = checkNotNegative(clockRefreshPeriod, "clockRefreshPeriod");
-    }
-
-    /**
      * Sets the ThreadFactory used to create the Thread that runs the {@link Reactor}.
      *
      * @param threadFactory the ThreadFactory
@@ -195,24 +203,6 @@ public abstract class ReactorBuilder {
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = checkNotNull(threadFactory, "threadFactory");
-    }
-
-    /**
-     * An eventloop has multiple queues to process. This setting controls the number of items
-     * that are processed from a single queue in batch, before moving to the next queue.
-     * <p>
-     * Setting it to a lower value will improve fairness but can reduce throughput. Setting
-     * it to a very high value could in theory lead to certain queues or event sources not
-     * being processed at all. So imagine some local task that rescheduled itself, then it
-     * could happen that with a very high batch size this tasks is processed in a loop while
-     * none of the other queues/event-sources is checked and hence they are being starved
-     * from CPU time.
-     *
-     * @param batchSize the size of the batch
-     * @throws IllegalArgumentException if batchSize smaller than 1.
-     */
-    public void setBatchSize(int batchSize) {
-        this.batchSize = checkPositive(batchSize, "batchSize");
     }
 
     /**
@@ -285,7 +275,7 @@ public abstract class ReactorBuilder {
         this.taskFactorySupplier = checkNotNull(taskFactorySupplier, "taskFactorySupplier");
     }
 
-    public void setStorageDeviceRegistry(BlockDeviceRegistry blockDeviceRegistry) {
+    public void setBlockDeviceRegistry(BlockDeviceRegistry blockDeviceRegistry) {
         this.blockDeviceRegistry = checkNotNull(blockDeviceRegistry, "blockDeviceRegistry");
     }
 }

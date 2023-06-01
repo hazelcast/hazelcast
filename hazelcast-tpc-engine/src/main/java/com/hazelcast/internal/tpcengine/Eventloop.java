@@ -30,6 +30,8 @@ import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
 import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -54,8 +56,6 @@ public abstract class Eventloop {
 
     protected final Reactor reactor;
     protected final boolean spin;
-    protected final int batchSize;
-    protected final ReactorBuilder builder;
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     // todo:padding to prevent false sharing
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
@@ -64,26 +64,29 @@ public abstract class Eventloop {
     protected final IntPromiseAllocator intPromiseAllocator;
     public final TaskGroupHandle externalTaskQueueHandle;
     public final TaskGroupHandle localTaskQueueHandle;
-    final long taskQuotaNanos;
+    final long taskGroupQuotaNanos;
     private final ReactorMetrics metrics;
     protected boolean stop;
     protected long taskStartNanos;
-    protected long ioDeadlineNanos;
     protected final SlabAllocator<TaskGroup> taskGroupAllocator = new SlabAllocator<>(1024, TaskGroup::new);
+    private long ioDeadlineNanos;
     private final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
-    protected TaskGroup sharedHead;
-    protected TaskGroup sharedTail;
+    protected TaskGroup sharedFirst;
+    protected TaskGroup sharedLast;
+    public final Set<TaskGroup> taskGroups = new HashSet<>();
+    public final int taskGroupLimit;
     //protected final ArrayList<TaskGroup> blockedSharedTaskGroups = new ArrayList<>();
     private final long hogThresholdNanos;
-    CfsScheduler scheduler = new CfsScheduler();
+    final CfsScheduler scheduler;
     private long cycleStartNanos;
 
     protected Eventloop(Reactor reactor, ReactorBuilder builder) {
         this.reactor = reactor;
-        this.builder = builder;
         this.metrics = reactor.metrics;
         this.deadlineScheduler = new DeadlineScheduler(builder.deadlineTaskQueueCapacity);
+        this.taskGroupLimit = builder.taskGroupLimit;
+        this.scheduler = new CfsScheduler(builder.taskGroupLimit);
 
         TaskFactory taskFactory = builder.taskFactorySupplier.get();
         this.externalTaskQueueHandle = new TaskGroupBuilder(this)
@@ -99,12 +102,11 @@ public abstract class Eventloop {
                 .setTaskFactory(taskFactory)
                 .build();
         this.spin = builder.spin;
-        this.batchSize = builder.batchSize;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.nanoClock = new StandardNanoClock();
         this.taskStartNanos = nanoClock.nanoTime();
-        this.taskQuotaNanos = builder.taskQuotaNanos;
+        this.taskGroupQuotaNanos = builder.taskGroupQuotaNanos;
         this.hogThresholdNanos = builder.hogThresholdNanos;
         this.ioIntervalNanos = builder.ioIntervalNanos;
         this.ioDeadlineNanos = taskStartNanos + ioIntervalNanos;
@@ -115,7 +117,25 @@ public abstract class Eventloop {
     }
 
     public boolean offer(Object task) {
-        return localTaskQueueHandle.taskGroup.offer(task);
+        return offer(task, localTaskQueueHandle);
+    }
+
+    public boolean offer(Object task, TaskGroupHandle taskGroupHandle) {
+        checkNotNull(task, "task");
+        checkNotNull(taskGroupHandle,"taskGroupHandle");
+
+        TaskGroup taskGroup = taskGroupHandle.taskGroup;
+        if (taskGroup.eventloop != this) {
+            throw new IllegalArgumentException();
+        }
+        checkEventloopThread();
+        return taskGroupHandle.taskGroup.offer(task);
+    }
+
+    protected void checkEventloopThread() {
+        if (Thread.currentThread() != reactor.eventloopThread) {
+            throw new IllegalStateException();
+        }
     }
 
     /**
@@ -123,6 +143,7 @@ public abstract class Eventloop {
      * @return
      */
     public final TaskGroup getTaskGroup(TaskGroupHandle handle) {
+        checkEventloopThread();
         return handle.taskGroup;
     }
 
@@ -130,6 +151,10 @@ public abstract class Eventloop {
      * @return
      */
     public final TaskGroupBuilder newTaskGroupBuilder() {
+        checkEventloopThread();
+        if (stop) {
+            throw new IllegalStateException();
+        }
         return new TaskGroupBuilder(this);
     }
 
@@ -192,7 +217,7 @@ public abstract class Eventloop {
 
     protected final boolean scheduleBlockedSharedTaskGroups() {
         boolean scheduled = false;
-        TaskGroup taskGroup = sharedHead;
+        TaskGroup taskGroup = sharedFirst;
 
         while (taskGroup != null) {
             assert taskGroup.state == STATE_BLOCKED;
@@ -202,14 +227,14 @@ public abstract class Eventloop {
                 TaskGroup prev = taskGroup.prev;
 
                 if (prev == null) {
-                    sharedHead = next;
+                    sharedFirst = next;
                 } else {
                     prev.next = next;
                     taskGroup.prev = null;
                 }
 
                 if (next == null) {
-                    sharedTail = prev;
+                    sharedLast = prev;
                 } else {
                     next.prev = prev;
                     taskGroup.next = null;
@@ -231,11 +256,11 @@ public abstract class Eventloop {
         assert taskGroup.prev == null;
         assert taskGroup.next == null;
 
-        TaskGroup l = sharedTail;
+        TaskGroup l = sharedLast;
         taskGroup.prev = l;
-        sharedTail = taskGroup;
+        sharedLast = taskGroup;
         if (l == null) {
-            sharedHead = taskGroup;
+            sharedFirst = taskGroup;
         } else {
             l.next = taskGroup;
         }
@@ -273,7 +298,7 @@ public abstract class Eventloop {
                 continue;
             }
 
-            long quotaDeadlineNanos = cycleStartNanos + taskGroup.taskQuotaNanos;
+            long quotaDeadlineNanos = cycleStartNanos + taskGroup.quotaNanos;
             long cycleEndNanos = cycleStartNanos;
             long taskStartNanos = cycleStartNanos;
             boolean taskQueueEmpty = false;
@@ -350,24 +375,25 @@ public abstract class Eventloop {
         }
     }
 
-    private void processTask(TaskGroup taskGroup, Object task) {
-        // process the task.
-        if (task instanceof Runnable) {
+    private void processTask(TaskGroup taskGroup, Object taskObject) {
+        // process the taskObject.
+        if (taskObject instanceof Runnable) {
+
             try {
-                ((Runnable) task).run();
+                ((Runnable) taskObject).run();
             } catch (Exception e) {
                 logger.warning(e);
             }
         } else {
-            Task taskWrapper = taskGroup.taskFactory.toTask(task);
-            if (taskWrapper == null) {
+            Task task = taskGroup.taskFactory.toTask(taskObject);
+            if (task == null) {
                 //todo:
-                logger.severe("Unhandled command type: " + task.getClass().getName());
+                logger.severe("Unhandled command type: " + taskObject.getClass().getName());
                 return;
             }
 
-            taskWrapper.taskGroup = taskGroup;
-            taskWrapper.run();
+            task.taskGroup = taskGroup;
+            task.run();
         }
     }
 

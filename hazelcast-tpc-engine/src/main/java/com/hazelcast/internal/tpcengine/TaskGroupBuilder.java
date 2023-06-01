@@ -30,11 +30,11 @@ public class TaskGroupBuilder {
     private int shares;
     private Queue<Object> queue;
     private boolean shared;
-    private TaskFactory taskFactory = NopTaskFactory.INSTANCE;
+    private TaskFactory taskFactory = NullTaskFactory.INSTANCE;
 
     public TaskGroupBuilder(Eventloop eventloop) {
         this.eventloop = eventloop;
-        this.taskQuotaNanos = eventloop.taskQuotaNanos;
+        this.taskQuotaNanos = eventloop.taskGroupQuotaNanos;
     }
 
     public TaskGroupBuilder setTaskFactory(TaskFactory taskFactory) {
@@ -75,26 +75,30 @@ public class TaskGroupBuilder {
         // todo: already build check
         // todo: loop active check
 
-        TaskGroup taskQueue = eventloop.taskGroupAllocator.allocate();
-        taskQueue.queue = queue;
-        if (taskQueue.queue == null) {
+        if (eventloop.taskGroups.size() == eventloop.taskGroupLimit) {
+            throw new IllegalStateException("Too many taskgroups.");
+        }
+
+        TaskGroup taskGroup = eventloop.taskGroupAllocator.allocate();
+        taskGroup.queue = queue;
+        if (taskGroup.queue == null) {
             throw new RuntimeException();
         }
-        taskQueue.taskFactory = taskFactory;
-        taskQueue.shared = shared;
-        taskQueue.shares = shares;
-        taskQueue.name = name;
-        taskQueue.eventloop = eventloop;
-        taskQueue.taskQuotaNanos = taskQuotaNanos;
-        //taskQueue.taskQuotaNanos =
-        taskQueue.state = TaskGroup.STATE_BLOCKED;
+        taskGroup.taskFactory = taskFactory;
+        taskGroup.shared = shared;
+        taskGroup.shares = shares;
+        taskGroup.name = name;
+        taskGroup.eventloop = eventloop;
+        taskGroup.quotaNanos = taskQuotaNanos;
+        //taskGroup.taskQuotaNanos =
+        taskGroup.state = TaskGroup.STATE_BLOCKED;
 
-        // todo: we should only allow for taskGroups to be created as many of them fit into the CFS scheduler.
-
-        if (shared) {
-            eventloop.addLastBlockedShared(taskQueue);
+       if (shared) {
+            eventloop.addLastBlockedShared(taskGroup);
         }
 
-        return new TaskGroupHandle(taskQueue);
+        eventloop.taskGroups.add(taskGroup);
+
+        return new TaskGroupHandle(taskGroup);
     }
 }

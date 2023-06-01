@@ -102,30 +102,6 @@ public abstract class ReactorBuilderTest {
     }
 
     @Test
-    public void test_setClockRefreshPeriod_whenZero() {
-        ReactorBuilder builder = newBuilder();
-        builder.setClockRefreshPeriod(0);
-    }
-
-    @Test
-    public void test_setClockRefreshPeriod_whenNegative() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setClockRefreshPeriod(-1));
-    }
-
-    @Test
-    public void test_setBatchSize_whenZero() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setBatchSize(0));
-    }
-
-    @Test
-    public void test_setBatchSize_whenNegative() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setBatchSize(-1));
-    }
-
-    @Test
     public void test_setExternalTaskQueueCapacity_whenZero() {
         ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setExternalTaskQueueCapacity(0));
