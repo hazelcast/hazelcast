@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.parquet.hadoop.util.HadoopOutputFile;
 import org.apache.parquet.io.OutputFile;
 import org.junit.AfterClass;
@@ -70,6 +71,8 @@ public class SqlHadoopTest extends SqlTestSupport {
 
         Configuration configuration = new Configuration();
         configuration.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, directory.getAbsolutePath());
+        //avoid problems with resolving user information on dockerized environments
+        UserGroupInformation.setLoginUser(UserGroupInformation.createRemoteUser("hduser"));
         cluster = new MiniDFSCluster.Builder(configuration).build();
         cluster.waitClusterUp();
     }
