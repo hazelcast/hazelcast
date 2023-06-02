@@ -20,7 +20,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
-import org.apache.hadoop.security.UserGroupInformation;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,8 +45,6 @@ public class SqlStatefulDagTest extends SqlTestSupport {
 
         Configuration configuration = new Configuration();
         configuration.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, directory.getAbsolutePath());
-        //avoid problems with resolving user information on dockerized environments
-        UserGroupInformation.setLoginUser(UserGroupInformation.createRemoteUser("hduser"));
         cluster = new MiniDFSCluster.Builder(configuration).build();
         cluster.waitClusterUp();
     }
