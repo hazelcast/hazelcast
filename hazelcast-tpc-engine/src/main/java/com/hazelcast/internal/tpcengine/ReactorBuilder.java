@@ -38,17 +38,17 @@ import static java.lang.System.getProperty;
 public abstract class ReactorBuilder {
 
     public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.localTaskQueue.capacity";
-    public static final String NAME_EXTERNAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.externalTaskQueue.capacity";
+    public static final String NAME_GLOBAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.globalTaskQueue.capacity";
     public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.deadlineTaskQueue.capacity";
     public static final String NAME_REACTOR_SPIN = "hazelcast.tpc.reactor.spin";
     public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
     public static final String NAME_TASK_GROUP_LIMIT = "hazelcast.tpc.taskGroup.limit";
 
     private static final int DEFAULT_LOCAL_TASK_QUEUE_CAPACITY = 65536;
-    private static final int DEFAULT_EXTERNAL_TASK_QUEUE_CAPACITY = 65536;
+    private static final int DEFAULT_GLOBAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY = 4096;
     private static final int DEFAULT_TASK_QUOTA_NANOS = 500;
-    private static final int DEFAULT_HOG_THRESHOLD_NANOS = 500;
+    private static final int DEFAULT_STALL_THRESHOLD_NANOS = 500;
     private static final int DEFAULT_IO_INTERVAL_NANOS = 10;
     private static final int DEFAULT_TASK_GROUP_LIMIT = 1024;
     private static final boolean DEFAULT_SPIN = false;
@@ -88,25 +88,25 @@ public abstract class ReactorBuilder {
     };
 
     ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity(NAME_REACTOR_AFFINITY);
-
     ThreadFactory threadFactory = Thread::new;
     boolean spin;
     int localTaskQueueCapacity;
-    int externalTaskQueueCapacity;
-    int deadlineTaskQueueCapacity;
+    int globalTaskQueueCapacity;
+    int deadlineRunQueueCapacity;
     TpcEngine engine;
     long taskGroupQuotaNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_TASK_QUOTA_NANOS);
-    long hogThresholdNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_HOG_THRESHOLD_NANOS);
+    long stallThresholdNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_STALL_THRESHOLD_NANOS);
     long ioIntervalNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_IO_INTERVAL_NANOS);
     int taskGroupLimit;
+    StallDetector stallDetector = LoggingStallDetector.INSTANCE;
 
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
         this.localTaskQueueCapacity = Integer.getInteger(
                 NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_TASK_QUEUE_CAPACITY);
-        this.externalTaskQueueCapacity = Integer.getInteger(
-                NAME_EXTERNAL_TASK_QUEUE_CAPACITY, DEFAULT_EXTERNAL_TASK_QUEUE_CAPACITY);
-        this.deadlineTaskQueueCapacity = Integer.getInteger(
+        this.globalTaskQueueCapacity = Integer.getInteger(
+                NAME_GLOBAL_TASK_QUEUE_CAPACITY, DEFAULT_GLOBAL_TASK_QUEUE_CAPACITY);
+        this.deadlineRunQueueCapacity = Integer.getInteger(
                 NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
         this.taskGroupLimit = Integer.getInteger(NAME_TASK_GROUP_LIMIT, DEFAULT_TASK_GROUP_LIMIT);
         this.spin = Boolean.parseBoolean(getProperty(NAME_REACTOR_SPIN, Boolean.toString(DEFAULT_SPIN)));
@@ -161,20 +161,35 @@ public abstract class ReactorBuilder {
 
 
     /**
-     * The maximum amount of time a task is allowed to run before being considered a hog.
+     * The maximum amount of time a task is allowed to run before being considered stalling
+     * the reactor.
      *
-     * @param hogThreshold
+     * @param stallThreshold
      * @param unit
      */
-    public void setHogThreshold(long hogThreshold, TimeUnit unit) {
-        checkPositive(hogThreshold, "hogThreshold");
+    public void setStallThreshold(long stallThreshold, TimeUnit unit) {
+        checkPositive(stallThreshold, "stallThreshold");
         checkNotNull(unit, "unit");
-        this.hogThresholdNanos = unit.toNanos(hogThreshold);
+        this.stallThresholdNanos = unit.toNanos(stallThreshold);
+    }
+
+    /**
+     * Configures the stallDetector.
+     *
+     * @param stallDetector
+     * @throws NullPointerException if stallDetector is <code>null</code>.
+     */
+    public void setStallDetector(StallDetector stallDetector) {
+        this.stallDetector = checkNotNull(stallDetector, "stallDetector");
     }
 
     /**
      * The interval the I/O scheduler should be checked if there if any I/O activity (either
      * submitting work or there are any completed events.
+     * <p/>
+     * There is no guarantee that the I/O scheduler is going to be called at the exact interval
+     * when there are other threads/processes contending for the core and when there are stalls
+     * on the reactor.
      *
      * @param ioInterval
      * @param unit
@@ -229,7 +244,8 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the capacity of the local task queue.
+     * Sets the capacity of the local task queue. The local task queue is used only from the
+     * eventloop thread.
      *
      * @param localTaskQueueCapacity the capacity
      * @throws IllegalArgumentException if localTaskQueueCapacity not positive.
@@ -239,24 +255,24 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the capacity of the external task queue. The external task queue is the task queue used
+     * Sets the capacity of the global task queue. The global task queue is the task queue used
      * for other threads to communicate with the reactor.
      *
-     * @param externalTaskQueueCapacity the capacity
+     * @param globalTaskQueueCapacity the capacity
      * @throws IllegalArgumentException if externalTaskQueueCapacity not positive.
      */
-    public void setExternalTaskQueueCapacity(int externalTaskQueueCapacity) {
-        this.externalTaskQueueCapacity = checkPositive(externalTaskQueueCapacity, "externalTaskQueueCapacity");
+    public void setGlobalTaskQueueCapacity(int globalTaskQueueCapacity) {
+        this.globalTaskQueueCapacity = checkPositive(globalTaskQueueCapacity, "externalTaskQueueCapacity");
     }
 
     /**
-     * Sets the capacity of the scheduled task queue.
+     * Sets the capacity of the runqueue for the deadline scheduler.
      *
-     * @param deadlineTaskQueueCapacity the capacity
+     * @param deadlineRunQueueCapacity the capacity
      * @throws IllegalArgumentException if scheduledTaskQueueCapacity not positive.
      */
-    public void setDeadlineTaskQueueCapacity(int deadlineTaskQueueCapacity) {
-        this.deadlineTaskQueueCapacity = checkPositive(deadlineTaskQueueCapacity, "deadlineTaskQueueCapacity");
+    public void setDeadlineRunQueueCapacity(int deadlineRunQueueCapacity) {
+        this.deadlineRunQueueCapacity = checkPositive(deadlineRunQueueCapacity, "deadlineRunQueueCapacity");
     }
 
     // In the future we want to have better policies than only spinning.

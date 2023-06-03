@@ -276,7 +276,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
                 // todo: return value
-                localTaskQueue.offer(handler);
+                localTaskQueue.offerLocal(handler);
             } else if (writeThrough) {
                 handler.run();
             } else if (regularSchedule) {
@@ -331,7 +331,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
                 // todo: return value
-                localTaskQueue.offer(handler);
+                localTaskQueue.offerLocal(handler);
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {

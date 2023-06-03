@@ -16,10 +16,11 @@
 
 package com.hazelcast.internal.tpcengine;
 
-public class TaskGroupHandle {
-    public TaskGroup taskGroup;
+/**
+ * When a task runs for a too long period on the reactor, it stalls the reactor and
+ * then the {@link #onStall(Reactor, Runnable, long, long)} is called.
+ */
+public interface StallDetector {
 
-    public TaskGroupHandle(TaskGroup taskGroup) {
-        this.taskGroup = taskGroup;
-    }
+    void onStall(Reactor reactor, Runnable cmd, long startNanos, long durationNanos);
 }

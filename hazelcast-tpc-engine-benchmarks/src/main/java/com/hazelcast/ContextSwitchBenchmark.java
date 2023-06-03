@@ -5,6 +5,8 @@ import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
+import com.hazelcast.internal.tpcengine.TaskGroupHandle;
+import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -23,6 +25,10 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+/**
+ * Ideally the performance of the context switch should be bound to the time it takes to call
+ * the {@link System#nanoTime()}. And that should be around the 25-30 ns on Linux.
+ */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
@@ -33,7 +39,7 @@ public class ContextSwitchBenchmark {
 
     public static final int operations = 100 * 1000 * 1000;
     public static final int concurrency = 10;
-    public static final boolean useEventloopDirectly = false;
+    public static final boolean useEventloopDirectly = true;
     public static final ReactorType reactorType = ReactorType.NIO;
 
     private Reactor reactor;
@@ -58,15 +64,21 @@ public class ContextSwitchBenchmark {
     public void run() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(concurrency);
         reactor.execute(() -> {
+//            TaskGroupHandle handle = reactor.eventloop().rootTaskGroupHandle;
+            TaskGroupHandle handle = reactor.eventloop().newTaskGroupBuilder()
+                    .setLocalQueue(new CircularQueue<>(1024))
+                    .setName("bla")
+                    .build();
+
 //            eventloop.unsafe().schedule(() -> {
 //            }, 1000, SECONDS);
 
             for (int k = 0; k < concurrency; k++) {
-                Task task = new Task(reactor, operations / concurrency, latch, useEventloopDirectly);
+                Job task = new Job(reactor, handle, operations / concurrency, latch, useEventloopDirectly);
                 if (useEventloopDirectly) {
-                    reactor.eventloop().offer(task);
+                    reactor.eventloop().offer(task, handle);
                 } else {
-                    reactor.offer(task);
+                    reactor.offer(task, handle);
                 }
             }
         });
@@ -74,18 +86,20 @@ public class ContextSwitchBenchmark {
         latch.await();
     }
 
-    private static class Task implements Runnable {
+    private static class Job implements Runnable {
         private final CountDownLatch latch;
         private final Eventloop eventloop;
         private final boolean useEventloopDirectly;
         private final Reactor reactor;
         private final long operations;
+        private final TaskGroupHandle taskGroupHandle;
         private long iteration = 0;
 
-        public Task(Reactor reactor, long operations, CountDownLatch latch, boolean useEventloopDirectly) {
+        public Job(Reactor reactor, TaskGroupHandle taskGroupHandle, long operations, CountDownLatch latch, boolean useEventloopDirectly) {
             this.reactor = reactor;
             this.eventloop = reactor.eventloop();
             this.operations = operations;
+            this.taskGroupHandle = taskGroupHandle;
             this.latch = latch;
             this.useEventloopDirectly = useEventloopDirectly;
         }
@@ -96,9 +110,9 @@ public class ContextSwitchBenchmark {
             if (operations == iteration) {
                 latch.countDown();
             } else if (useEventloopDirectly) {
-                eventloop.offer(this);
+                eventloop.offer(this, taskGroupHandle);
             } else {
-                reactor.offer(this);
+                reactor.offer(this, taskGroupHandle);
             }
         }
     }

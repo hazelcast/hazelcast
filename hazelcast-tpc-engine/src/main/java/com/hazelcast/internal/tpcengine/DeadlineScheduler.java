@@ -85,7 +85,7 @@ public final class DeadlineScheduler {
 
             // offer the task to its task group.
             // this will trigger to taskGroup to schedule itself if needed.
-            task.taskGroup.offer(task);
+            task.taskGroup.offerLocal(task);
 
             // and go to the next task.
         }

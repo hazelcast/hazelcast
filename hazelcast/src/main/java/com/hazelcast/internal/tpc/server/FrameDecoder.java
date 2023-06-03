@@ -114,7 +114,7 @@ public class FrameDecoder extends AsyncSocketReader {
                     responseChain = frame;
                 } else {
                     // todo: return
-                    taskGroup.offer(frame);
+                    taskGroup.offerLocal(frame);
                     //taskFactory.schedule(frame);
                 }
                 frame = null;
@@ -126,7 +126,7 @@ public class FrameDecoder extends AsyncSocketReader {
                 }
                 packet.setConn(connection);
                 // todo: return
-                taskGroup.offer(packet);
+                taskGroup.offerLocal(packet);
                 //taskFactory.schedule(packet);
             }
 

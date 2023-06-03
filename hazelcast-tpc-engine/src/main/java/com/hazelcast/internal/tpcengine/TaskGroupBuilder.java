@@ -18,19 +18,23 @@ package com.hazelcast.internal.tpcengine;
 
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 public class TaskGroupBuilder {
 
+    private final static AtomicLong ID = new AtomicLong();
+
     private final Eventloop eventloop;
     private long taskQuotaNanos;
-    private String name;
+    private String name = "taskgroup-"+ ID.incrementAndGet();
     private int shares;
-    private Queue<Object> queue;
-    private boolean shared;
-    private TaskFactory taskFactory = NullTaskFactory.INSTANCE;
+    private Queue<Object> localQueue;
+    private Queue<Object> globalQueue;
+
+     private TaskFactory taskFactory = NullTaskFactory.INSTANCE;
 
     public TaskGroupBuilder(Eventloop eventloop) {
         this.eventloop = eventloop;
@@ -50,7 +54,7 @@ public class TaskGroupBuilder {
     }
 
     public TaskGroupBuilder setName(String name) {
-        this.name = checkNotNull(name, name);
+        this.name = checkNotNull(name, "name");
         return this;
     }
 
@@ -59,46 +63,54 @@ public class TaskGroupBuilder {
         return this;
     }
 
-    public TaskGroupBuilder setShared(boolean shared) {
-        this.shared = shared;
+    public TaskGroupBuilder setLocalQueue(Queue<Object> localQueue) {
+        this.localQueue = checkNotNull(localQueue, "localQueue");
         return this;
     }
 
-    public TaskGroupBuilder setQueue(Queue<Object> queue) {
-        this.queue = checkNotNull(queue, "queue");
+    public TaskGroupBuilder setGlobalQueue(Queue<Object> globalQueue) {
+        this.globalQueue = checkNotNull(globalQueue, "globalQueue");
         return this;
     }
 
     public TaskGroupHandle build() {
+
         // todo: check thread
         // todo: name check
         // todo: already build check
         // todo: loop active check
+        if (localQueue == null && globalQueue == null) {
+            throw new IllegalStateException();
+        }
 
         if (eventloop.taskGroups.size() == eventloop.taskGroupLimit) {
             throw new IllegalStateException("Too many taskgroups.");
         }
 
         TaskGroup taskGroup = eventloop.taskGroupAllocator.allocate();
-        taskGroup.queue = queue;
-        if (taskGroup.queue == null) {
-            throw new RuntimeException();
+        taskGroup.localQueue = localQueue;
+        taskGroup.globalQueue = globalQueue;
+        if (localQueue == null) {
+            taskGroup.pollState = TaskGroup.POLL_GLOBAL_ONLY;
+        } else if (globalQueue == null) {
+            taskGroup.pollState = TaskGroup.POLL_LOCAL_ONLY;
+        } else {
+            taskGroup.pollState = TaskGroup.POLL_GLOBAL_FIRST;
         }
         taskGroup.taskFactory = taskFactory;
-        taskGroup.shared = shared;
         taskGroup.shares = shares;
         taskGroup.name = name;
         taskGroup.eventloop = eventloop;
+        taskGroup.scheduler = eventloop.scheduler;
         taskGroup.quotaNanos = taskQuotaNanos;
         //taskGroup.taskQuotaNanos =
         taskGroup.state = TaskGroup.STATE_BLOCKED;
 
-       if (shared) {
-            eventloop.addLastBlockedShared(taskGroup);
+        if (taskGroup.globalQueue!=null) {
+            eventloop.addBlockedGlobal(taskGroup);
         }
 
         eventloop.taskGroups.add(taskGroup);
-
         return new TaskGroupHandle(taskGroup);
     }
 }

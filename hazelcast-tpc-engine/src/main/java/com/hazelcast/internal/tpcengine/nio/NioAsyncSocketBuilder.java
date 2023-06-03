@@ -52,7 +52,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
 
     NioAsyncSocketBuilder(NioReactor reactor, NioAcceptRequest acceptRequest) {
         try {
-            this.taskQueueHandle = reactor.eventloop().localTaskQueueHandle;
+            this.taskQueueHandle = reactor.eventloop().rootTaskGroupHandle;
             this.reactor = reactor;
             this.acceptRequest = acceptRequest;
             if (acceptRequest == null) {

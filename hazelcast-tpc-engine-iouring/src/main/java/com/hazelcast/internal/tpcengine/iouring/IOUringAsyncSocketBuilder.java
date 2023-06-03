@@ -34,7 +34,7 @@ public class IOUringAsyncSocketBuilder implements AsyncSocketBuilder {
     final IOUringAcceptRequest acceptRequest;
     final boolean clientSide;
     AsyncSocketReader reader;
-    TaskGroupHandle taskQueueHandle;
+    TaskGroupHandle taskGroupHandle;
     IOUringAsyncSocketOptions options;
     private boolean build;
 
@@ -49,13 +49,13 @@ public class IOUringAsyncSocketBuilder implements AsyncSocketBuilder {
             this.clientSide = false;
         }
         this.options = new IOUringAsyncSocketOptions(nativeSocket);
-        this.taskQueueHandle = reactor.eventloop().localTaskQueueHandle;
+        this.taskGroupHandle = reactor.eventloop().rootTaskGroupHandle;
     }
 
     @Override
     public AsyncSocketBuilder setTaskQueueHandle(TaskGroupHandle taskQueueHandle) {
         verifyNotBuild();
-        this.taskQueueHandle = checkNotNull(taskQueueHandle, "taskQueueHandle");
+        this.taskGroupHandle = checkNotNull(taskQueueHandle, "taskQueueHandle");
         return this;
     }
 

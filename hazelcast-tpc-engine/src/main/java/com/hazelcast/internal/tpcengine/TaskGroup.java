@@ -19,30 +19,53 @@ package com.hazelcast.internal.tpcengine;
 import java.util.Queue;
 
 /**
+ * The TaskGroup can be configured with either either (or both):
+ * <ol>
+ *     <li>local queue: for tasks submitted within the eventloop. This queue doesn't need to
+ *     be threadsafe.</li>
+ *     <li>global queue: for tasks submitted outside of the eventloop. This queue needs to
+ *     be threadsafe.</li>
+ * </ol>
+ *
+ * When there is only 1 queue, Tasks in the same TaskGroup will be processed in FIFO order.
+ * When there are 2 queues, tasks will be picked in round robin fashion and tasks in the
+ * same queue will be picked in FIFO order.
+ * <p>
+ * Every TaskGroup has a vruntime which stands for virtual runtime. This is the amount of time
+ * the TaskGroup has spend on the CPU.
+ * <p>
  * vruntime/pruntime
  * This number could be distorted when there are other threads running on the same CPU because
  * If a different task would be executed while a task is running on the CPU, the measured time
  * will include the time of that task as well.
- *
+ * <p>
  * idea: TaskGroup without time tracking to prevent the overhead of System.nanotime.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
-public class TaskGroup implements Comparable<TaskGroup> {
+public final class TaskGroup implements Comparable<TaskGroup> {
+
+    public final static int POLL_LOCAL_ONLY = 1;
+    public final static int POLL_GLOBAL_ONLY = 2;
+    public final static int POLL_LOCAL_FIRST = 3;
+    public final static int POLL_GLOBAL_FIRST = 4;
+
     public static final int STATE_RUNNING = 0;
     public static final int STATE_BLOCKED = 1;
+    public int pollState;
 
-    public int state;
+    public int state = STATE_BLOCKED;
     public String name;
     public int shares;
-    public Queue<Object> queue;
+    public Queue<Object> localQueue;
+    public Queue<Object> globalQueue;
 
     // any runnable on the queue will be processed as is.
     // any Task on the queue will also be processed according to the contract of the task.
     // anything else is offered to the taskFactory to be wrapped inside a task.
     public TaskFactory taskFactory;
     public int size;
-    public boolean shared;
     public Eventloop eventloop;
+    public CfsScheduler scheduler;
     // the physical runtime
     // the actual amount of time this task has spend on the CPU
     // If there are other threads running on the same processor, pruntime can be destored because these tasks
@@ -80,15 +103,98 @@ public class TaskGroup implements Comparable<TaskGroup> {
         return this.vruntimeNanos > that.vruntimeNanos ? 1 : -1;
     }
 
-    public boolean offer(Object task) {
-        if (!queue.offer(task)) {
+    /**
+     * Polls for a single TaskGroup.
+     *
+     * @return the TaskGroup that is next or <code>null</code> if this TaskGroup has no more
+     * tasks to execute.
+     */
+    public Runnable poll() {
+        Object taskObj;
+        switch (pollState) {
+            case POLL_LOCAL_ONLY:
+                taskObj = localQueue.poll();
+                break;
+            case POLL_GLOBAL_ONLY:
+                taskObj = globalQueue.poll();
+                break;
+            case POLL_GLOBAL_FIRST:
+                taskObj = globalQueue.poll();
+                if (taskObj != null) {
+                    pollState = POLL_LOCAL_FIRST;
+                } else {
+                    taskObj = localQueue.poll();
+                    if (taskObj == null) {
+                        pollState = POLL_LOCAL_FIRST;
+                    }
+                }
+                break;
+            case POLL_LOCAL_FIRST:
+                taskObj = localQueue.poll();
+                if (taskObj != null) {
+                    pollState = POLL_GLOBAL_FIRST;
+                } else {
+                    taskObj = globalQueue.poll();
+                    if (taskObj == null) {
+                        pollState = POLL_GLOBAL_FIRST;
+                    }
+                }
+                break;
+            default:
+                throw new IllegalStateException("Unknown pollState:" + pollState);
+        }
+
+        return (Runnable) taskObj;
+//
+//        if (taskObj == null) {
+//            return null;
+//        } else if (taskObj instanceof Runnable) {
+//            return (Runnable) taskObj;
+//        } else {
+//            // todo: doesn't handle null
+//            Task task = taskFactory.toTask(taskObj);
+//            task.taskGroup = this;
+//            return task;
+//        }
+    }
+
+    public boolean offerLocal(Object task) {
+        if (!localQueue.offer(task)) {
             return false;
         }
 
-        if (!shared && state == STATE_BLOCKED) {
-            eventloop.scheduler.enqueue(this);
+        if (state == STATE_RUNNING) {
+            return true;
         }
 
+        if (globalQueue != null) {
+            eventloop.removeBlockedGlobal(this);
+        }
+
+        scheduler.enqueue(this);
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "TaskGroup{" +
+                "name='" + name + '\'' +
+                ", pollState=" + pollState +
+                ", state=" + state +
+                ", shares=" + shares +
+                ", localQueue=" + localQueue +
+                ", globalQueue=" + globalQueue +
+                ", taskFactory=" + taskFactory +
+                ", size=" + size +
+                ", pruntimeNanos=" + pruntimeNanos +
+                ", vruntimeNanos=" + vruntimeNanos +
+                ", tasksProcessed=" + tasksProcessed +
+                ", blockedCount=" + blockedCount +
+                ", contextSwitchCount=" + contextSwitchCount +
+                ", startNanos=" + startNanos +
+                ", prev=" + prev +
+                ", next=" + next +
+                ", quotaNanos=" + quotaNanos +
+                '}';
     }
 }

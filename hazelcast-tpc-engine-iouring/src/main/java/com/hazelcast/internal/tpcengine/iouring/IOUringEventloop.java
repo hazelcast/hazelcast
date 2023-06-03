@@ -141,7 +141,7 @@ public class IOUringEventloop extends Eventloop {
             sq.submit();
         } else {
             wakeupNeeded.set(true);
-            if (scheduleBlockedSharedTaskGroups()) {
+            if (scheduleBlockedGlobal()) {
                 sq.submit();
             } else {
                 long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();

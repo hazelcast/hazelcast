@@ -92,25 +92,25 @@ public abstract class ReactorBuilderTest {
     @Test
     public void test_setScheduledTaskQueueCapacity_whenZero() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setDeadlineTaskQueueCapacity(0));
+        assertThrows(IllegalArgumentException.class, () -> builder.setDeadlineRunQueueCapacity(0));
     }
 
     @Test
     public void test_setScheduledTaskQueueCapacity_whenNegative() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setDeadlineTaskQueueCapacity(-1));
+        assertThrows(IllegalArgumentException.class, () -> builder.setDeadlineRunQueueCapacity(-1));
     }
 
     @Test
     public void test_setExternalTaskQueueCapacity_whenZero() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setExternalTaskQueueCapacity(0));
+        assertThrows(IllegalArgumentException.class, () -> builder.setGlobalTaskQueueCapacity(0));
     }
 
     @Test
     public void test_setExternalTaskQueueCapacity_whenNegative() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setExternalTaskQueueCapacity(-1));
+        assertThrows(IllegalArgumentException.class, () -> builder.setGlobalTaskQueueCapacity(-1));
     }
 
     @Test

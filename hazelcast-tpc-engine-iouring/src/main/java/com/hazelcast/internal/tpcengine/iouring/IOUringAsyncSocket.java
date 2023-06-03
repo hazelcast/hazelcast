@@ -125,7 +125,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         this.reactor = builder.reactor;
         this.eventloop = (IOUringEventloop) reactor.eventloop();
         this.sq = eventloop.sq;
-        this.localTaskQueue = eventloop.getTaskGroup(builder.taskQueueHandle);
+        this.localTaskQueue = eventloop.getTaskGroup(builder.taskGroupHandle);
         this.eventloopThread = reactor.eventloopThread();
         this.rcvBuff = ByteBuffer.allocateDirect(options.get(AsyncSocketOptions.SO_RCVBUF));
 
@@ -208,7 +208,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
-                localTaskQueue.queue.add(eventloopTask);
+                localTaskQueue.localQueue.add(eventloopTask);
             } else {
                 reactor.offer(eventloopTask);
             }
@@ -217,7 +217,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     private void resetFlushed() {
         if (!ioVector.isEmpty()) {
-            localTaskQueue.queue.add(eventloopTask);
+            localTaskQueue.localQueue.add(eventloopTask);
             return;
         }
 
@@ -263,7 +263,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         boolean result;
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                localTaskQueue.queue.add(eventloopTask);
+                localTaskQueue.localQueue.add(eventloopTask);
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {
@@ -435,7 +435,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     // TODO: Can this lead to spinning?
                     //System.out.println("-----");
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
-                    localTaskQueue.queue.add(eventloopTask);
+                    localTaskQueue.localQueue.add(eventloopTask);
                 } else {
                     throw newCQEFailedException("Failed to write data to the socket.", "writev(3p)", IORING_OP_WRITEV, -res);
                 }
@@ -455,7 +455,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     resetFlushed();
                 } else if (res == -EAGAIN) {
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
-                    localTaskQueue.queue.add(eventloopTask);
+                    localTaskQueue.localQueue.add(eventloopTask);
                 } else {
                     throw newCQEFailedException("Failed to write data to the socket.", "write(2)", IORING_OP_WRITE, -res);
                 }

@@ -70,9 +70,8 @@ public abstract class Reactor implements Executor {
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    protected final TaskGroup externalTaskQueue;
+    protected final TaskGroup rootTaskGroup;
     protected final Eventloop eventloop;
-    protected final TaskGroup localTaskQueue;
     protected final boolean spin;
     protected final Thread eventloopThread;
     protected final String name;
@@ -113,8 +112,7 @@ public abstract class Reactor implements Executor {
         // There is a happens-before edge between writing to the eventloopFuture and
         // the join. So at this point we can safely read the fields that have been
         // set in the constructor of the eventloop.
-        this.externalTaskQueue = eventloop.getTaskGroup(eventloop.externalTaskQueueHandle);
-        this.localTaskQueue = eventloop.getTaskGroup(eventloop.localTaskQueueHandle);
+        this.rootTaskGroup = eventloop.rootTaskGroupHandle.taskGroup;//eventloop.getTaskGroup(eventloop.rootTaskGroupHandle);
         this.wakeupNeeded = eventloop.wakeupNeeded;
     }
 
@@ -321,6 +319,10 @@ public abstract class Reactor implements Executor {
         }
     }
 
+    public final boolean offer(Runnable task) {
+        return offer(task, eventloop.rootTaskGroupHandle);
+    }
+
     /**
      * Offers a task to be executed on this {@link Reactor}.
      * <p/>
@@ -332,9 +334,21 @@ public abstract class Reactor implements Executor {
      */
     // todo: task queue id?
     public final boolean offer(Object task) {
+        return offer(task, eventloop.rootTaskGroupHandle);
+    }
+
+    public final boolean offer(Object task, TaskGroupHandle taskGroupHandle) {
+        //todo: is running
+        if (taskGroupHandle.taskGroup.eventloop != eventloop) {
+            throw new IllegalArgumentException();
+        }
+
+     //   System.out.println("offer taskGroup:"+taskGroupHandle.taskGroup.name);
+
         if (Thread.currentThread() == eventloopThread) {
-            return localTaskQueue.offer(task);
-        } else if (externalTaskQueue.offer(task)) {
+            // todo: only set when there is a local queue
+            return taskGroupHandle.taskGroup.offerLocal(task);
+        } else if (taskGroupHandle.taskGroup.globalQueue.offer(task)) {
             wakeup();
             return true;
         } else {
@@ -342,9 +356,8 @@ public abstract class Reactor implements Executor {
         }
     }
 
-
     @Override
-    public String toString() {
+    public final String toString() {
         return name;
     }
 

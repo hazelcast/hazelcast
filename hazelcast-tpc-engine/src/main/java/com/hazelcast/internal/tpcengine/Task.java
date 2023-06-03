@@ -38,14 +38,13 @@ public abstract class Task implements Runnable {
             switch (status) {
                 case TASK_BLOCKED:
                     // the task is blocked, so we need to add it to the blocked queue.
-                    //todo: not this quueue
-                    //taskGroup.queue.add(taskWrapper);
                     break;
                 case TASK_COMPLETED:
                     //task.release();
                     break;
                 case TASK_YIELD:
-                    taskGroup.offer(this);
+                    // add it to the local
+                    taskGroup.offerLocal(this);
                     break;
                 default:
                     throw new IllegalStateException("Unsupported status: " + status);
