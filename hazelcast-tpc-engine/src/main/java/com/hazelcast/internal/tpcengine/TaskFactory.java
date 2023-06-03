@@ -17,18 +17,24 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * A {@link TaskGroup} can have a processor. Any 'task' that is offered to a TaskGroup
- * that isn't a runnable, will be offered to the processor. The processor should try to
- * process that task.
+ * Every {@link TaskGroup} has a task factory. So arbitrary objects can be placed on the
+ * queues of the {@link TaskGroup}, but once they hit the {@link Eventloop} they need to be
+ * converted to some form of {@link Runnable} (also check the {@link Task} object).
  */
 public interface TaskFactory {
 
     /**
-     * Initializes the scheduler with the given eventloop.
+     * Initializes the TaskFactory with the given eventloop.
      *
-     * @param eventloop the Eventloop.
+     * @param eventloop the Eventloop this TaskFactory belongs to.
      */
     void init(Eventloop eventloop);
 
+    /**
+     * Converts the given object to a {@link Task}.
+     *
+     * @param cmd
+     * @return
+     */
     Task toTask(Object cmd);
 }

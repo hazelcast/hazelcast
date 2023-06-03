@@ -18,8 +18,14 @@ package com.hazelcast.internal.tpcengine;
 
 public class TaskGroupHandle {
     public TaskGroup taskGroup;
+    public TaskGroupMetrics metrics;
 
-    public TaskGroupHandle(TaskGroup taskGroup) {
+    public TaskGroupHandle(TaskGroup taskGroup, TaskGroupMetrics metrics) {
         this.taskGroup = taskGroup;
+        this.metrics = metrics;
+    }
+
+    public TaskGroupMetrics metrics(){
+        return metrics;
     }
 }

@@ -18,6 +18,9 @@ package com.hazelcast.internal.tpcengine;
 
 /**
  * A {@link TaskFactory} that returns null.
+ *
+ * todo: Currently it doesn't fit well into the design. It used to be a scheduler that
+ * drops all tasks.
  */
 public class NullTaskFactory implements TaskFactory {
 

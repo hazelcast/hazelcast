@@ -65,6 +65,8 @@ public abstract class Eventloop {
     public final TaskGroupHandle rootTaskGroupHandle;
     final long taskGroupQuotaNanos;
     private final ReactorMetrics metrics;
+    private final long targetLatencyNanos;
+    private final long minGranularityNanos;
     protected boolean stop;
     protected long taskStartNanos;
     protected final SlabAllocator<TaskGroup> taskGroupAllocator = new SlabAllocator<>(1024, TaskGroup::new);
@@ -87,7 +89,7 @@ public abstract class Eventloop {
         this.taskGroupLimit = builder.taskGroupLimit;
         this.scheduler = new CfsScheduler(builder.taskGroupLimit);
         this.rootTaskGroupHandle = new TaskGroupBuilder(this)
-                .setName(reactor.name+"-taskgroup-root")
+                .setName(reactor.name + "-taskgroup-root")
                 .setGlobalQueue(new MpscArrayQueue<>(builder.globalTaskQueueCapacity))
                 .setLocalQueue(new CircularQueue<>(builder.localTaskQueueCapacity))
                 .setShares(1)
@@ -102,6 +104,8 @@ public abstract class Eventloop {
         this.stallThresholdNanos = builder.stallThresholdNanos;
         this.ioIntervalNanos = builder.ioIntervalNanos;
         this.stallDetector = builder.stallDetector;
+        this.targetLatencyNanos = builder.targetLatencyNanos;
+        this.minGranularityNanos = builder.minGranularityNanos;
     }
 
     public final long cycleStartNanos() {
@@ -212,7 +216,7 @@ public abstract class Eventloop {
         TaskGroup taskGroup = sharedFirst;
 
         while (taskGroup != null) {
-            assert taskGroup.state == STATE_BLOCKED: "taskGroup.state"+taskGroup.state;
+            assert taskGroup.state == STATE_BLOCKED : "taskGroup.state" + taskGroup.state;
             TaskGroup next = taskGroup.next;
 
             if (!taskGroup.globalQueue.isEmpty()) {
@@ -266,7 +270,7 @@ public abstract class Eventloop {
      * Runs the actual eventloop.
      * <p/>
      * Is called from the reactor thread.
-     *
+     * <p>
      * {@link StandardNanoClock#nanoTime()} is pretty expensive (+/-25ns) due to {@link System#nanoTime()}. For
      * every task processed we do not want to call the {@link StandardNanoClock#nanoTime()} more than once because
      * the clock already dominates the context switch time.
@@ -284,6 +288,8 @@ public abstract class Eventloop {
         this.taskGroupStartNanos = now;
 
         while (!stop) {
+          // Thread.sleep(100);
+
             // There is no point in doing the deadlineScheduler tick in the taskQueue processing loop
             // because the taskQueue is going to be processed till it is empty (or the quotaDeadlineNanos
             // is exceeded).
@@ -300,6 +306,9 @@ public abstract class Eventloop {
                 continue;
             }
 
+            // I think the deadline nanos should be determined based on the weight of the taskGroup
+            // So there should be a 'target' granularity and devide that by the taskgroups based on
+            // their weight.
             long taskGroupDeadlineNanos = now + taskGroup.quotaNanos;
             long taskStartNanos = now;
             boolean blockTaskGroup = false;
@@ -307,8 +316,9 @@ public abstract class Eventloop {
             int taskCount = 0;
 
             contextSwitches++;
+            int x = taskGroup.skid;
             // Process the tasks in a taskQueue as long as the taskQuota is not exceeded.
-            while(now <= taskGroupDeadlineNanos){
+            while (now <= taskGroupDeadlineNanos) {
                 Runnable task = taskGroup.poll();
                 if (task == null) {
                     // taskQueue is empty, we are done.
@@ -318,30 +328,32 @@ public abstract class Eventloop {
 
                 try {
                     task.run();
-                } catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
 
                 taskGroup.tasksProcessed++;
                 taskCount++;
-                if(taskCount == 100) {
-                    taskCount=0;
+
+                if (x == 0) {
                     now = nanoClock.nanoTime();
-                }else{
-                    taskCount++;
+                    x = taskGroup.skid;
+                } else {
+                    x--;
                 }
+
                 long taskEndNanos = now;
                 long taskExecNanos = taskStartNanos - taskEndNanos;
                 deltaNanos += taskExecNanos;
 
-//                if (taskExecNanos > stallThresholdNanos) {
-//                    stallDetector.onStall(reactor, task, taskStartNanos, taskExecNanos);
-//                }
+                if (taskExecNanos > stallThresholdNanos) {
+                    stallDetector.onStall(reactor, task, taskStartNanos, taskExecNanos);
+                }
 
-//                if (now >= ioDeadlineNanos) {
-//                    ioDeadlineNanos = now + ioIntervalNanos;
-//                    ioSchedulerTick();
-//                }
+                if (now >= ioDeadlineNanos) {
+                    ioDeadlineNanos = now + ioIntervalNanos;
+                    ioSchedulerTick();
+                }
             }
 //
 //            if(contextSwitches%1000==0){

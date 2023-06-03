@@ -43,6 +43,8 @@ public abstract class ReactorBuilder {
     public static final String NAME_REACTOR_SPIN = "hazelcast.tpc.reactor.spin";
     public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
     public static final String NAME_TASK_GROUP_LIMIT = "hazelcast.tpc.taskGroup.limit";
+    public static final String NAME_TARGET_LATENCY_NANOS = "hazelcast.tpc.targetLatency.ns";
+    public static final String NAME_MIN_GRANULARITY_NANOS = "hazelcast.tpc.minGranularity.ns";
 
     private static final int DEFAULT_LOCAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_GLOBAL_TASK_QUEUE_CAPACITY = 65536;
@@ -51,6 +53,9 @@ public abstract class ReactorBuilder {
     private static final int DEFAULT_STALL_THRESHOLD_NANOS = 500;
     private static final int DEFAULT_IO_INTERVAL_NANOS = 10;
     private static final int DEFAULT_TASK_GROUP_LIMIT = 1024;
+    private static final long DEFAULT_TARGET_LATENCY_NANOS = TimeUnit.MILLISECONDS.toNanos(1);
+    private static final long DEFAULT_MIN_GRANULARITY_NANOS = TimeUnit.MICROSECONDS.toNanos(100);
+
     private static final boolean DEFAULT_SPIN = false;
 
     private static final Constructor<ReactorBuilder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
@@ -94,14 +99,19 @@ public abstract class ReactorBuilder {
     int globalTaskQueueCapacity;
     int deadlineRunQueueCapacity;
     TpcEngine engine;
+    // Are not set through system property.
     long taskGroupQuotaNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_TASK_QUOTA_NANOS);
     long stallThresholdNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_STALL_THRESHOLD_NANOS);
     long ioIntervalNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_IO_INTERVAL_NANOS);
     int taskGroupLimit;
     StallDetector stallDetector = LoggingStallDetector.INSTANCE;
+    long targetLatencyNanos;
+    long minGranularityNanos;
 
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
+
+        // todo: these properties should be set through a setter. Now they are unvalidated.
         this.localTaskQueueCapacity = Integer.getInteger(
                 NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_TASK_QUEUE_CAPACITY);
         this.globalTaskQueueCapacity = Integer.getInteger(
@@ -109,6 +119,8 @@ public abstract class ReactorBuilder {
         this.deadlineRunQueueCapacity = Integer.getInteger(
                 NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
         this.taskGroupLimit = Integer.getInteger(NAME_TASK_GROUP_LIMIT, DEFAULT_TASK_GROUP_LIMIT);
+        this.targetLatencyNanos = Long.getLong(NAME_TARGET_LATENCY_NANOS,  DEFAULT_TARGET_LATENCY_NANOS);
+        this.minGranularityNanos = Long.getLong(NAME_MIN_GRANULARITY_NANOS,DEFAULT_MIN_GRANULARITY_NANOS);
         this.spin = Boolean.parseBoolean(getProperty(NAME_REACTOR_SPIN, Boolean.toString(DEFAULT_SPIN)));
     }
 
@@ -155,10 +167,20 @@ public abstract class ReactorBuilder {
         this.taskGroupQuotaNanos = unit.toNanos(taskGroupQuota);
     }
 
-    public void setNameTaskGroupLimit(int taskGroupLimit) {
+    public ReactorBuilder setNameTaskGroupLimit(int taskGroupLimit) {
         this.taskGroupLimit = checkPositive(taskGroupLimit, "taskGroupLimit");
+        return this;
     }
 
+    public ReactorBuilder setTargetLatencyNanos(long targetLatencyNanos) {
+        this.targetLatencyNanos = checkPositive(targetLatencyNanos,"targetLatencyNanos");
+        return this;
+    }
+
+    public ReactorBuilder setMinGranularityNanos(long minGranularityNanos) {
+        this.minGranularityNanos = checkPositive(minGranularityNanos,"minGranularityNanos");
+        return this;
+    }
 
     /**
      * The maximum amount of time a task is allowed to run before being considered stalling

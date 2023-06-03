@@ -53,6 +53,7 @@ public final class TaskGroup implements Comparable<TaskGroup> {
     public static final int STATE_BLOCKED = 1;
     public int pollState;
 
+    public int skid;
     public int state = STATE_BLOCKED;
     public String name;
     public int shares;
@@ -93,6 +94,8 @@ public final class TaskGroup implements Comparable<TaskGroup> {
      * context switched.
      */
     public long quotaNanos;
+
+    public final TaskGroupMetrics metrics = new TaskGroupMetrics();
 
     @Override
     public int compareTo(TaskGroup that) {

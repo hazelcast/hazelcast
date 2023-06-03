@@ -22,10 +22,13 @@ import com.hazelcast.internal.tpcengine.util.Clock;
 import com.hazelcast.internal.tpcengine.util.Promise;
 
 /**
- * Represents a task that is going to be scheduled once or multiple times at some point in the future.
+ * A task that is going to be scheduled once or multiple times at some point in the future.
  *
  * todo: Should the DeadlineTask be a Task implementation? Or should the DeadlineTask allow for executing
  * a Task?
+ *
+ * todo: We need to deal with yielding of the task and we need to prevent the task from being executed due to
+ * the deadline and then being executed again due to the yield.
  */
 final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
 

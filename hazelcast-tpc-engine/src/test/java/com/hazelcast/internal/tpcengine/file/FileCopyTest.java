@@ -175,8 +175,7 @@ public abstract class FileCopyTest {
             if (read) {
                 src.pread(block * pageSize(), buffer.remaining(), buffer).then(this);
             } else {
-                //
-                dst.pwrite(bytesWritten, bytesToWrite, buffer).then(this);
+                 dst.pwrite(bytesWritten, bytesToWrite, buffer).then(this);
             }
         }
 
@@ -196,8 +195,8 @@ public abstract class FileCopyTest {
                 buffer.clearOrCompact();
                 read = true;
                 bytesWritten += res;
-                // if we are at the end
                 if (bytesWritten == src.size()) {
+                    // we we are at the end
                     dst.close().then((integer1, throwable1) -> {
                         if (throwable1 != null) {
                             future.completeExceptionally(throwable1);
@@ -206,11 +205,11 @@ public abstract class FileCopyTest {
 
                         future.complete(null);
                     });
-
-                    return;
+                } else {
+                    // triggers the read
+                    run();
+                    block++;
                 }
-                run();
-                block++;
             }
         }
     }

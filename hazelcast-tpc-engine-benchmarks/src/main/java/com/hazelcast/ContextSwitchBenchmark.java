@@ -5,6 +5,7 @@ import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
+import com.hazelcast.internal.tpcengine.Task;
 import com.hazelcast.internal.tpcengine.TaskGroupHandle;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -41,7 +42,9 @@ public class ContextSwitchBenchmark {
     public static final int concurrency = 10;
     public static final boolean useEventloopDirectly = true;
     public static final ReactorType reactorType = ReactorType.NIO;
-
+    public static final boolean useTask = true;
+    public static final boolean useRootTaskGroup = false;
+    public static final int skid =20;
     private Reactor reactor;
 
     @Setup
@@ -64,20 +67,23 @@ public class ContextSwitchBenchmark {
     public void run() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(concurrency);
         reactor.execute(() -> {
-//            TaskGroupHandle handle = reactor.eventloop().rootTaskGroupHandle;
-            TaskGroupHandle handle = reactor.eventloop().newTaskGroupBuilder()
-                    .setLocalQueue(new CircularQueue<>(1024))
-                    .setName("bla")
-                    .build();
-
-//            eventloop.unsafe().schedule(() -> {
-//            }, 1000, SECONDS);
+            TaskGroupHandle handle;
+            if (useRootTaskGroup) {
+                handle = reactor.eventloop().rootTaskGroupHandle;
+            } else {
+                handle = reactor.eventloop().newTaskGroupBuilder()
+                        .setLocalQueue(new CircularQueue<>(1024))
+                        .setSkid(skid)
+                        .setName("bla")
+                        .build();
+            }
 
             for (int k = 0; k < concurrency; k++) {
-                Job task = new Job(reactor, handle, operations / concurrency, latch, useEventloopDirectly);
-                if (useEventloopDirectly) {
-                    reactor.eventloop().offer(task, handle);
+                if (useTask) {
+                    RunnableJob task = new RunnableJob(reactor, handle, operations / concurrency, latch, useEventloopDirectly);
+                    reactor.offer(task, handle);
                 } else {
+                    TaskJob task = new TaskJob(operations / concurrency, latch);
                     reactor.offer(task, handle);
                 }
             }
@@ -86,7 +92,7 @@ public class ContextSwitchBenchmark {
         latch.await();
     }
 
-    private static class Job implements Runnable {
+    private static class RunnableJob implements Runnable {
         private final CountDownLatch latch;
         private final Eventloop eventloop;
         private final boolean useEventloopDirectly;
@@ -95,7 +101,11 @@ public class ContextSwitchBenchmark {
         private final TaskGroupHandle taskGroupHandle;
         private long iteration = 0;
 
-        public Job(Reactor reactor, TaskGroupHandle taskGroupHandle, long operations, CountDownLatch latch, boolean useEventloopDirectly) {
+        public RunnableJob(Reactor reactor,
+                           TaskGroupHandle taskGroupHandle,
+                           long operations,
+                           CountDownLatch latch,
+                           boolean useEventloopDirectly) {
             this.reactor = reactor;
             this.eventloop = reactor.eventloop();
             this.operations = operations;
@@ -113,6 +123,28 @@ public class ContextSwitchBenchmark {
                 eventloop.offer(this, taskGroupHandle);
             } else {
                 reactor.offer(this, taskGroupHandle);
+            }
+        }
+    }
+
+    private static class TaskJob extends Task {
+        private final CountDownLatch latch;
+        private final long operations;
+        private long iteration = 0;
+
+        public TaskJob(long operations, CountDownLatch latch) {
+            this.operations = operations;
+            this.latch = latch;
+        }
+
+        @Override
+        public int process() {
+            iteration++;
+            if (operations == iteration) {
+                latch.countDown();
+                return Task.TASK_COMPLETED;
+            } else {
+                return Task.TASK_YIELD;
             }
         }
     }

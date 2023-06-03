@@ -343,8 +343,6 @@ public abstract class Reactor implements Executor {
             throw new IllegalArgumentException();
         }
 
-     //   System.out.println("offer taskGroup:"+taskGroupHandle.taskGroup.name);
-
         if (Thread.currentThread() == eventloopThread) {
             // todo: only set when there is a local queue
             return taskGroupHandle.taskGroup.offerLocal(task);

@@ -21,6 +21,9 @@ import java.lang.invoke.VarHandle;
 
 /**
  * Contains metrics for a {@link Reactor}.
+ *
+ * todo:
+ * - add task groups processed count
  */
 public final class ReactorMetrics {
 

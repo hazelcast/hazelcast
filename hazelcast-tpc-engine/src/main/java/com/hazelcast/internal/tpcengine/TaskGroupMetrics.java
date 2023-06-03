@@ -19,6 +19,9 @@ package com.hazelcast.internal.tpcengine;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
+/**
+ * Contains the metrics for a {@link TaskGroup}.
+ */
 public class TaskGroupMetrics {
     private static final VarHandle TASKS_PROCESSED_COUNT;
     private static final VarHandle CPU_TIME_NANOS;

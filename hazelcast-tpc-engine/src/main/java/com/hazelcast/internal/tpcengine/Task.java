@@ -19,8 +19,15 @@ package com.hazelcast.internal.tpcengine;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
+/**
+ * A Task that gets executed on the {@link Eventloop}. A task can be blocked, completed or yield.
+ * <p/>
+ * The reason that a Task is a runnable and the Eventloop doesn't directly execute the Task is that
+ * we want to execute any Runnable on the Eventloop and we do not want to wrap runnables in Task objects.
+ */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public abstract class Task implements Runnable {
+
     public static final int TASK_COMPLETED = 0;
     public static final int TASK_BLOCKED = 1;
     public static final int TASK_YIELD = 2;
