@@ -28,11 +28,15 @@ import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public abstract class Task implements Runnable {
 
+    // Indicates that the task has completed and doesn't need to be reinserted into the {@link TaskQueue}.
     public static final int TASK_COMPLETED = 0;
+    // Indicates that the task is blocked and can be removed from the run queue of the scheduler.
     public static final int TASK_BLOCKED = 1;
+    // Indicates that the task is yielding; so there is more work to do but the thread is willing to
+    // give up the CPU to let other tasks run.
     public static final int TASK_YIELD = 2;
 
-    public TaskGroup taskGroup;
+    public TaskQueue taskQueue;
 
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
@@ -51,7 +55,7 @@ public abstract class Task implements Runnable {
                     break;
                 case TASK_YIELD:
                     // add it to the local
-                    taskGroup.offerLocal(this);
+                    taskQueue.offerLocal(this);
                     break;
                 default:
                     throw new IllegalStateException("Unsupported status: " + status);

@@ -17,8 +17,8 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * Every {@link TaskGroup} has a task factory. So arbitrary objects can be placed on the
- * queues of the {@link TaskGroup}, but once they hit the {@link Eventloop} they need to be
+ * Every {@link TaskQueue} has a task factory. So arbitrary objects can be placed on the
+ * {@link TaskQueue}, but once they hit the {@link Eventloop} they need to be
  * converted to some form of {@link Runnable} (also check the {@link Task} object).
  */
 public interface TaskFactory {

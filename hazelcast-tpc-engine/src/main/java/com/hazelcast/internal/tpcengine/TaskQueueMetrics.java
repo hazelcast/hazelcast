@@ -20,9 +20,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
 /**
- * Contains the metrics for a {@link TaskGroup}.
+ * Contains the metrics for a {@link TaskQueue}.
  */
-public class TaskGroupMetrics {
+public class TaskQueueMetrics {
     private static final VarHandle TASKS_PROCESSED_COUNT;
     private static final VarHandle CPU_TIME_NANOS;
 
@@ -32,8 +32,8 @@ public class TaskGroupMetrics {
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
-            TASKS_PROCESSED_COUNT = l.findVarHandle(TaskGroupMetrics.class, "taskCompletedCount", long.class);
-            CPU_TIME_NANOS = l.findVarHandle(TaskGroupMetrics.class, "cpuTimeNanos", long.class);
+            TASKS_PROCESSED_COUNT = l.findVarHandle(TaskQueueMetrics.class, "taskCompletedCount", long.class);
+            CPU_TIME_NANOS = l.findVarHandle(TaskQueueMetrics.class, "cpuTimeNanos", long.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }

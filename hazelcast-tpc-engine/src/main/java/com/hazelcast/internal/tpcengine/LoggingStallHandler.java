@@ -20,17 +20,19 @@ import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 /**
- * A {@link StallDetector} that writes a log entry when a stall is detected.
+ * A {@link StallHandler} that writes a log entry when a stall is detected.
  */
-public class LoggingStallDetector implements StallDetector {
-    public final static LoggingStallDetector INSTANCE = new LoggingStallDetector();
+public class LoggingStallHandler implements StallHandler {
+
+    public static final LoggingStallHandler INSTANCE = new LoggingStallHandler();
 
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
     @Override
-    public void onStall(Reactor reactor, Runnable task, long startNanos, long durationNanos) {
+    public void onStall(Reactor reactor, TaskQueue taskQueue, Runnable task, long startNanos, long durationNanos) {
         if (logger.isSevereEnabled()) {
-            logger.severe(reactor + " detected stall of " + durationNanos + " ns, the culprit is " + task);
+            logger.severe(reactor + " detected stall of " + durationNanos + " ns, the culprit is " + task
+                    + " in taskQueue " + taskQueue.name);
         }
     }
 }

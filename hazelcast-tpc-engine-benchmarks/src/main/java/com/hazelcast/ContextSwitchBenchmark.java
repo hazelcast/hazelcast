@@ -6,7 +6,7 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.Task;
-import com.hazelcast.internal.tpcengine.TaskGroupHandle;
+import com.hazelcast.internal.tpcengine.TaskQueueHandle;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -39,12 +39,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class ContextSwitchBenchmark {
 
     public static final int operations = 100 * 1000 * 1000;
-    public static final int concurrency = 10;
+    public static final int concurrency = 100;
     public static final boolean useEventloopDirectly = true;
     public static final ReactorType reactorType = ReactorType.NIO;
     public static final boolean useTask = true;
     public static final boolean useRootTaskGroup = false;
-    public static final int skid =20;
+    public static final int timeMeasureInterval = 100;
     private Reactor reactor;
 
     @Setup
@@ -67,13 +67,13 @@ public class ContextSwitchBenchmark {
     public void run() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(concurrency);
         reactor.execute(() -> {
-            TaskGroupHandle handle;
+            TaskQueueHandle handle;
             if (useRootTaskGroup) {
-                handle = reactor.eventloop().rootTaskGroupHandle;
+                handle = reactor.eventloop().primordialTaskQueueHandle;
             } else {
-                handle = reactor.eventloop().newTaskGroupBuilder()
+                handle = reactor.eventloop().newTaskQueueBuilder()
                         .setLocalQueue(new CircularQueue<>(1024))
-                        .setSkid(skid)
+                        .setClockSampleInterval(timeMeasureInterval)
                         .setName("bla")
                         .build();
             }
@@ -98,11 +98,11 @@ public class ContextSwitchBenchmark {
         private final boolean useEventloopDirectly;
         private final Reactor reactor;
         private final long operations;
-        private final TaskGroupHandle taskGroupHandle;
+        private final TaskQueueHandle taskGroupHandle;
         private long iteration = 0;
 
         public RunnableJob(Reactor reactor,
-                           TaskGroupHandle taskGroupHandle,
+                           TaskQueueHandle taskGroupHandle,
                            long operations,
                            CountDownLatch latch,
                            boolean useEventloopDirectly) {

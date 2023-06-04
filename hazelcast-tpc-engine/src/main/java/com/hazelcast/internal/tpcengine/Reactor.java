@@ -70,7 +70,7 @@ public abstract class Reactor implements Executor {
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    protected final TaskGroup rootTaskGroup;
+    protected final TaskQueue primordialTaskQueue;
     protected final Eventloop eventloop;
     protected final boolean spin;
     protected final Thread eventloopThread;
@@ -112,7 +112,7 @@ public abstract class Reactor implements Executor {
         // There is a happens-before edge between writing to the eventloopFuture and
         // the join. So at this point we can safely read the fields that have been
         // set in the constructor of the eventloop.
-        this.rootTaskGroup = eventloop.rootTaskGroupHandle.taskGroup;//eventloop.getTaskGroup(eventloop.rootTaskGroupHandle);
+        this.primordialTaskQueue = eventloop.primordialTaskQueueHandle.queue;
         this.wakeupNeeded = eventloop.wakeupNeeded;
     }
 
@@ -320,7 +320,7 @@ public abstract class Reactor implements Executor {
     }
 
     public final boolean offer(Runnable task) {
-        return offer(task, eventloop.rootTaskGroupHandle);
+        return offer(task, eventloop.primordialTaskQueueHandle);
     }
 
     /**
@@ -334,19 +334,19 @@ public abstract class Reactor implements Executor {
      */
     // todo: task queue id?
     public final boolean offer(Object task) {
-        return offer(task, eventloop.rootTaskGroupHandle);
+        return offer(task, eventloop.primordialTaskQueueHandle);
     }
 
-    public final boolean offer(Object task, TaskGroupHandle taskGroupHandle) {
+    public final boolean offer(Object task, TaskQueueHandle handle) {
         //todo: is running
-        if (taskGroupHandle.taskGroup.eventloop != eventloop) {
+        if (handle.queue.eventloop != eventloop) {
             throw new IllegalArgumentException();
         }
 
         if (Thread.currentThread() == eventloopThread) {
             // todo: only set when there is a local queue
-            return taskGroupHandle.taskGroup.offerLocal(task);
-        } else if (taskGroupHandle.taskGroup.globalQueue.offer(task)) {
+            return handle.queue.offerLocal(task);
+        } else if (handle.queue.global.offer(task)) {
             wakeup();
             return true;
         } else {

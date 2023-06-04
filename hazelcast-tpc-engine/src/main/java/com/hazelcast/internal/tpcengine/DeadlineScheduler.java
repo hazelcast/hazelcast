@@ -84,8 +84,8 @@ public final class DeadlineScheduler {
             runQueue.poll();
 
             // offer the task to its task group.
-            // this will trigger to taskGroup to schedule itself if needed.
-            task.taskGroup.offerLocal(task);
+            // this will trigger the taskQueue to schedule itself if needed.
+            task.taskQueue.offerLocal(task);
 
             // and go to the next task.
         }

@@ -22,7 +22,7 @@ import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.tpc.FrameCodec;
 import com.hazelcast.internal.tpcengine.TaskFactory;
-import com.hazelcast.internal.tpcengine.TaskGroup;
+import com.hazelcast.internal.tpcengine.TaskQueue;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
@@ -53,7 +53,7 @@ public class FrameDecoder extends AsyncSocketReader {
     public TaskFactory taskFactory;
     public Consumer<IOBuffer> responseHandler;
     public ServerConnectionManager connectionManager;
-    public TaskGroup taskGroup;
+    public TaskQueue taskGroup;
 
     private final PacketIOHelper packetIOHelper = new PacketIOHelper();
     private IOBuffer frame;

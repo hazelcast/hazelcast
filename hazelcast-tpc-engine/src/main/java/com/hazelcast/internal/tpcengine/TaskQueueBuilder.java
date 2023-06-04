@@ -1,0 +1,215 @@
+/*
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.internal.tpcengine;
+
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
+
+/**
+ * A {@link TaskQueueBuilder} is used to configure and create a {@link TaskQueue}.
+ * <p>
+ * A {@link TaskQueue} can have both a local and global task queue.
+ */
+public class TaskQueueBuilder {
+
+    private static final AtomicLong ID = new AtomicLong();
+
+    private final Eventloop eventloop;
+    private String name;
+    private int shares;
+    private Queue<Object> localQueue;
+    private Queue<Object> globalQueue;
+    private int clockSampleInterval = 1;
+    private boolean built;
+    private TaskFactory taskFactory = NullTaskFactory.INSTANCE;
+
+    TaskQueueBuilder(Eventloop eventloop) {
+        this.eventloop = eventloop;
+    }
+
+    /**
+     * Sets the TaskFactory that will be used to create tasks for this TaskQueue.
+     *
+     * @param taskFactory the TaskFactory.
+     * @return this.
+     * @throws IllegalStateException if the TaskQueue is already built or when the call
+     *                               isn't made from the eventloop thread.
+     */
+    public TaskQueueBuilder setTaskFactory(TaskFactory taskFactory) {
+        verifyNotBuilt();
+        verifyEventloopThread();
+
+        this.taskFactory = checkNotNull(taskFactory, "taskFactory");
+        return this;
+    }
+
+    /**
+     * Measuring the execution time of every task in a TaskQueue can be expensive.
+     * To reduce the overhead, the  clock sample  interval option can be used. This will
+     * only measure the execution time out of of every n tasks within the TaskQueue. There
+     * are a few drawback with setting the interval to a value larger than 1:
+     * <ol>
+     *      <li>it can lead to skid where you wrongly identify a task as a stalling task.
+     *      If interval is 10 and third task stalls, because time is measured at the the 10th task,
+     *      task 10 will task will be seen as the stalling task even though the third task caused
+     *      the problem.</li>
+     *      <li>task group could run longer than desired.</li>
+     *      <li>I/O scheduling could be delayed.</li>
+     *      <li>Deadline scheduling could be delayed.</li>
+     * </ol>
+     * For the time being this option is mostly useful for benchmark and performance tuning
+     * to reduce the overhead of calling System.nanotime.
+     *
+     * @param clockSampleInterval the clock sample interval. If the value is 1, then time
+     *                            is measured for every task.
+     * @throws IllegalArgumentException if clock sample interval is smaller than 1.
+     * @throws IllegalStateException    if the TaskQueue is already built or when the call
+     *                                  isn't made from the eventloop thread.
+     */
+    public TaskQueueBuilder setClockSampleInterval(int clockSampleInterval) {
+        verifyNotBuilt();
+        verifyEventloopThread();
+
+        this.clockSampleInterval = checkPositive(clockSampleInterval, "clockSampleInterval");
+        return this;
+    }
+
+    /**
+     * Sets the name of the TaskQueue. The name is used for logging and debugging purposes.
+     *
+     * @param name the name of the TaskQueue.
+     * @return this
+     * @throws NullPointerException  if name is null.
+     * @throws IllegalStateException if the TaskQueue is already built or when the call
+     *                               isn't made from the eventloop thread.
+     */
+    public TaskQueueBuilder setName(String name) {
+        verifyNotBuilt();
+        verifyEventloopThread();
+
+        this.name = checkNotNull(name, "name");
+        return this;
+    }
+
+    /**
+     * @param shares
+     * @throws IllegalStateException if the TaskQueue is already built or when the call
+     *                               isn't made from the eventloop thread.
+     */
+    public TaskQueueBuilder setShares(int shares) {
+        verifyNotBuilt();
+        verifyEventloopThread();
+
+        this.shares = checkPositive(shares, "shares");
+        return this;
+    }
+
+    /**
+     * Sets the local queue of the TaskQueue. The local queue is should be used for tasks generated
+     * within the eventloop. The local queue doesn't need to be thread-safe.
+     *
+     * @param localQueue the local queue.
+     * @return this.
+     * @throws NullPointerException  if localQueue is null.
+     * @throws IllegalStateException if the TaskQueue is already built or when the call
+     *                               isn't made from the eventloop thread.
+     */
+    public TaskQueueBuilder setLocalQueue(Queue<Object> localQueue) {
+        verifyNotBuilt();
+        verifyEventloopThread();
+
+        this.localQueue = checkNotNull(localQueue, "localQueue");
+        return this;
+    }
+
+    /**
+     * Sets the global queue of the TaskQueue. The global queue is should be used for tasks generated
+     * outside of the eventloop and therefor must be thread-safe.
+     *
+     * @param globalQueue the global queue.
+     * @return this.
+     * @throws NullPointerException  if globalQueue is null.
+     * @throws IllegalStateException if the TaskQueue is already built or when the call
+     *                               isn't made from the eventloop thread.
+     */
+    public TaskQueueBuilder setGlobalQueue(Queue<Object> globalQueue) {
+        verifyNotBuilt();
+        verifyEventloopThread();
+
+        this.globalQueue = checkNotNull(globalQueue, "globalQueue");
+        return this;
+    }
+
+    private void verifyNotBuilt() {
+        if (built) {
+            throw new IllegalStateException("Can't call build twice on the same AsyncSocketBuilder");
+        }
+    }
+
+    private void verifyEventloopThread() {
+        if (Thread.currentThread() != eventloop.reactor.eventloopThread()) {
+            throw new IllegalStateException("Can only call from eventloop thread");
+        }
+    }
+
+    public TaskQueueHandle build() {
+        verifyNotBuilt();
+        verifyEventloopThread();
+
+        built = true;
+
+        if (localQueue == null && globalQueue == null) {
+            throw new IllegalStateException("The local and global queue can't both be null. At least one of them must be set.");
+        }
+
+        if (eventloop.taskQueues.size() == eventloop.runQueueCapacity) {
+            throw new IllegalStateException("Too many taskgroups.");
+        }
+
+        TaskQueue taskQueue = eventloop.taskQueueAllocator.allocate();
+        taskQueue.local = localQueue;
+        taskQueue.global = globalQueue;
+        if (localQueue == null) {
+            taskQueue.pollState = TaskQueue.POLL_GLOBAL_ONLY;
+        } else if (globalQueue == null) {
+            taskQueue.pollState = TaskQueue.POLL_LOCAL_ONLY;
+        } else {
+            taskQueue.pollState = TaskQueue.POLL_GLOBAL_FIRST;
+        }
+        taskQueue.clockSampleInterval = clockSampleInterval;
+        taskQueue.taskFactory = taskFactory;
+        taskQueue.shares = shares;
+        if (name == null) {
+            taskQueue.name = "taskqueue-" + ID.incrementAndGet();
+        } else {
+            taskQueue.name = name;
+        }
+        taskQueue.eventloop = eventloop;
+        taskQueue.scheduler = eventloop.scheduler;
+        taskQueue.runState = TaskQueue.RUN_STATE_BLOCKED;
+
+        if (taskQueue.global != null) {
+            eventloop.addBlockedGlobal(taskQueue);
+        }
+
+        eventloop.taskQueues.add(taskQueue);
+        return new TaskQueueHandle(taskQueue, taskQueue.metrics);
+    }
+}

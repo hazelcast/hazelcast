@@ -35,7 +35,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.tpcengine.TaskGroup.STATE_BLOCKED;
+import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_BLOCKED;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
@@ -62,34 +62,34 @@ public abstract class Eventloop {
     protected final Clock nanoClock;
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
-    public final TaskGroupHandle rootTaskGroupHandle;
-    final long taskGroupQuotaNanos;
+    public final TaskQueueHandle primordialTaskQueueHandle;
     private final ReactorMetrics metrics;
-    private final long targetLatencyNanos;
-    private final long minGranularityNanos;
     protected boolean stop;
     protected long taskStartNanos;
-    protected final SlabAllocator<TaskGroup> taskGroupAllocator = new SlabAllocator<>(1024, TaskGroup::new);
+    protected final SlabAllocator<TaskQueue> taskQueueAllocator = new SlabAllocator<>(1024, TaskQueue::new);
     private final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
-    protected TaskGroup sharedFirst;
-    protected TaskGroup sharedLast;
-    public final Set<TaskGroup> taskGroups = new HashSet<>();
-    public final int taskGroupLimit;
+    protected TaskQueue sharedFirst;
+    protected TaskQueue sharedLast;
+    public final Set<TaskQueue> taskQueues = new HashSet<>();
+    public final int runQueueCapacity;
     private final long stallThresholdNanos;
-    final CfsScheduler scheduler;
-    private long taskGroupStartNanos;
-    private final StallDetector stallDetector;
-    private long contextSwitches;
+    final CfsTaskQueueScheduler scheduler;
+    private long taskQueueStartNanos;
+    private final StallHandler stallDetector;
+    private long taskQueueDeadlineNanos;
 
     protected Eventloop(Reactor reactor, ReactorBuilder builder) {
         this.reactor = reactor;
         this.metrics = reactor.metrics;
         this.deadlineScheduler = new DeadlineScheduler(builder.deadlineRunQueueCapacity);
-        this.taskGroupLimit = builder.taskGroupLimit;
-        this.scheduler = new CfsScheduler(builder.taskGroupLimit);
-        this.rootTaskGroupHandle = new TaskGroupBuilder(this)
-                .setName(reactor.name + "-taskgroup-root")
+        this.runQueueCapacity = builder.runQueueCapacity;
+        this.scheduler = new CfsTaskQueueScheduler(
+                builder.runQueueCapacity,
+                builder.targetLatencyNanos,
+                builder.minGranularityNanos);
+        this.primordialTaskQueueHandle = new TaskQueueBuilder(this)
+                .setName(reactor.name + "-primordial")
                 .setGlobalQueue(new MpscArrayQueue<>(builder.globalTaskQueueCapacity))
                 .setLocalQueue(new CircularQueue<>(builder.localTaskQueueCapacity))
                 .setShares(1)
@@ -100,32 +100,46 @@ public abstract class Eventloop {
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.nanoClock = new StandardNanoClock();
         this.taskStartNanos = nanoClock.nanoTime();
-        this.taskGroupQuotaNanos = builder.taskGroupQuotaNanos;
         this.stallThresholdNanos = builder.stallThresholdNanos;
         this.ioIntervalNanos = builder.ioIntervalNanos;
-        this.stallDetector = builder.stallDetector;
-        this.targetLatencyNanos = builder.targetLatencyNanos;
-        this.minGranularityNanos = builder.minGranularityNanos;
+        this.stallDetector = builder.stallHandler;
     }
 
-    public final long cycleStartNanos() {
-        return taskGroupStartNanos;
+    public final long taskQueueStartNanos() {
+        return taskQueueStartNanos;
+    }
+
+    /**
+     * Checks if the current task that is performed should yield. So if there is some long running
+     * tasks, it periodically checks this method. As long as it returns false, it can keep running.
+     * When true is returned, the task should yield (see {@link Task#process()} for more details) and
+     * the task will be scheduled again at some point in the future.
+     * <p/>
+     * This method is pretty expensive due to the overhead of {@link System#nanoTime()} which is roughly
+     * between 15/30 nanoseconds. So you want to prevent calling this method too often because you will
+     * loose a lot of performance. But if you don't call it often enough, you can into problems because
+     * you could end up stalling the reactor. So it is a tradeoff.
+     *
+     * @return
+     */
+    public boolean shouldYield() {
+        return nanoClock.nanoTime() > taskQueueDeadlineNanos;
     }
 
     public boolean offer(Object task) {
-        return offer(task, rootTaskGroupHandle);
+        return offer(task, primordialTaskQueueHandle);
     }
 
-    public boolean offer(Object task, TaskGroupHandle taskGroupHandle) {
+    public boolean offer(Object task, TaskQueueHandle handle) {
         //checkNotNull(task, "task");
-        //checkNotNull(taskGroupHandle,"taskGroupHandle");
+        //checkNotNull(handle,"handle");
 
-        TaskGroup taskGroup = taskGroupHandle.taskGroup;
+        // TaskQueue taskGroup = handle.queue;
         //if (taskGroup.eventloop != this) {
         //    throw new IllegalArgumentException();
         //}
         //checkEventloopThread();
-        return taskGroupHandle.taskGroup.offerLocal(task);
+        return handle.queue.offerLocal(task);
     }
 
     protected void checkEventloopThread() {
@@ -138,20 +152,20 @@ public abstract class Eventloop {
      * @param handle
      * @return
      */
-    public final TaskGroup getTaskGroup(TaskGroupHandle handle) {
+    public final TaskQueue getTaskQueue(TaskQueueHandle handle) {
         checkEventloopThread();
-        return handle.taskGroup;
+        return handle.queue;
     }
 
     /**
      * @return
      */
-    public final TaskGroupBuilder newTaskGroupBuilder() {
+    public final TaskQueueBuilder newTaskQueueBuilder() {
         checkEventloopThread();
         if (stop) {
             throw new IllegalStateException();
         }
-        return new TaskGroupBuilder(this);
+        return new TaskQueueBuilder(this);
     }
 
     /**
@@ -213,56 +227,56 @@ public abstract class Eventloop {
 
     protected final boolean scheduleBlockedGlobal() {
         boolean scheduled = false;
-        TaskGroup taskGroup = sharedFirst;
+        TaskQueue queue = sharedFirst;
 
-        while (taskGroup != null) {
-            assert taskGroup.state == STATE_BLOCKED : "taskGroup.state" + taskGroup.state;
-            TaskGroup next = taskGroup.next;
+        while (queue != null) {
+            assert queue.runState == RUN_STATE_BLOCKED : "taskQueue.state" + queue.runState;
+            TaskQueue next = queue.next;
 
-            if (!taskGroup.globalQueue.isEmpty()) {
-                removeBlockedGlobal(taskGroup);
+            if (!queue.global.isEmpty()) {
+                removeBlockedGlobal(queue);
                 scheduled = true;
-                scheduler.enqueue(taskGroup);
+                scheduler.enqueue(queue);
             }
 
-            taskGroup = next;
+            queue = next;
         }
 
         return scheduled;
     }
 
-    protected final void removeBlockedGlobal(TaskGroup taskGroup) {
-        TaskGroup next = taskGroup.next;
-        TaskGroup prev = taskGroup.prev;
+    protected final void removeBlockedGlobal(TaskQueue taskQueue) {
+        TaskQueue next = taskQueue.next;
+        TaskQueue prev = taskQueue.prev;
 
         if (prev == null) {
             sharedFirst = next;
         } else {
             prev.next = next;
-            taskGroup.prev = null;
+            taskQueue.prev = null;
         }
 
         if (next == null) {
             sharedLast = prev;
         } else {
             next.prev = prev;
-            taskGroup.next = null;
+            taskQueue.next = null;
         }
     }
 
-    void addBlockedGlobal(TaskGroup taskGroup) {
-//        assert taskGroup.globalQueue !=null;
-//        assert taskGroup.state == STATE_BLOCKED;
-//        assert taskGroup.prev == null;
-//        assert taskGroup.next == null;
+    void addBlockedGlobal(TaskQueue taskQueue) {
+//        assert taskQueue.globalQueue !=null;
+//        assert taskQueue.state == STATE_BLOCKED;
+//        assert taskQueue.prev == null;
+//        assert taskQueue.next == null;
 
-        TaskGroup l = sharedLast;
-        taskGroup.prev = l;
-        sharedLast = taskGroup;
+        TaskQueue l = sharedLast;
+        taskQueue.prev = l;
+        sharedLast = taskQueue;
         if (l == null) {
-            sharedFirst = taskGroup;
+            sharedFirst = taskQueue;
         } else {
-            l.next = taskGroup;
+            l.next = taskQueue;
         }
     }
 
@@ -285,44 +299,41 @@ public abstract class Eventloop {
     public void run() throws Exception {
         long now = nanoClock.nanoTime();
         long ioDeadlineNanos = now + ioIntervalNanos;
-        this.taskGroupStartNanos = now;
+        this.taskQueueStartNanos = now;
 
         while (!stop) {
-          // Thread.sleep(100);
+            // Thread.sleep(100);
 
-            // There is no point in doing the deadlineScheduler tick in the taskQueue processing loop
-            // because the taskQueue is going to be processed till it is empty (or the quotaDeadlineNanos
+            // There is no point in doing the deadlineScheduler tick in the queue processing loop
+            // because the queue is going to be processed till it is empty (or the quotaDeadlineNanos
             // is exceeded).
             deadlineScheduler.tick(now);
 
             scheduleBlockedGlobal();
 
-            TaskGroup taskGroup = scheduler.pickNext();
-            if (taskGroup == null) {
+            TaskQueue queue = scheduler.pickNext();
+            if (queue == null) {
                 park(now);
                 // todo: we should only need to update the clock if real parking happened and not when work was detected
                 now = nanoClock.nanoTime();
-                taskGroupStartNanos = now;
+                taskQueueStartNanos = now;
                 continue;
             }
 
-            // I think the deadline nanos should be determined based on the weight of the taskGroup
-            // So there should be a 'target' granularity and devide that by the taskgroups based on
-            // their weight.
-            long taskGroupDeadlineNanos = now + taskGroup.quotaNanos;
+            taskQueueDeadlineNanos = now + scheduler.timeSliceNanosCurrent();
             long taskStartNanos = now;
-            boolean blockTaskGroup = false;
+            boolean blockTaskQueue = false;
             long deltaNanos = 0;
             int taskCount = 0;
 
-            contextSwitches++;
-            int x = taskGroup.skid;
-            // Process the tasks in a taskQueue as long as the taskQuota is not exceeded.
-            while (now <= taskGroupDeadlineNanos) {
-                Runnable task = taskGroup.poll();
+            // This forces immediate time measurement of the first task.
+            int clockSampleStep = 1;
+            // Process the tasks in a queue as long as the deadline is not exceeded.
+            while (now <= taskQueueDeadlineNanos) {
+                Runnable task = queue.poll();
                 if (task == null) {
-                    // taskQueue is empty, we are done.
-                    blockTaskGroup = true;
+                    // queue is empty, we are done.
+                    blockTaskQueue = true;
                     break;
                 }
 
@@ -332,14 +343,14 @@ public abstract class Eventloop {
                     e.printStackTrace();
                 }
 
-                taskGroup.tasksProcessed++;
+                queue.tasksProcessed++;
                 taskCount++;
 
-                if (x == 0) {
+                if (clockSampleStep == 1) {
                     now = nanoClock.nanoTime();
-                    x = taskGroup.skid;
+                    clockSampleStep = queue.clockSampleInterval;
                 } else {
-                    x--;
+                    clockSampleStep--;
                 }
 
                 long taskEndNanos = now;
@@ -347,7 +358,7 @@ public abstract class Eventloop {
                 deltaNanos += taskExecNanos;
 
                 if (taskExecNanos > stallThresholdNanos) {
-                    stallDetector.onStall(reactor, task, taskStartNanos, taskExecNanos);
+                    stallDetector.onStall(reactor, queue, task, taskStartNanos, taskExecNanos);
                 }
 
                 if (now >= ioDeadlineNanos) {
@@ -355,37 +366,29 @@ public abstract class Eventloop {
                     ioSchedulerTick();
                 }
             }
-//
-//            if(contextSwitches%1000==0){
-//                System.out.println("taskCount:"+taskCount);
-//            }
 
-            // todo * include weight
-            long deltaWeightedNanos = deltaNanos;
-
+            scheduler.updateCurrent(deltaNanos);
             metrics.incTasksProcessedCount(taskCount);
             metrics.incCpuTimeNanos(deltaNanos);
 
-            taskGroup.pruntimeNanos += deltaNanos;
-            taskGroup.vruntimeNanos += deltaWeightedNanos;
-
-            if (blockTaskGroup) {
-                // the taskGroup is empty, so we mark this taskGroup as blocked.
-                taskGroup.state = STATE_BLOCKED;
-                taskGroup.blockedCount++;
+            if (blockTaskQueue) {
+                scheduler.dequeueCurrent();
+                // the queue is empty, so we mark this queue as blocked.
+                queue.runState = RUN_STATE_BLOCKED;
+                queue.blockedCount++;
 
                 // we also need to add it to the shared taskGroups so the eventloop will
                 // see any items that are written to its queue.
-                if (taskGroup.globalQueue != null) {
-                    addBlockedGlobal(taskGroup);
+                if (queue.global != null) {
+                    addBlockedGlobal(queue);
                 }
             } else {
                 // todo: it could be that the task group was empty and the quota was exceeded
 
-                // the taskGroup exceeded its quota and therefor wasn't drained, so we
+                // the queue exceeded its quota and therefor wasn't drained, so we
                 // need to insert it back into the scheduler because there is more work
                 // to be done.
-                scheduler.enqueue(taskGroup);
+                scheduler.yieldCurrent();
             }
         }
     }
@@ -397,16 +400,16 @@ public abstract class Eventloop {
     public final boolean schedule(Runnable cmd,
                                   long delay,
                                   TimeUnit unit) {
-        return schedule(cmd, delay, unit, rootTaskGroupHandle);
+        return schedule(cmd, delay, unit, primordialTaskQueueHandle);
     }
 
     /**
      * Schedules a one shot action with the given delay.
      *
-     * @param cmd             the cmd to execute.
-     * @param delay           the delay
-     * @param unit            the unit of the delay
-     * @param taskGroupHandle the handle of this TaskGroup the cmd belongs to.
+     * @param cmd    the cmd to execute.
+     * @param delay  the delay
+     * @param unit   the unit of the delay
+     * @param handle the handle of the TaskQueue the cmd belongs to.
      * @return true if the cmd was successfully scheduled.
      * @throws NullPointerException     if cmd or unit is null
      * @throws IllegalArgumentException when delay smaller than 0.
@@ -414,15 +417,15 @@ public abstract class Eventloop {
     public final boolean schedule(Runnable cmd,
                                   long delay,
                                   TimeUnit unit,
-                                  TaskGroupHandle taskGroupHandle) {
+                                  TaskQueueHandle handle) {
         checkNotNull(cmd);
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
-        checkNotNull(taskGroupHandle);
+        checkNotNull(handle);
 
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
         task.cmd = cmd;
-        task.taskGroup = taskGroupHandle.taskGroup;
+        task.taskQueue = handle.queue;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
         return deadlineScheduler.offer(task);
     }
@@ -441,16 +444,16 @@ public abstract class Eventloop {
                                                 long initialDelay,
                                                 long delay,
                                                 TimeUnit unit,
-                                                TaskGroupHandle taskGroupHandle) {
+                                                TaskQueueHandle handle) {
         checkNotNull(cmd);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
-        checkNotNull(taskGroupHandle);
+        checkNotNull(handle);
 
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
         task.cmd = cmd;
-        task.taskGroup = taskGroupHandle.taskGroup;
+        task.taskQueue = handle.queue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
         task.delayNanos = unit.toNanos(delay);
         return deadlineScheduler.offer(task);
@@ -470,16 +473,16 @@ public abstract class Eventloop {
                                              long initialDelay,
                                              long period,
                                              TimeUnit unit,
-                                             TaskGroupHandle taskGroupHandle) {
+                                             TaskQueueHandle handle) {
         checkNotNull(cmd);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(period, "period");
         checkNotNull(unit);
-        checkNotNull(taskGroupHandle);
+        checkNotNull(handle);
 
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
         task.cmd = cmd;
-        task.taskGroup = taskGroupHandle.taskGroup;
+        task.taskQueue = handle.queue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
         task.periodNanos = unit.toNanos(period);
         return deadlineScheduler.offer(task);
@@ -493,7 +496,7 @@ public abstract class Eventloop {
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
         task.promise = promise;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
-        task.taskGroup = rootTaskGroupHandle.taskGroup;
+        task.taskQueue = primordialTaskQueueHandle.queue;
         deadlineScheduler.offer(task);
         return promise;
     }

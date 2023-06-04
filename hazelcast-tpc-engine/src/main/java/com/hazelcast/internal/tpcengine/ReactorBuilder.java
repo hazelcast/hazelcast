@@ -42,7 +42,7 @@ public abstract class ReactorBuilder {
     public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.deadlineTaskQueue.capacity";
     public static final String NAME_REACTOR_SPIN = "hazelcast.tpc.reactor.spin";
     public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
-    public static final String NAME_TASK_GROUP_LIMIT = "hazelcast.tpc.taskGroup.limit";
+    public static final String NAME_RUN_QUEUE_CAPACITY = "hazelcast.tpc.runqueue.capacity";
     public static final String NAME_TARGET_LATENCY_NANOS = "hazelcast.tpc.targetLatency.ns";
     public static final String NAME_MIN_GRANULARITY_NANOS = "hazelcast.tpc.minGranularity.ns";
 
@@ -52,7 +52,7 @@ public abstract class ReactorBuilder {
     private static final int DEFAULT_TASK_QUOTA_NANOS = 500;
     private static final int DEFAULT_STALL_THRESHOLD_NANOS = 500;
     private static final int DEFAULT_IO_INTERVAL_NANOS = 10;
-    private static final int DEFAULT_TASK_GROUP_LIMIT = 1024;
+    private static final int DEFAULT_RUN_QUEUE_CAPACITY = 1024;
     private static final long DEFAULT_TARGET_LATENCY_NANOS = TimeUnit.MILLISECONDS.toNanos(1);
     private static final long DEFAULT_MIN_GRANULARITY_NANOS = TimeUnit.MICROSECONDS.toNanos(100);
 
@@ -100,11 +100,10 @@ public abstract class ReactorBuilder {
     int deadlineRunQueueCapacity;
     TpcEngine engine;
     // Are not set through system property.
-    long taskGroupQuotaNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_TASK_QUOTA_NANOS);
     long stallThresholdNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_STALL_THRESHOLD_NANOS);
     long ioIntervalNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_IO_INTERVAL_NANOS);
-    int taskGroupLimit;
-    StallDetector stallDetector = LoggingStallDetector.INSTANCE;
+    int runQueueCapacity;
+    StallHandler stallHandler = LoggingStallHandler.INSTANCE;
     long targetLatencyNanos;
     long minGranularityNanos;
 
@@ -118,9 +117,9 @@ public abstract class ReactorBuilder {
                 NAME_GLOBAL_TASK_QUEUE_CAPACITY, DEFAULT_GLOBAL_TASK_QUEUE_CAPACITY);
         this.deadlineRunQueueCapacity = Integer.getInteger(
                 NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
-        this.taskGroupLimit = Integer.getInteger(NAME_TASK_GROUP_LIMIT, DEFAULT_TASK_GROUP_LIMIT);
-        this.targetLatencyNanos = Long.getLong(NAME_TARGET_LATENCY_NANOS,  DEFAULT_TARGET_LATENCY_NANOS);
-        this.minGranularityNanos = Long.getLong(NAME_MIN_GRANULARITY_NANOS,DEFAULT_MIN_GRANULARITY_NANOS);
+        this.runQueueCapacity = Integer.getInteger(NAME_RUN_QUEUE_CAPACITY, DEFAULT_RUN_QUEUE_CAPACITY);
+        this.targetLatencyNanos = Long.getLong(NAME_TARGET_LATENCY_NANOS, DEFAULT_TARGET_LATENCY_NANOS);
+        this.minGranularityNanos = Long.getLong(NAME_MIN_GRANULARITY_NANOS, DEFAULT_MIN_GRANULARITY_NANOS);
         this.spin = Boolean.parseBoolean(getProperty(NAME_REACTOR_SPIN, Boolean.toString(DEFAULT_SPIN)));
     }
 
@@ -154,31 +153,18 @@ public abstract class ReactorBuilder {
      */
     public abstract Reactor build();
 
-    /**
-     * The maximum amount of time tasks from a single TaskGroup can run before the TaskGroup needs to
-     * be 'context switched'.
-     *
-     * @param taskGroupQuota
-     * @param unit
-     */
-    public void setTaskGroupQuota(long taskGroupQuota, TimeUnit unit) {
-        checkPositive(taskGroupQuota, "taskGroupQuota");
-        checkNotNull(unit, "unit");
-        this.taskGroupQuotaNanos = unit.toNanos(taskGroupQuota);
-    }
-
-    public ReactorBuilder setNameTaskGroupLimit(int taskGroupLimit) {
-        this.taskGroupLimit = checkPositive(taskGroupLimit, "taskGroupLimit");
+    public ReactorBuilder setRunQueueCapacity(int runQueueCapacity) {
+        this.runQueueCapacity = checkPositive(runQueueCapacity, "runQueueCapacity");
         return this;
     }
 
     public ReactorBuilder setTargetLatencyNanos(long targetLatencyNanos) {
-        this.targetLatencyNanos = checkPositive(targetLatencyNanos,"targetLatencyNanos");
+        this.targetLatencyNanos = checkPositive(targetLatencyNanos, "targetLatencyNanos");
         return this;
     }
 
     public ReactorBuilder setMinGranularityNanos(long minGranularityNanos) {
-        this.minGranularityNanos = checkPositive(minGranularityNanos,"minGranularityNanos");
+        this.minGranularityNanos = checkPositive(minGranularityNanos, "minGranularityNanos");
         return this;
     }
 
@@ -196,13 +182,13 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Configures the stallDetector.
+     * Configures the stallHandler.
      *
-     * @param stallDetector
-     * @throws NullPointerException if stallDetector is <code>null</code>.
+     * @param stallHandler
+     * @throws NullPointerException if stallHandler is <code>null</code>.
      */
-    public void setStallDetector(StallDetector stallDetector) {
-        this.stallDetector = checkNotNull(stallDetector, "stallDetector");
+    public void setStallHandler(StallHandler stallHandler) {
+        this.stallHandler = checkNotNull(stallHandler, "stallHandler");
     }
 
     /**

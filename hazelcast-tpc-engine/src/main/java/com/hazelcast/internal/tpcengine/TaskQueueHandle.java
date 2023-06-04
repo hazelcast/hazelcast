@@ -16,11 +16,17 @@
 
 package com.hazelcast.internal.tpcengine;
 
-/**
- * When a task runs for a too long period on the reactor, it stalls the reactor and
- * then the {@link #onStall(Reactor, Runnable, long, long)} is called.
- */
-public interface StallDetector {
+@SuppressWarnings({"checkstyle:VisibilityModifier"})
+public class TaskQueueHandle {
+    public TaskQueue queue;
+    public TaskQueueMetrics metrics;
 
-    void onStall(Reactor reactor, Runnable cmd, long startNanos, long durationNanos);
+    public TaskQueueHandle(TaskQueue queue, TaskQueueMetrics metrics) {
+        this.queue = queue;
+        this.metrics = metrics;
+    }
+
+    public TaskQueueMetrics metrics() {
+        return metrics;
+    }
 }

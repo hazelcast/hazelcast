@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
-import com.hazelcast.internal.tpcengine.TaskGroup;
+import com.hazelcast.internal.tpcengine.TaskQueue;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
@@ -87,7 +87,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     private final long userdata_OP_WRITEV;
 
     private final LinuxSocket linuxSocket;
-    private final TaskGroup localTaskQueue;
+    private final TaskQueue localTaskQueue;
 
     // ======================================================
     // For the reading side of the socket
@@ -125,7 +125,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         this.reactor = builder.reactor;
         this.eventloop = (IOUringEventloop) reactor.eventloop();
         this.sq = eventloop.sq;
-        this.localTaskQueue = eventloop.getTaskGroup(builder.taskGroupHandle);
+        this.localTaskQueue = eventloop.getTaskQueue(builder.taskGroupHandle);
         this.eventloopThread = reactor.eventloopThread();
         this.rcvBuff = ByteBuffer.allocateDirect(options.get(AsyncSocketOptions.SO_RCVBUF));
 
@@ -208,7 +208,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
-                localTaskQueue.localQueue.add(eventloopTask);
+                localTaskQueue.local.add(eventloopTask);
             } else {
                 reactor.offer(eventloopTask);
             }
@@ -217,7 +217,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     private void resetFlushed() {
         if (!ioVector.isEmpty()) {
-            localTaskQueue.localQueue.add(eventloopTask);
+            localTaskQueue.local.add(eventloopTask);
             return;
         }
 
@@ -263,7 +263,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         boolean result;
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                localTaskQueue.localQueue.add(eventloopTask);
+                localTaskQueue.local.add(eventloopTask);
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {
@@ -435,7 +435,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     // TODO: Can this lead to spinning?
                     //System.out.println("-----");
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
-                    localTaskQueue.localQueue.add(eventloopTask);
+                    localTaskQueue.local.add(eventloopTask);
                 } else {
                     throw newCQEFailedException("Failed to write data to the socket.", "writev(3p)", IORING_OP_WRITEV, -res);
                 }
@@ -455,7 +455,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     resetFlushed();
                 } else if (res == -EAGAIN) {
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
-                    localTaskQueue.localQueue.add(eventloopTask);
+                    localTaskQueue.local.add(eventloopTask);
                 } else {
                     throw newCQEFailedException("Failed to write data to the socket.", "write(2)", IORING_OP_WRITE, -res);
                 }
@@ -471,7 +471,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             try {
                 if (res > 0) {
                     int bytesRead = res;
-                    LAST_READ_TIME_NANOS.setOpaque(IOUringAsyncSocket.this, eventloop.cycleStartNanos());
+                    LAST_READ_TIME_NANOS.setOpaque(IOUringAsyncSocket.this, eventloop.taskQueueStartNanos());
                     metrics.incReadEvents();
                     metrics.incBytesRead(bytesRead);
 

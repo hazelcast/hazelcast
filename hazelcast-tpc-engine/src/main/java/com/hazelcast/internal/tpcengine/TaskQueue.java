@@ -19,46 +19,47 @@ package com.hazelcast.internal.tpcengine;
 import java.util.Queue;
 
 /**
- * The TaskGroup can be configured with either either (or both):
+ * The TaskQueue can be configured with either either (or both):
  * <ol>
  *     <li>local queue: for tasks submitted within the eventloop. This queue doesn't need to
- *     be threadsafe.</li>
+ *     be thread safe.</li>
  *     <li>global queue: for tasks submitted outside of the eventloop. This queue needs to
- *     be threadsafe.</li>
+ *     be thread safe.</li>
  * </ol>
- *
- * When there is only 1 queue, Tasks in the same TaskGroup will be processed in FIFO order.
+ * <p/>
+ * When there is only 1 queue, Tasks in the same TaskQueue will be processed in FIFO order.
  * When there are 2 queues, tasks will be picked in round robin fashion and tasks in the
  * same queue will be picked in FIFO order.
  * <p>
- * Every TaskGroup has a vruntime which stands for virtual runtime. This is the amount of time
- * the TaskGroup has spend on the CPU.
+ * Every TaskQueue has a vruntime which stands for virtual runtime. THis is used by the
+ * {@link CfsTaskQueueScheduler} to pick the TaskQueue with the lowest vruntime.
  * <p>
  * vruntime/pruntime
  * This number could be distorted when there are other threads running on the same CPU because
  * If a different task would be executed while a task is running on the CPU, the measured time
  * will include the time of that task as well.
  * <p>
- * idea: TaskGroup without time tracking to prevent the overhead of System.nanotime.
+ * In Linux terms this would be the sched_entity.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
-public final class TaskGroup implements Comparable<TaskGroup> {
+public final class TaskQueue implements Comparable<TaskQueue> {
 
-    public final static int POLL_LOCAL_ONLY = 1;
-    public final static int POLL_GLOBAL_ONLY = 2;
-    public final static int POLL_LOCAL_FIRST = 3;
-    public final static int POLL_GLOBAL_FIRST = 4;
+    public static final int POLL_LOCAL_ONLY = 1;
+    public static final int POLL_GLOBAL_ONLY = 2;
+    public static final int POLL_LOCAL_FIRST = 3;
+    public static final int POLL_GLOBAL_FIRST = 4;
 
-    public static final int STATE_RUNNING = 0;
-    public static final int STATE_BLOCKED = 1;
+    public static final int RUN_STATE_RUNNING = 1;
+    public static final int RUN_STATE_BLOCKED = 2;
     public int pollState;
 
-    public int skid;
-    public int state = STATE_BLOCKED;
+    // the interval in which the time on the CPU is measured. 1 means every interval.
+    public int clockSampleInterval;
+    public int runState = RUN_STATE_BLOCKED;
     public String name;
     public int shares;
-    public Queue<Object> localQueue;
-    public Queue<Object> globalQueue;
+    public Queue<Object> local;
+    public Queue<Object> global;
 
     // any runnable on the queue will be processed as is.
     // any Task on the queue will also be processed according to the contract of the task.
@@ -66,39 +67,33 @@ public final class TaskGroup implements Comparable<TaskGroup> {
     public TaskFactory taskFactory;
     public int size;
     public Eventloop eventloop;
-    public CfsScheduler scheduler;
-    // the physical runtime
-    // the actual amount of time this task has spend on the CPU
-    // If there are other threads running on the same processor, pruntime can be destored because these tasks
-    // can contribute to the pruntime of this taskGroup.
-    public long pruntimeNanos;
+    public CfsTaskQueueScheduler scheduler;
+    // The accumulated amount of time this task has spend on the CPU
+    // If there are other threads running on the same processor, pruntime can be distorted because these tasks
+    // can contribute to the runtime of this taskQueue.
+    public long sumExecRuntimeNanos;
     // the virtual runtime. The vruntime is weighted + also when reinserted into the tree, the vruntime
     // is always updated to the min_vruntime. So the vruntime isn't the actual amount of time spend on the CPU
     public long vruntimeNanos;
     public long tasksProcessed;
-    // the number of times this taskGroup has been blocked
+    // the number of times this taskQueue has been blocked
     public long blockedCount;
-    // the number of times this taskGroup has been context switched.
+    // the number of times this taskQueue has been context switched.
     public boolean contextSwitchCount;
 
-    // the start time of this TaskGroup
+    // the start time of this TaskQueue
     public long startNanos;
 
     // The TakGroup is an intrusive double-linked-list-node. This is used to keep track
     // of blocked shared tasksGroups.
-    public TaskGroup prev;
-    public TaskGroup next;
+    public TaskQueue prev;
+    public TaskQueue next;
 
-    /**
-     * The maximum amount of time the tasks in this group can run before the taskGroup is
-     * context switched.
-     */
-    public long quotaNanos;
-
-    public final TaskGroupMetrics metrics = new TaskGroupMetrics();
+    public final TaskQueueMetrics metrics = new TaskQueueMetrics();
+    public long weight = 1;
 
     @Override
-    public int compareTo(TaskGroup that) {
+    public int compareTo(TaskQueue that) {
         if (that.vruntimeNanos == this.vruntimeNanos) {
             return 0;
         }
@@ -107,37 +102,39 @@ public final class TaskGroup implements Comparable<TaskGroup> {
     }
 
     /**
-     * Polls for a single TaskGroup.
+     * Polls for a single Runnable. If only the local queue is set, a poll is done from the
+     * local queue. If only a global queue is set, a poll is done from the global queue. If
+     * both local and global queue are set, then a round robin poll is done over these 2 queues.
      *
-     * @return the TaskGroup that is next or <code>null</code> if this TaskGroup has no more
+     * @return the Runnable that is next or <code>null</code> if this TaskQueue has no more
      * tasks to execute.
      */
     public Runnable poll() {
         Object taskObj;
         switch (pollState) {
             case POLL_LOCAL_ONLY:
-                taskObj = localQueue.poll();
+                taskObj = local.poll();
                 break;
             case POLL_GLOBAL_ONLY:
-                taskObj = globalQueue.poll();
+                taskObj = global.poll();
                 break;
             case POLL_GLOBAL_FIRST:
-                taskObj = globalQueue.poll();
+                taskObj = global.poll();
                 if (taskObj != null) {
                     pollState = POLL_LOCAL_FIRST;
                 } else {
-                    taskObj = localQueue.poll();
+                    taskObj = local.poll();
                     if (taskObj == null) {
                         pollState = POLL_LOCAL_FIRST;
                     }
                 }
                 break;
             case POLL_LOCAL_FIRST:
-                taskObj = localQueue.poll();
+                taskObj = local.poll();
                 if (taskObj != null) {
                     pollState = POLL_GLOBAL_FIRST;
                 } else {
-                    taskObj = globalQueue.poll();
+                    taskObj = global.poll();
                     if (taskObj == null) {
                         pollState = POLL_GLOBAL_FIRST;
                     }
@@ -147,30 +144,30 @@ public final class TaskGroup implements Comparable<TaskGroup> {
                 throw new IllegalStateException("Unknown pollState:" + pollState);
         }
 
-        return (Runnable) taskObj;
-//
-//        if (taskObj == null) {
-//            return null;
-//        } else if (taskObj instanceof Runnable) {
-//            return (Runnable) taskObj;
-//        } else {
-//            // todo: doesn't handle null
-//            Task task = taskFactory.toTask(taskObj);
-//            task.taskGroup = this;
-//            return task;
-//        }
+        //return (Runnable) taskObj;
+
+        if (taskObj == null) {
+            return null;
+        } else if (taskObj instanceof Runnable) {
+            return (Runnable) taskObj;
+        } else {
+            // todo: doesn't handle null
+            Task task = taskFactory.toTask(taskObj);
+            task.taskQueue = this;
+            return task;
+        }
     }
 
     public boolean offerLocal(Object task) {
-        if (!localQueue.offer(task)) {
+        if (!local.offer(task)) {
             return false;
         }
 
-        if (state == STATE_RUNNING) {
+        if (runState == RUN_STATE_RUNNING) {
             return true;
         }
 
-        if (globalQueue != null) {
+        if (global != null) {
             eventloop.removeBlockedGlobal(this);
         }
 
@@ -180,24 +177,23 @@ public final class TaskGroup implements Comparable<TaskGroup> {
 
     @Override
     public String toString() {
-        return "TaskGroup{" +
-                "name='" + name + '\'' +
-                ", pollState=" + pollState +
-                ", state=" + state +
-                ", shares=" + shares +
-                ", localQueue=" + localQueue +
-                ", globalQueue=" + globalQueue +
-                ", taskFactory=" + taskFactory +
-                ", size=" + size +
-                ", pruntimeNanos=" + pruntimeNanos +
-                ", vruntimeNanos=" + vruntimeNanos +
-                ", tasksProcessed=" + tasksProcessed +
-                ", blockedCount=" + blockedCount +
-                ", contextSwitchCount=" + contextSwitchCount +
-                ", startNanos=" + startNanos +
-                ", prev=" + prev +
-                ", next=" + next +
-                ", quotaNanos=" + quotaNanos +
-                '}';
+        return "TaskQueue{"
+                + "name='" + name + '\''
+                + ", pollState=" + pollState
+                + ", runState=" + runState
+                + ", shares=" + shares
+                + ", weight=" + weight
+                + ", local=" + local
+                + ", global=" + global
+                + ", size=" + size
+                + ", sumExecRuntimeNanos=" + sumExecRuntimeNanos
+                + ", vruntimeNanos=" + vruntimeNanos
+                + ", tasksProcessed=" + tasksProcessed
+                + ", blockedCount=" + blockedCount
+                + ", contextSwitchCount=" + contextSwitchCount
+                + ", startNanos=" + startNanos
+                + ", prev=" + prev
+                + ", next=" + next
+                + '}';
     }
 }
