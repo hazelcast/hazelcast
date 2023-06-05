@@ -48,6 +48,7 @@ import static com.hazelcast.splitbrainprotection.durableexecutor.DurableExecutor
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("unchecked")
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -133,7 +134,7 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
 
     @Test
     public void submit_runnable_noSplitBrainProtection() {
-        assertThatThrownBy(() -> exec(3).submit(runnable()).get()).isInstanceOf(SplitBrainProtectionException.class);
+        assertThatThrownBy(() -> exec(3).submit(runnable()).get()).hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -144,7 +145,7 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
     @Test
     public void submit_runnable_result_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).submit(runnable(), "result").get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -154,7 +155,7 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
 
     @Test
     public void submit_callable_noSplitBrainProtection() {
-        assertThatThrownBy(() -> exec(3).submit(callable()).get()).isInstanceOf(SplitBrainProtectionException.class);
+        assertThatThrownBy(() -> exec(3).submit(callable()).get()).hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -165,7 +166,7 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
     @Test
     public void submitToKeyOwner_callable_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).submitToKeyOwner(callable(), key(3)).get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -176,7 +177,7 @@ public class DurableExecutorSplitBrainProtectionWriteTest extends AbstractSplitB
     @Test
     public void submitToKeyOwner_runnable_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).submitToKeyOwner(runnable(), key(3)).get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test(expected = UnsupportedOperationException.class)

@@ -83,7 +83,7 @@ public class RingbufferSplitBrainProtectionWriteTest extends AbstractSplitBrainP
     @Test
     public void addAllAsync_noSplitBrainProtection() {
         assertThatThrownBy(() -> ring(3).addAllAsync(singletonList("123"), OverflowPolicy.OVERWRITE).toCompletableFuture().get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -96,7 +96,7 @@ public class RingbufferSplitBrainProtectionWriteTest extends AbstractSplitBrainP
         assertThatThrownBy(() ->
                 ring(3).addAsync("123", OverflowPolicy.OVERWRITE).toCompletableFuture().get()
         )
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     protected Ringbuffer ring(int index) {

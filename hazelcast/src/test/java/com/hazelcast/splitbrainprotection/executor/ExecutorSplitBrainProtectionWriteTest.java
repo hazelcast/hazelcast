@@ -168,7 +168,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submit_runnable_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).submit(runnable()).get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -179,7 +179,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submit_runnable_result_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).submit(runnable(), "result").get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -190,7 +190,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submit_runnable_selector_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).submit(runnable(), selector(3)).get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -215,7 +215,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submit_callable_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).submit(callable()).get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -226,7 +226,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submit_callable_selector_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).submit(callable(), selector(3)).get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -251,7 +251,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submitToAllMembers_callable_noSplitBrainProtection() {
         assertThatThrownBy(() -> wait(exec(3).submitToAllMembers(callable())))
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -290,7 +290,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submitToKeyOwner_callable_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).submitToKeyOwner(callable(), key(3)).get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -329,7 +329,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submitToMember_callable_noSplitBrainProtection() {
         assertThatThrownBy(() -> exec(3).submitToMember(callable(), member(3)).get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -368,7 +368,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submitToMembers_callable_member_noSplitBrainProtection() {
         assertThatThrownBy(() -> wait(exec(3).submitToMembers(callable(), singletonList(member(3)))))
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
@@ -393,7 +393,7 @@ public class ExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainPro
     @Test
     public void submitToMembers_callable_selector_noSplitBrainProtection() {
         assertThatThrownBy(() -> wait(exec(3).submitToMembers(callable(), selector(3))))
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test

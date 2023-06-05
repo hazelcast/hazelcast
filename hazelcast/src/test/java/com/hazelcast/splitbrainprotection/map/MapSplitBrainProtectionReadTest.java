@@ -83,7 +83,7 @@ public class MapSplitBrainProtectionReadTest extends AbstractSplitBrainProtectio
     @Test
     public void getAsync_failing_whenSplitBrainProtectionSize_notMet() {
         assertThatThrownBy(() -> map(3).getAsync("foo").toCompletableFuture().get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test
