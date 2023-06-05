@@ -34,7 +34,7 @@ import java.util.UUID;
 import static com.hazelcast.config.IndexType.BITMAP;
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertNull;
