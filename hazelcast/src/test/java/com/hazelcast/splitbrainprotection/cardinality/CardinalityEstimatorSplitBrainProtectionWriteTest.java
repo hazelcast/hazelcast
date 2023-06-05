@@ -80,7 +80,7 @@ public class CardinalityEstimatorSplitBrainProtectionWriteTest extends AbstractS
     @Test
     public void addAsync_noSplitBrainProtection() {
         assertThatThrownBy(() -> estimator(3).addAsync(1).toCompletableFuture().get())
-                .isInstanceOf(SplitBrainProtectionException.class);
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     protected CardinalityEstimator estimator(int index) {
