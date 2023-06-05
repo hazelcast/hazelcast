@@ -119,7 +119,7 @@ public class StsMonitorTest {
     @Test
     public void testWatchResumesAfter410Gone() {
         ClusterTopologyIntentTracker tracker = Mockito.mock(ClusterTopologyIntentTracker.class, Mockito.withSettings().lenient());
-        KubernetesClient.StsMonitor stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token, tracker);
+        KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token, tracker);
 
         // initial STS list
         expectAndReturnStsList("1", "2").once();
