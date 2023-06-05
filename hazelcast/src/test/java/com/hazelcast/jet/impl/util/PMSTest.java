@@ -14,21 +14,39 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.security.Permission;
+import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.google.common.collect.Lists.asList;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
@@ -36,11 +54,38 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.memberPruningMetaSupp
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PMSTest extends SimpleTestInClusterSupport {
+    private static final String OUTPUT_FILE = "output.txt";
+    private File output;
+    private Scanner scanner;
+
     @BeforeClass
     public static void beforeClass() throws Exception {
         initialize(3, null);
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        output = new File(OUTPUT_FILE);
+        assertTrue(output.createNewFile());
+        assertTrue(output.exists());
+        try {
+            scanner = new Scanner(Path.of(OUTPUT_FILE));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        File output = new File(OUTPUT_FILE);
+        assertTrue(output.exists());
+        output.delete();
     }
 
     @Test
@@ -71,6 +116,10 @@ public class PMSTest extends SimpleTestInClusterSupport {
 
         // should print 0 and 1.
         assertJobStatusEventually(job, JobStatus.COMPLETED);
+
+        Assert.assertEquals("0", scanner.nextLine());
+        Assert.assertEquals("1", scanner.nextLine());
+        scanner.close();
     }
 
     @Test
@@ -103,6 +152,8 @@ public class PMSTest extends SimpleTestInClusterSupport {
 
         // should print 0 and 1.
         assertJobStatusEventually(job, JobStatus.COMPLETED);
+        Assert.assertEquals("0", scanner.nextLine());
+        Assert.assertEquals("1", scanner.nextLine());
     }
 
     @Test
@@ -147,6 +198,7 @@ public class PMSTest extends SimpleTestInClusterSupport {
 
         // should print 2.
         assertJobStatusEventually(job, JobStatus.COMPLETED);
+        Assert.assertEquals("2", scanner.nextLine());
     }
 
     @Test
@@ -191,6 +243,14 @@ public class PMSTest extends SimpleTestInClusterSupport {
         // (0, 1)
         // (1, 1)
         assertJobStatusEventually(job, JobStatus.COMPLETED);
+        Set<String> expectedOutput = new HashSet<>(Arrays.asList("(0, 0)", "(1, 0)", "(0, 1)", "(1, 1)"));
+        try {
+            String nextLine = scanner.nextLine();
+            System.err.println(nextLine);
+            assertTrue(expectedOutput.remove(nextLine));
+        } catch (NoSuchElementException e) {
+            fail("Can't find any line in file");
+        }
     }
 
     @Test
@@ -303,9 +363,23 @@ public class PMSTest extends SimpleTestInClusterSupport {
     }
 
     private static class PrintP extends AbstractProcessor {
+        private FileWriter fileWriter;
+
+        {
+            try {
+                fileWriter = new FileWriter(OUTPUT_FILE);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private PrintWriter printWriter = new PrintWriter(fileWriter);
+
         @Override
         protected boolean tryProcess0(@NotNull Object item) {
             System.err.println(item);
+            printWriter.println(item);
+            printWriter.flush();
             return complete();
         }
 
