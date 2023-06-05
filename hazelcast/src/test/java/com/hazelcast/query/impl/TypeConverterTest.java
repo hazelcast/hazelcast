@@ -19,10 +19,8 @@ package com.hazelcast.query.impl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
@@ -34,16 +32,13 @@ import java.util.Locale;
 
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TypeConverterTest {
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testConvert_whenPassedNullValue_thenConvertToNullObject() {
@@ -170,10 +165,10 @@ public class TypeConverterTest {
     @Test
     public void testBigIntegerConvert_whenPassedNullValue_thenConvertToBigInteger() {
         Comparable value = "NotANumber";
-        thrown.expect(NumberFormatException.class);
-        thrown.expectMessage(startsWith("For input string: "));
 
-        TypeConverters.BIG_INTEGER_CONVERTER.convert(value);
+        assertThatThrownBy(() -> TypeConverters.BIG_INTEGER_CONVERTER.convert(value))
+                .isInstanceOf(NumberFormatException.class)
+                .hasMessageStartingWith("For input string: ");
     }
 
     @Test
@@ -287,9 +282,8 @@ public class TypeConverterTest {
     @Test
     public void testBigDecimalConvert_whenPassedNullValue_thenConvertToBigDecimal() {
         Comparable value = "NotANumber";
-        thrown.expect(NumberFormatException.class);
-
-        TypeConverters.BIG_DECIMAL_CONVERTER.convert(value);
+        assertThatThrownBy(() -> TypeConverters.BIG_DECIMAL_CONVERTER.convert(value))
+                .isInstanceOf(NumberFormatException.class);
     }
 
     @Test
@@ -319,9 +313,7 @@ public class TypeConverterTest {
     @Test
     public void testCharConvert_whenPassedEmptyString_thenConvertToChar() {
         Comparable value = "";
-        thrown.expect(IllegalArgumentException.class);
-
-        TypeConverters.CHAR_CONVERTER.convert(value);
+        assertThatThrownBy(() -> TypeConverters.CHAR_CONVERTER.convert(value)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
