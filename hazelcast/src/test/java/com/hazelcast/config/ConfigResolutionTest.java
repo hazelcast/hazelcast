@@ -38,8 +38,6 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ConfigResolutionTest {
 
-    private static final String CONFIG_FILE_PREFIX = ConfigResolutionTest.class.getSimpleName() + "foo";
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -58,7 +56,7 @@ public class ConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_xml_loadedAsXml() throws Exception {
-        File file = helper.givenXmlConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".xml", "cluster-xml");
+        File file = helper.givenXmlConfigFileInWorkDir("foo.xml", "cluster-xml");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         Config config = Config.load();
@@ -68,8 +66,8 @@ public class ConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_xml_loadedAsXml() throws Exception {
-        helper.givenXmlConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".xml", "cluster-xml");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".xml");
+        helper.givenXmlConfigFileOnClasspath("foo.xml", "cluster-xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.xml");
 
         Config config = Config.load();
 
@@ -78,7 +76,7 @@ public class ConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_yaml_loadedAsYaml() throws Exception {
-        File file = helper.givenYamlConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".yaml", "cluster-yaml");
+        File file = helper.givenYamlConfigFileInWorkDir("foo.yaml", "cluster-yaml");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         Config config = Config.load();
@@ -88,8 +86,8 @@ public class ConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_yaml_loadedAsYaml() throws Exception {
-        helper.givenYamlConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".yaml", "cluster-yaml");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".yaml");
+        helper.givenYamlConfigFileOnClasspath("foo.yaml", "cluster-yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yaml");
 
         Config config = Config.load();
 
@@ -98,7 +96,7 @@ public class ConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_yml_loadedAsYaml() throws Exception {
-        File file = helper.givenYamlConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".yml", "cluster-yaml");
+        File file = helper.givenYamlConfigFileInWorkDir("foo.yml", "cluster-yaml");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         Config config = Config.load();
@@ -108,8 +106,8 @@ public class ConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_yml_loadedAsYaml() throws Exception {
-        helper.givenYamlConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".yml", "cluster-yaml");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".yml");
+        helper.givenYamlConfigFileOnClasspath("foo.yml", "cluster-yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yml");
 
         Config config = Config.load();
 
@@ -118,13 +116,13 @@ public class ConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_bar_throws() throws Exception {
-        File file = helper.givenXmlConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".bar", "irrelevant");
+        File file = helper.givenXmlConfigFileInWorkDir("foo.bar", "irrelevant");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".bar");
+        expectedException.expectMessage("foo.bar");
         expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
 
         Config.load();
@@ -132,13 +130,13 @@ public class ConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_bar_throws() throws Exception {
-        helper.givenXmlConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".bar", "irrelevant");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".bar");
+        helper.givenXmlConfigFileOnClasspath("foo.bar", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.bar");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("classpath:" + CONFIG_FILE_PREFIX + ".bar");
+        expectedException.expectMessage("classpath:foo.bar");
         expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
 
         Config.load();
@@ -146,97 +144,97 @@ public class ConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentXml_throws() {
-        System.setProperty(SYSPROP_MEMBER_CONFIG, CONFIG_FILE_PREFIX + ".xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.xml");
 
         expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".xml");
+        expectedException.expectMessage("foo.xml");
 
         Config.load();
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentXml_throws() {
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".xml");
+        expectedException.expectMessage("foo.xml");
 
         Config.load();
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentYaml_throws() {
-        System.setProperty(SYSPROP_MEMBER_CONFIG, CONFIG_FILE_PREFIX + ".yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yaml");
 
         expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
+        expectedException.expectMessage("foo.yaml");
 
         Config.load();
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentYaml_throws() {
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".yaml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
+        expectedException.expectMessage("foo.yaml");
 
         Config.load();
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentYml_throws() {
-        System.setProperty(SYSPROP_MEMBER_CONFIG, CONFIG_FILE_PREFIX + ".yml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yml");
 
         expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yml");
+        expectedException.expectMessage("foo.yml");
 
         Config.load();
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentYml_throws() {
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".yml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yml");
+        expectedException.expectMessage("foo.yml");
 
         Config.load();
     }
 
     @Test
     public void testResolveSystemProperty_file_nonExistentBar_throws() {
-        System.setProperty(SYSPROP_MEMBER_CONFIG, CONFIG_FILE_PREFIX + ".bar");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.bar");
 
         expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".bar");
+        expectedException.expectMessage("foo.bar");
 
         Config.load();
     }
 
     @Test
     public void testResolveSystemProperty_classpath_nonExistentBar_throws() {
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".bar");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.bar");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage("classpath");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".bar");
+        expectedException.expectMessage("foo.bar");
 
         Config.load();
     }
 
     @Test
     public void testResolveSystemProperty_file_noSuffix_throws() throws Exception {
-        File file = helper.givenXmlConfigFileInWorkDir(CONFIG_FILE_PREFIX, "irrelevant");
+        File file = helper.givenXmlConfigFileInWorkDir("foo", "irrelevant");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX);
+        expectedException.expectMessage("foo");
         expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
 
         Config.load();
@@ -244,13 +242,13 @@ public class ConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_noSuffix_throws() throws Exception {
-        helper.givenXmlConfigFileOnClasspath(CONFIG_FILE_PREFIX, "irrelevant");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX);
+        helper.givenXmlConfigFileOnClasspath("foo", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage("classpath:" + CONFIG_FILE_PREFIX);
+        expectedException.expectMessage("classpath:foo");
         expectedException.expectMessage(ALL_ACCEPTED_SUFFIXES_STRING);
 
         Config.load();

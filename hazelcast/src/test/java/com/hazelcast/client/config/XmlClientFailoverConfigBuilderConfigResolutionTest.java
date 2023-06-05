@@ -39,9 +39,6 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
-    private static final String CONFIG_FILE_PREFIX = XmlClientFailoverConfigBuilderConfigResolutionTest
-            .class.getSimpleName() + "foo";
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -56,8 +53,8 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_xml() throws Exception {
-        helper.givenXmlClientFailoverConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".xml", 42);
-        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, CONFIG_FILE_PREFIX + ".xml");
+        helper.givenXmlClientFailoverConfigFileInWorkDir("foo.xml", 42);
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "foo.xml");
 
         ClientFailoverConfig config = new XmlClientFailoverConfigBuilder().build();
 
@@ -66,8 +63,8 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_xml() throws Exception {
-        helper.givenXmlClientFailoverConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".xml", 42);
-        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".xml");
+        helper.givenXmlClientFailoverConfigFileOnClasspath("foo.xml", 42);
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.xml");
 
         ClientFailoverConfig config = new XmlClientFailoverConfigBuilder().build();
         assertEquals(42, config.getTryCount());
@@ -96,13 +93,13 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonXml_throws() throws Exception {
-        File file = helper.givenXmlClientFailoverConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".yaml", 42);
+        File file = helper.givenXmlClientFailoverConfigFileInWorkDir("foo.yaml", 42);
         System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
+        expectedException.expectMessage("foo.yaml");
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlClientFailoverConfigBuilder().build();
@@ -110,13 +107,13 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonXml_throws() throws Exception {
-        helper.givenXmlClientFailoverConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".yaml", 42);
-        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".yaml");
+        helper.givenXmlClientFailoverConfigFileOnClasspath("foo.yaml", 42);
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "classpath:foo.yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
+        expectedException.expectMessage("foo.yaml");
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlClientFailoverConfigBuilder().build();
@@ -137,11 +134,11 @@ public class XmlClientFailoverConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentNonXml_throws() {
-        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, CONFIG_FILE_PREFIX + ".yaml");
+        System.setProperty(SYSPROP_CLIENT_FAILOVER_CONFIG, "foo.yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_CLIENT_FAILOVER_CONFIG);
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
+        expectedException.expectMessage("foo.yaml");
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlClientFailoverConfigBuilder().build();

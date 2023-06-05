@@ -41,8 +41,6 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class YamlConfigBuilderConfigResolutionTest {
 
-    private static final String CONFIG_FILE_PREFIX = YamlConfigBuilderConfigResolutionTest.class.getSimpleName() + "foo";
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -57,8 +55,8 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_yaml() throws Exception {
-        helper.givenYamlConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".yaml", "cluster-yaml-file");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, CONFIG_FILE_PREFIX + ".yaml");
+        helper.givenYamlConfigFileInWorkDir("foo.yaml", "cluster-yaml-file");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yaml");
 
         Config config = new YamlConfigBuilder().build();
         assertEquals("cluster-yaml-file", config.getInstanceName());
@@ -66,8 +64,8 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_yaml() throws Exception {
-        helper.givenYamlConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".yaml", "cluster-yaml-classpath");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".yaml");
+        helper.givenYamlConfigFileOnClasspath("foo.yaml", "cluster-yaml-classpath");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yaml");
 
         Config config = new YamlConfigBuilder().build();
         assertEquals("cluster-yaml-classpath", config.getInstanceName());
@@ -75,8 +73,8 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_yml() throws Exception {
-        helper.givenYamlConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".yml", "cluster-yml-file");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, CONFIG_FILE_PREFIX + ".yml");
+        helper.givenYamlConfigFileInWorkDir("foo.yml", "cluster-yml-file");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.yml");
 
         Config config = new YamlConfigBuilder().build();
         assertEquals("cluster-yml-file", config.getInstanceName());
@@ -84,8 +82,8 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_yml() throws Exception {
-        helper.givenYamlConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".yml", "cluster-yml-classpath");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".yml");
+        helper.givenYamlConfigFileOnClasspath("foo.yml", "cluster-yml-classpath");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.yml");
 
         Config config = new YamlConfigBuilder().build();
         assertEquals("cluster-yml-classpath", config.getInstanceName());
@@ -114,13 +112,13 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonYaml_throws() throws Exception {
-        File file = helper.givenYamlConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".xml", "irrelevant");
+        File file = helper.givenYamlConfigFileInWorkDir("foo.xml", "irrelevant");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".xml");
+        expectedException.expectMessage("foo.xml");
         expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
 
         new YamlConfigBuilder().build();
@@ -128,13 +126,13 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonYaml_throws() throws Exception {
-        helper.givenYamlConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".xml", "irrelevant");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".xml");
+        helper.givenYamlConfigFileOnClasspath("foo.xml", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".xml");
+        expectedException.expectMessage("foo.xml");
         expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
 
         new YamlConfigBuilder().build();
@@ -142,11 +140,11 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentNonYaml_throws() {
-        System.setProperty(SYSPROP_MEMBER_CONFIG, CONFIG_FILE_PREFIX + ".xml");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "foo.xml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".xml");
+        expectedException.expectMessage("foo.xml");
         expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
 
         new YamlConfigBuilder().build();
@@ -167,13 +165,13 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_noSuffix_throws() throws Exception {
-        File file = helper.givenYamlConfigFileInWorkDir(CONFIG_FILE_PREFIX, "irrelevant");
+        File file = helper.givenYamlConfigFileInWorkDir("foo", "irrelevant");
         System.setProperty(SYSPROP_MEMBER_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX);
+        expectedException.expectMessage("foo");
         expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
 
         new YamlConfigBuilder().build();
@@ -181,13 +179,13 @@ public class YamlConfigBuilderConfigResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_noSuffix_throws() throws Exception {
-        helper.givenYamlConfigFileOnClasspath(CONFIG_FILE_PREFIX, "irrelevant");
-        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:" + CONFIG_FILE_PREFIX);
+        helper.givenYamlConfigFileOnClasspath("foo", "irrelevant");
+        System.setProperty(SYSPROP_MEMBER_CONFIG, "classpath:foo");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_MEMBER_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX);
+        expectedException.expectMessage("foo");
         expectedException.expectMessage(YAML_ACCEPTED_SUFFIXES_STRING);
 
         new YamlConfigBuilder().build();

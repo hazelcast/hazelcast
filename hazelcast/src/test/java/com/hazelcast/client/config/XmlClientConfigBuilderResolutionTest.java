@@ -38,8 +38,6 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class XmlClientConfigBuilderResolutionTest {
 
-    private static final String CONFIG_FILE_PREFIX = XmlClientConfigBuilderResolutionTest.class.getSimpleName() + "foo";
-
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -54,8 +52,8 @@ public class XmlClientConfigBuilderResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_xml() throws Exception {
-        helper.givenXmlClientConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".xml", "cluster-xml-file");
-        System.setProperty(SYSPROP_CLIENT_CONFIG, CONFIG_FILE_PREFIX + ".xml");
+        helper.givenXmlClientConfigFileInWorkDir("foo.xml", "cluster-xml-file");
+        System.setProperty(SYSPROP_CLIENT_CONFIG, "foo.xml");
 
         ClientConfig config = new XmlClientConfigBuilder().build();
         assertEquals("cluster-xml-file", config.getInstanceName());
@@ -63,8 +61,8 @@ public class XmlClientConfigBuilderResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_xml() throws Exception {
-        helper.givenXmlClientConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".xml", "cluster-xml-classpath");
-        System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".xml");
+        helper.givenXmlClientConfigFileOnClasspath("foo.xml", "cluster-xml-classpath");
+        System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:foo.xml");
 
         ClientConfig config = new XmlClientConfigBuilder().build();
         assertEquals("cluster-xml-classpath", config.getInstanceName());
@@ -93,13 +91,13 @@ public class XmlClientConfigBuilderResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonXml_throws() throws Exception {
-        File file = helper.givenXmlClientConfigFileInWorkDir(CONFIG_FILE_PREFIX + ".yaml", "irrelevant");
+        File file = helper.givenXmlClientConfigFileInWorkDir("foo.yaml", "irrelevant");
         System.setProperty(SYSPROP_CLIENT_CONFIG, file.getAbsolutePath());
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_CLIENT_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
+        expectedException.expectMessage("foo.yaml");
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlClientConfigBuilder().build();
@@ -107,13 +105,13 @@ public class XmlClientConfigBuilderResolutionTest {
 
     @Test
     public void testResolveSystemProperty_classpath_nonXml_throws() throws Exception {
-        helper.givenXmlClientConfigFileOnClasspath(CONFIG_FILE_PREFIX + ".yaml", "irrelevant");
-        System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:" + CONFIG_FILE_PREFIX + ".yaml");
+        helper.givenXmlClientConfigFileOnClasspath("foo.yaml", "irrelevant");
+        System.setProperty(SYSPROP_CLIENT_CONFIG, "classpath:foo.yaml");
 
         expectedException.expect(HazelcastException.class);
         expectedException.expectMessage(SYSPROP_CLIENT_CONFIG);
         expectedException.expectMessage("suffix");
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
+        expectedException.expectMessage("foo.yaml");
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlClientConfigBuilder().build();
@@ -134,11 +132,11 @@ public class XmlClientConfigBuilderResolutionTest {
 
     @Test
     public void testResolveSystemProperty_file_nonExistentNonXml_throws() {
-        System.setProperty(SYSPROP_CLIENT_CONFIG, CONFIG_FILE_PREFIX + ".yaml");
+        System.setProperty(SYSPROP_CLIENT_CONFIG, "foo.yaml");
 
         expectedException.expectMessage(SYSPROP_CLIENT_CONFIG);
         expectedException.expect(HazelcastException.class);
-        expectedException.expectMessage(CONFIG_FILE_PREFIX + ".yaml");
+        expectedException.expectMessage("foo.yaml");
         expectedException.expectMessage(XML_ACCEPTED_SUFFIXES_STRING);
 
         new XmlClientConfigBuilder().build();
