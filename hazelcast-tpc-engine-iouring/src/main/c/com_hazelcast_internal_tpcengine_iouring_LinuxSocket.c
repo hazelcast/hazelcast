@@ -62,7 +62,7 @@ static jobject create_java_socket_address(JNIEnv* env, struct sockaddr_storage* 
 
 JNIEXPORT jobject JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_toInetSocketAddress(JNIEnv* env, jclass this_class,
-                                                                              jlong addr, jlong l){
+                                                                              jlong addr, jlong l) {
     struct sockaddr_storage* sa = (struct sockaddr_storage*)addr;
     socklen_t sa_len = *((socklen_t*)l);
 
@@ -70,7 +70,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_toInetSocketAddress(JN
 }
 
 JNIEXPORT void JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_initNative(JNIEnv* env, jclass this_class){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_initNative(JNIEnv* env, jclass this_class) {
     class_SocketAddressFactory = (*env)->NewGlobalRef(env, (*env)->FindClass(
         env, "com/hazelcast/internal/tpcengine/iouring/SocketAddressFactory"));
     method_createIPv4Address = (*env)->GetStaticMethodID(
@@ -79,15 +79,15 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_initNative(JNIEnv* env
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_socket(JNIEnv* env, jclass this_class, jint type,
-                                                                 jint domain, jint protocol){
+                                                                 jint domain, jint protocol) {
     return socket(type, domain, protocol);
 }
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_listen(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                                 jint backlog){
+                                                                 jint backlog) {
     int res = listen(sock_fd, backlog);
-    if (res == -1){
+    if (res == -1) {
         throw_io_exception(env, "listen", errno);
         return;
     }
@@ -95,7 +95,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_listen(JNIEnv* env, jc
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_bind(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                               jbyteArray local_addr, jint port){
+                                                               jbyteArray local_addr, jint port) {
     struct sockaddr_storage sa;
     socklen_t len = sockaddr_from_java(env, local_addr, port, &sa);
 
@@ -107,7 +107,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_bind(JNIEnv* env, jcla
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_connect(JNIEnv *env, jclass this_class, jint sock_fd,
-                                                                  jbyteArray remote_addr, jint port, jint family){
+                                                                  jbyteArray remote_addr, jint port, jint family) {
      struct sockaddr_storage sa;
      socklen_t len = sockaddr_from_java(env, remote_addr, port, &sa);
 
@@ -121,7 +121,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_connect(JNIEnv *env, j
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpNoDelay(JNIEnv *env, jclass this_class, jint sock_fd,
-                                                                        jboolean tcpNoDelay){
+                                                                        jboolean tcpNoDelay) {
     int option_value = tcpNoDelay;
     int option_len = sizeof(int);
 
@@ -133,7 +133,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpNoDelay(JNIEnv *
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isTcpNoDelay(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isTcpNoDelay(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
     int option_len = sizeof(option_value);
 
@@ -146,7 +146,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isTcpNoDelay(JNIEnv* e
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setSendBufferSize(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                                            jint sendBufferSize){
+                                                                            jint sendBufferSize) {
     int option_value = sendBufferSize;
     int option_len = sizeof(option_value);
 
@@ -158,7 +158,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setSendBufferSize(JNIE
 }
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getSendBufferSize(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getSendBufferSize(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
     int option_len = sizeof(option_value);
 
@@ -171,7 +171,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getSendBufferSize(JNIE
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setReceiveBufferSize(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                                               jint receiveBufferSize){
+                                                                               jint receiveBufferSize) {
     int option_value = receiveBufferSize;
     int option_len = sizeof(option_value);
 
@@ -183,7 +183,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setReceiveBufferSize(J
 }
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getReceiveBufferSize(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getReceiveBufferSize(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
     int option_len = sizeof(option_value);
 
@@ -195,7 +195,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getReceiveBufferSize(J
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isReuseAddress(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isReuseAddress(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
     int option_len = sizeof(option_value);
 
@@ -208,7 +208,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isReuseAddress(JNIEnv*
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setReuseAddress(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                               jboolean reuseAddress){
+                                                               jboolean reuseAddress) {
     int option_value = reuseAddress;
     int option_len = sizeof(option_value);
 
@@ -220,7 +220,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setReuseAddress(JNIEnv
  }
 
 JNIEXPORT jboolean JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isReusePort(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isReusePort(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
     int option_len = sizeof(option_value);
 
@@ -233,7 +233,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isReusePort(JNIEnv* en
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setReusePort(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                            jboolean reusePort){
+                                                            jboolean reusePort) {
     int option_value = reusePort;
     int option_len = sizeof(option_value);
 
@@ -245,7 +245,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setReusePort(JNIEnv* e
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isKeepAlive(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isKeepAlive(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
     int option_len = sizeof(option_value);
 
@@ -258,7 +258,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isKeepAlive(JNIEnv* en
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setKeepAlive(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                            jboolean keepAlive){
+                                                            jboolean keepAlive) {
     int option_value = keepAlive;
     int option_len = sizeof(option_value);
 
@@ -270,7 +270,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setKeepAlive(JNIEnv* e
 }
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getTcpKeepAliveTime(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getTcpKeepAliveTime(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
     int option_len = sizeof(option_value);
 
@@ -283,7 +283,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getTcpKeepAliveTime(JN
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpKeepAliveTime(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                                   jint tcp_keepalive_time){
+                                                                   jint tcp_keepalive_time) {
     int option_value = tcp_keepalive_time;
     int option_len = sizeof(option_value);
 
@@ -295,7 +295,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpKeepAliveTime(JN
 }
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getTcpKeepaliveIntvl(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getTcpKeepaliveIntvl(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
     int option_len = sizeof(option_value);
 
@@ -308,7 +308,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getTcpKeepaliveIntvl(J
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpKeepaliveIntvl(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                                    jint tcp_keepalive_intvl){
+                                                                    jint tcp_keepalive_intvl) {
     int option_value = tcp_keepalive_intvl;
     int option_len = sizeof(option_value);
 
@@ -320,7 +320,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpKeepaliveIntvl(J
 }
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getTcpKeepaliveProbes(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getTcpKeepaliveProbes(JNIEnv* env, jclass this_class, jint sock_fd) {
     int option_value;
     int option_len = sizeof(option_value);
 
@@ -333,7 +333,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getTcpKeepaliveProbes(
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpKeepAliveProbes(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                                     jint tcp_keepalive_probes){
+                                                                     jint tcp_keepalive_probes) {
     int option_value = tcp_keepalive_probes;
     int option_len = sizeof(option_value);
 
@@ -346,9 +346,9 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setTcpKeepAliveProbes(
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setSoLinger(JNIEnv* env, jclass this_class, jint sock_fd,
-                                                           jint soLinger){
+                                                           jint soLinger) {
     struct linger option_value;
-    if (soLinger < 0){
+    if (soLinger < 0) {
         option_value.l_onoff = 0;
         option_value.l_linger = 0;
     } else {
@@ -366,7 +366,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setSoLinger(JNIEnv* en
 }
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getSoLinger(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getSoLinger(JNIEnv* env, jclass this_class, jint sock_fd) {
     struct linger option_value;
     int option_len = sizeof(option_value);
 
@@ -379,7 +379,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getSoLinger(JNIEnv* en
 }
 
 JNIEXPORT jobject JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getLocalAddress(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getLocalAddress(JNIEnv* env, jclass this_class, jint sock_fd) {
     struct sockaddr_storage addr;
     socklen_t addr_len = sizeof(addr);
 
@@ -392,7 +392,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getLocalAddress(JNIEnv
 }
 
 JNIEXPORT jobject JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getRemoteAddress(JNIEnv* env, jclass this_class, jint sock_fd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getRemoteAddress(JNIEnv* env, jclass this_class, jint sock_fd) {
     struct sockaddr_storage addr;
     socklen_t addr_len = sizeof(addr);
 
@@ -406,9 +406,9 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_getRemoteAddress(JNIEn
 
 JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setBlocking(JNIEnv* env, jclass this_class,
-                                                           jint socketfd, jboolean blocking){
+                                                           jint socketfd, jboolean blocking) {
     int res = fcntl(socketfd, F_GETFL, 0);
-    if (res == -1){
+    if (res == -1) {
         throw_io_exception(env, "Failed to call socket.setBlocking", errno);
         return;
     }
@@ -429,9 +429,9 @@ Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_setBlocking(JNIEnv* en
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isBlocking(JNIEnv* env, jclass this_class, jint socketfd){
+Java_com_hazelcast_internal_tpcengine_iouring_LinuxSocket_isBlocking(JNIEnv* env, jclass this_class, jint socketfd) {
     int res = fcntl(socketfd, F_GETFL, 0);
-    if (res == -1){
+    if (res == -1) {
         return throw_io_exception(env, "Failed to call socket.isBlocking", errno);
     }
     int flags = res;

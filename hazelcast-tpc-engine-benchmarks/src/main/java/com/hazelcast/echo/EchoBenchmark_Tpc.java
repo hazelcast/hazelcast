@@ -62,14 +62,14 @@ public class EchoBenchmark_Tpc {
     public static final int socketBufferSize = 128 * 1024;
     public static final boolean useDirectByteBuffers = true;
     public static final long iterations = 4_000_000L;
-    public static final int payloadSize = 1000;
+    public static final int payloadSize = 0;
     public static final int concurrency = 1;
     public static final boolean tcpNoDelay = true;
     public static final boolean spin = false;
     public static final boolean regularSchedule = true;
-    public static final ReactorType reactorType = ReactorType.NIO;
-    public static final String cpuAffinityClient = "2";
-    public static final String cpuAffinityServer = "9";
+    public static final ReactorType reactorType = ReactorType.IOURING;
+    public static final String cpuAffinityClient = "1";
+    public static final String cpuAffinityServer = "4";
     public static final boolean registerRingFd = false;
 
     public static void main(String[] args) throws InterruptedException {

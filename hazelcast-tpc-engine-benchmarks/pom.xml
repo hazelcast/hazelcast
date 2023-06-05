@@ -127,13 +127,13 @@
         <dependency>
             <groupId>io.netty.incubator</groupId>
             <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-            <version>0.0.17.Final-SNAPSHOT</version>
+            <version>0.0.21.Final</version>
             <classifier>linux-x86_64</classifier>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.1.87.Final</version>
+            <version>4.1.93.Final</version>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>

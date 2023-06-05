@@ -37,7 +37,7 @@ public class EchoBenchmark_Netty {
     public static final int port = 5000;
     public static final int concurrency = 1;
     public static final long iterations = 4_000_000;
-    public static final Type type = Type.EPOLL;
+    public static final Type type = Type.NIO;
     public static final String cpuAffinityClient = "1";
     public static final String cpuAffinityServer = "4";
 

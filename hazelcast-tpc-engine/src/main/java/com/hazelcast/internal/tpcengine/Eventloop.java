@@ -107,7 +107,6 @@ public abstract class Eventloop {
         this.spin = builder.spin;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
-        this.taskStartNanos = nanoClock.nanoTime();
         this.stallThresholdNanos = builder.stallThresholdNanos;
         this.ioIntervalNanos = builder.ioIntervalNanos;
         this.stallHandler = builder.stallHandler;
@@ -301,6 +300,7 @@ public abstract class Eventloop {
      * Override this method to execute some logic before the {@link #run()} method is called.
      */
     public void beforeRun() {
+        this.taskStartNanos = nanoClock.nanoTime();
     }
 
     /**
@@ -321,8 +321,8 @@ public abstract class Eventloop {
             "checkstyle:InnerAssignment"})
     public void run() throws Exception {
         //System.out.println("eventloop.run");
-        long now = nanoClock.nanoTime();
-        long ioDeadlineNanos = now + ioIntervalNanos;
+        long nowNanos = nanoClock.nanoTime();
+        long ioDeadlineNanos = nowNanos + ioIntervalNanos;
 
         while (!stop) {
             // Thread.sleep(100);
@@ -330,35 +330,39 @@ public abstract class Eventloop {
             // There is no point in doing the deadlineScheduler tick in the queue processing loop
             // because the queue is going to be processed till it is empty (or the quotaDeadlineNanos
             // is exceeded).
-            deadlineScheduler.tick(now);
+            deadlineScheduler.tick(nowNanos);
 
             scheduleBlockedGlobal();
 
             TaskQueue queue = taskQueueScheduler.pickNext();
             if (queue == null) {
+                long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
+                long timeoutNanos = earliestDeadlineNanos == -1
+                        ? Long.MAX_VALUE
+                        : Math.max(0, earliestDeadlineNanos - nowNanos);
 
                 //System.out.println("park");
-                park(now);
+                park(timeoutNanos);
                 //System.out.println("park done");
                 // todo: we should only need to update the clock if real parking happened and not when work was detected
-                now = nanoClock.nanoTime();
+                nowNanos = nanoClock.nanoTime();
                 // todo: should the ioDeadlineNanos be updated here?
-                ioDeadlineNanos = now + ioIntervalNanos;
+                ioDeadlineNanos = nowNanos + ioIntervalNanos;
                 continue;
             }
 
             //System.out.println("processing");
 
-            taskQueueStartNanos = now;
-            taskQueueDeadlineNanos = now + taskQueueScheduler.timeSliceNanosCurrent();
-            long taskStartNanos = now;
+            taskQueueStartNanos = nowNanos;
+            taskQueueDeadlineNanos = nowNanos + taskQueueScheduler.timeSliceNanosCurrent();
+            long taskStartNanos = nowNanos;
             long deltaNanos = 0;
             int taskCount = 0;
             boolean queueEmpty = false;
             // This forces immediate time measurement of the first task.
             int clockSampleStep = 1;
             // Process the tasks in a queue as long as the deadline is not exceeded.
-            while (now <= taskQueueDeadlineNanos) {
+            while (nowNanos <= taskQueueDeadlineNanos) {
                 Runnable task = queue.poll();
                 if (task == null) {
                     queueEmpty = true;
@@ -377,13 +381,13 @@ public abstract class Eventloop {
                 taskCount++;
 
                 if (clockSampleStep == 1) {
-                    now = nanoClock.nanoTime();
+                    nowNanos = nanoClock.nanoTime();
                     clockSampleStep = queue.clockSampleInterval;
                 } else {
                     clockSampleStep--;
                 }
 
-                long taskEndNanos = now;
+                long taskEndNanos = nowNanos;
                 long taskExecNanos = taskStartNanos - taskEndNanos;
                 deltaNanos += taskExecNanos;
 
@@ -391,8 +395,8 @@ public abstract class Eventloop {
                     stallHandler.onStall(reactor, queue, task, taskStartNanos, taskExecNanos);
                 }
 
-                if (now >= ioDeadlineNanos) {
-                    ioDeadlineNanos = now + ioIntervalNanos;
+                if (nowNanos >= ioDeadlineNanos) {
+                    ioDeadlineNanos = nowNanos + ioIntervalNanos;
                     ioSchedulerTick();
                 }
             }
@@ -431,7 +435,14 @@ public abstract class Eventloop {
     protected abstract boolean ioSchedulerTick() throws IOException;
 
     // todo: with io_uring should this involve completions?
-    protected abstract void park(long nowNanos) throws IOException;
+
+    /**
+     * Parks the current thread for a certain amount of time.
+     *
+     * @param timeoutNanos the timeout in nanos. 0 means no timeout. Long.MAX_VALUE means wait forever.
+     * @throws IOException
+     */
+    protected abstract void park(long timeoutNanos) throws IOException;
 
     public final boolean schedule(Runnable cmd,
                                   long delay,

@@ -63,7 +63,7 @@ JNIEXPORT void JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_IOUring_register(JNIEnv* env, jclass this_class, jint fd,
                                                          jint opcode, jlong arg, jint nr_args){
      int res = io_uring_register(fd, opcode, (void *)arg, nr_args);
-     if (res < 0){
+     if (res < 0) {
         throw_exception(env, "io_uring_enter", -res);
      }
 }
@@ -73,7 +73,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_IOUring_registerRingFd(JNIEnv* env
                                                                jlong ring_addr){
     // https://man7.org/linux/man-pages/man3/io_uring_register_ring_fd.3.html
     int res = io_uring_register_ring_fd((struct io_uring *)ring_addr);
-    if (res != 1){
+    if (res != 1) {
         return throw_exception(env, "io_uring_register_ring_fd", -res);
     }
 
@@ -85,32 +85,22 @@ Java_com_hazelcast_internal_tpcengine_iouring_IOUring_unregisterRingFd(JNIEnv* e
                                                                jlong ring_addr){
     // https://man7.org/linux/man-pages/man3/io_uring_unregister_ring_fd.3.html
     int res = io_uring_unregister_ring_fd((struct io_uring *)ring_addr);
-    if (res != 1){
+    if (res != 1) {
         throw_exception(env, "io_uring_unregister_ring_fd", -res);
     }
 }
-
-
-//JNIEXPORT void JNICALL
-//Java_com_hazelcast_internal_tpcengine_iouring_IOUring_register_1socket(JNIEnv* env, jclass this_class,
-//                                                                jint ring_fd, jint socket_fd){
-//
-//     int res = io_uring_register(fd, IORING_REGISTER_FILES, (void *)arg, 1);
-//     if (res < 0){
-//        return throw_exception(env, "io_uring_enter", errno);
-//     }
-//}
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_IOUring_enter(JNIEnv* env, jclass this_class, jint fd,
                                                       jint to_submit, jint min_complete, jint flags){
     int res = io_uring_enter(fd, to_submit, min_complete, flags, NULL);
-    if (res < 0){
-        if(res == -EINTR){
+    if (res < 0) {
+        if (res == -EINTR) {
             // dealing with interrupt.
             return 0;
-        }else {
-            // don't rely on errno:
+        } else {
+            // todo: don't rely on errno; the error code interpretation is different
+            // perhaps better to return the error code as is and let the caller handle it.
             // https://manpages.debian.org/unstable/liburing-dev/io_uring_enter.2.en.html
             return throw_exception(env, "io_uring_enter", -res);
         }

@@ -30,93 +30,93 @@
 #include "include/com_hazelcast_internal_tpcengine_iouring_Linux.h"
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_errno(JNIEnv *env,jclass this_class){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_errno(JNIEnv *env,jclass this_class) {
     return errno;
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_strerror(JNIEnv* env, jclass this_class, jint errnum){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_strerror(JNIEnv* env, jclass this_class, jint errnum) {
     char* err_msg = strerror(errnum);
     return (*env)->NewStringUTF(env, err_msg);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_eventfd(JNIEnv* env, jclass this_class, jint initval,
-                                                            jint flags){
+                                                            jint flags) {
     return eventfd(initval, flags);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_open(JNIEnv* env, jclass this_class, jstring pathname,
-                                                         jlong flags, jint mode){
+                                                         jlong flags, jint mode) {
     const char* path = (*env)->GetStringUTFChars(env, pathname, NULL);
     return open(path, (int)flags, (mode_t)mode);
 }
 
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_close(JNIEnv* env, jclass this_class, jint fd){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_close(JNIEnv* env, jclass this_class, jint fd) {
     return close(fd);
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_read(JNIEnv* env, jclass this_class, jint fd, jlong buf,
-                                                         jlong count){
+                                                         jlong count) {
     return read(fd, (void *)buf, (size_t)count);
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_write(JNIEnv* env, jclass this_class, jint fd, jlong buf,
-                                                          jlong count){
+                                                          jlong count) {
     return write(fd, (void *)buf, (size_t)count);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_eventfd_1write(JNIEnv* env, jclass this_class, jint fd,
-                                                                   jlong value){
+                                                                   jlong value) {
     return eventfd_write(fd, value);
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_pread(JNIEnv* env, jclass this_class, jint fd, jlong buf,
-                                                          jlong count, jlong offset){
+                                                          jlong count, jlong offset) {
     return pread(fd, (void *)buf, (size_t)count, (off_t) offset);
 }
 
 JNIEXPORT jlong JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_pwrite(JNIEnv* env, jclass this_class, jint fd, jlong buf,
-                                                           jlong count, jlong offset){
+                                                           jlong count, jlong offset) {
     return pwrite(fd, (void *)buf, (size_t)count, (off_t) offset);
 }
 
 JNIEXPORT void JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_sync(JNIEnv* env, jclass this_class){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_sync(JNIEnv* env, jclass this_class) {
     sync();
 }
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_syncfs(JNIEnv* env, jclass this_class, jint fd){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_syncfs(JNIEnv* env, jclass this_class, jint fd) {
     return syncfs(fd);
 }
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_fsync(JNIEnv* env, jclass this_class, jint fd){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_fsync(JNIEnv* env, jclass this_class, jint fd) {
     return fsync(fd);
 }
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_fdatasync(JNIEnv* env, jclass this_class, jint fd){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_fdatasync(JNIEnv* env, jclass this_class, jint fd) {
     return fdatasync(fd);
 }
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1gettime(JNIEnv* env, jclass this_class, jint clk_id,
-                                                                   jlong tp){
+                                                                   jlong tp) {
     return 0;// return clock_gettime(clk_id, );
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1currentTime(JNIEnv* env, jclass this_class){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1currentTime(JNIEnv* env, jclass this_class) {
     struct timespec timespec;
 
     int res = clock_gettime(CLOCK_REALTIME, &timespec);
@@ -127,7 +127,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1currentTime(JNIEnv* e
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1monotonicTime(JNIEnv* env,jclass this_class){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1monotonicTime(JNIEnv* env,jclass this_class) {
     struct timespec timespec;
 
     int res = clock_gettime(CLOCK_MONOTONIC, &timespec);
@@ -138,7 +138,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1monotonicTime(JNIEnv*
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1processCpuTime(JNIEnv* env, jclass this_class){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1processCpuTime(JNIEnv* env, jclass this_class) {
     struct timespec timespec;
 
     int res = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &timespec);
@@ -149,7 +149,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1processCpuTime(JNIEnv
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1threadCpuTime(JNIEnv* env, jclass this_class){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1threadCpuTime(JNIEnv* env, jclass this_class) {
     struct timespec timespec;
 
     int res = clock_gettime(CLOCK_MONOTONIC, &timespec);
@@ -160,7 +160,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_Linux_clock_1threadCpuTime(JNIEnv*
 }
 
 JNIEXPORT jlong JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_Linux_filesize(JNIEnv* env, jclass this_class, jint fd){
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_filesize(JNIEnv* env, jclass this_class, jint fd) {
     struct stat s;
     int res = fstat(fd, &s);
     if (res == -1) {

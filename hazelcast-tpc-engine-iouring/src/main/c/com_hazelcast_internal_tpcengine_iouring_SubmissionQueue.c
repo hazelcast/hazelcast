@@ -26,7 +26,7 @@
 
 
 JNIEXPORT void JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_SubmissionQueue_init0(JNIEnv* env, jobject this_object, jlong io_uring){
+Java_com_hazelcast_internal_tpcengine_iouring_SubmissionQueue_init0(JNIEnv* env, jobject this_object, jlong io_uring) {
 
     jclass this_class = (*env)->GetObjectClass(env, this_object);
 

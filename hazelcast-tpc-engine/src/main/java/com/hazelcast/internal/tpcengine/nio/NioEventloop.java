@@ -26,7 +26,6 @@ import java.nio.channels.Selector;
 import java.util.Iterator;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Nio specific Eventloop implementation.
@@ -73,25 +72,19 @@ final class NioEventloop extends Eventloop {
     }
 
     @Override
-    protected void park(long nowNanos) throws IOException {
+    protected void park(long timeoutNanos) throws IOException {
         int keyCount;
-        if (spin) {
+        long timeoutMs = timeoutNanos / 1000000;
+        if (spin || timeoutMs == 0) {
             keyCount = selector.selectNow();
         } else {
             wakeupNeeded.set(true);
-
             if (scheduleBlockedGlobal()) {
                 keyCount = selector.selectNow();
             } else {
-                long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
-                if (earliestDeadlineNanos == -1) {
-                    keyCount = selector.select();
-                } else {
-                    long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineNanos - nowNanos);
-                    keyCount = timeoutMillis <= 0
-                            ? selector.selectNow()
-                            : selector.select(timeoutMillis);
-                }
+                keyCount = timeoutNanos == Long.MAX_VALUE
+                        ? selector.select()
+                        : selector.select(timeoutMs);
             }
             wakeupNeeded.set(false);
         }

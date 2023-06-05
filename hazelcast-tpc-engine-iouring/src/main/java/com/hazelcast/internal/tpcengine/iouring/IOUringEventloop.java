@@ -137,40 +137,31 @@ public final class IOUringEventloop extends Eventloop {
 
     @Override
     public void beforeRun() {
+        super.beforeRun();
         sq_offerEventFdRead();
     }
 
     @Override
-    protected void park(long nowNanos) throws IOException {
-//        boolean hasCompletion = cq.hasCompletions();
-//        if (hasCompletion) {
-//            cq.process(eventLoopHandler);
-//        }
-
-        if (spin) {
+    protected void park(long timeoutNanos) throws IOException {
+        if (spin || timeoutNanos == 0) {
             sq.submit();
         } else {
             wakeupNeeded.set(true);
             if (scheduleBlockedGlobal()) {
                 sq.submit();
             } else {
-                long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
-                if (earliestDeadlineNanos != -1) {
-                    long timeoutNanos = earliestDeadlineNanos - nowNanos;
-                    if (timeoutNanos > 0) {
-                        sq_offerTimeout(timeoutNanos);
-                        sq.submitAndWait();
-                    } else {
-                        sq.submit();
-                    }
-                } else {
-                    sq.submitAndWait();
+                if (timeoutNanos != Long.MAX_VALUE) {
+                    sq_offerTimeout(timeoutNanos);
                 }
+
+                sq.submitAndWait();
             }
             wakeupNeeded.set(false);
         }
 
-        cq.process(eventLoopHandler);
+        if (cq.hasCompletions()) {
+            cq.process(eventLoopHandler);
+        }
     }
 
     @Override
@@ -192,6 +183,7 @@ public final class IOUringEventloop extends Eventloop {
         return worked;
     }
 
+    // todo: delete
 //    @Override
 //    protected void run() throws Exception {
 //        final NanoClock nanoClock = this.nanoClock;
