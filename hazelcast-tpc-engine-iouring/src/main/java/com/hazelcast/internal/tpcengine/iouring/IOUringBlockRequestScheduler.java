@@ -53,6 +53,7 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
 /**
  * Todo: The IOScheduler should be a scheduler for all storage devices. Currently it is only for a single device.
  */
+@SuppressWarnings({"checkstyle:MethodLength", "checkstyle:MemberName", "checkstyle:LocalVariableName"})
 public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
