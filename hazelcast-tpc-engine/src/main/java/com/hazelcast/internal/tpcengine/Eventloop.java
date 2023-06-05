@@ -22,11 +22,11 @@ import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.Clock;
+import com.hazelcast.internal.tpcengine.util.EpochClock;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.Promise;
 import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
-import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
 import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
@@ -62,7 +62,7 @@ public abstract class Eventloop {
     protected final Clock nanoClock;
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
-    public final TaskQueueHandle primordialTaskQueueHandle;
+    protected final TaskQueueHandle primordialTaskQueueHandle;
     private final ReactorMetrics metrics;
     protected boolean stop;
     protected long taskStartNanos;
@@ -71,42 +71,54 @@ public abstract class Eventloop {
     protected final DeadlineScheduler deadlineScheduler;
     protected TaskQueue sharedFirst;
     protected TaskQueue sharedLast;
-    public final Set<TaskQueue> taskQueues = new HashSet<>();
-    public final int runQueueCapacity;
+    // contains all the task-queues. The scheduler only contains the runnable ones.
+    protected final Set<TaskQueue> taskQueues = new HashSet<>();
+    protected final int runQueueCapacity;
     private final long stallThresholdNanos;
-    final CfsTaskQueueScheduler scheduler;
+    final TaskQueueScheduler taskQueueScheduler;
     private long taskQueueStartNanos;
-    private final StallHandler stallDetector;
+    private final StallHandler stallHandler;
     private long taskQueueDeadlineNanos;
 
     protected Eventloop(Reactor reactor, ReactorBuilder builder) {
+        this.nanoClock = new EpochClock();
         this.reactor = reactor;
         this.metrics = reactor.metrics;
         this.deadlineScheduler = new DeadlineScheduler(builder.deadlineRunQueueCapacity);
         this.runQueueCapacity = builder.runQueueCapacity;
-        this.scheduler = new CfsTaskQueueScheduler(
-                builder.runQueueCapacity,
-                builder.targetLatencyNanos,
-                builder.minGranularityNanos);
+        if (builder.cfs) {
+            this.taskQueueScheduler = new CfsTaskQueueScheduler(
+                    builder.runQueueCapacity,
+                    builder.targetLatencyNanos,
+                    builder.minGranularityNanos);
+        } else {
+            this.taskQueueScheduler = new FcfsTaskQueueScheduler(
+                    builder.runQueueCapacity,
+                    builder.targetLatencyNanos,
+                    builder.minGranularityNanos);
+        }
         this.primordialTaskQueueHandle = new TaskQueueBuilder(this)
                 .setName(reactor.name + "-primordial")
-                .setGlobalQueue(new MpscArrayQueue<>(builder.globalTaskQueueCapacity))
-                .setLocalQueue(new CircularQueue<>(builder.localTaskQueueCapacity))
-                .setShares(1)
+                .setGlobal(new MpscArrayQueue<>(builder.globalTaskQueueCapacity))
+                .setLocal(new CircularQueue<>(builder.localTaskQueueCapacity))
+                .setPriority(1)
                 .setTaskFactory(builder.taskFactorySupplier.get())
                 .build();
         this.spin = builder.spin;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
-        this.nanoClock = new StandardNanoClock();
         this.taskStartNanos = nanoClock.nanoTime();
         this.stallThresholdNanos = builder.stallThresholdNanos;
         this.ioIntervalNanos = builder.ioIntervalNanos;
-        this.stallDetector = builder.stallHandler;
+        this.stallHandler = builder.stallHandler;
     }
 
     public final long taskQueueStartNanos() {
         return taskQueueStartNanos;
+    }
+
+    public final TaskQueueHandle primordialTaskQueueHandle() {
+        return primordialTaskQueueHandle;
     }
 
     /**
@@ -122,15 +134,15 @@ public abstract class Eventloop {
      *
      * @return
      */
-    public boolean shouldYield() {
+    public final boolean shouldYield() {
         return nanoClock.nanoTime() > taskQueueDeadlineNanos;
     }
 
-    public boolean offer(Object task) {
+    public final boolean offer(Object task) {
         return offer(task, primordialTaskQueueHandle);
     }
 
-    public boolean offer(Object task, TaskQueueHandle handle) {
+    public final boolean offer(Object task, TaskQueueHandle handle) {
         //checkNotNull(task, "task");
         //checkNotNull(handle,"handle");
 
@@ -142,7 +154,7 @@ public abstract class Eventloop {
         return handle.queue.offerLocal(task);
     }
 
-    protected void checkEventloopThread() {
+    protected final void checkEventloopThread() {
         if (Thread.currentThread() != reactor.eventloopThread) {
             throw new IllegalStateException();
         }
@@ -236,7 +248,7 @@ public abstract class Eventloop {
             if (!queue.global.isEmpty()) {
                 removeBlockedGlobal(queue);
                 scheduled = true;
-                scheduler.enqueue(queue);
+                taskQueueScheduler.enqueue(queue);
             }
 
             queue = next;
@@ -246,6 +258,9 @@ public abstract class Eventloop {
     }
 
     protected final void removeBlockedGlobal(TaskQueue taskQueue) {
+        assert taskQueue.global != null;
+        assert taskQueue.runState == RUN_STATE_BLOCKED;
+
         TaskQueue next = taskQueue.next;
         TaskQueue prev = taskQueue.prev;
 
@@ -265,10 +280,10 @@ public abstract class Eventloop {
     }
 
     void addBlockedGlobal(TaskQueue taskQueue) {
-//        assert taskQueue.globalQueue !=null;
-//        assert taskQueue.state == STATE_BLOCKED;
-//        assert taskQueue.prev == null;
-//        assert taskQueue.next == null;
+        assert taskQueue.global != null;
+        assert taskQueue.runState == RUN_STATE_BLOCKED;
+        assert taskQueue.prev == null;
+        assert taskQueue.next == null;
 
         TaskQueue l = sharedLast;
         taskQueue.prev = l;
@@ -280,13 +295,16 @@ public abstract class Eventloop {
         }
     }
 
+    public void beforeRun() {
+    }
+
     /**
      * Runs the actual eventloop.
      * <p/>
      * Is called from the reactor thread.
      * <p>
-     * {@link StandardNanoClock#nanoTime()} is pretty expensive (+/-25ns) due to {@link System#nanoTime()}. For
-     * every task processed we do not want to call the {@link StandardNanoClock#nanoTime()} more than once because
+     * {@link EpochClock#nanoTime()} is pretty expensive (+/-25ns) due to {@link System#nanoTime()}. For
+     * every task processed we do not want to call the {@link EpochClock#nanoTime()} more than once because
      * the clock already dominates the context switch time.
      *
      * @throws Exception if something fails while running the eventloop. The reactor
@@ -297,9 +315,9 @@ public abstract class Eventloop {
             "checkstyle:CyclomaticComplexity",
             "checkstyle:InnerAssignment"})
     public void run() throws Exception {
+        //System.out.println("eventloop.run");
         long now = nanoClock.nanoTime();
         long ioDeadlineNanos = now + ioIntervalNanos;
-        this.taskQueueStartNanos = now;
 
         while (!stop) {
             // Thread.sleep(100);
@@ -311,31 +329,38 @@ public abstract class Eventloop {
 
             scheduleBlockedGlobal();
 
-            TaskQueue queue = scheduler.pickNext();
+            TaskQueue queue = taskQueueScheduler.pickNext();
             if (queue == null) {
+
+                //System.out.println("park");
                 park(now);
+                //System.out.println("park done");
                 // todo: we should only need to update the clock if real parking happened and not when work was detected
                 now = nanoClock.nanoTime();
-                taskQueueStartNanos = now;
+                // todo: should the ioDeadlineNanos be updated here?
+                ioDeadlineNanos = now + ioIntervalNanos;
                 continue;
             }
 
-            taskQueueDeadlineNanos = now + scheduler.timeSliceNanosCurrent();
+            //System.out.println("processing");
+
+            taskQueueStartNanos = now;
+            taskQueueDeadlineNanos = now + taskQueueScheduler.timeSliceNanosCurrent();
             long taskStartNanos = now;
-            boolean blockTaskQueue = false;
             long deltaNanos = 0;
             int taskCount = 0;
-
+            boolean queueEmpty = false;
             // This forces immediate time measurement of the first task.
             int clockSampleStep = 1;
             // Process the tasks in a queue as long as the deadline is not exceeded.
             while (now <= taskQueueDeadlineNanos) {
                 Runnable task = queue.poll();
                 if (task == null) {
+                    queueEmpty = true;
                     // queue is empty, we are done.
-                    blockTaskQueue = true;
                     break;
                 }
+                //System.out.println("task"+task);
 
                 try {
                     task.run();
@@ -358,7 +383,7 @@ public abstract class Eventloop {
                 deltaNanos += taskExecNanos;
 
                 if (taskExecNanos > stallThresholdNanos) {
-                    stallDetector.onStall(reactor, queue, task, taskStartNanos, taskExecNanos);
+                    stallHandler.onStall(reactor, queue, task, taskStartNanos, taskExecNanos);
                 }
 
                 if (now >= ioDeadlineNanos) {
@@ -367,34 +392,40 @@ public abstract class Eventloop {
                 }
             }
 
-            scheduler.updateCurrent(deltaNanos);
+            taskQueueScheduler.updateCurrent(deltaNanos);
             metrics.incTasksProcessedCount(taskCount);
             metrics.incCpuTimeNanos(deltaNanos);
+            metrics.incContextSwitchCount();
 
-            if (blockTaskQueue) {
-                scheduler.dequeueCurrent();
-                // the queue is empty, so we mark this queue as blocked.
+            if (queueEmpty || queue.isEmpty()) {
+                //System.out.println("park");
+                // either the empty queue was detected in the loop or
+                // the taskQueueDeadlineNanos and the queue is empty.
+
+                // remove task queue from scheduler
+                taskQueueScheduler.dequeueCurrent();
+
                 queue.runState = RUN_STATE_BLOCKED;
                 queue.blockedCount++;
 
-                // we also need to add it to the shared taskGroups so the eventloop will
-                // see any items that are written to its queue.
                 if (queue.global != null) {
+                    // we also need to add it to the shared taskQueues so the eventloop will
+                    // see any items that are written to its global queue.
                     addBlockedGlobal(queue);
                 }
             } else {
-                // todo: it could be that the task group was empty and the quota was exceeded
-
+                //System.out.println("yield");
                 // the queue exceeded its quota and therefor wasn't drained, so we
                 // need to insert it back into the scheduler because there is more work
                 // to be done.
-                scheduler.yieldCurrent();
+                taskQueueScheduler.yieldCurrent();
             }
         }
     }
 
     protected abstract boolean ioSchedulerTick() throws IOException;
 
+    // todo: with io_uring should this involve completions?
     protected abstract void park(long nowNanos) throws IOException;
 
     public final boolean schedule(Runnable cmd,

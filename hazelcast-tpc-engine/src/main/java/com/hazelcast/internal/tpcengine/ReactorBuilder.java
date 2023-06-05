@@ -31,31 +31,36 @@ import java.util.function.Supplier;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * A builder for {@link Reactor} instances.
  */
 public abstract class ReactorBuilder {
 
-    public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.localTaskQueue.capacity";
-    public static final String NAME_GLOBAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.globalTaskQueue.capacity";
-    public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.deadlineTaskQueue.capacity";
+    public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.reactor.localTaskQueue.capacity";
+    public static final String NAME_GLOBAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.reactor.globalTaskQueue.capacity";
+    public static final String NAME_SCHEDULED_RUN_QUEUE_CAPACITY = "hazelcast.tpc.reactor.deadlineRunQueue.capacity";
     public static final String NAME_REACTOR_SPIN = "hazelcast.tpc.reactor.spin";
     public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
-    public static final String NAME_RUN_QUEUE_CAPACITY = "hazelcast.tpc.runqueue.capacity";
-    public static final String NAME_TARGET_LATENCY_NANOS = "hazelcast.tpc.targetLatency.ns";
-    public static final String NAME_MIN_GRANULARITY_NANOS = "hazelcast.tpc.minGranularity.ns";
+    public static final String NAME_RUN_QUEUE_CAPACITY = "hazelcast.tpc.reactor.runQueue.capacity";
+    public static final String NAME_TARGET_LATENCY_NANOS = "hazelcast.tpc.reactor.targetLatency.ns";
+    public static final String NAME_MIN_GRANULARITY_NANOS = "hazelcast.tpc.reactor.minGranularity.ns";
+    public static final String NAME_STALL_THRESHOLD_NANOS = "hazelcast.tpc.reactor.stallThreshold.ns";
+    public static final String NAME_IO_INTERVAL_NANOS = "hazelcast.tpc.reactor.ioInterval.ns";
+    public static final String NAME_CFS = "hazelcast.tpc.reactor.cfs";
 
     private static final int DEFAULT_LOCAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_GLOBAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY = 4096;
-    private static final int DEFAULT_TASK_QUOTA_NANOS = 500;
-    private static final int DEFAULT_STALL_THRESHOLD_NANOS = 500;
-    private static final int DEFAULT_IO_INTERVAL_NANOS = 10;
     private static final int DEFAULT_RUN_QUEUE_CAPACITY = 1024;
-    private static final long DEFAULT_TARGET_LATENCY_NANOS = TimeUnit.MILLISECONDS.toNanos(1);
-    private static final long DEFAULT_MIN_GRANULARITY_NANOS = TimeUnit.MICROSECONDS.toNanos(100);
-
+    private static final long DEFAULT_STALL_THRESHOLD_NANOS = MICROSECONDS.toNanos(500);
+    private static final long DEFAULT_IO_INTERVAL_NANOS = MICROSECONDS.toNanos(10);
+    private static final long DEFAULT_TARGET_LATENCY_NANOS = MILLISECONDS.toNanos(1);
+    private static final long DEFAULT_MIN_GRANULARITY_NANOS = MICROSECONDS.toNanos(100);
+    private static final boolean DEFAULT_CFS = true;
     private static final boolean DEFAULT_SPIN = false;
 
     private static final Constructor<ReactorBuilder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
@@ -99,28 +104,27 @@ public abstract class ReactorBuilder {
     int globalTaskQueueCapacity;
     int deadlineRunQueueCapacity;
     TpcEngine engine;
-    // Are not set through system property.
-    long stallThresholdNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_STALL_THRESHOLD_NANOS);
-    long ioIntervalNanos = TimeUnit.MICROSECONDS.toNanos(DEFAULT_IO_INTERVAL_NANOS);
+    long stallThresholdNanos;
+    long ioIntervalNanos;
     int runQueueCapacity;
     StallHandler stallHandler = LoggingStallHandler.INSTANCE;
     long targetLatencyNanos;
     long minGranularityNanos;
+    boolean cfs;
 
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
 
-        // todo: these properties should be set through a setter. Now they are unvalidated.
-        this.localTaskQueueCapacity = Integer.getInteger(
-                NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_TASK_QUEUE_CAPACITY);
-        this.globalTaskQueueCapacity = Integer.getInteger(
-                NAME_GLOBAL_TASK_QUEUE_CAPACITY, DEFAULT_GLOBAL_TASK_QUEUE_CAPACITY);
-        this.deadlineRunQueueCapacity = Integer.getInteger(
-                NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
-        this.runQueueCapacity = Integer.getInteger(NAME_RUN_QUEUE_CAPACITY, DEFAULT_RUN_QUEUE_CAPACITY);
-        this.targetLatencyNanos = Long.getLong(NAME_TARGET_LATENCY_NANOS, DEFAULT_TARGET_LATENCY_NANOS);
-        this.minGranularityNanos = Long.getLong(NAME_MIN_GRANULARITY_NANOS, DEFAULT_MIN_GRANULARITY_NANOS);
-        this.spin = Boolean.parseBoolean(getProperty(NAME_REACTOR_SPIN, Boolean.toString(DEFAULT_SPIN)));
+        setLocalTaskQueueCapacity(Integer.getInteger(NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_TASK_QUEUE_CAPACITY));
+        setGlobalTaskQueueCapacity(Integer.getInteger(NAME_GLOBAL_TASK_QUEUE_CAPACITY, DEFAULT_GLOBAL_TASK_QUEUE_CAPACITY));
+        setDeadlineRunQueueCapacity(Integer.getInteger(NAME_SCHEDULED_RUN_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY));
+        setRunQueueCapacity(Integer.getInteger(NAME_RUN_QUEUE_CAPACITY, DEFAULT_RUN_QUEUE_CAPACITY));
+        setTargetLatency(Long.getLong(NAME_TARGET_LATENCY_NANOS, DEFAULT_TARGET_LATENCY_NANOS), NANOSECONDS);
+        setMinGranularity(Long.getLong(NAME_MIN_GRANULARITY_NANOS, DEFAULT_MIN_GRANULARITY_NANOS), NANOSECONDS);
+        setStallThreshold(Long.getLong(NAME_STALL_THRESHOLD_NANOS, DEFAULT_STALL_THRESHOLD_NANOS), NANOSECONDS);
+        setIoInterval(Long.getLong(NAME_IO_INTERVAL_NANOS, DEFAULT_IO_INTERVAL_NANOS), NANOSECONDS);
+        setSpin(Boolean.parseBoolean(getProperty(NAME_REACTOR_SPIN, Boolean.toString(DEFAULT_SPIN))));
+        setCfs(Boolean.parseBoolean(getProperty(NAME_CFS, Boolean.toString(DEFAULT_CFS))));
     }
 
     public static ReactorBuilder newReactorBuilder(ReactorType type) {
@@ -143,28 +147,22 @@ public abstract class ReactorBuilder {
         }
     }
 
-    /**
-     * Builds a Reactor based on the configuration of this {@link ReactorBuilder}.
-     * <p/>
-     * This method can be called multiple times. So a single ReactorBuilder instance can
-     * create a family of similar {@link Reactor} instances.
-     *
-     * @return the created Reactor.
-     */
-    public abstract Reactor build();
-
-    public ReactorBuilder setRunQueueCapacity(int runQueueCapacity) {
+      public ReactorBuilder setRunQueueCapacity(int runQueueCapacity) {
         this.runQueueCapacity = checkPositive(runQueueCapacity, "runQueueCapacity");
         return this;
     }
 
-    public ReactorBuilder setTargetLatencyNanos(long targetLatencyNanos) {
-        this.targetLatencyNanos = checkPositive(targetLatencyNanos, "targetLatencyNanos");
+    public ReactorBuilder setTargetLatency(long targetLatency, TimeUnit unit) {
+        checkPositive(targetLatency, "targetLatency");
+        checkNotNull(unit, "unit");
+        this.targetLatencyNanos = unit.toNanos(targetLatency);
         return this;
     }
 
-    public ReactorBuilder setMinGranularityNanos(long minGranularityNanos) {
-        this.minGranularityNanos = checkPositive(minGranularityNanos, "minGranularityNanos");
+    public ReactorBuilder setMinGranularity(long minGranularity, TimeUnit unit) {
+        checkPositive(minGranularity, "minGranularity");
+        checkNotNull(unit, "unit");
+        this.minGranularityNanos = unit.toNanos(minGranularity);
         return this;
     }
 
@@ -182,9 +180,9 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Configures the stallHandler.
+     * Sets the {@link StallHandler}.
      *
-     * @param stallHandler
+     * @param stallHandler the new stall handler
      * @throws NullPointerException if stallHandler is <code>null</code>.
      */
     public void setStallHandler(StallHandler stallHandler) {
@@ -198,6 +196,8 @@ public abstract class ReactorBuilder {
      * There is no guarantee that the I/O scheduler is going to be called at the exact interval
      * when there are other threads/processes contending for the core and when there are stalls
      * on the reactor.
+     * <p/>
+     * Setting the value too low will cause a lot of overhead. Setting it too high will
      *
      * @param ioInterval
      * @param unit
@@ -274,7 +274,7 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the capacity of the runqueue for the deadline scheduler.
+     * Sets the capacity of the run queue for the deadline scheduler.
      *
      * @param deadlineRunQueueCapacity the capacity
      * @throws IllegalArgumentException if scheduledTaskQueueCapacity not positive.
@@ -290,6 +290,17 @@ public abstract class ReactorBuilder {
     }
 
     /**
+     * Sets the scheduler to use. If cfs is true, the {@link CfsTaskQueueScheduler} it used. Otherwise the
+     * {@link FcfsTaskQueueScheduler} is used. Primary reason to set cfs=false is for performance testing
+     * and debugging purposes.
+     *
+     * @param cfs if true, the {@link CfsTaskQueueScheduler} is used. Otherwise the {@link FcfsTaskQueueScheduler}
+     */
+    public final void setCfs(boolean cfs) {
+        this.cfs = cfs;
+    }
+
+    /**
      * Sets the supplier function for {@link TaskFactory} instances.
      *
      * @param taskFactorySupplier the supplier
@@ -302,4 +313,15 @@ public abstract class ReactorBuilder {
     public void setBlockDeviceRegistry(BlockDeviceRegistry blockDeviceRegistry) {
         this.blockDeviceRegistry = checkNotNull(blockDeviceRegistry, "blockDeviceRegistry");
     }
+
+    /**
+     * Builds a Reactor based on the configuration of this {@link ReactorBuilder}.
+     * <p/>
+     * This method can be called multiple times. So a single ReactorBuilder instance can
+     * create a family of similar {@link Reactor} instances.
+     *
+     * @return the created Reactor.
+     */
+    public abstract Reactor build();
+
 }

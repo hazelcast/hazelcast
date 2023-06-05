@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.util.EpochClock;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
@@ -29,18 +31,26 @@ public final class ReactorMetrics {
 
     private static final VarHandle TASKS_PROCESSED_COUNT;
     private static final VarHandle CPU_TIME_NANOS;
+    private static final VarHandle CONTEXT_SWITCH_COUNT;
 
     private volatile long taskCompletedCount;
     private volatile long cpuTimeNanos;
+    private volatile long contextSwitchCount;
+    private final long startTimeNanos = EpochClock.INSTANCE.nanoTime();
 
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
             TASKS_PROCESSED_COUNT = l.findVarHandle(ReactorMetrics.class, "taskCompletedCount", long.class);
             CPU_TIME_NANOS = l.findVarHandle(ReactorMetrics.class, "cpuTimeNanos", long.class);
+            CONTEXT_SWITCH_COUNT = l.findVarHandle(ReactorMetrics.class, "contextSwitchCount", long.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
+    }
+
+    public long startTimeNanos() {
+        return startTimeNanos;
     }
 
     public long taskProcessCount() {
@@ -57,5 +67,13 @@ public final class ReactorMetrics {
 
     public void incCpuTimeNanos(long delta) {
         CPU_TIME_NANOS.setOpaque(this, (long) CPU_TIME_NANOS.getOpaque(this) + delta);
+    }
+
+    public long contextSwitchCount() {
+        return (long) CONTEXT_SWITCH_COUNT.getOpaque(this);
+    }
+
+    public void incContextSwitchCount() {
+        CONTEXT_SWITCH_COUNT.setOpaque(this, (long) CONTEXT_SWITCH_COUNT.getOpaque(this) + 1);
     }
 }

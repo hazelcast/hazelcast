@@ -17,11 +17,13 @@
 package com.hazelcast.internal.tpcengine.util;
 
 /**
- * A clock that returns the current time in nanoseconds from an arbitrary epoch.
+ * A clock that returns the current time in nanoseconds from the epoch.
  * <p>
  * This class is thread-safe.
  */
-public class StandardNanoClock implements Clock {
+public class EpochClock implements Clock {
+
+    public static final EpochClock INSTANCE = new EpochClock();
 
     private static final long START_TIME = System.nanoTime();
 //

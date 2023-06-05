@@ -16,7 +16,7 @@
 
 package com.hazelcast;
 
-import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
+import com.hazelcast.internal.tpcengine.util.EpochClock;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 @Threads(value = 1)
 public class NanoTimeBenchmark {
 
-    private final StandardNanoClock nanoClock = new StandardNanoClock();
+    private final EpochClock nanoClock = new EpochClock();
 
     @Benchmark
     public long nanoTime(){

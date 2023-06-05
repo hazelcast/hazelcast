@@ -208,7 +208,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
-                localTaskQueue.local.add(eventloopTask);
+                localTaskQueue.offerLocal(eventloopTask);
             } else {
                 reactor.offer(eventloopTask);
             }
@@ -217,7 +217,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     private void resetFlushed() {
         if (!ioVector.isEmpty()) {
-            localTaskQueue.local.add(eventloopTask);
+            localTaskQueue.offerLocal(eventloopTask);
             return;
         }
 
@@ -263,7 +263,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         boolean result;
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                localTaskQueue.local.add(eventloopTask);
+                localTaskQueue.offerLocal(eventloopTask);
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {
@@ -435,7 +435,8 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     // TODO: Can this lead to spinning?
                     //System.out.println("-----");
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
-                    localTaskQueue.local.add(eventloopTask);
+                    //todo: return value
+                    localTaskQueue.offerLocal(eventloopTask);
                 } else {
                     throw newCQEFailedException("Failed to write data to the socket.", "writev(3p)", IORING_OP_WRITEV, -res);
                 }
@@ -455,7 +456,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     resetFlushed();
                 } else if (res == -EAGAIN) {
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
-                    localTaskQueue.local.add(eventloopTask);
+                    localTaskQueue.offerLocal(eventloopTask);
                 } else {
                     throw newCQEFailedException("Failed to write data to the socket.", "write(2)", IORING_OP_WRITE, -res);
                 }

@@ -48,7 +48,8 @@ public abstract class Task implements Runnable {
             int status = process();
             switch (status) {
                 case TASK_BLOCKED:
-                    // the task is blocked, so we need to add it to the blocked queue.
+                    // when the task unblocks, it will add itself to its taskqueue and get
+                    // the taskqueue scheduled.
                     break;
                 case TASK_COMPLETED:
                     //task.release();

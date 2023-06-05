@@ -27,7 +27,10 @@ import java.util.PriorityQueue;
  * earliest deadline, is at the beginning of the queue.
  */
 public final class DeadlineScheduler {
+
+    // -1 indicates that there is no task in the deadline scheduler.
     private long earliestDeadlineNanos = -1;
+
     private final PriorityQueue<DeadlineTask> runQueue;
 
     public DeadlineScheduler(int capacity) {
@@ -53,11 +56,15 @@ public final class DeadlineScheduler {
     public boolean offer(DeadlineTask task) {
         assert task.deadlineNanos >= 0;
 
+        if (!runQueue.offer(task)) {
+            return false;
+        }
+
         if (task.deadlineNanos < earliestDeadlineNanos) {
             earliestDeadlineNanos = task.deadlineNanos;
         }
 
-        return runQueue.offer(task);
+        return true;
     }
 
     public void tick(long nowNanos) {
@@ -68,7 +75,7 @@ public final class DeadlineScheduler {
             DeadlineTask task = runQueue.peek();
 
             if (task == null) {
-                // run queue is empty. Since the runQueue is empty, the earlierDeadlineNanos is reset to -1.
+                // Since the runQueue is empty, the earlierDeadlineNanos is reset to -1.
                 earliestDeadlineNanos = -1;
                 return;
             }
@@ -85,6 +92,8 @@ public final class DeadlineScheduler {
 
             // offer the task to its task group.
             // this will trigger the taskQueue to schedule itself if needed.
+
+            // todo: return value is ignored.
             task.taskQueue.offerLocal(task);
 
             // and go to the next task.

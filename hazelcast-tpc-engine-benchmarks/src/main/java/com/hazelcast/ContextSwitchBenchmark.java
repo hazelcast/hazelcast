@@ -39,17 +39,18 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class ContextSwitchBenchmark {
 
     public static final int operations = 100 * 1000 * 1000;
-    public static final int concurrency = 100;
+    public static final int concurrency = 1;
     public static final boolean useEventloopDirectly = true;
-    public static final ReactorType reactorType = ReactorType.NIO;
+    public static final ReactorType reactorType = ReactorType.IOURING;
     public static final boolean useTask = true;
-    public static final boolean useRootTaskGroup = false;
-    public static final int timeMeasureInterval = 100;
+    public static final boolean usePrimordialTaskQueue = true;
+    public static final int clockSampleInterval = 1;
     private Reactor reactor;
 
     @Setup
     public void setup() {
         ReactorBuilder reactorBuilder = ReactorBuilder.newReactorBuilder(reactorType);
+        reactorBuilder.setCfs(true);
         //reactorBuilder.setBatchSize(1);
         //reactorBuilder.setClockRefreshPeriod(1);
         reactor = reactorBuilder.build();
@@ -68,12 +69,12 @@ public class ContextSwitchBenchmark {
         CountDownLatch latch = new CountDownLatch(concurrency);
         reactor.execute(() -> {
             TaskQueueHandle handle;
-            if (useRootTaskGroup) {
-                handle = reactor.eventloop().primordialTaskQueueHandle;
+            if (usePrimordialTaskQueue) {
+                handle = reactor.eventloop().primordialTaskQueueHandle();
             } else {
                 handle = reactor.eventloop().newTaskQueueBuilder()
-                        .setLocalQueue(new CircularQueue<>(1024))
-                        .setClockSampleInterval(timeMeasureInterval)
+                        .setLocal(new CircularQueue<>(1024))
+                        .setClockSampleInterval(clockSampleInterval)
                         .setName("bla")
                         .build();
             }

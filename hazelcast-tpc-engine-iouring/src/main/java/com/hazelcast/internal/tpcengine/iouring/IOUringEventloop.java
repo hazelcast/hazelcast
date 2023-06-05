@@ -44,7 +44,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
         "checkstyle:DeclarationOrder",
         "checkstyle:NestedIfDepth",
         "checkstyle:MethodName"})
-public class IOUringEventloop extends Eventloop {
+public final class IOUringEventloop extends Eventloop {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     protected static final int NANOSECONDS_IN_SECOND = 1_000_000_000;
 
@@ -136,7 +136,17 @@ public class IOUringEventloop extends Eventloop {
     }
 
     @Override
+    public void beforeRun() {
+        sq_offerEventFdRead();
+    }
+
+    @Override
     protected void park(long nowNanos) throws IOException {
+//        boolean hasCompletion = cq.hasCompletions();
+//        if (hasCompletion) {
+//            cq.process(eventLoopHandler);
+//        }
+
         if (spin) {
             sq.submit();
         } else {
@@ -159,6 +169,8 @@ public class IOUringEventloop extends Eventloop {
             }
             wakeupNeeded.set(false);
         }
+
+        cq.process(eventLoopHandler);
     }
 
     @Override
@@ -168,11 +180,11 @@ public class IOUringEventloop extends Eventloop {
         // todo: this is where we want to iterate over the dev schedulers and submit
         // the pending BlockRequests to the sq.
 
-        if(sq.submit()>0){
+        if (sq.submit() > 0) {
             worked = true;
         }
 
-        if(cq.hasCompletions()){
+        if (cq.hasCompletions()) {
             cq.process(eventLoopHandler);
             worked = true;
         }

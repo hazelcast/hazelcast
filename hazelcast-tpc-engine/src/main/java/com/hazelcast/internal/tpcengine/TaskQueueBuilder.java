@@ -19,6 +19,10 @@ package com.hazelcast.internal.tpcengine;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.tpcengine.TaskQueue.POLL_GLOBAL_FIRST;
+import static com.hazelcast.internal.tpcengine.TaskQueue.POLL_GLOBAL_ONLY;
+import static com.hazelcast.internal.tpcengine.TaskQueue.POLL_LOCAL_ONLY;
+import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_BLOCKED;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
@@ -29,13 +33,15 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  */
 public class TaskQueueBuilder {
 
+    public static final int MIN_PRIORITY = -20;
+    public static final int MAX_PRIORITY = 20;
     private static final AtomicLong ID = new AtomicLong();
 
     private final Eventloop eventloop;
     private String name;
-    private int shares;
-    private Queue<Object> localQueue;
-    private Queue<Object> globalQueue;
+    private int nice;
+    private Queue<Object> local;
+    private Queue<Object> global;
     private int clockSampleInterval = 1;
     private boolean built;
     private TaskFactory taskFactory = NullTaskFactory.INSTANCE;
@@ -62,7 +68,7 @@ public class TaskQueueBuilder {
 
     /**
      * Measuring the execution time of every task in a TaskQueue can be expensive.
-     * To reduce the overhead, the  clock sample  interval option can be used. This will
+     * To reduce the overhead, the  clock sample interval option can be used. This will
      * only measure the execution time out of of every n tasks within the TaskQueue. There
      * are a few drawback with setting the interval to a value larger than 1:
      * <ol>
@@ -109,15 +115,28 @@ public class TaskQueueBuilder {
     }
 
     /**
-     * @param shares
+     * Sets the priority. When the CfsScheduler is used, the priority determines the size
+     * of the time slice and the priority of the taks queue.
+     * <p>
+     * -20 is the lowest priority and 20 is the highest priority. The default priority is 0.
+     * A task that has a priority of n will get 20 percent larger time slice than a task
+     * with a priority of n-1.
+     *
+     * @param priority
      * @throws IllegalStateException if the TaskQueue is already built or when the call
      *                               isn't made from the eventloop thread.
      */
-    public TaskQueueBuilder setShares(int shares) {
+    public TaskQueueBuilder setPriority(int priority) {
         verifyNotBuilt();
         verifyEventloopThread();
 
-        this.shares = checkPositive(shares, "shares");
+        if (priority < MIN_PRIORITY) {
+            throw new IllegalArgumentException();
+        } else if (priority > MAX_PRIORITY) {
+            throw new IllegalArgumentException();
+        }
+
+        this.nice = checkPositive(priority, "priority");
         return this;
     }
 
@@ -125,17 +144,17 @@ public class TaskQueueBuilder {
      * Sets the local queue of the TaskQueue. The local queue is should be used for tasks generated
      * within the eventloop. The local queue doesn't need to be thread-safe.
      *
-     * @param localQueue the local queue.
+     * @param local the local queue.
      * @return this.
      * @throws NullPointerException  if localQueue is null.
      * @throws IllegalStateException if the TaskQueue is already built or when the call
      *                               isn't made from the eventloop thread.
      */
-    public TaskQueueBuilder setLocalQueue(Queue<Object> localQueue) {
+    public TaskQueueBuilder setLocal(Queue<Object> local) {
         verifyNotBuilt();
         verifyEventloopThread();
 
-        this.localQueue = checkNotNull(localQueue, "localQueue");
+        this.local = checkNotNull(local, "localQueue");
         return this;
     }
 
@@ -143,17 +162,17 @@ public class TaskQueueBuilder {
      * Sets the global queue of the TaskQueue. The global queue is should be used for tasks generated
      * outside of the eventloop and therefor must be thread-safe.
      *
-     * @param globalQueue the global queue.
+     * @param global the global queue.
      * @return this.
      * @throws NullPointerException  if globalQueue is null.
      * @throws IllegalStateException if the TaskQueue is already built or when the call
      *                               isn't made from the eventloop thread.
      */
-    public TaskQueueBuilder setGlobalQueue(Queue<Object> globalQueue) {
+    public TaskQueueBuilder setGlobal(Queue<Object> global) {
         verifyNotBuilt();
         verifyEventloopThread();
 
-        this.globalQueue = checkNotNull(globalQueue, "globalQueue");
+        this.global = checkNotNull(global, "globalQueue");
         return this;
     }
 
@@ -169,14 +188,18 @@ public class TaskQueueBuilder {
         }
     }
 
+    /**
+     * Builds the TaskQueue.
+     *
+     * @return the handle to the TaskQueue.
+     */
     public TaskQueueHandle build() {
         verifyNotBuilt();
         verifyEventloopThread();
-
         built = true;
 
-        if (localQueue == null && globalQueue == null) {
-            throw new IllegalStateException("The local and global queue can't both be null. At least one of them must be set.");
+        if (local == null && global == null) {
+            throw new IllegalStateException("The local and global queue can't both be null.");
         }
 
         if (eventloop.taskQueues.size() == eventloop.runQueueCapacity) {
@@ -184,26 +207,27 @@ public class TaskQueueBuilder {
         }
 
         TaskQueue taskQueue = eventloop.taskQueueAllocator.allocate();
-        taskQueue.local = localQueue;
-        taskQueue.global = globalQueue;
-        if (localQueue == null) {
-            taskQueue.pollState = TaskQueue.POLL_GLOBAL_ONLY;
-        } else if (globalQueue == null) {
-            taskQueue.pollState = TaskQueue.POLL_LOCAL_ONLY;
+        taskQueue.startNanos = eventloop.nanoClock.nanoTime();
+        taskQueue.local = local;
+        taskQueue.global = global;
+        if (local == null) {
+            taskQueue.pollState = POLL_GLOBAL_ONLY;
+        } else if (global == null) {
+            taskQueue.pollState = POLL_LOCAL_ONLY;
         } else {
-            taskQueue.pollState = TaskQueue.POLL_GLOBAL_FIRST;
+            taskQueue.pollState = POLL_GLOBAL_FIRST;
         }
         taskQueue.clockSampleInterval = clockSampleInterval;
         taskQueue.taskFactory = taskFactory;
-        taskQueue.shares = shares;
+        taskQueue.shares = nice;
         if (name == null) {
             taskQueue.name = "taskqueue-" + ID.incrementAndGet();
         } else {
             taskQueue.name = name;
         }
         taskQueue.eventloop = eventloop;
-        taskQueue.scheduler = eventloop.scheduler;
-        taskQueue.runState = TaskQueue.RUN_STATE_BLOCKED;
+        taskQueue.scheduler = eventloop.taskQueueScheduler;
+        taskQueue.runState = RUN_STATE_BLOCKED;
 
         if (taskQueue.global != null) {
             eventloop.addBlockedGlobal(taskQueue);

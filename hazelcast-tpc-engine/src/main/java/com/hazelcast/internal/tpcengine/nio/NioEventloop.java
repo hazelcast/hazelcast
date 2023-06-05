@@ -31,7 +31,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * Nio specific Eventloop implementation.
  */
-class NioEventloop extends Eventloop {
+final class NioEventloop extends Eventloop {
 
     final Selector selector = SelectorOptimizer.newSelector();
 

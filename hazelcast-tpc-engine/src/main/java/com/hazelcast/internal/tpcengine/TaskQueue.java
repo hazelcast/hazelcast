@@ -19,6 +19,13 @@ package com.hazelcast.internal.tpcengine;
 import java.util.Queue;
 
 /**
+ * A TaskQueue is the unit of scheduling within the eventloop. Each eventloop has a primordial
+ * TaskQueue which can be used as the 'default' TaskQueue. But it is also possible to create your
+ * own TaskQueues. For example when you have tasks from clients, but also long running tasks from
+ * e.g. some compaction process, you could give the clients and the compaction process their
+ * own taskQueues. If no clients are busy, the compaction process can get all resources. But when
+ * clients need to CPU, they can get it.
+ * <p>
  * The TaskQueue can be configured with either either (or both):
  * <ol>
  *     <li>local queue: for tasks submitted within the eventloop. This queue doesn't need to
@@ -40,6 +47,8 @@ import java.util.Queue;
  * will include the time of that task as well.
  * <p>
  * In Linux terms this would be the sched_entity.
+ * <p>
+ * The TaskQueue is inspired by the <a href="https://github.com/DataDog/glommio">Glommio</> TaskQueue.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public final class TaskQueue implements Comparable<TaskQueue> {
@@ -65,13 +74,13 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // any Task on the queue will also be processed according to the contract of the task.
     // anything else is offered to the taskFactory to be wrapped inside a task.
     public TaskFactory taskFactory;
-    public int size;
     public Eventloop eventloop;
-    public CfsTaskQueueScheduler scheduler;
+    public TaskQueueScheduler scheduler;
     // The accumulated amount of time this task has spend on the CPU
     // If there are other threads running on the same processor, pruntime can be distorted because these tasks
     // can contribute to the runtime of this taskQueue.
     public long sumExecRuntimeNanos;
+    // Field is only used when the TaskQueue is scheduled by the CfsTaskQueueScheduler.
     // the virtual runtime. The vruntime is weighted + also when reinserted into the tree, the vruntime
     // is always updated to the min_vruntime. So the vruntime isn't the actual amount of time spend on the CPU
     public long vruntimeNanos;
@@ -79,7 +88,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // the number of times this taskQueue has been blocked
     public long blockedCount;
     // the number of times this taskQueue has been context switched.
-    public boolean contextSwitchCount;
+    public long contextSwitchCount;
 
     // the start time of this TaskQueue
     public long startNanos;
@@ -92,13 +101,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     public final TaskQueueMetrics metrics = new TaskQueueMetrics();
     public long weight = 1;
 
-    @Override
-    public int compareTo(TaskQueue that) {
-        if (that.vruntimeNanos == this.vruntimeNanos) {
-            return 0;
-        }
-
-        return this.vruntimeNanos > that.vruntimeNanos ? 1 : -1;
+    public boolean isEmpty() {
+        return (local != null && local.isEmpty()) && (global != null && global.isEmpty());
     }
 
     /**
@@ -148,7 +152,9 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
         if (taskObj == null) {
             return null;
-        } else if (taskObj instanceof Runnable) {
+        }
+
+        if (taskObj instanceof Runnable) {
             return (Runnable) taskObj;
         } else {
             // todo: doesn't handle null
@@ -175,6 +181,19 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         return true;
     }
 
+    public boolean offerGlobal(Object task) {
+        return global.offer(task);
+    }
+
+    @Override
+    public int compareTo(TaskQueue that) {
+        if (that.vruntimeNanos == this.vruntimeNanos) {
+            return 0;
+        }
+
+        return this.vruntimeNanos > that.vruntimeNanos ? 1 : -1;
+    }
+
     @Override
     public String toString() {
         return "TaskQueue{"
@@ -183,9 +202,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 + ", runState=" + runState
                 + ", shares=" + shares
                 + ", weight=" + weight
-                + ", local=" + local
-                + ", global=" + global
-                + ", size=" + size
+//                + ", local=" + local
+//                + ", global=" + global
                 + ", sumExecRuntimeNanos=" + sumExecRuntimeNanos
                 + ", vruntimeNanos=" + vruntimeNanos
                 + ", tasksProcessed=" + tasksProcessed
@@ -196,4 +214,5 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 + ", next=" + next
                 + '}';
     }
+
 }
