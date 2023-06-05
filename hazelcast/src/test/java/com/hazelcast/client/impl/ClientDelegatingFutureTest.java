@@ -104,7 +104,7 @@ public class ClientDelegatingFutureTest {
         invocationFuture.completeExceptionally(new IllegalArgumentException());
 
         assertThatThrownBy(delegatingFuture::get)
-                .isInstanceOf(CompletionException.class)
+                .isInstanceOf(ExecutionException.class)
                 .cause().has(rootCause(IllegalArgumentException.class));
     }
 

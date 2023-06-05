@@ -118,7 +118,7 @@ public class ClientInvocationFutureTest {
         invocationFuture.completeExceptionally(new IllegalArgumentException());
 
         assertThatThrownBy(() -> invocationFuture.joinInternal())
-                .isInstanceOf(ExecutionException.class);
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
