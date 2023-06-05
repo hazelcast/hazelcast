@@ -67,7 +67,7 @@ public class EchoBenchmark_Tpc {
     public static final boolean tcpNoDelay = true;
     public static final boolean spin = false;
     public static final boolean regularSchedule = true;
-    public static final ReactorType reactorType = ReactorType.IOURING;
+    public static final ReactorType reactorType = ReactorType.NIO;
     public static final String cpuAffinityClient = "1";
     public static final String cpuAffinityServer = "4";
     public static final boolean registerRingFd = false;
