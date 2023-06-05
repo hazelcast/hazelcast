@@ -49,10 +49,10 @@ public class RpcBenchmark {
 
     public static final int serverCpu = -1;
     public static final int clientCpu = -1;
-    public static final boolean spin = true;
-    public static final int requestTotal = 100 * 1000 * 1000;
+    public static final boolean spin = false;
+    public static final int requestTotal = 1 * 1000 * 1000;
     public static final int concurrency = 2000;
-    public static final ReactorType reactorType = ReactorType.NIO;
+    public static final ReactorType reactorType = ReactorType.IOURING;
 
     public static void main(String[] args) throws InterruptedException {
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
@@ -68,7 +68,7 @@ public class RpcBenchmark {
         long startMs = System.currentTimeMillis();
 
         for (int k = 0; k < concurrency; k++) {
-            IOBuffer buf = new IOBuffer(128);
+            IOBuffer buf = new IOBuffer(128, true);
             buf.writeInt(-1);
             buf.writeLong(requestTotal / concurrency);
             constructComplete(buf);
@@ -164,7 +164,6 @@ public class RpcBenchmark {
                 })
                 .build();
         serverSocket.bind(serverAddress);
-        serverReactor.start();
 
         return serverSocket;
     }

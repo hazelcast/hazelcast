@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine;
 
 import java.util.PriorityQueue;
 
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -55,16 +56,15 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     private int nrRunning;
     // total weight of all the TaskGroups in this CfsScheduler
     private long loadWeight;
-
     private TaskQueue current;
 
     CfsTaskQueueScheduler(int runQueueCapacity,
                           long targetLatencyNanos,
                           long minGranularityNanos) {
+        this.capacity = checkPositive(runQueueCapacity, "runQueueCapacity");
         this.runQueue = new PriorityQueue<>(runQueueCapacity);
-        this.capacity = runQueueCapacity;
-        this.targetLatencyNanos = targetLatencyNanos;
-        this.minGranularityNanos = minGranularityNanos;
+        this.targetLatencyNanos = checkPositive(targetLatencyNanos, "targetLatencyNanos");
+        this.minGranularityNanos = checkPositive(minGranularityNanos, "minGranularityNanos");
     }
 
     @Override
@@ -79,24 +79,27 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     @Override
     public TaskQueue pickNext() {
         assert current == null;
+
         current = runQueue.peek();
         return current;
     }
 
     @Override
     public void updateCurrent(long deltaNanos) {
+        assert current != null;
+
         // todo * include weight
         long deltaWeightedNanos = deltaNanos;
         current.sumExecRuntimeNanos += deltaNanos;
         current.vruntimeNanos += deltaWeightedNanos;
 
-        //todo: do we need to update min_vruntimeNanos?
         //current.vruntimeNanos += durationNanos * current.weight / loadWeight;
     }
 
     @Override
     public void dequeueCurrent() {
         assert current != null;
+
         runQueue.poll();
         nrRunning--;
         loadWeight -= current.weight;

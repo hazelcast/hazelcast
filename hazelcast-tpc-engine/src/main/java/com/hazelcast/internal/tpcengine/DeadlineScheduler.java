@@ -16,30 +16,34 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.util.BoundPriorityQueue;
-
 import java.util.PriorityQueue;
 
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
+
 /**
- * A scheduler that schedules tasks based on their deadline. The scheduler is not thread-safe.
+ * A scheduler that schedules {@link DeadlineTask} instances based on their
+ * deadline. The scheduler is not thread-safe.
  * <p/>
- * The scheduler contains a run queue with tasks ordered by their deadline. So the task with the
- * earliest deadline, is at the beginning of the queue.
+ * The scheduler contains a run queue with tasks ordered by their deadline.
+ * So the task with the earliest deadline, is at the beginning of the queue.
  */
 public final class DeadlineScheduler {
 
+    private int nrScheduled;
+    private final int capacity;
     // -1 indicates that there is no task in the deadline scheduler.
     private long earliestDeadlineNanos = -1;
 
     private final PriorityQueue<DeadlineTask> runQueue;
 
-    public DeadlineScheduler(int capacity) {
-        this.runQueue = new BoundPriorityQueue<>(capacity);
+    public DeadlineScheduler(int runQueueCapacity) {
+        this.capacity = checkPositive(runQueueCapacity, "runQueueCapacity");
+        this.runQueue = new PriorityQueue<>(runQueueCapacity);
     }
 
     /**
-     * Returns the epoch time in nanos of the earliest deadline. If no task exist with a deadline,
-     * -1 returned.
+     * Returns the epoch time in nanos of the earliest deadline. If no task exist
+     * with a deadline, -1 returned.
      *
      * @return the epoch time in nanos of the earliest deadline.
      */
@@ -48,7 +52,8 @@ public final class DeadlineScheduler {
     }
 
     /**
-     * Offers a DeadlineTask to the scheduler. The task will be scheduled based on its deadline.
+     * Offers a DeadlineTask to the scheduler. The task will be scheduled based
+     * on its deadline.
      *
      * @param task the task to schedule
      * @return true if the task was added to the scheduler, false otherwise.
@@ -56,9 +61,12 @@ public final class DeadlineScheduler {
     public boolean offer(DeadlineTask task) {
         assert task.deadlineNanos >= 0;
 
-        if (!runQueue.offer(task)) {
+        if (nrScheduled == capacity) {
             return false;
         }
+
+        nrScheduled++;
+        runQueue.offer(task);
 
         if (task.deadlineNanos < earliestDeadlineNanos) {
             earliestDeadlineNanos = task.deadlineNanos;
@@ -67,10 +75,18 @@ public final class DeadlineScheduler {
         return true;
     }
 
+    /**
+     * Gives the DeadlineScheduler a chance to schedule tasks. This method should be
+     * called periodically.
+     *
+     * @param nowNanos the current epoch time in nanos.
+     */
     public void tick(long nowNanos) {
         assert nowNanos >= 0;
 
-        // We keep removing items from the runQueue until we find a task that is not ready to be scheduled
+        // We keep removing items from the runQueue until we find a task that is
+        // not ready to be scheduled. All items remaining items are certainly
+        // not ready to be scheduled.
         for (; ; ) {
             DeadlineTask task = runQueue.peek();
 
@@ -89,6 +105,7 @@ public final class DeadlineScheduler {
 
             // the task first needs to be removed from the run queue since we peeked it.
             runQueue.poll();
+            nrScheduled--;
 
             // offer the task to its task group.
             // this will trigger the taskQueue to schedule itself if needed.

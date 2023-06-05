@@ -29,10 +29,14 @@ import static java.lang.Math.min;
  * the number of running taskQueues. To prevent very small time slices,
  * there is a lower bound using the {@code minGranularityNanos}.
  * <p>
- * The FcfsTaskQueueScheduler will be helpful to pinpoint to problems. Because
- * it can easily replace the FcsScheduler and can exclude problems in the
- * FcsScheduler. Also it will be useful to measure the performance advantages/overhead
- * of the CfsScheduler.
+ * The FcfsTaskQueueScheduler will be helpful to pinpoint problems:
+ * <ol>
+ *     <li>we can exclude the {@link CfsTaskQueueScheduler} if there is some
+ *     scheduling problem and we have difficulties which component is the cause.</li>
+ *     <li>we can exclude the overhead of the O(log(n)) complexity of the
+ *     {@link CfsTaskQueueScheduler}. This will be useful for benchmarking so
+ *     we can have a baseline to compare against.</li>
+ * </ol>
  */
 class FcfsTaskQueueScheduler implements TaskQueueScheduler {
 

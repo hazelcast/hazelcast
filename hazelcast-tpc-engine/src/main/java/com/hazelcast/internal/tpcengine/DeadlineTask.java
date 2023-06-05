@@ -22,7 +22,8 @@ import com.hazelcast.internal.tpcengine.util.Clock;
 import com.hazelcast.internal.tpcengine.util.Promise;
 
 /**
- * A task that is going to be scheduled once or multiple times at some point in the future.
+ * A task that is going to be scheduled once or multiple times at some point
+ * in the future.
  * <p>
  * todo: Should the DeadlineTask be a Task implementation? Or should the DeadlineTask allow for executing
  * a Task?

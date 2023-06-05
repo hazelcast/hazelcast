@@ -161,8 +161,10 @@ public abstract class Eventloop {
     }
 
     /**
-     * @param handle
-     * @return
+     * Gets the {@link TaskQueue} for the given {@link TaskQueueHandle}.
+     *
+     * @param handle the handle
+     * @return the TaskQueue that belongs to this handle.
      */
     public final TaskQueue getTaskQueue(TaskQueueHandle handle) {
         checkEventloopThread();
@@ -170,13 +172,13 @@ public abstract class Eventloop {
     }
 
     /**
-     * @return
+     * Creates an new {@link TaskQueueBuilder} for this Eventloop.
+     *
+     * @return the TaskQueueBuilder.
+     * @throws IllegalStateException if current thread is not the Eventloop thread.
      */
     public final TaskQueueBuilder newTaskQueueBuilder() {
         checkEventloopThread();
-        if (stop) {
-            throw new IllegalStateException();
-        }
         return new TaskQueueBuilder(this);
     }
 
@@ -257,7 +259,7 @@ public abstract class Eventloop {
         return scheduled;
     }
 
-    protected final void removeBlockedGlobal(TaskQueue taskQueue) {
+    final void removeBlockedGlobal(TaskQueue taskQueue) {
         assert taskQueue.global != null;
         assert taskQueue.runState == RUN_STATE_BLOCKED;
 
@@ -279,7 +281,7 @@ public abstract class Eventloop {
         }
     }
 
-    void addBlockedGlobal(TaskQueue taskQueue) {
+    final void addBlockedGlobal(TaskQueue taskQueue) {
         assert taskQueue.global != null;
         assert taskQueue.runState == RUN_STATE_BLOCKED;
         assert taskQueue.prev == null;
@@ -295,6 +297,9 @@ public abstract class Eventloop {
         }
     }
 
+    /**
+     * Override this method to execute some logic before the {@link #run()} method is called.
+     */
     public void beforeRun() {
     }
 

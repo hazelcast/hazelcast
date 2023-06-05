@@ -147,7 +147,14 @@ public abstract class ReactorBuilder {
         }
     }
 
-      public ReactorBuilder setRunQueueCapacity(int runQueueCapacity) {
+    /**
+     * Sets the capacity for the run queue of the {@link TaskQueueScheduler}.This defines
+     * the maximum number of TaskQueues that can be created within an {@link EventLoop}.
+     *
+     * @param runQueueCapacity
+     * @return
+     */
+    public ReactorBuilder setRunQueueCapacity(int runQueueCapacity) {
         this.runQueueCapacity = checkPositive(runQueueCapacity, "runQueueCapacity");
         return this;
     }
@@ -182,7 +189,7 @@ public abstract class ReactorBuilder {
     /**
      * Sets the {@link StallHandler}.
      *
-     * @param stallHandler the new stall handler
+     * @param stallHandler the new StallHandler.
      * @throws NullPointerException if stallHandler is <code>null</code>.
      */
     public void setStallHandler(StallHandler stallHandler) {
@@ -190,17 +197,18 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * The interval the I/O scheduler should be checked if there if any I/O activity (either
+     * The interval the I/O scheduler is be checked if there if any I/O activity (either
      * submitting work or there are any completed events.
      * <p/>
      * There is no guarantee that the I/O scheduler is going to be called at the exact interval
      * when there are other threads/processes contending for the core and when there are stalls
      * on the reactor.
      * <p/>
-     * Setting the value too low will cause a lot of overhead. Setting it too high will
+     * Setting the value too low will cause a lot of overhead. Setting it too high will suboptimal
+     * performance in the I/O system because I/O requests will be delayed.
      *
-     * @param ioInterval
-     * @param unit
+     * @param ioInterval the io interval
+     * @param unit       the unit for the io interval.
      */
     public void setIoInterval(long ioInterval, TimeUnit unit) {
         checkPositive(ioInterval, "ioInterval");
