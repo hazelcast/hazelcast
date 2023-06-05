@@ -26,14 +26,12 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -41,10 +39,7 @@ public class ClientConfigValidatorTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
 
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Test
     public void getMap_throws_illegalArgumentException_whenLocalUpdatePolicy_is_cacheOnUpdate() {
@@ -57,10 +52,9 @@ public class ClientConfigValidatorTest extends HazelcastTestSupport {
         factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
-        thrown.expect(InvalidConfigurationException.class);
-        thrown.expectMessage(containsString("Wrong `local-update-policy`"));
-
-        client.getMap(MAP_NAME);
+        assertThatThrownBy(() -> client.getMap(MAP_NAME))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Wrong `local-update-policy`");
     }
 
     @After

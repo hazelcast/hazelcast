@@ -30,13 +30,10 @@ import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -50,6 +47,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -61,9 +59,6 @@ public class Job_SeparateClusterTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;
     private static final int LOCAL_PARALLELISM = 1;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private HazelcastInstance instance1;
     private HazelcastInstance instance2;
@@ -95,8 +90,8 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         instance1.shutdown();
 
         // Then
-        expectedException.expect(JobAlreadyExistsException.class);
-        instance2.getJet().newJob(dag, config);
+        assertThatThrownBy(() -> instance2.getJet().newJob(dag, config))
+                .isInstanceOf(JobAlreadyExistsException.class);
     }
 
     @Test
@@ -125,8 +120,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         NoOutputSourceP.failure.set(ex);
 
         // Then
-        expectedException.expectMessage(Matchers.containsString(ex.getMessage()));
-        job.join();
+        assertThatThrownBy(job::join).hasMessageContaining(ex.getMessage());
     }
 
     @Test
@@ -160,8 +154,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         NoOutputSourceP.failure.set(ex);
 
         // Then
-        expectedException.expectMessage(Matchers.containsString(ex.getMessage()));
-        job.join();
+        assertThatThrownBy(job::join).hasMessageContaining(ex.getMessage());
     }
 
     @Test

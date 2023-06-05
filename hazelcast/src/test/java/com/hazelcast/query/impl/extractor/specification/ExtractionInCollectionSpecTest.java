@@ -46,8 +46,6 @@ import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataSt
 import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.tattoos;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.not;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 /**

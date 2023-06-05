@@ -41,34 +41,34 @@ public class FastMultiResultSetTest {
     private final FastMultiResultSet result = new FastMultiResultSet();
 
     @Test
-    public void testAddResultSet_empty(){
+    public void testAddResultSet_empty() {
         assertThat(result.size()).isEqualTo(0);
     }
 
     @Test
-    public void testContains_empty(){
+    public void testContains_empty() {
         assertThat(result.contains(entry(data()))).isFalse();
     }
 
     @Test
-    public void testIterator_empty(){
+    public void testIterator_empty() {
         assertThat(result.iterator().hasNext()).isFalse();
     }
 
     @Test
-    public void testSize_empty(){
+    public void testSize_empty() {
         assertThat(result.isEmpty()).isTrue();
     }
 
     @Test
-    public void testAddResultSet_notEmpty(){
+    public void testAddResultSet_notEmpty() {
         addEntry(entry(data()));
 
         assertThat(result.size()).isEqualTo(1);
     }
 
     @Test
-    public void testContains_notEmpty(){
+    public void testContains_notEmpty() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
 
@@ -76,7 +76,7 @@ public class FastMultiResultSetTest {
     }
 
     @Test
-    public void testIterator_notEmpty(){
+    public void testIterator_notEmpty() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
 
@@ -127,7 +127,7 @@ public class FastMultiResultSetTest {
     }
 
     public void addEntry(QueryableEntry entry) {
-        ConcurrentMap<Data, QueryableEntry> values = new ConcurrentHashMap<Data, QueryableEntry>();
+        ConcurrentMap<Data, QueryableEntry> values = new ConcurrentHashMap<>();
         values.put(entry.getKeyData(), entry);
         result.addResultSet(values);
     }
