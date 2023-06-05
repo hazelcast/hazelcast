@@ -19,7 +19,7 @@ package com.hazelcast.test.archunit;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 
-import static org.junit.Assume.assumeThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 import java.lang.reflect.Method;
 
@@ -29,15 +29,14 @@ import org.junit.Test;
 import static com.tngtech.archunit.core.importer.ImportOption.Predefined.ONLY_INCLUDE_TESTS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThan;
 
 public class ArchUnitRulesTest {
 
     @BeforeClass
     public static void beforeClass() {
-        assumeThat("Skipping as ASM shaded within ArchUnit 1.0.0 doesn't support Java 20", getCurrentJavaVersion(),
-                is(lessThan(20)));
+        assumeThat(getCurrentJavaVersion())
+                .as("Skipping as ASM shaded within ArchUnit 1.0.0 doesn't support Java 20")
+                .isLessThan(20);
     }
 
     @Test
