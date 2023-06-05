@@ -103,7 +103,7 @@ public final class IndexHeapMemoryCostUtil {
             return DATE_COST;
         }
 
-        if (clazz.isEnum()) {
+        if (Enum.class.isAssignableFrom(clazz)) {
             // enum values are shared, so they don't cost anything
             return 0;
         }

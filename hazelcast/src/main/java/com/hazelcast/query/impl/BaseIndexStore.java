@@ -122,7 +122,7 @@ public abstract class BaseIndexStore implements IndexStore {
             Comparable value = (Comparable) input;
             if (value == null) {
                 value = NULL;
-            } else if (value.getClass().isEnum()) {
+            } else if (Enum.class.isAssignableFrom(value.getClass())) {
                 value = TypeConverters.ENUM_CONVERTER.convert(value);
             }
             return canonicalizeScalarForStorage(value);
