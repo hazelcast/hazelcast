@@ -55,7 +55,7 @@ public abstract class EventloopTest {
     public void test_tooManyTaskQueues() {
         CompletableFuture future = new CompletableFuture();
         reactor.offer(() -> {
-            for (int k = 0; k < runQueueCapacity-1; k++) {
+            for (int k = 0; k < runQueueCapacity - 1; k++) {
                 reactor.eventloop.newTaskQueueBuilder().setLocal(new CircularQueue<>(10)).build();
             }
 
