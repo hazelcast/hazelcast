@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import org.assertj.core.api.Condition;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -57,6 +58,11 @@ public class RootCauseMatcher extends TypeSafeMatcher<Throwable> {
     public RootCauseMatcher(Class<? extends Throwable> expectedType, String expectedMessage) {
         this.expectedType = expectedType;
         this.expectedMessage = expectedMessage;
+    }
+
+    public static Condition<Throwable> rootCause(Class<? extends Throwable> expectedType, String expectedMessage) {
+        var matcher = new RootCauseMatcher(expectedType, expectedMessage);
+        return new Condition<>(matcher::matchesSafely, expectedMessage);
     }
 
     @Override
