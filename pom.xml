@@ -144,7 +144,7 @@
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.24.2</assertj.version>
-        <atomikos.version>3.9.3</atomikos.version>
+        <atomikos.version>6.0.0</atomikos.version>
         <bytebuddy.version>1.14.5</bytebuddy.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.12.0</commons-io.version>
