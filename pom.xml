@@ -157,7 +157,6 @@
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <junit.version>4.13.2</junit.version>
         <mockito.version>5.3.1</mockito.version>
-        <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.18.3</testcontainers.version>
         <jna.version>5.13.0</jna.version>
@@ -201,9 +200,6 @@
            open java.base/java.lang
         TimedMemberStateFactoryHelper:
            open java.management/sun.management
-
-        Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
-           export java.xml/jdk.xml.internal
         -->
         <javaModuleArgs>
             --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
@@ -211,7 +207,6 @@
             --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
             --add-opens java.base/java.lang=${hazelcast.module.name}
             --add-opens java.management/sun.management=${hazelcast.module.name}
-            --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
             --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
             --illegal-access=deny
         </javaModuleArgs>
@@ -1999,18 +1994,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <version>${powermock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-            <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
