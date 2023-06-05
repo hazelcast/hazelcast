@@ -212,7 +212,7 @@ public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
             throw new AssertionError("Unknown exception type " + t);
         }
     }
-    
+
     private static <T> Condition<T> nullValue(Class<T> type) {
         return new Condition<>(Objects::isNull, "must be null");
     }

@@ -17,9 +17,7 @@
 package com.hazelcast.internal.util;
 
 import org.assertj.core.api.Condition;
-import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeMatcher;
 
 /**
  * Matcher for {@link org.junit.rules.ExpectedException#expectCause(Matcher)} to assert the root cause of an exception.
@@ -46,45 +44,35 @@ import org.hamcrest.TypeSafeMatcher;
  *   }
  * </code></pre>
  */
-public class RootCauseMatcher extends TypeSafeMatcher<Throwable> {
+public class RootCauseMatcher {
 
     private final Class<? extends Throwable> expectedType;
     private final String expectedMessage;
 
-    public RootCauseMatcher(Class<? extends Throwable> expectedType) {
+    private RootCauseMatcher(Class<? extends Throwable> expectedType) {
         this(expectedType, null);
     }
 
-    public RootCauseMatcher(Class<? extends Throwable> expectedType, String expectedMessage) {
+    private RootCauseMatcher(Class<? extends Throwable> expectedType, String expectedMessage) {
         this.expectedType = expectedType;
         this.expectedMessage = expectedMessage;
     }
 
     public static Condition<Throwable> rootCause(Class<? extends Throwable> expectedType, String expectedMessage) {
         var matcher = new RootCauseMatcher(expectedType, expectedMessage);
-        return new Condition<>(matcher::matchesSafely, expectedMessage);
+        return new Condition<>(matcher::matches, expectedMessage);
     }
 
-    @Override
-    protected boolean matchesSafely(Throwable item) {
+    public static Condition<Throwable> rootCause(Class<? extends Throwable> expectedType) {
+        return rootCause(expectedType, null);
+    }
+
+    private boolean matches(Throwable item) {
         item = getRootCause(item);
         if (expectedMessage == null) {
             return item.getClass().isAssignableFrom(expectedType);
         }
         return item.getClass().isAssignableFrom(expectedType) && item.getMessage().contains(expectedMessage);
-    }
-
-    @Override
-    public void describeTo(Description description) {
-        description.appendText("expects type ").appendValue(expectedType);
-        if (expectedMessage != null) {
-            description.appendText(" with message ").appendValue(expectedMessage);
-        }
-    }
-
-    @Override
-    protected void describeMismatchSafely(Throwable item, Description mismatchDescription) {
-        super.describeMismatchSafely(getRootCause(item), mismatchDescription);
     }
 
     public static Throwable getRootCause(Throwable item) {

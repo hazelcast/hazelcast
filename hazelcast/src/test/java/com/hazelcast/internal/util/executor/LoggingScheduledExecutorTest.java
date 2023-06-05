@@ -24,12 +24,9 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Method;
@@ -41,14 +38,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.SEVERE;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -57,13 +55,10 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
 
-    private TestLogger logger = new TestLogger();
-    private TestThreadFactory factory = new TestThreadFactory();
+    private final TestLogger logger = new TestLogger();
+    private final TestThreadFactory factory = new TestThreadFactory();
 
     private LoggingScheduledExecutor executor;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @After
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -127,23 +122,14 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
             future.cancel(true);
         }
 
-        final BlockingQueue<Runnable> workQueue = ((LoggingScheduledExecutor) executor).getQueue();
+        final BlockingQueue<Runnable> workQueue = executor.getQueue();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(0, workQueue.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(0, workQueue.size()));
     }
 
     @Test
     public void testConstructor_withRejectedExecutionHandler() {
-        RejectedExecutionHandler handler = new RejectedExecutionHandler() {
-            @Override
-            public void rejectedExecution(Runnable runnable, ThreadPoolExecutor executor) {
-            }
+        RejectedExecutionHandler handler = (runnable, executor) -> {
         };
 
         executor = new LoggingScheduledExecutor(logger, 1, factory, handler);
@@ -154,35 +140,31 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
         executor.submit(new FailedRunnable());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertInstanceOf(RuntimeException.class, logger.getThrowable());
+        assertTrueEventually(() -> {
+            assertInstanceOf(RuntimeException.class, logger.getThrowable());
 
-                Level level = logger.getLevel();
-                assertEquals(SEVERE, level);
-            }
+            Level level = logger.getLevel();
+            assertEquals(SEVERE, level);
         });
     }
 
     @Test
-    public void throwsExecutionException_withCallable() throws Exception {
+    public void throwsExecutionException_withCallable() {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
         Future<Integer> future = executor.submit(new FailedCallable());
 
-        expectedException.expect(new RootCauseMatcher(RuntimeException.class));
-        future.get();
-
+        assertThatThrownBy(future::get)
+                .has(rootCause(RuntimeException.class));
         assertNull(logger.getThrowable());
     }
 
     @Test
-    public void throwsExecutionException_withCallable_withFutureGetTimeout() throws Exception {
+    public void throwsExecutionException_withCallable_withFutureGetTimeout() {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
         Future<Integer> future = executor.submit(new FailedCallable());
 
-        expectedException.expect(new RootCauseMatcher(RuntimeException.class));
-        future.get(10, SECONDS);
+        assertThatThrownBy(() -> future.get(10, SECONDS))
+                .has(rootCause(RuntimeException.class));
 
         assertNull(logger.getThrowable());
     }
@@ -197,8 +179,8 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         assertFalse(future.isCancelled());
         assertTrue(future.cancel(true));
 
-        expectedException.expect(CancellationException.class);
-        future.get();
+        assertThatThrownBy(future::get)
+                .isInstanceOf(CancellationException.class);
     }
 
     private static class FailedRunnable implements Runnable {
