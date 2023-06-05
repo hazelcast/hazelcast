@@ -167,6 +167,7 @@
         <hikari.version>4.0.3</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+        <maven.skip.unit.tests>false</maven.skip.unit.tests>
 
         <!-- The path to relocated external dependencies. -->
         <relocation.root>com.hazelcast.shaded</relocation.root>
@@ -792,6 +793,7 @@
                                     <goal>test</goal>
                                 </goals>
                                 <configuration combine.self="override">
+                                    <skip>${maven.skip.unit.tests}</skip>
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
                                     <!-- 0.5C means half as many forks as cpu cores -->
@@ -835,6 +837,7 @@
                                     <goal>test</goal>
                                 </goals>
                                 <configuration combine.self="override">
+                                    <skip>${maven.skip.unit.tests}</skip>
                                     <useFile>false</useFile>
                                     <trimStackTrace>false</trimStackTrace>
                                     <argLine>
