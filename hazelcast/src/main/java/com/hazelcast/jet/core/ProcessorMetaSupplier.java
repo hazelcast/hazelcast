@@ -578,7 +578,6 @@ public interface ProcessorMetaSupplier extends Serializable {
         return new SpecificMemberPms(supplier, memberAddress, doesWorkWithoutInput);
     }
 
-    // TODO: create with PMS.
     static ProcessorMetaSupplier memberPruningMetaSupplier(
             @Nonnull ProcessorSupplier supplier
     ) {
