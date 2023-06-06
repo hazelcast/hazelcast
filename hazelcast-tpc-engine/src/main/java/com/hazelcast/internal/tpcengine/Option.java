@@ -25,7 +25,8 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * <p>
  * The builders currently only have explicit settings which can make it inflexible
  * to add new options. With an option approach it would be a lot more flexible to
- * pass settings.
+ * pass settings. So we need to think if we want to convert builders to have a set
+ * of options instead of explicit encoded properties.
  *
  * @param <T> the type of the option.
  */

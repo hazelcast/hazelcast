@@ -16,17 +16,35 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+
+/**
+ * A handle to a {@link TaskQueue}. A TaskQueue should not be directly
+ * accessed and the interactions like destruction, changing priorities,
+ * adding tasks etc, should be done through the TaskQueueHandle.
+ */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public class TaskQueueHandle {
-    public TaskQueue queue;
-    public TaskQueueMetrics metrics;
+    // the visibility should be reduced.
+    public final TaskQueue queue;
+    private final TaskQueueMetrics metrics;
 
     public TaskQueueHandle(TaskQueue queue, TaskQueueMetrics metrics) {
-        this.queue = queue;
-        this.metrics = metrics;
+        this.queue = checkNotNull(queue, "queue");
+        this.metrics = checkNotNull(metrics, "metrics");
     }
 
+    /**
+     * Returns the TaskQueueMetrics associated with the TaskQueue this handle is referring to.
+     *
+     * @return the metrics.
+     */
     public TaskQueueMetrics metrics() {
         return metrics;
+    }
+
+    @Override
+    public String toString() {
+        return queue.name;
     }
 }
