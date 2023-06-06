@@ -30,6 +30,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.nio.NioAsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.internal.util.ThreadAffinity;
+import org.jctools.util.PaddedAtomicLong;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
@@ -44,6 +45,7 @@ import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELA
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A benchmarks that test the throughput of 2 sockets that are bouncing packets
@@ -58,10 +60,9 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
  */
 public class EchoBenchmark_Tpc {
     public static final int port = 5006;
-    // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
+    public static final int durationSecond = 600;
     public static final int socketBufferSize = 128 * 1024;
     public static final boolean useDirectByteBuffers = true;
-    public static final long iterations = 4_000_000L;
     public static final int payloadSize = 0;
     public static final int concurrency = 1;
     public static final boolean tcpNoDelay = true;
@@ -71,8 +72,16 @@ public class EchoBenchmark_Tpc {
     public static final String cpuAffinityClient = "1";
     public static final String cpuAffinityServer = "4";
     public static final boolean registerRingFd = false;
+    public static final int connections = 100;
+    public static volatile boolean stop;
+
 
     public static void main(String[] args) throws InterruptedException {
+        PaddedAtomicLong[] completedArray = new PaddedAtomicLong[connections];
+        for (int k = 0; k < completedArray.length; k++) {
+            completedArray[k] = new PaddedAtomicLong();
+        }
+
         ReactorBuilder clientReactorBuilder = newReactorBuilder();
         if (clientReactorBuilder instanceof IOUringReactorBuilder) {
             IOUringReactorBuilder b = (IOUringReactorBuilder) clientReactorBuilder;
@@ -99,35 +108,58 @@ public class EchoBenchmark_Tpc {
 
         AsyncServerSocket serverSocket = newServer(serverReactor, serverAddress);
 
-        CountDownLatch latch = new CountDownLatch(concurrency);
+        CountDownLatch completionLatch = new CountDownLatch(concurrency * connections);
 
-        AsyncSocket clientSocket = newClient(clientReactor, serverAddress, latch);
+        AsyncSocket[] clientSockets = new AsyncSocket[connections];
+        for (int k = 0; k < clientSockets.length; k++) {
+            clientSockets[k] = newClient(clientReactor, serverAddress, completionLatch, completedArray[k]);
+        }
 
         long start = System.currentTimeMillis();
 
         for (int k = 0; k < concurrency; k++) {
-            byte[] payload = new byte[payloadSize];
-            IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
-            buf.writeInt(payload.length);
-            buf.writeLong(iterations / concurrency);
-            buf.writeBytes(payload);
-            buf.flip();
-            if (!clientSocket.write(buf)) {
-                throw new RuntimeException();
+            for (int i = 0; i < connections; i++) {
+                AsyncSocket clientSocket = clientSockets[i];
+                // write the payload size (int), the number of iterations (long) and the payload (byte[]
+                byte[] payload = new byte[payloadSize];
+                IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
+                buf.writeInt(payload.length);
+                buf.writeLong(Long.MAX_VALUE);
+                buf.writeBytes(payload);
+                buf.flip();
+                if (!clientSocket.write(buf)) {
+                    throw new RuntimeException();
+                }
             }
         }
-        clientSocket.flush();
+        for (int i = 0; i < connections; i++) {
+            clientSockets[i].flush();
+        }
 
-        latch.await();
+        Monitor monitor = new Monitor(durationSecond, completedArray);
+        monitor.start();
+        completionLatch.await();
+
+        long count = sum(completedArray);
 
         long duration = System.currentTimeMillis() - start;
         System.out.println("Duration " + duration + " ms");
-        System.out.println("Throughput:" + (iterations * 1000 / duration) + " ops");
+        System.out.println("Throughput:" + (count * 1000f / duration) + " echo/second");
 
-        clientSocket.close();
+        for (int i = 0; i < connections; i++) {
+            clientSockets[i].close();
+        }
         serverSocket.close();
 
         System.exit(0);
+    }
+
+    private static long sum(PaddedAtomicLong[] array) {
+        long sum = 0;
+        for (PaddedAtomicLong c : array) {
+            sum += c.get();
+        }
+        return sum;
     }
 
     @NotNull
@@ -139,12 +171,15 @@ public class EchoBenchmark_Tpc {
         }
     }
 
-    private static AsyncSocket newClient(Reactor clientReactor, SocketAddress serverAddress, CountDownLatch latch) {
+    private static AsyncSocket newClient(Reactor clientReactor,
+                                         SocketAddress serverAddress,
+                                         CountDownLatch latch,
+                                         PaddedAtomicLong completed) {
         AsyncSocketBuilder socketBuilder = clientReactor.newAsyncSocketBuilder()
                 .set(TCP_NODELAY, tcpNoDelay)
                 .set(SO_SNDBUF, socketBufferSize)
                 .set(SO_RCVBUF, socketBufferSize)
-                .setReader(new ClientAsyncSocketReader(latch));
+                .setReader(new ClientAsyncSocketReader(latch, completed));
 
         if (socketBuilder instanceof NioAsyncSocketBuilder) {
             NioAsyncSocketBuilder nioSocketBuilder = (NioAsyncSocketBuilder) socketBuilder;
@@ -215,10 +250,6 @@ public class EchoBenchmark_Tpc {
                     break;
                 }
 
-//                        if (round % 100 == 0) {
-//                            System.out.println("server round:" + round);
-//                        }
-
                 payloadBuffer.flip();
                 IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
                 responseBuf.writeInt(payloadSize);
@@ -235,19 +266,26 @@ public class EchoBenchmark_Tpc {
 
     private static class ClientAsyncSocketReader extends AsyncSocketReader {
         private final CountDownLatch latch;
+        private final PaddedAtomicLong completed;
         private ByteBuffer payloadBuffer;
         private long round;
         private int payloadSize;
         private final IOBufferAllocator responseAllocator;
 
-        public ClientAsyncSocketReader(CountDownLatch latch) {
+        public ClientAsyncSocketReader(CountDownLatch latch, PaddedAtomicLong completed) {
             this.latch = latch;
-            payloadSize = -1;
-            responseAllocator = new NonConcurrentIOBufferAllocator(8, useDirectByteBuffers);
+            this.payloadSize = -1;
+            this.responseAllocator = new NonConcurrentIOBufferAllocator(8, useDirectByteBuffers);
+            this.completed = completed;
         }
 
         @Override
         public void onRead(ByteBuffer src) {
+            if (stop) {
+                latch.countDown();
+                return;
+            }
+
             for (; ; ) {
                 if (payloadSize == -1) {
                     if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
@@ -274,24 +312,48 @@ public class EchoBenchmark_Tpc {
                 }
                 payloadBuffer.flip();
 
-                if (round % 1_000_000 == 0) {
-                    System.out.println("client round:" + round);
+                completed.lazySet(completed.get() + 1);
+
+                IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
+                responseBuf.writeInt(payloadSize);
+                responseBuf.writeLong(round);
+                responseBuf.write(payloadBuffer);
+                responseBuf.flip();
+                if (!socket.unsafeWriteAndFlush(responseBuf)) {
+                    throw new RuntimeException("Socket has no space");
                 }
 
-                if (round == 0) {
-                    latch.countDown();
-                } else {
-                    IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
-                    responseBuf.writeInt(payloadSize);
-                    responseBuf.writeLong(round);
-                    responseBuf.write(payloadBuffer);
-                    responseBuf.flip();
-                    if (!socket.unsafeWriteAndFlush(responseBuf)) {
-                        throw new RuntimeException("Socket has no space");
-                    }
-                }
                 payloadSize = -1;
             }
+        }
+    }
+
+    private static class Monitor extends Thread {
+        private final int durationSecond;
+        private final PaddedAtomicLong[] completedArray;
+        private long last = 0;
+
+        public Monitor(int durationSecond, PaddedAtomicLong[] completedArray) {
+            this.durationSecond = durationSecond;
+            this.completedArray = completedArray;
+        }
+
+        @Override
+        public void run() {
+            long end = System.currentTimeMillis() + SECONDS.toMillis(durationSecond);
+            while (System.currentTimeMillis() < end) {
+                try {
+                    Thread.sleep(SECONDS.toMillis(1));
+                } catch (InterruptedException e) {
+                }
+
+                long total = sum(completedArray);
+                long diff = total - last;
+                last = total;
+                System.out.println("  thp " + diff + " echo/sec");
+            }
+
+            stop = true;
         }
     }
 }

@@ -143,7 +143,13 @@ public final class IOUringEventloop extends Eventloop {
 
     @Override
     protected void park(long timeoutNanos) throws IOException {
-        if (spin || timeoutNanos == 0) {
+        boolean completions = false;
+        if (cq.hasCompletions()) {
+            completions = true;
+            cq.process(eventLoopHandler);
+        }
+
+        if (spin || timeoutNanos == 0 || completions) {
             sq.submit();
         } else {
             wakeupNeeded.set(true);

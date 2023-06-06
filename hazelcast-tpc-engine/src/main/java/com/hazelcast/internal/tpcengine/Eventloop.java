@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_BLOCKED;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static java.lang.Math.max;
 
 /**
  * Contains the actual eventloop run by a Reactor. The effentloop is a responsible for scheduling
@@ -324,6 +325,7 @@ public abstract class Eventloop {
         long nowNanos = nanoClock.nanoTime();
         long ioDeadlineNanos = nowNanos + ioIntervalNanos;
 
+        int spin_step = 1;
         while (!stop) {
             // Thread.sleep(100);
 
@@ -336,17 +338,28 @@ public abstract class Eventloop {
 
             TaskQueue queue = taskQueueScheduler.pickNext();
             if (queue == null) {
+                // There is no work, we need to park.
+
                 long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
                 long timeoutNanos = earliestDeadlineNanos == -1
                         ? Long.MAX_VALUE
-                        : Math.max(0, earliestDeadlineNanos - nowNanos);
+                        : max(0, earliestDeadlineNanos - nowNanos);
+
+                if(spin_step==1){
+                    spin_step = 15;
+                }else{
+                    Thread.onSpinWait();
+                    spin_step--;
+                    if(earliestDeadlineNanos==-1){
+                        timeoutNanos = 0;
+                    }
+                }
 
                 //System.out.println("park");
                 park(timeoutNanos);
                 //System.out.println("park done");
                 // todo: we should only need to update the clock if real parking happened and not when work was detected
                 nowNanos = nanoClock.nanoTime();
-                // todo: should the ioDeadlineNanos be updated here?
                 ioDeadlineNanos = nowNanos + ioIntervalNanos;
                 continue;
             }
@@ -437,9 +450,11 @@ public abstract class Eventloop {
     // todo: with io_uring should this involve completions?
 
     /**
-     * Parks the current thread for a certain amount of time.
+     * Parks the eventloop thread.
      *
-     * @param timeoutNanos the timeout in nanos. 0 means no timeout. Long.MAX_VALUE means wait forever.
+     * @param timeoutNanos the timeout in nanos. 0 means no timeout.
+     *                     Long.MAX_VALUE means wait forever. a timeout
+     *                     smaller than 0 will not be used.
      * @throws IOException
      */
     protected abstract void park(long timeoutNanos) throws IOException;

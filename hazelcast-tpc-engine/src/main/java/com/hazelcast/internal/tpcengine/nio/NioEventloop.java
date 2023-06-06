@@ -32,6 +32,8 @@ import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
  */
 final class NioEventloop extends Eventloop {
 
+    private static final int NANOS_PER_MILLI = 1000000;
+
     final Selector selector = SelectorOptimizer.newSelector();
 
     NioEventloop(NioReactor reactor, NioReactorBuilder builder) {
@@ -74,7 +76,7 @@ final class NioEventloop extends Eventloop {
     @Override
     protected void park(long timeoutNanos) throws IOException {
         int keyCount;
-        long timeoutMs = timeoutNanos / 1000000;
+        long timeoutMs = timeoutNanos / NANOS_PER_MILLI;
         if (spin || timeoutMs == 0) {
             keyCount = selector.selectNow();
         } else {
