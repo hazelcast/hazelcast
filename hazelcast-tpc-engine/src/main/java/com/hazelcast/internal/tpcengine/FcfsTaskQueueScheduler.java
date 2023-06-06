@@ -32,7 +32,8 @@ import static java.lang.Math.min;
  * The FcfsTaskQueueScheduler will be helpful to pinpoint problems:
  * <ol>
  *     <li>we can exclude the {@link CfsTaskQueueScheduler} if there is some
- *     scheduling problem and we have difficulties which component is the cause.</li>
+ *     scheduling problem and we have difficulties which component is the
+ *     cause.</li>
  *     <li>we can exclude the overhead of the O(log(n)) complexity of the
  *     {@link CfsTaskQueueScheduler}. This will be useful for benchmarking so
  *     we can have a baseline to compare against.</li>
