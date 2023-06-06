@@ -188,6 +188,13 @@
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
 
         <!--
+        License plugin is not thread-safe, leads to flaky failures when checking licenses, so it is skipped by default.
+        to run the build with license plugin run with `-T1 -Dlicense.skipAddThirdParty=false`.
+        The `-T1` parameter disables the parallel build.
+        -->
+        <license.skipAddThirdParty>true</license.skipAddThirdParty>
+
+        <!--
         Allow access to Operating system metrics:
            open jdk.management/com.sun.management.internal
            export jdk.management/com.ibm.lang.management.internal
@@ -268,6 +275,7 @@
                     <include>**/*.xml</include>
                     <include>**/*.yaml</include>
                     <include>**/*.xsd</include>
+                    <include>**/*.txt</include>
                     <include>**/hazelcast-config-*.json</include>
                     <include>**/*.handlers</include>
                     <include>**/*.schemas</include>
