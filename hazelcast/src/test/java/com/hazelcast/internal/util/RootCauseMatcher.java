@@ -17,8 +17,6 @@
 package com.hazelcast.internal.util;
 
 import org.assertj.core.api.Condition;
-import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
-import org.hamcrest.Matcher;
 
 /**
  * Matcher for {@link org.assertj.core.api.Assertions#assertThatThrownBy} to assert the root cause of an exception.
