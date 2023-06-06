@@ -34,8 +34,15 @@ public final class DeadlineScheduler {
     // -1 indicates that there is no task in the deadline scheduler.
     private long earliestDeadlineNanos = -1;
 
+    // The DeadlineTasks are ordered by their deadline. So smallest deadline first.
     private final PriorityQueue<DeadlineTask> runQueue;
 
+    /**
+     * Creates a new scheduler with the given capacity.
+     *
+     * @param runQueueCapacity the capacity of the run queue
+     * @throws IllegalArgumentException when the capacity is smaller than 1.
+     */
     public DeadlineScheduler(int runQueueCapacity) {
         this.capacity = checkPositive(runQueueCapacity, "runQueueCapacity");
         this.runQueue = new PriorityQueue<>(runQueueCapacity);

@@ -25,6 +25,7 @@ public class EpochClock implements Clock {
 
     public static final EpochClock INSTANCE = new EpochClock();
 
+    // todo: we need to determine the actual epoch time START_TIME
     private static final long START_TIME = System.nanoTime();
 //
 //    static {
