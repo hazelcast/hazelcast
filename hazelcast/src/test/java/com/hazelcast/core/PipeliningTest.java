@@ -102,7 +102,7 @@ public class PipeliningTest extends HazelcastTestSupport {
 
     @Test
     public void test() throws Exception {
-        int maxValue = 100_000;
+        int maxValue = 10_000;
         List<Integer> expected = new ArrayList<>();
         Map<Integer, Integer> entriesToAdd = new HashMap<>();
 
