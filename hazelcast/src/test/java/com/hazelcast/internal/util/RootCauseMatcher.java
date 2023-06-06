@@ -49,11 +49,11 @@ public class RootCauseMatcher {
     private final Class<? extends Throwable> expectedType;
     private final String expectedMessage;
 
-    private RootCauseMatcher(Class<? extends Throwable> expectedType) {
+    public RootCauseMatcher(Class<? extends Throwable> expectedType) {
         this(expectedType, null);
     }
 
-    private RootCauseMatcher(Class<? extends Throwable> expectedType, String expectedMessage) {
+    public RootCauseMatcher(Class<? extends Throwable> expectedType, String expectedMessage) {
         this.expectedType = expectedType;
         this.expectedMessage = expectedMessage;
     }
