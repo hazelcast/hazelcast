@@ -37,9 +37,11 @@ import java.security.Permission;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Function;
@@ -85,7 +87,7 @@ public class PMSTest extends SimpleTestInClusterSupport {
     public void tearDown() throws Exception {
         File output = new File(OUTPUT_FILE);
         assertTrue(output.exists());
-        output.delete();
+        assertTrue(output.delete());
     }
 
     @Test
@@ -142,10 +144,13 @@ public class PMSTest extends SimpleTestInClusterSupport {
         dag.edge(between(generator, printer));
         dag.markAsPrunable();
 
+        Map<Address, int[]> partitionAssignment = getPartitionAssignment(instance());
+        assertEquals(3, partitionAssignment.size());
+        Iterator<Address> it = partitionAssignment.keySet().iterator();
+
         JobConfig jobConfig = new JobConfig();
-        // TODO: there is an extremely high probability that partitions 1 and 2 will be on different members.
-        //  But we should not rely on probability -> rewrite it with assigning known partitions for diff members.
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, new HashSet<>(Arrays.asList(1, 2)));
+        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, new HashSet<>(Arrays.asList(
+                partitionAssignment.get(it.next())[0], partitionAssignment.get(it.next())[0])));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -214,8 +219,10 @@ public class PMSTest extends SimpleTestInClusterSupport {
                         .mapToObj(GenP::new)
                         .collect(Collectors.toList()));
 
-        ProcessorMetaSupplier pmsJoin = ProcessorMetaSupplier.of(
-                (ProcessorSupplier) count -> nCopies(count, new JoinP()));
+        ProcessorMetaSupplier pmsJoin = new ValidatingMetaSupplier(
+                memberPruningMetaSupplier(
+                        (ProcessorSupplier) count -> nCopies(count, new JoinP())),
+                2);
 
         ProcessorMetaSupplier pmsPrint = memberPruningMetaSupplier(
                 (ProcessorSupplier) count -> nCopies(count, new PrintP()));
@@ -237,11 +244,6 @@ public class PMSTest extends SimpleTestInClusterSupport {
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
 
-        // Prints
-        // (0, 0)
-        // (1, 0)
-        // (0, 1)
-        // (1, 1)
         assertJobStatusEventually(job, JobStatus.COMPLETED);
         Set<String> expectedOutput = new HashSet<>(Arrays.asList("(0, 0)", "(1, 0)", "(0, 1)", "(1, 1)"));
         try {
