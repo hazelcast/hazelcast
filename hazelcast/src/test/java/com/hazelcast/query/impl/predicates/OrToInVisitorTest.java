@@ -36,6 +36,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
+@SuppressWarnings("rawtypes")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OrToInVisitorTest {
@@ -51,7 +52,7 @@ public class OrToInVisitorTest {
 
     @Test
     public void whenEmptyPredicate_thenReturnItself() {
-        OrPredicate or = new OrPredicate(null);
+        OrPredicate or = new OrPredicate((Predicate[]) null);
         OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
         assertThat(or, equalTo(result));
     }
