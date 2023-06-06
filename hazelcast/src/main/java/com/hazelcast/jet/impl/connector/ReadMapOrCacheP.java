@@ -274,18 +274,12 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         private static final long serialVersionUID = 1L;
         private final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
-        private Map<Address, int[]> partitionAssignment = null;
-        private int[] partitionsToScan = null;
-
-        LocalProcessorMetaSupplier(
-                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
-        ) {
-            this.readerSupplier = readerSupplier;
-        }
+        private Map<Address, int[]> partitionAssignment;
+        private int[] partitionsToScan;
 
         LocalProcessorMetaSupplier(
                 @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
-                int[] partitionsToScan
+                @Nullable int[] partitionsToScan
         ) {
             this.readerSupplier = readerSupplier;
             this.partitionsToScan = partitionsToScan;
@@ -298,8 +292,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             } else {
                 return address -> {
                     int[] partitions = partitionAssignment.get(address);
-                    Arrays.sort(partitions);
                     List<Integer> partitionsToScanList = new ArrayList<>();
+                    // partitionAssignment is sorted, so we can use binary search
                     for (int pId : partitionsToScan) {
                         if (Arrays.binarySearch(partitions, pId) > 0) {
                             partitionsToScanList.add(pId);

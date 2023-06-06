@@ -54,6 +54,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Map.Entry;
@@ -74,7 +75,8 @@ public final class HazelcastReaders {
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
         return new LocalProcessorMetaSupplier<
                 InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
-                new LocalCacheReaderFunction(cacheName)
+                new LocalCacheReaderFunction(cacheName),
+                null
         ) {
             @Override
             public Permission getRequiredPermission() {
@@ -172,22 +174,8 @@ public final class HazelcastReaders {
     }
 
     @Nonnull
-    public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
-        return new LocalProcessorMetaSupplier<
-                InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>(
-                new LocalMapReaderFunction(mapName)
-        ) {
-            @Override
-            public Permission getRequiredPermission() {
-                return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
-            }
-        };
-    }
-
-    @Nonnull
-    public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName, int[] partitions) {
-        return new LocalProcessorMetaSupplier<
-                InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>(
+    public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName, @Nullable int[] partitions) {
+        return new LocalProcessorMetaSupplier<>(
                 new LocalMapReaderFunction(mapName),
                 partitions
         ) {
@@ -247,7 +235,8 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
         return new LocalProcessorMetaSupplier<InternalCompletableFuture<ResultSegment>, ResultSegment, QueryResultRow>(
-                new LocalMapQueryReaderFunction<>(mapName, predicate, projection)
+                new LocalMapQueryReaderFunction<>(mapName, predicate, projection),
+                null
         ) {
             @Override
             public Permission getRequiredPermission() {
