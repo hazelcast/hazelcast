@@ -17,30 +17,24 @@
 package com.hazelcast.internal.util;
 
 import org.assertj.core.api.Condition;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.hamcrest.Matcher;
 
 /**
- * Matcher for {@link org.junit.rules.ExpectedException#expectCause(Matcher)} to assert the root cause of an exception.
+ * Matcher for {@link org.assertj.core.api.Assertions#assertThatThrownBy} to assert the root cause of an exception.
  * <p>
  * Optionally the exception message can be tested as well.
  * <p>
  * Example usage:
  * <pre><code>
- *  {@literal @}Rule
- *   public ExpectedException expect = ExpectedException.none();
- *
  *  {@literal @}Test
  *   public void testRootCause() {
- *     expected.expect(ExecutionException.class);
- *     expected.expectCause(new RootCauseMatcher(StaleTaskException.class));
- *     throwException();
+ *     assertThatThrownBy(() -> throwException()).cause().has(rootCauseStaleTaskException.class());
  *   }
  *
  *  {@literal @}Test
  *   public void testRootCause_withMessage() {
- *     expected.expect(ExecutionException.class);
- *     expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Expected message"));
- *     throwException();
+ *     assertThatThrownBy(() -> throwException()).cause().has(rootCauseStaleTaskException.class(), "Expected message");
  *   }
  * </code></pre>
  */
