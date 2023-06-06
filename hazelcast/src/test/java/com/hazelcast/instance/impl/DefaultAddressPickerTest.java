@@ -295,9 +295,26 @@ public class DefaultAddressPickerTest {
         assertEquals(new Address(host, port), addressPicker.getPublicAddress(null));
     }
 
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPublicAddress_whenBlankViaProperty() throws Exception {
+        config.setProperty("hazelcast.local.publicAddress", " ");
+
+        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker.pickAddress();
+    }
+
     @Test(expected = UnknownHostException.class)
     public void testPublicAddress_withInvalidAddress() throws Exception {
         config.getNetworkConfig().setPublicAddress("invalid");
+
+        addressPicker = new DefaultAddressPicker(config, logger);
+        addressPicker.pickAddress();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testPublicAddress_withBlankAddress() throws Exception {
+        config.getNetworkConfig().setPublicAddress(" ");
 
         addressPicker = new DefaultAddressPicker(config, logger);
         addressPicker.pickAddress();
