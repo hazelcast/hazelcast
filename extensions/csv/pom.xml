@@ -63,9 +63,9 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>jar-with-dependencies</id>
@@ -91,7 +91,7 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
+          </plugin>
         </plugins>
     </build>
 

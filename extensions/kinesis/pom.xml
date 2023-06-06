@@ -55,6 +55,20 @@
                             <shadedPattern>${relocation.root}.com.amazonaws</shadedPattern>
                         </relocation>
                     </relocations>
+                    <filters>
+                        <filter>
+                            <artifact>com.fasterxml.jackson.core:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/MANIFEST.MF</exclude>
+                                <!--
+                                jackson-core is multi-jar since 2.15.0
+                                Excludes optimizations for later Java versions because we can't
+                                process them in shade plugin while building for Java 8
+                                -->
+                                <exclude>META-INF/versions/**</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
                 </configuration>
             </plugin>
         </plugins>
