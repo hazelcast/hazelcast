@@ -314,7 +314,6 @@
                     <configLocation>${checkstyle.configLocation}</configLocation>
                     <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>
                     <headerLocation>${checkstyle.headerLocation}</headerLocation>
-                    <enableRSS>false</enableRSS>
                     <linkXRef>false</linkXRef>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
