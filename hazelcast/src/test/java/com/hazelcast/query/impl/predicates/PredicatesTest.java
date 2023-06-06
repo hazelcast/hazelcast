@@ -300,7 +300,7 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testInNullWithNullArray() {
-        Predicates.in(ATTRIBUTE, null);
+        Predicates.in(ATTRIBUTE, (Comparable<?>[]) null);
     }
 
     private class DummyEntry extends QueryEntry {

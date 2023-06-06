@@ -47,8 +47,8 @@ public class MapPutAllWithBouncingMemberTest extends HazelcastTestSupport {
     public int putAllBatchSize;
 
     @Parameterized.Parameters(name = "putAllBatchSize: {0}")
-    public static Collection<Object> data() {
-        return asList(new Integer[] {0, 2});
+    public static Collection<Integer> data() {
+        return asList(0, 2);
     }
 
     @Override
