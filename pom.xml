@@ -36,7 +36,6 @@
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
-        <module>modulepath-tests</module>
     </modules>
 
     <properties>
@@ -1342,6 +1341,24 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <!--
+            Profile which allows to skip the modulepath-tests module.
+            The module runs by default, but can be skipped by adding -Dskip-modulepath-tests property.
+            This is used in PR builder when we run only `mvn test-compile` which is not possible due
+            to an automatic module name not being created in the hazelcast jar (no jar is built at all).
+            -->
+            <id>modulepath-tests</id>
+            <activation>
+                <property>
+                    <name>!skip-modulepath-tests</name>
+                </property>
+            </activation>
+            <modules>
+                <module>modulepath-tests</module>
+            </modules>
         </profile>
 
         <profile>
