@@ -38,6 +38,7 @@ Non-goals are:
 
 - support any kind of pruning for streaming jobs. It may be considered to do later, but now it is not a case.
 - support migration-tolerance for member and processor pruning. 
+- support local index scan.
 
 
 ## Technical Design
@@ -137,8 +138,8 @@ For that, we can use SQL optimization phase also for determining partitions and 
 about required partitions to run to `JobConfig`, and then mark DAG as 'ableToPruneMembers'. This mark is an indicator
 for `ExecutionPlanBuilder` to choose code path with member pruning during execution plans creation.
 As a helpful API for SQL's `CreateDagVisitor`, we introduced new wrapper for both `ProcessorMetaSupplier` and
-`ProcessorSupplier` - `memberPruningProcessorMetaSupplier`, where `doesWorkWithoutInput` method returns `false`. This PMS
-make easier and more precise choosing members to prune.
+`ProcessorSupplier` - `memberPruningProcessorMetaSupplier`, where `doesWorkWithoutInput` method returns `false`. In 
+`ExecutionPlanBuilder` we checks that all vertices in DAG does not work without input and then we can apply member pruning.
 
 ### Processor pruning
 
