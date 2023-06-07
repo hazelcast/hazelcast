@@ -319,6 +319,7 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
                                         <exclude>**/package-info.java</exclude>
+                                        <exclude>org/apache/calcite/runtime/CalciteResource.properties</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -442,7 +443,6 @@
             <artifactId>hazelcast</artifactId>
             <version>${project.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-core</artifactId>
@@ -863,6 +863,14 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+        </dependency>
+
+        <!-- Keep apiguardian-api as provided dependency to remove javac warnings -->
+        <dependency>
+            <groupId>org.apiguardian</groupId>
+            <artifactId>apiguardian-api</artifactId>
+            <version>1.1.2</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

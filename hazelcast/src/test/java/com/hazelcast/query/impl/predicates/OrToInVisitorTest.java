@@ -32,6 +32,7 @@ import static com.hazelcast.query.Predicates.or;
 import static org.mockito.Mockito.mock;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("rawtypes")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OrToInVisitorTest {
@@ -47,7 +48,7 @@ public class OrToInVisitorTest {
 
     @Test
     public void whenEmptyPredicate_thenReturnItself() {
-        OrPredicate or = new OrPredicate(null);
+        OrPredicate or = new OrPredicate((Predicate[]) null);
         OrPredicate result = (OrPredicate) visitor.visit(or, indexes);
         assertThat(or).isEqualTo(result);
     }
