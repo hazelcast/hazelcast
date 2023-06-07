@@ -152,8 +152,6 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     @Override
     @Test
     public void testConfigurationWithFileName() throws Exception {
-        assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
-
         File file = createTempFile("foo", "bar");
         file.deleteOnExit();
 

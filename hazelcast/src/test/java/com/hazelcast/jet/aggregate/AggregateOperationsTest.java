@@ -84,13 +84,12 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -628,7 +627,7 @@ public class AggregateOperationsTest {
         validateOpWithoutDeduct(
                 groupingBy(entryKey(), TreeMap::new, counting()),
                 a -> {
-                    assertThat(a, instanceOf(TreeMap.class));
+                    assertThat(a).isInstanceOf(TreeMap.class);
                     return a;
                 },
                 entryB,

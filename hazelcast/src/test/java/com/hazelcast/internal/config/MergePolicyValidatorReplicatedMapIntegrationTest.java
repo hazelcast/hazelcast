@@ -55,8 +55,7 @@ public class MergePolicyValidatorReplicatedMapIntegrationTest extends AbstractMe
     public void testReplicatedMap_withHyperLogLogMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("cardinalityEstimator", hyperLogLogMergePolicy);
 
-        expectCardinalityEstimatorException();
-        hz.getReplicatedMap("cardinalityEstimator");
+        expectCardinalityEstimatorException(() -> hz.getReplicatedMap("cardinalityEstimator"));
     }
 
     @Test
@@ -70,8 +69,7 @@ public class MergePolicyValidatorReplicatedMapIntegrationTest extends AbstractMe
     public void testReplicatedMap_withInvalidMergePolicy() {
         HazelcastInstance hz = getHazelcastInstance("invalid", invalidMergePolicyConfig);
 
-        expectedInvalidMergePolicyException();
-        hz.getReplicatedMap("invalid");
+        expectedInvalidMergePolicyException(() -> hz.getReplicatedMap("invalid"));
     }
 
     @Test

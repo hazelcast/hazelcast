@@ -18,12 +18,8 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.sql.Time;
@@ -34,6 +30,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -44,9 +41,6 @@ public class DateHelperTest {
     public static final String TIMESTAMP_FORMAT = DateHelper.TIMESTAMP_FORMAT;
     public static final String SQL_DATE_FORMAT = DateHelper.SQL_DATE_FORMAT;
     public static final String SQL_TIME_FORMAT = DateHelper.SQL_TIME_FORMAT;
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testSqlDate() {
@@ -89,17 +83,14 @@ public class DateHelperTest {
     }
 
     @Test
-    public void testSqlDateFailsForInvalidDate() throws Exception {
+    public void testSqlDateFailsForInvalidDate() {
         // Given
         String invalidDate = "Trust me, I am a date";
 
         // When
-        thrown.expect(RuntimeException.class);
-        thrown.expectCause(instanceOf(ParseException.class));
-        DateHelper.parseSqlDate(invalidDate);
-
-        // Then
-        // No-op
+        assertThatThrownBy(() -> DateHelper.parseSqlDate(invalidDate))
+                .isInstanceOf(RuntimeException.class)
+                .hasCauseInstanceOf(ParseException.class);
     }
 
     private void assertSqlDatesEqual(java.sql.Date firstDate, java.sql.Date secondDate) {
@@ -172,20 +163,16 @@ public class DateHelperTest {
     }
 
     @Test
-    public void testTimestampFailsForInvalidValue() throws Exception {
+    public void testTimestampFailsForInvalidValue() {
         // Given
         String invalidTimestamp = "Quid temporem est";
 
         // When
-        thrown.expectCause(instanceOf(ParseException.class));
-        DateHelper.parseTimeStamp(invalidTimestamp);
+        assertThatThrownBy(() -> DateHelper.parseTimeStamp(invalidTimestamp))
+                .hasCauseInstanceOf(ParseException.class);
 
         // Then
         // No-op
-    }
-
-    private Matcher<Throwable> instanceOf(Class<?> exceptionClass) {
-        return Matchers.instanceOf(exceptionClass);
     }
 
     private void assertTimestampsEqual(Timestamp firstTimestamp, Timestamp secondTimestamp) {
@@ -245,13 +232,13 @@ public class DateHelperTest {
     }
 
     @Test
-    public void testTimeFailsForInvalidValue() throws Exception {
+    public void testTimeFailsForInvalidValue() {
         // Given
         String invalidTime = "Time is now";
 
         // When
-        thrown.expectCause(instanceOf(ParseException.class));
-        DateHelper.parseSqlTime(invalidTime);
+        assertThatThrownBy(() -> DateHelper.parseSqlTime(invalidTime))
+                .hasCauseInstanceOf(ParseException.class);
 
         // Then
         // No-op

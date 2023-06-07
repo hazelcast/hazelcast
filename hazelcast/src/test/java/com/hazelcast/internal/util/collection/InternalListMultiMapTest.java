@@ -29,9 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -41,7 +39,7 @@ public class InternalListMultiMapTest {
 
     @Before
     public void setUp() {
-        this.multiMap = new InternalListMultiMap<Integer, String>();
+        this.multiMap = new InternalListMultiMap<>();
     }
 
     @Test
@@ -49,8 +47,8 @@ public class InternalListMultiMapTest {
         multiMap.put(1, "value");
         Collection<String> results = multiMap.get(1);
 
-        assertThat(results, hasSize(1));
-        assertThat(results, contains("value"));
+        assertThat(results).hasSize(1);
+        assertThat(results).containsExactlyInAnyOrder("value");
     }
 
     @Test
@@ -59,13 +57,13 @@ public class InternalListMultiMapTest {
         multiMap.put(1, "value");
         Collection<String> results = multiMap.get(1);
 
-        assertThat(results, hasSize(2));
-        assertThat(results, contains("value", "value"));
+        assertThat(results).hasSize(2);
+        assertThat(results).containsExactlyInAnyOrder("value", "value");
     }
 
     @Test
     public void entrySet_whenEmpty_thenReturnEmptySet() {
         Set<Map.Entry<Integer, List<String>>> entries = multiMap.entrySet();
-        assertThat(entries, hasSize(0));
+        assertThat(entries).isEmpty();
     }
 }
