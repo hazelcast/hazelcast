@@ -151,7 +151,7 @@ public class BiInt2ObjectMapTest {
                 return false;
             }
 
-            final var that = (EntryCapture<?>) o;
+            final EntryCapture<?> that = (EntryCapture<?>) o;
 
             return keyPartA == that.keyPartA && keyPartB == that.keyPartB && value.equals(that.value);
 

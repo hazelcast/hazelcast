@@ -73,7 +73,7 @@ public class CompositeValueTest {
         assertThat(NULL).isGreaterThan(NEGATIVE_INFINITY);
         assertThat(NULL).isLessThan(POSITIVE_INFINITY);
 
-       assertThat(NEGATIVE_INFINITY).isLessThan(NULL);
+        assertThat(NEGATIVE_INFINITY).isLessThan(NULL);
         assertThat(NEGATIVE_INFINITY).isLessThan(POSITIVE_INFINITY);
 
         assertThat(POSITIVE_INFINITY).isGreaterThan(NULL);

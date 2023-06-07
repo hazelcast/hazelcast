@@ -118,7 +118,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
             resultToMatchVar = ((List<?>) resultToMatchVar).toArray();
         }
 
-        final var resultToMatch = resultToMatchVar;
+        final Object resultToMatch = resultToMatchVar;
 
         ThrowingCallable test = () -> {
             // print test scenario for debug purposes

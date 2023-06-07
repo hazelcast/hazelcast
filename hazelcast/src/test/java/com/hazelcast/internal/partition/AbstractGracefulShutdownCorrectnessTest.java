@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.Accessors.getNode;
@@ -115,7 +116,7 @@ public abstract class AbstractGracefulShutdownCorrectnessTest extends PartitionC
     public void testPartitionData_whenNodesStartedShutdown_whileOperationsOngoing() throws InterruptedException {
         final Config config = getConfig(true, false);
 
-        var future = spawn(() -> {
+        Future<?> future = spawn(() -> {
             LinkedList<HazelcastInstance> instances
                     = new LinkedList<>(Arrays.asList(factory.newInstances(config, nodeCount)));
             try {
