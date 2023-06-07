@@ -511,18 +511,21 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
 
         MemberInfo member = member("127.0.0.1");
         List<MemberInfo> members = Collections.singletonList(member);
-        clusterService.handleMembersViewEvent(1, members, UUID.randomUUID());
 
-        // Returns the member list after the members view event
-        assertCollection(
-                members.stream()
-                        .map(MemberInfo::toMember)
-                        .collect(Collectors.toList()),
-                clusterService.getEffectiveMemberList());
+        for (int i = 0; i < 3; i++) {
+            clusterService.handleMembersViewEvent(i, members, UUID.randomUUID());
 
-        clusterService.onTryToConnectNextCluster();
+            // Returns the member list after the members view event
+            assertCollection(
+                    members.stream()
+                            .map(MemberInfo::toMember)
+                            .collect(Collectors.toList()),
+                    clusterService.getEffectiveMemberList());
 
-        // Returns an empty list after reset
-        assertCollection(Collections.emptyList(), clusterService.getEffectiveMemberList());
+            clusterService.onTryToConnectNextCluster();
+
+            // Returns an empty list after reset
+            assertCollection(Collections.emptyList(), clusterService.getEffectiveMemberList());
+        }
     }
 }
