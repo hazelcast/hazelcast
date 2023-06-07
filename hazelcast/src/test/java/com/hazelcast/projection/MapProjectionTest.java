@@ -43,6 +43,7 @@ import java.util.Map;
 
 import static com.google.common.primitives.Ints.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @RunWith(HazelcastParallelClassRunner.class)
@@ -98,8 +99,9 @@ public class MapProjectionTest extends HazelcastTestSupport {
         IMap<String, Double> map = getMapWithNodeCount(3);
         populateMap(map);
 
-        var ex = assertThrows(RuntimeException.class, () -> map.project(new ExceptionThrowingProjection()));
-        assertThat(ex).hasMessageContaining("transform() exception");
+        assertThatThrownBy(() -> map.project(new ExceptionThrowingProjection()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("transform() exception");
     }
 
     @Test

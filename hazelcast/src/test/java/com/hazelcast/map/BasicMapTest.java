@@ -879,7 +879,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testEntryViewLastUpdateTimeSet_whenEntryIsExpirable() {
         // statisticsEnabled shouldn't change anything, no need to test same scenario twice
-        assumeThat(perEntryStatsEnabled).isFalse();
+        assumeThat(statisticsEnabled).isFalse();
 
         HazelcastInstance instance = getInstance();
         IMap<Integer, Integer> map = instance.getMap("testEntryViewLastUpdateTimeSet_whenEntryIsExpirable");

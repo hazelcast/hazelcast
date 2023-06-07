@@ -314,7 +314,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         assertEquals(2, map.size());
         assertEquals("1", map.get("1"));
-        assertNull(null, map.get("2"));
+        assertNull(map.get("2"));
         assertEquals("3", map.get("3"));
     }
 

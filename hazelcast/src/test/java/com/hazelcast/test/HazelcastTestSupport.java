@@ -1268,6 +1268,7 @@ public abstract class HazelcastTestSupport {
     public static void assertTrueEventually(AssertTask task) {
         assertTrueEventually(null, task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
+    
     public static void assertFalseEventually(AssertTask task, long timeoutSeconds) {
         AssertionError error = null;
         // we are going to check five times a second
