@@ -278,6 +278,7 @@
                                     !org.junit,
                                     !com.hazelcast.*,
                                     !com.fasterxml.jackson.*,
+                                    !com.zaxxer.hikari.*,
                                     !org.snakeyaml.*,
                                     !io.github.classgraph.*,
                                     !org.everit.json.*,
@@ -306,6 +307,8 @@
                                     org.hibernate.service;resolution:=optional,
                                     org.hibernate.service.spi;resolution:=optional,
                                     net.openhft.affinity;resolution:=optional,
+                                    javax.jms;resolution:=optional,
+                                    org.osgi.framework;resolution:=optional,
                                     *
                                 </Import-Package>
                                 <Bundle-Name>Hazelcast(Core)</Bundle-Name>
