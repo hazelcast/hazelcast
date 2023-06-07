@@ -92,7 +92,7 @@
 
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
-        <antlr4.version>4.9.3</antlr4.version>
+        <antlr4.version>4.13.0</antlr4.version>
         <avro.version>1.11.1</avro.version>
         <aws.sdk.version>1.12.479</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
