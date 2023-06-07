@@ -674,14 +674,23 @@
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${maven.shade.plugin.version}</version>
                     <configuration>
-                        <filters>
+                        <filters combine.children="append">
                             <filter>
                                 <artifact>*:*</artifact>
                                 <excludes>
                                     <exclude>module-info.class</exclude>
+                                    <exclude>META-INF/versions/9/module-info.class</exclude>
+                                    <exclude>THIRD-PARTY.txt</exclude>
+                                    <exclude>LICENSE</exclude>
+                                    <exclude>NOTICE</exclude>
                                     <exclude>META-INF/*.SF</exclude>
                                     <exclude>META-INF/*.DSA</exclude>
                                     <exclude>META-INF/*.RSA</exclude>
+                                    <exclude>META-INF/LICENSE</exclude>
+                                    <exclude>META-INF/MANIFEST.MF</exclude>
+                                    <exclude>META-INF/THIRD-PARTY.txt</exclude>
+                                    <exclude>META-INF/DEPENDENCIES</exclude>
+                                    <exclude>overview.html</exclude>
                                 </excludes>
                             </filter>
                         </filters>
