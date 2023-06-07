@@ -17,64 +17,64 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * The taskqueue-scheduler is a cooperative scheduler (unlike the schedulers in Linux).
+ * The {@link TaskQueueScheduler} is a cooperative scheduler (unlike the schedulers in Linux).
  * So it is up to the task to yield the CPU. If a task doesn't yield the CPU, it prevents
  * the other tasks from running. It will also prevent the deadline-scheduler and io-scheduler
  * from running.
  * <p/>
  * A taskqueue-scheduler only contains taskqueues that are runnable. So if a taskqueue
- * is blocked, it is removed from the scheduler. When the taskqueue becomes runnable again, it
- * is enqueud.
+ * is blocked, it is removed from the scheduler using {@link TaskQueueScheduler#dequeueActive()}.
+ * When the taskqueue becomes runnable again, it is enqueued using
+ * {@link TaskQueueScheduler#enqueue(TaskQueue)}
  * <p/>
  * A task-queue is tied to a particular {@link Eventloop} and doesn't need to be thread-safe.
  * <p/>
  * Unlike Linux schedulers, a taskqueue-scheduler doesn't support migration of work from one
  * {@link Eventloop} to another. This is fine since we do not want to move work between cores.
  */
-//todo: javadoc needs to be fixed since it refers to the CFS scheduler
 public interface TaskQueueScheduler {
 
     /**
-     * Returns the length of the time slice of the current TaskQueue. The length is
-     * proportional to the weight of the TaskQueue. There is a lower bound to the
-     * time slice to prevent excessive context switching.
+     * Returns the length of the time slice of the active TaskQueue.
      *
-     * @return the length of the time slice of the current TaskQueue.
+     * @return the length of the time slice of the active TaskQueue.
      */
-    long timeSliceNanosCurrent();
+    long timeSliceNanosActive();
 
     /**
-     * Picks the next taskQueue to run. The taskQueue with the lowest vruntime is picked.
+     * Picks the next active taskQueue.
      *
      * @return the next taskQueue to run. If no task is available, then <code>null</code> is returned.
      */
     TaskQueue pickNext();
 
-    void updateCurrent(long deltaNanos);
-
     /**
-     * Remove the current task from the run queue. This happens when the task is blocked or the
-     * task should be removed. So after a context switch (of task queues), either this method or the
-     * {@link #yieldCurrent()} method is called.
-     */
-    void dequeueCurrent();
-
-    /**
-     * Yields the current taskQueue which effectively removes it from the runQueue and adds
-     * it back to the runQueue. This is needed so that the current taskQueue is properly inserted
-     * into the runQueue based on its vruntime.
-     * <p/>
-     * This method is called when the current taskQueue is blocked.
+     * Updates the active taskQueue with the given delta.
      *
-     * @see #dequeueCurrent()
+     * @param execDeltaNanos the amount of time the active taskQueue has been running.
      */
-    void yieldCurrent();
+    void updateActive(long execDeltaNanos);
 
     /**
-     * Enqueues a taskQueue into the CfsScheduler. This could be a taskQueue that was blocked or
-     * is completely new. The vruntime of the taskQueue is updated to the max of the min_vruntime
-     * and its own vruntime. This is done to prevent that when a task had very little vruntime
-     * compared to the other tasks, that it is going to own the CPU for a very long time.
+     * Remove the active task from the run queue. This happens when the task is blocked or the
+     * task should be removed. So after a context switch (of task queues), either this method or the
+     * {@link #yieldActive()} method is called.
+     */
+    void dequeueActive();
+
+    /**
+     * Yields the active taskQueue which effectively removes it from the runQueue and adds
+     * it back to the runQueue.
+     * <p/>
+     * This method is called when the active taskQueue is blocked.
+     *
+     * @see #dequeueActive()
+     */
+    void yieldActive();
+
+    /**
+     * Enqueues a taskQueue into the run queue. This could be a taskQueue that was blocked or
+     * is completely new.
      *
      * @param taskQueue the taskQueue to enqueue.
      */

@@ -57,7 +57,7 @@ public abstract class ReactorBuilder {
     private static final int DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY = 4096;
     private static final int DEFAULT_RUN_QUEUE_CAPACITY = 1024;
     private static final long DEFAULT_STALL_THRESHOLD_NANOS = MICROSECONDS.toNanos(500);
-    private static final long DEFAULT_IO_INTERVAL_NANOS = MICROSECONDS.toNanos(10);
+    private static final long DEFAULT_IO_INTERVAL_NANOS = MICROSECONDS.toNanos(50);
     private static final long DEFAULT_TARGET_LATENCY_NANOS = MILLISECONDS.toNanos(1);
     private static final long DEFAULT_MIN_GRANULARITY_NANOS = MICROSECONDS.toNanos(100);
     private static final boolean DEFAULT_CFS = true;
@@ -107,7 +107,7 @@ public abstract class ReactorBuilder {
     long stallThresholdNanos;
     long ioIntervalNanos;
     int runQueueCapacity;
-    StallHandler stallHandler = LoggingStallHandler.INSTANCE;
+    ReactorStallHandler stallHandler = LoggingStallHandler.INSTANCE;
     long targetLatencyNanos;
     long minGranularityNanos;
     boolean cfs;
@@ -151,34 +151,59 @@ public abstract class ReactorBuilder {
      * Sets the capacity for the run queue of the {@link TaskQueueScheduler}.This defines
      * the maximum number of TaskQueues that can be created within an {@link EventLoop}.
      *
-     * @param runQueueCapacity
-     * @return
+     * @param runQueueCapacity the capacity of the run queue.
+     * @throws IllegalArgumentException if the capacity is not a positive number.
      */
-    public ReactorBuilder setRunQueueCapacity(int runQueueCapacity) {
+    public void setRunQueueCapacity(int runQueueCapacity) {
         this.runQueueCapacity = checkPositive(runQueueCapacity, "runQueueCapacity");
-        return this;
     }
 
-    public ReactorBuilder setTargetLatency(long targetLatency, TimeUnit unit) {
+    /**
+     * Sets the total amount of time that can be divided over the taskqueues in the
+     * {@link TaskQueueScheduler}. It depends on the scheduler implementation how
+     * this is interpreted.
+     *
+     * @param targetLatency the target latency.
+     * @param unit the unit of the target latency.
+     * @throws IllegalArgumentException if the targetLatency is not a positive number.
+     * @throws NullPointerException if unit is null.
+     */
+    public void setTargetLatency(long targetLatency, TimeUnit unit) {
         checkPositive(targetLatency, "targetLatency");
         checkNotNull(unit, "unit");
         this.targetLatencyNanos = unit.toNanos(targetLatency);
-        return this;
     }
 
-    public ReactorBuilder setMinGranularity(long minGranularity, TimeUnit unit) {
+    /**
+     * Sets the minimum amount of time a taskqueue is guaranteed to run (unless the
+     * taskgroup decided to stop/yield).
+     * <p>
+     * Setting this value too low could lead to excessive context switching. Setting
+     * this value too high could lead to unresponsiveness (increased latency).
+     *
+     * @param minGranularity the minimum granularity.
+     * @param unit the unit of the minGranularity.
+     * @throws IllegalArgumentException if the targetLatency is not a positive number.
+     * @throws NullPointerException if unit is null.
+     */
+    public void setMinGranularity(long minGranularity, TimeUnit unit) {
         checkPositive(minGranularity, "minGranularity");
         checkNotNull(unit, "unit");
         this.minGranularityNanos = unit.toNanos(minGranularity);
-        return this;
     }
 
     /**
      * The maximum amount of time a task is allowed to run before being considered stalling
      * the reactor.
+     * <p/>
+     * Setting this value too low will lead to a lot of noise (false positives). Setting
+     * this value too high will lead to not detecting the stalls on the reactor (false
+     * negatives).
      *
-     * @param stallThreshold
-     * @param unit
+     * @param stallThreshold the stall threshold.
+     * @param unit the unit of the stall threshold.
+     * @throws IllegalArgumentException if the targetLatency is not a positive number.
+     * @throws NullPointerException if unit is null.
      */
     public void setStallThreshold(long stallThreshold, TimeUnit unit) {
         checkPositive(stallThreshold, "stallThreshold");
@@ -187,12 +212,12 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the {@link StallHandler}.
+     * Sets the {@link ReactorStallHandler}.
      *
      * @param stallHandler the new StallHandler.
      * @throws NullPointerException if stallHandler is <code>null</code>.
      */
-    public void setStallHandler(StallHandler stallHandler) {
+    public void setStallHandler(ReactorStallHandler stallHandler) {
         this.stallHandler = checkNotNull(stallHandler, "stallHandler");
     }
 
@@ -204,8 +229,9 @@ public abstract class ReactorBuilder {
      * when there are other threads/processes contending for the core and when there are stalls
      * on the reactor.
      * <p/>
-     * Setting the value too low will cause a lot of overhead. Setting it too high will suboptimal
-     * performance in the I/O system because I/O requests will be delayed.
+     * Setting the value too low will cause a lot of overhead. It can even lead to the eventloop
+     * spinning on ticks to the io-scheduler instead of able to park. Setting it too high will
+     * suboptimal performance in the I/O system because I/O requests will be delayed.
      *
      * @param ioInterval the io interval
      * @param unit       the unit for the io interval.

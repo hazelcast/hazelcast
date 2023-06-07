@@ -38,6 +38,10 @@ import java.util.Queue;
  * When there are 2 queues, tasks will be picked in round robin fashion and tasks in the
  * same queue will be picked in FIFO order.
  * <p>
+ * TaskGroups are relatively cheap. A task group that is blocked, will not be on the run queue
+ * of the scheduler. But if the task group has a global queue, periodically a check will be done
+ * to see if there are tasks on the global queue.
+ * <p>
  * Every TaskQueue has a vruntime which stands for virtual runtime. THis is used by the
  * {@link CfsTaskQueueScheduler} to pick the TaskQueue with the lowest vruntime.
  * <p>
@@ -46,7 +50,7 @@ import java.util.Queue;
  * If a different task would be executed while a task is running on the CPU, the measured time
  * will include the time of that task as well.
  * <p>
- * In Linux terms this would be the sched_entity.
+ * In Linux terms the TaskQueue would be the sched_entity.
  * <p>
  * The TaskQueue is inspired by the <a href="https://github.com/DataDog/glommio">Glommio</> TaskQueue.
  */
@@ -60,6 +64,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
     public static final int RUN_STATE_RUNNING = 1;
     public static final int RUN_STATE_BLOCKED = 2;
+
+
     public int pollState;
 
     // the interval in which the time on the CPU is measured. 1 means every interval.
@@ -77,12 +83,14 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     public Eventloop eventloop;
     public TaskQueueScheduler scheduler;
     // The accumulated amount of time this task has spend on the CPU
-    // If there are other threads running on the same processor, pruntime can be distorted because these tasks
-    // can contribute to the runtime of this taskQueue.
+    // If there are other threads running on the same processor, sumExecRuntimeNanos can be
+    // distorted because these threads can contribute to the runtime of this taskQueue if such
+    // a thread gets context switched while a task of the TaskQueue is running.
     public long sumExecRuntimeNanos;
     // Field is only used when the TaskQueue is scheduled by the CfsTaskQueueScheduler.
-    // the virtual runtime. The vruntime is weighted + also when reinserted into the tree, the vruntime
-    // is always updated to the min_vruntime. So the vruntime isn't the actual amount of time spend on the CPU
+    // the virtual runtime. The vruntime is weighted + also when reinserted into the tree,
+    // the vruntime is always updated to the min_vruntime. So the vruntime isn't the actual
+    // amount of time spend on the CPU
     public long vruntimeNanos;
     public long tasksProcessed;
     // the number of times this taskQueue has been blocked
@@ -202,8 +210,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 + ", runState=" + runState
                 + ", shares=" + shares
                 + ", weight=" + weight
-//                + ", local=" + local
-//                + ", global=" + global
                 + ", sumExecRuntimeNanos=" + sumExecRuntimeNanos
                 + ", vruntimeNanos=" + vruntimeNanos
                 + ", tasksProcessed=" + tasksProcessed

@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
@@ -40,7 +42,7 @@ import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
  */
 final class NioEventloop extends Eventloop {
 
-    private static final int NANOS_PER_MILLI = 1000000;
+    private static final long NANOS_PER_MILLI = TimeUnit.MILLISECONDS.toNanos(1);
 
     final Selector selector = SelectorOptimizer.newSelector();
     private final IOBufferAllocator blockIOBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
@@ -150,6 +152,31 @@ final class NioEventloop extends Eventloop {
         }
         return worked;
     }
+
+//    @Override
+//    protected boolean ioSchedulerTick() throws IOException {
+//        return selector.selectNow(selectorProcessor) > 0;
+//    }
+//
+//    @Override
+//    protected void park(long timeoutNanos) throws IOException {
+//        assert timeoutNanos >= 0;
+//
+//        long timeoutMs = timeoutNanos / NANOS_PER_MILLI;
+//        if (spin || timeoutMs == 0) {
+//            selector.selectNow(selectorProcessor);
+//        } else {
+//            wakeupNeeded.set(true);
+//            if (scheduleBlockedGlobal()) {
+//                selector.selectNow(selectorProcessor);
+//            } else if (timeoutNanos == Long.MAX_VALUE) {
+//                selector.select(selectorProcessor, 0); //0 means block for ever.
+//            } else {
+//                selector.select(selectorProcessor, timeoutMs);
+//            }
+//            wakeupNeeded.set(false);
+//        }
+//    }
 
     @Override
     protected void destroy() {

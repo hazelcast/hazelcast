@@ -25,7 +25,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public class TaskQueueHandle {
-    // the visibility should be reduced.
+    // todo: the visibility should be reduced.
     public final TaskQueue queue;
     private final TaskQueueMetrics metrics;
 
@@ -35,7 +35,8 @@ public class TaskQueueHandle {
     }
 
     /**
-     * Returns the TaskQueueMetrics associated with the TaskQueue this handle is referring to.
+     * Returns the TaskQueueMetrics associated with the TaskQueue this
+     * handle is referring to.
      *
      * @return the metrics.
      */

@@ -56,7 +56,7 @@ public final class IOUringEventloop extends Eventloop {
     private final IOBufferAllocator blockIOBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
     final SubmissionQueue sq;
     private final CompletionQueue cq;
-    private final EventloopHandler eventLoopHandler;
+    private final CompletionProcessor completionProcessor;
     private final long userdata_eventRead;
     private final long userdata_timeout;
     private final long timeoutSpecAddr = UNSAFE.allocateMemory(SIZEOF_KERNEL_TIMESPEC);
@@ -80,7 +80,7 @@ public final class IOUringEventloop extends Eventloop {
         this.sq = uring.submissionQueue();
         this.cq = uring.completionQueue();
 
-        this.eventLoopHandler = new EventloopHandler();
+        this.completionProcessor = new CompletionProcessor();
         this.userdata_eventRead = nextPermanentHandlerId();
         this.userdata_timeout = nextPermanentHandlerId();
         handlers.put(userdata_eventRead, new EventFdCompletionHandler());
@@ -141,14 +141,16 @@ public final class IOUringEventloop extends Eventloop {
         boolean completions = false;
         if (cq.hasCompletions()) {
             completions = true;
-            cq.process(eventLoopHandler);
+            cq.process(completionProcessor);
         }
 
         if (spin || timeoutNanos == 0 || completions) {
+            //System.out.println("submit1");
             sq.submit();
         } else {
             wakeupNeeded.set(true);
             if (scheduleBlockedGlobal()) {
+                //System.out.println("submit2");
                 sq.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {
@@ -161,7 +163,7 @@ public final class IOUringEventloop extends Eventloop {
         }
 
         if (cq.hasCompletions()) {
-            cq.process(eventLoopHandler);
+            cq.process(completionProcessor);
         }
     }
 
@@ -177,69 +179,12 @@ public final class IOUringEventloop extends Eventloop {
         }
 
         if (cq.hasCompletions()) {
-            cq.process(eventLoopHandler);
+            cq.process(completionProcessor);
             worked = true;
         }
 
         return worked;
     }
-
-    // todo: delete
-//    @Override
-//    protected void run() throws Exception {
-//        final NanoClock nanoClock = this.nanoClock;
-//        final EventloopHandler eventLoopHandler = this.eventLoopHandler;
-//        final AtomicBoolean wakeupNeeded = this.wakeupNeeded;
-//        final CompletionQueue cq = this.cq;
-//        final boolean spin = this.spin;
-//        final SubmissionQueue sq = this.sq;
-//        final Scheduler scheduler = this.scheduler;
-//
-//        sq_offerEventFdRead();
-//
-//        boolean moreWork = false;
-//        do {
-//            if (cq.hasCompletions()) {
-//                // todo: do we want to control number of events being processed.
-//                cq.process(eventLoopHandler);
-//            } else {
-//                if (spin || moreWork) {
-//                    sq.submit();
-//                } else {
-//                    wakeupNeeded.set(true);
-//                    if (hasConcurrentTask()) {
-//                        sq.submit();
-//                    } else {
-//                        if (earliestDeadlineNanos != -1) {
-//                            long timeoutNanos = earliestDeadlineNanos - nanoClock.nanoTime();
-//                            if (timeoutNanos > 0) {
-//                                sq_offerTimeout(timeoutNanos);
-//                                sq.submitAndWait();
-//                                nanoClock.update();
-//                            } else {
-//                                sq.submit();
-//                            }
-//                        } else {
-//                            sq.submitAndWait();
-//                            nanoClock.update();
-//                        }
-//                    }
-//                    wakeupNeeded.set(false);
-//                }
-//            }
-//
-//            // what are the queues that are available for processing
-//            // 1: completion events
-//            // 2: concurrent task queue
-//            // 3: timed task queue
-//            // 4: local task queue
-//            // 5: scheduler task queue
-//
-//            moreWork = tasksTick();
-//            moreWork |= scheduler.tick();
-//            moreWork |= scheduledTaskTick();
-//        } while (!stop);
-//    }
 
     @Override
     protected void destroy() {
@@ -296,7 +241,7 @@ public final class IOUringEventloop extends Eventloop {
     }
 
 
-    private class EventloopHandler implements CompletionHandler {
+    private class CompletionProcessor implements CompletionHandler {
         final LongObjectHashMap<CompletionHandler> handlers = IOUringEventloop.this.handlers;
 
         @Override

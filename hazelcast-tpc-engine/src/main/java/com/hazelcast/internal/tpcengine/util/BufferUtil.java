@@ -22,6 +22,8 @@ import java.lang.reflect.Field;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
+// this this snippet for DirectByteBuffer constructor changes.
+// https://issues.apache.org/jira/browse/SPARK-42369
 public final class BufferUtil {
 
     private static final Field ADDRESS;

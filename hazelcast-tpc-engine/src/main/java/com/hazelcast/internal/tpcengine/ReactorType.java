@@ -21,7 +21,10 @@ package com.hazelcast.internal.tpcengine;
  */
 public enum ReactorType {
 
-    NIO, IOURING;
+    // Can be used on any OS that can run Java
+    NIO,
+    // Can only be used on Linux 5.7+
+    IOURING;
 
     public static ReactorType fromString(String type) {
         if (type.equalsIgnoreCase("io_uring") || type.equalsIgnoreCase("iouring")) {

@@ -46,7 +46,7 @@ class FcfsTaskQueueScheduler implements TaskQueueScheduler {
     private final long targetLatencyNanos;
     private final long minGranularityNanos;
     private int nrRunning;
-    private TaskQueue current;
+    private TaskQueue active;
 
     FcfsTaskQueueScheduler(int runQueueCapacity,
                            long targetLatencyNanos,
@@ -58,46 +58,46 @@ class FcfsTaskQueueScheduler implements TaskQueueScheduler {
     }
 
     @Override
-    public long timeSliceNanosCurrent() {
-        assert current != null;
+    public long timeSliceNanosActive() {
+        assert active != null;
 
         return min(minGranularityNanos, targetLatencyNanos / nrRunning);
     }
 
     @Override
     public TaskQueue pickNext() {
-        assert current == null;
+        assert active == null;
 
-        current = runQueue.peek();
-        return current;
+        active = runQueue.peek();
+        return active;
     }
 
     @Override
-    public void updateCurrent(long deltaNanos) {
-        current.sumExecRuntimeNanos += deltaNanos;
+    public void updateActive(long execDeltaNanos) {
+        active.sumExecRuntimeNanos += execDeltaNanos;
     }
 
     @Override
-    public void dequeueCurrent() {
-        assert current != null;
+    public void dequeueActive() {
+        assert active != null;
 
         runQueue.poll();
         nrRunning--;
-        current = null;
+        active = null;
     }
 
     @Override
-    public void yieldCurrent() {
-        assert current != null;
+    public void yieldActive() {
+        assert active != null;
 
         if (nrRunning > 1) {
             // if there is only one taskQueue in the runQueue, then there
             // is no need to remove and then add the item
             runQueue.poll();
-            runQueue.add(current);
+            runQueue.add(active);
         }
 
-        current = null;
+        active = null;
     }
 
     @Override

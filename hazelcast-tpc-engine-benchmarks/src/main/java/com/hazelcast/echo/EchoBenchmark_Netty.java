@@ -34,15 +34,20 @@ import java.util.concurrent.ThreadFactory;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-
+/**
+ * Make sure you add the following the JVM options, otherwise the selector will create
+ * garbage:
+ * <p>
+ * --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+ */
 public class EchoBenchmark_Netty {
-    public static final int durationSecond = 600;
+    public static final int durationSeconds = 600;
     public static final int port = 5000;
-    public static final int concurrency = 1;
-    public static final Type type = Type.IO_URING;
+    public static final int concurrency = 100;
+    public static final Type type = Type.EPOLL;
     public static final String cpuAffinityClient = "1";
     public static final String cpuAffinityServer = "4";
-    public static final int connections = 100;
+    public static final int connections = 1;
     private static volatile boolean stop;
 
     public enum Type {
@@ -51,11 +56,11 @@ public class EchoBenchmark_Netty {
         IO_URING
     }
 
-    public static CountDownLatch countDownLatch = new CountDownLatch(concurrency * connections);
+    public static CountDownLatch countDownLatch = new CountDownLatch(connections);
 
     public static void main(String[] args) throws InterruptedException {
         // needed so that Netty doesn't run into bad performance with a high number of connections
-        System.setProperty("io.netty.iouring.iosqeAsyncThreshold","16384");
+        System.setProperty("io.netty.iouring.iosqeAsyncThreshold", "16384");
 
         PaddedAtomicLong[] completedArray = new PaddedAtomicLong[connections];
         for (int k = 0; k < completedArray.length; k++) {
@@ -92,13 +97,18 @@ public class EchoBenchmark_Netty {
 
         long start = System.currentTimeMillis();
         for (Channel channel : channels) {
-            ByteBuffer byteBuffer = ByteBuffer.allocate(8);
-            byteBuffer.putLong(Long.MAX_VALUE);
-            byteBuffer.flip();
-            ByteBuf buf = Unpooled.wrappedBuffer(byteBuffer);
-            channel.write(buf);
+            for (int k = 0; k < concurrency; k++) {
+                ByteBuffer byteBuffer = ByteBuffer.allocate(8);
+                byteBuffer.putLong(Long.MAX_VALUE);
+                byteBuffer.flip();
+                ByteBuf buf = Unpooled.wrappedBuffer(byteBuffer);
+                channel.write(buf);
+            }
+        }
+        for (Channel channel : channels) {
             channel.flush();
         }
+
         System.out.println("Starting with " + type);
 
         Monitor monitor = new Monitor(completedArray);
@@ -196,6 +206,7 @@ public class EchoBenchmark_Netty {
     }
 
     static class EchoClientHandler extends ChannelInboundHandlerAdapter {
+
         public EchoClientHandler(PaddedAtomicLong completed) {
             this.completed = completed;
         }
@@ -264,7 +275,7 @@ public class EchoBenchmark_Netty {
 
         @Override
         public void run() {
-            long end = System.currentTimeMillis() + SECONDS.toMillis(durationSecond);
+            long end = System.currentTimeMillis() + SECONDS.toMillis(durationSeconds);
             while (System.currentTimeMillis() < end) {
                 try {
                     Thread.sleep(SECONDS.toMillis(1));

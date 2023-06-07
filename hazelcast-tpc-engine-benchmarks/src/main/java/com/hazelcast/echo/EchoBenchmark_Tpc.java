@@ -50,6 +50,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * A benchmarks that test the throughput of 2 sockets that are bouncing packets
  * with some payload between them.
+ *
+ * Make sure you add the following the JVM options, otherwise the selector will create
+ * garbage:
+ *
+ * --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+ *
  * <p>
  * for IO_Uring read:
  * https://github.com/frevib/io_uring-echo-server/issues/8?spm=a2c65.11461447.0.0.27707555CrwLfj
@@ -60,21 +66,20 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public class EchoBenchmark_Tpc {
     public static final int port = 5006;
-    public static final int durationSecond = 600;
+    public static final int durationSeconds = 600;
     public static final int socketBufferSize = 128 * 1024;
     public static final boolean useDirectByteBuffers = true;
-    public static final int payloadSize = 0;
-    public static final int concurrency = 1;
+    public static final int payloadSize = 40;
+    public static final int concurrency = 100;
     public static final boolean tcpNoDelay = true;
     public static final boolean spin = false;
     public static final boolean regularSchedule = true;
-    public static final ReactorType reactorType = ReactorType.NIO;
+    public static final ReactorType reactorType = ReactorType.IOURING;
     public static final String cpuAffinityClient = "1";
     public static final String cpuAffinityServer = "4";
     public static final boolean registerRingFd = false;
-    public static final int connections = 100;
+    public static final int connections = 1;
     public static volatile boolean stop;
-
 
     public static void main(String[] args) throws InterruptedException {
         PaddedAtomicLong[] completedArray = new PaddedAtomicLong[connections];
@@ -136,7 +141,7 @@ public class EchoBenchmark_Tpc {
             clientSockets[i].flush();
         }
 
-        Monitor monitor = new Monitor(durationSecond, completedArray);
+        Monitor monitor = new Monitor(durationSeconds, completedArray);
         monitor.start();
         completionLatch.await();
 

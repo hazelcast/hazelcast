@@ -83,7 +83,7 @@ public abstract class Eventloop {
     private final long stallThresholdNanos;
     final TaskQueueScheduler taskQueueScheduler;
     private long taskQueueStartNanos;
-    private final StallHandler stallHandler;
+    private final ReactorStallHandler stallHandler;
     private long taskQueueDeadlineNanos;
     protected final BlockDeviceRegistry blockDeviceRegistry;
     protected final Map<BlockDevice, BlockRequestScheduler> deviceSchedulers = new HashMap<>();
@@ -119,6 +119,8 @@ public abstract class Eventloop {
         this.stallThresholdNanos = builder.stallThresholdNanos;
         this.ioIntervalNanos = builder.ioIntervalNanos;
         this.stallHandler = builder.stallHandler;
+
+        System.out.println("ioIntervalNanos:" + ioIntervalNanos);
     }
 
     public final long taskQueueStartNanos() {
@@ -307,6 +309,7 @@ public abstract class Eventloop {
 
     /**
      * Override this method to execute some logic before the {@link #run()} method is called.
+     * When you override it, make sure you call {@code super.beforeRun()}.
      */
     public void beforeRun() {
         this.taskStartNanos = nanoClock.nanoTime();
@@ -327,13 +330,16 @@ public abstract class Eventloop {
     @SuppressWarnings({"checkstyle:NPathComplexity",
             "checkstyle:MethodLength",
             "checkstyle:CyclomaticComplexity",
-            "checkstyle:InnerAssignment"})
-    public void run() throws Exception {
+            "checkstyle:InnerAssignment",
+            "checkstyle:MagicNumber"})
+    public final void run() throws Exception {
         //System.out.println("eventloop.run");
         long nowNanos = nanoClock.nanoTime();
         long ioDeadlineNanos = nowNanos + ioIntervalNanos;
 
-        int spin_step = 1;
+        long x = 0;
+
+        //int spinStep = 1;
         while (!stop) {
             // Thread.sleep(100);
 
@@ -353,37 +359,46 @@ public abstract class Eventloop {
                         ? Long.MAX_VALUE
                         : max(0, earliestDeadlineNanos - nowNanos);
 
-                if(spin_step==1){
-                    spin_step = 15;
-                }else{
-                    Thread.onSpinWait();
-                    spin_step--;
-                    if(earliestDeadlineNanos==-1){
-                        timeoutNanos = 0;
-                    }
-                }
+                long start = nanoClock.nanoTime();
+                // experimental code to do some spinning instead of parking.
+                //if (spinStep == 1) {
+                //    spinStep = 15;
+                //} else {
+                //   Thread.onSpinWait();
+                //   spinStep--;
+                //   if (earliestDeadlineNanos == -1) {
+                //       timeoutNanos = 0;
+                //    }
+                //}
 
                 //System.out.println("park");
                 park(timeoutNanos);
+
                 //System.out.println("park done");
                 // todo: we should only need to update the clock if real parking happened and not when work was detected
                 nowNanos = nanoClock.nanoTime();
                 ioDeadlineNanos = nowNanos + ioIntervalNanos;
+                long duration = nowNanos- start;
+//                if (x % 10000 == 0) {
+//                    System.out.println("park: " +duration + " ns");
+//                }
                 continue;
             }
 
             //System.out.println("processing");
 
             taskQueueStartNanos = nowNanos;
-            taskQueueDeadlineNanos = nowNanos + taskQueueScheduler.timeSliceNanosCurrent();
+            taskQueueDeadlineNanos = nowNanos + taskQueueScheduler.timeSliceNanosActive();
             long taskStartNanos = nowNanos;
-            long deltaNanos = 0;
+            long taskGroupExecNanos = 0;
             int taskCount = 0;
             boolean queueEmpty = false;
             // This forces immediate time measurement of the first task.
             int clockSampleStep = 1;
             // Process the tasks in a queue as long as the deadline is not exceeded.
             while (nowNanos <= taskQueueDeadlineNanos) {
+                x++;
+
                 Runnable task = queue.poll();
                 if (task == null) {
                     queueEmpty = true;
@@ -410,21 +425,29 @@ public abstract class Eventloop {
 
                 long taskEndNanos = nowNanos;
                 long taskExecNanos = taskStartNanos - taskEndNanos;
-                deltaNanos += taskExecNanos;
+                taskGroupExecNanos += taskExecNanos;
 
                 if (taskExecNanos > stallThresholdNanos) {
                     stallHandler.onStall(reactor, queue, task, taskStartNanos, taskExecNanos);
                 }
 
                 if (nowNanos >= ioDeadlineNanos) {
-                    ioDeadlineNanos = nowNanos + ioIntervalNanos;
+                    long start = nanoClock.nanoTime();
                     ioSchedulerTick();
+                    nowNanos = nanoClock.nanoTime();
+                    ioDeadlineNanos = nowNanos + ioIntervalNanos;
+
+//                    if (x % 10000 == 0) {
+//                        System.out.println("ioSchedulerTick: " + (nowNanos - start) + " ns");
+//                    }
+                    // todo: should read out time again? Think shuld be fine since this call isn't made frequently
+                    // we could even measure latency of the ioscheduler tick.
                 }
             }
 
-            taskQueueScheduler.updateCurrent(deltaNanos);
+            taskQueueScheduler.updateActive(taskGroupExecNanos);
             metrics.incTasksProcessedCount(taskCount);
-            metrics.incCpuTimeNanos(deltaNanos);
+            metrics.incCpuTimeNanos(taskGroupExecNanos);
             metrics.incContextSwitchCount();
 
             if (queueEmpty || queue.isEmpty()) {
@@ -433,29 +456,25 @@ public abstract class Eventloop {
                 // the taskQueueDeadlineNanos and the queue is empty.
 
                 // remove task queue from scheduler
-                taskQueueScheduler.dequeueCurrent();
+                taskQueueScheduler.dequeueActive();
 
                 queue.runState = RUN_STATE_BLOCKED;
                 queue.blockedCount++;
 
                 if (queue.global != null) {
                     // we also need to add it to the shared taskQueues so the eventloop will
-                    // see any items that are written to its global queue.
+                    // see any items that are written to its global queues.
                     addBlockedGlobal(queue);
                 }
             } else {
                 //System.out.println("yield");
-                // the queue exceeded its quota and therefor wasn't drained, so we
-                // need to insert it back into the scheduler because there is more work
-                // to be done.
-                taskQueueScheduler.yieldCurrent();
+                // the queue exceeded its quota and therefor wasn't drained completely.
+                taskQueueScheduler.yieldActive();
             }
         }
     }
 
     protected abstract boolean ioSchedulerTick() throws IOException;
-
-    // todo: with io_uring should this involve completions?
 
     /**
      * Parks the eventloop thread.

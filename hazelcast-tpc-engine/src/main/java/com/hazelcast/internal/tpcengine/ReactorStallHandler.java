@@ -27,7 +27,8 @@ package com.hazelcast.internal.tpcengine;
  * this is detected, stack traces for example can be dumped. This will help a lot with
  * tracking down performance problems. Similar to the slow operation detector.
  */
-public interface StallHandler {
+public interface ReactorStallHandler {
 
-    void onStall(Reactor reactor, TaskQueue taskQueue, Runnable cmd, long startNanos, long durationNanos);
+    void onStall(Reactor reactor, TaskQueue taskQueue, Runnable cmd,
+                 long startNanos, long durationNanos);
 }

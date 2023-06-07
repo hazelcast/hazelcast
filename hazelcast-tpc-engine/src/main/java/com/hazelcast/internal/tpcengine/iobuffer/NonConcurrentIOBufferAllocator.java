@@ -24,9 +24,9 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegati
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
- * A {@link IOBufferAllocator} that can only be used serially (so by a single thread).
- * <p>
- * {@link #allocate()} should be done by the same thread as {@link #free(IOBuffer)}.
+ * A {@link IOBufferAllocator} that can't be used concurrently. So a
+ * single thread should own this allocator and all interaction with the
+ * allocator should be done by that thread.
  */
 @SuppressWarnings("checkstyle:MagicNumber")
 public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
@@ -66,12 +66,9 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
             for (int k = 0; k < bufs.length; k++) {
                 //newAllocations.incrementAndGet();
                 //System.out.println(" new buf");
-                ByteBuffer buffer;
-                if (direct) {
-                    buffer = BufferUtil.allocateDirect(minSize, alignment);
-                } else {
-                    buffer = ByteBuffer.allocate(minSize);
-                }
+                ByteBuffer buffer = direct
+                        ? BufferUtil.allocateDirect(minSize, alignment)
+                        : ByteBuffer.allocate(minSize);
 
                 IOBuffer buf = new IOBuffer(buffer);
                 buf.concurrent = false;

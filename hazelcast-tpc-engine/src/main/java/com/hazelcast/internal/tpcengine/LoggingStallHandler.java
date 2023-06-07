@@ -20,9 +20,9 @@ import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 /**
- * A {@link StallHandler} that writes a log entry when a stall is detected.
+ * A {@link ReactorStallHandler} that writes a log entry when a stall is detected.
  */
-public class LoggingStallHandler implements StallHandler {
+public class LoggingStallHandler implements ReactorStallHandler {
 
     public static final LoggingStallHandler INSTANCE = new LoggingStallHandler();
 

@@ -59,7 +59,7 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     private int nrRunning;
     // total weight of all the TaskGroups in this CfsScheduler
     private long loadWeight;
-    private TaskQueue current;
+    private TaskQueue active;
 
     CfsTaskQueueScheduler(int runQueueCapacity,
                           long targetLatencyNanos,
@@ -71,62 +71,82 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     }
 
     @Override
-    public long timeSliceNanosCurrent() {
-        assert current != null;
+    public long timeSliceNanosActive() {
+        assert active != null;
 
         // Every task should get a quota proportional to its weight. But if the quota is very small
         // it will lead to excessive context switching. So we there is a minimum minGranularityNanos.
-        return min(minGranularityNanos, targetLatencyNanos * current.weight / loadWeight);
+        return min(minGranularityNanos, targetLatencyNanos * active.weight / loadWeight);
     }
 
+    /**
+     * @inheritDoc
+     *
+     * The taskQueue with the lowest vruntime is picked.
+     */
     @Override
     public TaskQueue pickNext() {
-        assert current == null;
+        assert active == null;
 
-        current = runQueue.peek();
-        return current;
+        active = runQueue.peek();
+        return active;
     }
 
     @Override
-    public void updateCurrent(long deltaNanos) {
-        assert current != null;
+    public void updateActive(long execDeltaNanos) {
+        assert active != null;
 
         // todo * include weight
-        long deltaWeightedNanos = deltaNanos;
-        current.sumExecRuntimeNanos += deltaNanos;
-        current.vruntimeNanos += deltaWeightedNanos;
+        long deltaWeightedNanos = execDeltaNanos;
+        active.sumExecRuntimeNanos += execDeltaNanos;
+        active.vruntimeNanos += deltaWeightedNanos;
 
         //current.vruntimeNanos += durationNanos * current.weight / loadWeight;
     }
 
     @Override
-    public void dequeueCurrent() {
-        assert current != null;
+    public void dequeueActive() {
+        assert active != null;
 
         runQueue.poll();
         nrRunning--;
-        loadWeight -= current.weight;
-        current = null;
+        loadWeight -= active.weight;
+        active = null;
 
         if (nrRunning > 0) {
             min_vruntimeNanos = runQueue.peek().vruntimeNanos;
         }
     }
 
+    /**
+     * @inheritDoc
+     *
+     * yieldActive is needed so that the active taskQueue is properly inserted
+     * into the runQueue based on its updated vruntime.
+     */
     @Override
-    public void yieldCurrent() {
-        assert current != null;
+    public void yieldActive() {
+        assert active != null;
 
         if (nrRunning > 1) {
-            // if there is only one taskQueue in the runQueue, then there is no need to yield.
+            // if there is only one taskQueue in the runQueue, then there is no
+            // need to yield.
             runQueue.poll();
-            runQueue.offer(current);
+            runQueue.offer(active);
         }
 
-        current = null;
+        active = null;
         min_vruntimeNanos = runQueue.peek().vruntimeNanos;
     }
 
+    /**
+     * @inheritDoc
+     *
+     * The vruntime of the taskQueue is updated to the max of the min_vruntime
+     * and its own vruntime. This is done to prevent that when a task had very
+     * little vruntime compared to the other tasks, it is going to own the CPU
+     * for a very long time.
+     */
     @Override
     public void enqueue(TaskQueue taskQueue) {
         // the eventloop should control the number of created taskQueues
