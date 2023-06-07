@@ -44,7 +44,6 @@ public interface TaskQueueScheduler {
      * scheduler and the deadline scheduler.  So individual tasks within the task group should not
      * run longer than the min granularity.
      *
-     *
      * @return the length of the time slice of the active TaskQueue.
      */
     long timeSliceNanosActive();
@@ -52,12 +51,19 @@ public interface TaskQueueScheduler {
     /**
      * Picks the next active taskQueue.
      *
-     * @return the next taskQueue to run. If no task is available, then <code>null</code> is returned.
+     * @return the next taskQueue to run. If no task is available, then <code>null</code>
+     * is returned.
      */
     TaskQueue pickNext();
 
     /**
-     * Updates the active taskQueue with the given delta.
+     * Updates the active taskQueue with the given total execution time the taskQueue has spend
+     * on the CPU.
+     * <p/>
+     * This method should be called after taskQueue that was selected by {@link #pickNext()}
+     * has been running and is about to be context switched. After this method is called
+     * then either {@link #yieldActive()} needs to be called to schedule the taskQueue again or
+     * {@link #dequeueActive()} needs to be called to remove the taskQueue from the run queue.
      *
      * @param execDeltaNanos the amount of time the active taskQueue has been running.
      */
@@ -74,7 +80,8 @@ public interface TaskQueueScheduler {
      * Yields the active taskQueue which effectively removes it from the runQueue and adds
      * it back to the runQueue.
      * <p/>
-     * This method is called when the active taskQueue is blocked.
+     * This method is called when the active taskQueue needs to be context switched, but has
+     * has more work to do.
      *
      * @see #dequeueActive()
      */
@@ -82,7 +89,7 @@ public interface TaskQueueScheduler {
 
     /**
      * Enqueues a taskQueue into the run queue. This could be a taskQueue that was blocked or
-     * is completely new.
+     * is new.
      *
      * @param taskQueue the taskQueue to enqueue.
      */

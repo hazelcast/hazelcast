@@ -18,7 +18,7 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 
-import static java.lang.Math.min;
+import static java.lang.Math.max;
 
 /**
  * A first come first serve (FIFO) {@link TaskQueueScheduler}. So task
@@ -41,12 +41,12 @@ import static java.lang.Math.min;
  */
 class FcfsTaskQueueScheduler implements TaskQueueScheduler {
 
-    private final CircularQueue<TaskQueue> runQueue;
-    private final int capacity;
-    private final long targetLatencyNanos;
-    private final long minGranularityNanos;
-    private int nrRunning;
-    private TaskQueue active;
+    final CircularQueue<TaskQueue> runQueue;
+    final int capacity;
+    final long targetLatencyNanos;
+    final long minGranularityNanos;
+    int nrRunning;
+    TaskQueue active;
 
     FcfsTaskQueueScheduler(int runQueueCapacity,
                            long targetLatencyNanos,
@@ -61,7 +61,8 @@ class FcfsTaskQueueScheduler implements TaskQueueScheduler {
     public long timeSliceNanosActive() {
         assert active != null;
 
-        return min(minGranularityNanos, targetLatencyNanos / nrRunning);
+        long timeslice = targetLatencyNanos / nrRunning;
+        return max(minGranularityNanos, timeslice);
     }
 
     @Override

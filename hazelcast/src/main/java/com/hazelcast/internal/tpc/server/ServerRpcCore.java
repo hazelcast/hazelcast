@@ -68,6 +68,9 @@ import static java.lang.System.getProperty;
  * The {@link ServerRpcCore} takes care of RPC between members.
  * <p>
  * todo: Should also handle redirect messages.
+ *
+ *
+ * todo: requests and responses could be modelled using an io_uring like submission and completion queue.
  */
 @SuppressWarnings("checkstyle:MagicNumber")
 public final class ServerRpcCore implements RpcCore {

@@ -237,8 +237,6 @@ public abstract class AsyncSocket_LargePayloadTest {
 
         AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress(), completionLatch);
 
-        Thread.sleep(1000);
-
         for (int k = 0; k < concurrency; k++) {
             byte[] payload = new byte[payloadSize];
             IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
