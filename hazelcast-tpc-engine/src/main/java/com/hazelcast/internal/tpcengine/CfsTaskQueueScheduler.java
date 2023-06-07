@@ -20,7 +20,6 @@ import java.util.PriorityQueue;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Math.max;
-import static java.lang.Math.min;
 
 /**
  * A {@link TaskQueue} scheduler that always schedules the task group with the
@@ -51,15 +50,15 @@ import static java.lang.Math.min;
 @SuppressWarnings({"checkstyle:MemberName"})
 class CfsTaskQueueScheduler implements TaskQueueScheduler {
 
-    private final PriorityQueue<TaskQueue> runQueue;
-    private final int capacity;
-    private final long targetLatencyNanos;
-    private final long minGranularityNanos;
-    private long min_vruntimeNanos;
-    private int nrRunning;
-    // total weight of all the TaskGroups in this CfsScheduler
-    private long loadWeight;
-    private TaskQueue active;
+    final PriorityQueue<TaskQueue> runQueue;
+    final int capacity;
+    final long targetLatencyNanos;
+    final long minGranularityNanos;
+    long min_vruntimeNanos;
+    int nrRunning;
+    // total weight of all the TaskGroups in this CfsScheduler (it is called loadWeight in the kernel)
+    long totalWeight;
+    TaskQueue active;
 
     CfsTaskQueueScheduler(int runQueueCapacity,
                           long targetLatencyNanos,
@@ -74,15 +73,15 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     public long timeSliceNanosActive() {
         assert active != null;
 
-        // Every task should get a quota proportional to its weight. But if the quota is very small
-        // it will lead to excessive context switching. So we there is a minimum minGranularityNanos.
-        return min(minGranularityNanos, targetLatencyNanos * active.weight / loadWeight);
+        // every task gets a timeslice proportional to its weight and the total weight.
+        long timesliceNanos = targetLatencyNanos * active.weight / totalWeight;
+        // If the timeslice is very small it will lead to excessive context switching So we
+        // take the max value of the minGranularity and the timeslice.
+        return max(minGranularityNanos, timesliceNanos);
     }
 
     /**
-     * @inheritDoc
-     *
-     * The taskQueue with the lowest vruntime is picked.
+     * @inheritDoc The taskQueue with the lowest vruntime is picked.
      */
     @Override
     public TaskQueue pickNext() {
@@ -110,7 +109,7 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
 
         runQueue.poll();
         nrRunning--;
-        loadWeight -= active.weight;
+        totalWeight -= active.weight;
         active = null;
 
         if (nrRunning > 0) {
@@ -119,9 +118,7 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     }
 
     /**
-     * @inheritDoc
-     *
-     * yieldActive is needed so that the active taskQueue is properly inserted
+     * @inheritDoc yieldActive is needed so that the active taskQueue is properly inserted
      * into the runQueue based on its updated vruntime.
      */
     @Override
@@ -140,9 +137,7 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     }
 
     /**
-     * @inheritDoc
-     *
-     * The vruntime of the taskQueue is updated to the max of the min_vruntime
+     * @inheritDoc The vruntime of the taskQueue is updated to the max of the min_vruntime
      * and its own vruntime. This is done to prevent that when a task had very
      * little vruntime compared to the other tasks, it is going to own the CPU
      * for a very long time.
@@ -152,10 +147,11 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
         // the eventloop should control the number of created taskQueues
         assert nrRunning <= capacity;
 
-        loadWeight += taskQueue.weight;
+        totalWeight += taskQueue.weight;
         nrRunning++;
         taskQueue.runState = TaskQueue.RUN_STATE_RUNNING;
         taskQueue.vruntimeNanos = max(taskQueue.vruntimeNanos, min_vruntimeNanos);
         runQueue.add(taskQueue);
     }
+
 }

@@ -70,6 +70,7 @@ public abstract class Eventloop {
     protected final IntPromiseAllocator intPromiseAllocator;
     protected final TaskQueueHandle primordialTaskQueueHandle;
     private final ReactorMetrics metrics;
+    private final long minGranularityNanos;
     protected boolean stop;
     protected long taskStartNanos;
     protected final SlabAllocator<TaskQueue> taskQueueAllocator = new SlabAllocator<>(1024, TaskQueue::new);
@@ -82,7 +83,6 @@ public abstract class Eventloop {
     protected final int runQueueCapacity;
     private final long stallThresholdNanos;
     final TaskQueueScheduler taskQueueScheduler;
-    private long taskQueueStartNanos;
     private final ReactorStallHandler stallHandler;
     private long taskQueueDeadlineNanos;
     protected final BlockDeviceRegistry blockDeviceRegistry;
@@ -94,6 +94,7 @@ public abstract class Eventloop {
         this.metrics = reactor.metrics;
         this.deadlineScheduler = new DeadlineScheduler(builder.deadlineRunQueueCapacity);
         this.runQueueCapacity = builder.runQueueCapacity;
+        this.minGranularityNanos = builder.minGranularityNanos;
         if (builder.cfs) {
             this.taskQueueScheduler = new CfsTaskQueueScheduler(
                     builder.runQueueCapacity,
@@ -119,12 +120,16 @@ public abstract class Eventloop {
         this.stallThresholdNanos = builder.stallThresholdNanos;
         this.ioIntervalNanos = builder.ioIntervalNanos;
         this.stallHandler = builder.stallHandler;
-
-        System.out.println("ioIntervalNanos:" + ioIntervalNanos);
     }
 
-    public final long taskQueueStartNanos() {
-        return taskQueueStartNanos;
+    /**
+     * Returns the current epoch time in nanos of when the active task started. Outside of
+     * the execution active task, this value is undefined.
+     *
+     * @return the current epoch time in nanos of when the active task started.
+     */
+    public final long taskStartNanos() {
+        return taskStartNanos;
     }
 
     public final TaskQueueHandle primordialTaskQueueHandle() {
@@ -145,7 +150,7 @@ public abstract class Eventloop {
      * @return
      */
     public final boolean shouldYield() {
-        return nanoClock.nanoTime() > taskQueueDeadlineNanos;
+        return nanoClock.nanoTime() > taskDeadlineNanos;
     }
 
     public final boolean offer(Object task) {
@@ -378,7 +383,7 @@ public abstract class Eventloop {
                 // todo: we should only need to update the clock if real parking happened and not when work was detected
                 nowNanos = nanoClock.nanoTime();
                 ioDeadlineNanos = nowNanos + ioIntervalNanos;
-                long duration = nowNanos- start;
+                long duration = nowNanos - start;
 //                if (x % 10000 == 0) {
 //                    System.out.println("park: " +duration + " ns");
 //                }
@@ -387,14 +392,12 @@ public abstract class Eventloop {
 
             //System.out.println("processing");
 
-            taskQueueStartNanos = nowNanos;
-            taskQueueDeadlineNanos = nowNanos + taskQueueScheduler.timeSliceNanosActive();
-            long taskStartNanos = nowNanos;
+            long taskQueueDeadlineNanos = nowNanos + taskQueueScheduler.timeSliceNanosActive();
             long taskGroupExecNanos = 0;
             int taskCount = 0;
             boolean queueEmpty = false;
             // This forces immediate time measurement of the first task.
-            int clockSampleStep = 1;
+            int clockSampleRound = 1;
             // Process the tasks in a queue as long as the deadline is not exceeded.
             while (nowNanos <= taskQueueDeadlineNanos) {
                 x++;
@@ -406,7 +409,8 @@ public abstract class Eventloop {
                     break;
                 }
                 //System.out.println("task"+task);
-
+                taskStartNanos = nowNanos;
+                taskDeadlineNanos = nowNanos + minGranularityNanos;
                 try {
                     task.run();
                 } catch (Exception e) {
@@ -416,15 +420,16 @@ public abstract class Eventloop {
                 queue.tasksProcessed++;
                 taskCount++;
 
-                if (clockSampleStep == 1) {
+                if (clockSampleRound == 1) {
                     nowNanos = nanoClock.nanoTime();
-                    clockSampleStep = queue.clockSampleInterval;
+                    clockSampleRound = queue.clockSampleInterval;
                 } else {
-                    clockSampleStep--;
+                    clockSampleRound--;
                 }
 
                 long taskEndNanos = nowNanos;
-                long taskExecNanos = taskStartNanos - taskEndNanos;
+                // make sure that a task always progresses the time.
+                long taskExecNanos = Math.max(taskStartNanos - taskEndNanos, 1);
                 taskGroupExecNanos += taskExecNanos;
 
                 if (taskExecNanos > stallThresholdNanos) {

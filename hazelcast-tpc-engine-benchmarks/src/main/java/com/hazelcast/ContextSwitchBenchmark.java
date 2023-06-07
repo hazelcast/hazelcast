@@ -29,6 +29,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Ideally the performance of the context switch should be bound to the time it takes to call
  * the {@link System#nanoTime()}. And that should be around the 25-30 ns on Linux.
+ *
+ * Make sure the following JVM parameter is added:
+ * --add-opens java.base/sun.nio.ch=ALL-UNNAMED
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -41,7 +44,7 @@ public class ContextSwitchBenchmark {
     public static final int operations = 100 * 1000 * 1000;
     public static final int concurrency = 1;
     public static final boolean useEventloopDirectly = true;
-    public static final ReactorType reactorType = ReactorType.IOURING;
+    public static final ReactorType reactorType = ReactorType.NIO;
     public static final boolean useTask = true;
     public static final boolean usePrimordialTaskQueue = true;
     public static final int clockSampleInterval = 1;

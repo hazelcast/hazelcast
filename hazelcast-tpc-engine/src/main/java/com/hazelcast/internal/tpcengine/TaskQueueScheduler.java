@@ -35,7 +35,15 @@ package com.hazelcast.internal.tpcengine;
 public interface TaskQueueScheduler {
 
     /**
-     * Returns the length of the time slice of the active TaskQueue.
+     * Returns the length of the time slice of the active TaskQueue. This is the total amount
+     * of time that can be spend on the CPU before the task group should yield. Individual tasks
+     * within a task group are bound by the the minimum granularity.
+     * <p/>
+     * So you could have e.g. a time slice for the task group of 1ms. If a single task within this
+     * task group would run for that time slice, then it will lead to stalls with respect to the io
+     * scheduler and the deadline scheduler.  So individual tasks within the task group should not
+     * run longer than the min granularity.
+     *
      *
      * @return the length of the time slice of the active TaskQueue.
      */

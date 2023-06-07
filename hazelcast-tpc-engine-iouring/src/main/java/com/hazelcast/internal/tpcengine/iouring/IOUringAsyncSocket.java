@@ -472,7 +472,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             try {
                 if (res > 0) {
                     int bytesRead = res;
-                    LAST_READ_TIME_NANOS.setOpaque(IOUringAsyncSocket.this, eventloop.taskQueueStartNanos());
+                    LAST_READ_TIME_NANOS.setOpaque(IOUringAsyncSocket.this, eventloop.taskStartNanos());
                     metrics.incReadEvents();
                     metrics.incBytesRead(bytesRead);
 
