@@ -59,7 +59,7 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
 
     protected MySqlCdcSources.Builder sourceBuilder(String name) {
         return MySqlCdcSources.mysql(name)
-                .setDatabaseAddress(mysql.getContainerIpAddress())
+                .setDatabaseAddress(mysql.getHost())
                 .setDatabasePort(mysql.getMappedPort(MYSQL_PORT))
                 .setDatabaseUser("debezium")
                 .setDatabasePassword("dbz")
