@@ -296,28 +296,28 @@ public class DefaultAddressPickerTest {
     }
 
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testPublicAddress_whenBlankViaProperty() throws Exception {
         config.setProperty("hazelcast.local.publicAddress", " ");
 
         addressPicker = new DefaultAddressPicker(config, logger);
-        addressPicker.pickAddress();
+        assertThrows(IllegalArgumentException.class, () -> addressPicker.pickAddress());
     }
 
-    @Test(expected = UnknownHostException.class)
+    @Test
     public void testPublicAddress_withInvalidAddress() throws Exception {
         config.getNetworkConfig().setPublicAddress("invalid");
 
         addressPicker = new DefaultAddressPicker(config, logger);
-        addressPicker.pickAddress();
+        assertThrows(UnknownHostException.class, () -> addressPicker.pickAddress());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testPublicAddress_withBlankAddress() throws Exception {
         config.getNetworkConfig().setPublicAddress(" ");
 
         addressPicker = new DefaultAddressPicker(config, logger);
-        addressPicker.pickAddress();
+        assertThrows(IllegalArgumentException.class, () -> addressPicker.pickAddress());
     }
 
     @Test
