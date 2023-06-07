@@ -18,27 +18,13 @@ package com.hazelcast.test.archunit;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
-
-import static org.junit.Assume.assumeThat;
-
-import java.lang.reflect.Method;
-
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static com.tngtech.archunit.core.importer.ImportOption.Predefined.ONLY_INCLUDE_TESTS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.lessThan;
 
-public class ArchUnitRulesTest {
-
-    @BeforeClass
-    public static void beforeClass() {
-        assumeThat("Skipping as ASM shaded within ArchUnit 1.0.0 doesn't support Java 20", getCurrentJavaVersion(),
-                is(lessThan(20)));
-    }
+public class ArchUnitRulesTest extends ArchUnitTestSupport {
 
     @Test
     public void should_fail_with_non_compliant_class() {
@@ -60,19 +46,5 @@ public class ArchUnitRulesTest {
         assertThat(classes).isNotEmpty();
 
         ArchUnitRules.SERIALIZABLE_SHOULD_HAVE_VALID_SERIAL_VERSION_UID.check(classes);
-    }
-
-    private static int getCurrentJavaVersion() {
-        Class runtimeClass = Runtime.class;
-
-        try {
-            Class versionClass = Class.forName("java.lang.Runtime$Version");
-            Method versionMethod = runtimeClass.getDeclaredMethod("version");
-            Object versionObj = versionMethod.invoke(Runtime.getRuntime());
-            Method majorMethod = versionClass.getDeclaredMethod("major");
-            return (int) majorMethod.invoke(versionObj);
-        } catch (Exception e) {
-            return 8;
-        }
     }
 }
