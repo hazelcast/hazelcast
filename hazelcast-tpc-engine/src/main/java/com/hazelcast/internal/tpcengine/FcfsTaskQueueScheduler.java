@@ -74,8 +74,8 @@ class FcfsTaskQueueScheduler implements TaskQueueScheduler {
     }
 
     @Override
-    public void updateActive(long execDeltaNanos) {
-        active.sumExecRuntimeNanos += execDeltaNanos;
+    public void updateActive(long cpuTimeNanos) {
+        active.actualRuntimeNanos += cpuTimeNanos;
     }
 
     @Override

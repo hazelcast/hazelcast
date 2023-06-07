@@ -49,12 +49,13 @@ import static java.lang.Math.max;
  */
 @SuppressWarnings({"checkstyle:MemberName"})
 class CfsTaskQueueScheduler implements TaskQueueScheduler {
+    private static final int NICE_0_LOAD = 1024;
 
     final PriorityQueue<TaskQueue> runQueue;
     final int capacity;
     final long targetLatencyNanos;
     final long minGranularityNanos;
-    long min_vruntimeNanos;
+    long min_virtualRuntimeNanos;
     int nrRunning;
     // total weight of all the TaskGroups in this CfsScheduler (it is called loadWeight in the kernel)
     long totalWeight;
@@ -92,15 +93,21 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     }
 
     @Override
-    public void updateActive(long execDeltaNanos) {
+    public void updateActive(long cpuTimeNanos) {
         assert active != null;
 
-        // todo * include weight
-        long deltaWeightedNanos = execDeltaNanos;
-        active.sumExecRuntimeNanos += execDeltaNanos;
-        active.vruntimeNanos += deltaWeightedNanos;
+        if (cpuTimeNanos == 0) {
+            // due to low resolution (so smallest increment in time) of the clock
+            // it can happen that the execDelta is 0ns. In that case we still need to
+            // progress the time by just assuming 1ns of execution time.
+            active.actualRuntimeNanos += 1;
+            active.virtualRuntimeNanos += 1;
+        } else {
+            //virtual runtime = real runtime * NICE_0_LOAD / weight of the process
 
-        //current.vruntimeNanos += durationNanos * current.weight / loadWeight;
+            active.actualRuntimeNanos += cpuTimeNanos;
+            active.virtualRuntimeNanos += max(1, cpuTimeNanos * NICE_0_LOAD / active.weight);
+        }
     }
 
     @Override
@@ -113,7 +120,7 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
         active = null;
 
         if (nrRunning > 0) {
-            min_vruntimeNanos = runQueue.peek().vruntimeNanos;
+            min_virtualRuntimeNanos = runQueue.peek().virtualRuntimeNanos;
         }
     }
 
@@ -133,7 +140,7 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
         }
 
         active = null;
-        min_vruntimeNanos = runQueue.peek().vruntimeNanos;
+        min_virtualRuntimeNanos = runQueue.peek().virtualRuntimeNanos;
     }
 
     /**
@@ -150,7 +157,7 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
         totalWeight += taskQueue.weight;
         nrRunning++;
         taskQueue.runState = TaskQueue.RUN_STATE_RUNNING;
-        taskQueue.vruntimeNanos = max(taskQueue.vruntimeNanos, min_vruntimeNanos);
+        taskQueue.virtualRuntimeNanos = max(taskQueue.virtualRuntimeNanos, min_virtualRuntimeNanos);
         runQueue.add(taskQueue);
     }
 

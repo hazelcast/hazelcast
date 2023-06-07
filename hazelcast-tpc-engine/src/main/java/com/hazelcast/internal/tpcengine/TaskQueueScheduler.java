@@ -57,7 +57,7 @@ public interface TaskQueueScheduler {
     TaskQueue pickNext();
 
     /**
-     * Updates the active taskQueue with the given total execution time the taskQueue has spend
+     * Updates the active taskQueue with the given total time the taskQueue has spend
      * on the CPU.
      * <p/>
      * This method should be called after taskQueue that was selected by {@link #pickNext()}
@@ -65,9 +65,9 @@ public interface TaskQueueScheduler {
      * then either {@link #yieldActive()} needs to be called to schedule the taskQueue again or
      * {@link #dequeueActive()} needs to be called to remove the taskQueue from the run queue.
      *
-     * @param execDeltaNanos the amount of time the active taskQueue has been running.
+     * @param cpuTimeNanos the amount of time the active taskQueue has been running.
      */
-    void updateActive(long execDeltaNanos);
+    void updateActive(long cpuTimeNanos);
 
     /**
      * Remove the active task from the run queue. This happens when the task is blocked or the

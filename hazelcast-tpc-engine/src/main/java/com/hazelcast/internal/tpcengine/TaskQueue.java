@@ -72,7 +72,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     public int clockSampleInterval;
     public int runState = RUN_STATE_BLOCKED;
     public String name;
-    public int shares;
     public Queue<Object> local;
     public Queue<Object> global;
 
@@ -86,12 +85,12 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // If there are other threads running on the same processor, sumExecRuntimeNanos can be
     // distorted because these threads can contribute to the runtime of this taskQueue if such
     // a thread gets context switched while a task of the TaskQueue is running.
-    public long sumExecRuntimeNanos;
+    public long actualRuntimeNanos;
     // Field is only used when the TaskQueue is scheduled by the CfsTaskQueueScheduler.
     // the virtual runtime. The vruntime is weighted + also when reinserted into the tree,
     // the vruntime is always updated to the min_vruntime. So the vruntime isn't the actual
     // amount of time spend on the CPU
-    public long vruntimeNanos;
+    public long virtualRuntimeNanos;
     public long tasksProcessed;
     // the number of times this taskQueue has been blocked
     public long blockedCount;
@@ -195,11 +194,11 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
     @Override
     public int compareTo(TaskQueue that) {
-        if (that.vruntimeNanos == this.vruntimeNanos) {
+        if (that.virtualRuntimeNanos == this.virtualRuntimeNanos) {
             return 0;
         }
 
-        return this.vruntimeNanos > that.vruntimeNanos ? 1 : -1;
+        return this.virtualRuntimeNanos > that.virtualRuntimeNanos ? 1 : -1;
     }
 
     @Override
@@ -208,10 +207,9 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 + "name='" + name + '\''
                 + ", pollState=" + pollState
                 + ", runState=" + runState
-                + ", shares=" + shares
                 + ", weight=" + weight
-                + ", sumExecRuntimeNanos=" + sumExecRuntimeNanos
-                + ", vruntimeNanos=" + vruntimeNanos
+                + ", sumExecRuntimeNanos=" + actualRuntimeNanos
+                + ", vruntimeNanos=" + virtualRuntimeNanos
                 + ", tasksProcessed=" + tasksProcessed
                 + ", blockedCount=" + blockedCount
                 + ", contextSwitchCount=" + contextSwitchCount

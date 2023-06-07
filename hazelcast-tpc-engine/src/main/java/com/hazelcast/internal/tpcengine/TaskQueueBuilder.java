@@ -219,7 +219,6 @@ public class TaskQueueBuilder {
         }
         taskQueue.clockSampleInterval = clockSampleInterval;
         taskQueue.taskFactory = taskFactory;
-        taskQueue.shares = nice;
         if (name == null) {
             taskQueue.name = "taskqueue-" + ID.incrementAndGet();
         } else {
@@ -228,6 +227,7 @@ public class TaskQueueBuilder {
         taskQueue.eventloop = eventloop;
         taskQueue.scheduler = eventloop.taskQueueScheduler;
         taskQueue.runState = RUN_STATE_BLOCKED;
+        taskQueue.weight = 1;//1024/(Math.pow(1.24,nice));
 
         if (taskQueue.global != null) {
             eventloop.addBlockedGlobal(taskQueue);

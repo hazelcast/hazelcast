@@ -45,7 +45,7 @@ public class CfsTaskQueueSchedulerTest {
     public void test_timeSliceNanosActive() {
         TaskQueue q1 = new TaskQueue();
         q1.weight = 1;
-        q1.vruntimeNanos = 1000;
+        q1.virtualRuntimeNanos = 1000;
         scheduler.enqueue(q1);
 
         scheduler.pickNext();
@@ -55,7 +55,7 @@ public class CfsTaskQueueSchedulerTest {
 
         TaskQueue q2 = new TaskQueue();
         q2.weight = 1;
-        q2.vruntimeNanos = 1000;
+        q2.virtualRuntimeNanos = 1000;
         scheduler.enqueue(q2);
 
         scheduler.pickNext();
@@ -65,15 +65,15 @@ public class CfsTaskQueueSchedulerTest {
     @Test
     public void test_pickNext() {
         TaskQueue q1 = new TaskQueue();
-        q1.vruntimeNanos = 1000;
+        q1.virtualRuntimeNanos = 1000;
         scheduler.enqueue(q1);
 
         TaskQueue q2 = new TaskQueue();
-        q2.vruntimeNanos = 100;
+        q2.virtualRuntimeNanos = 100;
         scheduler.enqueue(q2);
 
         TaskQueue q3 = new TaskQueue();
-        q3.vruntimeNanos = 10000;
+        q3.virtualRuntimeNanos = 10000;
         scheduler.enqueue(q3);
 
         assertEquals(q2, scheduler.pickNext());
@@ -90,17 +90,17 @@ public class CfsTaskQueueSchedulerTest {
     public void test_yieldActive() {
         TaskQueue q1 = new TaskQueue();
         q1.weight = 1;
-        q1.vruntimeNanos = 1000;
+        q1.virtualRuntimeNanos = 1000;
         scheduler.enqueue(q1);
 
         TaskQueue q2 = new TaskQueue();
         q2.weight = 1;
-        q2.vruntimeNanos = 100;
+        q2.virtualRuntimeNanos = 100;
         scheduler.enqueue(q2);
 
         TaskQueue q3 = new TaskQueue();
         q3.weight = 1;
-        q3.vruntimeNanos = 10000;
+        q3.virtualRuntimeNanos = 10000;
         scheduler.enqueue(q3);
 
         assertEquals(q2, scheduler.pickNext());
@@ -126,17 +126,17 @@ public class CfsTaskQueueSchedulerTest {
     public void test_dequeueActive() {
         TaskQueue q1 = new TaskQueue();
         q1.weight = 1;
-        q1.vruntimeNanos = 1;
+        q1.virtualRuntimeNanos = 1;
         scheduler.enqueue(q1);
 
         TaskQueue q2 = new TaskQueue();
         q2.weight = 2;
-        q2.vruntimeNanos = 2;
+        q2.virtualRuntimeNanos = 2;
         scheduler.enqueue(q2);
 
         TaskQueue q3 = new TaskQueue();
         q3.weight = 3;
-        q3.vruntimeNanos = 3;
+        q3.virtualRuntimeNanos = 3;
         scheduler.enqueue(q3);
 
         assertEquals(q1, scheduler.pickNext());
@@ -178,10 +178,10 @@ public class CfsTaskQueueSchedulerTest {
         q1.weight = 1;
 
         int min_vruntime = 100000;
-        scheduler.min_vruntimeNanos = min_vruntime;
+        scheduler.min_virtualRuntimeNanos = min_vruntime;
 
         scheduler.enqueue(q1);
-        assertEquals(min_vruntime, q1.vruntimeNanos);
+        assertEquals(min_vruntime, q1.virtualRuntimeNanos);
     }
 
     @Test
@@ -190,11 +190,11 @@ public class CfsTaskQueueSchedulerTest {
         q1.weight = 1;
 
         int min_vruntime = 100000;
-        scheduler.min_vruntimeNanos = min_vruntime;
+        scheduler.min_virtualRuntimeNanos = min_vruntime;
 
-        q1.vruntimeNanos = 10 * min_vruntime;
+        q1.virtualRuntimeNanos = 10 * min_vruntime;
 
         scheduler.enqueue(q1);
-        assertEquals(10 * min_vruntime, q1.vruntimeNanos);
+        assertEquals(10 * min_vruntime, q1.virtualRuntimeNanos);
     }
 }
