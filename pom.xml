@@ -36,7 +36,6 @@
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
-        <module>modulepath-tests</module>
     </modules>
 
     <properties>
@@ -67,9 +66,9 @@
         </maven.javadoc.plugin.excludePackageNames>
         <maven.antrun.plugin.version>3.0.0</maven.antrun.plugin.version>
         <maven.gpg.plugin.version>3.1.0</maven.gpg.plugin.version>
-        <maven.assembly.plugin.version>3.5.0</maven.assembly.plugin.version>
+        <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
-        <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
+        <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.4.1</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.6.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
@@ -112,7 +111,7 @@
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
-        <kafka.version>3.4.0</kafka.version>
+        <kafka.version>3.4.1</kafka.version>
         <kotlin.version>1.8.21</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
@@ -121,7 +120,7 @@
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
-        <picocli.version>4.7.3</picocli.version>
+        <picocli.version>4.7.4</picocli.version>
         <postgresql.version>42.6.0</postgresql.version>
         <prometheus.version>0.18.0</prometheus.version>
 
@@ -164,7 +163,7 @@
         <archunit.version>1.0.1</archunit.version>
         <errorprone.version>2.19.1</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <kubernetes-server-mock.version>6.5.0</kubernetes-server-mock.version>
+        <kubernetes-server-mock.version>6.7.1</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -187,6 +186,13 @@
 
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
+
+        <!--
+        License plugin is not thread-safe, leads to flaky failures when checking licenses, so it is skipped by default.
+        to run the build with license plugin run with `-T1 -Dlicense.skipAddThirdParty=false`.
+        The `-T1` parameter disables the parallel build.
+        -->
+        <license.skipAddThirdParty>true</license.skipAddThirdParty>
 
         <!--
         Allow access to Operating system metrics:
@@ -269,6 +275,7 @@
                     <include>**/*.xml</include>
                     <include>**/*.yaml</include>
                     <include>**/*.xsd</include>
+                    <include>**/*.txt</include>
                     <include>**/hazelcast-config-*.json</include>
                     <include>**/*.handlers</include>
                     <include>**/*.schemas</include>
@@ -667,14 +674,23 @@
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${maven.shade.plugin.version}</version>
                     <configuration>
-                        <filters>
+                        <filters combine.children="append">
                             <filter>
                                 <artifact>*:*</artifact>
                                 <excludes>
                                     <exclude>module-info.class</exclude>
+                                    <exclude>META-INF/versions/9/module-info.class</exclude>
+                                    <exclude>THIRD-PARTY.txt</exclude>
+                                    <exclude>LICENSE</exclude>
+                                    <exclude>NOTICE</exclude>
                                     <exclude>META-INF/*.SF</exclude>
                                     <exclude>META-INF/*.DSA</exclude>
                                     <exclude>META-INF/*.RSA</exclude>
+                                    <exclude>META-INF/LICENSE</exclude>
+                                    <exclude>META-INF/MANIFEST.MF</exclude>
+                                    <exclude>META-INF/THIRD-PARTY.txt</exclude>
+                                    <exclude>META-INF/DEPENDENCIES</exclude>
+                                    <exclude>overview.html</exclude>
                                 </excludes>
                             </filter>
                         </filters>
@@ -1345,6 +1361,24 @@
         </profile>
 
         <profile>
+            <!--
+            Profile which allows to skip the modulepath-tests module.
+            The module runs by default, but can be skipped by adding -Dskip-modulepath-tests property.
+            This is used in PR builder when we run only `mvn test-compile` which is not possible due
+            to an automatic module name not being created in the hazelcast jar (no jar is built at all).
+            -->
+            <id>modulepath-tests</id>
+            <activation>
+                <property>
+                    <name>!skip-modulepath-tests</name>
+                </property>
+            </activation>
+            <modules>
+                <module>modulepath-tests</module>
+            </modules>
+        </profile>
+
+        <profile>
             <!-- same as default build (excludes Nightly & Slow tests), outputs serialized objects to a blob -->
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
@@ -1800,7 +1834,7 @@
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.5-3</version>
+                <version>1.5.5-4</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1820,7 +1854,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.34.0</version>
+                <version>3.35.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
