@@ -1768,7 +1768,7 @@
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-common-protos</artifactId>
-                <version>2.19.1</version>
+                <version>2.20.0</version>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
