@@ -115,7 +115,7 @@
         <kotlin.version>1.8.21</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
-        <mysql.connector.version>8.0.30</mysql.connector.version>
+        <mysql.connector.version>8.0.33</mysql.connector.version>
         <netty.version>4.1.92.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
@@ -1770,8 +1770,8 @@
                 <version>2.20.0</version>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.connector.version}</version>
             </dependency>
             <dependency>
