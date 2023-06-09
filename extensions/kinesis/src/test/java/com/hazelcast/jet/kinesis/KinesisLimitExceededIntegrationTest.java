@@ -62,8 +62,6 @@ public class KinesisLimitExceededIntegrationTest extends AbstractKinesisTest {
 
     @BeforeClass
     public static void beforeClass() {
-        assumeDockerEnabled();
-
         // To run with real kinesis AWS credentials need be available
         // to be loaded by DefaultAWSCredentialsProviderChain.
         // Keep in mind the real Kinesis is paid service and once you
@@ -75,6 +73,8 @@ public class KinesisLimitExceededIntegrationTest extends AbstractKinesisTest {
                     .withEndpoint("https://kinesis.us-east-1.amazonaws.com")
                     .withRegion("us-east-1");
         } else {
+            assumeDockerEnabled();
+
             localStack = new LocalStackContainer(parse("localstack/localstack")
                     .withTag(LOCALSTACK_VERSION))
                     // Introduce errors so some items fail to be written and need to be retried
