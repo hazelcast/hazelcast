@@ -54,7 +54,6 @@ public class KinesisLimitExceededIntegrationTest extends AbstractKinesisTest {
     private static AwsConfig AWS_CONFIG;
     private static AmazonKinesisAsync KINESIS;
     private static KinesisTestHelper HELPER;
-    private static boolean useRealKinesis;
 
     public KinesisLimitExceededIntegrationTest() {
         super(AWS_CONFIG, KINESIS, HELPER);
@@ -66,7 +65,7 @@ public class KinesisLimitExceededIntegrationTest extends AbstractKinesisTest {
         // to be loaded by DefaultAWSCredentialsProviderChain.
         // Keep in mind the real Kinesis is paid service and once you
         // run it you should ensure that cleanup happened correctly.
-        useRealKinesis = Boolean.parseBoolean(System.getProperty("run.with.real.kinesis", "false"));
+        boolean useRealKinesis = Boolean.parseBoolean(System.getProperty("run.with.real.kinesis", "false"));
 
         if (useRealKinesis) {
             AWS_CONFIG = new AwsConfig()
