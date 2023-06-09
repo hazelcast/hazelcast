@@ -18,7 +18,13 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
+import com.hazelcast.internal.tpcengine.file.BlockDevice;
+import com.hazelcast.internal.tpcengine.file.BlockRequestScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpcengine.nio.NioBlockRequestScheduler.NioBlockRequest;
+import com.hazelcast.internal.tpcengine.util.Preconditions;
+import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -26,6 +32,8 @@ import java.nio.channels.Selector;
 import java.util.Iterator;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
+import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
 
 /**
  * Nio specific Eventloop implementation.
@@ -35,6 +43,7 @@ final class NioEventloop extends Eventloop {
     private static final int NANOS_PER_MILLI = 1000000;
 
     final Selector selector = SelectorOptimizer.newSelector();
+    private final IOBufferAllocator blockIOBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
 
     NioEventloop(NioReactor reactor, NioReactorBuilder builder) {
         super(reactor, builder);
@@ -42,20 +51,34 @@ final class NioEventloop extends Eventloop {
 
     @Override
     public IOBufferAllocator blockIOBufferAllocator() {
-        throw new UnsupportedOperationException();
+        return blockIOBufferAllocator;
     }
 
     @Override
     public AsyncFile newAsyncFile(String path) {
-        throw new UnsupportedOperationException();
+        Preconditions.checkNotNull(path, "path");
+
+        BlockDevice dev = blockDeviceRegistry.findBlockDevice(path);
+        if (dev == null) {
+            throw newUncheckedIOException("Could not find storage device for [" + path + "]");
+        }
+
+        BlockRequestScheduler blockRequestScheduler = deviceSchedulers.get(dev);
+        if (blockRequestScheduler == null) {
+            blockRequestScheduler = new NioBlockRequestScheduler(dev, this);
+            deviceSchedulers.put(dev, blockRequestScheduler);
+        }
+
+        return new NioAsyncFile(path, this, blockRequestScheduler);
     }
 
     @Override
     protected boolean ioSchedulerTick() throws IOException {
         int keyCount = selector.selectNow();
+        boolean worked;
 
         if (keyCount == 0) {
-            return false;
+            worked = false;
         } else {
             Iterator<SelectionKey> it = selector.selectedKeys().iterator();
             while (it.hasNext()) {
@@ -69,15 +92,20 @@ final class NioEventloop extends Eventloop {
                     handler.close(null, e);
                 }
             }
-            return true;
+            worked = true;
         }
+
+        worked |= runDeviceSchedulerCompletions();
+
+        return worked;
     }
 
     @Override
     protected void park(long timeoutNanos) throws IOException {
+        boolean worked = runDeviceSchedulerCompletions();
         int keyCount;
         long timeoutMs = timeoutNanos / NANOS_PER_MILLI;
-        if (spin || timeoutMs == 0) {
+        if (spin || timeoutMs == 0 || worked) {
             keyCount = selector.selectNow();
         } else {
             wakeupNeeded.set(true);
@@ -105,6 +133,22 @@ final class NioEventloop extends Eventloop {
                 }
             }
         }
+
+        runDeviceSchedulerCompletions();
+    }
+
+    private boolean runDeviceSchedulerCompletions() {
+        // similar to cq completions in io_uring
+        boolean worked = false;
+        for (BlockRequestScheduler blockRequestScheduler : deviceSchedulers.values()) {
+            NioBlockRequestScheduler nioBlockRequestScheduler = (NioBlockRequestScheduler) blockRequestScheduler;
+            MpscArrayQueue<NioBlockRequest> cq = nioBlockRequestScheduler.cq;
+            int drained = cq.drain(nioBlockRequestScheduler::complete);
+            if (drained > 0) {
+                worked = true;
+            }
+        }
+        return worked;
     }
 
     @Override
