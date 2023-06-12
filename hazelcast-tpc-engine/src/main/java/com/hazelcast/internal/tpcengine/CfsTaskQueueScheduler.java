@@ -20,6 +20,8 @@ import java.util.PriorityQueue;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Math.max;
+import static java.lang.Math.pow;
+import static java.lang.Math.round;
 
 /**
  * A {@link TaskQueue} scheduler that always schedules the task group with the
@@ -47,9 +49,9 @@ import static java.lang.Math.max;
  * <p>
  * https://mechpen.github.io/posts/2020-04-27-cfs-group/index.html
  */
-@SuppressWarnings({"checkstyle:MemberName"})
+@SuppressWarnings({"checkstyle:MemberName", "checkstyle:MagicNumber"})
 class CfsTaskQueueScheduler implements TaskQueueScheduler {
-    private static final int NICE_0_LOAD = 1024;
+    public static final int NICE_0_LOAD = 1024;
 
     final PriorityQueue<TaskQueue> runQueue;
     final int capacity;
@@ -70,11 +72,19 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
         this.minGranularityNanos = checkPositive(minGranularityNanos, "minGranularityNanos");
     }
 
+    public static int niceToWeight(int nice) {
+        return (int) round(NICE_0_LOAD / pow(1.25, nice));
+    }
+
     @Override
     public long timeSliceNanosActive() {
+//        // temporary hack to maximize the number of context switches.
+//        if (true) {
+//            return 1;
+//        }
         assert active != null;
 
-        // every task gets a timeslice proportional to its weight and the total weight.
+        // every task gets a timeslice proportional to its weight compared the total weight.
         long timesliceNanos = targetLatencyNanos * active.weight / totalWeight;
         // If the timeslice is very small it will lead to excessive context switching So we
         // take the max value of the minGranularity and the timeslice.
@@ -106,7 +116,12 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
             //virtual runtime = real runtime * NICE_0_LOAD / weight of the process
 
             active.actualRuntimeNanos += cpuTimeNanos;
-            active.virtualRuntimeNanos += max(1, cpuTimeNanos * NICE_0_LOAD / active.weight);
+            // todo: if the weight is very small, then the vruntimeDelta will be very big.
+            // and leads to an overflow faster. With 2^63 nanos, it takes 290 years to overflow.
+            // But with a minimal weight, the overflow happens at 290/88=3 years.
+            // So the bigger the weight of the task, the smaller the actual vruntime increment.
+            long vruntimeDelta = max(1, cpuTimeNanos * NICE_0_LOAD / active.weight);
+            active.virtualRuntimeNanos += vruntimeDelta;
         }
     }
 

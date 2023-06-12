@@ -106,7 +106,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     public TaskQueue next;
 
     public final TaskQueueMetrics metrics = new TaskQueueMetrics();
-    public long weight = 1;
+    //the weight is only used by the CfsTaskQueueScheduler.
+    public int weight = 1;
 
     public boolean isEmpty() {
         return (local != null && local.isEmpty()) && (global != null && global.isEmpty());

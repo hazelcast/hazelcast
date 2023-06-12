@@ -110,7 +110,7 @@ public abstract class Eventloop {
                 .setName(reactor.name + "-primordial")
                 .setGlobal(new MpscArrayQueue<>(builder.globalTaskQueueCapacity))
                 .setLocal(new CircularQueue<>(builder.localTaskQueueCapacity))
-                .setPriority(1)
+                .setNice(1)
                 .setTaskFactory(builder.taskFactorySupplier.get())
                 .build();
         this.spin = builder.spin;
@@ -551,7 +551,6 @@ public abstract class Eventloop {
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
         task.delayNanos = unit.toNanos(delay);
         return deadlineScheduler.offer(task);
-        //throw new UnsupportedOperationException();
     }
 
     /**

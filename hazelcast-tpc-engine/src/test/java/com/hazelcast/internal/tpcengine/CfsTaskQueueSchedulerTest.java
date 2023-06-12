@@ -19,21 +19,22 @@ package com.hazelcast.internal.tpcengine;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
-
+import static com.hazelcast.internal.tpcengine.CfsTaskQueueScheduler.niceToWeight;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 
 public class CfsTaskQueueSchedulerTest {
 
-    public static final long TARGET_LATENCY_NANOS = TimeUnit.MILLISECONDS.toNanos(1);
-    public static final long MIN_GRANULARITY_NANOS = TimeUnit.MICROSECONDS.toNanos(100);
+    public static final long TARGET_LATENCY_NANOS = 100;
+    public static final long MIN_GRANULARITY_NANOS = 10;
+    public static final int RUN_QUEUE_CAPACITY = 100;
 
     private CfsTaskQueueScheduler scheduler;
 
     @Before
     public void setup() {
-        scheduler = new CfsTaskQueueScheduler(100, TARGET_LATENCY_NANOS, MIN_GRANULARITY_NANOS);
+        scheduler = new CfsTaskQueueScheduler(RUN_QUEUE_CAPACITY, TARGET_LATENCY_NANOS, MIN_GRANULARITY_NANOS);
     }
 
     @Test
@@ -42,9 +43,9 @@ public class CfsTaskQueueSchedulerTest {
     }
 
     @Test
-    public void test_timeSliceNanosActive() {
+    public void test_timeSliceNanosActive_sameWeight() {
         TaskQueue q1 = new TaskQueue();
-        q1.weight = 1;
+        q1.weight = niceToWeight(0);
         q1.virtualRuntimeNanos = 1000;
         scheduler.enqueue(q1);
 
@@ -54,7 +55,7 @@ public class CfsTaskQueueSchedulerTest {
         scheduler.yieldActive();
 
         TaskQueue q2 = new TaskQueue();
-        q2.weight = 1;
+        q2.weight = niceToWeight(0);
         q2.virtualRuntimeNanos = 1000;
         scheduler.enqueue(q2);
 
@@ -62,18 +63,53 @@ public class CfsTaskQueueSchedulerTest {
         assertEquals(TARGET_LATENCY_NANOS / 2, scheduler.timeSliceNanosActive());
     }
 
+//    @Test
+//    public void test_timeSliceNanos_minGranularity() {
+//        fail("not implemented yet");
+//    }
+
     @Test
-    public void test_pickNext() {
+    public void test_timeSliceNanosActive_differentWeight() {
         TaskQueue q1 = new TaskQueue();
+        q1.name = "q1";
+        q1.weight = niceToWeight(0);
         q1.virtualRuntimeNanos = 1000;
         scheduler.enqueue(q1);
 
         TaskQueue q2 = new TaskQueue();
+        q2.name = "q2";
+        q2.weight = niceToWeight(1);
+        q2.virtualRuntimeNanos = 1000;
+        scheduler.enqueue(q2);
+
+        assertSame(q1, scheduler.pickNext());
+        // a task with a higher weight will get a larger timeslice.
+        assertEquals(55, scheduler.timeSliceNanosActive());
+
+        scheduler.updateActive(1000);
+        scheduler.yieldActive();
+
+        assertSame(q2, scheduler.pickNext());
+        // a task with a lower weight will get a smaller timeslice.
+        // there should roughly be 20% difference between the timeslice of q1 and q2
+        assertEquals(44, scheduler.timeSliceNanosActive());
+    }
+
+    @Test
+    public void test_pickNext() {
+        TaskQueue q1 = new TaskQueue();
+        q1.virtualRuntimeNanos = 1000;
+        q1.weight = niceToWeight(0);
+        scheduler.enqueue(q1);
+
+        TaskQueue q2 = new TaskQueue();
         q2.virtualRuntimeNanos = 100;
+        q2.weight = niceToWeight(0);
         scheduler.enqueue(q2);
 
         TaskQueue q3 = new TaskQueue();
         q3.virtualRuntimeNanos = 10000;
+        q3.weight = niceToWeight(0);
         scheduler.enqueue(q3);
 
         assertEquals(q2, scheduler.pickNext());
@@ -89,17 +125,17 @@ public class CfsTaskQueueSchedulerTest {
     @Test
     public void test_yieldActive() {
         TaskQueue q1 = new TaskQueue();
-        q1.weight = 1;
+        q1.weight = niceToWeight(0);
         q1.virtualRuntimeNanos = 1000;
         scheduler.enqueue(q1);
 
         TaskQueue q2 = new TaskQueue();
-        q2.weight = 1;
+        q2.weight = niceToWeight(0);
         q2.virtualRuntimeNanos = 100;
         scheduler.enqueue(q2);
 
         TaskQueue q3 = new TaskQueue();
-        q3.weight = 1;
+        q3.weight = niceToWeight(0);
         q3.virtualRuntimeNanos = 10000;
         scheduler.enqueue(q3);
 
@@ -121,21 +157,20 @@ public class CfsTaskQueueSchedulerTest {
         assertEquals(q3, scheduler.pickNext());
     }
 
-
     @Test
     public void test_dequeueActive() {
         TaskQueue q1 = new TaskQueue();
-        q1.weight = 1;
+        q1.weight = niceToWeight(0);
         q1.virtualRuntimeNanos = 1;
         scheduler.enqueue(q1);
 
         TaskQueue q2 = new TaskQueue();
-        q2.weight = 2;
+        q2.weight = niceToWeight(1);
         q2.virtualRuntimeNanos = 2;
         scheduler.enqueue(q2);
 
         TaskQueue q3 = new TaskQueue();
-        q3.weight = 3;
+        q3.weight = niceToWeight(2);
         q3.virtualRuntimeNanos = 3;
         scheduler.enqueue(q3);
 
@@ -158,24 +193,51 @@ public class CfsTaskQueueSchedulerTest {
     @Test
     public void test_enqueue() {
         TaskQueue q1 = new TaskQueue();
-        q1.weight = 1;
+        q1.weight = niceToWeight(0);
 
         TaskQueue q2 = new TaskQueue();
-        q2.weight = 2;
+        q2.weight = niceToWeight(0);
 
         scheduler.enqueue(q1);
         assertEquals(1, scheduler.nrRunning);
-        assertEquals(1, scheduler.totalWeight);
+        assertEquals(q1.weight, scheduler.totalWeight);
 
         scheduler.enqueue(q2);
         assertEquals(2, scheduler.nrRunning);
-        assertEquals(3, scheduler.totalWeight);
+        assertEquals(q1.weight + q2.weight, scheduler.totalWeight);
+    }
+
+    @Test
+    public void test_updateActive_when_nice_0() {
+        TaskQueue q1 = new TaskQueue();
+        q1.weight = niceToWeight(0);
+
+        scheduler.enqueue(q1);
+        scheduler.pickNext();
+        scheduler.updateActive(100000);
+
+        assertEquals(100000, q1.actualRuntimeNanos);
+        assertEquals(100000, q1.virtualRuntimeNanos);
+    }
+
+    @Test
+    public void test_updateActive_when_nice_1() {
+        TaskQueue q1 = new TaskQueue();
+        q1.weight = niceToWeight(1);
+
+        scheduler.enqueue(q1);
+        scheduler.pickNext();
+        scheduler.updateActive(100000);
+
+        assertEquals(100000, q1.actualRuntimeNanos);
+        // the task gets a vruntime penalty due to its low weight.
+        assertEquals(125030, q1.virtualRuntimeNanos);
     }
 
     @Test
     public void test_enqueue_vruntime_updated_whenFallenBehind() {
         TaskQueue q1 = new TaskQueue();
-        q1.weight = 1;
+        q1.weight = niceToWeight(0);
 
         int min_vruntime = 100000;
         scheduler.min_virtualRuntimeNanos = min_vruntime;
@@ -187,7 +249,7 @@ public class CfsTaskQueueSchedulerTest {
     @Test
     public void test_enqueue_vruntime_not_updated_whenAhead() {
         TaskQueue q1 = new TaskQueue();
-        q1.weight = 1;
+        q1.weight = niceToWeight(0);
 
         int min_vruntime = 100000;
         scheduler.min_virtualRuntimeNanos = min_vruntime;

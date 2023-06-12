@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_RECV;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_SEND;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITEV;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EAGAIN;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
@@ -382,6 +381,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                         // we do a regular write.
                         ByteBuffer buffer = ioVector.get(0).byteBuffer();
 
+                        // OP_SEND is faster than OP_WRITE.
                         UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_SEND);
                         UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
                         UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
@@ -458,7 +458,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
                     localTaskQueue.offerLocal(eventloopTask);
                 } else {
-                    throw newCQEFailedException("Failed to write data to the socket.", "write(2)", IORING_OP_WRITE, -res);
+                    throw newCQEFailedException("Failed to write data to the socket.", "write(2)", IORING_OP_SEND, -res);
                 }
             } catch (Exception e) {
                 close("Closing IOUringAsyncSocket due to exception", e);

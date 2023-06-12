@@ -1,4 +1,4 @@
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast;
 
 public class Main {
 

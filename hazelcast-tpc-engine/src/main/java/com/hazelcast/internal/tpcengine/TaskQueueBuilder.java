@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpcengine;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.tpcengine.CfsTaskQueueScheduler.niceToWeight;
 import static com.hazelcast.internal.tpcengine.TaskQueue.POLL_GLOBAL_FIRST;
 import static com.hazelcast.internal.tpcengine.TaskQueue.POLL_GLOBAL_ONLY;
 import static com.hazelcast.internal.tpcengine.TaskQueue.POLL_LOCAL_ONLY;
@@ -33,8 +34,8 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  */
 public class TaskQueueBuilder {
 
-    public static final int MIN_PRIORITY = -20;
-    public static final int MAX_PRIORITY = 20;
+    public static final int MIN_NICE = -20;
+    public static final int MAX_NICE = 20;
     private static final AtomicLong ID = new AtomicLong();
 
     private final Eventloop eventloop;
@@ -115,28 +116,34 @@ public class TaskQueueBuilder {
     }
 
     /**
-     * Sets the priority. When the CfsScheduler is used, the priority determines the size
-     * of the time slice and the priority of the taks queue.
+     * Sets the nice value. When the CfsScheduler is used, the nice value determines the size
+     * of the time slice and the priority of the task queue. For the FcfsTaskQueueScheduler,
+     * the value is ignored.
      * <p>
-     * -20 is the lowest priority and 20 is the highest priority. The default priority is 0.
-     * A task that has a priority of n will get 20 percent larger time slice than a task
-     * with a priority of n-1.
+     * -20 is the lowest nice, which means the task isn't nice at all and wants to spend
+     * as much time on the CPU as possible. 20 is the highest nice value, which means the
+     * task is fine giving up its time on the CPU for any less nicer task queue.
+     * <p>
+     * A task that has a nice level of <code>n</code> will get 20 percent larger time slice
+     * than a task with a priority of <code>n-1</code>.
      *
-     * @param priority
-     * @throws IllegalStateException if the TaskQueue is already built or when the call
-     *                               isn't made from the eventloop thread.
+     * @param nice the nice level
+     * @throws IllegalArgumentException if the nice value is smaller than MIN_NICE or
+     *                                  larger than MAX_NICE.
+     * @throws IllegalStateException    if the TaskQueue is already built or when the call
+     *                                  isn't made from the eventloop thread.
      */
-    public TaskQueueBuilder setPriority(int priority) {
+    public TaskQueueBuilder setNice(int nice) {
         verifyNotBuilt();
         verifyEventloopThread();
 
-        if (priority < MIN_PRIORITY) {
+        if (nice < MIN_NICE) {
             throw new IllegalArgumentException();
-        } else if (priority > MAX_PRIORITY) {
+        } else if (nice > MAX_NICE) {
             throw new IllegalArgumentException();
         }
 
-        this.nice = checkPositive(priority, "priority");
+        this.nice = nice;
         return this;
     }
 
@@ -227,7 +234,7 @@ public class TaskQueueBuilder {
         taskQueue.eventloop = eventloop;
         taskQueue.scheduler = eventloop.taskQueueScheduler;
         taskQueue.runState = RUN_STATE_BLOCKED;
-        taskQueue.weight = 1;//1024/(Math.pow(1.24,nice));
+        taskQueue.weight = niceToWeight(nice);
 
         if (taskQueue.global != null) {
             eventloop.addBlockedGlobal(taskQueue);

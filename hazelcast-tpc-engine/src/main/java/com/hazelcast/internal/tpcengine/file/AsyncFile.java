@@ -161,6 +161,15 @@ public abstract class AsyncFile {
      * {@link #barrierFsync()} for that.
      * <p>
      * todo: probably better to add flag for fdatasync instead of making it a method.
+     * <p/>
+     * fsync combined with buffered I/O (so using the page cache) is very unreliable. When
+     * there are dirty pages in the page cache and an fsync is performed, it will force these
+     * dirty pages to be written to disk. If at least one of these writes fails, the page will
+     * be marked as failed. As a consequence the fsync will fail, but it will also mark the
+     * page as clean and remove the failed state from that page. So if you would perform another
+     * fsync, then it very likely would succeed since there are no dirty pages. The problem is
+     * that the changes never made it to disk, so that fsync is useless. For more information
+     * see: https://danluu.com/fsyncgate/
      *
      * @return
      */
@@ -321,6 +330,21 @@ public abstract class AsyncFile {
 
     /**
      * Writes data to a file from the given offset.
+     * <p/>
+     * If Direct I/O is used and the write completes successfully, the write is either
+     * in the write buffer of the storage device or on persistent storage of that device.
+     * <p/>
+     * If the write is in the write buffer of that device, the f(data)sync will guarantee
+     * that the write is on persistent storage. On proper enterprise grade SSDs there will
+     * be a capacitor or some form of battery on the SSD to guarantee that the write buffer
+     * gets written to persistent storage in case of power loss. So in that case, the fsync
+     * in theory isn't needed and effectively can be treated as a no-op by the SSD.
+     * <p/>
+     * If buffered I/O is used (so through the page cache), the write is only in the page cache
+     * and not on disk. Only at some point in the future, this write ends up at disk. This makes
+     * dealing with I/O errors much more complicated because there is a disconnect between the
+     * making the write and completing it (on the page cache) and the actual write to disk. And
+     * these problems can bubble up at the fsync.
      *
      * @param offset the offset within the file.
      * @param length the number of bytes to write

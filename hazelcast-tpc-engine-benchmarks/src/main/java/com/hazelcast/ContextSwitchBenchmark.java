@@ -6,94 +6,104 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.Task;
+import com.hazelcast.internal.tpcengine.TaskQueueBuilder;
 import com.hazelcast.internal.tpcengine.TaskQueueHandle;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
-import org.openjdk.jmh.annotations.Threads;
-import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
+import static com.hazelcast.internal.tpcengine.TaskQueueBuilder.MAX_NICE;
+import static com.hazelcast.internal.tpcengine.TaskQueueBuilder.MIN_NICE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Ideally the performance of the context switch should be bound to the time it takes to call
  * the {@link System#nanoTime()}. And that should be around the 25-30 ns on Linux.
- *
+ * <p>
  * Make sure the following JVM parameter is added:
  * --add-opens java.base/sun.nio.ch=ALL-UNNAMED
  */
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Benchmark)
-@Fork(value = 1)
-@Warmup(iterations = 1)
-@Threads(value = 1)
+
 public class ContextSwitchBenchmark {
 
+    public static final int durationSeconds = 600;
     public static final int operations = 100 * 1000 * 1000;
-    public static final int concurrency = 1;
+    public static final int tasksPerTaskGroup = 1;
     public static final boolean useEventloopDirectly = true;
-    public static final ReactorType reactorType = ReactorType.NIO;
+    public static final ReactorType reactorType = ReactorType.IOURING;
     public static final boolean useTask = true;
-    public static final boolean usePrimordialTaskQueue = true;
     public static final int clockSampleInterval = 1;
-    private Reactor reactor;
+    public static final int taskGroupCount = 10;
+    public static final boolean randomNiceLevel = false;
+    public static final boolean useCfs = true;
 
-    @Setup
-    public void setup() {
+    private static final List<TaskQueueHandle> handles = new ArrayList<>();
+    private static volatile boolean stop = false;
+    private static final AtomicLong counter = new AtomicLong();
+
+    public static final Function<Eventloop, TaskQueueHandle> taskGroupFactor = eventloop -> {
+        Random random = new Random();
+        int priority = randomNiceLevel
+                ? random.nextInt(MAX_NICE - MIN_NICE + 1) + MIN_NICE
+                : 0;
+        return eventloop
+                .newTaskQueueBuilder()
+                .setNice(priority)
+                .setClockSampleInterval(clockSampleInterval)
+                .setLocal(new CircularQueue<>(1024))
+                .build();
+    };
+
+    public static void main(String[] args) throws InterruptedException {
+        CountDownLatch completionLatch = new CountDownLatch(taskGroupCount * tasksPerTaskGroup);
+
         ReactorBuilder reactorBuilder = ReactorBuilder.newReactorBuilder(reactorType);
-        reactorBuilder.setCfs(true);
+        reactorBuilder.setCfs(useCfs);
+        reactorBuilder.setRunQueueCapacity(taskGroupCount + 1);
         //reactorBuilder.setBatchSize(1);
         //reactorBuilder.setClockRefreshPeriod(1);
-        reactor = reactorBuilder.build();
+        Reactor reactor = reactorBuilder.build();
         reactor.start();
-    }
 
-    @TearDown
-    public void tearDown() throws InterruptedException {
-        reactor.shutdown();
-        reactor.awaitTermination(5, SECONDS);
-    }
+        long start = System.currentTimeMillis();
 
-    @Benchmark
-    @OperationsPerInvocation(value = operations)
-    public void run() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(concurrency);
         reactor.execute(() -> {
-            TaskQueueHandle handle;
-            if (usePrimordialTaskQueue) {
-                handle = reactor.eventloop().primordialTaskQueueHandle();
+            if (taskGroupCount == 0) {
+                handles.add(reactor.eventloop().primordialTaskQueueHandle());
             } else {
-                handle = reactor.eventloop().newTaskQueueBuilder()
-                        .setLocal(new CircularQueue<>(1024))
-                        .setClockSampleInterval(clockSampleInterval)
-                        .setName("bla")
-                        .build();
+                for (int k = 0; k < taskGroupCount; k++) {
+                    handles.add(taskGroupFactor.apply(reactor.eventloop()));
+                }
             }
 
-            for (int k = 0; k < concurrency; k++) {
-                if (useTask) {
-                    RunnableJob task = new RunnableJob(reactor, handle, operations / concurrency, latch, useEventloopDirectly);
-                    reactor.offer(task, handle);
-                } else {
-                    TaskJob task = new TaskJob(operations / concurrency, latch);
-                    reactor.offer(task, handle);
+            for (TaskQueueHandle handle : handles) {
+                for (int k = 0; k < tasksPerTaskGroup; k++) {
+                    if (useTask) {
+                        RunnableJob task = new RunnableJob(reactor, handle, completionLatch, useEventloopDirectly);
+                        reactor.offer(task, handle);
+                    } else {
+                        TaskJob task = new TaskJob(completionLatch);
+                        reactor.offer(task, handle);
+                    }
                 }
             }
         });
 
-        latch.await();
+        Monitor monitor = new Monitor(durationSeconds);
+        monitor.start();
+        monitor.join();
+
+        long count = counter.get();
+
+        long duration = System.currentTimeMillis() - start;
+        System.out.println("Duration " + duration + " ms");
+        System.out.println("Throughput:" + (count * 1000f / duration) + " tasks/second");
+
     }
 
     private static class RunnableJob implements Runnable {
@@ -101,18 +111,14 @@ public class ContextSwitchBenchmark {
         private final Eventloop eventloop;
         private final boolean useEventloopDirectly;
         private final Reactor reactor;
-        private final long operations;
         private final TaskQueueHandle taskGroupHandle;
-        private long iteration = 0;
 
         public RunnableJob(Reactor reactor,
                            TaskQueueHandle taskGroupHandle,
-                           long operations,
                            CountDownLatch latch,
                            boolean useEventloopDirectly) {
             this.reactor = reactor;
             this.eventloop = reactor.eventloop();
-            this.operations = operations;
             this.taskGroupHandle = taskGroupHandle;
             this.latch = latch;
             this.useEventloopDirectly = useEventloopDirectly;
@@ -120,10 +126,12 @@ public class ContextSwitchBenchmark {
 
         @Override
         public void run() {
-            iteration++;
-            if (operations == iteration) {
-                latch.countDown();
-            } else if (useEventloopDirectly) {
+            if (stop) {
+                return;
+            }
+
+            counter.setOpaque(counter.getOpaque() + 1);
+            if (useEventloopDirectly) {
                 eventloop.offer(this, taskGroupHandle);
             } else {
                 reactor.offer(this, taskGroupHandle);
@@ -133,23 +141,47 @@ public class ContextSwitchBenchmark {
 
     private static class TaskJob extends Task {
         private final CountDownLatch latch;
-        private final long operations;
-        private long iteration = 0;
 
-        public TaskJob(long operations, CountDownLatch latch) {
-            this.operations = operations;
+        public TaskJob(CountDownLatch latch) {
             this.latch = latch;
         }
 
         @Override
         public int process() {
-            iteration++;
-            if (operations == iteration) {
+            if (stop) {
                 latch.countDown();
                 return Task.TASK_COMPLETED;
-            } else {
-                return Task.TASK_YIELD;
             }
+
+            counter.setOpaque(counter.getOpaque() + 1);
+            return Task.TASK_YIELD;
+        }
+    }
+
+    private static class Monitor extends Thread {
+        private final int durationSecond;
+        private long last = 0;
+
+        public Monitor(int durationSecond) {
+            this.durationSecond = durationSecond;
+        }
+
+        @Override
+        public void run() {
+            long end = System.currentTimeMillis() + SECONDS.toMillis(durationSecond);
+            while (System.currentTimeMillis() < end) {
+                try {
+                    Thread.sleep(SECONDS.toMillis(1));
+                } catch (InterruptedException e) {
+                }
+
+                long total = counter.get();
+                long diff = total - last;
+                last = total;
+                System.out.println("  thp " + diff + " tasks/sec");
+            }
+
+            stop = true;
         }
     }
 }
