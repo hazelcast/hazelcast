@@ -151,14 +151,6 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     }
 
     private static boolean testIfInstanceIsStillActive(HazelcastInstance instance) {
-        if (instance instanceof HazelcastInstanceProxy) {
-            try {
-                ((HazelcastInstanceProxy) instance).getOriginal();
-                return true;
-            } catch (HazelcastInstanceNotActiveException ignored) {
-                return false;
-            }
-        }
         if (instance instanceof HazelcastInstanceImpl) {
             try {
                 return ((HazelcastInstanceImpl) instance).isRunning();
