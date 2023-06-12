@@ -90,9 +90,9 @@ public class RestClientTest {
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                .withHeaders(singletonMap(headerKey, headerValue))
-                .get()
-                .getBody();
+                                  .withHeaders(singletonMap(headerKey, headerValue))
+                                  .get()
+                                  .getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -113,11 +113,11 @@ public class RestClientTest {
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                .withReadTimeoutSeconds(1200)
-                .withConnectTimeoutSeconds(1200)
-                .withRetries(1)
-                .get()
-                .getBody();
+                                  .withReadTimeoutSeconds(1200)
+                                  .withConnectTimeoutSeconds(1200)
+                                  .withRetries(1)
+                                  .get()
+                                  .getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -145,9 +145,9 @@ public class RestClientTest {
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                .withBody(BODY_REQUEST)
-                .post()
-                .getBody();
+                                  .withBody(BODY_REQUEST)
+                                  .post()
+                                  .getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -164,10 +164,10 @@ public class RestClientTest {
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                .withBody(BODY_REQUEST)
-                .expectResponseCodes(expectedCode1, expectedCode2)
-                .post()
-                .getBody();
+                                  .withBody(BODY_REQUEST)
+                                  .expectResponseCodes(expectedCode1, expectedCode2)
+                                  .post()
+                                  .getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -184,8 +184,8 @@ public class RestClientTest {
         // when
         RestClientException exception = assertThrows(RestClientException.class, () ->
                 RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                        .withBody(BODY_REQUEST)
-                        .get());
+                          .withBody(BODY_REQUEST)
+                          .get());
 
         // then
         assertEquals(responseCode, exception.getHttpErrorCode());
@@ -203,9 +203,9 @@ public class RestClientTest {
         // when
         RestClientException exception = assertThrows(RestClientException.class, () ->
                 RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                        .withBody(BODY_REQUEST)
-                        .expectResponseCodes(expectedCode)
-                        .post());
+                          .withBody(BODY_REQUEST)
+                          .expectResponseCodes(expectedCode)
+                          .post());
 
         // then
         assertEquals(unexpectedCode, exception.getHttpErrorCode());
@@ -222,9 +222,9 @@ public class RestClientTest {
 
         // when
         RestClient.Response response = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                .withBody(BODY_REQUEST)
-                .expectResponseCodes(responseCode)
-                .get();
+                                                 .withBody(BODY_REQUEST)
+                                                 .expectResponseCodes(responseCode)
+                                                 .get();
 
         // then
         assertEquals(responseCode, response.getCode());
@@ -257,7 +257,7 @@ public class RestClientTest {
         try {
             new Thread(server).start();
             RestClient.create("https://127.0.0.1:" + server.serverSocket.getLocalPort())
-                    .withCaCertificates(readFile("src/test/resources/kubernetes/ca.crt")).get();
+                      .withCaCertificates(readFile("src/test/resources/kubernetes/ca.crt")).get();
         } catch (Exception e) {
             // whatever
         } finally {
