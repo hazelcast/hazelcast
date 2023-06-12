@@ -25,6 +25,18 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -38,17 +50,6 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RestClientTest {
     private static final String API_ENDPOINT = "/some/endpoint";
@@ -69,7 +70,7 @@ public class RestClientTest {
     public void getSuccess() {
         // given
         stubFor(get(urlEqualTo(API_ENDPOINT))
-            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+                .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get().getBody();
@@ -84,14 +85,14 @@ public class RestClientTest {
         String headerKey = "Metadata-Flavor";
         String headerValue = "Google";
         stubFor(get(urlEqualTo(API_ENDPOINT))
-            .withHeader(headerKey, equalTo(headerValue))
-            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+                .withHeader(headerKey, equalTo(headerValue))
+                .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-            .withHeaders(singletonMap(headerKey, headerValue))
-            .get()
-            .getBody();
+                .withHeaders(singletonMap(headerKey, headerValue))
+                .get()
+                .getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -101,22 +102,22 @@ public class RestClientTest {
     public void getWithRetries() {
         // given
         stubFor(get(urlEqualTo(API_ENDPOINT))
-            .inScenario("Retry Scenario")
-            .whenScenarioStateIs(STARTED)
-            .willReturn(aResponse().withStatus(500).withBody("Internal error"))
-            .willSetStateTo("Second Try"));
+                .inScenario("Retry Scenario")
+                .whenScenarioStateIs(STARTED)
+                .willReturn(aResponse().withStatus(500).withBody("Internal error"))
+                .willSetStateTo("Second Try"));
         stubFor(get(urlEqualTo(API_ENDPOINT))
-            .inScenario("Retry Scenario")
-            .whenScenarioStateIs("Second Try")
-            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+                .inScenario("Retry Scenario")
+                .whenScenarioStateIs("Second Try")
+                .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-            .withReadTimeoutSeconds(1200)
-            .withConnectTimeoutSeconds(1200)
-            .withRetries(1)
-            .get()
-            .getBody();
+                .withReadTimeoutSeconds(1200)
+                .withConnectTimeoutSeconds(1200)
+                .withRetries(1)
+                .get()
+                .getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -126,7 +127,7 @@ public class RestClientTest {
     public void getFailure() {
         // given
         stubFor(get(urlEqualTo(API_ENDPOINT))
-            .willReturn(aResponse().withStatus(500).withBody("Internal error")));
+                .willReturn(aResponse().withStatus(500).withBody("Internal error")));
 
         // when
         RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get();
@@ -139,14 +140,14 @@ public class RestClientTest {
     public void postSuccess() {
         // given
         stubFor(post(urlEqualTo(API_ENDPOINT))
-            .withRequestBody(equalTo(BODY_REQUEST))
-            .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
+                .withRequestBody(equalTo(BODY_REQUEST))
+                .willReturn(aResponse().withStatus(200).withBody(BODY_RESPONSE)));
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-            .withBody(BODY_REQUEST)
-            .post()
-            .getBody();
+                .withBody(BODY_REQUEST)
+                .post()
+                .getBody();
 
         // then
         assertEquals(BODY_RESPONSE, result);
@@ -232,21 +233,27 @@ public class RestClientTest {
 
     @Test
     public void tls13SupportDefaultCacert() throws IOException {
-        Tls13CipherCheckingServer server = new Tls13CipherCheckingServer(new ServerSocket(0));
+        Tls13CipherCheckingServer server = new Tls13CipherCheckingServer(new ServerSocket(0), "DefaultCa");
         try {
             new Thread(server).start();
             RestClient.create("https://127.0.0.1:" + server.serverSocket.getLocalPort()).get();
         } catch (Exception e) {
             // whatever
         } finally {
-            server.shutdownRequested = true;
+            server.stop();
         }
-        assertTrue("No TLS 1.3 cipher used", server.tls13CipherFound.get());
+        // Ensure our checking thread is finished before asserting cipher found
+        try {
+            server.shutdownLatch.await(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+        assertTrue("No TLS 1.3 cipher used", server.tls13CipherFound);
     }
 
     @Test
     public void tls13SupportCustomCacert() throws IOException {
-        Tls13CipherCheckingServer server = new Tls13CipherCheckingServer(new ServerSocket(0));
+        Tls13CipherCheckingServer server = new Tls13CipherCheckingServer(new ServerSocket(0), "CustomCa");
         try {
             new Thread(server).start();
             RestClient.create("https://127.0.0.1:" + server.serverSocket.getLocalPort())
@@ -254,9 +261,15 @@ public class RestClientTest {
         } catch (Exception e) {
             // whatever
         } finally {
-            server.shutdownRequested = true;
+            server.stop();
         }
-        assertTrue("No TLS 1.3 cipher used", server.tls13CipherFound.get());
+        // Ensure our checking thread is finished before asserting cipher found
+        try {
+            server.shutdownLatch.await(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+        assertTrue("No TLS 1.3 cipher used", server.tls13CipherFound);
     }
 
     private String readFile(String fileName) throws IOException {
@@ -267,11 +280,15 @@ public class RestClientTest {
         private static final ILogger LOGGER = Logger.getLogger(Tls13CipherCheckingServer.class);
 
         final ServerSocket serverSocket;
+        // For better logging, so we can trace it back to specific tests
+        final String providerName;
         volatile boolean shutdownRequested;
-        final AtomicBoolean tls13CipherFound = new AtomicBoolean();
+        volatile boolean tls13CipherFound = false;
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
 
-        Tls13CipherCheckingServer(ServerSocket serverSocket) {
+        Tls13CipherCheckingServer(ServerSocket serverSocket, String providerName) {
             this.serverSocket = serverSocket;
+            this.providerName = providerName + ": ";
             try {
                 this.serverSocket.setSoTimeout(500);
             } catch (SocketException e) {
@@ -282,16 +299,17 @@ public class RestClientTest {
 
         public void run() {
             try {
-                while (!(shutdownRequested || tls13CipherFound.get())) {
+                while (!(shutdownRequested || tls13CipherFound)) {
                     try {
                         Socket socket = serverSocket.accept();
                         new Thread(() -> {
-                            LOGGER.info("Socket accepted " + socket);
+                            LOGGER.info(providerName + "Socket accepted " + socket);
                             try {
                                 socket.setSoTimeout(5000);
-                                tls13CipherFound.compareAndSet(false, hasTls13Cipher(socket.getInputStream()));
+                                tls13CipherFound = assertTls13Cipher(socket.getInputStream());
+                                LOGGER.info(providerName + "TLS 1.3 found? " + tls13CipherFound);
                             } catch (IOException e) {
-                                LOGGER.warning("Reading from the socket failed", e);
+                                LOGGER.warning(providerName + "Reading from the socket failed", e);
                             } finally {
                                 close(socket);
                             }
@@ -301,17 +319,18 @@ public class RestClientTest {
                     }
                 }
             } catch (IOException e) {
-                LOGGER.warning("The test server thrown an exception", e);
+                LOGGER.warning(providerName + "The test server thrown an exception", e);
             } finally {
                 close(serverSocket);
             }
+            shutdownLatch.countDown();
         }
 
         void stop() {
             shutdownRequested = true;
         }
 
-        static boolean hasTls13Cipher(InputStream is) throws IOException {
+        static boolean assertTls13Cipher(InputStream is) throws IOException {
             try (DataInputStream dis = new DataInputStream(is)) {
                 int type = dis.readUnsignedByte();
                 // HANDSHAKE record
@@ -346,7 +365,9 @@ public class RestClientTest {
                     }
                 }
             }
-            return false;
+            // Throw an exception instead of returning false, so we have more detailed
+            // information to work with in the event of a failure
+            throw new IOException("TLS 1.3 cipher not found!");
         }
 
         private static void skip(DataInputStream dis, int toSkip) throws IOException {
