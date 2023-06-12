@@ -40,7 +40,6 @@ Non-goals are:
 - support migration-tolerance for member and processor pruning. 
 - support local index scan.
 
-
 ## Technical Design
 
 Let's split member pruning, processor pruning and partition pruning as separate stages, which can complement each other, 
@@ -119,7 +118,7 @@ with additional meta-information from DAG and JobConfig constructed by SQL optim
 
 ##### Heavyweight approach
 
-The core idea here is that  `ExecutionPlanBuilder` would have detailed analysis of received DAG before execution plan
+The core idea here is that `ExecutionPlanBuilder` would have detailed analysis of received DAG before execution plan
 creation and then, possibly, trying to optimize DAG and only then apply member pruning based. The requirements
 to prune member are :
 - each vertex in the DAG may work without an input;
@@ -139,7 +138,7 @@ about required partitions to run to `JobConfig`, and then mark DAG as 'ableToPru
 for `ExecutionPlanBuilder` to choose code path with member pruning during execution plans creation.
 As a helpful API for SQL's `CreateDagVisitor`, we introduced new wrapper for both `ProcessorMetaSupplier` and
 `ProcessorSupplier` - `memberPruningProcessorMetaSupplier`, where `doesWorkWithoutInput` method returns `false`. In 
-`ExecutionPlanBuilder` we checks that all vertices in DAG does not work without input and then we can apply member pruning.
+`ExecutionPlanBuilder` we checks that all vertices in DAG does not work without input, and then we can apply member pruning.
 
 ### Processor pruning
 
@@ -184,13 +183,8 @@ This example illustrates **inter-member** processor pruning.
 To control processor creation and parallelism within one member, we would like to use various processor suppliers
 (`ProcessorMetaSupplier` or `ProcessorSupplier`). The correctness of this method will totally rely on how DAG constructor.
 Since Partition Pruning initiative was introduced to align PredicateAPI and SQL functionality and performance, we will
-rely on SQL optimizer input and DAG construction phase in `CreateDagVisitor`. Here we describe Jet API to support processor
-pruning :
-- create new `lazyForceTotalParallelismOne` (or override old `forceTotalParallelismOne`) PMS builder which does not 
-  cache member address to prevent wrong usage of cached plan;
-- new smart `_insert_this_name` PMS wrapper which computes preferred local parallelism based on input from SQL optimizer
-  and partitions owned by given member;
-
+rely on SQL optimizer input and DAG construction phase in `CreateDagVisitor`. 
+This approach was tried, but it was **rejected** due to **small performance difference for increased code complexity**.
 ##### Inter-member processor pruning
 
 After long discussions, we decided NOT support this kind of processor pruning, because it
@@ -203,6 +197,12 @@ After long discussions, we decided NOT support this kind of processor pruning, b
 Partition pruning is a pretty simple optimization: we will extract partition key condition during SQL opt phase,
 pass it to specialized processor supplier which will spawn `ReadMapOrCacheP` with only required partitions to scan.
 
-### Notes
+## Final decision
+After long discussions, we decided to implement **lightweight** approach for member pruning and Scan processor partition pruning.
+
+Processor pruning was considered as non-universal, complex and  **rejected**. As a side effect from this research, 
+we decided to add  new `lazyForceTotalParallelismOne` PMS builder which does not cache member address to prevent 
+wrong usage of cached plan.
+
 
 ### Acceptance Criteria
