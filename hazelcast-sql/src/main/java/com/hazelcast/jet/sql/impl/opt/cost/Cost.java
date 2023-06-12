@@ -133,11 +133,7 @@ public class Cost implements RelOptCost {
 
     @Override
     public RelOptCost minus(RelOptCost other) {
-        Cost other0 = (Cost) other;
-        return new Cost(
-                rows - other0.getRowsInternal(),
-                cpu - other0.getCpuInternal(),
-                network - other0.getNetworkInternal());
+        throw new UnsupportedOperationException("Should not be called.");
     }
 
     @Override

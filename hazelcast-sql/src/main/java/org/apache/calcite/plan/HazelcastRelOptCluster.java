@@ -16,6 +16,7 @@
 
 package org.apache.calcite.plan;
 
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -31,15 +32,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Located in the Calcite package because the required super constructor is package-private.
  */
 public final class HazelcastRelOptCluster extends RelOptCluster {
+    /** Distribution trait definition that is used during query execution. */
+    private final DistributionTraitDef distributionTraitDef;
 
-    /**
-     * Metadata about parameters.
-     */
+    /** Metadata about parameters. */
     private QueryParameterMetadata parameterMetadata;
 
-    /**
-     * Whether 'CREATE JOB' is used
-     */
+    /** Whether 'CREATE JOB' is used */
     private boolean requiresJob;
 
     private HazelcastRelOptCluster(
@@ -47,19 +46,31 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
             RelDataTypeFactory typeFactory,
             RexBuilder rexBuilder,
             AtomicInteger nextCorrel,
-            Map<String, RelNode> mapCorrelToRel
+            Map<String, RelNode> mapCorrelToRel,
+            DistributionTraitDef distributionTraitDef
     ) {
         super(planner, typeFactory, rexBuilder, nextCorrel, mapCorrelToRel);
+
+        this.distributionTraitDef = distributionTraitDef;
     }
 
-    public static HazelcastRelOptCluster create(RelOptPlanner planner, RexBuilder rexBuilder) {
+    public static HazelcastRelOptCluster create(
+            RelOptPlanner planner,
+            RexBuilder rexBuilder,
+            DistributionTraitDef distributionTraitDef
+    ) {
         return new HazelcastRelOptCluster(
                 planner,
                 rexBuilder.getTypeFactory(),
                 rexBuilder,
                 new AtomicInteger(0),
-                new HashMap<>()
+                new HashMap<>(),
+                distributionTraitDef
         );
+    }
+
+    public DistributionTraitDef getDistributionTraitDef() {
+        return distributionTraitDef;
     }
 
     public QueryParameterMetadata getParameterMetadata() {
@@ -76,5 +87,10 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
 
     public void setRequiresJob(boolean requiresJob) {
         this.requiresJob = requiresJob;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{distributionTraitDef=" + distributionTraitDef + '}';
     }
 }
