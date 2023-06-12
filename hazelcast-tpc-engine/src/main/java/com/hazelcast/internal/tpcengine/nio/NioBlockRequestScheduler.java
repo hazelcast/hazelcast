@@ -217,29 +217,29 @@ public class NioBlockRequestScheduler implements BlockRequestScheduler {
         return opts;
     }
 
-    void complete(NioBlockRequest nioBlockRequest) {
-        if (nioBlockRequest.exc != null) {
-            nioBlockRequest.promise.completeExceptionally(nioBlockRequest.exc);
+    void complete(NioBlockRequest req) {
+        if (req.exc != null) {
+            req.promise.completeExceptionally(req.exc);
         } else {
-            if (nioBlockRequest.opcode == BLK_REQ_OP_OPEN) {
-                nioBlockRequest.getFile().channel = nioBlockRequest.channel;
+            if (req.opcode == BLK_REQ_OP_OPEN) {
+                req.getFile().channel = req.channel;
             }
-            nioBlockRequest.promise.complete(nioBlockRequest.result);
-            handleMetrics(nioBlockRequest);
+            req.promise.complete(req.result);
+            handleMetrics(req);
         }
 
-        nioBlockRequest.rwFlags = 0;
-        nioBlockRequest.flags = 0;
-        nioBlockRequest.opcode = 0;
-        nioBlockRequest.length = 0;
-        nioBlockRequest.offset = 0;
-        nioBlockRequest.permissions = 0;
-        nioBlockRequest.buffer = null;
-        nioBlockRequest.file = null;
-        nioBlockRequest.promise = null;
-        nioBlockRequest.result = 0;
-        nioBlockRequest.exc = null;
-        requestAllocator.free(nioBlockRequest);
+        req.rwFlags = 0;
+        req.flags = 0;
+        req.opcode = 0;
+        req.length = 0;
+        req.offset = 0;
+        req.permissions = 0;
+        req.buffer = null;
+        req.file = null;
+        req.promise = null;
+        req.result = 0;
+        req.exc = null;
+        requestAllocator.free(req);
         concurrent--;
 
         while (waitQueue.hasRemaining() && concurrent < concurrentLimit) {
