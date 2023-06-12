@@ -29,8 +29,6 @@ import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -38,6 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -64,7 +63,7 @@ public class TransactionLogTest {
         log.add(record);
 
         assertEquals(1, log.size());
-        assertThat(log.getRecords(), contains(record));
+        assertThat(log.getRecords()).containsExactlyInAnyOrder(record);
     }
 
     @Test

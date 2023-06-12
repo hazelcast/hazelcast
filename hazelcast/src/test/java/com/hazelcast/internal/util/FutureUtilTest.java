@@ -24,10 +24,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -47,7 +45,9 @@ import java.util.logging.Level;
 import static com.hazelcast.internal.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.RootCauseMatcher.rootCause;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -55,9 +55,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class FutureUtilTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -200,15 +197,15 @@ public class FutureUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAllDoneThrowsException_whenSomeFutureHasException() throws Exception {
+    public void testGetAllDoneThrowsException_whenSomeFutureHasException() {
         InterruptedException exception = new InterruptedException();
-        Collection<Future<?>> futures = Arrays.asList(InternalCompletableFuture.completedExceptionally(exception));
+        Collection<Future<?>> futures = List.of(InternalCompletableFuture.completedExceptionally(exception));
         // the future is completedExceptionally with an InterruptedException (thread was not
         // interrupted during future.get()), so it is normal to expect
         // InterruptedException wrapped within an ExecutionException.
-        expectedException.expect(ExecutionException.class);
-        expectedException.expectCause(new RootCauseMatcher(InterruptedException.class));
-        FutureUtil.checkAllDone(futures);
+        assertThatThrownBy(() -> FutureUtil.checkAllDone(futures))
+                .isInstanceOf(ExecutionException.class)
+                .cause().has(rootCause(InterruptedException.class));
     }
 
     @Test

@@ -38,10 +38,7 @@ import static com.hazelcast.query.impl.getters.GetterCache.SIMPLE_GETTER_CACHE_S
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.sameInstance;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -81,8 +78,8 @@ public class ExtractorsTest {
         Getter getterSecondInvocation = extractors.getGetter(bond, "car.power", true);
 
         // THEN
-        assertThat(getterFirstInvocation, sameInstance(getterSecondInvocation));
-        assertThat(getterFirstInvocation, instanceOf(FieldGetter.class));
+        assertThat(getterFirstInvocation).isSameAs(getterSecondInvocation);
+        assertThat(getterFirstInvocation).isInstanceOf(FieldGetter.class);
     }
 
     @Test
@@ -91,7 +88,7 @@ public class ExtractorsTest {
         Object power = createExtractors(null).extract(bond, "car.power", null);
 
         // THEN
-        assertThat((Integer) power, equalTo(550));
+        assertThat((Integer) power).isEqualTo(550);
     }
 
     @Test
@@ -106,8 +103,8 @@ public class ExtractorsTest {
         Getter getterSecondInvocation = extractors.getGetter(bond, "gimmePower", true);
 
         // THEN
-        assertThat(getterFirstInvocation, sameInstance(getterSecondInvocation));
-        assertThat(getterFirstInvocation, instanceOf(ExtractorGetter.class));
+        assertThat(getterFirstInvocation).isSameAs(getterSecondInvocation);
+        assertThat(getterFirstInvocation).isInstanceOf(ExtractorGetter.class);
     }
 
     @Test
@@ -121,7 +118,7 @@ public class ExtractorsTest {
         Object power = extractors.extract(bond, "gimmePower", null);
 
         // THEN
-        assertThat((Integer) power, equalTo(550));
+        assertThat((Integer) power).isEqualTo(550);
     }
 
     @Test

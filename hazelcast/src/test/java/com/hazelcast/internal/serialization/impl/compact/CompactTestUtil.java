@@ -53,8 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.phonehome.TestUtil.getNode;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -333,7 +332,7 @@ public final class CompactTestUtil {
         Collection<Schema> expectedSchemas = getSchemasFor(classes);
         for (HazelcastInstance instance : instances) {
             Collection<Schema> schemas = getNode(instance).getSchemaService().getAllSchemas();
-            assertThat(schemas, containsInAnyOrder(expectedSchemas.toArray()));
+            assertThat(schemas).containsExactlyInAnyOrderElementsOf(expectedSchemas);
         }
     }
 

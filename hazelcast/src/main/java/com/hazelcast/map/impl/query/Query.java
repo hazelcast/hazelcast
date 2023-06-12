@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -25,7 +24,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -38,7 +36,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Object representing a Query together with all possible co-variants: like a predicate, iterationType, etc.
  */
-public class Query implements IdentifiedDataSerializable, Versioned {
+public class Query implements IdentifiedDataSerializable {
 
     private String mapName;
     private Predicate predicate;
@@ -145,9 +143,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
         out.writeByte(iterationType.getId());
         out.writeObject(aggregator);
         out.writeObject(projection);
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
-            out.writeObject(partitionIdSet);
-        }
+        out.writeObject(partitionIdSet);
     }
 
     @Override
@@ -157,9 +153,7 @@ public class Query implements IdentifiedDataSerializable, Versioned {
         this.iterationType = IterationType.getById(in.readByte());
         this.aggregator = in.readObject();
         this.projection = in.readObject();
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
-            this.partitionIdSet = in.readObject();
-        }
+        this.partitionIdSet = in.readObject();
     }
 
     public static final class QueryBuilder {
