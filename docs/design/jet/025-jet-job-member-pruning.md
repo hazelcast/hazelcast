@@ -12,18 +12,18 @@
 
 ## Background
 
-Before Hazelcast Platform 5.4, Jet job was always deployed to all data members (specifically - all not-lite members). 
+Before Hazelcast Platform 5.4, Jet job was always deployed to all data members, specifically all non-lite members. 
 If some DAG vertex isn’t using all members, it creates no-op processors on the rest, but Jet still creates queues 
 to/from those vertices and starts the processors, even though it completes immediately and the queues are closed with a `DONE_ITEM`. 
 If some member isn’t used at all, the DAG is still deployed to it, and the coordinator has to send `InitExecutionOperation` to it and wait for 
 the completion. Even though the processors are no-op, or have no data to process, it’s an unnecessary overhead, 
-which becomes noticeable in very small batch jobs.
+which becomes noticeable in very small batch jobs and/or large clusters due to serial transmission.
 
 ## Terminology
 
-- Member pruning - prevention of cluster members without requested data on board to be involved in job execution;
-- Processor pruning - elimination of redundant stage processor creation;
-- (IMap) Partition pruning - extract partition condition and assigning only required partition to read by `ReadMapOrCacheP`;
+- Member pruning - prevent cluster members without requested data on board from involving in job execution;
+- Processor pruning - eliminate redundant stage processor creation;
+- (IMap) Partition pruning - extract partition condition and assign only required partition to be read by `ReadMapOrCacheP`;
 
 ## Goals
 
@@ -124,9 +124,9 @@ to prune member are :
 - each vertex in the DAG may work without an input;
 - DAG does not contain `distributed-broadcast` edges;
 
-As a pros, using this approach generify member pruning usage for both SQL, Pipeline API; allow usage for any connectors.
-As a cons, this approach brings high complexity in problem analysis, long development and big list of corner cases, which
-are discussed in chapter below.
+This approach generifies member pruning for SQL, Pipeline API and any connector.
+However, it brings high complexity in problem analysis, long development time
+and big list of corner cases, which are discussed in the chapter below.
 
 ##### Lightweight approach
 
@@ -170,10 +170,9 @@ So, it's a good target for **intra-member** processor pruning.
 ```
 ![Scan + Scan -> HashJoin](https://jet-start.sh/docs/assets/arch-dag-4.svg)
 
-For 2-stage aggregation, honestly, an author don't see actual processor pruning abilities to optimize that case. 
-Potentially it may be done in another way - if we can translate 2-staged into single-staged on SQL opt phase and 
-then eliminate member(s) via member pruning.
-Even though, lets take a look on the picture above. Here, we can theoretically, eliminate scan and flatmap nodes. 
+For 2-stage aggregation, honestly, we don't see any processor pruning possibilities. Potentially,
+it may be done in another way: we can translate 2-staged into single-staged on SQL opt phase and
+then eliminate member(s) via member pruning, namely scan and flatmap nodes.
 In practice, processor logic is opaque to Jet and may have side effects which may break the job. 
 This example illustrates **inter-member** processor pruning.
 
@@ -181,15 +180,15 @@ This example illustrates **inter-member** processor pruning.
 
 ##### Intra-member processor pruning
 To control processor creation and parallelism within one member, we would like to use various processor suppliers
-(`ProcessorMetaSupplier` or `ProcessorSupplier`). The correctness of this method will totally rely on how DAG constructor.
+(`ProcessorMetaSupplier` or `ProcessorSupplier`). The correctness of this method will totally rely on how DAG is constructed.
 Since Partition Pruning initiative was introduced to align PredicateAPI and SQL functionality and performance, we will
 rely on SQL optimizer input and DAG construction phase in `CreateDagVisitor`. 
 This approach was tried, but it was **rejected** due to **small performance difference for increased code complexity**.
 ##### Inter-member processor pruning
 
-After long discussions, we decided NOT support this kind of processor pruning, because it
-- relatively ineffective, because most of DAGs with broadcast edges were created with algorithm correctness in mind
-- hard to implement solution which fits most use cases;
+After long discussions, we decided NOT to support this kind of processor pruning, because it
+- is relatively ineffective since most DAGs with broadcast edges were created with algorithm correctness in mind,
+- is hard to implement for most use cases, and
 - doesn't fit the goal of general effort.
 
 ### Scan processor partition pruning
