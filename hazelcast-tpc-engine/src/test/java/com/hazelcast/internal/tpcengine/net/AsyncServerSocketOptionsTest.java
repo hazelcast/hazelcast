@@ -27,12 +27,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotWindows;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEADDR;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEPORT;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
-import static com.hazelcast.internal.tpcengine.util.TpcTestSupport.assumeThatNoWindowsOS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -72,7 +72,7 @@ public abstract class AsyncServerSocketOptionsTest {
 
     @Test
     public void test_set() {
-        assumeThatNoWindowsOS();
+        assumeNotWindows();
         try (AsyncServerSocket serverSocket = newServerSocket()) {
             AsyncSocketOptions options = serverSocket.options();
             assertTrue(options.set(SUPPORTED_OPTION, true));
