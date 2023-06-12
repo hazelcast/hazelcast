@@ -30,29 +30,24 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.security.Permission;
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.google.common.collect.Lists.asList;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.memberPruningMetaSupplier;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
@@ -95,20 +90,19 @@ public class PMSTest extends SimpleTestInClusterSupport {
         // Given
         int expectedTotalParallelism = 2;
         ProcessorMetaSupplier pmsGen = new ValidatingMetaSupplier(
-                memberPruningMetaSupplier((ProcessorSupplier) count ->
+                ProcessorMetaSupplier.of((ProcessorSupplier) count ->
                         IntStream.range(0, count)
                                 .mapToObj(GenP::new)
                                 .collect(Collectors.toList())),
                 expectedTotalParallelism);
 
-        ProcessorMetaSupplier pmsPrint = memberPruningMetaSupplier(
+        ProcessorMetaSupplier pmsPrint = ProcessorMetaSupplier.of(
                 (ProcessorSupplier) count -> nCopies(count, new PrintP()));
 
         DAG dag = new DAG();
         Vertex generator = dag.newVertex("Generator", pmsGen);
         Vertex printer = dag.newVertex("Printer", pmsPrint);
         dag.edge(between(generator, printer));
-        dag.markAsPrunable();
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(1));
@@ -129,20 +123,19 @@ public class PMSTest extends SimpleTestInClusterSupport {
         // Given
         int expectedTotalParallelism = 4;
         ProcessorMetaSupplier pmsGen = new ValidatingMetaSupplier(
-                memberPruningMetaSupplier((ProcessorSupplier) count ->
+                ProcessorMetaSupplier.of((ProcessorSupplier) count ->
                         IntStream.range(0, count)
                                 .mapToObj(GenP::new)
                                 .collect(Collectors.toList())),
                 expectedTotalParallelism);
 
-        ProcessorMetaSupplier pmsPrint = memberPruningMetaSupplier(
+        ProcessorMetaSupplier pmsPrint = ProcessorMetaSupplier.of(
                 (ProcessorSupplier) count -> nCopies(count, new PrintP()));
 
         DAG dag = new DAG();
         Vertex generator = dag.newVertex("Generator", pmsGen);
         Vertex printer = dag.newVertex("Printer", pmsPrint);
         dag.edge(between(generator, printer));
-        dag.markAsPrunable();
 
         Map<Address, int[]> partitionAssignment = getPartitionAssignment(instance());
         assertEquals(3, partitionAssignment.size());
@@ -167,7 +160,7 @@ public class PMSTest extends SimpleTestInClusterSupport {
         final int partitionId = 1;
         Address addr = getAddressForPartitionId(instance(), partitionId);
 
-        ProcessorMetaSupplier pmsGen = memberPruningMetaSupplier((ProcessorSupplier) count ->
+        ProcessorMetaSupplier pmsGen = ProcessorMetaSupplier.of((ProcessorSupplier) count ->
                 IntStream.range(0, count).mapToObj(GenP::new).collect(Collectors.toList()));
 
         ProcessorMetaSupplier pmsAgg = forceTotalParallelismOne(
@@ -176,7 +169,7 @@ public class PMSTest extends SimpleTestInClusterSupport {
                 addr,
                 false);
 
-        ProcessorMetaSupplier pmsPrint = memberPruningMetaSupplier(
+        ProcessorMetaSupplier pmsPrint = ProcessorMetaSupplier.of(
                 (ProcessorSupplier) count -> nCopies(count, new PrintP()));
 
         DAG dag = new DAG();
@@ -192,7 +185,6 @@ public class PMSTest extends SimpleTestInClusterSupport {
         // aggregator -> printer
         dag.edge(between(aggregator, printer).isolated());
 
-        dag.markAsPrunable();
 
 
         JobConfig jobConfig = new JobConfig();
@@ -209,22 +201,22 @@ public class PMSTest extends SimpleTestInClusterSupport {
     @Test
     public void test_scanJoin() {
         // Given
-        ProcessorMetaSupplier pmsGen1 = memberPruningMetaSupplier((ProcessorSupplier) count ->
+        ProcessorMetaSupplier pmsGen1 = ProcessorMetaSupplier.of((ProcessorSupplier) count ->
                 IntStream.range(0, count)
                         .mapToObj(GenP::new)
                         .collect(Collectors.toList()));
 
-        ProcessorMetaSupplier pmsGen2 = memberPruningMetaSupplier((ProcessorSupplier) count ->
+        ProcessorMetaSupplier pmsGen2 = ProcessorMetaSupplier.of((ProcessorSupplier) count ->
                 IntStream.range(0, count)
                         .mapToObj(GenP::new)
                         .collect(Collectors.toList()));
 
         ProcessorMetaSupplier pmsJoin = new ValidatingMetaSupplier(
-                memberPruningMetaSupplier(
+                ProcessorMetaSupplier.of(
                         (ProcessorSupplier) count -> nCopies(count, new JoinP())),
                 2);
 
-        ProcessorMetaSupplier pmsPrint = memberPruningMetaSupplier(
+        ProcessorMetaSupplier pmsPrint = ProcessorMetaSupplier.of(
                 (ProcessorSupplier) count -> nCopies(count, new PrintP()));
 
         DAG dag = new DAG();
@@ -236,7 +228,6 @@ public class PMSTest extends SimpleTestInClusterSupport {
         dag.edge(Edge.from(generatorLeft).to(joiner, 0).isolated());
         dag.edge(Edge.from(generatorRight).to(joiner, 1).distributed().broadcast());
         dag.edge(between(joiner, printer).isolated());
-        dag.markAsPrunable();
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(1));
@@ -263,16 +254,13 @@ public class PMSTest extends SimpleTestInClusterSupport {
                         .mapToObj(GenP::new)
                         .collect(Collectors.toList()));
 
-        ProcessorMetaSupplier pruningPmsGen = memberPruningMetaSupplier(pmsGen);
-
-        ProcessorMetaSupplier pmsPrint = memberPruningMetaSupplier(
+        ProcessorMetaSupplier pmsPrint = ProcessorMetaSupplier.of(
                 (ProcessorSupplier) count -> nCopies(count, new PrintP()));
 
         DAG dag = new DAG();
-        Vertex generator = dag.newVertex("Generator", pruningPmsGen);
+        Vertex generator = dag.newVertex("Generator", pmsGen);
         Vertex printer = dag.newVertex("Printer", pmsPrint);
         dag.edge(between(generator, printer));
-        dag.markAsPrunable();
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(1));
@@ -323,11 +311,6 @@ public class PMSTest extends SimpleTestInClusterSupport {
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@NotNull List<Address> addresses) {
             return wrappingPms.get(addresses);
-        }
-
-        @Override
-        public boolean doesWorkWithoutInput() {
-            return wrappingPms.doesWorkWithoutInput();
         }
 
         @Override

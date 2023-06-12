@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.util.StringUtil;
@@ -85,7 +84,6 @@ public class DAG implements IdentifiedDataSerializable, Versioned, Iterable<Vert
     //Note: This lock prevents only some changes to the DAG. It cannot prevent changing user-supplied
     // objects like processor suppliers or various lambdas.
     private transient boolean locked;
-    private boolean dagMembersMarkedAsPrunable = false;
 
     private final Set<Edge> edges = new LinkedHashSet<>();
     private final Map<String, Vertex> nameToVertex = new HashMap<>();
@@ -306,32 +304,6 @@ public class DAG implements IdentifiedDataSerializable, Versioned, Iterable<Vert
     @Nonnull @Override
     public Iterator<Vertex> iterator() {
         return validate().iterator();
-    }
-
-    public void markAsPrunable() {
-        this.dagMembersMarkedAsPrunable = true;
-    }
-
-    public boolean areDagMembersMarkedAsPrunable() {
-        return dagMembersMarkedAsPrunable;
-    }
-
-    /**
-     * Returns true, if members in current DAG are allowed
-     * to be pruned without additional conditions.
-     */
-    public boolean membersArePrunable() {
-        if (!dagMembersMarkedAsPrunable) {
-            return false;
-        }
-
-        // Check each meta-supplier if it is possible to eliminate processor creation.
-        for (Vertex v : this) {
-            if (v.getMetaSupplier().doesWorkWithoutInput()) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**
@@ -598,10 +570,6 @@ public class DAG implements IdentifiedDataSerializable, Versioned, Iterable<Vert
         for (Edge edge : edges) {
             out.writeObject(edge);
         }
-
-//        if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) {
-        out.writeBoolean(dagMembersMarkedAsPrunable);
-//        }
     }
 
     @Override
@@ -623,10 +591,6 @@ public class DAG implements IdentifiedDataSerializable, Versioned, Iterable<Vert
         }
 
         verticesByIdentity.addAll(nameToVertex.values());
-
-//        if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) {
-        dagMembersMarkedAsPrunable = in.readBoolean();
-//        }
     }
 
     @Override

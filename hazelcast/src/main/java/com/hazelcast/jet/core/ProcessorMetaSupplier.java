@@ -155,26 +155,9 @@ public interface ProcessorMetaSupplier extends Serializable {
      * been called.
      *
      * @see #isReusable()
-     * @see #doesWorkWithoutInput()
      */
 
     Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
-
-    /**
-     * Returns false, if processor does not need to be created if the engine knows it will have no input.
-     * This happens after a distribute-to edge on members which are not the target. Or if the upstream’s
-     * ProcessorMetaSupplier returned `null` and there’s a non-distributed edge to this processor.
-     * <p>
-     * For example, a filter processor does nothing if there’s no input. A source processor by definition
-     * does not expect any input, and needs to do work in that case, so it must return true.
-     * An intermediate processor, e.g, a summing processor, might want to emit a zero in case there’s no input,
-     * so it also must return true, similarly to a file sink that wants to create an empty file in case of no input.
-     *
-     * @since 5.4
-     */
-    default boolean doesWorkWithoutInput() {
-        return true;
-    }
 
     /**
      * Returns {@code true} if the {@link #close(Throwable)} method of this
@@ -578,91 +561,6 @@ public interface ProcessorMetaSupplier extends Serializable {
         return new SpecificMemberPms(supplier, memberAddress, doesWorkWithoutInput);
     }
 
-    static ProcessorMetaSupplier memberPruningMetaSupplier(
-            @Nonnull ProcessorSupplier supplier
-    ) {
-        return new ProcessorMetaSupplier () {
-            @Override
-            public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-                return addr -> supplier;
-            }
-
-            @Override
-            public boolean doesWorkWithoutInput() {
-                return false;
-            }
-
-            @Override
-            public boolean initIsCooperative() {
-                return true;
-            }
-
-            @Override
-            public boolean closeIsCooperative() {
-                return true;
-            }
-        };
-    }
-
-    static ProcessorMetaSupplier memberPruningMetaSupplier(
-            @Nonnull ProcessorMetaSupplier processorMetaSupplier
-    ) {
-        return new ProcessorMetaSupplier() {
-            @Nullable
-            @Override
-            public Permission getRequiredPermission() {
-                return processorMetaSupplier.getRequiredPermission();
-            }
-
-            @Nonnull
-            @Override
-            public Map<String, String> getTags() {
-                return processorMetaSupplier.getTags();
-            }
-
-            @Override
-            public int preferredLocalParallelism() {
-                return processorMetaSupplier.preferredLocalParallelism();
-            }
-
-            @Override
-            public void init(@Nonnull Context context) throws Exception {
-                processorMetaSupplier.init(context);
-            }
-
-            @Override
-            public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-                return processorMetaSupplier.get(addresses);
-            }
-
-
-            @Override
-            public void close(@Nullable Throwable error) throws Exception {
-                processorMetaSupplier.close(error);
-            }
-
-            @Override
-            public boolean isReusable() {
-                return processorMetaSupplier.isReusable();
-            }
-
-            @Override
-            public boolean initIsCooperative() {
-                return processorMetaSupplier.initIsCooperative();
-            }
-
-            @Override
-            public boolean closeIsCooperative() {
-                return processorMetaSupplier.closeIsCooperative();
-            }
-
-            @Override
-            public boolean doesWorkWithoutInput() {
-                return false;
-            }
-        };
-    }
-
 
     /**
      * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
@@ -744,11 +642,6 @@ public interface ProcessorMetaSupplier extends Serializable {
         @Override
         public boolean closeIsCooperative() {
             return true;
-        }
-
-        @Override
-        public boolean doesWorkWithoutInput() {
-            return doesWorkWithoutInput;
         }
 
         @Override

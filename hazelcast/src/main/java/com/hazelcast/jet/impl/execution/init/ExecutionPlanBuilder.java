@@ -93,9 +93,8 @@ public final class ExecutionPlanBuilder {
         final EdgeConfig defaultEdgeConfig = nodeEngine.getConfig().getJetConfig().getDefaultEdgeConfig();
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
-
-        if (dag.membersArePrunable()) {
-            Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        if (requiredPartitions != null) {
             Map<MemberInfo, int[]> requiredMembers = new HashMap<>();
             for (Entry<MemberInfo, int[]> entry : partitionsByMember.entrySet()) {
                 for (int partitionId : entry.getValue()) {
