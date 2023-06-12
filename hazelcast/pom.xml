@@ -570,6 +570,15 @@
             <version>${jsr107.tck.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- Required as dependency of cache-tests -->
+        <!-- Tests like CacheExpiryTest won't work if it's not provided, -->
+        <!-- although javax.cache does not declare dependency -->
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <version>2.2</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-tests</artifactId>
