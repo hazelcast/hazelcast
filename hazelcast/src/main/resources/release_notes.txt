@@ -7,6 +7,7 @@ This document lists the enhancements and fixed issues for the Hazelcast Platform
 
 ## Fixes
 
+* Fixed an issue where some of the members in a Hazelcast cluster deployed on Kubernetes (as a statefulset) shut down with en exception in a delayed manner. [#24709]
 * Fixed an issue where Jet job snapshots could be prematurely deleted after a restart of a cluster, having lossless restart enabled. [#24576]
 * Fixed an issue where the SELECT COUNT(DISTINCT COLUMN) query for maps was producing incorrect results. [#24490]
 * Fixed various issues in [Health Monitor] including incorrect metric names. [#24634]
