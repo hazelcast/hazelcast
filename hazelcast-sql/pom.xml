@@ -639,6 +639,13 @@
             <version>${confluent.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- Required to use KafkaAvroDeserializer from kafka-avro-serializer@4.1.4 -->
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
+            <version>${jackson.mapper.asl.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry</artifactId>
