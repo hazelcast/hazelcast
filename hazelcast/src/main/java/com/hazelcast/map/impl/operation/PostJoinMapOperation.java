@@ -60,6 +60,10 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     public void addMapInterceptors(MapContainer mapContainer) {
         InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
         List<MapInterceptor> interceptorList = interceptorRegistry.getInterceptors();
+        // we do not send info for maps that do not have interceptors
+        if (interceptorList.isEmpty()) {
+            return;
+        }
         Map<String, MapInterceptor> interceptorMap = interceptorRegistry.getId2InterceptorMap();
         Map<MapInterceptor, String> revMap = createHashMap(interceptorMap.size());
         for (Map.Entry<String, MapInterceptor> entry : interceptorMap.entrySet()) {
