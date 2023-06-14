@@ -37,6 +37,10 @@ public class LicenseKey {
     }
 
     public static String maskLicense(String licenseKey) {
+        if (licenseKey == null) {
+            return null;
+        }
+
         if (licenseKey.length() > LICENSE_KEY_VISIBLE_CHAR_COUNT) {
             String[] licenceKeyParts = licenseKey.split("#");
             String originalKeyPart = licenceKeyParts[licenceKeyParts.length - 1];
