@@ -13,11 +13,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.row.EmptyRow;
-import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
