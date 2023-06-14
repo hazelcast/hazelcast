@@ -46,6 +46,7 @@ import org.jline.utils.InfoCmp;
 
 import java.io.IOError;
 import java.io.PrintWriter;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -267,12 +268,9 @@ public final class SqlConsole {
 
     private static String sqlStartingPrompt(HazelcastInstance hz) {
         HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hz);
-        ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
-        MCClusterMetadata clusterMetadata =
-                FutureUtil.getValue(getClusterMetadata(hazelcastClientImpl, clientClusterService.getMasterMember()));
+        String versionString = "Hazelcast " + getMasterVersion(hazelcastClientImpl);
         Cluster cluster = hazelcastClientImpl.getCluster();
         Set<Member> members = cluster.getMembers();
-        String versionString = "Hazelcast " + clusterMetadata.getMemberVersion();
         return new AttributedStringBuilder()
                 .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
                 .append("Connected to ")
@@ -284,6 +282,18 @@ public final class SqlConsole {
                 .append(" more)\n")
                 .append("Type 'help' for instructions")
                 .toAnsi();
+    }
+
+    private static String getMasterVersion(HazelcastClientInstanceImpl hazelcastClientImpl) {
+        try {
+            ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
+            MCClusterMetadata clusterMetadata =
+                    FutureUtil.getValue(getClusterMetadata(hazelcastClientImpl, clientClusterService.getMasterMember()));
+            return clusterMetadata.getMemberVersion();
+        } catch (AccessControlException e) {
+            // Cluster metadata are protected by ManagementPermission when security is enabled
+            return "<unknown version>";
+        }
     }
 
     private static String helpPrompt() {
