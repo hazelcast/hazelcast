@@ -93,7 +93,7 @@ import static java.util.Collections.emptyList;
 /**
  * Default implementation of a record store.
  */
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "rawtypes"})
 public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final ILogger logger;
     protected final RecordStoreLoader recordStoreLoader;
@@ -729,7 +729,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         // then try to load missing keys from map-store
         if (mapDataStore != EMPTY_MAP_DATA_STORE && !keys.isEmpty()) {
-            Map loadedEntries = loadEntries(keys, callerAddress);
+            Map<Data, Object> loadedEntries = loadEntries(keys, callerAddress);
             addToMapEntrySet(mapEntries, loadedEntries);
         }
 
@@ -812,8 +812,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         mapEntries.add(dataKey, dataValue);
     }
 
-    public void addToMapEntrySet(MapEntries mapEntries, Map<Object, Object> entries) {
-        for (Map.Entry<Object, Object> entry : entries.entrySet()) {
+    public void addToMapEntrySet(MapEntries mapEntries, Map<?, ?> entries) {
+        for (Map.Entry<?, ?> entry : entries.entrySet()) {
             addToMapEntrySet(entry.getKey(), entry.getValue(), mapEntries);
         }
     }
@@ -1059,6 +1059,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean merge(MapMergeTypes<Object, Object> mergingEntry,
                          SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
                          CallerProvenance provenance) {
@@ -1108,7 +1109,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     now, null, persist, true, false);
         }
 
-        return newValue != null;
+        return true;
     }
 
     @Override
