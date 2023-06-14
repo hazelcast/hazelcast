@@ -17,12 +17,10 @@
 package com.hazelcast.client.console;
 
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.management.MCClusterMetadata;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -46,7 +44,6 @@ import org.jline.utils.InfoCmp;
 
 import java.io.IOError;
 import java.io.PrintWriter;
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,7 +54,6 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.client.console.HazelcastCommandLine.getClusterMetadata;
 import static com.hazelcast.client.console.HazelcastCommandLine.getHazelcastClientInstanceImpl;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
@@ -268,7 +264,8 @@ public final class SqlConsole {
 
     private static String sqlStartingPrompt(HazelcastInstance hz) {
         HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hz);
-        String versionString = "Hazelcast " + getMasterVersion(hazelcastClientImpl);
+        ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
+        String versionString = "Hazelcast " + clientClusterService.getMasterMember().getVersion().toString();
         Cluster cluster = hazelcastClientImpl.getCluster();
         Set<Member> members = cluster.getMembers();
         return new AttributedStringBuilder()
@@ -282,18 +279,6 @@ public final class SqlConsole {
                 .append(" more)\n")
                 .append("Type 'help' for instructions")
                 .toAnsi();
-    }
-
-    private static String getMasterVersion(HazelcastClientInstanceImpl hazelcastClientImpl) {
-        try {
-            ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
-            MCClusterMetadata clusterMetadata =
-                    FutureUtil.getValue(getClusterMetadata(hazelcastClientImpl, clientClusterService.getMasterMember()));
-            return clusterMetadata.getMemberVersion();
-        } catch (AccessControlException e) {
-            // Cluster metadata are protected by ManagementPermission when security is enabled
-            return "<unknown version>";
-        }
     }
 
     private static String helpPrompt() {
