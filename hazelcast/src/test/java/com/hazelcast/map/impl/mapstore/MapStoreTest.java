@@ -390,8 +390,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
         final ConcurrentMap<String, Long> store = new ConcurrentHashMap<>();
         final MapStore<String, Long> myMapStore = new SimpleMapStore<>(store);
         Config config = getConfig();
-        config.getMapConfig("myMap")
-                .setMapStoreConfig(new MapStoreConfig()
+        MapConfig mapConfig = config.getMapConfig("myMap");
+        mapConfig.setMapStoreConfig(new MapStoreConfig()
                         .setImplementation(myMapStore));
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
