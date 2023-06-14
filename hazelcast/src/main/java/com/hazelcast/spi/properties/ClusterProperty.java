@@ -1632,18 +1632,6 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.enterprise.license.key");
 
     /**
-     * Hazelcast license key is masked by default for everything.
-     * You can disable masking via this property. Note that this
-     * property doesn't affect configuration generation masking.
-     *
-     * @see com.hazelcast.internal.config.LicenseKey#maskLicense(String)
-     * @see com.hazelcast.config.ConfigXmlGenerator#ConfigXmlGenerator(boolean, boolean)
-     * @since 5.4
-     */
-    public static final HazelcastProperty ENTERPRISE_LICENSE_KEY_MASK
-            = new HazelcastProperty("hazelcast.enterprise.license.key.logging.mask", true);
-
-    /**
      * Hazelcast serialization version. This is single byte value between 1 and
      * Max supported serialization version.
      *
