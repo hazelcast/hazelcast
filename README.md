@@ -305,12 +305,12 @@ marked as good first issue for some guidance.
 
 ### Building From Source
 
-Building Hazelcast requires at minimum JDK 1.8. Pull the latest source from the
+Building Hazelcast requires at minimum JDK 11. Pull the latest source from the
 repository and use Maven install (or package) to build:
 
 ```bash
 $ git pull origin master
-$ mvn clean package -Dtests
+$ mvn clean package -DskipTests
 ```
 
 Additionally, there is a `quick` build activated by setting the `-Dquick` system
@@ -323,13 +323,17 @@ Take into account that the default build executes thousands of tests which may
 take a considerable amount of time. Hazelcast has 3 testing profiles:
 
 * Default: Type `mvn test` to run quick/integration tests (those can be run
-  in parallel without using network).
-* Slow Tests: Type `mvn test -P slow-test` to run tests that are either slow
+  in parallel without using network by using `-P parallelTest` profile).
+* Slow Tests: Type `mvn test -P nightly-build` to run tests that are either slow
   or cannot be run in parallel.
 * All Tests: Type `mvn test -P all-tests` to run all tests serially using
   network.
 
 Some tests require Docker to run. Set `-Dhazelcast.disable.docker.tests` system property to ignore them.
+
+When developing a PR it is sufficient to run your new tests and some 
+related subset of tests locally. Our PR builder will take care of running
+the full test suite.
 
 ## Trigger Phrases in the Pull Request Conversation
 
