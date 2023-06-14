@@ -134,16 +134,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     /**
      * A private property to let users control the reconnection behavior of the client.
      * <p>
-     * When enabled, the client will skip trying to connect the member list during
-     * reconnection attempts.
+     * When enabled, the client will skip trying to connect to members in the last known
+     * member list during reconnection attempts.
      * <p>
      * This property might be handy for users who are using the client with unisocket
-     * mode and exposing their multi-member cluster via a single load balancer or node port.
-     * In that scenario, the client would normally try to connect to the members from
-     * the member list first, but that would fail for sure, as the cluster members are not
-     * accessible from the client directly. In such use cases, setting this to
-     * {@code true} might make the reconnections shorter, as the client would directly
-     * try to connect to the configured load balancer/node port address from the configuration.
+     * mode and exposing their multi-member cluster via a single load balancer or node port
+     * in Kubernetes. In that scenario, the client would normally try to reconnect to the
+     * members in the last known member list first after disconnection, but that would fail
+     * for sure, as the cluster members are not accessible from the client directly. In such
+     * use cases, setting this to {@code true} might make the reconnections shorter, as the
+     * client would directly try to connect to the configured load balancer/node port address
+     * from the configuration.
      */
     public static final HazelcastProperty SKIP_MEMBER_LIST_DURING_RECONNECTION =
             new HazelcastProperty("hazelcast.client.internal.skip.member.list.during.reconnection", false);
