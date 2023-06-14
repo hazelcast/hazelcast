@@ -128,8 +128,7 @@ for `ExecutionPlanBuilder` to choose code path with member pruning during execut
 
 ### Processor pruning
 
-For processor pruning we would like to separate two kinds of pruning: **intra-member** processor pruning, which
-is applicable only for processor creation elimination inside one member, and **inter-member** processor pruning.
+We would like to separate processor pruning into two categories: **intra-member** and **inter-member**.
 
 #### Use cases for processor pruning
 
