@@ -48,6 +48,7 @@ import org.apache.calcite.tools.RuleSets;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -158,8 +159,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 null,
                 null,
                 indexes,
-                false
-        );
+                false,
+                Collections.emptyList());
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
 

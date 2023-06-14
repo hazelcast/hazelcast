@@ -34,6 +34,7 @@ public class PartitionedMapTable extends AbstractMapTable {
 
     private final List<MapTableIndex> indexes;
     private final boolean hd;
+    private final List<String> partitioningAttributes;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public PartitionedMapTable(
@@ -47,7 +48,8 @@ public class PartitionedMapTable extends AbstractMapTable {
             Object keyJetMetadata,
             Object valueJetMetadata,
             List<MapTableIndex> indexes,
-            boolean hd
+            boolean hd,
+            List<String> partitioningAttributes
     ) {
         super(
             schemaName,
@@ -64,6 +66,7 @@ public class PartitionedMapTable extends AbstractMapTable {
 
         this.indexes = indexes;
         this.hd = hd;
+        this.partitioningAttributes = partitioningAttributes;
     }
 
     @Override
@@ -119,6 +122,10 @@ public class PartitionedMapTable extends AbstractMapTable {
 
     public QueryDataType[] valueTypes() {
         return valueFields().map(TableField::getType).toArray(QueryDataType[]::new);
+    }
+
+    public List<String> partitioningAttributes() {
+        return partitioningAttributes;
     }
 
     static class PartitionedMapPlanObjectKey implements PlanObjectKey {
