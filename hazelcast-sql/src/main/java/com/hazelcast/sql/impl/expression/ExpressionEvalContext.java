@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.ProcessorMetaSupplier.Context;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.Util;
@@ -40,7 +41,7 @@ public interface ExpressionEvalContext {
 
     static ExpressionEvalContext from(Context ctx) {
         List<Object> arguments = ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME);
-        if (ctx instanceof TestProcessorSupplierContext) {
+        if (ctx instanceof TestProcessorMetaSupplierContext) {
             if (arguments == null) {
                 arguments = new ArrayList<>();
             }

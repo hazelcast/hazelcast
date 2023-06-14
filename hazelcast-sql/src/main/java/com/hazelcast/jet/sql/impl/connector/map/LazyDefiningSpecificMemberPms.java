@@ -17,8 +17,10 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Function;
@@ -28,6 +30,9 @@ public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.Specifi
     // TODO: transient?
     private Integer partitionArgIndex;
     private SupplierEx<?> partitionKeyExprSupplier;
+
+    int partitionId;
+    Map<Address, int[]> partitionAssignment;
 
     public LazyDefiningSpecificMemberPms() {
         super();
@@ -55,7 +60,6 @@ public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.Specifi
         }
 
         ExpressionEvalContext eec = ExpressionEvalContext.from(context);
-        int partitionId;
         Expression<?> partitionKeyExpr = null;
         if (partitionKeyExprSupplier != null) {
             Object obj = partitionKeyExprSupplier.get();
@@ -68,51 +72,53 @@ public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.Specifi
         // test path
         if (context instanceof TestProcessorMetaSupplierContext) {
             TestProcessorMetaSupplierContext ctx = (TestProcessorMetaSupplierContext) context;
-            partitionId = ctx.getNodeEngine().getPartitionService().getPartitionId(
+            this.partitionId = ctx.getNodeEngine().getPartitionService().getPartitionId(
                     partitionArgIndex != null
                             ? eec.getArgument(partitionArgIndex)
                             : Objects.requireNonNull(partitionKeyExpr).eval(null, eec));
         } else {
             assert context instanceof Contexts.MetaSupplierCtx;
             Contexts.MetaSupplierCtx ctx = (Contexts.MetaSupplierCtx) context;
-            partitionId = ctx.nodeEngine().getPartitionService()
+            this.partitionId = ctx.nodeEngine().getPartitionService()
                     .getPartitionId(
                             partitionArgIndex != null
                                     ? eec.getArgument(partitionArgIndex)
                                     : Objects.requireNonNull(partitionKeyExpr).eval(null, eec));
         }
-
-        for (Entry<Address, int[]> entry : context.partitionAssignment().entrySet()) {
-            for (int pId : entry.getValue()) {
-                if (pId == partitionId) {
-                    this.memberAddress = entry.getKey();
-                    break;
-                }
-            }
-        }
-        if (this.memberAddress == null) {
-            throw new RuntimeException();
-        }
+        partitionAssignment = context.partitionAssignment();
     }
 
 
     @Override
     public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-        if (!addresses.contains(memberAddress)) {
+        Address address = null;
+        for (Entry<Address, int[]> entry : partitionAssignment.entrySet()) {
+            for (int pId : entry.getValue()) {
+                if (pId == partitionId) {
+                    address = entry.getKey();
+                    break;
+                }
+            }
+        }
+        if (address == null) {
             throw new JetException("Cluster does not contain the required member: " + memberAddress);
         }
-        return addr -> addr.equals(memberAddress) ? supplier : null;
+
+        if (!addresses.contains(address)) {
+            throw new JetException("Cluster does not contain the required member: " + memberAddress);
+        }
+        return addr -> supplier;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
+        out.writeObject(supplier);
         out.writeInt(partitionArgIndex);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
+        supplier = in.readObject();
         partitionArgIndex = in.readInt();
     }
 

@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
-import static com.hazelcast.jet.impl.util.Util.getHazelcastInstanceImpl;
 import static java.util.stream.Collectors.toMap;
 
 /**
