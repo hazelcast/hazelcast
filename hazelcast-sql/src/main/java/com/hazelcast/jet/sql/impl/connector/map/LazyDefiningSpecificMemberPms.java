@@ -1,3 +1,19 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
@@ -24,12 +40,12 @@ import java.util.function.Function;
 
 public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.SpecificMemberPms {
 
+    Map<Address, int[]> partitionAssignment;
+    int partitionId;
+
     // TODO: transient?
     private Integer partitionArgIndex;
     private SupplierEx<?> partitionKeyExprSupplier;
-
-    int partitionId;
-    Map<Address, int[]> partitionAssignment;
 
     public LazyDefiningSpecificMemberPms() {
         super();
@@ -85,7 +101,6 @@ public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.Specifi
         partitionAssignment = context.partitionAssignment();
     }
 
-
     @Override
     public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
         Address address = null;
@@ -97,11 +112,7 @@ public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.Specifi
                 }
             }
         }
-        if (address == null) {
-            throw new JetException("Cluster does not contain the required member: " + memberAddress);
-        }
-
-        if (!addresses.contains(address)) {
+        if (address == null && !addresses.contains(address)) {
             throw new JetException("Cluster does not contain the required member: " + memberAddress);
         }
         return addr -> supplier;
