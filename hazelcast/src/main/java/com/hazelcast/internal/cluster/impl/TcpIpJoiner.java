@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -457,6 +458,15 @@ public class TcpIpJoiner extends AbstractJoiner {
     public void onMemberAdded(Member member) {
         if (!member.localMember()) {
             knownMemberAddresses.put(member.getAddress(), Long.MAX_VALUE);
+
+            // If we previously blacklisted this member's address (i.e. the address/port was
+            // previously used in an incompatible node), we should remove the blacklist now
+            // that it has joined our node - otherwise it's ignored in split-brain!
+            Boolean previousBlacklistStatus = blacklistedAddresses.remove(member.getAddress());
+            if (previousBlacklistStatus != null) {
+                logger.info(member.getAddress() + " is removed from the " + (previousBlacklistStatus ? "permanent " : " ")
+                        + "blacklist due to successfully joining the cluster ");
+            }
         }
     }
 
@@ -479,6 +489,8 @@ public class TcpIpJoiner extends AbstractJoiner {
             logger.severe(e);
             return;
         }
+
+        // Remove known addresses from possibleAddresses
         LocalAddressRegistry addressRegistry = node.getLocalAddressRegistry();
         possibleAddresses.removeAll(addressRegistry.getLocalAddresses());
         node.getClusterService().getMembers().forEach(
@@ -495,9 +507,16 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
         );
 
+        // Remove permanently blacklisted addresses from possibleAddresses
+        blacklistedAddresses.entrySet().stream()
+                            .filter(Map.Entry::getValue)
+                            .map(Map.Entry::getKey)
+                            .forEach(possibleAddresses::remove);
+
         if (possibleAddresses.isEmpty()) {
             return;
         }
+
         SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();
         for (Address address : possibleAddresses) {
             SplitBrainMergeCheckResult result = sendSplitBrainJoinMessageAndCheckResponse(address, request);
