@@ -35,7 +35,8 @@ public abstract class AbstractMapStoreTest extends HazelcastTestSupport {
         return newConfig(mapName, storeImpl, writeDelaySeconds, MapStoreConfig.InitialLoadMode.LAZY);
     }
 
-    public Config newConfig(String mapName, Object storeImpl, int writeDelaySeconds, MapStoreConfig.InitialLoadMode loadMode) {
+    public Config newConfig(String mapName, Object storeImpl, int writeDelaySeconds,
+                            MapStoreConfig.InitialLoadMode loadMode) {
         Config config = getConfig();
         config.getMetricsConfig().setEnabled(false);
         MapConfig mapConfig = config.getMapConfig(mapName);
@@ -50,6 +51,6 @@ public abstract class AbstractMapStoreTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        return smallInstanceConfig();
+        return smallInstanceConfigWithoutJetAndMetrics();
     }
 }
