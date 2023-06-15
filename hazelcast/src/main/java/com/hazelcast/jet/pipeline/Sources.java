@@ -58,6 +58,7 @@ import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
@@ -1494,5 +1495,31 @@ public final class Sources {
     ) {
         return batchFromProcessor("jdbcSource",
                 SourceProcessors.readJdbcP(connectionURL, query, createOutputFn));
+    }
+
+    /**
+     * Same as @{link {@link Sources#jdbc(String, String, FunctionEx)}}
+     * <p>
+     * This overload allows passing some properties for JDBC
+     * <p>
+     * Example: <pre>{@code
+     *        Properties properties = new Properties();
+     *        properties.put(JdbcPropertyKeys.FETCH_SIZE, "5");
+     *        properties.put(JdbcPropertyKeys.AUTO_COMMIT, "false");
+     *        p.readFrom(Sources.jdbc(
+     *            DB_CONNECTION_URL,
+     *            "select ID, NAME from PERSON",
+     *            properties
+     *            resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
+     *    }</pre>
+     */
+    public static <T> BatchSource<T> jdbc(
+            @Nonnull String connectionURL,
+            @Nonnull String query,
+            @Nonnull Properties properties,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
+    ) {
+        return batchFromProcessor("jdbcSource",
+                SourceProcessors.readJdbcP(connectionURL, query, properties, createOutputFn));
     }
 }

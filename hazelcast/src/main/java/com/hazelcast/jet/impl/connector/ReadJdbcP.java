@@ -26,6 +26,9 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
+import com.hazelcast.jet.pipeline.JdbcPropertyKeys;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
@@ -37,7 +40,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
+import static com.hazelcast.internal.util.StringUtil.isBoolean;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -48,13 +53,15 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
  */
 public final class ReadJdbcP<T> extends AbstractProcessor {
 
+    private static final ILogger LOGGER = Logger.getLogger(ReadJdbcP.class);
+
     private final SupplierEx<? extends Connection> newConnectionFn;
     private final ToResultSetFunction resultSetFn;
     private final FunctionEx<? super ResultSet, ? extends T> mapOutputFn;
 
     private Connection connection;
     private ResultSet resultSet;
-    private Traverser traverser;
+    private Traverser<? extends T> traverser;
     private int parallelism;
     private int index;
 
@@ -106,6 +113,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     public static <T> ProcessorMetaSupplier supplier(
             @Nonnull String connectionURL,
             @Nonnull String query,
+            @Nonnull Properties properties,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
@@ -114,7 +122,9 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                 SecuredFunctions.readJdbcProcessorFn(connectionURL,
                         context -> DriverManager.getConnection(connectionURL),
                         (connection, parallelism, index) -> {
+                            setAutoCommit(connection, properties);
                             PreparedStatement statement = connection.prepareStatement(query);
+                            setFetchSize(statement, properties);
                             try {
                                 return statement.executeQuery();
                             } catch (SQLException e) {
@@ -155,8 +165,8 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     public boolean complete() {
         if (traverser == null) {
             resultSet = uncheckCall(() -> resultSetFn.createResultSet(connection, parallelism, index));
-            traverser = ((Traverser<ResultSet>) () -> uncheckCall(() -> resultSet.next() ? resultSet : null))
-                    .map(mapOutputFn);
+            Traverser<ResultSet> t = () -> uncheckCall(() -> resultSet.next() ? resultSet : null);
+            traverser = t.map(mapOutputFn);
         }
         return emitFromTraverser(traverser);
     }
@@ -190,5 +200,37 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             return e;
         }
         return null;
+    }
+
+    private static void setAutoCommit(Connection connection, Properties properties) {
+        try {
+            String key = JdbcPropertyKeys.AUTO_COMMIT;
+            if (properties.containsKey(key)) {
+                String value = properties.getProperty(key);
+
+                if (isBoolean(value)) {
+                    boolean autoCommit = Boolean.parseBoolean(value);
+                    connection.setAutoCommit(autoCommit);
+                }
+            }
+        } catch (SQLException exception) {
+            LOGGER.severe("Error setting setFetchSize to PreparedStatement", exception);
+        } catch (NumberFormatException exception) {
+            LOGGER.severe("Invalid integer value set for fetchSize", exception);
+        }
+    }
+
+    private static void setFetchSize(PreparedStatement statement, Properties properties) {
+        try {
+            String key = JdbcPropertyKeys.FETCH_SIZE;
+            if (properties.containsKey(key)) {
+                int fetchSize = Integer.parseInt(properties.getProperty(key));
+                statement.setFetchSize(fetchSize);
+            }
+        } catch (SQLException exception) {
+            LOGGER.severe("Error setting setFetchSize to PreparedStatement", exception);
+        } catch (NumberFormatException exception) {
+            LOGGER.severe("Invalid integer value set for fetchSize", exception);
+        }
     }
 }
