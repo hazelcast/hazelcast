@@ -50,8 +50,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 public class MetricsCompressorTest {
 
     private static final String LONG_NAME = Stream.generate(() -> "a")
-                                                  .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
-                                                  .collect(Collectors.joining());
+                                                 .limit(MetricsDictionary.MAX_WORD_LENGTH + 1)
+                                                 .collect(Collectors.joining());
 
     private final DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
     private final SpiedMetricDescriptor spiedSupplier = new SpiedMetricDescriptor(supplier);
@@ -270,7 +270,7 @@ public class MetricsCompressorTest {
         assertEquals(2, spiedSupplier.getInvocationCount());
     }
 
-    @Test // Passes
+    @Test
     public void testModifyingExtractedDoesntImpactExtraction() {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
@@ -317,7 +317,7 @@ public class MetricsCompressorTest {
         verify(metricConsumerSpy).consumeLong(sameMetric, 43L);
     }
 
-    @Test // Passes
+    @Test
     public void testLongTagValue() {
         DefaultMetricDescriptorSupplier supplier = new DefaultMetricDescriptorSupplier();
         MetricsCompressor compressor = new MetricsCompressor();
@@ -395,11 +395,11 @@ public class MetricsCompressorTest {
         assumeTrue(isNewUnitIntroduced);
 
         MetricDescriptor originalMetric = supplier.get()
-                                                  .withPrefix("prefix")
-                                                  .withMetric("metricName")
-                                                  .withDiscriminator("ds", "dsName1")
-                                                  .withUnit(aNewUnit)
-                                                  .withTag("tag0", "tag0Value");
+                .withPrefix("prefix")
+                .withMetric("metricName")
+                .withDiscriminator("ds", "dsName1")
+                .withUnit(aNewUnit)
+                .withTag("tag0", "tag0Value");
 
         compressor.addLong(originalMetric, 42L);
         byte[] blob = compressor.getBlobAndReset();
@@ -408,12 +408,12 @@ public class MetricsCompressorTest {
         MetricsCompressor.extractMetrics(blob, metricConsumerMock, spiedSupplier);
 
         MetricDescriptor expectedMetric = supplier.get()
-                                                  .withPrefix("prefix")
-                                                  .withMetric("metricName")
-                                                  .withDiscriminator("ds", "dsName1")
-                                                  .withUnit(null)
-                                                  .withTag("tag0", "tag0Value")
-                                                  .withTag("metric-unit", aNewUnit.name());
+                .withPrefix("prefix")
+                .withMetric("metricName")
+                .withDiscriminator("ds", "dsName1")
+                .withUnit(null)
+                .withTag("tag0", "tag0Value")
+                .withTag("metric-unit", aNewUnit.name());
 
         verify(metricConsumerMock).consumeLong(expectedMetric, 42L);
         verifyNoMoreInteractions(metricConsumerMock);
