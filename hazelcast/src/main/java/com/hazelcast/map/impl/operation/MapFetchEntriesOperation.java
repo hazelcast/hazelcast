@@ -19,10 +19,15 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
+import com.hazelcast.map.impl.operation.steps.IMapOpStep;
+import com.hazelcast.map.impl.operation.steps.UtilSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 
@@ -70,6 +75,23 @@ public class MapFetchEntriesOperation extends MapOperation implements ReadonlyOp
             pointers[i] = new IterationPointer(in.readInt(), in.readInt());
         }
     }
+
+    @Override
+    public Step getStartingStep() {
+        return new IMapOpStep() {
+            @Override
+            public void runStep(State state) {
+                runInternalDirect();
+            }
+
+            @Nullable
+            @Override
+            public Step nextStep(State state) {
+                return UtilSteps.FINAL_STEP;
+            }
+        };
+    }
+
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
