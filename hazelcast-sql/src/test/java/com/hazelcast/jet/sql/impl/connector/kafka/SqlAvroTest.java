@@ -397,7 +397,7 @@ public class SqlAvroTest extends SqlTestSupport {
                 + "OPTIONS ("
                 + "'keyFormat'='java'"
                 + ", 'keyJavaClass'='java.lang.Integer'"
-                + ", 'valueFormat'='avro'"
+                + ", 'valueFormat'='" + AVRO_FORMAT + "'"
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
                 + ", 'auto.offset.reset'='earliest')"

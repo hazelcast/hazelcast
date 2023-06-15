@@ -37,32 +37,67 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 final class FileUtil {
 
-    private static final Record AVRO_RECORD =
-            new GenericRecordBuilder(
-                    SchemaBuilder.record("name")
-                                 .fields()
-                                 .name("string").type().stringType().noDefault()
-                                 .name("boolean").type().booleanType().noDefault()
-                                 .name("byte").type().intType().noDefault()
-                                 .name("short").type().intType().noDefault()
-                                 .name("int").type().intType().noDefault()
-                                 .name("long").type().longType().noDefault()
-                                 .name("float").type().floatType().noDefault()
-                                 .name("double").type().doubleType().noDefault()
-                                 .name("decimal").type().stringType().noDefault()
-                                 .name("time").type().stringType().noDefault()
-                                 .name("date").type().stringType().noDefault()
-                                 .name("timestamp").type().stringType().noDefault()
-                                 .name("timestampTz").type().stringType().noDefault()
-                                 .name("null").type().nullable().record("nul").fields().endRecord().noDefault()
-                                 .name("object").type().record("object").fields().endRecord().noDefault()
-                                 .endRecord()
+    static final Record AVRO_RECORD =
+            new GenericRecordBuilder(SchemaBuilder.record("name")
+                     .fields()
+                     .name("string").type().stringType().noDefault()
+                     .name("boolean").type().booleanType().noDefault()
+                     .name("byte").type().intType().noDefault()
+                     .name("short").type().intType().noDefault()
+                     .name("int").type().intType().noDefault()
+                     .name("long").type().longType().noDefault()
+                     .name("float").type().floatType().noDefault()
+                     .name("double").type().doubleType().noDefault()
+                     .name("decimal").type().stringType().noDefault()
+                     .name("time").type().stringType().noDefault()
+                     .name("date").type().stringType().noDefault()
+                     .name("timestamp").type().stringType().noDefault()
+                     .name("timestampTz").type().stringType().noDefault()
+                     .name("null").type().nullable().record("nul").fields().endRecord().noDefault()
+                     .name("object").type().record("object").fields().endRecord().noDefault()
+                     .endRecord()
             ).set("string", "string")
              .set("boolean", true)
-             .set("byte", (byte) 127)
-             .set("short", (short) 32767)
-             .set("int", 2147483647)
-             .set("long", 9223372036854775807L)
+             .set("byte", Byte.MAX_VALUE)
+             .set("short", Short.MAX_VALUE)
+             .set("int", Integer.MAX_VALUE)
+             .set("long", Long.MAX_VALUE)
+             .set("float", 1234567890.1F)
+             .set("double", 123451234567890.1D)
+             .set("decimal", "9223372036854775.123")
+             .set("time", "12:23:34")
+             .set("date", "2020-04-15")
+             .set("timestamp", "2020-04-15T12:23:34.001")
+             .set("timestampTz", "2020-04-15T12:23:34.200Z")
+             .set("null", null)
+             .set("object", new GenericRecordBuilder(SchemaBuilder.record("object").fields().endRecord()).build())
+             .build();
+
+    static final Record AVRO_NULLABLE_RECORD =
+            new GenericRecordBuilder(SchemaBuilder.record("name")
+                    .fields()
+                    .name("string").type().nullable().stringType().noDefault()
+                    .name("boolean").type().nullable().booleanType().noDefault()
+                    .name("byte").type().nullable().intType().noDefault()
+                    .name("short").type().nullable().intType().noDefault()
+                    .name("int").type().nullable().intType().noDefault()
+                    .name("long").type().nullable().longType().noDefault()
+                    .name("float").type().nullable().floatType().noDefault()
+                    .name("double").type().nullable().doubleType().noDefault()
+                    .name("decimal").type().nullable().stringType().noDefault()
+                    .name("time").type().nullable().stringType().noDefault()
+                    .name("date").type().nullable().stringType().noDefault()
+                    .name("timestamp").type().nullable().stringType().noDefault()
+                    .name("timestampTz").type().nullable().stringType().noDefault()
+                    .name("null").type().nullable().record("nul").fields().endRecord().noDefault()
+                    .name("object").type().nullable().record("object").fields().endRecord().noDefault()
+                    .endRecord()
+            ).set("string", "string")
+             .set("boolean", true)
+             .set("byte", (int) Byte.MAX_VALUE)
+             .set("short", (int) Short.MAX_VALUE)
+             .set("int", Integer.MAX_VALUE)
+             .set("long", Long.MAX_VALUE)
              .set("float", 1234567890.1F)
              .set("double", 123451234567890.1D)
              .set("decimal", "9223372036854775.123")
@@ -110,19 +145,23 @@ final class FileUtil {
     private FileUtil() {
     }
 
-    static File createAvroFile() {
+    /**
+     * Creates a temporary directory with prefix 'sql-avro-test', writes the
+     * specified Avro record to 'file.avro' in this directory and returns the file.
+     */
+    static File createAvroFile(Record avroRecord) {
         try {
-            File file = Files.createTempDirectory("sql-avro-test").toFile();
-            file.deleteOnExit();
+            File directory = Files.createTempDirectory("sql-avro-test").toFile();
+            directory.deleteOnExit();
+            File file = new File(directory, "file.avro");
 
             try (DataFileWriter<GenericRecord> writer = new DataFileWriter<>(new GenericDatumWriter<>())) {
-                writer.create(AVRO_RECORD.getSchema(), new File(file.getAbsolutePath(), "file.avro"));
-                writer.append(AVRO_RECORD);
+                writer.create(avroRecord.getSchema(), file);
+                writer.append(avroRecord);
             }
-
             return file;
-        } catch (IOException ioe) {
-            throw sneakyThrow(ioe);
+        } catch (IOException e) {
+            throw sneakyThrow(e);
         }
     }
 

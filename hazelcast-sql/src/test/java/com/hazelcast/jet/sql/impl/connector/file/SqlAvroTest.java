@@ -24,6 +24,7 @@ import org.apache.avro.generic.GenericRecordBuilder;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,14 +33,17 @@ import java.time.OffsetDateTime;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_GLOB;
+import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_IGNORE_FILE_NOT_FOUND;
+import static com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector.OPTION_PATH;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlAvroTest extends SqlTestSupport {
-
-    private static final String RESOURCES_PATH = FileUtil.createAvroFile().getAbsolutePath();
+    private static final File AVRO_FILE = FileUtil.createAvroFile(FileUtil.AVRO_RECORD);
+    private static final File AVRO_NULLABLE_FILE = FileUtil.createAvroFile(FileUtil.AVRO_NULLABLE_RECORD);
 
     private static SqlService sqlService;
 
@@ -54,12 +58,8 @@ public class SqlAvroTest extends SqlTestSupport {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " ("
                 + "nonExistingField VARCHAR"
-                + ") TYPE " + FileSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
-                + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.avro" + '\''
-                + ")"
+                + ") TYPE " + FileSqlConnector.TYPE_NAME
+                + createMappingOptions(AVRO_FILE)
         );
 
         assertRowsAnyOrder(
@@ -74,12 +74,8 @@ public class SqlAvroTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + " ("
                 + "id TINYINT EXTERNAL NAME byte"
                 + ", name VARCHAR EXTERNAL NAME string"
-                + ") TYPE " + FileSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
-                + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.avro" + '\''
-                + ")"
+                + ") TYPE " + FileSqlConnector.TYPE_NAME
+                + createMappingOptions(AVRO_FILE)
         );
 
         assertRowsAnyOrder(
@@ -106,12 +102,8 @@ public class SqlAvroTest extends SqlTestSupport {
                 + ", \"timestamp\" TIMESTAMP"
                 + ", timestampTz TIMESTAMP WITH TIME ZONE"
                 + ", object OBJECT"
-                + ") TYPE " + FileSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
-                + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.avro" + '\''
-                + ")"
+                + ") TYPE " + FileSqlConnector.TYPE_NAME
+                + createMappingOptions(AVRO_FILE)
         );
 
         assertRowsAnyOrder(
@@ -137,14 +129,19 @@ public class SqlAvroTest extends SqlTestSupport {
 
     @Test
     public void test_schemaDiscovery() {
+        test_schemaDiscovery(AVRO_FILE);
+    }
+
+    @Test
+    public void test_schemaDiscovery_nullableFields() {
+        test_schemaDiscovery(AVRO_NULLABLE_FILE);
+    }
+
+    private void test_schemaDiscovery(File avroFile) {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
-                + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.avro" + '\''
-                + ")"
+                + "TYPE " + FileSqlConnector.TYPE_NAME
+                + createMappingOptions(avroFile)
         );
 
         assertRowsAnyOrder(
@@ -163,8 +160,8 @@ public class SqlAvroTest extends SqlTestSupport {
                         + ", \"timestamp\""
                         + ", \"timestampTz\""
                         + ", \"null\""
-                        + ", object"
-                        + " FROM " + name,
+                        + ", object "
+                        + "FROM " + name,
                 singletonList(new Row(
                         "string",
                         true,
@@ -187,6 +184,15 @@ public class SqlAvroTest extends SqlTestSupport {
 
     @Test
     public void test_tableFunction() {
+        test_tableFunction(AVRO_FILE);
+    }
+
+    @Test
+    public void test_tableFunction_nullableFields() {
+        test_tableFunction(AVRO_NULLABLE_FILE);
+    }
+
+    private void test_tableFunction(File avroFile) {
         assertRowsAnyOrder(
                 "SELECT "
                         + "string"
@@ -203,9 +209,9 @@ public class SqlAvroTest extends SqlTestSupport {
                         + ", \"timestamp\""
                         + ", \"timestampTz\""
                         + ", \"null\""
-                        + ", object"
-                        + " FROM TABLE ("
-                        + "AVRO_FILE ('" + RESOURCES_PATH + "', 'file.avro')"
+                        + ", object "
+                        + "FROM TABLE("
+                        + "  AVRO_FILE('" + avroFile.getParent() + "')"
                         + ")",
                 singletonList(new Row(
                         "string",
@@ -231,12 +237,8 @@ public class SqlAvroTest extends SqlTestSupport {
     public void when_conversionFails_then_queryFails() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " (string INT) "
-                + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
-                + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "file.avro" + '\''
-                + ")"
+                + "TYPE " + FileSqlConnector.TYPE_NAME
+                + createMappingOptions(AVRO_FILE)
         );
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + name).iterator().hasNext())
@@ -250,8 +252,8 @@ public class SqlAvroTest extends SqlTestSupport {
                 + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
                 + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + FileSqlConnector.OPTION_PATH + "'='/non-existent-directory'"
-                + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "foo.avro" + '\''
+                + ", '" + OPTION_PATH + "'='/non-existent-directory'"
+                + ", '" + OPTION_GLOB + "'='" + "foo.avro" + '\''
                 + ")"
         );
     }
@@ -260,12 +262,12 @@ public class SqlAvroTest extends SqlTestSupport {
     public void when_fileDoesNotExist_then_fails() {
         String name = randomName();
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING " + name
-                        + " TYPE " + FileSqlConnector.TYPE_NAME + ' '
+                sqlService.execute("CREATE MAPPING " + name + ' '
+                        + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
                         + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                        + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
-                        + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "foo.avro" + '\''
+                        + ", '" + OPTION_PATH + "'='" + AVRO_FILE.getParent() + '\''
+                        + ", '" + OPTION_GLOB + "'='" + "foo.avro" + '\''
                         + ")"
                 )
         ).hasMessageContaining("matches no files");
@@ -275,12 +277,12 @@ public class SqlAvroTest extends SqlTestSupport {
     public void when_fileDoesNotExistAndIgnoreFileNotFound_then_returnNoResults() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " (field INT) "
-                + " TYPE " + FileSqlConnector.TYPE_NAME + ' '
+                + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
                 + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + FileSqlConnector.OPTION_PATH + "'='" + RESOURCES_PATH + '\''
-                + ", '" + FileSqlConnector.OPTION_GLOB + "'='" + "foo.avro" + '\''
-                + ", '" + FileSqlConnector.OPTION_IGNORE_FILE_NOT_FOUND + "'='" + "true" + '\''
+                + ", '" + OPTION_PATH + "'='" + AVRO_FILE.getParent() + '\''
+                + ", '" + OPTION_GLOB + "'='" + "foo.avro" + '\''
+                + ", '" + OPTION_IGNORE_FILE_NOT_FOUND + "'='" + "true" + '\''
                 + ")"
         );
 
@@ -293,10 +295,9 @@ public class SqlAvroTest extends SqlTestSupport {
     public void when_directoryDoesNotExist_then_tableFunctionThrowsException() {
         String path = hadoopNonExistingPath();
         assertThatThrownBy(() -> sqlService.execute(
-                "SELECT *"
-                + " FROM TABLE ("
-                + "avro_file (path => '" + path + "')"
-                + ")"
+                "SELECT * FROM TABLE(" +
+                "  avro_file(path => '" + path + "')" +
+                ")"
         )).isInstanceOf(HazelcastSqlException.class)
           .hasMessageContaining("The directory '" + path + "' does not exist");
     }
@@ -304,13 +305,20 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void when_fileDoesNotExist_then_tableFunctionThrowsException() {
         assertThatThrownBy(() -> sqlService.execute(
-                "SELECT * "
-                + " FROM TABLE ("
-                + "avro_file ("
-                + " path => '" + RESOURCES_PATH + "'"
-                + " , glob => 'foo.avro'"
-                + ")"
-                + ")")
+                "SELECT * FROM TABLE(" +
+                "  avro_file(" +
+                "    path => '" + AVRO_FILE.getParent() + "'," +
+                "    glob => 'foo.avro'" +
+                "  )" +
+                ")")
         ).hasMessageContaining("matches no files");
+    }
+
+    private static String createMappingOptions(File file) {
+        return " OPTIONS ("
+                + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
+                + ", '" + OPTION_PATH + "'='" + file.getParent() + '\''
+                + ", '" + OPTION_GLOB + "'='" + file.getName() + '\''
+                + ")";
     }
 }

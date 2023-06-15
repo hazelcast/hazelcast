@@ -25,16 +25,34 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.avro.Schema.Type.NULL;
+
 final class AvroResolver {
 
     private AvroResolver() {
     }
 
+    // CREATE MAPPING <name> TYPE File OPTIONS ('format'='avro', ...)
+    // TABLE(AVRO_FILE(...))
     static List<MappingField> resolveFields(Schema schema) {
         Map<String, MappingField> fields = new LinkedHashMap<>();
         for (Schema.Field avroField : schema.getFields()) {
             String name = avroField.name();
-            QueryDataType type = resolveType(avroField.schema().getType());
+            Schema fieldSchema = avroField.schema();
+
+            // Unwrap nullable types ([aType, "null"]) since SQL types are
+            // nullable by default and NOT NULL is currently unsupported.
+            if (fieldSchema.isUnion()) {
+                List<Schema> unionSchemas = fieldSchema.getTypes();
+                if (unionSchemas.size() == 2) {
+                    if (unionSchemas.get(0).getType() == NULL) {
+                        fieldSchema = unionSchemas.get(1);
+                    } else if (unionSchemas.get(1).getType() == NULL) {
+                        fieldSchema = unionSchemas.get(0);
+                    }
+                }
+            }
+            QueryDataType type = resolveType(fieldSchema.getType());
 
             MappingField field = new MappingField(name, type);
             fields.putIfAbsent(field.name(), field);
