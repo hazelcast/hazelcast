@@ -45,7 +45,6 @@ import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELA
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.upcast;
 
 /**
  * Mimics an RPC call. So there are worker threads that send request with a call id and a payload. This request is
@@ -315,7 +314,7 @@ public abstract class AsyncSocket_RpcTest {
                     break;
                 }
 
-                upcast(payloadBuffer).flip();
+                payloadBuffer.flip();
                 IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
                 responseBuf.writeInt(payloadSize);
                 responseBuf.writeLong(callId);
@@ -389,7 +388,7 @@ public abstract class AsyncSocket_RpcTest {
                     // not all bytes have been received.
                     break;
                 }
-                upcast(payloadBuffer).flip();
+                payloadBuffer.flip();
 
                 iteration.incrementAndGet();
                 CompletableFuture future = futures.remove(callId);

@@ -32,10 +32,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 import static com.hazelcast.query.Predicates.equal;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -62,71 +59,61 @@ public class DateHandlingPredicateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dateValueInPredicate() throws Exception {
+    public void dateValueInPredicate() {
         // date vs. date
-        assertThat(
-                map.values(equal("date", new java.util.Date(JUNE_2016_MILLIS))),
-                allOf(hasItem(CUSTOMER_0), not(hasItem(CUSTOMER_1)))
-        );
+        assertThat(map.values(equal("date", new java.util.Date(JUNE_2016_MILLIS))))
+                .contains(CUSTOMER_0)
+                .doesNotContain(CUSTOMER_1);
 
         // date vs. sqlDate
-        assertThat(
-                map.values(equal("date", new java.sql.Date(JUNE_2016_MILLIS))),
-                allOf(hasItem(CUSTOMER_0), not(hasItem(CUSTOMER_1)))
-        );
+        assertThat(map.values(equal("date", new java.sql.Date(JUNE_2016_MILLIS))))
+                .contains(CUSTOMER_0)
+                .doesNotContain(CUSTOMER_1);
 
         // date vs. sqlTimestamp
-        assertThat(
-                map.values(equal("date", new java.sql.Timestamp(JUNE_2016_MILLIS))),
-                allOf(hasItem(CUSTOMER_0), not(hasItem(CUSTOMER_1)))
-        );
-
+        assertThat(map.values(equal("date", new java.sql.Timestamp(JUNE_2016_MILLIS))))
+                .contains(CUSTOMER_0)
+                .doesNotContain(CUSTOMER_1);
     }
 
     @Test
-    public void sqlDateValueInPredicate() throws Exception {
+    public void sqlDateValueInPredicate() {
         // sqlDate vs. date
-        assertThat(
-                map.values(equal("sqlDate", new java.util.Date(JUNE_2016_MILLIS))),
-                allOf(hasItem(CUSTOMER_0), not(hasItem(CUSTOMER_1)))
-        );
+        assertThat(map.values(equal("sqlDate", new java.util.Date(JUNE_2016_MILLIS))))
+                .contains(CUSTOMER_0)
+                .doesNotContain(CUSTOMER_1);
 
         // sqlDate vs. sqlDate
-        assertThat(
-                map.values(equal("sqlDate", new java.sql.Date(JUNE_2016_MILLIS))),
-                allOf(hasItem(CUSTOMER_0), not(hasItem(CUSTOMER_1)))
-        );
+        assertThat(map.values(equal("sqlDate", new java.sql.Date(JUNE_2016_MILLIS))))
+                .contains(CUSTOMER_0)
+                .doesNotContain(CUSTOMER_1);
 
         // sqlDate vs. sqlTimestamp
-        assertThat(
-                map.values(equal("sqlDate", new java.sql.Timestamp(JUNE_2016_MILLIS))),
-                allOf(hasItem(CUSTOMER_0), not(hasItem(CUSTOMER_1)))
-        );
-
+        assertThat(map.values(equal("sqlDate", new java.sql.Timestamp(JUNE_2016_MILLIS))))
+                .contains(CUSTOMER_0)
+                .doesNotContain(CUSTOMER_1);
     }
 
     @Test
-    public void sqlTimestampValueInPredicate() throws Exception {
+    public void sqlTimestampValueInPredicate() {
         // sqlTimestamp vs. date
-        assertThat(
-                map.values(equal("sqlTimestamp", new java.util.Date(JUNE_2016_MILLIS))),
-                allOf(hasItem(CUSTOMER_0), not(hasItem(CUSTOMER_1)))
-        );
+        assertThat(map.values(equal("sqlTimestamp", new java.util.Date(JUNE_2016_MILLIS))))
+                .contains(CUSTOMER_0)
+                .doesNotContain(CUSTOMER_1);
 
         // sqlTimestamp vs. sqlDate
-        assertThat(
-                map.values(equal("sqlTimestamp", new java.sql.Date(JUNE_2016_MILLIS))),
-                allOf(hasItem(CUSTOMER_0), not(hasItem(CUSTOMER_1)))
-        );
+        assertThat(map.values(equal("sqlTimestamp", new java.sql.Date(JUNE_2016_MILLIS))))
+                .contains(CUSTOMER_0)
+                .doesNotContain(CUSTOMER_1);
 
         // sqlTimestamp vs. sqlTimestamp
-        assertThat(
-                map.values(equal("sqlTimestamp", new java.sql.Timestamp(JUNE_2016_MILLIS))),
-                allOf(hasItem(CUSTOMER_0), not(hasItem(CUSTOMER_1)))
-        );
+        assertThat(map.values(equal("sqlTimestamp", new java.sql.Timestamp(JUNE_2016_MILLIS))))
+                .contains(CUSTOMER_0)
+                .doesNotContain(CUSTOMER_1);
 
     }
 
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private static class Customer implements Serializable {
 
         private final int id;

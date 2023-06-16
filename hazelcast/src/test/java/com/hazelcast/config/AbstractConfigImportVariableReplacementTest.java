@@ -20,7 +20,6 @@ import com.hazelcast.config.replacer.PropertyReplacer;
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
@@ -31,8 +30,6 @@ import java.util.Properties;
  * and {@link YamlConfigImportVariableReplacementTest}
  */
 public abstract class AbstractConfigImportVariableReplacementTest {
-    @Rule
-    public ExpectedException rule = ExpectedException.none();
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 

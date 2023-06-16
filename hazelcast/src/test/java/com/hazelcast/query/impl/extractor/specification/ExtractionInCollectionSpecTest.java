@@ -46,9 +46,7 @@ import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataSt
 import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.person;
 import static com.hazelcast.query.impl.extractor.specification.ComplexTestDataStructure.tattoos;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assume.assumeThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 /**
  * Specification test that verifies the behavior of corner-cases extraction in arrays and collections.
@@ -430,7 +428,7 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
     }
 
     private void ignoreForPortable(String reason) {
-        assumeThat(mv, not(equalTo(PORTABLE)));
+        assumeThat(mv).isNotEqualTo(PORTABLE);
     }
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")

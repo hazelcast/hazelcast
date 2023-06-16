@@ -36,10 +36,9 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static org.hamcrest.core.StringContains.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -100,7 +99,7 @@ public class ExceptionUtilTest extends JetTestSupport {
             dag.newVertex("source", () -> new MockP().setCompleteError(() -> exc)).localParallelism(1);
             client.getJet().newJob(dag).join();
         } catch (Exception caught) {
-            assertThat(caught.toString(), containsString(exc.toString()));
+            assertThat(caught.toString()).contains(exc.toString());
         }
     }
 

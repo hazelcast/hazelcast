@@ -29,10 +29,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -41,8 +39,9 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.HashSet;
 
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.isA;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings({"unchecked", "ResultOfMethodCallIgnored"})
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -55,9 +54,6 @@ public class MapSplitBrainProtectionReadTest extends AbstractSplitBrainProtectio
 
     @Parameter
     public static SplitBrainProtectionOn splitBrainProtectionOn;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -85,9 +81,9 @@ public class MapSplitBrainProtectionReadTest extends AbstractSplitBrainProtectio
     }
 
     @Test
-    public void getAsync_failing_whenSplitBrainProtectionSize_notMet() throws Exception {
-        expectedException.expectCause(isA(SplitBrainProtectionException.class));
-        map(3).getAsync("foo").toCompletableFuture().get();
+    public void getAsync_failing_whenSplitBrainProtectionSize_notMet() {
+        assertThatThrownBy(() -> map(3).getAsync("foo").toCompletableFuture().get())
+                .hasCauseInstanceOf(SplitBrainProtectionException.class);
     }
 
     @Test

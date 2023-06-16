@@ -43,8 +43,7 @@ public class CompositeEvictionCheckerTest {
     @Test(expected = IllegalArgumentException.class)
     public void evictionCheckersCannotBeNull() {
         CompositeEvictionChecker.newCompositeEvictionChecker(
-                CompositeEvictionChecker.CompositionOperator.AND,
-                null);
+                CompositeEvictionChecker.CompositionOperator.AND);
     }
 
     @Test(expected = IllegalArgumentException.class)

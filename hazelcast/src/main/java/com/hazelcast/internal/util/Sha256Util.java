@@ -19,7 +19,6 @@ package com.hazelcast.internal.util;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestInputStream;
@@ -50,10 +49,8 @@ public final class Sha256Util {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         messageDigest.update(data, 0, length);
 
-        BigInteger bigInteger = new BigInteger(1, messageDigest.digest());
-        final int radix = 16;
-        return bigInteger.toString(radix);
-
+        byte[] digest = messageDigest.digest();
+        return bytesToHex(digest);
     }
 
     /**

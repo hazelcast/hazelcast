@@ -38,11 +38,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
-import static org.hamcrest.core.Is.is;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * Tests for {@link HazelcastCache}.
@@ -173,7 +172,7 @@ public class HazelcastCacheTest {
 
         assertEquals(10, results.size());
         for (Object result : results) {
-            assertThat((Integer) result, is(1));
+            assertThat((Integer) result).isEqualTo(1);
         }
     }
 

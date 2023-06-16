@@ -46,7 +46,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
     AsyncSocketReader reader;
     NioAsyncSocketOptions options;
-    private boolean build;
+    private boolean built;
 
     NioAsyncSocketBuilder(NioReactor reactor, NioAcceptRequest acceptRequest) {
         try {
@@ -68,34 +68,34 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
 
     @Override
     public <T> boolean setIfSupported(Option<T> option, T value) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
-        return options.setIfSupported(option, value);
+        return options.set(option, value);
     }
 
     public NioAsyncSocketBuilder setReceiveBufferIsDirect(boolean receiveBufferIsDirect) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         this.receiveBufferIsDirect = receiveBufferIsDirect;
         return this;
     }
 
     public NioAsyncSocketBuilder setWriteQueueCapacity(int writeQueueCapacity) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         this.writeQueueCapacity = checkPositive(writeQueueCapacity, "writeQueueCapacity");
         return this;
     }
 
     public NioAsyncSocketBuilder setRegularSchedule(boolean regularSchedule) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         this.regularSchedule = regularSchedule;
         return this;
     }
 
     public NioAsyncSocketBuilder setWriteThrough(boolean writeThrough) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         this.writeThrough = writeThrough;
         return this;
@@ -109,7 +109,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
      * @throws NullPointerException if readHandler is null.
      */
     public final NioAsyncSocketBuilder setReader(AsyncSocketReader reader) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         this.reader = checkNotNull(reader);
         return this;
@@ -118,9 +118,9 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
     @SuppressWarnings("java:S1181")
     @Override
     public AsyncSocket build() {
-        verifyNotBuild();
+        verifyNotBuilt();
 
-        build = true;
+        built = true;
 
         if (reader == null) {
             throw new IllegalStateException("reader is not configured.");
@@ -144,8 +144,8 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         }
     }
 
-    private void verifyNotBuild() {
-        if (build) {
+    private void verifyNotBuilt() {
+        if (built) {
             throw new IllegalStateException("Can't call build twice on the same AsyncSocketBuilder");
         }
     }
