@@ -23,8 +23,6 @@ import com.hazelcast.map.impl.operation.steps.engine.StepResponseUtil;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
-import javax.annotation.Nullable;
-
 public enum UtilSteps implements IMapOpStep {
 
     /**
@@ -81,6 +79,14 @@ public enum UtilSteps implements IMapOpStep {
         }
     },
 
+    /**
+     * When applied to a {@link MapOperation}, this {@link
+     * #DIRECT_RUN_STEP} converts that operation into a Step
+     * as a whole and makes that operation queued in {@link
+     * com.hazelcast.map.impl.recordstore.DefaultRecordStore#offloadedOperations},
+     * so that operations does not run in
+     * parallel with other offloaded operations.
+     */
     DIRECT_RUN_STEP {
 
         @Override
@@ -89,7 +95,6 @@ public enum UtilSteps implements IMapOpStep {
             op.runInternalDirect();
         }
 
-        @Nullable
         @Override
         public Step nextStep(State state) {
             return UtilSteps.FINAL_STEP;
