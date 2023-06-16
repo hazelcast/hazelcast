@@ -32,7 +32,8 @@ import java.io.IOException;
 import java.util.UUID;
 
 /**
- * Signal that the given member no longer owns any replicas (and its state may be changed to lite member).
+ * Signal that the given member no longer owns any replicas (and its state may be changed to lite member),
+ * sent from master member to the demoted member.
  *
  * @since 5.4
  */
