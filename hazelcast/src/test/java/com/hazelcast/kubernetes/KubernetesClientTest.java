@@ -166,7 +166,7 @@ public class KubernetesClientTest {
                 endpointsList(
                         endpoints("192.168.0.25", "hazelcast-1",
                                 endpointPort("some-port", 5701),
-                                endpointPort("hazelcast-service-port", 5702)),
+                                endpointPort("hazelcast", 5702)),
                         endpoints("172.17.0.5", "172.17.0.6", "hazelcast-1", 5701)
                 ));
         stub(String.format("/api/v1/namespaces/%s/pods/hazelcast-0", NAMESPACE),
@@ -193,7 +193,7 @@ public class KubernetesClientTest {
                 endpointsList(
                         endpoints("192.168.0.25", "hazelcast-1",
                                 endpointPort("some-port", 5701),
-                                endpointPort("hazelcast-service-port", 5702)),
+                                endpointPort("hazelcast", 5702)),
                         endpoints("172.17.0.5", "172.17.0.6", "hazelcast-1", 5701)
                 ));
         stub(String.format("/api/v1/namespaces/%s/pods/hazelcast-0", NAMESPACE),
