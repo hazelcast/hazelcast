@@ -553,14 +553,6 @@ public interface ProcessorMetaSupplier extends Serializable {
         return new SpecificMemberPms(supplier, memberAddress);
     }
 
-    static ProcessorMetaSupplier forceTotalParallelismOne(
-            @Nonnull ProcessorSupplier supplier,
-            @Nonnull Address memberAddress,
-            boolean doesWorkWithoutInput
-    ) {
-        return new SpecificMemberPms(supplier, memberAddress, doesWorkWithoutInput);
-    }
-
 
     /**
      * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
@@ -588,22 +580,13 @@ public interface ProcessorMetaSupplier extends Serializable {
 
         private ProcessorSupplier supplier;
         private Address memberAddress;
-        private boolean doesWorkWithoutInput;
 
         SpecificMemberPms() {
-            this.doesWorkWithoutInput = true;
         }
 
         private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
             this.supplier = supplier;
             this.memberAddress = memberAddress;
-            this.doesWorkWithoutInput = true;
-        }
-
-        private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress, boolean doesWorkWithoutInput) {
-            this.supplier = supplier;
-            this.memberAddress = memberAddress;
-            this.doesWorkWithoutInput = doesWorkWithoutInput;
         }
 
         @Override
@@ -648,14 +631,12 @@ public interface ProcessorMetaSupplier extends Serializable {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(supplier);
             out.writeObject(memberAddress);
-            out.writeBoolean(doesWorkWithoutInput);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             supplier = in.readObject();
             memberAddress = in.readObject();
-            doesWorkWithoutInput = in.readBoolean();
         }
 
         @Override

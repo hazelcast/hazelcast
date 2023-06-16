@@ -166,8 +166,7 @@ public class PMSTest extends SimpleTestInClusterSupport {
         ProcessorMetaSupplier pmsAgg = forceTotalParallelismOne(
                 ProcessorSupplier.of(
                         Processors.aggregateP(AggregateOperations.counting())),
-                addr,
-                false);
+                addr);
 
         ProcessorMetaSupplier pmsPrint = ProcessorMetaSupplier.of(
                 (ProcessorSupplier) count -> nCopies(count, new PrintP()));
@@ -199,7 +198,7 @@ public class PMSTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_scanJoin() {
+    public void test_dagWithBranching() {
         // Given
         ProcessorMetaSupplier pmsGen1 = ProcessorMetaSupplier.of((ProcessorSupplier) count ->
                 IntStream.range(0, count)
@@ -332,7 +331,7 @@ public class PMSTest extends SimpleTestInClusterSupport {
     private static class GenP extends AbstractProcessor {
         private final int item;
 
-        public GenP(int item) {
+        GenP(int item) {
             this.item = item;
         }
 
