@@ -925,7 +925,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 }
 
                 boolean demoteInitiated;
-                if (node.getThisAddress().equals(masterAddress)) {
+                if (node.isMaster()) {
                     demoteInitiated = onDemoteRequest(node.getLocalMember());
                 } else {
                     UUID memberUuid = node.getLocalMember().getUuid();
