@@ -78,20 +78,8 @@ public class MapFetchEntriesOperation extends MapOperation implements ReadonlyOp
 
     @Override
     public Step getStartingStep() {
-        return new IMapOpStep() {
-            @Override
-            public void runStep(State state) {
-                runInternalDirect();
-            }
-
-            @Nullable
-            @Override
-            public Step nextStep(State state) {
-                return UtilSteps.FINAL_STEP;
-            }
-        };
+        return UtilSteps.DIRECT_RUN_STEP;
     }
-
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
