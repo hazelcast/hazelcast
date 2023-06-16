@@ -21,6 +21,7 @@ import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
@@ -1055,6 +1056,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final SqlRowMetadata rowMetadata;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final List<Tuple2<String, Map<String, Expression<?>>>> partitionStrategyCandidates;
 
         SelectPlan(
                 PlanKey planKey,
@@ -1065,7 +1067,8 @@ abstract class SqlPlanImpl extends SqlPlan {
                 boolean isStreaming,
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
-                List<Permission> permissions
+                List<Permission> permissions,
+                List<Tuple2<String, Map<String, Expression<?>>>> partitionStrategyCandidates
         ) {
             super(planKey);
 
@@ -1077,6 +1080,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.partitionStrategyCandidates = partitionStrategyCandidates;
         }
 
         QueryParameterMetadata getParameterMetadata() {
@@ -1107,6 +1111,10 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isPlanValid(PlanCheckContext context) {
             return context.isValid(objectKeys);
+        }
+
+        public List<Tuple2<String, Map<String, Expression<?>>>> getPartitionStrategyCandidates() {
+            return partitionStrategyCandidates;
         }
 
         @Override

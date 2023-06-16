@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
 import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdPrunability;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdRowCount;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
@@ -74,6 +75,7 @@ public final class OptimizerContext {
             HazelcastRelMdRowCount.SOURCE,
             HazelcastRelMdBoundedness.SOURCE,
             HazelcastRelMdWatermarkedFields.SOURCE,
+            HazelcastRelMdPrunability.SOURCE,
             DefaultRelMetadataProvider.INSTANCE
     ));
 

@@ -496,6 +496,7 @@ public class PlanExecutor {
 
     SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
+        // TODO[Ivan]: compute list<map<string, expression<?>> -> list(partitionKeys) -> set(partitionId)
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
