@@ -32,6 +32,7 @@ import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.DemoteDataMemberOp;
 import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
@@ -1101,6 +1102,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void demoteLocalDataMember() {
+
+        if (getClusterVersion().isUnknownOrLessThan(Versions.V5_4)) {
+            throw new UnsupportedOperationException("demoteLocalDataMember requires cluster version 5.4 or greater");
+        }
+
         MemberImpl member = getLocalMember();
         if (member.isLiteMember()) {
             throw new IllegalStateException(member + " is not a data member!");
