@@ -155,11 +155,11 @@ So, it's a good target for **intra-member** processor pruning.
 ```
 ![Scan + Scan -> HashJoin](https://jet-start.sh/docs/assets/arch-dag-4.svg)
 
-For 2-stage aggregation, honestly, we don't see any processor pruning possibilities. Potentially,
-it may be done in another way: we can translate 2-staged into single-staged on SQL opt phase and
-then eliminate member(s) via member pruning, namely scan and flatmap nodes.
-In practice, processor logic is opaque to Jet and may have side effects which may break the job. 
-This example illustrates **inter-member** processor pruning.
+Two-stage aggregation might be a good target for **inter-member** processor pruning. However,
+processor logic is opaque to Jet and changing it requires a lot of changes, which may jeopardize
+the correctness of execution plans. Potentially, it may be done in another way: we can translate
+two-staged into single-staged on SQL opt phase and then eliminate member(s) via member pruning,
+namely scan and flatmap nodes.
 
 #### Solution design details
 
