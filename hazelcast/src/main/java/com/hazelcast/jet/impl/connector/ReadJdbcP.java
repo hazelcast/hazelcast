@@ -120,18 +120,21 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 SecuredFunctions.readJdbcProcessorFn(connectionURL,
+                        // Return a new connection. Connection will be closed by ReadJdbcP processor
                         context -> DriverManager.getConnection(connectionURL),
+                        // Create a ResultSet. ResultSet will be closed by ReadJdbcP processor
                         (connection, parallelism, index) -> {
-                            setAutoCommit(connection, properties);
-                            PreparedStatement statement = connection.prepareStatement(query);
-                            setFetchSize(statement, properties);
+                            setAutoCommitIfNecessary(connection, properties);
+                            PreparedStatement preparedStatement = connection.prepareStatement(query);
+                            setFetchSizeIfNecessary(preparedStatement, properties);
                             try {
-                                return statement.executeQuery();
+                                return preparedStatement.executeQuery();
                             } catch (SQLException e) {
-                                statement.close();
+                                preparedStatement.close();
                                 throw e;
                             }
-                        }, mapOutputFn),
+                        },
+                        mapOutputFn),
                 newUnsecureUuidString(),
                 ConnectorPermission.jdbc(connectionURL, ACTION_READ)
         );
@@ -202,7 +205,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         return null;
     }
 
-    private static void setAutoCommit(Connection connection, Properties properties) {
+    private static void setAutoCommitIfNecessary(Connection connection, Properties properties) {
         try {
             String key = JdbcPropertyKeys.AUTO_COMMIT;
             if (properties.containsKey(key)) {
@@ -214,13 +217,11 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                 }
             }
         } catch (SQLException exception) {
-            LOGGER.severe("Error setting setFetchSize to PreparedStatement", exception);
-        } catch (NumberFormatException exception) {
-            LOGGER.severe("Invalid integer value set for fetchSize", exception);
+            LOGGER.severe("Error setting setAutoCommit to PreparedStatement", exception);
         }
     }
 
-    private static void setFetchSize(PreparedStatement statement, Properties properties) {
+    private static void setFetchSizeIfNecessary(PreparedStatement statement, Properties properties) {
         try {
             String key = JdbcPropertyKeys.FETCH_SIZE;
             if (properties.containsKey(key)) {

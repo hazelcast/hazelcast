@@ -1502,7 +1502,7 @@ public final class Sources {
      * <p>
      * This overload allows passing some properties for JDBC
      * <p>
-     * Example: <pre>{@code
+     * Example for PostgreSQL fetchSize: <pre>{@code
      *        Properties properties = new Properties();
      *        properties.put(JdbcPropertyKeys.FETCH_SIZE, "5");
      *        properties.put(JdbcPropertyKeys.AUTO_COMMIT, "false");
@@ -1512,6 +1512,18 @@ public final class Sources {
      *            properties
      *            resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      *    }</pre>
+     *    <p>
+     * Example for MySQL fetchSize: The DB_CONNECTION_URL should have "&useCursorFetch=true" parameter
+     * <pre>{@code
+     *        Properties properties = new Properties();
+     *        properties.put(JdbcPropertyKeys.FETCH_SIZE, "5");
+     *        p.readFrom(Sources.jdbc(
+     *            DB_CONNECTION_URL,
+     *            "select ID, NAME from PERSON",
+     *            properties
+     *            resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
+     *    }</pre>
+     *
      */
     public static <T> BatchSource<T> jdbc(
             @Nonnull String connectionURL,
