@@ -22,10 +22,8 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.impl.operations.DemoteDataMemberOp;
 import com.hazelcast.internal.partition.InternalPartition;
-import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.NoDataMemberInClusterException;
@@ -39,10 +37,8 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SerializationSamplesExcluded;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
@@ -66,19 +62,17 @@ import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class, SerializationSamplesExcluded.class})
 public class DemoteDataMemberTest extends HazelcastTestSupport {
-
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
     @Test
     public void dataMaster_demoted() {
@@ -119,8 +113,8 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config().setLiteMember(true));
         factory.newHazelcastInstance(new Config().setLiteMember(true));
 
-        exception.expect(IllegalStateException.class);
-        hz1.getCluster().demoteLocalDataMember();
+        assertThatThrownBy(() -> hz1.getCluster().demoteLocalDataMember())
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -136,9 +130,9 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz3));
-        exception.expect(CompletionException.class);
-        exception.expect(new RootCauseMatcher(IllegalStateException.class));
-        future.join();
+        assertThatThrownBy(future::join)
+                .isInstanceOf(CompletionException.class)
+                .rootCause().isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -168,9 +162,9 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
 
         InternalCompletableFuture<MembersView> future =
                 getOperationService(hz2).invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, getAddress(hz1));
-        exception.expect(CompletionException.class);
-        exception.expect(new RootCauseMatcher(IllegalStateException.class));
-        future.join();
+        assertThatThrownBy(future::join)
+                .isInstanceOf(CompletionException.class)
+                .rootCause().isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -250,8 +244,7 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         assertTrue(getMember(hz1).isLiteMember());
         assertAllLiteMembers(hz1.getCluster());
 
-        exception.expect(NoDataMemberInClusterException.class);
-        testMap.isEmpty();
+        assertThatThrownBy(testMap::isEmpty).isInstanceOf(NoDataMemberInClusterException.class);
     }
 
     @Test
@@ -304,8 +297,8 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         warmUpPartitions(hz1, hz2, hz3);
         changeClusterStateEventually(hz2, state);
 
-        exception.expect(IllegalStateException.class);
-        hz2.getCluster().demoteLocalDataMember();
+        assertThatThrownBy(() -> hz2.getCluster().demoteLocalDataMember())
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -320,12 +313,12 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         clusterService.getClusterJoinManager().setMastershipClaimInProgress();
 
         Cluster cluster = hz2.getCluster();
-        exception.expect(IllegalStateException.class);
-        cluster.demoteLocalDataMember();
+        assertThatThrownBy(cluster::demoteLocalDataMember)
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-    public void demotion_shouldFail_whenMasterLeaves_duringDemotion() throws Exception {
+    public void demotion_shouldSucceed_whenMasterLeaves_duringDemotion() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
@@ -333,6 +326,9 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = factory.newHazelcastInstance(new Config());
 
         assertClusterSizeEventually(3, hz2);
+
+        warmUpPartitions(hz1, hz2, hz3);
+        assertPartitionsAssigned(hz3);
 
         dropOperationsBetween(hz3, hz1, F_ID, singletonList(DEMOTE_DATA_MEMBER));
         Cluster cluster = hz3.getCluster();
@@ -350,8 +346,9 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, hz2, hz3);
 
         Exception exception = future.get();
-        // MemberLeftException is wrapped by HazelcastException
-        assertInstanceOf(MemberLeftException.class, exception.getCause());
+        assertNull(exception);
+        assertTrue(getMember(hz3).isLiteMember());
+        assertNoPartitionsAssigned(hz3);
     }
 
     @Test
@@ -481,7 +478,7 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
                 k++;
             }
         }
-        assertThat(k, greaterThan(0));
+        assertThat(k).isGreaterThan(0);
     }
 
     private static void assertNoPartitionsAssigned(HazelcastInstance instance) {
