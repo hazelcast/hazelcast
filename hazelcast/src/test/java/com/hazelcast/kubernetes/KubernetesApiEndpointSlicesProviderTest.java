@@ -313,7 +313,7 @@ public class KubernetesApiEndpointSlicesProviderTest
                + "          \"port\": 5701\n"
                + "        },\n"
                + "        {\n"
-               + "          \"name\": \"hazelcast-service-port\",\n"
+               + "          \"name\": \"hazelcast\",\n"
                + "          \"protocol\": \"TCP\",\n"
                + "          \"port\": 5702\n"
                + "        }\n"
