@@ -1115,7 +1115,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         clusterServiceLock.lock();
         try {
-            if (!member.getAddress().equals(master.getAddress())) {
+            if (!node.isMaster()) {
                 updateMembers(view, master.getAddress(), master.getUuid(), getThisUuid());
             }
 
