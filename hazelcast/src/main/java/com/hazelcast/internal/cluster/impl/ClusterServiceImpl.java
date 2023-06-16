@@ -1109,8 +1109,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         DemoteDataMemberOp op = new DemoteDataMemberOp();
         op.setCallerUuid(member.getUuid());
-        InvocationFuture<MembersView> future =
-                nodeEngine.getOperationService().invokeOnTarget(SERVICE_NAME, op, master.getAddress());
+        InvocationFuture<MembersView> future = nodeEngine.getOperationService().invokeOnMaster(SERVICE_NAME, op);
         MembersView view = future.joinInternal();
 
         clusterServiceLock.lock();
