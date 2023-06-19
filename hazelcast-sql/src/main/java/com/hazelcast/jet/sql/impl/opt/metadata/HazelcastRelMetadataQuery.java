@@ -73,7 +73,7 @@ public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
             try {
                 return prunabilityHandler.extractPrunability(rel, this);
             } catch (JaninoRelMetadataProvider.NoHandler e) {
-                watermarkedFieldsHandler = revise(e.relClass, WatermarkedFieldsMetadata.DEF);
+                prunabilityHandler = revise(e.relClass, PrunabilityMetadata.DEF);
             }
         }
     }

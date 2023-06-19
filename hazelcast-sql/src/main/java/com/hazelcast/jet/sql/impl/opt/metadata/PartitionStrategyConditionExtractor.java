@@ -47,7 +47,7 @@ class PartitionStrategyConditionExtractor {
                 if (inputRef == null || constantExpr == null) {
                     return Tuple2.tuple2(mapName, Collections.emptyMap());
                 }
-                completenessMap.put(inputRef.getName(), constantExpr);
+                completenessMap.put(inputRef.getName(), call);
 
         }
         return Tuple2.tuple2(mapName, completenessMap);
@@ -81,8 +81,8 @@ class PartitionStrategyConditionExtractor {
             return call.getOperands().get(0);
         }
 
-        if (call.getOperands().get(0) instanceof RexLiteral) {
-            return call.getOperands().get(0);
+        if (call.getOperands().get(1) instanceof RexLiteral) {
+            return call.getOperands().get(1);
         }
 
         return null;

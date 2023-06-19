@@ -34,9 +34,11 @@ import com.hazelcast.jet.sql.impl.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -176,6 +178,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
 
     protected static TableField field(String name, QueryDataType type) {
         return new Field(name, type, false);
+    }
+
+    protected static MapTableField mapField(String name, QueryDataType type, QueryPath queryPath) {
+        return new MapTableField(name, type, false, queryPath);
     }
 
     protected static void assertPlan(RelNode rel, PlanRows expected) {
