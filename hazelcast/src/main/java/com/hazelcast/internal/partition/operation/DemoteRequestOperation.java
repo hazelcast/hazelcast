@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.operation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.operations.DemoteDataMemberOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -37,6 +38,8 @@ import java.util.UUID;
  * request was accepted and any needed migration has been scheduled.
  * After needed migrations have finished and the member no longer owns any replica, the member is notified with a
  * {@link DemoteResponseOperation}.
+ *
+ * @see DemoteDataMemberOp
  *
  * @since 5.4
  */

@@ -23,11 +23,21 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.cluster.impl.MembersViewResponse;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
+import com.hazelcast.internal.partition.operation.DemoteRequestOperation;
+import com.hazelcast.internal.partition.operation.DemoteResponseOperation;
 
 import java.util.UUID;
 
 /**
- * Demotes caller data member to a lite member. Should be executed on only master node.
+ * Demotes caller data member to a lite member. Should be executed on only master node. This operation may only be
+ * executed <i>after</i> a {@link DemoteResponseOperation} has been received.
+ * <p/>
+ * The overall sequence of operations to demote a member is;
+ * <ol>
+ *     <li>{@link DemoteRequestOperation} (initiated by demoted member, executed on master)</li>
+ *     <li>{@link DemoteResponseOperation} (initiated by master, executed on demoted member)</li>
+ *     <li>{@link DemoteDataMemberOp} (initiated by demoted member, executed on master)</li>
+ * </ol>
  *
  * @since 5.4
  */

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.cluster.impl.operations.DemoteDataMemberOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -34,6 +35,8 @@ import java.util.UUID;
 /**
  * Signal that the given member no longer owns any replicas (and its state may be changed to lite member),
  * sent from master member to the demoted member.
+ *
+ * @see DemoteDataMemberOp
  *
  * @since 5.4
  */
