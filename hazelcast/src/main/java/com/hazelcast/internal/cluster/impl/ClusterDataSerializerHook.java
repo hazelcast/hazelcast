@@ -102,9 +102,10 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int PROMOTE_LITE_MEMBER = 39;
     public static final int VECTOR_CLOCK = 40;
     public static final int DEMOTE_DATA_MEMBER = 41;
+    public static final int MEMBERS_VIEW_RESPONSE = 42;
 
 
-    static final int LEN = DEMOTE_DATA_MEMBER + 1;
+    static final int LEN = MEMBERS_VIEW_RESPONSE + 1;
 
     @Override
     public int getFactoryId() {
@@ -155,6 +156,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[HEARTBEAT_COMPLAINT] = arg -> new HeartbeatComplaintOp();
         constructors[PROMOTE_LITE_MEMBER] = arg -> new PromoteLiteMemberOp();
         constructors[DEMOTE_DATA_MEMBER] = arg -> new DemoteDataMemberOp();
+        constructors[MEMBERS_VIEW_RESPONSE] = arg -> new MembersViewResponse();
         constructors[VECTOR_CLOCK] = arg -> new VectorClock();
         constructors[ENDPOINT_QUALIFIER] = arg -> new EndpointQualifier();
         return new ArrayDataSerializableFactory(constructors);

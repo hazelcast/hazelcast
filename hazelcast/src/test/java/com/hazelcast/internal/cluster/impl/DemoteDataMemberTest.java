@@ -352,7 +352,7 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void demotion_shouldFail_whenMasterIsSuspected_duringDemotion() throws Exception {
+    public void demotion_shouldSucceed_whenMasterIsSuspected_duringDemotion() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
@@ -376,12 +376,11 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
         assertMasterAddressEventually(getAddress(hz2), hz3);
 
         dropOperationsBetween(hz3, hz1, F_ID, singletonList(EXPLICIT_SUSPICION));
-        try {
-            future.get();
-            fail("Demotion should fail!");
-        } catch (ExecutionException e) {
-            assertInstanceOf(IllegalStateException.class, e.getCause());
-        }
+
+        future.get();
+
+        assertTrue(hz3.getCluster().getLocalMember().isLiteMember());
+        assertNoPartitionsAssigned(hz3);
     }
 
     @Test

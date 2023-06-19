@@ -1122,13 +1122,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
         DemoteDataMemberOp op = new DemoteDataMemberOp();
         op.setCallerUuid(member.getUuid());
-        InvocationFuture<MembersView> future = nodeEngine.getOperationService().invokeOnMaster(SERVICE_NAME, op);
-        MembersView view = future.joinInternal();
+        InvocationFuture<MembersViewResponse> future = nodeEngine.getOperationService().invokeOnMaster(SERVICE_NAME, op);
+        MembersViewResponse response = future.joinInternal();
 
         clusterServiceLock.lock();
         try {
             if (!node.isMaster()) {
-                updateMembers(view, master.getAddress(), master.getUuid(), getThisUuid());
+                updateMembers(response.getMembersView(), response.getMemberAddress(), response.getMemberUuid(), getThisUuid());
             }
 
             MemberImpl localMemberInMemberList = membershipManager.getMember(member.getAddress());

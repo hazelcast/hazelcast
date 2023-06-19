@@ -17,9 +17,11 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.cluster.impl.MembersViewResponse;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
 
 import java.util.UUID;
@@ -31,7 +33,7 @@ import java.util.UUID;
  */
 public class DemoteDataMemberOp extends AbstractClusterOperation {
 
-    private transient MembersView response;
+    private transient MembersViewResponse response;
 
     public DemoteDataMemberOp() {
     }
@@ -43,7 +45,9 @@ public class DemoteDataMemberOp extends AbstractClusterOperation {
         UUID callerUuid = getCallerUuid();
 
         MembershipManager membershipManager = service.getMembershipManager();
-        response = membershipManager.demoteToLiteMember(callerAddress, callerUuid);
+        MembersView membersView = membershipManager.demoteToLiteMember(callerAddress, callerUuid);
+        Member localMember = getNodeEngine().getLocalMember();
+        this.response = new MembersViewResponse(localMember.getAddress(), localMember.getUuid(), membersView);
     }
 
     @Override
