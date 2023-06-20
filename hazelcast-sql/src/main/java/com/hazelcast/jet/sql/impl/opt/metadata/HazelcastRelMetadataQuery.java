@@ -16,17 +16,18 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
-import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness.BoundednessMetadata;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdPrunability.PrunabilityMetadata;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields.WatermarkedFieldsMetadata;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlOperator;
 
 import java.util.List;
-import java.util.Map;
 
 public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
 
@@ -68,7 +69,7 @@ public final class HazelcastRelMetadataQuery extends RelMetadataQuery {
         }
     }
 
-    public List<Tuple2<String, Map<String, RexNode>>> extractPrunability(RelNode rel) {
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(RelNode rel) {
         for (; ; ) {
             try {
                 return prunabilityHandler.extractPrunability(rel, this);

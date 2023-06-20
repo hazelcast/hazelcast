@@ -1,6 +1,22 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql.impl.opt.prunability;
 
-import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
@@ -10,24 +26,23 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
-import java.util.Map;
 
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.EQUALS;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class FullScanPrunabilityTest extends OptimizerTestSupport {
     @BeforeClass
@@ -48,21 +63,17 @@ public class FullScanPrunabilityTest extends OptimizerTestSupport {
         assertPlan(root, plan(planRow(0, FullScanPhysicalRel.class)));
 
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
-        List<Tuple2<String, Map<String, RexNode>>> prunability = query.extractPrunability(root);
+        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> prunability = query.extractPrunability(root);
+        RelDataType varcharType = HazelcastTypeUtils.createType(
+                HazelcastTypeFactory.INSTANCE,
+                SqlTypeName.VARCHAR,
+                false);
+
+        RexInputRef expectedLeftInputRef = new RexInputRef(1, varcharType);
+
         assertEquals(1, prunability.size());
-        assertNotNull(prunability.get(0));
-        assertEquals("m", prunability.get(0).f0());
-
-        Map<String, RexNode> completenessMap = prunability.get(0).f1();
-        assertEquals(1, completenessMap.size());
-
-        RexInputRef expectedLeftInputRef = new RexInputRef(1,
-                HazelcastTypeUtils.createType(
-                        HazelcastTypeFactory.INSTANCE,
-                        SqlTypeName.VARCHAR,
-                        false));
-
-        assertTrue(completenessMap.containsKey(expectedLeftInputRef.getName()));
-        assertInstanceOf(RexCall.class, completenessMap.get(expectedLeftInputRef.getName()));
+        assertEquals(EQUALS, prunability.get(0).f0());
+        assertEquals(expectedLeftInputRef, prunability.get(0).f1());
+//        assertEquals(HazelcastRexBuilder.INSTANCE.makeLiteral("10", varcharType), prunability.get(0).f2().);
     }
 }

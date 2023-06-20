@@ -14,29 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.metadata;
+package com.hazelcast.jet.sql.impl.opt.prunability;
 
-import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlOperator;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
-class PartitionStrategyConditionExtractor {
-    Map<String, RexNode> completenessMap;
-
-    PartitionStrategyConditionExtractor() {
-        this.completenessMap = new HashMap<>();
-    }
+public class PartitionStrategyConditionExtractor {
 
     // Tuple2(mapName, Map(columnName -> condition))
-    public Tuple2<String, Map<String, RexNode>> extractCondition(String mapName, RexCall call) {
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractCondition(RexCall call) {
+        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> result = new ArrayList<>();
         // $1 = 1e
         switch (call.getKind()) {
             // TODO: more cases.
@@ -45,12 +41,15 @@ class PartitionStrategyConditionExtractor {
                 final RexInputRef inputRef = extractInputRef(call);
                 final RexNode constantExpr = extractConstantExpression(call);
                 if (inputRef == null || constantExpr == null) {
-                    return Tuple2.tuple2(mapName, Collections.emptyMap());
+                    break;
                 }
-                completenessMap.put(inputRef.getName(), call);
+                result.add(Tuple3.tuple3(call.getOperator(), inputRef, constantExpr));
+                break;
+            default:
+                return result;
 
         }
-        return Tuple2.tuple2(mapName, completenessMap);
+        return result;
     }
 
     private RexInputRef extractInputRef(final RexCall call) {

@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -133,8 +134,10 @@ import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.apache.calcite.sql.util.SqlString;
 import org.apache.calcite.tools.RuleSets;
@@ -907,13 +910,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private List<Tuple2<String, Map<String, Expression<?>>>> partitionStrategyCandidates(
             PhysicalRel root, QueryParameterMetadata parameterMetadata) {
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
-        List<Tuple2<String, Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
+        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> prunabilityMap = query.extractPrunability(root);
 
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
 
-        return prunabilityMap.stream()
-                .map(t -> tuple2(t.f0(), toExpressionMap(visitor, Objects.requireNonNull(t.f1()))))
-                .collect(Collectors.toList());
+        // TODO[sasha] !
+        return null;
     }
 
     private Map<String, Expression<?>> toExpressionMap(RexToExpressionVisitor visitor, Map<String, RexNode> input) {
