@@ -367,4 +367,9 @@ public interface Cluster {
      */
     void changeClusterVersion(@Nonnull Version version,
                               @Nonnull TransactionOptions options);
+
+    /**
+     * @return true if Hazelcast Instance is connected to a EE cluster
+     */
+    boolean isEnterprise();
 }

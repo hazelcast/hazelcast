@@ -257,7 +257,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this);
         partitionService = new ClientPartitionServiceImpl(this);
-        clusterService = new ClientClusterServiceImpl(loggingService.getLogger(ClientClusterService.class));
+        clusterService = new ClientClusterServiceImpl(this, loggingService.getLogger(ClientClusterService.class));
         clusterDiscoveryService = initClusterDiscoveryService(externalAddressProvider);
         connectionManager = (TcpClientConnectionManager) clientConnectionManagerFactory.createConnectionManager(this);
         invocationService = new ClientInvocationServiceImpl(this);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.proxy;
 
+import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
@@ -41,8 +42,11 @@ public class ClientClusterProxy implements Cluster {
 
     private final ClientClusterServiceImpl clusterService;
 
-    public ClientClusterProxy(ClientClusterServiceImpl clusterService) {
+    private final ClientConnectionManager connectionManager;
+
+    public ClientClusterProxy(ClientClusterServiceImpl clusterService, ClientConnectionManager connectionManager) {
         this.clusterService = clusterService;
+        this.connectionManager = connectionManager;
     }
 
     @Override
@@ -125,6 +129,11 @@ public class ClientClusterProxy implements Cluster {
     @Override
     public void changeClusterVersion(@Nonnull Version version, @Nonnull TransactionOptions options) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isEnterprise() {
+        return this.clusterService.getMemberList().size() > 0 && this.connectionManager.isConnectedClusterEnterprise();
     }
 
     @Override

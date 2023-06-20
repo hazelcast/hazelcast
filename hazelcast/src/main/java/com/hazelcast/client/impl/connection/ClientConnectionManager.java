@@ -95,4 +95,10 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      * the TPC config is disabled.
      */
     boolean isUnisocketClient();
+
+    /**
+     * Returns {@code true} if the client is connected to a cluster with
+     * enterprise features enabled, {@code false} otherwise.
+     */
+    boolean isConnectedClusterEnterprise();
 }

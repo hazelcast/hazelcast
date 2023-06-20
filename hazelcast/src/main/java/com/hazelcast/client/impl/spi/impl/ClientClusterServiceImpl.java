@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.proxy.ClientClusterProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Address;
@@ -73,6 +74,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             new AtomicReference<>(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION, new LinkedHashMap<>(), null));
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final ILogger logger;
+    private final HazelcastClientInstanceImpl client;
     private final Object clusterViewLock = new Object();
     //read and written under clusterViewLock
     private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
@@ -89,12 +91,13 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public ClientClusterServiceImpl(ILogger logger) {
+    public ClientClusterServiceImpl(HazelcastClientInstanceImpl clientInstance, ILogger logger) {
         this.logger = logger;
+        this.client = clientInstance;
     }
 
     public Cluster getCluster() {
-        return new ClientClusterProxy(this);
+        return new ClientClusterProxy(this, this.client.getConnectionManager());
     }
 
     @Override
