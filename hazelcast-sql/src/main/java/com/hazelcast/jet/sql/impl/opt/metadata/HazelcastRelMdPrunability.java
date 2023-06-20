@@ -42,6 +42,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexProgram;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.util.Util;
 
@@ -55,6 +56,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 
 public final class HazelcastRelMdPrunability
         implements MetadataHandler<PrunabilityMetadata> {
@@ -116,13 +119,31 @@ public final class HazelcastRelMdPrunability
     }
 
     public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(Calc calc, RelMetadataQuery mq) {
-        // TODO: Implement
-        return Collections.emptyList();
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
+        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> prunability = query.extractPrunability(calc.getInput());
+        if (prunability.isEmpty()) {
+            return Collections.emptyList();
+        }
+        RexProgram program = calc.getProgram();
+        if (program.projectsOnlyIdentity()) {
+            return prunability;
+        }
+
+        List<RexNode> rexNodes = program.expandList(program.getProjectList());
+
+        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> permutedPrunability = prunability.stream()
+                .map(t -> tuple3(
+                        t.f0(),
+                        RexInputRef.of(rexNodes.indexOf(t.f1()), program.getInputRowType()), // TODO: Handle if field is not projected.
+                        t.f2())
+                ).collect(Collectors.toList());
+
+        return permutedPrunability;
     }
 
-    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(Aggregate calc, RelMetadataQuery mq) {
-        // Note: Aggregation breaks prunability.
-        return Collections.emptyList();
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(Aggregate agg, RelMetadataQuery mq) {
+        // Note: Aggregation breaks(?) prunability, but temporarily it forwards prunability.
+        return extractPrunability(agg.getInput(), mq);
     }
 
     @SuppressWarnings("unused")

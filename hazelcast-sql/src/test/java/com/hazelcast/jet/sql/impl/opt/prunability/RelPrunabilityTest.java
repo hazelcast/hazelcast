@@ -19,6 +19,9 @@ package com.hazelcast.jet.sql.impl.opt.prunability;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateAccumulateByKeyPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.AggregateCombineByKeyPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -44,14 +47,14 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-public class FullScanPrunabilityTest extends OptimizerTestSupport {
+public class RelPrunabilityTest extends OptimizerTestSupport {
     @BeforeClass
     public static void beforeClass() throws Exception {
         initialize(1, null);
     }
 
     @Test
-    public void test() {
+    public void test_fullScan() {
         HazelcastTable table = partitionedTable(
                 "m",
                 asList(
@@ -75,5 +78,38 @@ public class FullScanPrunabilityTest extends OptimizerTestSupport {
         assertEquals(EQUALS, prunability.get(0).f0());
         assertEquals(expectedLeftInputRef, prunability.get(0).f1());
 //        assertEquals(HazelcastRexBuilder.INSTANCE.makeLiteral("10", varcharType), prunability.get(0).f2().);
+    }
+
+
+    @Test
+    public void test_calc() {
+        HazelcastTable table = partitionedTable(
+                "m",
+                asList(
+                        mapField(KEY, INT, QueryPath.KEY_PATH),
+                        mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
+                10);
+        PhysicalRel root = optimizePhysical("SELECT this, SUM(__key) FROM m WHERE this = '10' GROUP BY __key, this", asList(INT, VARCHAR), table).getPhysical();
+
+        assertPlan(root, plan(
+                planRow(0, CalcPhysicalRel.class),
+                planRow(1, AggregateCombineByKeyPhysicalRel.class),
+                planRow(2, AggregateAccumulateByKeyPhysicalRel.class),
+                planRow(3, FullScanPhysicalRel.class)
+        ));
+
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
+        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> prunability = query.extractPrunability(root);
+        RelDataType varcharType = HazelcastTypeUtils.createType(
+                HazelcastTypeFactory.INSTANCE,
+                SqlTypeName.VARCHAR,
+                false);
+        RexInputRef expectedLeftInputRef = new RexInputRef(0, varcharType);
+
+        assertEquals(1, prunability.size());
+        assertEquals(EQUALS, prunability.get(0).f0());
+        assertEquals(expectedLeftInputRef, prunability.get(0).f1());
+
+        // TODO: don't even know how to actually get 'pure' project under FullScan, which always pushdown...
     }
 }
