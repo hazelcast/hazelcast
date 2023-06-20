@@ -31,6 +31,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.JobConfigArguments;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -73,6 +74,9 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
+import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -85,6 +89,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
@@ -104,11 +109,13 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -496,12 +503,58 @@ public class PlanExecutor {
 
     SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        // TODO[Ivan]: compute list<map<string, expression<?>> -> list(partitionKeys) -> set(partitionId)
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
+                args,
+                serializationService,
+                Util.getNodeEngine(hazelcastInstance));
+
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isStreaming())
                 .setTimeoutMillis(timeout);
+
+        final Set<Integer> partitions = new HashSet<>();
+        for (final Tuple2<String, Map<String, Expression<?>>> candidate : plan.getPartitionStrategyCandidates()) {
+            // TODO: null checks
+            final String mapName = candidate.f0();
+            final Map<String, Expression<?>> keyExprs = candidate.f1();
+            final MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(mapName));
+            final PartitioningStrategy strategy = mapContainer.getPartitioningStrategy() == null
+                    ? new DefaultPartitioningStrategy()
+                    : mapContainer.getPartitioningStrategy();
+
+            if (!(strategy instanceof AttributePartitioningStrategy)
+                    && !(strategy instanceof DefaultPartitioningStrategy)) {
+                // shouldn't happen
+                // TODO: maybe handle properly and bypass the candidates altogether if they're based on user's strategy?
+                throw new HazelcastException("Only Default and Attribute Partitioning Strategies are supported.");
+            }
+
+            final Object partitionKey;
+            if (keyExprs.size() > 1) {
+                assert strategy instanceof AttributePartitioningStrategy;
+                final AttributePartitioningStrategy attributeStrategy = (AttributePartitioningStrategy) strategy;
+                final Object[] attributes = Arrays.stream(attributeStrategy.getPartitioningAttributes())
+                        .map(keyExprs::get)
+                        // TODO assert that exprs are ConstantExpr or ParameterExpr
+                        .map(expr -> (Object) expr.eval(null, evalContext))
+                        .collect(Collectors.toList())
+                        .toArray(new Object[]{});
+                partitionKey = attributes;
+            } else {
+                assert candidate.getValue().size() == 1;
+                // TODO: different constant reference for __key
+                partitionKey = candidate.getValue().get(DEFAULT_UNIQUE_KEY);
+            }
+            // TODO: null checks to handle repartitioning
+            partitions.add(hazelcastInstance.getPartitionService().getPartition(partitionKey).getPartitionId());
+        }
+
+        if (!partitions.isEmpty()) {
+            jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, partitions);
+        }
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();

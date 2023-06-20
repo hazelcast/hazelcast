@@ -95,7 +95,8 @@ public class PartitionPruningOptTest extends SqlTestSupport {
 
     @Test
     public void test() {
-        executeWithLog("SELECT * FROM test1 WHERE (__key = ? OR __key = ?) AND this = 'v1'", 1, 2);
+        executeWithLog("SELECT * FROM test1 WHERE __key = ?", 1);
+//        executeWithLog("SELECT * FROM test1 WHERE (__key = ? OR __key = ?) AND this = 'v1'", 1, 2);
 //        executeWithLog("SELECT * FROM test1 WHERE __key = ? AND this = 'v1' LIMIT 1", 1);
 //        executeWithLog("SELECT * FROM test1 WHERE __key = ? AND this = 'v1' ORDER BY __key LIMIT 1", 1);
 //        executeWithLog("SELECT __key FROM test1 WHERE __key = ? AND this = 'v1' GROUP BY __key", 1);
