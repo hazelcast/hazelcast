@@ -27,7 +27,10 @@ import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.instance.GeneratedBuildProperties;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.LifecycleServiceImpl;
 import com.hazelcast.instance.impl.Node;
@@ -871,6 +874,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         long partitionStateStamp = getPartitionStateStamp();
         clusterStateManager.changeClusterState(ClusterStateChange.from(version), membershipManager.getMemberMap(),
                 options, partitionStateStamp, false);
+    }
+
+    @Override
+    public boolean isEnterprise() {
+        return BuildInfoProvider.getBuildInfo().isEnterprise();
     }
 
     private long getPartitionStateStamp() {
