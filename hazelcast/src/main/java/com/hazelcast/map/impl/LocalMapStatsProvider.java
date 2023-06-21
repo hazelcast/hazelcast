@@ -176,6 +176,16 @@ public class LocalMapStatsProvider {
             String mapName = mapProxy.getName();
 
             if (mapConfig.isStatisticsEnabled() && !statsPerMap.containsKey(mapName)) {
+                // Lite members can invoke MapOperations, and their statistics are of importance for monitoring
+                // when Lite members are in use - so we should include them from our statsMap field in this case
+                if (nodeEngine.getLocalMember().isLiteMember()) {
+                    LocalMapStatsImpl localMapStats = statsMap.get(mapName);
+                    if (localMapStats != null && localMapStats.total() > 0) {
+                        statsPerMap.put(mapName, localMapStats);
+                        continue;
+                    }
+                }
+
                 statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
             }
         }
