@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
@@ -27,6 +28,8 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.internal.cluster.impl.TcpIpJoiner;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
@@ -748,6 +751,58 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
         assertMasterAddress(getAddress(hz3), hz1, hz2, hz3);
+    }
+
+    @Test
+    // https://github.com/hazelcast/hazelcast/pull/24830
+    public void testBlacklistsConsideredAndRecovered_WhenUsingTcpIpJoiner() {
+        Config configA = createSimpleTcpIpConfig("cluster_A");
+        Config configB = createSimpleTcpIpConfig("cluster_B");
+
+        // Start 2 clusters, with 2 members each
+        HazelcastInstance a1 = Hazelcast.newHazelcastInstance(configA);
+        HazelcastInstance a2 = Hazelcast.newHazelcastInstance(configA);
+        HazelcastInstance b1 = Hazelcast.newHazelcastInstance(configB);
+        HazelcastInstance b2 = Hazelcast.newHazelcastInstance(configB);
+
+        // Fetch the port of a2
+        Address a2Address = getNode(a2).getThisAddress();
+
+        // Confirm that A2 is blacklisted by B1 after a SplitBrainHandler run (due to cluster mismatch)
+        Joiner joinerB1 = getNode(b1).getJoiner();
+        assertTrueEventually("Node A2 has not been blacklisted by Node B1!",
+                () -> assertTrue(joinerB1.isBlacklisted(a2Address)), 6);
+
+        // Confirm that A2's address is not returned in the list of filtered addresses used in SplitBrainHandler
+        assertFalse(((TcpIpJoiner) joinerB1).getFilteredPossibleAddresses().contains(a2Address));
+
+        // Shutdown A2, and start B3, which should be on the same address/port
+        a2.shutdown();
+        HazelcastInstance b3 = Hazelcast.newHazelcastInstance(configB);
+
+        // Confirm b3 is running on the address/port previously occupied by a2
+        Address b3Address = getNode(b3).getThisAddress();
+        assertEquals(a2Address, b3Address);
+
+        // Confirm B3 joins the cluster with B1/B2
+        assertClusterSizeEventually(3, b1, b2, b3);
+
+        // Confirm that B3's address is not blacklisted on B1, allowing SplitBrainHandler checks
+        assertTrueEventually("Node B3 is still blacklisted by Node B1!",
+                () -> assertFalse(joinerB1.isBlacklisted(b3Address)), 6);
+    }
+
+    private Config createSimpleTcpIpConfig(String clusterName) {
+        Config config = new Config();
+        config.setClusterName(clusterName);
+        TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
+        tcpIpConfig.setEnabled(true);
+        tcpIpConfig.setMembers(List.of("127.0.0.1"));
+        config.getNetworkConfig().setPortAutoIncrement(true);
+        config.getNetworkConfig().getJoin().setTcpIpConfig(tcpIpConfig);
+        config.setProperty("hazelcast.merge.first.run.delay.seconds", "3");
+        config.setProperty("hazelcast.merge.next.run.delay.seconds", "3");
+        return config;
     }
 
     public static class MergedEventLifeCycleListener implements LifecycleListener {
