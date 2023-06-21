@@ -465,7 +465,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             Boolean previousBlacklistStatus = blacklistedAddresses.remove(member.getAddress());
             if (previousBlacklistStatus != null) {
                 logger.info(member.getAddress() + " is removed from the " + (previousBlacklistStatus ? "permanent " : " ")
-                        + "blacklist due to successfully joining the cluster ");
+                        + "blacklist due to successfully joining the cluster");
             }
         }
     }
@@ -480,14 +480,13 @@ public class TcpIpJoiner extends AbstractJoiner {
         knownMemberAddresses.put(memberAddress, Clock.currentTimeMillis());
     }
 
-    @Override
-    public void searchForOtherClusters() {
+    public Collection<Address> getFilteredPossibleAddresses() {
         final Collection<Address> possibleAddresses;
         try {
             possibleAddresses = getPossibleAddresses();
         } catch (Throwable e) {
             logger.severe(e);
-            return;
+            return Collections.emptyList();
         }
 
         // Remove known addresses from possibleAddresses
@@ -513,6 +512,12 @@ public class TcpIpJoiner extends AbstractJoiner {
                             .map(Map.Entry::getKey)
                             .forEach(possibleAddresses::remove);
 
+        return possibleAddresses;
+    }
+
+    @Override
+    public void searchForOtherClusters() {
+        final Collection<Address> possibleAddresses = getFilteredPossibleAddresses();
         if (possibleAddresses.isEmpty()) {
             return;
         }
