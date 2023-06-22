@@ -797,7 +797,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         config.setClusterName(clusterName);
         TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
         tcpIpConfig.setEnabled(true);
-        tcpIpConfig.setMembers(List.of("127.0.0.1"));
+        tcpIpConfig.setMembers(Collections.singletonList("127.0.0.1"));
         config.getNetworkConfig().setPortAutoIncrement(true);
         config.getNetworkConfig().getJoin().setTcpIpConfig(tcpIpConfig);
         config.setProperty("hazelcast.merge.first.run.delay.seconds", "3");
