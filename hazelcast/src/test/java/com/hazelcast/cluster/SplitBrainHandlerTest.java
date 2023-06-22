@@ -99,7 +99,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     @Test
     public void testClusterShouldNotMergeDifferentClusterName() {
-        Config config1 = new Config();
+        Config config1 = smallInstanceConfigWithoutJetAndMetrics();
         config1.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config1.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         String firstClusterName = generateRandomString(10);
@@ -110,7 +110,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         join1.getMulticastConfig().setEnabled(true);
         join1.getTcpIpConfig().addMember("127.0.0.1");
 
-        Config config2 = new Config();
+        Config config2 = smallInstanceConfigWithoutJetAndMetrics();
         config2.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config2.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         String secondClusterName = generateRandomString(10);
@@ -197,7 +197,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     private void testMergeAfterSplitBrain(boolean multicast) throws InterruptedException {
         String clusterName = generateRandomString(10);
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         config.setClusterName(clusterName);
@@ -339,7 +339,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     private static Config buildConfig(boolean multicastEnabled, int port) {
-        Config c = new Config();
+        Config c = smallInstanceConfigWithoutJetAndMetrics();
         c.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         c.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
 
@@ -367,7 +367,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
             }
         });
 
-        Config config1 = new Config();
+        Config config1 = smallInstanceConfigWithoutJetAndMetrics();
         // bigger port to make sure address.hashCode() check pass during merge!
         config1.getNetworkConfig().setPort(5901);
         config1.setClusterName(clusterName);
@@ -379,7 +379,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
         sleepSeconds(1);
 
-        Config config2 = new Config();
+        Config config2 = smallInstanceConfigWithoutJetAndMetrics();
         config2.setClusterName(clusterName);
         config2.getNetworkConfig().setPort(5701);
         config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "5");
@@ -404,7 +404,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     private void testClusterMerge_when_split_not_detected_by_master(boolean multicastEnabled) {
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         String clusterName = generateRandomString(10);
         config.setClusterName(clusterName);
         config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
@@ -599,7 +599,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     private Config buildConfig(final String clusterName, final boolean liteMember) {
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
         config.setClusterName(clusterName);
@@ -619,7 +619,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     @Test
     // https://github.com/hazelcast/hazelcast/issues/8137
     public void testClusterMerge_when_split_not_detected_by_slave() {
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         String clusterName = generateRandomString(10);
         config.setClusterName(clusterName);
         config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
@@ -678,7 +678,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     @Test
     // https://github.com/hazelcast/hazelcast/issues/8137
     public void testClusterMerge_when_split_not_detected_by_slave_and_restart_during_merge() {
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         String clusterName = generateRandomString(10);
         config.setClusterName(clusterName);
         config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "10");
@@ -793,7 +793,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     private Config createSimpleTcpIpConfig(String clusterName) {
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.setClusterName(clusterName);
         TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
         tcpIpConfig.setEnabled(true);
