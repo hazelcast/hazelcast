@@ -25,8 +25,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,7 +43,7 @@ import org.junit.runner.RunWith;
  * coalescing writes.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ QuickTest.class, ParallelJVMTest.class })
+@Category(SlowTest.class)
 public class WriteBehindCoalescingBatchingTest extends HazelcastTestSupport {
 
     @Test
