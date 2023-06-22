@@ -38,7 +38,6 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
         this.socketChannel = socketChannel;
     }
 
-    // SO_TIMEOUT unfortunately doesn't have a SocketOption version.
     private static SocketOption toSocketOption(Option option) {
         if (TCP_NODELAY.equals(option)) {
             return StandardSocketOptions.TCP_NODELAY;
@@ -65,8 +64,7 @@ public class NioAsyncSocketOptions implements AsyncSocketOptions {
     public boolean isSupported(Option option) {
         checkNotNull(option, "option");
 
-        SocketOption socketOption = toSocketOption(option);
-        return isSupported(socketOption);
+        return isSupported(toSocketOption(option));
     }
 
     private boolean isSupported(SocketOption socketOption) {

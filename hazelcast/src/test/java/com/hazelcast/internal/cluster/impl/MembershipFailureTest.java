@@ -76,10 +76,9 @@ import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -898,7 +897,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
     private void terminateRandomInstancesConcurrently(int count) {
         List<HazelcastInstance> instances = new ArrayList<>(getAllHazelcastInstances());
-        assertThat(instances.size(), greaterThanOrEqualTo(count));
+        assertThat(instances.size()).isGreaterThanOrEqualTo(count);
 
         Collections.shuffle(instances);
         instances = instances.subList(0, count);

@@ -205,9 +205,6 @@ public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress() throws SocketException, UnknownHostException {
-        // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
-        assumeThatJDK8OrHigher();
-
         byte[] address = InetAddress.getByName(SOME_LINK_LOCAL_ADDRESS).getAddress();
         Inet6Address inet6Address = Inet6Address.getByAddress(SOME_LINK_LOCAL_ADDRESS, address, 1);
         assertThat(inet6Address.isLinkLocalAddress()).isTrue();
@@ -219,8 +216,6 @@ public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress_withNoInterfaceBind() throws SocketException, UnknownHostException {
-        // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
-        assumeThatJDK8OrHigher();
         Inet6Address inet6Address = createInet6AddressWithScope(SOME_LINK_LOCAL_ADDRESS, 0);
         assertThat(inet6Address.isLinkLocalAddress()).isTrue();
 
@@ -236,8 +231,6 @@ public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testGetInetAddressFor() throws SocketException, UnknownHostException {
-        // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
-        assumeThatJDK8OrHigher();
         Inet6Address inet6Address = createInet6AddressWithScope(SOME_SITE_LOCAL_ADDRESS, 1);
         assertThat(inet6Address.isSiteLocalAddress()).isTrue();
 
@@ -248,9 +241,6 @@ public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testGetPossibleInetAddressesFor_whenNotLocalAddress() throws UnknownHostException {
-        // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
-        assumeThatJDK8OrHigher();
-
         Inet6Address inet6Address = (Inet6Address) Inet6Address.getByName(SOME_NOT_LOCAL_ADDRESS);
         assertThat(inet6Address.isSiteLocalAddress()).isFalse();
         assertThat(inet6Address.isLinkLocalAddress()).isFalse();
@@ -261,10 +251,7 @@ public class AddressUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetPossibleInetAddressesFor_whenLocalAddress() throws SocketException, UnknownHostException {
-        // refer to https://github.com/hazelcast/hazelcast/pull/13069#issuecomment-388719847
-        assumeThatJDK8OrHigher();
-
+    public void testGetPossibleInetAddressesFor_whenLocalAddress() throws UnknownHostException {
         Inet6Address inet6Address = (Inet6Address) Inet6Address.getByName(SOME_LINK_LOCAL_ADDRESS);
         assertThat(inet6Address.isLinkLocalAddress()).isTrue();
 

@@ -22,7 +22,6 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
@@ -34,9 +33,8 @@ import static org.mockito.Mockito.when;
 /**
  * Tests the {@link OverridePropertyRule} with multiple instances.
  */
-@PrepareForTest(OverridePropertyRulePowerMockTest.TestClass.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class OverridePropertyRulePowerMockTest {
+public class OverridePropertyRuleMockTest {
 
     @Rule
     public OverridePropertyRule overridePropertyRule = set("hazelcast.custom.system.property", "5");
@@ -69,14 +67,14 @@ public class OverridePropertyRulePowerMockTest {
     }
 
     @Test
-    public void testCustomPropertyWithPowerMock() throws Exception {
+    public void testCustomPropertyWithMock() throws Exception {
         TestClass testClass = createTestClass();
 
         assertEquals("5", testClass.getProperty("hazelcast.custom.system.property"));
     }
 
     @Test
-    public void testHazelcastPropertyWithPowerMock() throws Exception {
+    public void testHazelcastPropertyWithMock() throws Exception {
         TestClass testClass = createTestClass();
 
         assertEquals("true", testClass.getProperty("java.net.preferIPv4Stack"));
@@ -90,7 +88,6 @@ public class OverridePropertyRulePowerMockTest {
     public class TestClass {
 
         String getProperty(String property) throws Exception {
-            // assert that PowerMock is working
             assertEquals("mocked-name", OtherClass.getName());
 
             return System.getProperty(property);

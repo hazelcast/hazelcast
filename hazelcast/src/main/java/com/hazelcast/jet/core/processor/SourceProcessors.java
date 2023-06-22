@@ -99,7 +99,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readMapP(@Nonnull String mapName) {
-        return HazelcastReaders.readLocalMapSupplier(mapName);
+        return HazelcastReaders.readLocalMapSupplier(mapName, null);
     }
 
     /**

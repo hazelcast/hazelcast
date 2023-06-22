@@ -76,6 +76,7 @@ import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.TokenCredentials;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.sql.impl.CoreQueryUtils;
 
 import javax.annotation.Nonnull;
@@ -130,6 +131,24 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
 public class TcpClientConnectionManager implements ClientConnectionManager, MembershipListener {
 
+    /**
+     * A private property to let users control the reconnection behavior of the client.
+     * <p>
+     * When enabled, the client will skip trying to connect to members in the last known
+     * member list during reconnection attempts.
+     * <p>
+     * This property might be handy for users who are using the client with unisocket
+     * mode and exposing their multi-member cluster via a single load balancer or node port
+     * in Kubernetes. In that scenario, the client would normally try to reconnect to the
+     * members in the last known member list first after disconnection, but that would fail
+     * for sure, as the cluster members are not accessible from the client directly. In such
+     * use cases, setting this to {@code true} might make the reconnections shorter, as the
+     * client would directly try to connect to the configured load balancer/node port address
+     * from the configuration.
+     */
+    public static final HazelcastProperty SKIP_MEMBER_LIST_DURING_RECONNECTION =
+            new HazelcastProperty("hazelcast.client.internal.skip.member.list.during.reconnection", false);
+
     private static final int DEFAULT_IO_THREAD_COUNT = 3;
     private static final int EXECUTOR_CORE_POOL_SIZE = 10;
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
@@ -163,6 +182,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final LoadBalancer loadBalancer;
     private final boolean isUnisocketClient;
     private final boolean isTpcAwareClient;
+    private final boolean skipMemberListDuringReconnection;
     private volatile Credentials currentCredentials;
 
     // following fields are updated inside synchronized(clientStateMutex)
@@ -221,26 +241,28 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     public TcpClientConnectionManager(HazelcastClientInstanceImpl client) {
         this.client = client;
         ClientConfig config = client.getClientConfig();
+        HazelcastProperties properties = client.getProperties();
         this.loadBalancer = client.getLoadBalancer();
         this.labels = Collections.unmodifiableSet(config.getLabels());
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
-        this.connectionType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROP)
+        this.connectionType = properties.getBoolean(MC_CLIENT_MODE_PROP)
                 ? ConnectionType.MC_JAVA_CLIENT : ConnectionType.JAVA_CLIENT;
         this.connectionTimeoutMillis = initConnectionTimeoutMillis();
         this.networking = initNetworking();
         this.outboundPorts.addAll(getOutboundPorts());
         this.outboundPortCount = outboundPorts.size();
-        this.authenticationTimeout = client.getProperties().getPositiveMillisOrDefault(HEARTBEAT_TIMEOUT);
+        this.authenticationTimeout = properties.getPositiveMillisOrDefault(HEARTBEAT_TIMEOUT);
         this.failoverConfigProvided = client.getFailoverConfig() != null;
         this.executor = createExecutorService();
         this.clusterDiscoveryService = client.getClusterDiscoveryService();
         this.waitStrategy = initializeWaitStrategy(config);
-        this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
+        this.shuffleMemberList = properties.getBoolean(SHUFFLE_MEMBER_LIST);
         this.isUnisocketClient = unisocketModeConfigured(config);
         this.isTpcAwareClient = config.getTpcConfig().isEnabled();
         this.asyncStart = config.getConnectionStrategyConfig().isAsyncStart();
         this.reconnectMode = config.getConnectionStrategyConfig().getReconnectMode();
         this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
+        this.skipMemberListDuringReconnection = properties.getBoolean(SKIP_MEMBER_LIST_DURING_RECONNECTION);
     }
 
     private boolean unisocketModeConfigured(ClientConfig config) {
@@ -522,27 +544,16 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             do {
                 Set<Address> triedAddressesPerAttempt = new HashSet<>();
 
-                List<Member> memberList = new ArrayList<>(client.getClientClusterService().getMemberList());
-                if (shuffleMemberList) {
-                    Collections.shuffle(memberList);
+                // Try to connect to a member in the member list first
+                if (tryConnectToMemberList(switchingToNextCluster, triedAddressesPerAttempt)) {
+                    return true;
                 }
-                //try to connect to a member in the member list first
-                for (Member member : memberList) {
-                    checkClientActive();
-                    triedAddressesPerAttempt.add(member.getAddress());
-                    connectionProcessListenerRunner.onAttemptingToConnectToTarget(this::translate, member);
-                    ClientConnection connection = connect(member,
-                            o -> getOrConnectToMember(o, switchingToNextCluster),
-                            this::translate);
-                    if (connection != null) {
-                        return true;
-                    }
-                }
-                //try to connect to a member given via config(explicit config/discovery mechanisms)
+
+                // Try to connect to a member given via config(explicit config/discovery mechanisms)
                 for (Address address : getPossibleMemberAddresses(context.getAddressProvider())) {
                     checkClientActive();
                     if (!triedAddressesPerAttempt.add(address)) {
-                        //if we can not add it means that it is already tried to be connected with the member list
+                        // If we can not add it means that it is already tried to be connected with the member list
                         continue;
                     }
                     connectionProcessListenerRunner.onAttemptingToConnectToTarget(this::translate, address);
@@ -568,6 +579,37 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         connectionProcessListenerRunner.onClusterConnectionFailed(context.getClusterName());
         logger.info("Unable to connect to any address from the cluster with name: " + context.getClusterName()
                 + ". The following addresses were tried: " + triedAddresses);
+        return false;
+    }
+
+    /**
+     * @return {@code true} if the connection attempt to member list succeeds,
+     * {@code false} otherwise.
+     */
+    private boolean tryConnectToMemberList(boolean switchingToNextCluster, Set<Address> triedAddressesPerAttempt) {
+        if (skipMemberListDuringReconnection) {
+            // No need to try further if we want to skip connection
+            // attempts to the last-known-member-list.
+            return false;
+        }
+
+        List<Member> memberList = new ArrayList<>(client.getClientClusterService().getEffectiveMemberList());
+        if (shuffleMemberList) {
+            Collections.shuffle(memberList);
+        }
+
+        for (Member member : memberList) {
+            checkClientActive();
+            triedAddressesPerAttempt.add(member.getAddress());
+            connectionProcessListenerRunner.onAttemptingToConnectToTarget(this::translate, member);
+            ClientConnection connection = connect(member,
+                    o -> getOrConnectToMember(o, switchingToNextCluster),
+                    this::translate);
+            if (connection != null) {
+                return true;
+            }
+        }
+
         return false;
     }
 

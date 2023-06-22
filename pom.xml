@@ -1,4 +1,4 @@
-<!--
+git <!--
   ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,7 +57,7 @@
 
         <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
-        <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
+        <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
             *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:
@@ -67,27 +67,27 @@
             *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
         </maven.javadoc.plugin.excludePackageNames>
         <maven.antrun.plugin.version>3.0.0</maven.antrun.plugin.version>
-        <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
-        <maven.assembly.plugin.version>3.5.0</maven.assembly.plugin.version>
+        <maven.gpg.plugin.version>3.1.0</maven.gpg.plugin.version>
+        <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
-        <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
-        <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
-        <maven.dependency.plugin.version>3.5.0</maven.dependency.plugin.version>
+        <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
+        <maven.shade.plugin.version>3.4.1</maven.shade.plugin.version>
+        <maven.dependency.plugin.version>3.6.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>3.1.0</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>3.2.2</maven.checkstyle.plugin.version>
+        <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
+        <maven.checkstyle.plugin.version>3.3.0</maven.checkstyle.plugin.version>
         <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>3.0.0</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>3.1.2</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.3.0</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
-        <maven.resources.plugin.version>3.3.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>8.1.2</owasp.dependency-check.version>
+        <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
+        <owasp.dependency-check.version>8.3.1</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
-        <codehause.license.plugin.version>2.0.1</codehause.license.plugin.version>
+        <codehause.license.plugin.version>2.1.0</codehause.license.plugin.version>
 
         <!-- Version of the client used in Hazelcast 3 connector -->
         <hazelcast-3.version>3.12.13</hazelcast-3.version>
@@ -96,13 +96,13 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.472</aws.sdk.version>
+        <aws.sdk.version>1.12.488</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
-        <classgraph.version>4.8.158</classgraph.version>
+        <classgraph.version>4.8.160</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
-        <guava.version>31.1-jre</guava.version>
-        <hadoop.version>3.3.4</hadoop.version>
+        <guava.version>32.0.1-jre</guava.version>
+        <hadoop.version>3.3.5</hadoop.version>
         <h2.version>2.1.214</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
         <jackson.version>2.14.2</jackson.version>
@@ -113,25 +113,25 @@
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
-        <kafka.version>3.4.0</kafka.version>
-        <kotlin.version>1.8.21</kotlin.version>
-        <reload4j.version>1.2.24</reload4j.version>
+        <kafka.version>3.4.1</kafka.version>
+        <kotlin.version>1.8.22</kotlin.version>
+        <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
-        <mysql.connector.version>8.0.30</mysql.connector.version>
-        <netty.version>4.1.92.Final</netty.version>
+        <mysql.connector.version>8.0.33</mysql.connector.version>
+        <netty.version>4.1.93.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
-        <picocli.version>4.7.3</picocli.version>
-        <postgresql.version>42.5.4</postgresql.version>
+        <picocli.version>4.7.4</picocli.version>
+        <postgresql.version>42.6.0</postgresql.version>
         <prometheus.version>0.18.0</prometheus.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
         See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
         -->
-        <protobuf.version>22.0</protobuf.version>
-        <java.protobuf.version>3.23.0</java.protobuf.version>
+        <protobuf.version>23.2</protobuf.version>
+        <java.protobuf.version>3.${protobuf.version}</java.protobuf.version>
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
         <scala.version>2.13</scala.version>
@@ -146,27 +146,25 @@
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.24.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.14.4</bytebuddy.version>
+        <bytebuddy.version>1.14.5</bytebuddy.version>
         <commons-codec.version>1.15</commons-codec.version>
-        <commons-io.version>2.12.0</commons-io.version>
+        <commons-io.version>2.13.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
-        <hamcrest.version>1.3</hamcrest.version>
         <http.core.version>4.4.16</http.core.version>
         <http.client.version>4.5.14</http.client.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <junit.version>4.13.2</junit.version>
-        <mockito.version>3.6.0</mockito.version>
-        <powermock.version>2.0.9</powermock.version>
+        <mockito.version>5.3.1</mockito.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.18.1</testcontainers.version>
+        <testcontainers.version>1.18.3</testcontainers.version>
         <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.0.1</archunit.version>
         <errorprone.version>2.19.1</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <kubernetes-server-mock.version>6.5.0</kubernetes-server-mock.version>
+        <kubernetes-server-mock.version>6.7.1</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -191,6 +189,13 @@
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
 
         <!--
+        License plugin is not thread-safe, leads to flaky failures when checking licenses, so it is skipped by default.
+        to run the build with license plugin run with `-T1 -Dlicense.skipAddThirdParty=false`.
+        The `-T1` parameter disables the parallel build.
+        -->
+        <license.skipAddThirdParty>true</license.skipAddThirdParty>
+
+        <!--
         Allow access to Operating system metrics:
            open jdk.management/com.sun.management.internal
            export jdk.management/com.ibm.lang.management.internal
@@ -202,9 +207,6 @@
            open java.base/java.lang
         TimedMemberStateFactoryHelper:
            open java.management/sun.management
-
-        Powermock issue workaround (https://github.com/powermock/powermock/issues/905):
-           export java.xml/jdk.xml.internal
         -->
         <javaModuleArgs>
             --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
@@ -212,7 +214,6 @@
             --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
             --add-opens java.base/java.lang=${hazelcast.module.name}
             --add-opens java.management/sun.management=${hazelcast.module.name}
-            --add-exports java.xml/jdk.xml.internal=${hazelcast.module.name}
             --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
             --illegal-access=deny
         </javaModuleArgs>
@@ -275,6 +276,7 @@
                     <include>**/*.xml</include>
                     <include>**/*.yaml</include>
                     <include>**/*.xsd</include>
+                    <include>**/*.txt</include>
                     <include>**/hazelcast-config-*.json</include>
                     <include>**/*.handlers</include>
                     <include>**/*.schemas</include>
@@ -320,7 +322,6 @@
                     <configLocation>${checkstyle.configLocation}</configLocation>
                     <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>
                     <headerLocation>${checkstyle.headerLocation}</headerLocation>
-                    <enableRSS>false</enableRSS>
                     <linkXRef>false</linkXRef>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
@@ -673,14 +674,23 @@
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${maven.shade.plugin.version}</version>
                     <configuration>
-                        <filters>
+                        <filters combine.children="append">
                             <filter>
                                 <artifact>*:*</artifact>
                                 <excludes>
                                     <exclude>module-info.class</exclude>
+                                    <exclude>META-INF/versions/9/module-info.class</exclude>
+                                    <exclude>THIRD-PARTY.txt</exclude>
+                                    <exclude>LICENSE</exclude>
+                                    <exclude>NOTICE</exclude>
                                     <exclude>META-INF/*.SF</exclude>
                                     <exclude>META-INF/*.DSA</exclude>
                                     <exclude>META-INF/*.RSA</exclude>
+                                    <exclude>META-INF/LICENSE</exclude>
+                                    <exclude>META-INF/MANIFEST.MF</exclude>
+                                    <exclude>META-INF/THIRD-PARTY.txt</exclude>
+                                    <exclude>META-INF/DEPENDENCIES</exclude>
+                                    <exclude>overview.html</exclude>
                                 </excludes>
                             </filter>
                         </filters>
@@ -691,6 +701,13 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${maven.javadoc.plugin.version}</version>
                     <configuration>
+                        <!--
+                         JavaDoc generation fails on JDK 11 with very strange errors, e.g. that classes
+                         cannot be compiled (while compile works).
+                         Please see https://github.com/hazelcast/hazelcast/pull/24621
+                         -->
+                        <source>8</source>
+                        <detectJavaApiLink>false</detectJavaApiLink>
                         <maxmemory>1024</maxmemory>
                         <excludePackageNames>${maven.javadoc.plugin.excludePackageNames}</excludePackageNames>
                         <doclint>-missing</doclint>
@@ -1344,6 +1361,24 @@
         </profile>
 
         <profile>
+            <!--
+            Profile which allows to skip the modulepath-tests module.
+            The module runs by default, but can be skipped by adding -Dskip-modulepath-tests property.
+            This is used in PR builder when we run only `mvn test-compile` which is not possible due
+            to an automatic module name not being created in the hazelcast jar (no jar is built at all).
+            -->
+            <id>modulepath-tests</id>
+            <activation>
+                <property>
+                    <name>!skip-modulepath-tests</name>
+                </property>
+            </activation>
+            <modules>
+                <module>modulepath-tests</module>
+            </modules>
+        </profile>
+
+        <profile>
             <!-- same as default build (excludes Nightly & Slow tests), outputs serialized objects to a blob -->
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
@@ -1561,14 +1596,14 @@
             <dependency>
                 <groupId>com.google.auth</groupId>
                 <artifactId>google-auth-library-bom</artifactId>
-                <version>1.16.1</version>
+                <version>1.17.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-bom</artifactId>
-                <version>1.43.1</version>
+                <version>1.43.2</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -1718,7 +1753,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.22</version>
+                <version>1.23.0</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
@@ -1728,16 +1763,16 @@
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.1.8.4</version>
+                <version>1.1.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-common-protos</artifactId>
-                <version>2.14.3</version>
+                <version>2.20.0</version>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.connector.version}</version>
             </dependency>
             <dependency>
@@ -1799,7 +1834,7 @@
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.5-3</version>
+                <version>1.5.5-4</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1819,7 +1854,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.34.0</version>
+                <version>3.35.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1849,7 +1884,7 @@
             <dependency>
                 <groupId>net.minidev</groupId>
                 <artifactId>json-smart</artifactId>
-                <version>2.4.10</version>
+                <version>2.4.11</version>
             </dependency>
             <dependency>
               <groupId>org.wildfly.openssl</groupId>
@@ -1859,7 +1894,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-tcnative-classes</artifactId>
-                <version>2.0.60.Final</version>
+                <version>2.0.61.Final</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api-client</groupId>
@@ -1869,7 +1904,7 @@
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-iam-v1</artifactId>
-                <version>1.9.3</version>
+                <version>1.14.0</version>
             </dependency>
             <!-- Force higher version, compatible with M1 -->
             <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
@@ -1978,12 +2013,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-library</artifactId>
-            <version>${hamcrest.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
@@ -1992,18 +2021,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito2</artifactId>
-            <version>${powermock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
-            <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -2054,7 +2071,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.0.23</version>
+            <version>10.1.10</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -58,10 +58,9 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 /**
  * Test if a node joining a cluster which is loading data works.
@@ -85,7 +84,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
     @Parameter
     public InitialLoadMode initialLoadMode;
 
-    private final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(NODE_COUNT);
+    private final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<>(NODE_COUNT);
 
     @Parameters(name = "{0}")
     public static Collection<Object[]> parameters() {
@@ -152,8 +151,9 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
     @Test(timeout = 600000)
     public void testLoadingFinishes_whenMemberJoinsWhileLoading() throws Exception {
-        assumeThat("With LAZY InMemoryModel this test may fail due to a known issue reported in OS #11544 and #12384",
-                initialLoadMode, not(LAZY));
+        assumeThat(initialLoadMode)
+                .as("With LAZY InMemoryModel this test may fail due to a known issue reported in OS #11544 and #12384")
+                .isNotEqualTo(LAZY);
 
         final Config config = createConfigWithDelayingMapStore();
 

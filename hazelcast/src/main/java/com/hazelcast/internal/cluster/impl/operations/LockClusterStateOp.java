@@ -19,7 +19,6 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterStateChange;
@@ -28,7 +27,6 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
@@ -40,7 +38,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 public class LockClusterStateOp  extends Operation implements AllowedDuringPassiveState, UrgentSystemOperation,
-        IdentifiedDataSerializable, Versioned {
+        IdentifiedDataSerializable {
 
     private ClusterStateChange stateChange;
     private Address initiator;
@@ -114,11 +112,7 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
         out.writeObject(initiator);
         UUIDSerializationUtil.writeUUID(out, txnId);
         out.writeLong(leaseTime);
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeLong(partitionStateStamp);
-        } else {
-            out.writeInt((int) partitionStateStamp);
-        }
+        out.writeLong(partitionStateStamp);
         out.writeInt(memberListVersion);
     }
 
@@ -129,11 +123,7 @@ public class LockClusterStateOp  extends Operation implements AllowedDuringPassi
         initiator = in.readObject();
         txnId = UUIDSerializationUtil.readUUID(in);
         leaseTime = in.readLong();
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            partitionStateStamp = in.readLong();
-        } else {
-            partitionStateStamp = in.readInt();
-        }
+        partitionStateStamp = in.readLong();
         memberListVersion = in.readInt();
     }
 

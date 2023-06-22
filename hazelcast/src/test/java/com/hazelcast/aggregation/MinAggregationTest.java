@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.assertj.core.data.Offset;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,6 +31,7 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.createExtractableEntryWithValue;
@@ -46,10 +48,7 @@ import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.INTEGER;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.LONG;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.STRING;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -65,16 +64,16 @@ public class MinAggregationTest {
         Collections.sort(values);
         BigDecimal expectation = values.get(0);
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalMin();
+        Aggregator<Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalMin();
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalMin();
+        Aggregator<Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalMin();
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -83,17 +82,17 @@ public class MinAggregationTest {
         Collections.sort(values);
         BigDecimal expectation = values.get(0).bigDecimal;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalMin("bigDecimal");
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalMin("bigDecimal");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
                 = Aggregators.bigDecimalMin("bigDecimal");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -102,16 +101,16 @@ public class MinAggregationTest {
         Collections.sort(values);
         BigInteger expectation = values.get(0);
 
-        Aggregator<Map.Entry<BigInteger, BigInteger>, BigInteger> aggregation = Aggregators.bigIntegerMin();
+        Aggregator<Entry<BigInteger, BigInteger>, BigInteger> aggregation = Aggregators.bigIntegerMin();
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<BigInteger, BigInteger>, BigInteger> resultAggregation = Aggregators.bigIntegerMin();
+        Aggregator<Entry<BigInteger, BigInteger>, BigInteger> resultAggregation = Aggregators.bigIntegerMin();
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -120,17 +119,17 @@ public class MinAggregationTest {
         Collections.sort(values);
         BigInteger expectation = values.get(0).bigInteger;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> aggregation = Aggregators.bigIntegerMin("bigInteger");
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigInteger> aggregation = Aggregators.bigIntegerMin("bigInteger");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
                 = Aggregators.bigIntegerMin("bigInteger");
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -148,7 +147,7 @@ public class MinAggregationTest {
         resultAggregation.combine(aggregation);
         Double result = resultAggregation.aggregate();
 
-        assertThat(result, is(closeTo(expectation, ERROR)));
+        assertThat(result).isCloseTo(expectation, Offset.offset(ERROR));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -157,16 +156,16 @@ public class MinAggregationTest {
         Collections.sort(values);
         double expectation = values.get(0).doubleValue;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleMin("doubleValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleMin("doubleValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.doubleMin("doubleValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.doubleMin("doubleValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -175,16 +174,16 @@ public class MinAggregationTest {
         Collections.sort(values);
         long expectation = values.get(0);
 
-        Aggregator<Map.Entry<Integer, Integer>, Integer> aggregation = Aggregators.integerMin();
+        Aggregator<Entry<Integer, Integer>, Integer> aggregation = Aggregators.integerMin();
         for (Integer value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<Integer, Integer>, Integer> resultAggregation = Aggregators.integerMin();
+        Aggregator<Entry<Integer, Integer>, Integer> resultAggregation = Aggregators.integerMin();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -193,16 +192,16 @@ public class MinAggregationTest {
         Collections.sort(values);
         int expectation = values.get(0).intValue;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Integer> aggregation = Aggregators.integerMin("intValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Integer> aggregation = Aggregators.integerMin("intValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Integer> resultAggregation = Aggregators.integerMin("intValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Integer> resultAggregation = Aggregators.integerMin("intValue");
         resultAggregation.combine(aggregation);
         int result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -211,16 +210,16 @@ public class MinAggregationTest {
         Collections.sort(values);
         long expectation = values.get(0);
 
-        Aggregator<Map.Entry<Long, Long>, Long> aggregation = Aggregators.longMin();
+        Aggregator<Entry<Long, Long>, Long> aggregation = Aggregators.longMin();
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<Long, Long>, Long> resultAggregation = Aggregators.longMin();
+        Aggregator<Entry<Long, Long>, Long> resultAggregation = Aggregators.longMin();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -229,16 +228,16 @@ public class MinAggregationTest {
         Collections.sort(values);
         long expectation = values.get(0).longValue;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.longMin("longValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.longMin("longValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.longMin("longValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.longMin("longValue");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -247,16 +246,16 @@ public class MinAggregationTest {
         Collections.sort(values);
         String expectation = values.get(0);
 
-        Aggregator<Map.Entry<String, String>, String> aggregation = Aggregators.comparableMin();
+        Aggregator<Entry<String, String>, String> aggregation = Aggregators.comparableMin();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<String, String>, String> resultAggregation = Aggregators.comparableMin();
+        Aggregator<Entry<String, String>, String> resultAggregation = Aggregators.comparableMin();
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -265,17 +264,17 @@ public class MinAggregationTest {
         Collections.sort(values);
         String expectation = values.get(0).stringValue;
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMin("stringValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMin("stringValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, String> resultAggregation
                 = Aggregators.comparableMin("stringValue");
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -285,16 +284,16 @@ public class MinAggregationTest {
         String expectation = values.get(0);
         values.add(null);
 
-        Aggregator<Map.Entry<String, String>, String> aggregation = Aggregators.comparableMin();
+        Aggregator<Entry<String, String>, String> aggregation = Aggregators.comparableMin();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<String, String>, String> resultAggregation = Aggregators.comparableMin();
+        Aggregator<Entry<String, String>, String> resultAggregation = Aggregators.comparableMin();
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -304,37 +303,37 @@ public class MinAggregationTest {
         String expectation = values.get(0).stringValue;
         values.add(null);
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMin("stringValue");
+        Aggregator<Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMin("stringValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, String> resultAggregation
                 = Aggregators.comparableMin("stringValue");
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testMinBy_withAttributePath_withNull() {
         List<ValueContainer> values = sampleValueContainers(STRING);
         Collections.sort(values);
-        Map.Entry<ValueContainer, ValueContainer> expectation = createExtractableEntryWithValue(values.get(0), ss);
+        Entry<ValueContainer, ValueContainer> expectation = createExtractableEntryWithValue(values.get(0), ss);
         values.add(null);
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> aggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, Entry<ValueContainer, ValueContainer>> aggregation
                 = Aggregators.minBy("stringValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value, ss));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> resultAggregation
+        Aggregator<Entry<ValueContainer, ValueContainer>, Entry<ValueContainer, ValueContainer>> resultAggregation
                 = Aggregators.minBy("stringValue");
         resultAggregation.combine(aggregation);
-        Map.Entry<ValueContainer, ValueContainer> result = resultAggregation.aggregate();
+        Entry<ValueContainer, ValueContainer> result = resultAggregation.aggregate();
 
-        assertThat(result, is(equalTo(expectation)));
+        assertThat(result).isEqualTo(expectation);
     }
 }

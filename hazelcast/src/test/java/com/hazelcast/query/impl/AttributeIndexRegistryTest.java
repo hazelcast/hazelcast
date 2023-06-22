@@ -34,9 +34,7 @@ import java.util.UUID;
 import static com.hazelcast.config.IndexType.BITMAP;
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.sameInstance;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.when;
@@ -73,7 +71,10 @@ public class AttributeIndexRegistryTest {
 
         InternalIndex unorderedA = index(HASH, "a");
         registry.register(unorderedA);
-        assertThat(registry.match("a", IndexMatchHint.NONE), anyOf(sameInstance(orderedA), sameInstance(unorderedA)));
+        assertThat(registry.match("a", IndexMatchHint.NONE)).satisfiesAnyOf(
+                r -> assertThat(r).isSameAs(orderedA),
+                r -> assertThat(r).isSameAs(unorderedA)
+        );
         assertSame(orderedA, registry.match("a", IndexMatchHint.PREFER_ORDERED));
         assertSame(unorderedA, registry.match("a", IndexMatchHint.PREFER_UNORDERED));
         assertSame(unorderedB, registry.match("b", IndexMatchHint.NONE));
@@ -111,8 +112,10 @@ public class AttributeIndexRegistryTest {
 
         InternalIndex unorderedA12 = index(HASH, "a1", "a2");
         registry.register(unorderedA12);
-        assertThat(undecorated(registry.match("a1", IndexMatchHint.NONE)),
-                anyOf(sameInstance(orderedA12), sameInstance(unorderedA12)));
+        assertThat(undecorated(registry.match("a1", IndexMatchHint.NONE))).satisfiesAnyOf(
+                r -> assertThat(r).isSameAs(orderedA12),
+                r -> assertThat(r).isSameAs(unorderedA12)
+        );
         assertSame(orderedA12, undecorated(registry.match("a1", IndexMatchHint.PREFER_ORDERED)));
         assertSame(orderedA12, undecorated(registry.match("a1", IndexMatchHint.PREFER_UNORDERED)));
         assertNull(registry.match("a2", IndexMatchHint.NONE));
@@ -154,8 +157,10 @@ public class AttributeIndexRegistryTest {
 
         InternalIndex orderedA12 = index(SORTED, "a1", "a2");
         registry.register(orderedA12);
-        assertThat(undecorated(registry.match("a1", IndexMatchHint.NONE)),
-                anyOf(sameInstance(unorderedA1), sameInstance(orderedA12)));
+        assertThat(undecorated(registry.match("a1", IndexMatchHint.NONE))).satisfiesAnyOf(
+                r -> assertThat(r).isSameAs(unorderedA1),
+                r -> assertThat(r).isSameAs(orderedA12)
+        );
         assertSame(orderedA12, undecorated(registry.match("a1", IndexMatchHint.PREFER_ORDERED)));
         assertSame(unorderedA1, registry.match("a1", IndexMatchHint.PREFER_UNORDERED));
         assertNull(registry.match("a2", IndexMatchHint.NONE));

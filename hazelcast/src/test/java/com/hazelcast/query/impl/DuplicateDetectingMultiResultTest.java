@@ -27,103 +27,103 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("rawtypes")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DuplicateDetectingMultiResultTest {
 
-    private DuplicateDetectingMultiResult result = new DuplicateDetectingMultiResult();
+    private final DuplicateDetectingMultiResult result = new DuplicateDetectingMultiResult();
 
     @Test
-    public void testAddResultSet_empty() throws Exception {
-        assertThat(result.size(), is(0));
+    public void testAddResultSet_empty() {
+        assertThat(result).isEmpty();
     }
 
     @Test
-    public void testContains_empty() throws Exception {
-        assertThat(result.contains(entry(data())), is(false));
+    public void testContains_empty() {
+        assertThat(result).doesNotContain(entry(data()));
     }
 
     @Test
-    public void testIterator_empty() throws Exception {
-        assertThat(result.iterator().hasNext(), is(false));
+    public void testIterator_empty() {
+        assertThat(result.iterator().hasNext()).isFalse();
     }
 
     @Test
-    public void testSize_empty() throws Exception {
-        assertThat(result.isEmpty(), is(true));
+    public void testSize_empty() {
+        assertThat(result).isEmpty();
     }
 
     @Test
-    public void testAddResultSet_notEmpty() throws Exception {
+    public void testAddResultSet_notEmpty() {
         addEntry(entry(data()));
 
-        assertThat(result.size(), is(1));
+        assertThat(result).hasSize(1);
     }
 
     @Test
-    public void testContains_notEmpty() throws Exception {
+    public void testContains_notEmpty() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
 
-        assertThat(result.contains(entry), is(true));
+        assertThat(result.contains(entry)).isTrue();
     }
 
     @Test
-    public void testIterator_notEmpty() throws Exception {
+    public void testIterator_notEmpty() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
 
-        assertThat(result.iterator().hasNext(), is(true));
-        assertThat(result.iterator().next(), is(entry));
+        assertThat(result.iterator().hasNext()).isTrue();
+        assertThat(result.iterator().next()).isEqualTo(entry);
     }
 
     @Test
-    public void testSize_notEmpty() throws Exception {
+    public void testSize_notEmpty() {
         addEntry(entry(data()));
 
-        assertThat(result.isEmpty(), is(false));
+        assertThat(result.isEmpty()).isFalse();
     }
 
     @Test
-    public void testAddResultSet_duplicate() throws Exception {
+    public void testAddResultSet_duplicate() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
         addEntry(entry);
 
-        assertThat(result.size(), is(1));
+        assertThat(result.size()).isEqualTo(1);
     }
 
     @Test
-    public void testContains_duplicate() throws Exception {
+    public void testContains_duplicate() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
         addEntry(entry);
 
-        assertThat(result.contains(entry), is(true));
+        assertThat(result.contains(entry)).isTrue();
     }
 
     @Test
-    public void testIterator_duplicate() throws Exception {
+    public void testIterator_duplicate() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
         addEntry(entry);
 
-        assertThat(result.iterator().hasNext(), is(true));
-        assertThat(result.iterator().next(), is(entry));
+        assertThat(result.iterator().hasNext()).isTrue();
+        assertThat(result.iterator().next()).isEqualTo(entry);
     }
 
     @Test
-    public void testSize_duplicate() throws Exception {
+    public void testSize_duplicate() {
         QueryableEntry entry = entry(data());
         addEntry(entry);
         addEntry(entry);
 
-        assertThat(result.isEmpty(), is(false));
+        assertThat(result.isEmpty()).isFalse();
     }
 
     public QueryableEntry entry(Data data) {

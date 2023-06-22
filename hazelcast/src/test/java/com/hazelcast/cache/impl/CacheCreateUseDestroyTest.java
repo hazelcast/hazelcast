@@ -67,10 +67,9 @@ import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.test.Accessors.getNode;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.not;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -114,7 +113,7 @@ public class CacheCreateUseDestroyTest extends HazelcastTestSupport {
     }
 
     protected void assumptions() {
-        assumeThat(inMemoryFormat, not(NATIVE));
+        assumeThat(inMemoryFormat).isNotEqualTo(NATIVE);
     }
 
     @Override

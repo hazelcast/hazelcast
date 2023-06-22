@@ -47,10 +47,9 @@ import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.chang
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getPartitionService;
-import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -78,7 +77,7 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 List<Integer> memberPartitions = partitionService.getMemberPartitions(node.getThisAddress());
-                assertThat(memberPartitions, empty());
+                assertThat(memberPartitions).isEmpty();
                 service.assertNoReplication();
             }
         }, 10);
