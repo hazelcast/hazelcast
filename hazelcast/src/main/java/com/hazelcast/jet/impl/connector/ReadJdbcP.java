@@ -214,6 +214,8 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                 if (isBoolean(value)) {
                     boolean autoCommit = Boolean.parseBoolean(value);
                     connection.setAutoCommit(autoCommit);
+                } else {
+                    throw new IllegalArgumentException("Invalid boolean value set for autoCommit");
                 }
             }
         } catch (SQLException exception) {

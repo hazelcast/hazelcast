@@ -45,8 +45,18 @@ public class PostgreReadJdbcPPropertiesTest extends ReadJdbcPPropertiesTest {
     @Test
     public void testInvalidFetchSize() {
         Properties properties = new Properties();
+        // FETCH_SIZE should be a number in string format
         properties.put(JdbcPropertyKeys.FETCH_SIZE, "aa");
         assertThatThrownBy(() -> runTest(properties))
                 .hasRootCauseInstanceOf(NumberFormatException.class);
+    }
+
+    @Test
+    public void testInvalidAutoCommit() {
+        Properties properties = new Properties();
+        // AUTO_COMMIT should be a boolean in string format
+        properties.put(JdbcPropertyKeys.AUTO_COMMIT, "1");
+        assertThatThrownBy(() -> runTest(properties))
+                .hasRootCauseInstanceOf(IllegalArgumentException.class);
     }
 }
