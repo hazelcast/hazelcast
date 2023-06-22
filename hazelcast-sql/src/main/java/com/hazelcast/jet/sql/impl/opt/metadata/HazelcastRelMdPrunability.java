@@ -54,7 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
@@ -100,17 +99,14 @@ public final class HazelcastRelMdPrunability
             return Collections.emptyList();
         }
 
-        final Map<Integer, Boolean> filterCompleteness = partitioningColumnIndexes.stream()
-                .collect(Collectors.toMap(Function.identity(), (k) -> false));
-
         final RexNode filter = hazelcastTable.getFilter();
         if (!(filter instanceof RexCall)) {
             return Collections.emptyList();
         }
 
         final RexCall call = (RexCall) filter;
-        PartitionStrategyConditionExtractor conditionExtractor = new PartitionStrategyConditionExtractor();
-        return conditionExtractor.extractCondition(call);
+        final var conditionExtractor = new PartitionStrategyConditionExtractor();
+        return conditionExtractor.extractCondition(call, partitioningColumnIndexes);
     }
 
     public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(IndexScanMapPhysicalRel scan, RelMetadataQuery mq) {

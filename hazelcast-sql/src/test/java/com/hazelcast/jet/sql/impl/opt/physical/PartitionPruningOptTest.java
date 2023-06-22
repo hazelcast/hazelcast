@@ -120,7 +120,7 @@ public class PartitionPruningOptTest extends SqlTestSupport {
     public void test_something() {
 //        instance().getSql().execute("SELECT * FROM test WHERE __key = ? AND this = ''", 113);
 //        instance().getSql().execute("SELECT * FROM test2 WHERE comp2 = ? AND comp3 = ?", 113, 113);
-        instance().getSql().execute("SELECT * FROM test2 WHERE comp2 = 113 AND comp3 = ?", 113);
+        instance().getSql().execute("SELECT * FROM test2 WHERE comp1 = 113 AND comp2 = ?", 113);
     }
 
     public static class KeyObj implements Serializable {

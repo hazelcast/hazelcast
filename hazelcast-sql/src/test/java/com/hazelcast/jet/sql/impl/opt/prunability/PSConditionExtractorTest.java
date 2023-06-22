@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.EQUALS;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
@@ -48,7 +49,7 @@ public class PSConditionExtractorTest {
         RexInputRef leftInputRef = b.makeInputRef(typeFactory.createSqlType(INTEGER), 0);
         RexLiteral rexLiteral = b.makeLiteral("1");
         RexCall call = (RexCall) b.makeCall(EQUALS, leftInputRef, rexLiteral);
-        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> decomposedConds = extractor.extractCondition(call);
+        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> decomposedConds = extractor.extractCondition(call, Set.of(0));
 
         assertEquals(1, decomposedConds.size());
         assertEquals(EQUALS, decomposedConds.get(0).f0());

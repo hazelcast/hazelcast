@@ -907,6 +907,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
+    // TODO: List<Tuple<tableName, Map<columnName, Expression>>>
     private List<Tuple2<String, Map<String, Expression<?>>>> partitionStrategyCandidates(
             PhysicalRel root, QueryParameterMetadata parameterMetadata) {
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);

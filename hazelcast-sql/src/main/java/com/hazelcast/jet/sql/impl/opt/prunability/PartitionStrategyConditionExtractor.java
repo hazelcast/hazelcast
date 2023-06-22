@@ -27,15 +27,50 @@ import org.apache.calcite.sql.SqlOperator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
 
 public class PartitionStrategyConditionExtractor {
 
-    // Tuple2(mapName, Map(columnName -> condition))
-    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractCondition(RexCall call) {
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractCondition(
+            RexCall call,
+            Set<Integer> partitioningColumns
+    ) {
+        final var conditions = extractSubCondition(call, partitioningColumns);
+        final Set<Integer> affectedColumns = conditions.stream()
+                .map(Tuple3::f1)
+                .filter(Objects::nonNull)
+                .map(RexInputRef::getIndex)
+                .collect(Collectors.toSet());
+
+        if (!affectedColumns.equals(partitioningColumns)) {
+            return emptyList();
+        }
+
+        return conditions;
+    }
+
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractSubCondition(
+            RexCall call,
+            Set<Integer> partitioningColumns
+    ) {
         List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> result = new ArrayList<>();
         // $1 = 1e
         switch (call.getKind()) {
-            // TODO: more cases.
+            // TODO: redesign into range-analysis based approach
+            case AND:
+                for (final RexNode operand : call.getOperands()) {
+                    if (!(operand instanceof RexCall)) {
+                        return emptyList();
+                    }
+
+                    result.addAll(extractSubCondition((RexCall) operand, partitioningColumns));
+                }
+
+                break;
             case EQUALS:
                 assert call.getOperands().size() == 2;
                 final RexInputRef inputRef = extractInputRef(call);
@@ -43,6 +78,10 @@ public class PartitionStrategyConditionExtractor {
                 if (inputRef == null || constantExpr == null) {
                     break;
                 }
+                if (!partitioningColumns.contains(inputRef.getIndex())) {
+                    break;
+                }
+
                 result.add(Tuple3.tuple3(call.getOperator(), inputRef, constantExpr));
                 break;
             default:
