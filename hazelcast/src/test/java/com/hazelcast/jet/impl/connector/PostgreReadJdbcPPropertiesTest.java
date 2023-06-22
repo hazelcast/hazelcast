@@ -24,6 +24,8 @@ import org.junit.Test;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 public class PostgreReadJdbcPPropertiesTest extends ReadJdbcPPropertiesTest {
 
     @BeforeClass
@@ -38,5 +40,13 @@ public class PostgreReadJdbcPPropertiesTest extends ReadJdbcPPropertiesTest {
         properties.put(JdbcPropertyKeys.FETCH_SIZE, String.valueOf(fetchSize));
         properties.put(JdbcPropertyKeys.AUTO_COMMIT, "false");
         runTestFetchSize(properties, fetchSize);
+    }
+
+    @Test
+    public void testInvalidFetchSize() {
+        Properties properties = new Properties();
+        properties.put(JdbcPropertyKeys.FETCH_SIZE, "aa");
+        assertThatThrownBy(() -> runTest(properties))
+                .hasRootCauseInstanceOf(NumberFormatException.class);
     }
 }

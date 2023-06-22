@@ -23,6 +23,9 @@ import org.junit.Test;
 
 import java.sql.SQLException;
 import java.util.Properties;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 public class MySQLReadJdbcPPropertiesTest extends ReadJdbcPPropertiesTest {
 
     @BeforeClass
@@ -37,5 +40,13 @@ public class MySQLReadJdbcPPropertiesTest extends ReadJdbcPPropertiesTest {
         Properties properties = new Properties();
         properties.put(JdbcPropertyKeys.FETCH_SIZE, String.valueOf(fetchSize));
         runTestFetchSize(properties, fetchSize);
+    }
+
+    @Test
+    public void testInvalidFetchSize() {
+        Properties properties = new Properties();
+        properties.put(JdbcPropertyKeys.FETCH_SIZE, "aa");
+        assertThatThrownBy(() -> runTest(properties))
+                .hasRootCauseInstanceOf(NumberFormatException.class);
     }
 }

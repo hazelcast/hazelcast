@@ -97,4 +97,14 @@ public abstract class ReadJdbcPPropertiesTest extends SimpleTestInClusterSupport
         instance().getJet().newJob(p).join();
     }
 
+    protected void runTest(Properties properties) {
+        Pipeline p = Pipeline.create();
+        p.readFrom(Sources.jdbc(dbConnectionUrl, "select * from items",
+                        properties,
+                        resultSet -> entry(resultSet.getInt(1), resultSet.getString(2))
+                ))
+                .writeTo(assertOrdered(tableContents));
+
+        instance().getJet().newJob(p).join();
+    }
 }

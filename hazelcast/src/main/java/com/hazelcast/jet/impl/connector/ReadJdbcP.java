@@ -126,8 +126,8 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                         (connection, parallelism, index) -> {
                             setAutoCommitIfNecessary(connection, properties);
                             PreparedStatement preparedStatement = connection.prepareStatement(query);
-                            setFetchSizeIfNecessary(preparedStatement, properties);
                             try {
+                                setFetchSizeIfNecessary(preparedStatement, properties);
                                 return preparedStatement.executeQuery();
                             } catch (SQLException e) {
                                 preparedStatement.close();
@@ -221,7 +221,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         }
     }
 
-    private static void setFetchSizeIfNecessary(PreparedStatement statement, Properties properties) {
+    private static void setFetchSizeIfNecessary(PreparedStatement statement, Properties properties) throws SQLException {
         try {
             String key = JdbcPropertyKeys.FETCH_SIZE;
             if (properties.containsKey(key)) {
@@ -230,8 +230,10 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             }
         } catch (SQLException exception) {
             LOGGER.severe("Error setting setFetchSize to PreparedStatement", exception);
+            throw exception;
         } catch (NumberFormatException exception) {
             LOGGER.severe("Invalid integer value set for fetchSize", exception);
+            throw exception;
         }
     }
 }
