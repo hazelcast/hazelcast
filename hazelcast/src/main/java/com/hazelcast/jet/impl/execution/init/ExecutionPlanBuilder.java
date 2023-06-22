@@ -91,8 +91,8 @@ public final class ExecutionPlanBuilder {
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
 
-        Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos, requiredPartitions);
-        Map<Address, int[]> partitionsByAddress = partitionsByMember
+        final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos, requiredPartitions);
+        final Map<Address, int[]> partitionsByAddress = partitionsByMember
                 .entrySet()
                 .stream()
                 .collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
@@ -125,8 +125,6 @@ public final class ExecutionPlanBuilder {
             String prefix = prefix(jobConfig.getName(), jobId, vertex.getName(), "#PMS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
 
-            Map<Address, int[]> finalPartitionsByAddress = partitionsByAddress;
-            int finalClusterSize = clusterSize;
             RunnableEx action = () -> {
                 JetServiceBackend jetBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
                 JobClassLoaderService jobClassLoaderService = jetBackend.getJobClassLoaderService();
@@ -134,8 +132,8 @@ public final class ExecutionPlanBuilder {
                 try {
                     doWithClassLoader(processorClassLoader, () ->
                             metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId,
-                                    jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, finalClusterSize,
-                                    isLightJob, finalPartitionsByAddress, subject, processorClassLoader)));
+                                    jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, clusterSize,
+                                    isLightJob, partitionsByAddress, subject, processorClassLoader)));
                 } catch (Exception e) {
                     throw sneakyThrow(peel(e));
                 }
