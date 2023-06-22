@@ -44,7 +44,6 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
@@ -161,7 +160,7 @@ public class StsMonitorTest {
         expectWatch("1").andReturn(500, null).always();
 
         KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
-        Future<Void> runFuture = spawn(stsMonitor);
+        var runFuture = spawn(stsMonitor);
         sleepSeconds(10);
         stsMonitor.running = false;
         FutureUtil.waitWithDeadline(Collections.singleton(runFuture), 5, TimeUnit.SECONDS);
@@ -175,7 +174,7 @@ public class StsMonitorTest {
         expectStsList().andReturn(500, null).always();
 
         KubernetesClient.StsMonitorThread stsMonitor = buildStsMonitor(namespace, apiServerBaseUrl, token);
-        Future<Void> runFuture = spawn(stsMonitor);
+        var runFuture = spawn(stsMonitor);
         sleepSeconds(10);
         stsMonitor.running = false;
         FutureUtil.waitWithDeadline(Collections.singleton(runFuture), 5, TimeUnit.SECONDS);

@@ -24,7 +24,6 @@ import com.hazelcast.internal.server.tcp.TcpServer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,8 +37,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_
 import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNode;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -61,7 +59,7 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
         TcpServer networkingService = (TcpServer) getNode(instance).getServer();
         final NioNetworking networking = (NioNetworking) networkingService.getNetworking();
 
-        assertTrueEventually(() -> assertThat(networking.getChannels(), Matchers.empty()));
+        assertTrueEventually(() -> assertThat(networking.getChannels()).isEmpty());
     }
 
     @Test
@@ -107,7 +105,7 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
         NioNetworking networking = (NioNetworking) networkingService.getNetworking();
         Set<NioChannel> channels = networking.getChannels();
 
-        assertThat(channels.size(), lessThanOrEqualTo(maxChannelCount));
+        assertThat(channels.size()).isLessThanOrEqualTo(maxChannelCount);
         for (NioChannel channel : channels) {
             assertTrue("Channel " + channel + " was found closed (channel: " + channel.isClosed() + ", socketChannel: " + !channel
                             .socketChannel().isOpen() + ") in instance " + instance,

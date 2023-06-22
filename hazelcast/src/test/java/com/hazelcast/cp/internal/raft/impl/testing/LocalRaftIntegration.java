@@ -53,11 +53,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newAddress;
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
 
 /**
  * In-memory {@link RaftIntegration} implementation for Raft core testing. Creates a single thread executor
@@ -97,7 +94,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     void discoverNode(RaftNodeImpl node) {
         assertNotEquals(localEndpoint, node.getLocalMember());
         RaftNodeImpl old = nodes.putIfAbsent(node.getLocalMember(), node);
-        assertThat(old, anyOf(nullValue(), sameInstance(node)));
+        assertThat(old).isIn(null, node);
     }
 
     boolean removeNode(RaftNodeImpl node) {
