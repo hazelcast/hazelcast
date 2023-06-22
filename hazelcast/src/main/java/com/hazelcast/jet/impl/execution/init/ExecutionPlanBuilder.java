@@ -35,6 +35,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,6 +50,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
@@ -60,7 +63,6 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
-import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.stream.Collectors.toMap;
@@ -84,30 +86,18 @@ public final class ExecutionPlanBuilder {
     ) {
         final VerticesIdAndOrder verticesIdAndOrder = VerticesIdAndOrder.assignVertexIds(dag);
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
-        Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos);
-        Map<Address, int[]> partitionsByAddress =
-                partitionsByMember.entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
-        int clusterSize = partitionsByMember.size();
-        final boolean isJobDistributed = clusterSize > 1;
         final EdgeConfig defaultEdgeConfig = nodeEngine.getConfig().getJetConfig().getDefaultEdgeConfig();
+        Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
-        Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
-        if (requiredPartitions != null) {
-            Map<MemberInfo, int[]> requiredMembers = new HashMap<>();
-            for (Entry<MemberInfo, int[]> entry : partitionsByMember.entrySet()) {
-                for (int partitionId : entry.getValue()) {
-                    if (requireNonNull(requiredPartitions).contains(partitionId)) {
-                        requiredMembers.putIfAbsent(entry.getKey(), entry.getValue());
-                    }
-                }
-            }
-            partitionsByMember = requiredMembers;
-            partitionsByAddress = requiredMembers.entrySet()
-                    .stream()
-                    .collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
-            clusterSize = partitionsByAddress.size();
-        }
+
+        Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos, requiredPartitions);
+        Map<Address, int[]> partitionsByAddress = partitionsByMember
+                .entrySet()
+                .stream()
+                .collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
+        final int clusterSize = partitionsByAddress.size();
+        final boolean isJobDistributed = clusterSize > 1;
 
         for (MemberInfo member : partitionsByMember.keySet()) {
             plans.put(member, new ExecutionPlan(partitionsByAddress, jobConfig, lastSnapshotId, memberIndex++,
@@ -251,7 +241,8 @@ public final class ExecutionPlanBuilder {
      * the {@code memberList}, are assigned to one of the members in a
      * round-robin way.
      */
-    public static Map<MemberInfo, int[]> getPartitionAssignment(NodeEngine nodeEngine, List<MemberInfo> memberList) {
+    public static Map<MemberInfo, int[]> getPartitionAssignment(
+            NodeEngine nodeEngine, List<MemberInfo> memberList, @Nullable Set<Integer> requiredPartitions) {
         IPartitionService partitionService = nodeEngine.getPartitionService();
         Map<Address, MemberInfo> membersByAddress = new HashMap<>();
         for (MemberInfo memberInfo : memberList) {
@@ -262,7 +253,9 @@ public final class ExecutionPlanBuilder {
         int partitionCount = partitionService.getPartitionCount();
         int memberIndex = 0;
 
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+        for (int partitionId : requiredPartitions != null
+                ? requiredPartitions
+                : IntStream.range(0, partitionCount).boxed().collect(Collectors.toList())) {
             Address address = partitionService.getPartitionOwnerOrWait(partitionId);
             MemberInfo member = membersByAddress.get(address);
             if (member == null) {

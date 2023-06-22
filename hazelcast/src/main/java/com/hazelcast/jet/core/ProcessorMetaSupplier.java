@@ -157,6 +157,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * @see #isReusable()
      */
 
+    @Nonnull
     Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses);
 
     /**

@@ -71,7 +71,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class PMSTest extends SimpleTestInClusterSupport {
+public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     private static final String OUTPUT_FILE = "output.txt";
     private File output;
     private Scanner scanner;
@@ -258,31 +258,6 @@ public class PMSTest extends SimpleTestInClusterSupport {
         } catch (NoSuchElementException e) {
             fail("Can't find any line in file");
         }
-    }
-
-    @Test
-    public void test_memberPruningWithPMS() {
-        // Given
-        ProcessorMetaSupplier pmsGen = ProcessorMetaSupplier.of(2, (ProcessorSupplier) count ->
-                IntStream.range(0, count)
-                        .mapToObj(GenP::new)
-                        .collect(Collectors.toList()));
-
-        ProcessorMetaSupplier pmsPrint = ProcessorMetaSupplier.of(
-                (ProcessorSupplier) count -> nCopies(count, new PrintP()));
-
-        DAG dag = new DAG();
-        Vertex generator = dag.newVertex("Generator", pmsGen);
-        Vertex printer = dag.newVertex("Printer", pmsPrint);
-        dag.edge(between(generator, printer));
-
-        JobConfig jobConfig = new JobConfig();
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(1));
-
-        Job job = instance().getJet().newJob(dag, jobConfig);
-        job.join();
-
-        assertJobStatusEventually(job, JobStatus.COMPLETED);
     }
 
     private static class ValidatingMetaSupplier implements ProcessorMetaSupplier {

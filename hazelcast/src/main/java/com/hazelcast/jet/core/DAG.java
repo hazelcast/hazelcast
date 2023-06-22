@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
@@ -80,7 +79,7 @@ import static java.util.stream.Collectors.joining;
  *
  * @since Jet 3.0
  */
-public class DAG implements IdentifiedDataSerializable, Versioned, Iterable<Vertex> {
+public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     //Note: This lock prevents only some changes to the DAG. It cannot prevent changing user-supplied
     // objects like processor suppliers or various lambdas.
     private transient boolean locked;
