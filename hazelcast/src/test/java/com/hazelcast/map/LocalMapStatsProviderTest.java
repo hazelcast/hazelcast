@@ -23,6 +23,8 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -37,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -95,6 +98,12 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
 
         // Confirm 1 putCount metric was collected for the Lite member
         assertEquals(1, metricsCollector.totalCollected.get());
+
+        // Destroy the map and ensure metrics are cleaned up
+        map1.destroy();
+        MapService mapService = getNode(hzLite).getNodeEngine().getService(MapService.SERVICE_NAME);
+        LocalMapStatsProvider statsProvider = mapService.getMapServiceContext().getLocalMapStatsProvider();
+        assertFalse(statsProvider.hasLocalMapStatsImpl(MAP_NAME));
     }
 
     private Config createMetricsBasedConfig() {

@@ -103,6 +103,10 @@ public class LocalMapStatsProvider {
         return mapServiceContext;
     }
 
+    public boolean hasLocalMapStatsImpl(String name) {
+        return statsMap.containsKey(name);
+    }
+
     public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, constructorFunction);
     }
@@ -177,16 +181,12 @@ public class LocalMapStatsProvider {
 
             if (mapConfig.isStatisticsEnabled() && !statsPerMap.containsKey(mapName)) {
                 // Lite members can invoke MapOperations, and their statistics are of importance for monitoring
-                // when Lite members are in use - so we should include them from our statsMap field in this case
-                if (nodeEngine.getLocalMember().isLiteMember()) {
-                    LocalMapStatsImpl localMapStats = statsMap.get(mapName);
-                    if (localMapStats != null && localMapStats.total() > 0) {
-                        statsPerMap.put(mapName, localMapStats);
-                        continue;
-                    }
+                // when Lite members are in use - so we should include proxy stats if they are non-zero
+                if (mapProxy.getLocalMapStats().total() > 0) {
+                    statsPerMap.put(mapName, mapProxy.getLocalMapStats());
+                } else {
+                    statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
                 }
-
-                statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
             }
         }
     }
