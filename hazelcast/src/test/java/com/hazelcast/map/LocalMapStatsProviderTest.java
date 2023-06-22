@@ -53,7 +53,7 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
     //https://github.com/hazelcast/hazelcast/issues/11598
     @Test
     public void testRedundantPartitionMigrationWhenManagementCenterConfigured() {
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
 
         //don't need start management center, just configure it
         final HazelcastInstance instance = factory.newHazelcastInstance(config);
@@ -98,7 +98,7 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
     }
 
     private Config createMetricsBasedConfig() {
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.setClusterName("dev");
         config.getMetricsConfig().setEnabled(true);
         MapConfig map = config.getMapConfig(MAP_NAME);
