@@ -23,6 +23,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystems;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -36,7 +37,7 @@ public final class FileTestSupport {
         return randomTmpFile(0);
     }
 
-    public static File randomTmpFile(long size) {
+    public static File randomTmpFile(int size) {
         String tmpdir = System.getProperty("java.io.tmpdir");
         String uuid = UUID.randomUUID().toString().replace("-", "");
         String separator = FileSystems.getDefault().getSeparator();
@@ -45,11 +46,12 @@ public final class FileTestSupport {
         file.deleteOnExit();
 
         if (size > 0) {
+            // can be chunked if size is very large
+            byte[] bytes = new byte[size];
+            Arrays.fill(bytes, (byte) 1);
             try {
                 try (FileOutputStream fos = new FileOutputStream(file)) {
-                    for (long k = 0; k < size; k++) {
-                        fos.write(1);
-                    }
+                    fos.write(bytes);
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);

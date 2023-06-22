@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.BlockDevice;
-import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
+import com.hazelcast.internal.tpcengine.file.BlockRequestScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
@@ -27,8 +27,6 @@ import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_TIMEOUT;
@@ -49,8 +47,6 @@ public final class IOUringEventloop extends Eventloop {
     protected static final int NANOSECONDS_IN_SECOND = 1_000_000_000;
 
     private final IOUringReactor ioUringReactor;
-    private final BlockDeviceRegistry blockDeviceRegistry;
-    final Map<BlockDevice, IOUringBlockRequestScheduler> deviceSchedulers = new HashMap<>();
     private final IOUring uring;
 
     final LongObjectHashMap<CompletionHandler> handlers = new LongObjectHashMap<>(4096);
@@ -74,7 +70,6 @@ public final class IOUringEventloop extends Eventloop {
     public IOUringEventloop(IOUringReactor reactor, IOUringReactorBuilder builder) {
         super(reactor, builder);
         this.ioUringReactor = reactor;
-        this.blockDeviceRegistry = builder.getBlockDeviceRegistry();
 
         // The uring instance needs to be created on the eventloop thread.
         // This is required for some of the setup flags.
@@ -126,7 +121,7 @@ public final class IOUringEventloop extends Eventloop {
             throw newUncheckedIOException("Could not find storage device for [" + path + "]");
         }
 
-        IOUringBlockRequestScheduler blockRequestScheduler = deviceSchedulers.get(dev);
+        BlockRequestScheduler blockRequestScheduler = deviceSchedulers.get(dev);
         if (blockRequestScheduler == null) {
             blockRequestScheduler = new IOUringBlockRequestScheduler(dev, this);
             deviceSchedulers.put(dev, blockRequestScheduler);

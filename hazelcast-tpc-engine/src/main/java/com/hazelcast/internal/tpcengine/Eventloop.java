@@ -17,6 +17,9 @@
 package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
+import com.hazelcast.internal.tpcengine.file.BlockDevice;
+import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
+import com.hazelcast.internal.tpcengine.file.BlockRequestScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
@@ -30,7 +33,9 @@ import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -80,6 +85,8 @@ public abstract class Eventloop {
     private long taskQueueStartNanos;
     private final StallHandler stallHandler;
     private long taskQueueDeadlineNanos;
+    protected final BlockDeviceRegistry blockDeviceRegistry;
+    protected final Map<BlockDevice, BlockRequestScheduler> deviceSchedulers = new HashMap<>();
 
     protected Eventloop(Reactor reactor, ReactorBuilder builder) {
         this.nanoClock = new EpochClock();
@@ -108,6 +115,7 @@ public abstract class Eventloop {
         this.spin = builder.spin;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
+        this.blockDeviceRegistry = builder.blockDeviceRegistry;
         this.stallThresholdNanos = builder.stallThresholdNanos;
         this.ioIntervalNanos = builder.ioIntervalNanos;
         this.stallHandler = builder.stallHandler;
@@ -570,5 +578,9 @@ public abstract class Eventloop {
             deadlineNanos = Long.MAX_VALUE;
         }
         return deadlineNanos;
+    }
+
+    public Reactor getReactor() {
+        return reactor;
     }
 }

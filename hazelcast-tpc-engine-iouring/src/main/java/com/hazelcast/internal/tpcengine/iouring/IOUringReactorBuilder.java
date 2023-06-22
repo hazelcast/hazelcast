@@ -18,7 +18,6 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
-import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
@@ -82,9 +81,5 @@ public class IOUringReactorBuilder extends ReactorBuilder {
      */
     public void setEntries(int entries) {
         this.entries = checkPositive(entries, "entries");
-    }
-
-    BlockDeviceRegistry getBlockDeviceRegistry() {
-        return blockDeviceRegistry;
     }
 }
