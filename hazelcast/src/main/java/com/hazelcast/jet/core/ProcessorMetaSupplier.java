@@ -577,13 +577,13 @@ public interface ProcessorMetaSupplier extends Serializable {
     @SerializableByConvention
     class SpecificMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
 
-        private ProcessorSupplier supplier;
-        private Address memberAddress;
+        protected ProcessorSupplier supplier;
+        protected Address memberAddress;
 
-        SpecificMemberPms() {
+        public SpecificMemberPms() {
         }
 
-        private SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
+        protected SpecificMemberPms(ProcessorSupplier supplier, Address memberAddress) {
             this.supplier = supplier;
             this.memberAddress = memberAddress;
         }

@@ -264,6 +264,10 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return Util.getNodeEngine(instance).getDataConnectionService();
     }
 
+    public NodeEngineImpl getNodeEngine() {
+        return Util.getNodeEngine(hazelcastInstance());
+    }
+
     @Nonnull
     public TestProcessorMetaSupplierContext setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
