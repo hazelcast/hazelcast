@@ -1500,25 +1500,31 @@ public final class Sources {
     /**
      * Same as @{link {@link Sources#jdbc(String, String, FunctionEx)}}
      * <p>
-     * This overload allows passing some properties for JDBC
+     * It is not always possible to use the default properties. This overload allows passing some properties to the
+     * JDBC driver
      * <p>
-     * Example for PostgreSQL fetchSize: <pre>{@code
+     * Example for PostgreSQL fetchSize:  PostgreSQL requires that the autocommit should be <b>disabled</b>.
+     * Because the backend closes cursors at the end of transactions, so in autocommit enabled mode
+     * the backend will have closed the cursor before anything can be fetched from it.
+     * <pre>{@code
      *        Properties properties = new Properties();
      *        properties.put(JdbcPropertyKeys.FETCH_SIZE, "5");
      *        properties.put(JdbcPropertyKeys.AUTO_COMMIT, "false");
      *        p.readFrom(Sources.jdbc(
-     *            DB_CONNECTION_URL,
+     *            "jdbc:postgresql://localhost:5432/mydatabase",
      *            "select ID, NAME from PERSON",
      *            properties
      *            resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      *    }</pre>
      *    <p>
-     * Example for MySQL fetchSize: The DB_CONNECTION_URL should have "&useCursorFetch=true" parameter
+     * Example for MySQL fetchSize: The database connection URL should have <b>"&useCursorFetch=true"</b> parameter to enable
+     * cursor-based fetching. This means that the JDBC driver will fetch a set of rows from the database at a time,
+     * rather than fetching all the rows in the result set at once
      * <pre>{@code
      *        Properties properties = new Properties();
      *        properties.put(JdbcPropertyKeys.FETCH_SIZE, "5");
      *        p.readFrom(Sources.jdbc(
-     *            DB_CONNECTION_URL,
+     *            "jdbc:mysql://localhost:3306/mydatabase?useCursorFetch=true,"
      *            "select ID, NAME from PERSON",
      *            properties
      *            resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
