@@ -205,37 +205,30 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         return null;
     }
 
-    private static void setAutoCommitIfNecessary(Connection connection, Properties properties) {
-        try {
-            String key = JdbcPropertyKeys.AUTO_COMMIT;
-            if (properties.containsKey(key)) {
-                String value = properties.getProperty(key);
-
-                if (isBoolean(value)) {
-                    boolean autoCommit = Boolean.parseBoolean(value);
-                    connection.setAutoCommit(autoCommit);
-                } else {
-                    throw new IllegalArgumentException("Invalid boolean value set for autoCommit");
-                }
+    private static void setAutoCommitIfNecessary(Connection connection, Properties properties) throws SQLException {
+        String key = JdbcPropertyKeys.AUTO_COMMIT;
+        if (properties.containsKey(key)) {
+            String value = properties.getProperty(key);
+            if (isBoolean(value)) {
+                boolean autoCommit = Boolean.parseBoolean(value);
+                connection.setAutoCommit(autoCommit);
+            } else {
+                throw new IllegalArgumentException("Invalid boolean value specified for autoCommit");
             }
-        } catch (SQLException exception) {
-            LOGGER.severe("Error setting setAutoCommit to PreparedStatement", exception);
         }
     }
 
     private static void setFetchSizeIfNecessary(PreparedStatement statement, Properties properties) throws SQLException {
-        try {
-            String key = JdbcPropertyKeys.FETCH_SIZE;
-            if (properties.containsKey(key)) {
-                int fetchSize = Integer.parseInt(properties.getProperty(key));
+        String key = JdbcPropertyKeys.FETCH_SIZE;
+        if (properties.containsKey(key)) {
+            String value = properties.getProperty(key);
+            try {
+                int fetchSize = Integer.parseInt(value);
                 statement.setFetchSize(fetchSize);
+            } catch (NumberFormatException exception) {
+                LOGGER.severe("Invalid integer value specified for fetchSize", exception);
+                throw exception;
             }
-        } catch (SQLException exception) {
-            LOGGER.severe("Error setting setFetchSize to PreparedStatement", exception);
-            throw exception;
-        } catch (NumberFormatException exception) {
-            LOGGER.severe("Invalid integer value set for fetchSize", exception);
-            throw exception;
         }
     }
 }
