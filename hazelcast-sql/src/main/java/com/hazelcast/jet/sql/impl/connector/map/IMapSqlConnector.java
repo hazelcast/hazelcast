@@ -60,7 +60,6 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;

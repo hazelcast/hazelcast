@@ -58,7 +58,7 @@ public final class SelectByKeyMapLogicalRule {
             RelOptTable table = scan.getTable();
             RexBuilder rexBuilder = scan.getCluster().getRexBuilder();
             RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, rexBuilder);
-            if (keyCondition != null && false) {
+            if (keyCondition != null) {
                 SelectByKeyMapLogicalRel rel = new SelectByKeyMapLogicalRel(
                         scan.getCluster(),
                         OptUtils.toLogicalConvention(scan.getTraitSet()),

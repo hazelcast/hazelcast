@@ -75,7 +75,10 @@ public final class HazelcastRelMdPrunability
     }
 
     @SuppressWarnings("unused")
-    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(FullScanPhysicalRel scan, RelMetadataQuery mq) {
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(
+            FullScanPhysicalRel scan,
+            RelMetadataQuery mq
+    ) {
 
         final HazelcastTable hazelcastTable = OptUtils.extractHazelcastTable(scan);
         if (!(hazelcastTable.getTarget() instanceof PartitionedMapTable)) {
@@ -109,7 +112,10 @@ public final class HazelcastRelMdPrunability
         return conditionExtractor.extractCondition(call, partitioningColumnIndexes);
     }
 
-    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(IndexScanMapPhysicalRel scan, RelMetadataQuery mq) {
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(
+            IndexScanMapPhysicalRel scan,
+            RelMetadataQuery mq
+    ) {
         // TODO: Implement
         return Collections.emptyList();
     }
@@ -130,27 +136,37 @@ public final class HazelcastRelMdPrunability
         List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> permutedPrunability = prunability.stream()
                 .map(t -> tuple3(
                         t.f0(),
-                        RexInputRef.of(rexNodes.indexOf(t.f1()), program.getInputRowType()), // TODO: Handle if field is not projected.
+                        // TODO: Handle if field is not projected.
+                        RexInputRef.of(rexNodes.indexOf(t.f1()), program.getInputRowType()),
                         t.f2())
                 ).collect(Collectors.toList());
 
         return permutedPrunability;
     }
 
-    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(Aggregate agg, RelMetadataQuery mq) {
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(
+            Aggregate agg,
+            RelMetadataQuery mq
+    ) {
         // Note: Aggregation breaks(?) prunability, but temporarily it forwards prunability.
         return extractPrunability(agg.getInput(), mq);
     }
 
     @SuppressWarnings("unused")
-    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(RelSubset subset, RelMetadataQuery mq) {
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(
+            RelSubset subset,
+            RelMetadataQuery mq
+    ) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         RelNode rel = Util.first(subset.getBest(), subset.getOriginal());
         return query.extractPrunability(rel);
     }
 
     @SuppressWarnings("unused")
-    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(RelNode rel, RelMetadataQuery mq) {
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(
+            RelNode rel,
+            RelMetadataQuery mq
+    ) {
         // For any non-mentioned rels, we assume they are prunable and forwards prunability.
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> prunability = new ArrayList<>();
@@ -161,7 +177,10 @@ public final class HazelcastRelMdPrunability
         return prunability;
     }
 
-    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(BiRel rel, RelMetadataQuery mq) {
+    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractPrunability(
+            BiRel rel,
+            RelMetadataQuery mq
+    ) {
         // For any bi-rel we (temporarily) are not propagating prunability.
         return Collections.emptyList();
     }
