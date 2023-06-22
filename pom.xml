@@ -1,4 +1,4 @@
-git <!--
+<!--
   ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -1360,23 +1360,23 @@ git <!--
             </build>
         </profile>
 
-        <profile>
-            <!--
-            Profile which allows to skip the modulepath-tests module.
-            The module runs by default, but can be skipped by adding -Dskip-modulepath-tests property.
-            This is used in PR builder when we run only `mvn test-compile` which is not possible due
-            to an automatic module name not being created in the hazelcast jar (no jar is built at all).
-            -->
-            <id>modulepath-tests</id>
-            <activation>
-                <property>
-                    <name>!skip-modulepath-tests</name>
-                </property>
-            </activation>
-            <modules>
-                <module>modulepath-tests</module>
-            </modules>
-        </profile>
+<!--        <profile>-->
+<!--            &lt;!&ndash;-->
+<!--            Profile which allows to skip the modulepath-tests module.-->
+<!--            The module runs by default, but can be skipped by adding -Dskip-modulepath-tests property.-->
+<!--            This is used in PR builder when we run only `mvn test-compile` which is not possible due-->
+<!--            to an automatic module name not being created in the hazelcast jar (no jar is built at all).-->
+<!--            &ndash;&gt;-->
+<!--            <id>modulepath-tests</id>-->
+<!--            <activation>-->
+<!--                <property>-->
+<!--                    <name>!skip-modulepath-tests</name>-->
+<!--                </property>-->
+<!--            </activation>-->
+<!--            <modules>-->
+<!--                <module>modulepath-tests</module>-->
+<!--            </modules>-->
+<!--        </profile>-->
 
         <profile>
             <!-- same as default build (excludes Nightly & Slow tests), outputs serialized objects to a blob -->
