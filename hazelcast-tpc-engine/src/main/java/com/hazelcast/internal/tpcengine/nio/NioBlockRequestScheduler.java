@@ -50,12 +50,17 @@ import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_OPEN
 import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_READ;
 import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_WRITE;
 
+@SuppressWarnings({
+        "checkstyle:CyclomaticComplexity",
+        "checkstyle:VisibilityModifier",
+        "checkstyle:MethodLength"})
 public class NioBlockRequestScheduler implements BlockRequestScheduler {
     private static final Executor EXECUTOR = Executors.newCachedThreadPool((Runnable r) -> {
         Thread t = new Thread(r);
         t.setDaemon(true);
         return t;
     });
+
     final MpscArrayQueue<NioBlockRequest> cq;
     private final NioReactor reactor;
     private final int concurrentLimit;

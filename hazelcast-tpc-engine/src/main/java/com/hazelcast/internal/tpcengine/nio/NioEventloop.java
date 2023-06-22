@@ -30,22 +30,31 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Nio specific Eventloop implementation.
  */
 final class NioEventloop extends Eventloop {
 
-    private static final long NANOS_PER_MILLI = TimeUnit.MILLISECONDS.toNanos(1);
+    private static final long NANOS_PER_MILLI = MILLISECONDS.toNanos(1);
 
     final Selector selector = SelectorOptimizer.newSelector();
     private final IOBufferAllocator blockIOBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
+
+    private final Consumer<SelectionKey> selectorProcessor = key -> {
+        NioHandler handler = (NioHandler) key.attachment();
+        try {
+            handler.handle();
+        } catch (Exception e) {
+            handler.close(null, e);
+        }
+    };
 
     NioEventloop(NioReactor reactor, NioReactorBuilder builder) {
         super(reactor, builder);
@@ -143,9 +152,9 @@ final class NioEventloop extends Eventloop {
         // similar to cq completions in io_uring
         boolean worked = false;
         for (BlockRequestScheduler blockRequestScheduler : deviceSchedulers.values()) {
-            NioBlockRequestScheduler nioBlockRequestScheduler = (NioBlockRequestScheduler) blockRequestScheduler;
-            MpscArrayQueue<NioBlockRequest> cq = nioBlockRequestScheduler.cq;
-            int drained = cq.drain(nioBlockRequestScheduler::complete);
+            NioBlockRequestScheduler scheduler = (NioBlockRequestScheduler) blockRequestScheduler;
+            MpscArrayQueue<NioBlockRequest> cq = scheduler.cq;
+            int drained = cq.drain(scheduler::complete);
             if (drained > 0) {
                 worked = true;
             }

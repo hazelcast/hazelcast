@@ -84,7 +84,7 @@ public abstract class Eventloop {
     private final long stallThresholdNanos;
     final TaskQueueScheduler taskQueueScheduler;
     private final ReactorStallHandler stallHandler;
-    private long taskQueueDeadlineNanos;
+    private long taskDeadlineNanos;
     protected final BlockDeviceRegistry blockDeviceRegistry;
     protected final Map<BlockDevice, BlockRequestScheduler> deviceSchedulers = new HashMap<>();
 
