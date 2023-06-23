@@ -22,6 +22,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
@@ -609,7 +610,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
         ExecutorService executor = Executors.newFixedThreadPool(10);
 
-        int threadsCount = 10;
+        int threadsCount = RuntimeAvailableProcessors.get() - 1;
         int keysPerThread = 5000;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -662,7 +663,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
         ExecutorService executor = Executors.newFixedThreadPool(10);
 
-        int threadsCount = 10;
+        int threadsCount = RuntimeAvailableProcessors.get() - 1;
         int keysPerThread = 2500;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
