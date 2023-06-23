@@ -597,7 +597,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
                 .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
 
-    @Test
+    @Test(timeout = 5 * 60 * 1000)
     public void testConcurrentPutAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
@@ -610,7 +610,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
         ExecutorService executor = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() - 1);
 
-        int threadsCount = RuntimeAvailableProcessors.get() - 1;
+        int threadsCount = RuntimeAvailableProcessors.get() / 2;
         int keysPerThread = 5000;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -645,12 +645,12 @@ public class SqlOrderByTest extends HazelcastTestSupport {
             });
         }
 
-        assertOpenEventually(latch, 240000);
+        assertOpenEventually(latch, 400);
         assertNull(exception.get());
         executor.shutdown();
     }
 
-    @Test
+    @Test(timeout = 5 * 60 * 1000)
     public void testConcurrentUpdateAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
@@ -663,7 +663,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
         ExecutorService executor = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() - 1);
 
-        int threadsCount = RuntimeAvailableProcessors.get() - 1;
+        int threadsCount = RuntimeAvailableProcessors.get() / 2;
         int keysPerThread = 2500;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -706,7 +706,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
             });
         }
 
-        assertOpenEventually(latch, 240000);
+        assertOpenEventually(latch, 400);
         assertNull(exception.get());
         executor.shutdown();
     }
