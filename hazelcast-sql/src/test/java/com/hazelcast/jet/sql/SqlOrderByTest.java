@@ -57,7 +57,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -608,9 +608,9 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         indexConfig.addAttribute("intVal");
         map.addIndex(indexConfig);
 
-        ExecutorService executor = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() - 1);
+        ExecutorService executor = ForkJoinPool.commonPool();
 
-        int threadsCount = RuntimeAvailableProcessors.get() / 2;
+        int threadsCount = RuntimeAvailableProcessors.get() - 1;
         int keysPerThread = 5000;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -661,9 +661,9 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         indexConfig.addAttribute("intVal");
         map.addIndex(indexConfig);
 
-        ExecutorService executor = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() - 1);
+        ExecutorService executor = ForkJoinPool.commonPool();
 
-        int threadsCount = RuntimeAvailableProcessors.get() / 2;
+        int threadsCount = RuntimeAvailableProcessors.get() - 1;
         int keysPerThread = 2500;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -708,7 +708,6 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
         assertOpenEventually(latch, 400);
         assertNull(exception.get());
-        executor.shutdown();
     }
 
     private void addIndex(List<String> fieldNames, IndexType type) {
