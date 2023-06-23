@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.prunability;
 
-import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.datamodel.Tuple4;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAccumulateByKeyPhysicalRel;
@@ -32,14 +32,12 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.EQUALS;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -66,7 +64,7 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         assertPlan(root, plan(planRow(0, FullScanPhysicalRel.class)));
 
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
-        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> prunability = query.extractPrunability(root);
+        List<Tuple4<String, String, RexInputRef, RexNode>> prunability = query.extractPrunability(root);
         RelDataType varcharType = HazelcastTypeUtils.createType(
                 HazelcastTypeFactory.INSTANCE,
                 SqlTypeName.VARCHAR,
@@ -75,9 +73,10 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         RexInputRef expectedLeftInputRef = new RexInputRef(1, varcharType);
 
         assertEquals(1, prunability.size());
-        assertEquals(EQUALS, prunability.get(0).f0());
-        assertEquals(expectedLeftInputRef, prunability.get(0).f1());
-//        assertEquals(HazelcastRexBuilder.INSTANCE.makeLiteral("10", varcharType), prunability.get(0).f2().);
+        assertEquals("m", prunability.get(0).f0());
+        assertEquals("this", prunability.get(0).f1());
+        assertEquals(expectedLeftInputRef, prunability.get(0).f2());
+//        assertEquals(HazelcastRexBuilder.INSTANCE.makeLiteral("10", varcharType), prunability.get(0).f3());
     }
 
 
@@ -99,7 +98,7 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         ));
 
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
-        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> prunability = query.extractPrunability(root);
+        List<Tuple4<String, String, RexInputRef, RexNode>> prunability = query.extractPrunability(root);
         RelDataType varcharType = HazelcastTypeUtils.createType(
                 HazelcastTypeFactory.INSTANCE,
                 SqlTypeName.VARCHAR,
@@ -107,8 +106,9 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         RexInputRef expectedLeftInputRef = new RexInputRef(0, varcharType);
 
         assertEquals(1, prunability.size());
-        assertEquals(EQUALS, prunability.get(0).f0());
-        assertEquals(expectedLeftInputRef, prunability.get(0).f1());
+        assertEquals("m", prunability.get(0).f0());
+        assertEquals("this", prunability.get(0).f1());
+        assertEquals(expectedLeftInputRef, prunability.get(0).f2());
 
         // TODO: don't even know how to actually get 'pure' project under FullScan, which always pushdown...
     }

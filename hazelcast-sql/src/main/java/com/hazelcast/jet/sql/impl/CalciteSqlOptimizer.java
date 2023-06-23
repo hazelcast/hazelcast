@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.datamodel.Tuple4;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -134,10 +134,10 @@ import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.apache.calcite.sql.util.SqlString;
 import org.apache.calcite.tools.RuleSets;
@@ -146,11 +146,11 @@ import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -159,6 +159,7 @@ import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.schema;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.EQUALS;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -907,21 +908,22 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
-    // TODO: List<Tuple<tableName, Map<columnName, Expression>>>
-    private List<Tuple2<String, Map<String, Expression<?>>>> partitionStrategyCandidates(
+    private Map<String, Map<String, Expression<?>>> partitionStrategyCandidates(
             PhysicalRel root, QueryParameterMetadata parameterMetadata) {
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
-        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> prunabilityMap = query.extractPrunability(root);
+        final List<Tuple4<String, String, RexInputRef, RexNode>> prunabilities = query.extractPrunability(root);
 
+        RexBuilder b = HazelcastRexBuilder.INSTANCE;
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
 
-        // TODO[sasha] !
-        return null;
-    }
+        Map<String, Map<String, Expression<?>>> result = new HashMap<>();
+        // Note: We consider all calls to be re-generated here would be equality conditions.
+        for (Tuple4<String, String, RexInputRef, RexNode> el : prunabilities) {
+            result.putIfAbsent(el.f0(), new HashMap<>());
+            result.get(el.f0()).put(el.f1(), b.makeCall(EQUALS, el.f2(), el.f3()).accept(visitor));
+        }
 
-    private Map<String, Expression<?>> toExpressionMap(RexToExpressionVisitor visitor, Map<String, RexNode> input) {
-        return input.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().accept(visitor)));
+        return result;
     }
 
 

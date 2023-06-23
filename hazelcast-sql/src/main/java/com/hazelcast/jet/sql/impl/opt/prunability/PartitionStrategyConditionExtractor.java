@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.opt.prunability;
 
-import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.datamodel.Tuple4;
+import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlOperator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,30 +35,36 @@ import static java.util.Collections.emptyList;
 
 public class PartitionStrategyConditionExtractor {
 
-    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractCondition(
+    /**
+     * Returns tuple of table name, column name, left and right
+     * operands of comparison extracted from analysed condition.
+     */
+    public List<Tuple4<String, String, RexInputRef, RexNode>> extractCondition(
+            Table table,
             RexCall call,
             Set<Integer> partitioningColumns
     ) {
-        final var conditions = extractSubCondition(call, partitioningColumns);
+        final var conditions = extractSubCondition(table, call, partitioningColumns);
         final Set<Integer> affectedColumns = conditions.stream()
-                .map(Tuple3::f1)
+                .map(Tuple4::f2)
                 .filter(Objects::nonNull)
                 .map(RexInputRef::getIndex)
                 .collect(Collectors.toSet());
-
-        if (!affectedColumns.equals(partitioningColumns)) {
-            return emptyList();
-        }
+//        TODO[Ivan] : enable strategy in RelPrunabilityTest
+//        if (!affectedColumns.equals(partitioningColumns)) {
+//            return emptyList();
+//        }
 
         return conditions;
     }
 
-    public List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> extractSubCondition(
+    public List<Tuple4<String, String, RexInputRef, RexNode>> extractSubCondition(
+            Table table,
             RexCall call,
             Set<Integer> partitioningColumns
     ) {
-        List<Tuple3<? extends SqlOperator, RexInputRef, RexNode>> result = new ArrayList<>();
-        // $1 = 1e
+        List<Tuple4<String, String, RexInputRef, RexNode>> result = new ArrayList<>();
+        // $1 = 1
         switch (call.getKind()) {
             // TODO: redesign into range-analysis based approach
             case AND:
@@ -66,8 +72,7 @@ public class PartitionStrategyConditionExtractor {
                     if (!(operand instanceof RexCall)) {
                         return emptyList();
                     }
-
-                    result.addAll(extractSubCondition((RexCall) operand, partitioningColumns));
+                    result.addAll(extractSubCondition(table, (RexCall) operand, partitioningColumns));
                 }
 
                 break;
@@ -78,11 +83,12 @@ public class PartitionStrategyConditionExtractor {
                 if (inputRef == null || constantExpr == null) {
                     break;
                 }
-                if (!partitioningColumns.contains(inputRef.getIndex())) {
-                    break;
-                }
-
-                result.add(Tuple3.tuple3(call.getOperator(), inputRef, constantExpr));
+//                if (!partitioningColumns.contains(inputRef.getIndex())) {
+//                    break;
+//                }
+                String tableName = table.getSqlName();
+                String columnName = table.getField(inputRef.getIndex()).getName();
+                result.add(Tuple4.tuple4(tableName, columnName, inputRef, constantExpr));
                 break;
             default:
                 return result;

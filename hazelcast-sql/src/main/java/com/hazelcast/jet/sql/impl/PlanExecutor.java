@@ -516,10 +516,10 @@ public class PlanExecutor {
                 .setTimeoutMillis(timeout);
 
         final Set<Integer> partitions = new HashSet<>();
-        for (final Tuple2<String, Map<String, Expression<?>>> candidate : plan.getPartitionStrategyCandidates()) {
+        for (Entry<String, Map<String, Expression<?>>> candidate : plan.getPartitionStrategyCandidates().entrySet()) {
             // TODO: null checks
-            final String mapName = candidate.f0();
-            final Map<String, Expression<?>> keyExprs = candidate.f1();
+            final String mapName = candidate.getKey();
+            final Map<String, Expression<?>> keyExprs = candidate.getValue();
             final MapContainer mapContainer = getMapContainer(hazelcastInstance.getMap(mapName));
             final PartitioningStrategy strategy = mapContainer.getPartitioningStrategy() == null
                     ? new DefaultPartitioningStrategy()
