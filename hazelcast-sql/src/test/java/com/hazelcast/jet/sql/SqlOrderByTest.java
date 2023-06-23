@@ -297,7 +297,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
     public void testSelectWithOrderByAndProject() {
         // SELECT intVal, intVal + bigIntVal FROM t ORDER BY intVal, bigIntVal
         String sql = sqlWithOrderBy(Arrays.asList("intVal",
-                "intVal + bigIntVal"),
+                        "intVal + bigIntVal"),
                 Arrays.asList("intVal", "bigIntVal"), Arrays.asList(true, true));
 
         checkSelectWithOrderBy(Arrays.asList("intVal", "bigIntVal"),
@@ -602,13 +602,13 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
         IndexConfig indexConfig = new IndexConfig()
-            .setName("Index_" + randomName())
-            .setType(SORTED);
+                .setName("Index_" + randomName())
+                .setType(SORTED);
 
         indexConfig.addAttribute("intVal");
         map.addIndex(indexConfig);
 
-        ExecutorService executor = Executors.newFixedThreadPool(10);
+        ExecutorService executor = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() - 1);
 
         int threadsCount = RuntimeAvailableProcessors.get() - 1;
         int keysPerThread = 5000;
@@ -655,13 +655,13 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
         IndexConfig indexConfig = new IndexConfig()
-            .setName("Index_" + randomName())
-            .setType(SORTED);
+                .setName("Index_" + randomName())
+                .setType(SORTED);
 
         indexConfig.addAttribute("intVal");
         map.addIndex(indexConfig);
 
-        ExecutorService executor = Executors.newFixedThreadPool(10);
+        ExecutorService executor = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() - 1);
 
         int threadsCount = RuntimeAvailableProcessors.get() - 1;
         int keysPerThread = 2500;
