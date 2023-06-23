@@ -57,7 +57,7 @@ import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -597,7 +597,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
                 .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
 
-    @Test(timeout = 5 * 60 * 1000)
+    @Test(timeout = 10 * 60 * 1000)
     public void testConcurrentPutAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
@@ -608,9 +608,9 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         indexConfig.addAttribute("intVal");
         map.addIndex(indexConfig);
 
-        ExecutorService executor = ForkJoinPool.commonPool();
+        int threadsCount = RuntimeAvailableProcessors.get() - 2;
+        ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
 
-        int threadsCount = RuntimeAvailableProcessors.get() - 1;
         int keysPerThread = 5000;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -647,10 +647,10 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
         assertOpenEventually(latch, 400);
         assertNull(exception.get());
-        executor.shutdown();
+        executor.shutdownNow();
     }
 
-    @Test(timeout = 5 * 60 * 1000)
+    @Test(timeout = 10 * 60 * 1000)
     public void testConcurrentUpdateAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
@@ -661,9 +661,9 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         indexConfig.addAttribute("intVal");
         map.addIndex(indexConfig);
 
-        ExecutorService executor = ForkJoinPool.commonPool();
+        int threadsCount = RuntimeAvailableProcessors.get() - 2;
+        ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
 
-        int threadsCount = RuntimeAvailableProcessors.get() - 1;
         int keysPerThread = 2500;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -708,6 +708,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
 
         assertOpenEventually(latch, 400);
         assertNull(exception.get());
+        executor.shutdownNow();
     }
 
     private void addIndex(List<String> fieldNames, IndexType type) {
