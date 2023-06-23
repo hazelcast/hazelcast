@@ -181,12 +181,9 @@ public class LocalMapStatsProvider {
 
             if (mapConfig.isStatisticsEnabled() && !statsPerMap.containsKey(mapName)) {
                 // Lite members can invoke MapOperations, and their statistics are of importance for monitoring
-                // when Lite members are in use - so we should include proxy stats if they are non-zero
-                if (mapProxy.getLocalMapStats().total() > 0) {
-                    statsPerMap.put(mapName, mapProxy.getLocalMapStats());
-                } else {
-                    statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
-                }
+                // when Lite members are in use - so we should include these stats as well if they exist
+                LocalMapStatsImpl localMapStats = statsMap.get(mapName);
+                statsPerMap.put(mapName, localMapStats != null ? localMapStats : EMPTY_LOCAL_MAP_STATS);
             }
         }
     }
