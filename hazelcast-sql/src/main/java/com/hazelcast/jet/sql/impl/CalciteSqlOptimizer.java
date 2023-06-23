@@ -920,7 +920,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         // Note: We consider all calls to be re-generated here would be equality conditions.
         for (Tuple4<String, String, RexInputRef, RexNode> el : prunabilities) {
             result.putIfAbsent(el.f0(), new HashMap<>());
-            result.get(el.f0()).put(el.f1(), b.makeCall(EQUALS, el.f2(), el.f3()).accept(visitor));
+            result.get(el.f0()).put(el.f1(), el.f3().accept(visitor));
         }
 
         return result;

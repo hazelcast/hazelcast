@@ -50,10 +50,10 @@ public class PartitionStrategyConditionExtractor {
                 .filter(Objects::nonNull)
                 .map(RexInputRef::getIndex)
                 .collect(Collectors.toSet());
-//        TODO[Ivan] : enable strategy in RelPrunabilityTest
-//        if (!affectedColumns.equals(partitioningColumns)) {
-//            return emptyList();
-//        }
+
+        if (!affectedColumns.equals(partitioningColumns)) {
+            return emptyList();
+        }
 
         return conditions;
     }
@@ -83,9 +83,9 @@ public class PartitionStrategyConditionExtractor {
                 if (inputRef == null || constantExpr == null) {
                     break;
                 }
-//                if (!partitioningColumns.contains(inputRef.getIndex())) {
-//                    break;
-//                }
+                if (!partitioningColumns.contains(inputRef.getIndex())) {
+                    break;
+                }
                 String tableName = table.getSqlName();
                 String columnName = table.getField(inputRef.getIndex()).getName();
                 result.add(Tuple4.tuple4(tableName, columnName, inputRef, constantExpr));
