@@ -1503,7 +1503,7 @@ public final class Sources {
      * It is not always possible to use the default properties. This overload allows passing some properties to the
      * JDBC driver
      * <p>
-     * Example for PostgreSQL fetchSize:  PostgreSQL requires that the autocommit should be <b>disabled</b>.
+     * Example for PostgreSQL to specify fetchSize:  PostgreSQL requires that the autocommit should be <b>disabled</b>.
      * Because the backend closes cursors at the end of transactions, so in autocommit enabled mode
      * the backend will have closed the cursor before anything can be fetched from it.
      * <pre>{@code
@@ -1517,8 +1517,8 @@ public final class Sources {
      *            resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      *    }</pre>
      *    <p>
-     * Example for MySQL fetchSize: The database connection URL should have <b>"&useCursorFetch=true"</b> parameter to enable
-     * cursor-based fetching. This means that the JDBC driver will fetch a set of rows from the database at a time,
+     * Example for MySQL to specify fetchSize: The database connection URL should have <b>"&useCursorFetch=true"</b> parameter
+     * to enable cursor-based fetching. This means that the JDBC driver will fetch a set of rows from the database at a time,
      * rather than fetching all the rows in the result set at once
      * <pre>{@code
      *        Properties properties = new Properties();

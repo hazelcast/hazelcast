@@ -213,7 +213,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                 boolean autoCommit = Boolean.parseBoolean(value);
                 connection.setAutoCommit(autoCommit);
             } else {
-                throw new IllegalArgumentException("Invalid boolean value specified for autoCommit");
+                throw new IllegalArgumentException("Invalid boolean value specified for autoCommit: " + value);
             }
         }
     }
@@ -226,7 +226,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                 int fetchSize = Integer.parseInt(value);
                 statement.setFetchSize(fetchSize);
             } catch (NumberFormatException exception) {
-                LOGGER.severe("Invalid integer value specified for fetchSize", exception);
+                LOGGER.severe("Invalid integer value specified for fetchSize: " + value, exception);
                 throw exception;
             }
         }
