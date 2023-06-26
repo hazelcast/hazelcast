@@ -79,6 +79,7 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -135,6 +136,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
                 ((HazelcastInstanceAware) classLoader).setHazelcastInstance(this);
             }
         } catch (Throwable e) {
+            //noinspection CatchMayIgnoreException
             try {
                 // terminate the node by terminating the NodeEngine, ConnectionManager, services, operation threads etc.
                 node.shutdown(true);
@@ -441,7 +443,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
             return false;
         }
         HazelcastInstance that = (HazelcastInstance) o;
-        return !(name != null ? !name.equals(that.getName()) : that.getName() != null);
+        return Objects.equals(this.name, that.getName());
     }
 
     @Override

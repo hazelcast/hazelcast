@@ -24,6 +24,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.transaction.TransactionTimedOutException;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -448,11 +449,12 @@ public final class FutureUtil {
     /**
      * Get all futures that are done
      *
-     * @param futures
+     * @param futures collection of futures which we will check for done futures.
      * @return list of completed futures
      */
+    @Nonnull
     public static List<Future<?>> getAllDone(Collection<Future<?>> futures) {
-        List<Future<?>> doneFutures = new ArrayList<Future<?>>();
+        List<Future<?>> doneFutures = new ArrayList<>();
         for (Future<?> f : futures) {
             if (f.isDone()) {
                 doneFutures.add(f);

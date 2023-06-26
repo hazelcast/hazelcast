@@ -137,7 +137,7 @@
                     <configuration>
                         <createSourcesJar>true</createSourcesJar>
                         <shadeSourcesContent>true</shadeSourcesContent>
-                        <createDependencyReducedPom>true</createDependencyReducedPom>
+                        <createDependencyReducedPom>false</createDependencyReducedPom>
                         <shadedArtifactAttached>true</shadedArtifactAttached>
                         <shadedClassifierName>jar-with-dependencies</shadedClassifierName>
                         <transformers>
