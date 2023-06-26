@@ -24,6 +24,8 @@ import com.hazelcast.cp.CPGroup;
 import com.hazelcast.cp.CPGroup.CPGroupStatus;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.CPMember;
+import com.hazelcast.cp.event.CPMembershipEvent;
+import com.hazelcast.cp.event.CPMembershipListener;
 import com.hazelcast.cp.internal.operation.ResetCPMemberOp;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
@@ -52,6 +54,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cp.CPGroup.DEFAULT_GROUP_NAME;
 import static com.hazelcast.cp.internal.MetadataRaftGroupManager.MetadataRaftGroupInitStatus.IN_PROGRESS;
@@ -729,6 +733,35 @@ public class MetadataRaftGroupTest extends HazelcastRaftTestSupport {
         RaftGroupId groupId2 = getRaftInvocationManager(newInstances[0]).createRaftGroup(DEFAULT_GROUP_NAME).joinInternal();
 
         assertNotEquals(groupId1, groupId2);
+    }
+
+    @Test
+    public void when_memberRemovedAndRejoined() throws InterruptedException {
+        Config config = createConfig(3, 3);
+        AtomicInteger numberOfMembers = new AtomicInteger(0);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        hz1.getCPSubsystem().addMembershipListener(new CPMembershipListener() {
+            @Override
+            public void memberAdded(CPMembershipEvent event) {
+                numberOfMembers.incrementAndGet();
+            }
+
+            @Override
+            public void memberRemoved(CPMembershipEvent event) {
+                numberOfMembers.decrementAndGet();
+            }
+        });
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
+        assertTrue(hz1.getCPSubsystem().getCPSubsystemManagementService().awaitUntilDiscoveryCompleted(60, TimeUnit.SECONDS));
+        assertEqualsEventually(3, numberOfMembers);
+        hz3.shutdown();
+        assertClusterSizeEventually(2, hz1, hz2);
+        assertEqualsEventually(2, numberOfMembers);
+        HazelcastInstance hz4 = factory.newHazelcastInstance(config);
+        assertClusterSizeEventually(3, hz1, hz2, hz4);
+        assertEqualsEventually(3, numberOfMembers);
     }
 
     private CPGroupId createNewRaftGroup(HazelcastInstance instance, String name, int groupSize) {
