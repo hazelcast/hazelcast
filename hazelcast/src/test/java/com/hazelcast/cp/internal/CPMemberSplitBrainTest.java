@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class CPMemberFailoverTest extends RaftSplitBrainTestSupport {
+public class CPMemberSplitBrainTest extends RaftSplitBrainTestSupport {
     @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         waitUntilCPDiscoveryCompleted(instances);
