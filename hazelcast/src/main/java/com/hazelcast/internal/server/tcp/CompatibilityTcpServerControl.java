@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 
 /**
@@ -164,19 +165,23 @@ public final class CompatibilityTcpServerControl {
             }
         }
         connection.setRemoteAddress(remoteEndpoint);
+        // construct a synthetic UUID based on remote endpoint address
+        int remoteAddressHashCode = remoteAddress.hashCode();
+        UUID remoteUuid = new UUID(remoteAddressHashCode, remoteAddressHashCode);
         serverContext.onSuccessfulConnection(remoteEndpoint);
         if (handshake.isReply()) {
             new CompatibilitySendMemberHandshakeTask(logger, serverContext, connection, remoteEndpoint, false).run();
         }
 
-        if (checkAlreadyConnected(connection, remoteEndpoint, handshake.getPlaneIndex())) {
+        if (checkAlreadyConnected(connection, remoteEndpoint, remoteUuid, handshake.getPlaneIndex())) {
             return false;
         }
 
         if (logger.isLoggable(Level.FINEST)) {
             logger.finest("Registering connection " + connection + " to address " + remoteEndpoint);
         }
-        boolean returnValue = connectionManager.register(remoteEndpoint, connection, handshake.getPlaneIndex());
+        boolean returnValue = connectionManager.register(remoteEndpoint, remoteEndpoint, remoteAddressAliases, remoteUuid,
+                connection, handshake.getPlaneIndex());
 
         if (remoteAddressAliases != null && returnValue) {
             for (Address remoteAddressAlias : remoteAddressAliases) {
@@ -184,19 +189,21 @@ public final class CompatibilityTcpServerControl {
                     logger.finest("Registering connection " + connection + " to address alias " + remoteAddressAlias);
                 }
                 connectionManager.planes[handshake.getPlaneIndex()]
-                        .putConnectionIfAbsent(remoteAddressAlias, connection);
+                        .putConnection(remoteUuid, connection);
             }
         }
 
         return returnValue;
     }
 
-    private boolean checkAlreadyConnected(TcpServerConnection connection, Address remoteEndPoint, int planeIndex) {
-        Connection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteEndPoint);
+    private boolean checkAlreadyConnected(TcpServerConnection connection, Address remoteEndPoint,
+                                          UUID remoteUUID, int planeIndex) {
+        Connection existingConnection = connectionManager.planes[planeIndex].getConnection(remoteUUID);
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest(existingConnection + " is already bound to " + remoteEndPoint + ", new one is " + connection);
+                    logger.finest(existingConnection + " is already bound to " + remoteEndPoint + " / " + remoteUUID
+                            + ", new one is " + connection);
                 }
                 // todo probably it's already in activeConnections (ConnectTask , AcceptorIOThread)
                 connectionManager.connections.add(connection);
