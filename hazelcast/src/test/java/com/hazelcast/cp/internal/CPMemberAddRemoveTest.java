@@ -17,6 +17,7 @@
 package com.hazelcast.cp.internal;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -401,14 +402,46 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         instances[3].getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember()
                     .toCompletableFuture().get(30, TimeUnit.SECONDS);
 
-        CPGroupId metadataGroupId = getMetadataGroupId(instances[1]);
-        CPGroup group = instances[1].getCPSubsystem().getCPSubsystemManagementService().getCPGroup(METADATA_CP_GROUP_NAME)
-                                    .toCompletableFuture().get();
+        checkIfInCPGroup(instances[1]);
+    }
+
+    @Test
+    public void contractAndReExpandRaftGroup_leaveTwoRunning() throws ExecutionException, InterruptedException, TimeoutException {
+        HazelcastInstance[] instances = newInstances(3);
+        instances[2].shutdown();
+        assertClusterSizeEventually(2, instances[0], instances[1]);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(createConfig(3, 3));
+        assertClusterStateEventually(ClusterState.ACTIVE, hz1);
+        assertClusterSizeEventually(3, instances[0], instances[1], hz1);
+        hz1.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().toCompletableFuture().join();
+        checkIfInCPGroup(hz1);
+    }
+
+    @Test
+    public void contractAndReExpandRaftGroup_leaveOneRunning() throws ExecutionException, InterruptedException, TimeoutException {
+        HazelcastInstance[] instances = newInstances(3);
+        instances[1].shutdown();
+        instances[2].shutdown();
+        assertClusterSizeEventually(1, instances[0]);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(createConfig(3, 3));
+        HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig(3, 3));
+        assertClusterStateEventually(ClusterState.ACTIVE, hz1, hz2);
+        assertClusterSizeEventually(3, instances[0], hz1, hz2);
+        hz1.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().toCompletableFuture().join();
+        hz2.getCPSubsystem().getCPSubsystemManagementService().promoteToCPMember().toCompletableFuture().join();
+        checkIfInCPGroup(hz1);
+        checkIfInCPGroup(hz2);
+    }
+
+    private static void checkIfInCPGroup(HazelcastInstance instance) throws InterruptedException, ExecutionException {
+        CPGroupId metadataGroupId = getMetadataGroupId(instance);
+        CPGroup group = instance.getCPSubsystem().getCPSubsystemManagementService().getCPGroup(METADATA_CP_GROUP_NAME)
+                .toCompletableFuture().get();
         assertEquals(3, group.members().size());
         Collection<CPMember> members = group.members();
-        assertTrue(members.contains(instances[3].getCPSubsystem().getLocalCPMember()));
+        assertTrue(members.contains(instance.getCPSubsystem().getLocalCPMember()));
 
-        assertTrueEventually(() -> assertNotNull(getRaftNode(instances[3], metadataGroupId)));
+        assertTrueEventually(() -> assertNotNull(getRaftNode(instance, metadataGroupId)));
     }
 
     @Test
