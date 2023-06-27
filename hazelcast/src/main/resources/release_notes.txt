@@ -9,6 +9,7 @@ https://github.com/hazelcast/hazelcast/pull/23606[#23606]
 
 == Fixes
 
+* Fixed protocol handshake issues in the IO subsystem, including the `TLSv1.3` handshake. [#24893]
 * Fixed an issue where Hazelcast was sending empty map interceptor information to the members which are newly joined to the cluster; it was causing eager map initializations. [#24667]
 * Fixed an issue where `lastAccessTime` and `expirationTime` were not updated when an entry is accessed via `executeOnEntries`. [#24010]
 * Fixed a parsing issue in JSON arrays when using predicate queries; it was causing the JSON query results to be varied according to the property order. [#23451]
