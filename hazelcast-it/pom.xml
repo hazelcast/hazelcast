@@ -22,7 +22,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.3.1</version>
+        <version>5.3.1-migration</version>
     </parent>
 
     <artifactId>hazelcast-it</artifactId>
