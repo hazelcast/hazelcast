@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,18 +30,24 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.AND;
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.EQUALS;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
@@ -49,35 +56,86 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PSConditionExtractorTest extends OptimizerTestSupport {
-    PartitionStrategyConditionExtractor extractor;
+    private PartitionStrategyConditionExtractor extractor;
+    private HazelcastTypeFactory typeFactory;
 
     @Before
     public void setUp() throws Exception {
         extractor = new PartitionStrategyConditionExtractor();
+        typeFactory = HazelcastTypeFactory.INSTANCE;
     }
 
     @Test
     public void test_singleEquals() {
-        Table table = partitionedTable(
+        var table = partitionedTable(
                 "m",
                 asList(
                         mapField(KEY, INT, QueryPath.KEY_PATH),
                         mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
                 10).getTarget();
 
+        var b = new RexBuilder(typeFactory);
+        var leftInputRef = b.makeInputRef(typeFactory.createSqlType(INTEGER), 0);
+        var rexLiteral = b.makeLiteral("1");
+        var call = (RexCall) b.makeCall(EQUALS, leftInputRef, rexLiteral);
 
-        HazelcastTypeFactory typeFactory = HazelcastTypeFactory.INSTANCE;
-        RexBuilder b = new RexBuilder(typeFactory);
-        RexInputRef leftInputRef = b.makeInputRef(typeFactory.createSqlType(INTEGER), 0);
-        RexLiteral rexLiteral = b.makeLiteral("1");
-        RexCall call = (RexCall) b.makeCall(EQUALS, leftInputRef, rexLiteral);
-        List<Tuple4<String, String, RexInputRef, RexNode>> decomposedConds = extractor.extractCondition(
-                table, call, Set.of(0));
+        var decomposedConds = extractor.extractCondition(table, call, Set.of(0));
 
         assertEquals(1, decomposedConds.size());
         assertEquals("m", decomposedConds.get(0).f0());
         assertEquals("__key", decomposedConds.get(0).f1());
         assertEquals(leftInputRef, decomposedConds.get(0).f2());
         assertEquals(rexLiteral, decomposedConds.get(0).f3());
+    }
+
+    @Test
+    public void test_multiEqualsAndWithCompleteFilter() {
+        final PartitionedMapTable table = partitionedTable(
+                "m",
+                asList(
+                        mapField("comp0", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp1")),
+                        mapField("comp1", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp2")),
+                        mapField("comp2", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp3")),
+                        mapField(KEY, OBJECT, QueryPath.KEY_PATH),
+                        mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
+                Collections.emptyList(), 10, Arrays.asList("comp1", "comp2")).getTarget();
+
+        // comp0 = ?2 AND comp1 = ?1 AND comp2 = ?0
+        var b = new RexBuilder(typeFactory);
+        var param0 = b.makeDynamicParam(typeFactory.createSqlType(SqlTypeName.BIGINT), 0);
+        var param1 = b.makeDynamicParam(typeFactory.createSqlType(SqlTypeName.BIGINT), 1);
+        var param2 = b.makeDynamicParam(typeFactory.createSqlType(SqlTypeName.BIGINT), 2);
+        var col0 = b.makeInputRef(typeFactory.createSqlType(SqlTypeName.BIGINT), 0);
+        var col1 = b.makeInputRef(typeFactory.createSqlType(SqlTypeName.BIGINT), 1);
+        var col2 = b.makeInputRef(typeFactory.createSqlType(SqlTypeName.BIGINT), 2);
+
+        var filter = (RexCall) b.makeCall(AND,
+                b.makeCall(EQUALS, col0, param2),
+                b.makeCall(EQUALS, col1, param1),
+                b.makeCall(EQUALS, col2, param0)
+        );
+
+        var decomposedConds = extractor.extractCondition(table, filter, Set.of(0, 1));
+        assertEquals(2, decomposedConds.size());
+
+        assertEquals("m", decomposedConds.get(0).f0());
+        assertEquals("comp0", decomposedConds.get(0).f1());
+        assertEquals(col0, decomposedConds.get(0).f2());
+        assertEquals(param2, decomposedConds.get(0).f3());
+
+        assertEquals("m", decomposedConds.get(1).f0());
+        assertEquals("comp1", decomposedConds.get(1).f1());
+        assertEquals(col1, decomposedConds.get(1).f2());
+        assertEquals(param1, decomposedConds.get(1).f3());
+    }
+
+    @Test
+    public void test_residualFilters() {
+
+    }
+
+    @Test
+    public void whenOrConditionIsPresent_thenFail() {
+
     }
 }

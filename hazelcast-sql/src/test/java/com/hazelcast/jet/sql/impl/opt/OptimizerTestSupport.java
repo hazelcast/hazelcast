@@ -150,6 +150,16 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             List<MapTableIndex> indexes,
             long rowCount
     ) {
+        return partitionedTable(name, fields, indexes, rowCount, emptyList());
+    }
+
+    protected static HazelcastTable partitionedTable(
+            String name,
+            List<TableField> fields,
+            List<MapTableIndex> indexes,
+            long rowCount,
+            List<String> partitioningAttributes
+    ) {
         PartitionedMapTable table = new PartitionedMapTable(
                 SCHEMA_NAME_PUBLIC,
                 name,
@@ -162,7 +172,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 null,
                 indexes,
                 false,
-                Collections.emptyList());
+                partitioningAttributes);
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
 

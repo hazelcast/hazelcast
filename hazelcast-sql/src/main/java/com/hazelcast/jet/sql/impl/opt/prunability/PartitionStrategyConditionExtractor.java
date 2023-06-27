@@ -33,11 +33,36 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 
+/**
+ * Extracts RexDynamicParam/RexLiterals that correspond to key components in the filter.
+ * Only supports simple top level AND operators, as well as single operator filters e.g.
+ * - keyComp1 = ? AND keyComp2 = ?
+ * - __key = ?
+ * Since at this point of Opt all filters are normalized and coalesced into multi-operand AND/OR operators
+ * we can safely assume that something like AND(b=1, AND(a=1,c=1)) will become AND(b=1,a=1,c=1) at this point.
+ * Note that this class will likely change significantly with introduction of support for more complex filters.
+ *
+ * TODO: redesign the Tuple4<...> interface into Map<TableName, List<Map<ColumnName,RexNode>>>
+ *       where every Map<ColumnName,RexNode> is "executable" variant, thus allowing preserving grouping of values
+ *       for future case of comp1 = 1 AND (comp2 IN (2,3)) -> (comp1 = 1 AND comp2 = 2) OR (comp1 = 1 AND comp2 = 3)
+ *       in this case the map should contain:
+ *       tableName -> [
+ *          {
+ *              comp1 = RexLiteral(1),
+ *              comp2 = RexLiteral(2)
+ *          },
+ *          {
+ *              comp1 = RexLiteral(1),
+ *              comp2 = RexLiteral(3)
+ *          }
+ *       ]
+ *
+ */
 public class PartitionStrategyConditionExtractor {
 
     /**
      * Returns tuple of table name, column name, left and right
-     * operands of comparison extracted from analysed condition.
+     * operands of comparison extracted from the analyzed condition.
      */
     public List<Tuple4<String, String, RexInputRef, RexNode>> extractCondition(
             Table table,
@@ -63,19 +88,30 @@ public class PartitionStrategyConditionExtractor {
             RexCall call,
             Set<Integer> partitioningColumns
     ) {
-        List<Tuple4<String, String, RexInputRef, RexNode>> result = new ArrayList<>();
-        // $1 = 1
+        final List<Tuple4<String, String, RexInputRef, RexNode>> result = new ArrayList<>();
         switch (call.getKind()) {
-            // TODO: redesign into range-analysis based approach
             case AND:
                 for (final RexNode operand : call.getOperands()) {
                     if (!(operand instanceof RexCall)) {
                         return emptyList();
                     }
-                    result.addAll(extractSubCondition(table, (RexCall) operand, partitioningColumns));
+                    result.addAll(extractSingleOperatorCondition(table, (RexCall) operand, partitioningColumns));
                 }
-
                 break;
+            case EQUALS:
+                result.addAll(extractSingleOperatorCondition(table, call, partitioningColumns));
+                break;
+        }
+        return result;
+    }
+
+    private List<Tuple4<String, String, RexInputRef, RexNode>> extractSingleOperatorCondition(
+            Table table,
+            RexCall call,
+            Set<Integer> partitioningColumns
+    ) {
+        final List<Tuple4<String, String, RexInputRef, RexNode>> result = new ArrayList<>();
+        switch (call.getKind()) {
             case EQUALS:
                 assert call.getOperands().size() == 2;
                 final RexInputRef inputRef = extractInputRef(call);
@@ -91,9 +127,9 @@ public class PartitionStrategyConditionExtractor {
                 result.add(Tuple4.tuple4(tableName, columnName, inputRef, constantExpr));
                 break;
             default:
-                return result;
-
+                return emptyList();
         }
+
         return result;
     }
 
