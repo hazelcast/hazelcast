@@ -46,9 +46,8 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.stream.Collectors.toMap;
 
 public class LazyDefiningPMSTest extends SimpleTestInClusterSupport {
-    private static int ITERATIONS = 1000;
+    private static final int ITERATIONS = 1000;
 
-    private Map<Address, int[]> partitionAssignment;
     private int pKey;
     private int keyOwnerPartitionId;
 
@@ -60,7 +59,7 @@ public class LazyDefiningPMSTest extends SimpleTestInClusterSupport {
     @Before
     public void setUp() throws Exception {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance());
-        partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
+        Map<Address, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
                         Util.getMembersView(nodeEngine).getMembers())
                 .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
         Address address = instance().getCluster().getLocalMember().getAddress();

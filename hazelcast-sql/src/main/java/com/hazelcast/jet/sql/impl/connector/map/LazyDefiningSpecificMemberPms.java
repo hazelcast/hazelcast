@@ -25,6 +25,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -37,12 +38,16 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.SpecificMemberPms {
+/**
+ * A meta-supplier that will only use the given {@code ProcessorSupplier} on a node with given partition key.
+ */
+public class LazyDefiningSpecificMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
     int partitionId;
 
+    private ProcessorSupplier supplier;
+    private SupplierEx<Expression<?>> partitionKeyExprSupplier;
     private Map<Address, int[]> partitionAssignment;
     private Integer partitionArgIndex;
-    private SupplierEx<Expression<?>> partitionKeyExprSupplier;
 
     public LazyDefiningSpecificMemberPms() {
         super();
@@ -51,13 +56,11 @@ public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.Specifi
     private LazyDefiningSpecificMemberPms(ProcessorSupplier supplier, int partitionArgumentIndex) {
         this.supplier = supplier;
         this.partitionArgIndex = partitionArgumentIndex;
-        this.memberAddress = null;
     }
 
     private LazyDefiningSpecificMemberPms(ProcessorSupplier supplier, SupplierEx<Expression<?>> partitionExprSupplier) {
         this.supplier = supplier;
         this.partitionKeyExprSupplier = partitionExprSupplier;
-        this.memberAddress = null;
     }
 
     @Override
@@ -97,6 +100,21 @@ public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.Specifi
             throw new JetException("Cluster does not contain the required member");
         }
         return addr -> supplier;
+    }
+
+    @Override
+    public int preferredLocalParallelism() {
+        return 1;
+    }
+
+    @Override
+    public boolean isReusable() {
+        return true;
+    }
+
+    @Override
+    public boolean initIsCooperative() {
+        return true;
     }
 
     @Override
