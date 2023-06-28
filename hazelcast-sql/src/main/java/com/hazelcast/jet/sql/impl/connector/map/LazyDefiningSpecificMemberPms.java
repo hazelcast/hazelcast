@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.Util;
@@ -32,6 +31,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -89,17 +89,14 @@ public class LazyDefiningSpecificMemberPms implements ProcessorMetaSupplier, Ide
     public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
         Address address = null;
         for (Entry<Address, int[]> entry : partitionAssignment.entrySet()) {
-            for (int pId : entry.getValue()) {
-                if (pId == partitionId) {
-                    address = entry.getKey();
-                    break;
-                }
+            if (Arrays.binarySearch(entry.getValue(), partitionId) >= 0) {
+                address = entry.getKey();
+                break;
             }
         }
-        if (address == null && !addresses.contains(address)) {
-            throw new JetException("Cluster does not contain the required member");
-        }
-        return addr -> supplier;
+        final Address finalAddress = address;
+        // ExpectNothingProcessorSupplier may be eliminated by partition pruning, if used by SQL.
+        return addr -> addr.equals(finalAddress) ? supplier : new ExpectNothingProcessorSupplier();
     }
 
     @Override
@@ -114,7 +111,11 @@ public class LazyDefiningSpecificMemberPms implements ProcessorMetaSupplier, Ide
 
     @Override
     public boolean initIsCooperative() {
-        return true;
+        if (partitionKeyExprSupplier != null) {
+            return partitionKeyExprSupplier.get().isCooperative();
+        } else {
+            return true;
+        }
     }
 
     @Override
