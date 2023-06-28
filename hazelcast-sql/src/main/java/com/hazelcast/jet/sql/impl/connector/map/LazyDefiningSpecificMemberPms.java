@@ -85,6 +85,7 @@ public class LazyDefiningSpecificMemberPms implements ProcessorMetaSupplier, Ide
         partitionAssignment = context.partitionAssignment();
     }
 
+    @Nonnull
     @Override
     public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
         Address address = null;
