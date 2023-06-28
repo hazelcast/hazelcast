@@ -13,21 +13,21 @@
 ## Background
 
 Before Hazelcast Platform 5.4, Jet job was always deployed to all data members, specifically all non-lite members. 
-If some DAG vertex isn’t using all members, it creates no-op processors on the rest, but Jet still creates queues 
+If some DAG vertex is not using all members, it creates no-op processors on others and Jet still creates queues 
 to/from those vertices and starts the processors, even though it completes immediately and the queues are closed with a `DONE_ITEM`. 
-If some member isn’t used at all, the DAG is still deployed to it, and the coordinator has to send `InitExecutionOperation` to it and wait for 
-the completion. Even though the processors are no-op, or have no data to process, it’s an unnecessary overhead, 
+If some member is not used at all, the DAG is still deployed to it, and the coordinator has to send `InitExecutionOperation` to it and wait for 
+the completion. Even though the processors are no-op, or have no data to process, it is an unnecessary overhead, 
 which becomes noticeable in very small batch jobs and/or large clusters due to serial transmission.
 
 ## Terminology
 
-- Member pruning - prevent cluster members without requested data on board from involving in job execution;
-- Processor pruning - eliminate redundant stage processor creation;
-- (IMap) Partition pruning - extract partition condition and assign only required partition to be read by `ReadMapOrCacheP`;
+- Member pruning - prevent cluster members which to not own requested data from being involved in job execution
+- Processor pruning - eliminate redundant stage processor creation
+- (IMap) Partition pruning - extract partition condition and assign only required partition to be read by `ReadMapOrCacheP`
 
 ## Goals
 
-The goals of that initiative is corresponding with items enumerated in 'Terminology' section : 
+The goals of that initiative is corresponding with items enumerated in 'Terminology' section: 
 
 - deploy a job only on members which contain required partitions.
 - prune processors which are not required for job execution - e.g, their input processor doesn't produce data and 
@@ -37,8 +37,9 @@ the processor itself can work only with input.
 Non-goals are:
 
 - support any kind of pruning for streaming jobs. It may be considered to do later, but now it is not a case.
-- support migration-tolerance for member and processor pruning. 
-- support local index scan.
+- special support migration-tolerance for member and processor pruning. If the migration happens when the job is starting,
+  it will be running suboptimally, because it may fetch data from other members - same behavior as we have currently.
+- support local index scan. Index scan is not supported in pure Jet, only SQL has dedicated processor for that.
 
 ## Technical Design
 
@@ -92,8 +93,6 @@ So, here we can eliminate whole Member 2, since according to partition key condi
 and final destination point `Aggregate`. Moreover, it is a good example for further processor pruning optimization.
 
 #### Solution design details
-
-To support this behaviour, we need to extend the API.
 
 We propose to change the contract of `ProcessorMetaSupplier#get` return function so that it will be
 allowed to return `null` for addresses for which it does not want to deploy processors. But this will not be enough
@@ -164,11 +163,13 @@ namely scan and flatmap nodes.
 #### Solution design details
 
 ##### Intra-member processor pruning
+
 To control processor creation and parallelism within one member, we would like to use various processor suppliers
 (`ProcessorMetaSupplier` or `ProcessorSupplier`). The correctness of this method will totally rely on how DAG is constructed.
 Since Partition Pruning initiative was introduced to align PredicateAPI and SQL functionality and performance, we will
 rely on SQL optimizer input and DAG construction phase in `CreateDagVisitor`. 
 This approach was tried, but it was **rejected** due to **small performance difference for increased code complexity**.
+
 ##### Inter-member processor pruning
 
 After long discussions, we decided NOT to support this kind of processor pruning, because it
@@ -181,12 +182,12 @@ After long discussions, we decided NOT to support this kind of processor pruning
 Partition pruning is a pretty simple optimization: we will extract partition key condition during SQL opt phase,
 pass it to specialized processor supplier which will spawn `ReadMapOrCacheP` with only required partitions to scan.
 
-## Final decision
-After long discussions, we decided to implement **SQL-oriented** approach for member pruning and Scan processor partition pruning.
+## Final scope
+
+We decided to implement **SQL-oriented** approach for member pruning and Scan processor partition pruning.
 
 Processor pruning was considered as non-universal, complex and  **rejected**. As a side effect from this research, 
 we decided to add  new `lazyForceTotalParallelismOne` PMS builder which does not cache member address to prevent 
 wrong usage of cached plan.
-
 
 ### Acceptance Criteria
