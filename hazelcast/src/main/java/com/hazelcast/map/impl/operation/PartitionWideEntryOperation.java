@@ -130,7 +130,7 @@ public class PartitionWideEntryOperation extends MapOperation
 
     private void runForNative() {
         // try run with partitioned index
-        if (isTieredStoreMap()
+        if (!isTieredStoreMap()
                 && runWithPartitionedIndex()) {
             return;
         }
