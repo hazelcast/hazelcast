@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.operation.steps.MergeOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.MapMergeResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.Indexes;
@@ -211,7 +212,8 @@ public class MergeOperation extends MapOperation
         Data dataKey = getNodeEngine().toData(mergingEntry.getRawKey());
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
-        if (recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance())) {
+        MapMergeResponse response = recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance());
+        if (response.isMergeApplied()) {
             hasMergedValues = true;
 
             Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));
@@ -221,7 +223,8 @@ public class MergeOperation extends MapOperation
                 mapEventPublisher.publishEvent(getCallerAddress(), name, MERGED, dataKey, oldValue, dataValue);
             }
 
-            if (hasWanReplication) {
+            // Don't WAN replicate merge events where values don't change
+            if (hasWanReplication && response != MapMergeResponse.VALUES_ARE_EQUAL) {
                 publishWanUpdate(dataKey, dataValue);
             }
 

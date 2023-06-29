@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheMergeResponse;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -75,13 +76,16 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     private void merge(CacheMergeTypes<Object, Object> mergingEntry) {
         Data dataKey = (Data) mergingEntry.getRawKey();
 
-        CacheRecord backupRecord = recordStore.merge(mergingEntry, mergePolicy, NOT_WAN);
-        if (backupRecords != null && backupRecord != null) {
-            backupRecords.put(dataKey, backupRecord);
+        CacheMergeResponse response = recordStore.merge(mergingEntry, mergePolicy, NOT_WAN);
+        if (backupRecords != null && response.getResult().isMergeApplied()) {
+            backupRecords.put(dataKey, response.getRecord());
         }
         if (recordStore.isWanReplicationEnabled()) {
-            if (backupRecord != null) {
-                publishWanUpdate(dataKey, backupRecord);
+            if (response.getResult().isMergeApplied()) {
+                // Don't WAN replicate merge events where values don't change
+                if(response.getResult() != CacheMergeResponse.MergeResult.VALUES_ARE_EQUAL) {
+                    publishWanUpdate(dataKey, response.getRecord());
+                }
             } else {
                 publishWanRemove(dataKey);
             }

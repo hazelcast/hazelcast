@@ -1782,7 +1782,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public CacheRecord merge(CacheMergeTypes<Object, Object> mergingEntry,
+    public CacheMergeResponse merge(CacheMergeTypes<Object, Object> mergingEntry,
                              SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy,
                              CallerProvenance callerProvenance) {
         final long now = Clock.currentTimeMillis();
@@ -1791,7 +1791,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         mergingEntry = injectDependencies(mergingEntry);
         mergePolicy = injectDependencies(mergePolicy);
 
-        boolean merged = false;
+        CacheMergeResponse.MergeResult result = CacheMergeResponse.MergeResult.NO_MERGE_APPLIED;
         Data key = (Data) mergingEntry.getRawKey();
         long expiryTime = mergingEntry.getExpirationTime();
         R record = records.get(key);
@@ -1802,35 +1802,38 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             Object newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue != null) {
                 record = createRecordWithExpiry(key, newValue, expiryTime, now, disableWriteThrough, IGNORE_COMPLETION);
-                merged = record != null;
+                if (record != null) {
+                    result = CacheMergeResponse.MergeResult.RECORD_CREATED;
+                }
             }
         } else {
             Data oldValue = ss.toData(record.getValue());
             CacheMergeTypes<Object, Object> existingEntry = createMergingEntry(ss, key, oldValue, record);
             Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
 
-            merged = updateWithMergingValue(key, oldValue, newValue, record, expiryTime, now, disableWriteThrough);
+            result = updateWithMergingValue(key, oldValue, newValue, record, expiryTime, now, disableWriteThrough);
         }
 
-        if (merged && isStatisticsEnabled()) {
+        if (result.isMergeApplied() && isStatisticsEnabled()) {
             statistics.increaseCachePuts(1);
             statistics.addPutTimeNanos(Timer.nanosElapsed(startNanos));
         }
 
-        return merged ? record : null;
+        return result.isMergeApplied() ? new CacheMergeResponse(record, result) : new CacheMergeResponse(null, result);
     }
 
-    private boolean updateWithMergingValue(Data key, Object existingValue, Object mergingValue,
+    private CacheMergeResponse.MergeResult updateWithMergingValue(Data key, Object existingValue, Object mergingValue,
                                            R record, long expiryTime, long now, boolean disableWriteThrough) {
 
         if (valueComparator.isEqual(existingValue, mergingValue, ss)) {
             updateExpiryTime(record, expiryTime);
             processExpiredEntry(key, record, now);
-            return true;
+            return CacheMergeResponse.MergeResult.VALUES_ARE_EQUAL;
         }
 
-        return updateRecordWithExpiry(key, mergingValue, record, TIME_NOT_AVAILABLE,
-                now, disableWriteThrough, IGNORE_COMPLETION);
+        boolean updateResult = updateRecordWithExpiry(key, mergingValue, record, TIME_NOT_AVAILABLE, now, disableWriteThrough,
+                IGNORE_COMPLETION);
+        return updateResult ? CacheMergeResponse.MergeResult.RECORD_UPDATED : CacheMergeResponse.MergeResult.NO_MERGE_APPLIED;
     }
 
     private Object getExpiryPolicyOrNull(R record) {

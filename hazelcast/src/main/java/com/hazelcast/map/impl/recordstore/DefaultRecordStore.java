@@ -1060,9 +1060,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     @SuppressWarnings("unchecked")
-    public boolean merge(MapMergeTypes<Object, Object> mergingEntry,
-                         SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
-                         CallerProvenance provenance) {
+    public MapMergeResponse merge(MapMergeTypes<Object, Object> mergingEntry,
+                               SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
+                               CallerProvenance provenance) {
         checkIfLoaded();
         long now = getNow();
 
@@ -1077,12 +1077,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue == null) {
-                return false;
+                return MapMergeResponse.NO_MERGE_APPLIED;
             }
             boolean persist = persistenceEnabledFor(provenance);
             Record newRecord = putNewRecord(key, null, newValue, UNSET, UNSET, UNSET, now,
                     null, ADDED, persist, false);
             mergeRecordExpiration(key, newRecord, mergingEntry, now);
+            return MapMergeResponse.RECORD_CREATED;
         } else {
             oldValue = record.getValue();
             ExpiryMetadata expiryMetadata = expirySystem.getExpiryMetadata(key);
@@ -1096,20 +1097,19 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 }
                 onStore(record);
                 removeRecord0(key, record, false);
-                return true;
+                return MapMergeResponse.RECORD_REMOVED;
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
                 mergeRecordExpiration(key, record, mergingEntry, now);
-                return true;
+                return MapMergeResponse.VALUES_ARE_EQUAL;
             }
 
             boolean persist = persistenceEnabledFor(provenance);
             updateRecord(record, key, oldValue, newValue, true, UNSET, UNSET, UNSET,
                     now, null, persist, true, false);
+            return MapMergeResponse.RECORD_UPDATED;
         }
-
-        return true;
     }
 
     @Override
