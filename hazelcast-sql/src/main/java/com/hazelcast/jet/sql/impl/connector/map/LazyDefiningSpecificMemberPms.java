@@ -107,7 +107,7 @@ public class LazyDefiningSpecificMemberPms implements ProcessorMetaSupplier, Ide
 
     @Override
     public boolean isReusable() {
-        return true;
+        return false;
     }
 
     @Override
