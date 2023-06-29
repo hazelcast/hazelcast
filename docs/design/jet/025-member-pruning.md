@@ -1,4 +1,4 @@
-# Jet job member pruning
+# Member pruning
 
 |||
 |---|---|
@@ -12,12 +12,12 @@
 
 ## Background
 
-Before Hazelcast Platform 5.4, Jet job was always deployed to all data members, specifically all non-lite members. 
-If some DAG vertex is not using all members, it creates no-op processors on others and Jet still creates queues 
-to/from those vertices and starts the processors, even though it completes immediately and the queues are closed with a `DONE_ITEM`. 
-If some member is not used at all, the DAG is still deployed to it, and the coordinator has to send `InitExecutionOperation` to it and wait for 
-the completion. Even though the processors are no-op, or have no data to process, it is an unnecessary overhead, 
-which becomes noticeable in very small batch jobs and/or large clusters due to serial transmission.
+Before Hazelcast Platform 5.4, Jet job was always deployed to all data members, specifically all non-lite members.
+If some DAG vertex is not using all members, it creates no-op processors on others and Jet still creates queues
+to/from those vertices and starts the processors, even though it completes immediately and the queues are closed with a `DONE_ITEM`.
+If some member is not used at all, the DAG is still deployed to it, and the coordinator has to send `InitExecutionOperation` to it and wait for
+the completion. Even though the processors are no-op, or have no data to process, it is an unnecessary overhead,
+which becomes noticeable in very small batch jobs and/or large clusters.
 
 ## Terminology
 
@@ -27,11 +27,9 @@ which becomes noticeable in very small batch jobs and/or large clusters due to s
 
 ## Goals
 
-The goals of that initiative is corresponding with items enumerated in 'Terminology' section: 
+The goals of that initiative is corresponding with items enumerated in 'Terminology' section:
 
 - deploy a job only on members which contain required partitions.
-- prune processors which are not required for job execution - e.g, their input processor doesn't produce data and 
-the processor itself can work only with input.
 - limit number of partitions involved in IMap scan.
 
 Non-goals are:
@@ -43,23 +41,23 @@ Non-goals are:
 
 ## Technical Design
 
-Let's split member pruning, processor pruning and partition pruning as separate stages, which can complement each other, 
+Let's split member pruning, processor pruning and partition pruning as separate stages, which can complement each other,
 but on their own, each kind of pruning is still a good optimization.
 
 ### Member pruning
 
-Member pruning by its own, may have pretty simple solution. To implement it, we need to support that solution 
-in `ExecutionPlanBuilder` (execution plan creation phase). Previous `ProcessorMetaSupplier#get` contract was a reason 
+Member pruning by its own, may have pretty simple solution. To implement it, we need to support that solution
+in `ExecutionPlanBuilder` (execution plan creation phase). Previous `ProcessorMetaSupplier#get` contract was a reason
 for strict assumptions in execution plan creation algorithm, but that has changed.
 
 #### Use cases for member pruning
 
-**Important note**: by default, the basic unit on example pictures will be DAG vertices, but sometimes we will 
+**Important note**: by default, the basic unit on example pictures will be DAG vertices, but sometimes we will
 use processors as basic unit instead. We will explicitly declare it.
 
 ##### Member pruning for simple map scan
 
-Prune all members except Member 1 for scanning job. We want to highlight this simple case, because we assume that 
+Prune all members except Member 1 for scanning job. We want to highlight this simple case, because we assume that
 the bigger part of the submitted queries looks like `SELECT * FROM map WHERE ...`. So, if you may hint the optimizer
 with partitionKey, the submitted job could be even local.
 
@@ -80,6 +78,7 @@ Prune members without any connections, so, only Member 1 and Member K left in cl
 ![Scan + Scan -> HashJoin](https://svgshare.com/i/tfk.svg)
 
 ##### Member pruning for Scan -> Transform -> Aggregate
+
 ```
 - AGGREGATION
   - TRANSFORM
@@ -94,21 +93,17 @@ and final destination point `Aggregate`. Moreover, it is a good example for furt
 
 #### Solution design details
 
-We propose to change the contract of `ProcessorMetaSupplier#get` return function so that it will be
-allowed to return `null` for addresses for which it does not want to deploy processors. But this will not be enough
-to completely eliminate a member from the execution.
-
-Next, we need to determine the exact scope of the change. Two different approaches were
-considered, which differ from each other in the stage that we understand that some member
-may be pruned from job execution. The _generic_ approach tries to define the default
-behavior and applicable to DAGs from any source (SQL/Jet), whereas the _SQL-oriented_
-approach focuses on hinting `ExecutionPlanBuilder` with additional meta-information from
-JobConfig and DAG constructed by SQL optimizer.
+There are two different approaches were considered, which differ from each other
+in the stage that we understand that some member may be pruned from job execution.
+The _generic_ approach tries to define the default behavior and applicable to DAGs from any source (SQL/Jet),
+whereas the _SQL-oriented_ approach focuses on hinting `ExecutionPlanBuilder` with
+additional meta-information from JobConfig and DAG constructed by SQL optimizer.
 
 ##### Generic approach
 
-The core idea here is that `ExecutionPlanBuilder` would have detailed analysis of the received DAG and possibly 
+The core idea here is that `ExecutionPlanBuilder` would have detailed analysis of the received DAG and possibly
 try to optimize it before creating execution plans. The requirements to prune a member are:
+
 - each vertex in the DAG may work without an input;
 - DAG does not contain `distributed-broadcast` edges;
 
@@ -118,12 +113,19 @@ and big list of corner cases, which are discussed in the chapter below.
 
 ##### SQL-oriented approach
 
-Unlike the way described above, we can think that member pruning would be beneficial mostly for small jobs.
-The overwhelming majority of such jobs are generated by SQL, and our team effort is to replace Predicate API,
-where `PartitionPredicate` is available for partitioned data querying.
-For that, we can use SQL optimization phase also for determining partitions and for all relations, we can extract information
-about required partitions to run to `JobConfig`, and then mark DAG as 'ableToPruneMembers'. This mark is an indicator
-for `ExecutionPlanBuilder` to choose code path with member pruning during execution plan creation.
+Unlike the way described above, we can think that member pruning would be beneficial
+mostly for small jobs. The overwhelming majority of such jobs are generated by SQL,
+and our team effort is to replace Predicate API, where `PartitionPredicate` is available
+for partitioned data querying. For that, we will use SQL optimization phase also to determine
+partitions and for all relations. Then, we extract information about required partitions to run to `JobConfig`.
+This indicates that `ExecutionPlanBuilder` will try to choose only required members.
+
+### Scan processor partition pruning
+
+Partition pruning is a pretty simple optimization: we will extract partition key condition during SQL opt phase,
+pass it to specialized processor supplier which will spawn `ReadMapOrCacheP` with only required partitions to scan.
+
+## Rejected opportunities
 
 ### Processor pruning
 
@@ -137,21 +139,23 @@ We would like to separate processor pruning into two categories: **intra-member*
 
 ![Scan + Scan -> HashJoin](https://svgshare.com/i/tTM.svg)
 
-On the picture above we can see optimized example from member pruning case. We can go further and just don't create 
-processors which are not participating in data processing by tuning local parallelism parameter with 
-partition involvement knowledge: 
+On the picture above we can see optimized example from member pruning case. We can go further and just don't create
+processors which are not participating in data processing by tuning local parallelism parameter with
+partition involvement knowledge:
 
 ![Scan + Scan -> HashJoin](https://svgshare.com/i/tUD.svg)
 
 So, it's a good target for **intra-member** processor pruning.
 
 2. Double-staged aggregation.
+
 ```
 - COMBINE
   - ACCUMULATE
     - TRANSFORM
       - SCAN[map, partitionKey=K]
 ```
+
 ![Scan + Scan -> HashJoin](https://jet-start.sh/docs/assets/arch-dag-4.svg)
 
 Two-stage aggregation might be a good target for **inter-member** processor pruning. However,
@@ -167,27 +171,22 @@ namely scan and flatmap nodes.
 To control processor creation and parallelism within one member, we would like to use various processor suppliers
 (`ProcessorMetaSupplier` or `ProcessorSupplier`). The correctness of this method will totally rely on how DAG is constructed.
 Since Partition Pruning initiative was introduced to align PredicateAPI and SQL functionality and performance, we will
-rely on SQL optimizer input and DAG construction phase in `CreateDagVisitor`. 
+rely on SQL optimizer input and DAG construction phase in `CreateDagVisitor`.
 This approach was tried, but it was **rejected** due to **small performance difference for increased code complexity**.
 
 ##### Inter-member processor pruning
 
-After long discussions, we decided NOT to support this kind of processor pruning, because it
+We decided NOT to support this kind of processor pruning, because it
+
 - is relatively ineffective since most DAGs with broadcast edges were created with algorithm correctness in mind,
 - is hard to implement for most use cases, and
 - doesn't fit the goal of general effort.
-
-### Scan processor partition pruning
-
-Partition pruning is a pretty simple optimization: we will extract partition key condition during SQL opt phase,
-pass it to specialized processor supplier which will spawn `ReadMapOrCacheP` with only required partitions to scan.
 
 ## Final scope
 
 We decided to implement **SQL-oriented** approach for member pruning and Scan processor partition pruning.
 
-Processor pruning was considered as non-universal, complex and  **rejected**. As a side effect from this research, 
-we decided to add  new `lazyForceTotalParallelismOne` PMS builder which does not cache member address to prevent 
-wrong usage of cached plan.
-
-### Acceptance Criteria
+Processor pruning was considered as non-universal, complex and  **rejected**.
+As a side effect from this research, we decided to add new partition-aware
+`lazyForceTotalParallelismOne` PMS builder which does not cache member address
+to prevent wrong usage of cached plan.
