@@ -607,7 +607,6 @@ public final class RaftNodeImpl implements RaftNode {
      * Schedules periodic heartbeat task when a new leader is elected.
      */
     private void scheduleHeartbeat() {
-        broadcastAppendRequest();
         schedule(new HeartbeatTask(), heartbeatPeriodInMillis);
     }
 
