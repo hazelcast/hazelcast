@@ -321,6 +321,7 @@ public class MergeOperation extends MapOperation
      * safely be transferred to the backup replica.
      */
     @Nonnull
+    @SuppressWarnings("checkstyle:magicnumber")
     private List toBackupListByRemovingEvictedRecords(@Nullable BitSet localNonWanReplicatedKeys) {
         List toBackupList = new ArrayList(backupPairs.size());
         for (int i = 0; i < backupPairs.size(); i += 2) {
