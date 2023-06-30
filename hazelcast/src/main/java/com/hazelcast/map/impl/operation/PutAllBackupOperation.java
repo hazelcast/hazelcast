@@ -125,6 +125,7 @@ public class PutAllBackupOperation extends MapOperation
     }
 
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
