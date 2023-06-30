@@ -37,4 +37,8 @@ public class WanWrappedCacheRecord {
     public boolean isWanReplicated() {
         return wanReplicated;
     }
+
+    public void setWanReplicated(boolean wanReplicated) {
+        this.wanReplicated = wanReplicated;
+    }
 }

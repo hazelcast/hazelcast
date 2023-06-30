@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.WanWrappedCacheRecord;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,9 +26,12 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
+import java.io.EOFException;
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
@@ -73,14 +75,25 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
         out.writeBoolean(cacheRecords != null);
         if (cacheRecords != null) {
             out.writeInt(cacheRecords.size());
+            BitSet nonWanReplicatedKeys = new BitSet(cacheRecords.size());
+            int index = 0;
             for (Map.Entry<Data, WanWrappedCacheRecord> entry : cacheRecords.entrySet()) {
                 Data key = entry.getKey();
                 WanWrappedCacheRecord wrapped = entry.getValue();
                 IOUtil.writeData(out, key);
                 out.writeObject(wrapped.getRecord());
-                if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) {
-                    out.writeBoolean(wrapped.isWanReplicated());
+
+                if (!wrapped.isWanReplicated()) {
+                    nonWanReplicatedKeys.set(index);
                 }
+                index++;
+            }
+
+            if (nonWanReplicatedKeys.isEmpty()) {
+                out.writeBoolean(false);
+            } else {
+                out.writeBoolean(true);
+                out.writeByteArray(nonWanReplicatedKeys.toByteArray());
             }
         }
     }
@@ -92,14 +105,25 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
         if (recordNotNull) {
             int size = in.readInt();
             cacheRecords = createHashMap(size);
+
+            Data[] orderedKeys = new Data[size];
             for (int i = 0; i < size; i++) {
                 Data key = IOUtil.readData(in);
                 CacheRecord record = in.readObject();
-                boolean wanReplicated = true;
-                if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) {
-                    wanReplicated = in.readBoolean();
+                orderedKeys[i] = key;
+                cacheRecords.put(key, new WanWrappedCacheRecord(record, true));
+            }
+
+            // RU_COMPAT_5_3
+            try {
+                if (in.readBoolean()) {
+                    BitSet nonWanKeys = BitSet.valueOf(in.readByteArray());
+                    for (int i = nonWanKeys.nextSetBit(0); i >= 0; i = nonWanKeys.nextSetBit(i + 1)) {
+                        cacheRecords.get(orderedKeys[i]).setWanReplicated(false);
+                    }
                 }
-                cacheRecords.put(key, new WanWrappedCacheRecord(record, wanReplicated));
+            } catch (EOFException ex) {
+                ignore(ex);
             }
         }
     }
