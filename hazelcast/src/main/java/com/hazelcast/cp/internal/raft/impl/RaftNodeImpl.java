@@ -1238,6 +1238,7 @@ public final class RaftNodeImpl implements RaftNode {
         state.toLeader();
         appendEntryAfterLeaderElection();
         printMemberState();
+        broadcastAppendRequest();
         scheduleHeartbeat();
     }
 
