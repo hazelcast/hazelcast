@@ -234,7 +234,7 @@ public class MergeOperation extends MapOperation
             if (hasWanReplication) {
                 if (response != MapMergeResponse.VALUES_ARE_EQUAL) {
                     publishWanUpdate(dataKey, dataValue);
-                } else if(hasBackups) {
+                } else if (hasBackups) {
                     // Mark this dataKey so we don't WAN replicate via backups
                     nonWanReplicatedKeys.add(dataKey);
                 }

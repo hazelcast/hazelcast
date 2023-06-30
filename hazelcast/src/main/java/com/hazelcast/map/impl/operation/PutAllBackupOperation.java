@@ -116,7 +116,8 @@ public class PutAllBackupOperation extends MapOperation
             IOUtil.writeData(out, dataKey);
             Records.writeRecord(out, record, dataValue);
             Records.writeExpiry(out, expiryMetadata);
-            if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) { // TODO: Can't release on 5.3?
+            // TODO: Can't release on 5.3?
+            if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) {
                 out.writeBoolean(shouldWanReplicate);
             }
         }
@@ -134,7 +135,8 @@ public class PutAllBackupOperation extends MapOperation
             Record record = Records.readRecord(in);
             ExpiryMetadata expiryMetadata = Records.readExpiry(in);
             boolean shouldWanReplicate = true;
-            if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) { // TODO: Can't release on 5.3?
+            // TODO: Can't release on 5.3?
+            if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) {
                 shouldWanReplicate = in.readBoolean();
             }
 
