@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.cache.impl.record.WanWrappedCacheRecord;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -43,7 +44,7 @@ public class CachePutAllOperation extends CacheOperation
     private ExpiryPolicy expiryPolicy;
     private int completionId;
 
-    private transient Map<Data, CacheRecord> backupRecords;
+    private transient Map<Data, WanWrappedCacheRecord> backupRecords;
 
     public CachePutAllOperation() {
     }
@@ -79,7 +80,7 @@ public class CachePutAllOperation extends CacheOperation
 
             // backupRecord may be null (eg expired on put)
             if (backupRecord != null) {
-                backupRecords.put(key, backupRecord);
+                backupRecords.put(key, new WanWrappedCacheRecord(backupRecord, true));
                 publishWanUpdate(key, backupRecord);
             }
         }

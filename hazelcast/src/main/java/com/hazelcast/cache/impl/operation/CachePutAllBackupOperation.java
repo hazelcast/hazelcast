@@ -18,10 +18,13 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.cache.impl.record.WanWrappedCacheRecord;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
 import java.io.IOException;
@@ -35,14 +38,14 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
  *
  * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperation
  */
-public class CachePutAllBackupOperation extends CacheOperation implements BackupOperation {
+public class CachePutAllBackupOperation extends CacheOperation implements BackupOperation, Versioned {
 
-    private Map<Data, CacheRecord> cacheRecords;
+    private Map<Data, WanWrappedCacheRecord> cacheRecords;
 
     public CachePutAllBackupOperation() {
     }
 
-    public CachePutAllBackupOperation(String cacheNameWithPrefix, Map<Data, CacheRecord> cacheRecords) {
+    public CachePutAllBackupOperation(String cacheNameWithPrefix, Map<Data, WanWrappedCacheRecord> cacheRecords) {
         super(cacheNameWithPrefix);
         this.cacheRecords = cacheRecords;
     }
@@ -53,11 +56,13 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
             return;
         }
         if (cacheRecords != null) {
-            for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
-                CacheRecord record = entry.getValue();
-                recordStore.putRecord(entry.getKey(), record, true);
+            for (Map.Entry<Data, WanWrappedCacheRecord> entry : cacheRecords.entrySet()) {
+                WanWrappedCacheRecord wrapped = entry.getValue();
+                recordStore.putRecord(entry.getKey(), wrapped.getRecord(), true);
 
-                publishWanUpdate(entry.getKey(), record);
+                if (wrapped.isWanReplicated()) {
+                    publishWanUpdate(entry.getKey(), wrapped.getRecord());
+                }
             }
         }
     }
@@ -68,11 +73,14 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
         out.writeBoolean(cacheRecords != null);
         if (cacheRecords != null) {
             out.writeInt(cacheRecords.size());
-            for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
+            for (Map.Entry<Data, WanWrappedCacheRecord> entry : cacheRecords.entrySet()) {
                 Data key = entry.getKey();
-                CacheRecord record = entry.getValue();
+                WanWrappedCacheRecord wrapped = entry.getValue();
                 IOUtil.writeData(out, key);
-                out.writeObject(record);
+                out.writeObject(wrapped.getRecord());
+                if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) {
+                    out.writeBoolean(wrapped.isWanReplicated());
+                }
             }
         }
     }
@@ -87,7 +95,11 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
             for (int i = 0; i < size; i++) {
                 Data key = IOUtil.readData(in);
                 CacheRecord record = in.readObject();
-                cacheRecords.put(key, record);
+                boolean wanReplicated = true;
+                if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) {
+                    wanReplicated = in.readBoolean();
+                }
+                cacheRecords.put(key, new WanWrappedCacheRecord(record, wanReplicated));
             }
         }
     }

@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheMergeResponse;
-import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.cache.impl.record.WanWrappedCacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
@@ -46,7 +46,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     private SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy;
 
     private transient boolean hasBackups;
-    private transient Map<Data, CacheRecord> backupRecords;
+    private transient Map<Data, WanWrappedCacheRecord> backupRecords;
 
     public CacheMergeOperation() {
     }
@@ -78,7 +78,8 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
 
         CacheMergeResponse response = recordStore.merge(mergingEntry, mergePolicy, NOT_WAN);
         if (backupRecords != null && response.getResult().isMergeApplied()) {
-            backupRecords.put(dataKey, response.getRecord());
+            backupRecords.put(dataKey, new WanWrappedCacheRecord(response.getRecord(),
+                    response.getResult() != CacheMergeResponse.MergeResult.VALUES_ARE_EQUAL));
         }
         if (recordStore.isWanReplicationEnabled()) {
             if (response.getResult().isMergeApplied()) {

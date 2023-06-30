@@ -21,6 +21,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.cache.impl.record.WanWrappedCacheRecord;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -59,7 +60,7 @@ public class CacheLoadAllOperation
     private boolean replaceExistingValues;
     private boolean shouldBackup;
 
-    private transient Map<Data, CacheRecord> backupRecords;
+    private transient Map<Data, WanWrappedCacheRecord> backupRecords;
     private transient ICacheRecordStore cache;
 
     private Object response;
@@ -105,7 +106,7 @@ public class CacheLoadAllOperation
                     // Loaded keys may have been evicted, then record will be null.
                     // So if the loaded key is evicted, don't send it to backup.
                     if (record != null) {
-                        backupRecords.put(key, record);
+                        backupRecords.put(key, new WanWrappedCacheRecord(record, true));
                     }
                 }
                 shouldBackup = !backupRecords.isEmpty();

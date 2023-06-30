@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -36,16 +37,16 @@ public class PutAllBackupOperation extends MapOperation
         implements PartitionAwareOperation, BackupOperation, Versioned {
 
     private boolean disableWanReplicationEvent;
-    private List keyValueRecordExpiry;
+    private List keyValueRecordExpiryWan;
 
     private transient int lastIndex;
-    private transient List keyRecordExpiry;
+    private transient List keyRecordExpiryWan;
 
     public PutAllBackupOperation(String name,
-                                 List keyValueRecordExpiry,
+                                 List keyValueRecordExpiryWan,
                                  boolean disableWanReplicationEvent) {
         super(name);
-        this.keyValueRecordExpiry = keyValueRecordExpiry;
+        this.keyValueRecordExpiryWan = keyValueRecordExpiryWan;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
@@ -55,13 +56,14 @@ public class PutAllBackupOperation extends MapOperation
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
     protected void runInternal() {
-        List keyRecordExpiry = this.keyRecordExpiry;
-        if (keyRecordExpiry != null) {
-            for (int i = lastIndex; i < keyRecordExpiry.size(); i += 3) {
-                Data key = (Data) keyRecordExpiry.get(i);
-                Record record = (Record) keyRecordExpiry.get(i + 1);
-                ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 2);
-                putBackup(key, record, expiryMetadata);
+        List keyRecordExpiryWan = this.keyRecordExpiryWan;
+        if (keyRecordExpiryWan != null) {
+            for (int i = lastIndex; i < keyRecordExpiryWan.size(); i += 3) {
+                Data key = (Data) keyRecordExpiryWan.get(i);
+                Record record = (Record) keyRecordExpiryWan.get(i + 1);
+                ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiryWan.get(i + 2);
+                boolean shouldWanReplicate = (Boolean) keyRecordExpiryWan.get(i + 3);
+                putBackup(key, record, expiryMetadata, shouldWanReplicate);
                 lastIndex = i;
             }
         } else {
@@ -69,24 +71,27 @@ public class PutAllBackupOperation extends MapOperation
             // `runInternal` method, means this operation
             // has not been serialized/deserialized
             // and is running directly on caller node
-            List keyValueRecordExpiry = this.keyValueRecordExpiry;
-            for (int i = lastIndex; i < keyValueRecordExpiry.size(); i += 4) {
+            List keyValueRecordExpiry = this.keyValueRecordExpiryWan;
+            for (int i = lastIndex; i < keyValueRecordExpiry.size(); i += 5) {
                 Data key = (Data) keyValueRecordExpiry.get(i);
                 Record record = (Record) keyValueRecordExpiry.get(i + 2);
                 ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyValueRecordExpiry.get(i + 3);
-                putBackup(key, record, expiryMetadata);
+                boolean shouldWanReplicate = (Boolean) keyValueRecordExpiry.get(i + 4);
+                putBackup(key, record, expiryMetadata, shouldWanReplicate);
                 lastIndex = i;
             }
         }
     }
 
-    private void putBackup(Data key, Record record, ExpiryMetadata expiryMetadata) {
+    private void putBackup(Data key, Record record, ExpiryMetadata expiryMetadata, boolean shouldWanReplicate) {
         Record currentRecord = recordStore.putBackup(key, record,
                 expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(),
                 expiryMetadata.getExpirationTime(),
                 getCallerProvenance());
         Records.copyMetadataFrom(record, currentRecord);
-        publishWanUpdate(key, record.getValue());
+        if (shouldWanReplicate) {
+            publishWanUpdate(key, record.getValue());
+        }
         evict(key);
     }
 
@@ -100,16 +105,20 @@ public class PutAllBackupOperation extends MapOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeInt(keyValueRecordExpiry.size() / 4);
-        for (int i = 0; i < keyValueRecordExpiry.size(); i += 4) {
-            Data dataKey = (Data) keyValueRecordExpiry.get(i);
-            Data dataValue = (Data) keyValueRecordExpiry.get(i + 1);
-            Record record = (Record) keyValueRecordExpiry.get(i + 2);
-            ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyValueRecordExpiry.get(i + 3);
+        out.writeInt(keyValueRecordExpiryWan.size() / 4);
+        for (int i = 0; i < keyValueRecordExpiryWan.size(); i += 4) {
+            Data dataKey = (Data) keyValueRecordExpiryWan.get(i);
+            Data dataValue = (Data) keyValueRecordExpiryWan.get(i + 1);
+            Record record = (Record) keyValueRecordExpiryWan.get(i + 2);
+            ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyValueRecordExpiryWan.get(i + 3);
+            Boolean shouldWanReplicate = (Boolean) keyValueRecordExpiryWan.get(i + 4);
 
             IOUtil.writeData(out, dataKey);
             Records.writeRecord(out, record, dataValue);
             Records.writeExpiry(out, expiryMetadata);
+            if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) { // TODO: Can't release on 5.3?
+                out.writeBoolean(shouldWanReplicate);
+            }
         }
         out.writeBoolean(disableWanReplicationEvent);
     }
@@ -119,17 +128,22 @@ public class PutAllBackupOperation extends MapOperation
         super.readInternal(in);
 
         int size = in.readInt();
-        List keyRecordExpiry = new ArrayList<>(size * 3);
+        List keyRecordExpiryWan = new ArrayList<>(size * 3);
         for (int i = 0; i < size; i++) {
             Data dataKey = IOUtil.readData(in);
             Record record = Records.readRecord(in);
             ExpiryMetadata expiryMetadata = Records.readExpiry(in);
+            boolean shouldWanReplicate = true;
+            if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) { // TODO: Can't release on 5.3?
+                shouldWanReplicate = in.readBoolean();
+            }
 
-            keyRecordExpiry.add(dataKey);
-            keyRecordExpiry.add(record);
-            keyRecordExpiry.add(expiryMetadata);
+            keyRecordExpiryWan.add(dataKey);
+            keyRecordExpiryWan.add(record);
+            keyRecordExpiryWan.add(expiryMetadata);
+            keyRecordExpiryWan.add(shouldWanReplicate);
         }
-        this.keyRecordExpiry = keyRecordExpiry;
+        this.keyRecordExpiryWan = keyRecordExpiryWan;
         this.disableWanReplicationEvent = in.readBoolean();
     }
 

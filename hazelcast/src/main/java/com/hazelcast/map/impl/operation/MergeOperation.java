@@ -40,9 +40,11 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -73,6 +75,7 @@ public class MergeOperation extends MapOperation
 
     private transient List<Data> invalidationKeys;
     private transient boolean hasMergedValues;
+    private transient Set<Data> nonWanReplicatedKeys;
 
     private List backupPairs;
 
@@ -137,6 +140,10 @@ public class MergeOperation extends MapOperation
 
         if (hasInvalidation) {
             invalidationKeys = new ArrayList<>(mergingEntries.size());
+        }
+
+        if (hasWanReplication && hasBackups) {
+            nonWanReplicatedKeys = new HashSet<>(mergingEntries.size());
         }
 
         // This marking is needed because otherwise after split-brain heal, we can
@@ -224,8 +231,13 @@ public class MergeOperation extends MapOperation
             }
 
             // Don't WAN replicate merge events where values don't change
-            if (hasWanReplication && response != MapMergeResponse.VALUES_ARE_EQUAL) {
-                publishWanUpdate(dataKey, dataValue);
+            if (hasWanReplication) {
+                if (response != MapMergeResponse.VALUES_ARE_EQUAL) {
+                    publishWanUpdate(dataKey, dataValue);
+                } else if(hasBackups) {
+                    // Mark this dataKey so we don't WAN replicate via backups
+                    nonWanReplicatedKeys.add(dataKey);
+                }
             }
 
             if (hasInvalidation) {
@@ -301,6 +313,7 @@ public class MergeOperation extends MapOperation
     @Nonnull
     private List toBackupListByRemovingEvictedRecords() {
         List toBackupList = new ArrayList(backupPairs.size());
+        boolean hasNonWanReplicatedKeys = nonWanReplicatedKeys != null && !nonWanReplicatedKeys.isEmpty();
         for (int i = 0; i < backupPairs.size(); i += 2) {
             Data dataKey = ((Data) backupPairs.get(i));
             Record record = recordStore.getRecord(dataKey);
@@ -309,6 +322,8 @@ public class MergeOperation extends MapOperation
                 toBackupList.add(backupPairs.get(i + 1));
                 toBackupList.add(record);
                 toBackupList.add(recordStore.getExpirySystem().getExpiryMetadata(dataKey));
+                // boolean to indicate whether this backup entry should be WAN replicated
+                toBackupList.add(hasNonWanReplicatedKeys ? !nonWanReplicatedKeys.contains(dataKey) : hasWanReplication);
             }
         }
         return toBackupList;
