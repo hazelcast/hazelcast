@@ -98,7 +98,7 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      *
      * @return Stream of result rows
      *
-     * @since 5.3
+     * @since 5.4
      */
     @Nonnull
     default Stream<SqlRow> stream() {
