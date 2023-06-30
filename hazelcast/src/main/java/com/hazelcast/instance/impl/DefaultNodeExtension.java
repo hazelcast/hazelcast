@@ -29,6 +29,7 @@ import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.PersistenceConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -692,5 +693,10 @@ public class DefaultNodeExtension implements NodeExtension {
     @Nullable
     public JetServiceBackend getJetServiceBackend() {
         return jetServiceBackend;
+    }
+
+    @Override
+    public Object createSslEngineFactory(SSLConfig sslConfig) {
+        return null;
     }
 }

@@ -19,6 +19,7 @@ package com.hazelcast.test.compatibility;
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.auditlog.impl.NoOpAuditlogService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
@@ -312,5 +313,10 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public JetServiceBackend getJetServiceBackend() {
         return nodeExtension.getJetServiceBackend();
+    }
+
+    @Override
+    public Object createSslEngineFactory(SSLConfig sslConfig) {
+        return nodeExtension.createSslEngineFactory(sslConfig);
     }
 }

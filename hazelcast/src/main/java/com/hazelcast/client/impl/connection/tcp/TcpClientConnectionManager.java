@@ -804,7 +804,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             InetSocketAddress inetSocketAddress = new InetSocketAddress(target.getInetAddress(), target.getPort());
             channel.connect(inetSocketAddress, connectionTimeoutMillis);
 
-            TcpClientConnection connection = new TcpClientConnection(client, connectionIdGen.incrementAndGet(), channel);
+            TcpClientConnection connection = new TcpClientConnection(
+                    client, connectionIdGen.incrementAndGet(), channel, channelInitializer);
             if (isTpcAwareClient) {
                 connection.attributeMap().put(CandidateClusterContext.class, currentClusterContext);
             }
@@ -824,7 +825,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
-    private Channel createTpcChannel(Address address, TcpClientConnection connection) {
+    private Channel createTpcChannel(Address address, TcpClientConnection connection, ChannelInitializer channelInitializer) {
         SocketChannel socketChannel = null;
         try {
             socketChannel = SocketChannel.open();
@@ -832,14 +833,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             // TODO: Outbound ports for TPC?
             bindSocketToPort(socket);
-
-            // TODO: use the same channel initializer with the legacy connection, when
-            //  we implement TLS support for TPC.
-            HazelcastProperties properties = client.getProperties();
-            SocketOptions socketOptions = client.getClientConfig().getNetworkConfig().getSocketOptions();
-            boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
-            ClientPlainChannelInitializer channelInitializer
-                    = new ClientPlainChannelInitializer(socketOptions, directBuffer);
 
             Channel channel = networking.register(channelInitializer, socketChannel, true);
 
@@ -1348,6 +1341,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 tpcPorts,
                 tpcToken,
                 executor,
+                connection.getChannelInitializer(),
                 this::createTpcChannel,
                 client.getLoggingService());
         connector.initiate();

@@ -21,6 +21,7 @@ import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.core.HazelcastException;
@@ -54,6 +55,7 @@ import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_KEEPALIVE;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SSL_ENGINE_FACTORY;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -192,6 +194,8 @@ public class TpcServerBootstrap {
 
     private void openServerSockets() {
         TpcSocketConfig clientSocketConfig = getClientSocketConfig();
+        var clientSslConfig = getClientTlsConfig();
+        var sslEngineFactory = nodeEngine.getNode().getNodeExtension().createSslEngineFactory(clientSslConfig);
 
         String[] range = clientSocketConfig.getPortRange().split("-");
         int port = Integer.parseInt(range[0]);
@@ -209,13 +213,16 @@ public class TpcServerBootstrap {
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                     .setAcceptConsumer(acceptRequest -> {
-                        reactor.newAsyncSocketBuilder(acceptRequest)
+                        var socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest)
                                 .setReader(readHandlerSuppliers.get(reactor).get())
                                 .set(SO_SNDBUF, clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE)
                                 .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                                 .set(TCP_NODELAY, tcpNoDelay)
-                                .set(SO_KEEPALIVE, true)
-                                .build()
+                                .set(SO_KEEPALIVE, true);
+                        if (clientSslConfig != null && clientSslConfig.isEnabled()) {
+                            socketBuilder.set(SSL_ENGINE_FACTORY, sslEngineFactory);
+                        }
+                        socketBuilder.build()
                                 .start();
                     })
                     .build();
@@ -250,9 +257,9 @@ public class TpcServerBootstrap {
 
             endpointConfigs.forEach(((endpointQualifier, endpointConfig) -> {
                 if (endpointQualifier != EndpointQualifier.CLIENT
-                        && !endpointConfig.getTpcSocketConfig().equals(defaultTpcSocketConfig)) {
+                    && !endpointConfig.getTpcSocketConfig().equals(defaultTpcSocketConfig)) {
                     throw new InvalidConfigurationException(
-                            "TPC socket configuration is only available for clients ports for now.");
+                        "TPC socket configuration is only available for clients ports for now.");
                 }
             }));
 
@@ -261,10 +268,17 @@ public class TpcServerBootstrap {
                 // for clients. This means cluster will run but no client ports will be
                 // created, so no clients can connect to the cluster.
                 throw new InvalidConfigurationException("Missing client server socket configuration. "
-                        + "If you have enabled TPC and advanced networking, "
-                        + "please configure a client server socket.");
+                    + "If you have enabled TPC and advanced networking, "
+                    + "please configure a client server socket.");
             }
         }
+    }
+
+    private SSLConfig getClientTlsConfig() {
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            return config.getAdvancedNetworkConfig().getEndpointConfigs().get(EndpointQualifier.CLIENT).getSSLConfig();
+        }
+        return config.getNetworkConfig().getSSLConfig();
     }
 
     private int bind(AsyncServerSocket serverSocket, int port, int limit) {

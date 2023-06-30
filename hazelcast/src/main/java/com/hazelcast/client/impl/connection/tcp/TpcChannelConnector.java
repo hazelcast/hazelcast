@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 
@@ -56,21 +57,25 @@ public final class TpcChannelConnector {
     private final List<Integer> tpcPorts;
     private final byte[] tpcToken;
     private final ExecutorService executor;
-    private final BiFunction<Address, TcpClientConnection, Channel> channelCreator;
+    private final ChannelInitializer channelInitializer;
+    private final ChannelCreator channelConnector;
     private final ILogger logger;
     private final Channel[] tpcChannels;
     private final AtomicInteger remaining;
     private volatile boolean failed;
 
-    public TpcChannelConnector(HazelcastClientInstanceImpl client,
-                               long authenticationTimeoutMillis,
-                               UUID clientUuid,
-                               TcpClientConnection connection,
-                               List<Integer> tpcPorts,
-                               byte[] tpcToken,
-                               ExecutorService executor,
-                               BiFunction<Address, TcpClientConnection, Channel> channelCreator,
-                               LoggingService loggingService) {
+    public TpcChannelConnector(
+            HazelcastClientInstanceImpl client,
+            long authenticationTimeoutMillis,
+            UUID clientUuid,
+            TcpClientConnection connection,
+            List<Integer> tpcPorts,
+            byte[] tpcToken,
+            ExecutorService executor,
+            ChannelInitializer channelInitializer,
+            ChannelCreator channelCreator,
+            LoggingService loggingService
+    ) {
         this.client = client;
         this.authenticationTimeoutMillis = authenticationTimeoutMillis;
         this.clientUuid = clientUuid;
@@ -78,7 +83,8 @@ public final class TpcChannelConnector {
         this.tpcPorts = tpcPorts;
         this.tpcToken = tpcToken;
         this.executor = executor;
-        this.channelCreator = channelCreator;
+        this.channelInitializer = channelInitializer;
+        this.channelConnector = channelCreator;
         this.logger = loggingService.getLogger(TpcChannelConnector.class);
         this.tpcChannels = new Channel[tpcPorts.size()];
         this.remaining = new AtomicInteger(tpcPorts.size());
@@ -115,7 +121,7 @@ public final class TpcChannelConnector {
         Channel channel = null;
         try {
             Address address = translate(new Address(host, port));
-            channel = channelCreator.apply(address, connection);
+            channel = channelConnector.create(address, connection, channelInitializer);
             authenticate(channel);
             onSuccessfulChannelConnection(channel, index);
         } catch (Exception e) {
@@ -219,5 +225,13 @@ public final class TpcChannelConnector {
         }
 
         return translated;
+    }
+
+    /**
+     * Creates a Channel with the given parameters.
+     */
+    @FunctionalInterface
+    public interface ChannelCreator {
+        Channel create(Address address, TcpClientConnection connection, ChannelInitializer channelInitializer);
     }
 }

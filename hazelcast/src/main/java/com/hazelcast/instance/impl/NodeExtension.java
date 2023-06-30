@@ -18,6 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
@@ -405,4 +406,6 @@ public interface NodeExtension {
     /** Returns the internal jet service backend */
     @Nullable
     JetServiceBackend getJetServiceBackend();
+
+    Object createSslEngineFactory(SSLConfig sslConfig);
 }
