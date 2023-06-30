@@ -135,7 +135,7 @@ Some of these prompts may not be relevant to your design document; in which case
   - What testing and safe guards are being put in place to protect against unexpected problems?
 
 - Security questions (also go through [OWASP TOP 10](https://owasp.org/Top10/) and [CWE Top 25](https://cwe.mitre.org/top25/) lists):
-  - Is the functionality accessible through the client protocol? What permissions (types/names/actions) will be used to protect the access?
+  - Is the functionality accessible through the client protocol (including SQL commands)? What permissions (types/names/actions) will be used to protect the access?
   - Is the input validation/cleanup in place? Proper character-escaping used? Protection against SQL injection? 
   - Does the new functionality communicate over the network? Will it support TLS? If not, why?
   - Does it write to a filesystem? Are the data written protected by encryption? If not, why?
