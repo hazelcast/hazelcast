@@ -105,8 +105,8 @@ public class PutAllBackupOperation extends MapOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeInt(keyValueRecordExpiryWan.size() / 4);
-        for (int i = 0; i < keyValueRecordExpiryWan.size(); i += 4) {
+        out.writeInt(keyValueRecordExpiryWan.size() / 5);
+        for (int i = 0; i < keyValueRecordExpiryWan.size(); i += 5) {
             Data dataKey = (Data) keyValueRecordExpiryWan.get(i);
             Data dataValue = (Data) keyValueRecordExpiryWan.get(i + 1);
             Record record = (Record) keyValueRecordExpiryWan.get(i + 2);
@@ -129,7 +129,7 @@ public class PutAllBackupOperation extends MapOperation
         super.readInternal(in);
 
         int size = in.readInt();
-        List keyRecordExpiryWan = new ArrayList<>(size * 3);
+        List keyRecordExpiryWan = new ArrayList<>(size * 4);
         for (int i = 0; i < size; i++) {
             Data dataKey = IOUtil.readData(in);
             Record record = Records.readRecord(in);
