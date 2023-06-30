@@ -58,7 +58,7 @@ public class PutAllBackupOperation extends MapOperation
     protected void runInternal() {
         List keyRecordExpiryWan = this.keyRecordExpiryWan;
         if (keyRecordExpiryWan != null) {
-            for (int i = lastIndex; i < keyRecordExpiryWan.size(); i += 3) {
+            for (int i = lastIndex; i < keyRecordExpiryWan.size(); i += 4) {
                 Data key = (Data) keyRecordExpiryWan.get(i);
                 Record record = (Record) keyRecordExpiryWan.get(i + 1);
                 ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiryWan.get(i + 2);
