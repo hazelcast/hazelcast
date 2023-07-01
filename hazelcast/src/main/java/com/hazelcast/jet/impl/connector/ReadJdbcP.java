@@ -26,6 +26,9 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
+import com.hazelcast.jet.pipeline.JdbcPropertyKeys;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
 
@@ -37,7 +40,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Properties;
 
+import static com.hazelcast.internal.util.StringUtil.isBoolean;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -48,13 +53,15 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
  */
 public final class ReadJdbcP<T> extends AbstractProcessor {
 
+    private static final ILogger LOGGER = Logger.getLogger(ReadJdbcP.class);
+
     private final SupplierEx<? extends Connection> newConnectionFn;
     private final ToResultSetFunction resultSetFn;
     private final FunctionEx<? super ResultSet, ? extends T> mapOutputFn;
 
     private Connection connection;
     private ResultSet resultSet;
-    private Traverser traverser;
+    private Traverser<? extends T> traverser;
     private int parallelism;
     private int index;
 
@@ -106,22 +113,28 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     public static <T> ProcessorMetaSupplier supplier(
             @Nonnull String connectionURL,
             @Nonnull String query,
+            @Nonnull Properties properties,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 SecuredFunctions.readJdbcProcessorFn(connectionURL,
+                        // Return a new connection. Connection will be closed by ReadJdbcP processor
                         context -> DriverManager.getConnection(connectionURL),
+                        // Create a ResultSet. ResultSet will be closed by ReadJdbcP processor
                         (connection, parallelism, index) -> {
-                            PreparedStatement statement = connection.prepareStatement(query);
+                            setAutoCommitIfNecessary(connection, properties);
+                            PreparedStatement preparedStatement = connection.prepareStatement(query);
                             try {
-                                return statement.executeQuery();
+                                setFetchSizeIfNecessary(preparedStatement, properties);
+                                return preparedStatement.executeQuery();
                             } catch (SQLException e) {
-                                statement.close();
+                                preparedStatement.close();
                                 throw e;
                             }
-                        }, mapOutputFn),
+                        },
+                        mapOutputFn),
                 newUnsecureUuidString(),
                 ConnectorPermission.jdbc(connectionURL, ACTION_READ)
         );
@@ -155,8 +168,8 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     public boolean complete() {
         if (traverser == null) {
             resultSet = uncheckCall(() -> resultSetFn.createResultSet(connection, parallelism, index));
-            traverser = ((Traverser<ResultSet>) () -> uncheckCall(() -> resultSet.next() ? resultSet : null))
-                    .map(mapOutputFn);
+            Traverser<ResultSet> t = () -> uncheckCall(() -> resultSet.next() ? resultSet : null);
+            traverser = t.map(mapOutputFn);
         }
         return emitFromTraverser(traverser);
     }
@@ -190,5 +203,32 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             return e;
         }
         return null;
+    }
+
+    private static void setAutoCommitIfNecessary(Connection connection, Properties properties) throws SQLException {
+        String key = JdbcPropertyKeys.AUTO_COMMIT;
+        if (properties.containsKey(key)) {
+            String value = properties.getProperty(key);
+            if (isBoolean(value)) {
+                boolean autoCommit = Boolean.parseBoolean(value);
+                connection.setAutoCommit(autoCommit);
+            } else {
+                throw new IllegalArgumentException("Invalid boolean value specified for autoCommit: " + value);
+            }
+        }
+    }
+
+    private static void setFetchSizeIfNecessary(PreparedStatement statement, Properties properties) throws SQLException {
+        String key = JdbcPropertyKeys.FETCH_SIZE;
+        if (properties.containsKey(key)) {
+            String value = properties.getProperty(key);
+            try {
+                int fetchSize = Integer.parseInt(value);
+                statement.setFetchSize(fetchSize);
+            } catch (NumberFormatException exception) {
+                LOGGER.severe("Invalid integer value specified for fetchSize: " + value, exception);
+                throw exception;
+            }
+        }
     }
 }
