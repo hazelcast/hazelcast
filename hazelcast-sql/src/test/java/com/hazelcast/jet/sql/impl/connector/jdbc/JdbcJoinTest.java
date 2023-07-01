@@ -16,14 +16,19 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
 public class JdbcJoinTest extends JdbcSqlTestSupport {
@@ -45,32 +50,47 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         execute(
                 "CREATE MAPPING " + tableName + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 
     @Test
     public void test_stream2BatchJoinAsNestedLoopJoinIsNotSupported() throws Exception {
         String tableName = randomTableName();
-        createTable(tableName);
-        insertItems(tableName, 5);
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
+        String sql = String.format("INSERT INTO %s VALUES(1, 'myworker1', 208)", tableName);
+        executeJdbc(sql);
+
+        sql = String.format("INSERT INTO %s VALUES(2, 'myworker2', 209)", tableName);
+        executeJdbc(sql);
 
         execute(
                 "CREATE MAPPING " + tableName + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
+                + " id INT, "
+                + " name VARCHAR, "
+                + " ssn INT "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
-        assertThatThrownBy(() ->
-                sqlService.execute("SELECT n.name, t.v FROM " +
-                        "TABLE(GENERATE_STREAM(2)) t " +
-                        "JOIN " + tableName + " n ON n.id = t.v;")
-        ).hasMessageContaining("JDBC connector doesn't support stream-to-batch JOIN");
+        SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                                 "TABLE(GENERATE_STREAM(2)) t " +
+                                                 "JOIN " + tableName + " n ON t.v = n.id LIMIT 1");
+
+//        SqlResult sqlResult = sqlService.execute("SELECT n.id FROM " +
+//                                                 tableName + " n " +
+//                                                 "JOIN " + tableName + " n1 ON n.id = n1.ssn");
+
+        Iterator<SqlRow> iterator = sqlResult.iterator();
+        List<SqlRow> actualList = new ArrayList<>();
+        iterator.forEachRemaining(actualList::add);
+        assertThat(actualList)
+                .extracting(sqlRow -> sqlRow.getObject("ssn")
+                )
+                .contains(208);
     }
 
     @Test
@@ -82,17 +102,17 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         execute(
                 "CREATE MAPPING " + otherTableName + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + tableName + " t1 " +
-                        "JOIN " + otherTableName + " t2 " +
-                        "   ON t1.id = t2.id",
+                "FROM " + tableName + " t1 " +
+                "JOIN " + otherTableName + " t2 " +
+                "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),
                         new Row(1, "name-1"),
@@ -112,17 +132,17 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         execute(
                 "CREATE MAPPING " + otherTableName + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + tableName + " t1 " +
-                        "LEFT JOIN " + otherTableName + " t2 " +
-                        "   ON t1.id = t2.id",
+                "FROM " + tableName + " t1 " +
+                "LEFT JOIN " + otherTableName + " t2 " +
+                "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),
                         new Row(1, "name-1"),
@@ -142,17 +162,17 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         execute(
                 "CREATE MAPPING " + otherTableName + " ("
-                        + " id INT, "
-                        + " name VARCHAR "
-                        + ") "
-                        + "DATA CONNECTION " + TEST_DATABASE_REF
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + tableName + " t1 " +
-                        "RIGHT JOIN " + otherTableName + " t2 " +
-                        "   ON t1.id = t2.id",
+                "FROM " + tableName + " t1 " +
+                "RIGHT JOIN " + otherTableName + " t2 " +
+                "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),
                         new Row(1, "name-1"),
@@ -171,15 +191,15 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
         String mapName = "my_map";
         execute(
                 "CREATE MAPPING " + mapName + " ( " +
-                        "__key INT, " +
-                        "id INT, " +
-                        "name VARCHAR ) " +
-                        "TYPE IMap " +
-                        "OPTIONS (" +
-                        "    'keyFormat' = 'int'," +
-                        "    'valueFormat' = 'compact',\n" +
-                        "    'valueCompactTypeName' = 'person'" +
-                        ")"
+                "__key INT, " +
+                "id INT, " +
+                "name VARCHAR ) " +
+                "TYPE IMap " +
+                "OPTIONS (" +
+                "    'keyFormat' = 'int'," +
+                "    'valueFormat' = 'compact',\n" +
+                "    'valueCompactTypeName' = 'person'" +
+                ")"
         );
 
         execute("INSERT INTO " + mapName + "(__key, id, name)" +
@@ -187,9 +207,9 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + tableName + " t1 " +
-                        "JOIN " + mapName + " t2 " +
-                        "   ON t1.id = t2.id",
+                "FROM " + tableName + " t1 " +
+                "JOIN " + mapName + " t2 " +
+                "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),
                         new Row(1, "name-1"),
@@ -212,9 +232,9 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         assertRowsAnyOrder(
                 "SELECT t1.id, t2.name " +
-                        "FROM " + tableName + " t1 " +
-                        "JOIN \"" + mappingName + "\" t2 " +
-                        "   ON t1.id = t2.id",
+                "FROM " + tableName + " t1 " +
+                "JOIN \"" + mappingName + "\" t2 " +
+                "   ON t1.id = t2.id",
                 newArrayList(
                         new Row(0, "name-0"),
                         new Row(1, "name-1"),
