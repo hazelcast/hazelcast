@@ -29,13 +29,12 @@ import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 import javax.annotation.Nullable;
-import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.cluster.Versions.V5_4;
 
 public class PutAllBackupOperation extends MapOperation
         implements PartitionAwareOperation, BackupOperation, Versioned {
@@ -132,11 +131,14 @@ public class PutAllBackupOperation extends MapOperation
         }
         out.writeBoolean(disableWanReplicationEvent);
 
-        if (noWanReplicationKeys == null) {
-            out.writeBoolean(false);
-        } else {
-            out.writeBoolean(true);
-            out.writeByteArray(noWanReplicationKeys.toByteArray());
+        // RU_COMPAT_5_3
+        if (out.getVersion().isGreaterOrEqual(V5_4)) {
+            if (noWanReplicationKeys == null) {
+                out.writeBoolean(false);
+            } else {
+                out.writeBoolean(true);
+                out.writeByteArray(noWanReplicationKeys.toByteArray());
+            }
         }
     }
 
@@ -161,12 +163,10 @@ public class PutAllBackupOperation extends MapOperation
         this.noWanReplicationKeys = null;
 
         // RU_COMPAT_5_3
-        try {
+        if (in.getVersion().isGreaterOrEqual(V5_4)) {
             if (in.readBoolean()) {
                 this.noWanReplicationKeys = BitSet.valueOf(in.readByteArray());
             }
-        } catch (EOFException e) {
-            ignore(e);
         }
     }
 
