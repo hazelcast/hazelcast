@@ -1890,7 +1890,7 @@ public final class ClusterProperty {
      * <p>
      * The default value is {@code false}.
      *
-     * @since 5.3
+     * @since 5.4
      */
     public static final HazelcastProperty WAN_REPLICATE_IMAP_EVICTIONS
             = new HazelcastProperty("hazelcast.wan.replicate.imap.evictions", false);
@@ -1901,7 +1901,7 @@ public final class ClusterProperty {
      * <p>
      * The default value is {@code false}.
      *
-     * @since 5.3
+     * @since 5.4
      */
     public static final HazelcastProperty WAN_REPLICATE_ICACHE_EVICTIONS
             = new HazelcastProperty("hazelcast.wan.replicate.icache.evictions", false);
