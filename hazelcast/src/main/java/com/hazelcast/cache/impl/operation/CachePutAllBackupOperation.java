@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.cache.impl.record.WanWrappedCacheRecord;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,12 +25,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Map;
+import java.util.List;
 
 import static com.hazelcast.internal.cluster.Versions.V5_4;
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * Cache PutAllBackup Operation is the backup operation used by load all operation. Provides backup of
@@ -41,14 +41,23 @@ import static com.hazelcast.internal.util.MapUtil.createHashMap;
  */
 public class CachePutAllBackupOperation extends CacheOperation implements BackupOperation, Versioned {
 
-    private Map<Data, WanWrappedCacheRecord> cacheRecords;
+    private List dataCacheRecordPairs;
+    @Nullable
+    private BitSet noWanReplicationKeys;
+
+    private transient int lastIndex;
 
     public CachePutAllBackupOperation() {
     }
 
-    public CachePutAllBackupOperation(String cacheNameWithPrefix, Map<Data, WanWrappedCacheRecord> cacheRecords) {
+    public CachePutAllBackupOperation(String cacheNameWithPrefix, List dataCacheRecordPairs, BitSet noWanReplicationKeys) {
         super(cacheNameWithPrefix);
-        this.cacheRecords = cacheRecords;
+        this.dataCacheRecordPairs = dataCacheRecordPairs;
+        this.noWanReplicationKeys = noWanReplicationKeys;
+    }
+
+    public CachePutAllBackupOperation(String cacheNameWithPrefix, List dataCacheRecordPairs) {
+        this(cacheNameWithPrefix, dataCacheRecordPairs, null);
     }
 
     @Override
@@ -56,14 +65,17 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
         if (recordStore == null) {
             return;
         }
-        if (cacheRecords != null) {
-            for (Map.Entry<Data, WanWrappedCacheRecord> entry : cacheRecords.entrySet()) {
-                WanWrappedCacheRecord wrapped = entry.getValue();
-                recordStore.putRecord(entry.getKey(), wrapped.getRecord(), true);
-
-                if (wrapped.isWanReplicated()) {
-                    publishWanUpdate(entry.getKey(), wrapped.getRecord());
+        if (dataCacheRecordPairs != null) {
+            for (int i = lastIndex; i < dataCacheRecordPairs.size(); i += 2) {
+                Data key = (Data) dataCacheRecordPairs.get(i);
+                CacheRecord record = (CacheRecord) dataCacheRecordPairs.get(i + 1);
+                recordStore.putRecord(key, record, true);
+                
+                boolean wanReplicated = noWanReplicationKeys == null || !noWanReplicationKeys.get(i / 2);
+                if (wanReplicated) {
+                    publishWanUpdate(key, record);
                 }
+                lastIndex = i;
             }
         }
     }
@@ -71,30 +83,24 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(cacheRecords != null);
-        if (cacheRecords != null) {
-            out.writeInt(cacheRecords.size());
-            BitSet nonWanReplicatedKeys = new BitSet(cacheRecords.size());
-            int index = 0;
-            for (Map.Entry<Data, WanWrappedCacheRecord> entry : cacheRecords.entrySet()) {
-                Data key = entry.getKey();
-                WanWrappedCacheRecord wrapped = entry.getValue();
-                IOUtil.writeData(out, key);
-                out.writeObject(wrapped.getRecord());
+        out.writeBoolean(dataCacheRecordPairs != null);
+        if (dataCacheRecordPairs != null) {
+            out.writeInt(dataCacheRecordPairs.size() / 2);
+            for (int i = 0; i < dataCacheRecordPairs.size(); i += 2) {
+                Data dataKey = (Data) dataCacheRecordPairs.get(i);
+                CacheRecord record = (CacheRecord) dataCacheRecordPairs.get(i + 1);
 
-                if (!wrapped.isWanReplicated()) {
-                    nonWanReplicatedKeys.set(index);
-                }
-                index++;
+                IOUtil.writeData(out, dataKey);
+                out.writeObject(record);
             }
 
             // RU_COMPAT_5_3
             if (out.getVersion().isGreaterOrEqual(V5_4)) {
-                if (nonWanReplicatedKeys.isEmpty()) {
+                if (noWanReplicationKeys == null) {
                     out.writeBoolean(false);
                 } else {
                     out.writeBoolean(true);
-                    out.writeByteArray(nonWanReplicatedKeys.toByteArray());
+                    out.writeByteArray(noWanReplicationKeys.toByteArray());
                 }
             }
         }
@@ -106,23 +112,19 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
         boolean recordNotNull = in.readBoolean();
         if (recordNotNull) {
             int size = in.readInt();
-            cacheRecords = createHashMap(size);
+            dataCacheRecordPairs = new ArrayList(size * 2);
 
-            Data[] orderedKeys = new Data[size];
             for (int i = 0; i < size; i++) {
                 Data key = IOUtil.readData(in);
                 CacheRecord record = in.readObject();
-                orderedKeys[i] = key;
-                cacheRecords.put(key, new WanWrappedCacheRecord(record, true));
+                dataCacheRecordPairs.add(key);
+                dataCacheRecordPairs.add(record);
             }
 
             // RU_COMPAT_5_3
             if (in.getVersion().isGreaterOrEqual(V5_4)) {
                 if (in.readBoolean()) {
-                    BitSet nonWanKeys = BitSet.valueOf(in.readByteArray());
-                    for (int i = nonWanKeys.nextSetBit(0); i >= 0; i = nonWanKeys.nextSetBit(i + 1)) {
-                        cacheRecords.get(orderedKeys[i]).setWanReplicated(false);
-                    }
+                    this.noWanReplicationKeys = BitSet.valueOf(in.readByteArray());
                 }
             }
         }

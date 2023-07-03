@@ -69,14 +69,14 @@ public class PutAllBackupOperation extends MapOperation
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
     protected void runInternal() {
-        List keyRecordExpiryWan = this.keyRecordExpiry;
-        if (keyRecordExpiryWan != null) {
-            for (int i = lastIndex; i < keyRecordExpiryWan.size(); i += 3) {
-                Data key = (Data) keyRecordExpiryWan.get(i);
-                Record record = (Record) keyRecordExpiryWan.get(i + 1);
-                ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiryWan.get(i + 2);
-                boolean nonReplicatedKey = noWanReplicationKeys == null || noWanReplicationKeys.get(i / 3);
-                putBackup(key, record, expiryMetadata, !nonReplicatedKey);
+        List keyRecordExpiry = this.keyRecordExpiry;
+        if (keyRecordExpiry != null) {
+            for (int i = lastIndex; i < keyRecordExpiry.size(); i += 3) {
+                Data key = (Data) keyRecordExpiry.get(i);
+                Record record = (Record) keyRecordExpiry.get(i + 1);
+                ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 2);
+                boolean wanReplicated = noWanReplicationKeys == null || !noWanReplicationKeys.get(i / 3);
+                putBackup(key, record, expiryMetadata, wanReplicated);
                 lastIndex = i;
             }
         } else {
@@ -89,8 +89,8 @@ public class PutAllBackupOperation extends MapOperation
                 Data key = (Data) keyValueRecordExpiry.get(i);
                 Record record = (Record) keyValueRecordExpiry.get(i + 2);
                 ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyValueRecordExpiry.get(i + 3);
-                boolean nonReplicatedKey = noWanReplicationKeys == null || noWanReplicationKeys.get(i / 4);
-                putBackup(key, record, expiryMetadata, !nonReplicatedKey);
+                boolean wanReplicated = noWanReplicationKeys == null || !noWanReplicationKeys.get(i / 4);
+                putBackup(key, record, expiryMetadata, wanReplicated);
                 lastIndex = i;
             }
         }
@@ -148,17 +148,17 @@ public class PutAllBackupOperation extends MapOperation
         super.readInternal(in);
 
         int size = in.readInt();
-        List keyRecordExpiryWan = new ArrayList<>(size * 3);
+        List keyRecordExpiry = new ArrayList<>(size * 3);
         for (int i = 0; i < size; i++) {
             Data dataKey = IOUtil.readData(in);
             Record record = Records.readRecord(in);
             ExpiryMetadata expiryMetadata = Records.readExpiry(in);
 
-            keyRecordExpiryWan.add(dataKey);
-            keyRecordExpiryWan.add(record);
-            keyRecordExpiryWan.add(expiryMetadata);
+            keyRecordExpiry.add(dataKey);
+            keyRecordExpiry.add(record);
+            keyRecordExpiry.add(expiryMetadata);
         }
-        this.keyRecordExpiry = keyRecordExpiryWan;
+        this.keyRecordExpiry = keyRecordExpiry;
         this.disableWanReplicationEvent = in.readBoolean();
         this.noWanReplicationKeys = null;
 

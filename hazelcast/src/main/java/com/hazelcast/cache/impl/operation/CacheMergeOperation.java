@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheMergeResponse;
-import com.hazelcast.cache.impl.record.WanWrappedCacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
@@ -29,10 +28,9 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
-import java.util.Map;
 
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
 
 /**
@@ -46,7 +44,8 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     private SplitBrainMergePolicy<Object, CacheMergeTypes<Object, Object>, Object> mergePolicy;
 
     private transient boolean hasBackups;
-    private transient Map<Data, WanWrappedCacheRecord> backupRecords;
+    private transient List backupPairs;
+    private transient BitSet backupNonReplicatedKeys;
 
     public CacheMergeOperation() {
     }
@@ -62,7 +61,8 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
     protected void beforeRunInternal() {
         hasBackups = getSyncBackupCount() + getAsyncBackupCount() > 0;
         if (hasBackups) {
-            backupRecords = createHashMap(mergingEntries.size());
+            backupPairs = new ArrayList(mergingEntries.size());
+            backupNonReplicatedKeys = new BitSet(mergingEntries.size());
         }
     }
 
@@ -77,9 +77,12 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
         Data dataKey = (Data) mergingEntry.getRawKey();
 
         CacheMergeResponse response = recordStore.merge(mergingEntry, mergePolicy, NOT_WAN);
-        if (backupRecords != null && response.getResult().isMergeApplied()) {
-            backupRecords.put(dataKey, new WanWrappedCacheRecord(response.getRecord(),
-                    response.getResult() != CacheMergeResponse.MergeResult.VALUES_ARE_EQUAL));
+        if (backupPairs != null && response.getResult().isMergeApplied()) {
+            if (response.getResult() == CacheMergeResponse.MergeResult.VALUES_ARE_EQUAL) {
+                backupNonReplicatedKeys.set(backupPairs.size() / 2);
+            }
+            backupPairs.add(dataKey);
+            backupPairs.add(response.getRecord());
         }
         if (recordStore.isWanReplicationEnabled()) {
             if (response.getResult().isMergeApplied()) {
@@ -95,17 +98,17 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
 
     @Override
     public Object getResponse() {
-        return hasBackups && !backupRecords.isEmpty();
+        return hasBackups && !backupPairs.isEmpty();
     }
 
     @Override
     public boolean shouldBackup() {
-        return hasBackups && !backupRecords.isEmpty();
+        return hasBackups && !backupPairs.isEmpty();
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutAllBackupOperation(name, backupRecords);
+        return new CachePutAllBackupOperation(name, backupPairs);
     }
 
     @Override
