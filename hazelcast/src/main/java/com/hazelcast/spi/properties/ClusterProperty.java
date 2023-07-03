@@ -1884,6 +1884,28 @@ public final class ClusterProperty {
     public static final HazelcastProperty JAR_UPLOAD_DIR_PATH
             = new HazelcastProperty("hazelcast.cluster.jarupload.dirpath");
 
+    /**
+     * Defines whether WAN replication events should be fired when values are evicted
+     * from {@link IMap} objects.
+     * <p>
+     * The default value is {@code false}.
+     *
+     * @since 5.3
+     */
+    public static final HazelcastProperty WAN_REPLICATE_IMAP_EVICTIONS
+            = new HazelcastProperty("hazelcast.wan.replicate.imap.evictions", false);
+
+    /**
+     * Defines whether WAN replication events should be fired when values are evicted
+     * from {@link com.hazelcast.cache.ICache} objects.
+     * <p>
+     * The default value is {@code false}.
+     *
+     * @since 5.3
+     */
+    public static final HazelcastProperty WAN_REPLICATE_ICACHE_EVICTIONS
+            = new HazelcastProperty("hazelcast.wan.replicate.icache.evictions", false);
+
     private ClusterProperty() {
     }
 }
