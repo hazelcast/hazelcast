@@ -70,7 +70,7 @@ public class CachePutAllBackupOperation extends CacheOperation implements Backup
                 Data key = (Data) dataCacheRecordPairs.get(i);
                 CacheRecord record = (CacheRecord) dataCacheRecordPairs.get(i + 1);
                 recordStore.putRecord(key, record, true);
-                
+
                 boolean wanReplicated = noWanReplicationKeys == null || !noWanReplicationKeys.get(i / 2);
                 if (wanReplicated) {
                     publishWanUpdate(key, record);

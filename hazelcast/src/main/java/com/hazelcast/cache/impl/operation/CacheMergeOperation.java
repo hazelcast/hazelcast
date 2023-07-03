@@ -108,7 +108,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutAllBackupOperation(name, backupPairs);
+        return new CachePutAllBackupOperation(name, backupPairs, backupNonReplicatedKeys);
     }
 
     @Override
