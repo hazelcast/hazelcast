@@ -565,7 +565,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         removeKeyFromExpirySystem(dataKey);
         storage.removeRecord(dataKey, record);
 
-        if (wanReplicateEvictions) {
+        if (wanReplicateEvictions && eviction) {
             mapEventPublisher.publishWanRemove(name, toHeapData(dataKey));
         }
     }
