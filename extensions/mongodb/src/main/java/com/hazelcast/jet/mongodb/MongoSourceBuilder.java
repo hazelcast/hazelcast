@@ -413,7 +413,8 @@ public final class MongoSourceBuilder {
             final ReadMongoParams<T> localParams = params;
 
             ConnectorPermission permission = params.buildPermissions();
-            return Sources.batchFromProcessor(name, new DbCheckingPMetaSupplier(permission, localParams.isThrowOnNonExisting(), false,
+            return Sources.batchFromProcessor(name, new DbCheckingPMetaSupplier(permission,
+                    localParams.isThrowOnNonExisting(), false,
                     localParams.getDatabaseName(), localParams.getCollectionName(),
                     localParams.getClientSupplier(), localParams.getDataConnectionRef(),
                     ProcessorSupplier.of(() -> new ReadMongoP<>(localParams))));
@@ -615,7 +616,8 @@ public final class MongoSourceBuilder {
                     eventTimePolicy -> new DbCheckingPMetaSupplier(permission, localParams.isThrowOnNonExisting(), false,
                             localParams.getDatabaseName(), localParams.getCollectionName(),
                             localParams.getClientSupplier(), localParams.getDataConnectionRef(),
-                            ProcessorSupplier.of(() -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy)))));
+                            ProcessorSupplier.of(() -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy))))
+            );
         }
     }
 

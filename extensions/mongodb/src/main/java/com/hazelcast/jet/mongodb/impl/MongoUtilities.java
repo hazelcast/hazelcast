@@ -15,12 +15,8 @@
  */
 package com.hazelcast.jet.mongodb.impl;
 
-import com.hazelcast.jet.JetException;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
-import com.mongodb.connection.ClusterDescription;
 import org.bson.BsonArray;
 import org.bson.BsonDateTime;
 import org.bson.BsonString;
