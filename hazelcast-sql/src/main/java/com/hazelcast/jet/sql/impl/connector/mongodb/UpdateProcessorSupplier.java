@@ -122,7 +122,8 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                                 .setDataConnectionRef(dataConnectionName)
                                 .setDatabaseName(databaseName)
                                 .setCollectionName(collectionName)
-                                .setDocumentType(Document.class),
+                                .setDocumentType(Document.class)
+                                .setThrowOnNonExisting(false),
                         writeModelNoScan(predicateWithReplacements)
                 );
 
@@ -143,6 +144,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                             .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToUpdateDoc)
                             .setWriteModelFn(this::writeModelAfterScan)
+                            .setThrowOnNonExisting(false)
             );
 
             processors[i] = processor;

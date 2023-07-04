@@ -13,7 +13,6 @@ import com.hazelcast.jet.impl.processor.ExpectNothingP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
-import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
@@ -40,7 +39,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
 
     private final Permission requiredPermission;
     private final boolean shouldCheck;
-    private final boolean forceTotalParallelismOne;
+    private boolean forceTotalParallelismOne;
     private final String databaseName;
     private final String collectionName;
     private final ProcessorSupplier processorSupplier;
@@ -68,14 +67,18 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
         this.dataConnectionRef = dataConnectionRef;
     }
 
+    /**
+     * Sets preferred local parallelism. If {@link #forceTotalParallelismOne} is selected, this
+     * method will have no effect.
+     */
     public DbCheckingPMetaSupplier withPreferredLocalParallelism(int preferredLocalParallelism) {
-        this.preferredLocalParallelism = preferredLocalParallelism;
+        this.preferredLocalParallelism = forceTotalParallelismOne ? 1 : preferredLocalParallelism;
         return this;
     }
 
     @Override
     public int preferredLocalParallelism() {
-        return preferredLocalParallelism;
+        return forceTotalParallelismOne ? 1 : preferredLocalParallelism;
     }
 
     @Nullable
@@ -84,11 +87,23 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
         return requiredPermission;
     }
 
+    /**
+     * If true, only one instance of given supplier will be created.
+     */
+    public DbCheckingPMetaSupplier forceTotalParallelismOne(boolean forceTotalParallelismOne) {
+        this.forceTotalParallelismOne = forceTotalParallelismOne;
+        return this;
+    }
+
+    @Override
+    public boolean initIsCooperative() {
+        return true;
+    }
+
     @Override
     public void init(@Nonnull Context context) throws Exception {
-        PermissionsUtil.checkPermission(processorSupplier, context);
-
         if (forceTotalParallelismOne) {
+            preferredLocalParallelism = 1;
             if (context.localParallelism() != 1) {
                 throw new IllegalArgumentException(
                         "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
@@ -149,6 +164,11 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
         } else {
             return addr -> processorSupplier;
         }
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 
     static void checkCollectionExists(MongoDatabase database, String collectionName) {

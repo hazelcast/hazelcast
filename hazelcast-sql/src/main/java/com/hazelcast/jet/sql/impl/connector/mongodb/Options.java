@@ -62,7 +62,7 @@ final class Options {
     static final String PK_COLUMN = "idColumn";
 
     /**
-     * If set to true, the reading from MongoDB will be done in one processor instance.
+     * If set to true, the reading and/or writing from/to MongoDB will be done in one processor instance.
      * <p>
      * Normally user wants to distribute the work, however the {@code $function} aggregate is not present on
      * e.g. Atlas Serverless instances. In such cases setting this property to {@code true} allows user
@@ -70,6 +70,11 @@ final class Options {
      * change that restriction.
      */
     static final String FORCE_PARALLELISM_ONE = "forceMongoReadParallelismOne";
+
+    /**
+     * If set to true, the reading will be preceded with checking the existence of database and collection.
+     */
+    static final String CHECK_EXISTENCE = "checkExistence";
 
     private static final String POSSIBLE_VALUES = "This property should " +
             " have value of: a) 'now' b) time in epoch milliseconds or c) " +

@@ -157,6 +157,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier {
                             .setStartAtTimestamp(startAt == null ? null : new BsonTimestamp(startAt))
                             .setEventTimePolicy(eventTimePolicy)
                             .setNonDistributed(forceMongoParallelismOne)
+                            .setThrowOnNonExisting(false)
             );
 
             processors.add(processor);

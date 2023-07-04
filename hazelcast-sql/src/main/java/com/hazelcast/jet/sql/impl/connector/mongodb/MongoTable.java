@@ -50,6 +50,7 @@ class MongoTable extends JetTable {
     private final QueryDataType[] fieldTypes;
     private final BsonType[] fieldExternalTypes;
     private final boolean forceMongoParallelismOne;
+    private final boolean checkDbExistence;
 
     MongoTable(
             @Nonnull String schemaName,
@@ -69,6 +70,7 @@ class MongoTable extends JetTable {
         this.connectionString = options.get(Options.CONNECTION_STRING_OPTION);
         this.dataConnectionName = dataConnectionName;
         this.streaming = isStreaming(objectType);
+        this.checkDbExistence = Boolean.parseBoolean(options.getOrDefault(Options.CHECK_EXISTENCE, "true"));
 
         this.externalNames = getFields().stream()
                                         .map(field -> ((MongoTableField) field).externalName)
@@ -102,6 +104,10 @@ class MongoTable extends JetTable {
 
     QueryDataType[] fieldTypes() {
         return fieldTypes;
+    }
+
+    boolean checkExistence() {
+        return checkDbExistence;
     }
 
     QueryDataType fieldType(String externalName) {
