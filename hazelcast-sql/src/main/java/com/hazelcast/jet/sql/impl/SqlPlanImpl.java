@@ -1055,7 +1055,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final SqlRowMetadata rowMetadata;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
-        private final Map<String, Map<String, Expression<?>>> partitionStrategyCandidates;
+        private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
 
         SelectPlan(
                 PlanKey planKey,
@@ -1067,7 +1067,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
                 List<Permission> permissions,
-                Map<String, Map<String, Expression<?>>> partitionStrategyCandidates
+                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates
         ) {
             super(planKey);
 
@@ -1112,7 +1112,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             return context.isValid(objectKeys);
         }
 
-        public Map<String, Map<String, Expression<?>>> getPartitionStrategyCandidates() {
+        public Map<String, List<Map<String, Expression<?>>>> getPartitionStrategyCandidates() {
             return partitionStrategyCandidates;
         }
 

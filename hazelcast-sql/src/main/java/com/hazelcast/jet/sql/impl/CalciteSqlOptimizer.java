@@ -134,6 +134,8 @@ import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexDynamicParam;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
@@ -905,7 +907,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
-    private Map<String, Map<String, Expression<?>>> partitionStrategyCandidates(
+    private Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates(
             PhysicalRel root, QueryParameterMetadata parameterMetadata) {
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
         final Map<String, List<Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
@@ -913,8 +915,34 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         RexBuilder b = HazelcastRexBuilder.INSTANCE;
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
 
-        Map<String, Map<String, Expression<?>>> result = new HashMap<>();
-        // TODO: change result type
+        final Map<String, List<Map<String, Expression<?>>>> result = new HashMap<>();
+        for (final String tableName : prunabilityMap.keySet()) {
+            var tableVariants = prunabilityMap.get(tableName);
+            final List<Map<String, Expression<?>>> convertedList = new ArrayList<>();
+
+            for (final Map<String, RexNode> variant : tableVariants) {
+                final Map<String, Expression<?>> convertedVariant = new HashMap<>();
+                for (final String columnName : variant.keySet()) {
+                    // TODO: convert column to field name?
+                    final String fieldName = columnName;
+                    final RexNode rexNode = variant.get(columnName);
+                    if (rexNode instanceof RexDynamicParam) {
+                        convertedVariant.put(fieldName, visitor.visitDynamicParam((RexDynamicParam) rexNode));
+                    }
+
+                    if (rexNode instanceof RexLiteral) {
+                        convertedVariant.put(fieldName, visitor.visitLiteral((RexLiteral) rexNode));
+                    }
+                }
+                if (!convertedVariant.isEmpty()) {
+                    convertedList.add(convertedVariant);
+                }
+            }
+
+            // TODO: convert table name into map name?
+            final String mapName = tableName;
+            result.putIfAbsent(mapName, convertedList);
+        }
 
         return result;
     }
