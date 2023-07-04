@@ -349,7 +349,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         private Traverser<Document> delegateForCollection(MongoCollection<Document> collection,
                                                           List<Bson> aggregateList) {
-            return traverseIterable(collection.aggregate(aggregateList));
+            return traverseIterable(collection.aggregate(aggregateList).batchSize(BATCH_SIZE));
         }
 
         private Traverser<Document> delegateForDb(MongoDatabase database, List<Bson> aggregateList) {

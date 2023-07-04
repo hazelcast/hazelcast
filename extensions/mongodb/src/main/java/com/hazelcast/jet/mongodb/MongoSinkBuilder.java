@@ -19,7 +19,6 @@ package com.hazelcast.jet.mongodb;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
@@ -258,8 +257,11 @@ public final class MongoSinkBuilder<T> {
         final WriteMongoParams<T> localParams = this.params;
 
         ConnectorPermission permission = params.buildPermission();
-        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism, permission,
-                ProcessorSupplier.of(() -> new WriteMongoP<>(localParams))));
+        return Sinks.fromProcessor(name, new DbCheckingPMetaSupplier(permission, localParams.isThrowOnNonExisting(), false,
+                localParams.getDatabaseName(), localParams.getCollectionName(),
+                localParams.getClientSupplier(), localParams.getDataConnectionRef(),
+                ProcessorSupplier.of(() -> new WriteMongoP<>(localParams)))
+                .withPreferredLocalParallelism(preferredLocalParallelism));
     }
 
 }
