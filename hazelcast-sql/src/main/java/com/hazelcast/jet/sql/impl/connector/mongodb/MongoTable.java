@@ -17,6 +17,7 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.mongodb.Options.ResourceChecks;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -31,7 +32,9 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.FORCE_PARALLELISM_ONE;
+import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.readExistenceChecksFlag;
 import static java.lang.Boolean.parseBoolean;
 import static java.util.stream.Collectors.toList;
 
@@ -50,7 +53,7 @@ class MongoTable extends JetTable {
     private final QueryDataType[] fieldTypes;
     private final BsonType[] fieldExternalTypes;
     private final boolean forceMongoParallelismOne;
-    private final boolean checkDbExistence;
+    private final ResourceChecks checkExistence;
 
     MongoTable(
             @Nonnull String schemaName,
@@ -67,10 +70,10 @@ class MongoTable extends JetTable {
         this.databaseName = databaseName;
         this.collectionName = collectionName;
         this.options = options;
-        this.connectionString = options.get(Options.CONNECTION_STRING_OPTION);
+        this.connectionString = options.get(CONNECTION_STRING_OPTION);
         this.dataConnectionName = dataConnectionName;
         this.streaming = isStreaming(objectType);
-        this.checkDbExistence = Boolean.parseBoolean(options.getOrDefault(Options.CHECK_EXISTENCE, "true"));
+        this.checkExistence = readExistenceChecksFlag(options);
 
         this.externalNames = getFields().stream()
                                         .map(field -> ((MongoTableField) field).externalName)
@@ -106,8 +109,8 @@ class MongoTable extends JetTable {
         return fieldTypes;
     }
 
-    boolean checkExistence() {
-        return checkDbExistence;
+    boolean checkExistenceAfterCreation() {
+        return checkExistence == ResourceChecks.ALWAYS;
     }
 
     QueryDataType fieldType(String externalName) {

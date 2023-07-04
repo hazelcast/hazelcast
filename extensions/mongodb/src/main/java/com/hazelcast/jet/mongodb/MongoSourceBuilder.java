@@ -20,6 +20,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.mongodb.impl.DbCheckingPMetaSupplier;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.jet.pipeline.BatchSource;

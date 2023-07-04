@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
 import org.bson.BsonTimestamp;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
@@ -132,6 +133,29 @@ final class Options {
             return mf -> mf.name().equalsIgnoreCase(value);
         } else {
             return mf -> mf.externalName().equalsIgnoreCase(value);
+        }
+    }
+
+    static ResourceChecks readExistenceChecksFlag(Map<String, String> options) {
+        return ResourceChecks.fromString(options.getOrDefault(CHECK_EXISTENCE, "only-initial"));
+    }
+
+    enum ResourceChecks implements Serializable {
+        ALWAYS,
+        ONLY_INITIAL,
+        NEVER;
+
+        static ResourceChecks fromString(String code) {
+            if (ALWAYS.name().equalsIgnoreCase(code)) {
+                return ALWAYS;
+            }
+            if (ONLY_INITIAL.name().equalsIgnoreCase(code) || "only-initial".equalsIgnoreCase(code)) {
+                return ONLY_INITIAL;
+            }
+            if (NEVER.name().equalsIgnoreCase(code)) {
+                return NEVER;
+            }
+            throw new IllegalArgumentException("Unknown value for " + CHECK_EXISTENCE + " flag:" + code);
         }
     }
 }

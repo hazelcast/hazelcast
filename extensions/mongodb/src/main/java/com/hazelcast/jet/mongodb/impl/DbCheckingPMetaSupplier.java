@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.mongodb;
+package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.dataconnection.DataConnection;
@@ -31,7 +31,6 @@ import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.connection.ClusterDescription;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,6 +42,8 @@ import java.util.function.Function;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkCollectionExists;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkDatabaseExists;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static java.util.Collections.singletonList;
 
@@ -191,22 +192,4 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
         return true;
     }
 
-    static void checkCollectionExists(MongoDatabase database, String collectionName) {
-        for (String name : database.listCollectionNames()) {
-            if (name.equals(collectionName)) {
-                return;
-            }
-        }
-        throw new JetException("Collection " + collectionName + " in database " + database.getName() + " does not exist");
-    }
-
-    static void checkDatabaseExists(MongoClient client, String databaseName) {
-        for (String name : client.listDatabaseNames()) {
-            if (name.equalsIgnoreCase(databaseName)) {
-                return;
-            }
-        }
-        ClusterDescription clusterDescription = client.getClusterDescription();
-        throw new JetException("Database " + databaseName + " does not exist in cluster " + clusterDescription);
-    }
 }

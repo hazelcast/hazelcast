@@ -22,7 +22,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.mongodb.DbCheckingPMetaSupplier;
+import com.hazelcast.jet.mongodb.impl.DbCheckingPMetaSupplier;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -204,7 +204,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
         SupplierEx<MongoClient> clientSupplier = connectionString == null
                 ? null
                 : () -> MongoClients.create(connectionString);
-        return new DbCheckingPMetaSupplier(null, table.checkExistence(), table.isForceMongoParallelismOne(),
+        return new DbCheckingPMetaSupplier(null, table.checkExistenceAfterCreation(), table.isForceMongoParallelismOne(),
                 table.databaseName, table.collectionName,
                 clientSupplier, dataConnectionRef(table.dataConnectionName),
                 supplier);
