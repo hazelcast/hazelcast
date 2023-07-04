@@ -1,3 +1,18 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.cluster.Address;
@@ -49,6 +64,9 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
 
     private transient Address ownerAddress;
 
+    /**
+     * Creates a new instance of this meta supplier.
+     */
     public DbCheckingPMetaSupplier(@Nullable Permission requiredPermission,
                                    boolean shouldCheck,
                                    boolean forceTotalParallelismOne,
@@ -115,7 +133,8 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
                                   .filter(en -> arrayIndexOf(partitionId, en.getValue()) >= 0)
                                   .findAny()
                                   .map(Entry::getKey)
-                                  .orElseThrow(() -> new RuntimeException("Owner partition not assigned to any participating member"));
+                                  .orElseThrow(() -> new RuntimeException("Owner partition not assigned to any " +
+                                          "participating member"));
         }
 
         if (shouldCheck) {
@@ -145,11 +164,12 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
             } else if (dataConnectionRef != null) {
                 NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
                 InternalDataConnectionService dataConnectionService = nodeEngine.getDataConnectionService();
-                var dataConnection = dataConnectionService.getAndRetainDataConnection(dataConnectionRef.getName(), MongoDataConnection.class);
+                var dataConnection = dataConnectionService.getAndRetainDataConnection(dataConnectionRef.getName(),
+                        MongoDataConnection.class);
                 return tuple2(dataConnection.getClient(), dataConnection);
             } else {
-                throw new IllegalArgumentException("Either connectionSupplier or dataConnectionRef must be provided if database" +
-                        "and collection existence checks are requested");
+                throw new IllegalArgumentException("Either connectionSupplier or dataConnectionRef must be provided " +
+                        "if database and collection existence checks are requested");
             }
         } catch (Exception e) {
             throw new JetException("Cannot connect to MongoDB", e);
