@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.prunability;
 
-import com.hazelcast.jet.datamodel.Tuple4;
+import com.google.common.collect.Sets;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -25,13 +25,15 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlKind;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 
 /**
  * Extracts RexDynamicParam/RexLiterals that correspond to key components in the filter.
@@ -42,21 +44,6 @@ import static java.util.Collections.emptyList;
  * we can safely assume that something like AND(b=1, AND(a=1,c=1)) will become AND(b=1,a=1,c=1) at this point.
  * Note that this class will likely change significantly with introduction of support for more complex filters.
  *
- * TODO: redesign the Tuple4<...> interface into Map<TableName, List<Map<ColumnName,RexNode>>>
- *       where every Map<ColumnName,RexNode> is "executable" variant, thus allowing preserving grouping of values
- *       for future case of comp1 = 1 AND (comp2 IN (2,3)) -> (comp1 = 1 AND comp2 = 2) OR (comp1 = 1 AND comp2 = 3)
- *       in this case the map should contain:
- *       tableName -> [
- *          {
- *              comp1 = RexLiteral(1),
- *              comp2 = RexLiteral(2)
- *          },
- *          {
- *              comp1 = RexLiteral(1),
- *              comp2 = RexLiteral(3)
- *          }
- *       ]
- *
  */
 public class PartitionStrategyConditionExtractor {
 
@@ -64,73 +51,81 @@ public class PartitionStrategyConditionExtractor {
      * Returns tuple of table name, column name, left and right
      * operands of comparison extracted from the analyzed condition.
      */
-    public List<Tuple4<String, String, RexInputRef, RexNode>> extractCondition(
+    public Map<String, List<Map<String, RexNode>>> extractCondition(
             Table table,
             RexCall call,
-            Set<Integer> partitioningColumns
+            Set<String> partitioningColumns
     ) {
-        final var conditions = extractSubCondition(table, call, partitioningColumns);
-        final Set<Integer> affectedColumns = conditions.stream()
-                .map(Tuple4::f2)
-                .filter(Objects::nonNull)
-                .map(RexInputRef::getIndex)
-                .collect(Collectors.toSet());
-
-        if (!affectedColumns.equals(partitioningColumns)) {
-            return emptyList();
+        if (partitioningColumns.isEmpty()) {
+            return emptyMap();
+        }
+        final var variants = extractSubCondition(table, call, partitioningColumns);
+        if (variants.isEmpty()) {
+            return emptyMap();
         }
 
-        return conditions;
+        for (final Map<String, RexNode> variant : variants) {
+            // if any of the variants miss any of the columns, then entire filter is unbounded
+            if (!Sets.intersection(variant.keySet(), partitioningColumns).equals(partitioningColumns)) {
+                return emptyMap();
+            }
+        }
+
+        return Map.of(table.getSqlName(), variants);
     }
 
-    public List<Tuple4<String, String, RexInputRef, RexNode>> extractSubCondition(
+    public List<Map<String, RexNode>> extractSubCondition(
             Table table,
             RexCall call,
-            Set<Integer> partitioningColumns
+            Set<String> partitioningColumns
     ) {
-        final List<Tuple4<String, String, RexInputRef, RexNode>> result = new ArrayList<>();
+        final List<Map<String, RexNode>> result = new ArrayList<>();
         switch (call.getKind()) {
             case AND:
+                final Map<String, RexNode> variant = new HashMap<>();
                 for (final RexNode operand : call.getOperands()) {
                     if (!(operand instanceof RexCall)) {
                         return emptyList();
                     }
-                    result.addAll(extractSingleOperatorCondition(table, (RexCall) operand, partitioningColumns));
+                    var condition = extractEqualityCondition(table, (RexCall) operand, partitioningColumns);
+                    if (condition != null) {
+                        variant.put(condition.getKey(), condition.getValue());
+                    }
                 }
+                result.add(variant);
                 break;
             case EQUALS:
-                result.addAll(extractSingleOperatorCondition(table, call, partitioningColumns));
+                var entry = extractEqualityCondition(table, call, partitioningColumns);
+                if (entry != null) {
+                    result.add(Map.ofEntries(entry));
+                }
+                break;
+            default:
                 break;
         }
         return result;
     }
 
-    private List<Tuple4<String, String, RexInputRef, RexNode>> extractSingleOperatorCondition(
+    private Map.Entry<String, RexNode> extractEqualityCondition(
             Table table,
             RexCall call,
-            Set<Integer> partitioningColumns
+            Set<String> partitioningColumns
     ) {
-        final List<Tuple4<String, String, RexInputRef, RexNode>> result = new ArrayList<>();
-        switch (call.getKind()) {
-            case EQUALS:
-                assert call.getOperands().size() == 2;
-                final RexInputRef inputRef = extractInputRef(call);
-                final RexNode constantExpr = extractConstantExpression(call);
-                if (inputRef == null || constantExpr == null) {
-                    break;
-                }
-                if (!partitioningColumns.contains(inputRef.getIndex())) {
-                    break;
-                }
-                String tableName = table.getSqlName();
-                String columnName = table.getField(inputRef.getIndex()).getName();
-                result.add(Tuple4.tuple4(tableName, columnName, inputRef, constantExpr));
-                break;
-            default:
-                return emptyList();
+        if (!call.isA(SqlKind.EQUALS)) {
+            return null;
+        }
+        assert call.getOperands().size() == 2;
+        final RexInputRef inputRef = extractInputRef(call);
+        final RexNode constantExpr = extractConstantExpression(call);
+        if (inputRef == null || constantExpr == null) {
+            return null;
         }
 
-        return result;
+        final String columnName = table.getField(inputRef.getIndex()).getName();
+        if (!partitioningColumns.contains(columnName)) {
+            return null;
+        }
+        return new AbstractMap.SimpleEntry<>(columnName, constantExpr);
     }
 
     private RexInputRef extractInputRef(final RexCall call) {

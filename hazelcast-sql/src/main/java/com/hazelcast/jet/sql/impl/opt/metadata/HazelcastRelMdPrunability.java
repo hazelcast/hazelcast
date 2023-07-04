@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
-import com.hazelcast.jet.datamodel.Tuple4;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdPrunability.PrunabilityMetadata;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.prunability.PartitionStrategyConditionExtractor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.linq4j.tree.Types;
@@ -37,25 +37,21 @@ import org.apache.calcite.rel.metadata.MetadataHandler;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.rex.RexProgram;
 import org.apache.calcite.util.Util;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.datamodel.Tuple4.tuple4;
+import static java.util.Collections.emptyMap;
 
 public final class HazelcastRelMdPrunability
         implements MetadataHandler<PrunabilityMetadata> {
@@ -74,14 +70,14 @@ public final class HazelcastRelMdPrunability
     }
 
     @SuppressWarnings("unused")
-    public List<Tuple4<String, String, RexInputRef, RexNode>> extractPrunability(
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(
             FullScanPhysicalRel scan,
             RelMetadataQuery mq
     ) {
 
         final HazelcastTable hazelcastTable = OptUtils.extractHazelcastTable(scan);
         if (!(hazelcastTable.getTarget() instanceof PartitionedMapTable)) {
-            return Collections.emptyList();
+            return emptyMap();
         }
 
         final PartitionedMapTable targetTable = hazelcastTable.getTarget();
@@ -91,63 +87,37 @@ public final class HazelcastRelMdPrunability
                 .map(TableField::getName)
                 .collect(Collectors.toSet());
 
-        final RelDataType rowType = hazelcastTable.getRowType(scan.getCluster().getTypeFactory());
-        final Set<Integer> partitioningColumnIndexes = partitioningColumns.stream()
-                .map(colName -> rowType.getField(colName, false, false))
-                .filter(Objects::nonNull)
-                .map(RelDataTypeField::getIndex)
-                .collect(Collectors.toSet());
-        if (partitioningColumnIndexes.size() != partitioningColumns.size()) {
-            return Collections.emptyList();
+        if (targetTable.partitioningAttributes().isEmpty()) {
+            partitioningColumns.add(QueryPath.KEY);
         }
 
         final RexNode filter = hazelcastTable.getFilter();
         if (!(filter instanceof RexCall)) {
-            return Collections.emptyList();
+            return emptyMap();
         }
 
         final RexCall call = (RexCall) filter;
         final var conditionExtractor = new PartitionStrategyConditionExtractor();
-        return conditionExtractor.extractCondition(targetTable, call, partitioningColumnIndexes);
+        return conditionExtractor.extractCondition(targetTable, call, partitioningColumns);
     }
 
     @SuppressWarnings("unused")
-    public List<Tuple4<String, String, RexInputRef, RexNode>> extractPrunability(
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(
             IndexScanMapPhysicalRel scan,
             RelMetadataQuery mq
     ) {
         // TODO: Implement
-        return Collections.emptyList();
+        return emptyMap();
     }
 
     @SuppressWarnings("unused")
-    public List<Tuple4<String, String, RexInputRef, RexNode>> extractPrunability(Calc calc, RelMetadataQuery mq) {
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(Calc calc, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        List<Tuple4<String, String, RexInputRef, RexNode>> prunability = query.extractPrunability(calc.getInput());
-        if (prunability.isEmpty()) {
-            return Collections.emptyList();
-        }
-        RexProgram program = calc.getProgram();
-        if (program.projectsOnlyIdentity()) {
-            return prunability;
-        }
-
-        List<RexNode> rexNodes = program.expandList(program.getProjectList());
-
-        List<Tuple4<String, String, RexInputRef, RexNode>> permutedPrunability = prunability.stream()
-                .map(t -> tuple4(
-                        t.f0(),
-                        t.f1(),
-                        // TODO: Handle if field is not projected.
-                        RexInputRef.of(rexNodes.indexOf(t.f2()), program.getInputRowType()),
-                        t.f3())
-                ).collect(Collectors.toList());
-
-        return permutedPrunability;
+        return query.extractPrunability(calc.getInput());
     }
 
     @SuppressWarnings("unused")
-    public List<Tuple4<String, String, RexInputRef, RexNode>> extractPrunability(
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(
             Aggregate agg,
             RelMetadataQuery mq
     ) {
@@ -156,7 +126,7 @@ public final class HazelcastRelMdPrunability
     }
 
     @SuppressWarnings("unused")
-    public List<Tuple4<String, String, RexInputRef, RexNode>> extractPrunability(
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(
             RelSubset subset,
             RelMetadataQuery mq
     ) {
@@ -166,27 +136,32 @@ public final class HazelcastRelMdPrunability
     }
 
     @SuppressWarnings("unused")
-    public List<Tuple4<String, String, RexInputRef, RexNode>> extractPrunability(
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(
             RelNode rel,
             RelMetadataQuery mq
     ) {
         // For any non-mentioned rels, we assume they are prunable and forwards prunability.
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        List<Tuple4<String, String, RexInputRef, RexNode>> prunability = new ArrayList<>();
+        Map<String, List<Map<String, RexNode>>> prunability = new HashMap<>();
         for (int i = 0; i < rel.getInputs().size(); i++) {
             RelNode input = rel.getInput(i);
-            prunability.addAll(query.extractPrunability(input));
+            var extractedPrunability = query.extractPrunability(input);
+            for (final String tableName : extractedPrunability.keySet()) {
+                var tableVariants = extractedPrunability.get(tableName);
+                prunability.putIfAbsent(tableName, new ArrayList<>());
+                prunability.get(tableName).addAll(tableVariants);
+            }
         }
         return prunability;
     }
 
     @SuppressWarnings("unused")
-    public List<Tuple4<String, String, RexInputRef, RexNode>> extractPrunability(
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(
             BiRel rel,
             RelMetadataQuery mq
     ) {
         // For any bi-rel we (temporarily) are not propagating prunability.
-        return Collections.emptyList();
+        return Collections.emptyMap();
     }
 
     public interface PrunabilityMetadata extends Metadata {
@@ -204,7 +179,7 @@ public final class HazelcastRelMdPrunability
 
         interface Handler extends MetadataHandler<PrunabilityMetadata> {
 
-            List<Tuple4<String, String, RexInputRef, RexNode>> extractPrunability(RelNode rel, RelMetadataQuery mq);
+            Map<String, List<Map<String, RexNode>>> extractPrunability(RelNode rel, RelMetadataQuery mq);
         }
     }
 }

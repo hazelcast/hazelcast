@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.datamodel.Tuple4;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -135,7 +134,6 @@ import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
@@ -159,7 +157,6 @@ import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.schema;
-import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.EQUALS;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -911,17 +908,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private Map<String, Map<String, Expression<?>>> partitionStrategyCandidates(
             PhysicalRel root, QueryParameterMetadata parameterMetadata) {
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
-        final List<Tuple4<String, String, RexInputRef, RexNode>> prunabilities = query.extractPrunability(root);
+        final Map<String, List<Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
 
         RexBuilder b = HazelcastRexBuilder.INSTANCE;
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
 
         Map<String, Map<String, Expression<?>>> result = new HashMap<>();
-        // Note: We consider all calls to be re-generated here would be equality conditions.
-        for (Tuple4<String, String, RexInputRef, RexNode> el : prunabilities) {
-            result.putIfAbsent(el.f0(), new HashMap<>());
-            result.get(el.f0()).put(el.f1(), el.f3().accept(visitor));
-        }
+        // TODO: change result type
 
         return result;
     }

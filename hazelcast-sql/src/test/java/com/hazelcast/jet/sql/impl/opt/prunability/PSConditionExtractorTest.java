@@ -16,20 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.opt.prunability;
 
-import com.hazelcast.jet.datamodel.Tuple4;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
-import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +33,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.AND;
@@ -50,6 +45,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.junit.Assert.assertEquals;
 
@@ -79,13 +75,8 @@ public class PSConditionExtractorTest extends OptimizerTestSupport {
         var rexLiteral = b.makeLiteral("1");
         var call = (RexCall) b.makeCall(EQUALS, leftInputRef, rexLiteral);
 
-        var decomposedConds = extractor.extractCondition(table, call, Set.of(0));
-
-        assertEquals(1, decomposedConds.size());
-        assertEquals("m", decomposedConds.get(0).f0());
-        assertEquals("__key", decomposedConds.get(0).f1());
-        assertEquals(leftInputRef, decomposedConds.get(0).f2());
-        assertEquals(rexLiteral, decomposedConds.get(0).f3());
+        var decomposedConds = extractor.extractCondition(table, call, Set.of(KEY));
+        assertEquals(Map.of("m", singletonList(Map.of("__key", rexLiteral))), decomposedConds);
     }
 
     @Test
@@ -115,27 +106,19 @@ public class PSConditionExtractorTest extends OptimizerTestSupport {
                 b.makeCall(EQUALS, col2, param0)
         );
 
-        var decomposedConds = extractor.extractCondition(table, filter, Set.of(0, 1));
-        assertEquals(2, decomposedConds.size());
-
-        assertEquals("m", decomposedConds.get(0).f0());
-        assertEquals("comp0", decomposedConds.get(0).f1());
-        assertEquals(col0, decomposedConds.get(0).f2());
-        assertEquals(param2, decomposedConds.get(0).f3());
-
-        assertEquals("m", decomposedConds.get(1).f0());
-        assertEquals("comp1", decomposedConds.get(1).f1());
-        assertEquals(col1, decomposedConds.get(1).f2());
-        assertEquals(param1, decomposedConds.get(1).f3());
+        var decomposedConds = extractor.extractCondition(table, filter, Set.of("comp1", "comp2"));
+        assertEquals(Map.of("m", singletonList(Map.of(
+                "comp1", param1,
+                "comp2", param0
+                ))), decomposedConds);
     }
 
     @Test
-    public void test_residualFilters() {
+    public void whenOrConditionIsPresent_thenReturnNoVariants() {
 
     }
 
-    @Test
-    public void whenOrConditionIsPresent_thenFail() {
+    public void whenConditionIsIncomplete_thenReturnNoVariants() {
 
     }
 }

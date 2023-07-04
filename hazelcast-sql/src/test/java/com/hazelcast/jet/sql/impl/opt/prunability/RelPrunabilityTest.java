@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.prunability;
 
-import com.hazelcast.jet.datamodel.Tuple4;
+import com.hazelcast.jet.sql.impl.HazelcastRexBuilder;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAccumulateByKeyPhysicalRel;
@@ -30,19 +30,22 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexDynamicParam;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
-import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 public class RelPrunabilityTest extends OptimizerTestSupport {
@@ -56,27 +59,22 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         HazelcastTable table = partitionedTable(
                 "m",
                 asList(
-                        mapField(KEY, INT, QueryPath.KEY_PATH),
+                        mapField(KEY, BIGINT, QueryPath.KEY_PATH),
                         mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
                 10);
-        PhysicalRel root = optimizePhysical("SELECT __key FROM m WHERE this = '10'", asList(INT, VARCHAR), table).getPhysical();
+        PhysicalRel root = optimizePhysical("SELECT __key FROM m WHERE __key = 10 AND this IS NOT NULL", asList(BIGINT, VARCHAR), table).getPhysical();
 
         assertPlan(root, plan(planRow(0, FullScanPhysicalRel.class)));
 
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
-        List<Tuple4<String, String, RexInputRef, RexNode>> prunability = query.extractPrunability(root);
-        RelDataType varcharType = HazelcastTypeUtils.createType(
+        Map<String, List<Map<String, RexNode>>> prunability = query.extractPrunability(root);
+        RelDataType bigintType = HazelcastTypeUtils.createType(
                 HazelcastTypeFactory.INSTANCE,
-                SqlTypeName.VARCHAR,
-                false);
+                SqlTypeName.BIGINT,
+                true);
+        final RexLiteral expectedLiteral = HazelcastRexBuilder.INSTANCE.makeLiteral(10, bigintType);
 
-        RexInputRef expectedLeftInputRef = new RexInputRef(1, varcharType);
-
-        assertEquals(1, prunability.size());
-        assertEquals("m", prunability.get(0).f0());
-        assertEquals("this", prunability.get(0).f1());
-        assertEquals(expectedLeftInputRef, prunability.get(0).f2());
-//        assertEquals(HazelcastRexBuilder.INSTANCE.makeLiteral("10", varcharType), prunability.get(0).f3());
+        assertEquals(Map.of("m", singletonList(Map.of("__key", expectedLiteral))), prunability);
     }
 
 
@@ -85,10 +83,10 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         HazelcastTable table = partitionedTable(
                 "m",
                 asList(
-                        mapField(KEY, INT, QueryPath.KEY_PATH),
+                        mapField(KEY, BIGINT, QueryPath.KEY_PATH),
                         mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
                 10);
-        PhysicalRel root = optimizePhysical("SELECT this, SUM(__key) FROM m WHERE this = '10' GROUP BY __key, this", asList(INT, VARCHAR), table).getPhysical();
+        PhysicalRel root = optimizePhysical("SELECT this, SUM(__key) FROM m WHERE __key = ? AND this = '10' GROUP BY __key, this", asList(BIGINT, VARCHAR), table).getPhysical();
 
         assertPlan(root, plan(
                 planRow(0, CalcPhysicalRel.class),
@@ -98,18 +96,12 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         ));
 
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
-        List<Tuple4<String, String, RexInputRef, RexNode>> prunability = query.extractPrunability(root);
-        RelDataType varcharType = HazelcastTypeUtils.createType(
+        Map<String, List<Map<String, RexNode>>> prunability = query.extractPrunability(root);
+        RelDataType bigintType = HazelcastTypeUtils.createType(
                 HazelcastTypeFactory.INSTANCE,
-                SqlTypeName.VARCHAR,
-                false);
-        RexInputRef expectedLeftInputRef = new RexInputRef(0, varcharType);
-
-        assertEquals(1, prunability.size());
-        assertEquals("m", prunability.get(0).f0());
-        assertEquals("this", prunability.get(0).f1());
-        assertEquals(expectedLeftInputRef, prunability.get(0).f2());
-
-        // TODO: don't even know how to actually get 'pure' project under FullScan, which always pushdown...
+                SqlTypeName.BIGINT,
+                true);
+        final RexDynamicParam param = HazelcastRexBuilder.INSTANCE.makeDynamicParam(bigintType, 0);
+        assertEquals(Map.of("m", singletonList(Map.of("__key", param))), prunability);
     }
 }
