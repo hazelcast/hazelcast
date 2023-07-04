@@ -522,7 +522,7 @@ public class ClientClusterServiceImplTest extends HazelcastTestSupport {
                             .collect(Collectors.toList()),
                     clusterService.getEffectiveMemberList());
 
-            clusterService.onTryToConnectNextCluster();
+            clusterService.onClusterChange();
 
             // Returns an empty list after reset
             assertCollection(Collections.emptyList(), clusterService.getEffectiveMemberList());
