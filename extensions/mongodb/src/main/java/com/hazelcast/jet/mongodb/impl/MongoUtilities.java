@@ -148,23 +148,4 @@ public final class MongoUtilities {
                             .withZoneSameInstant(systemDefault())
                             .toLocalDateTime();
     }
-
-    static void checkCollectionExists(MongoDatabase database, String collectionName) {
-        for (String name : database.listCollectionNames()) {
-            if (name.equals(collectionName)) {
-                return;
-            }
-        }
-        throw new JetException("Collection " + collectionName + " in database " + database.getName() + " does not exist");
-    }
-
-    static void checkDatabaseExists(MongoClient client, String databaseName) {
-        for (String name : client.listDatabaseNames()) {
-            if (name.equalsIgnoreCase(databaseName)) {
-                return;
-            }
-        }
-        ClusterDescription clusterDescription = client.getClusterDescription();
-        throw new JetException("Database " + databaseName + " does not exist in cluster " + clusterDescription);
-    }
 }
