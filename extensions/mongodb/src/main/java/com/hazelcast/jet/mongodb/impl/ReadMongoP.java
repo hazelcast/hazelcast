@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.impl.CursorTraverser.EmptyItem;
+import com.hazelcast.jet.mongodb.impl.ReadMongoParams.Aggregates;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.mongodb.MongoException;
@@ -291,7 +292,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private final class BatchMongoReader extends MongoChunkedReader {
         private final FunctionEx<Document, I> mapItemFn;
-        private final List<Document> aggregates;
+        private final Aggregates aggregates;
         private Traverser<Document> delegate;
         private Object lastKey;
 
@@ -299,7 +300,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 String databaseName,
                 String collectionName,
                 FunctionEx<Document, I> mapItemFn,
-                List<Document> aggregates) {
+                Aggregates aggregates) {
             super(databaseName, collectionName);
             this.mapItemFn = mapItemFn;
             this.aggregates = aggregates;
@@ -307,7 +308,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         @Override
         void onConnect(MongoClient mongoClient, boolean supportsSnapshots) {
-            List<Bson> aggregateList = new ArrayList<>(aggregates);
+            List<Bson> aggregateList = new ArrayList<>(aggregates.nonNulls());
             if (supportsSnapshots && !hasSorts(aggregateList)) {
                 aggregateList.add(sort(ascending("_id")).toBsonDocument());
             }
@@ -315,7 +316,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 aggregateList.add(match(gt("_id", lastKey)).toBsonDocument());
             }
             if (canParallelize) {
-                aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex, false));
+                aggregateList.addAll(aggregates.indexAfterFilter(),
+                        partitionAggregate(totalParallelism, processorIndex, false));
             }
             if (collection != null) {
                 this.delegate = delegateForCollection(collection, aggregateList);
@@ -394,7 +396,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
     private final class StreamMongoReader extends MongoChunkedReader {
         private final BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapFn;
         private final BsonTimestamp startTimestamp;
-        private final List<Document> aggregates;
+        private final Aggregates aggregates;
         private final EventTimeMapper<I> eventTimeMapper;
         private MongoCursor<ChangeStreamDocument<Document>> cursor;
         private BsonDocument resumeToken;
@@ -404,7 +406,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 String collectionName,
                 BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapFn,
                 BsonTimestamp startTimestamp,
-                List<Document> aggregates,
+                Aggregates aggregates,
                 EventTimeMapper<I> eventTimeMapper
         ) {
             super(databaseName, collectionName);
@@ -416,9 +418,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         @Override
         public void onConnect(MongoClient mongoClient, boolean snapshotsEnabled) {
-            List<Bson> aggregateList = new ArrayList<>(aggregates);
+            List<Bson> aggregateList = new ArrayList<>(aggregates.nonNulls());
             if (canParallelize) {
-                aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex, true));
+                aggregateList.addAll(aggregates.indexAfterFilter(),
+                        partitionAggregate(totalParallelism, processorIndex, true));
             }
             ChangeStreamIterable<Document> changeStream;
             if (collection != null) {
