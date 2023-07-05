@@ -22,9 +22,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.impl.processor.ExpectNothingP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
@@ -36,16 +34,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkCollectionExists;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkDatabaseExists;
-import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
-import static java.util.Collections.singletonList;
 
 /**
  * A {@link ProcessorMetaSupplier} that will check if requested database and collection exist before creating
@@ -55,15 +48,14 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
 
     private final Permission requiredPermission;
     private final boolean shouldCheck;
+    private final ProcessorMetaSupplier standardForceOnePMS;
     private boolean forceTotalParallelismOne;
     private final String databaseName;
     private final String collectionName;
     private final ProcessorSupplier processorSupplier;
     private final SupplierEx<? extends MongoClient> clientSupplier;
     private final DataConnectionRef dataConnectionRef;
-    private int preferredLocalParallelism = Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
-
-    private transient Address ownerAddress;
+    private int preferredLocalParallelism;
 
     /**
      * Creates a new instance of this meta supplier.
@@ -87,6 +79,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
         this.clientSupplier = clientSupplier;
         this.dataConnectionRef = dataConnectionRef;
         this.preferredLocalParallelism = forceTotalParallelismOne ? 1 : preferredLocalParallelism;
+        this.standardForceOnePMS = ProcessorMetaSupplier.forceTotalParallelismOne(processorSupplier);
     }
 
     @Override
@@ -117,19 +110,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
     public void init(@Nonnull Context context) throws Exception {
         if (forceTotalParallelismOne) {
             preferredLocalParallelism = 1;
-            if (context.localParallelism() != 1) {
-                throw new IllegalArgumentException(
-                        "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
-                                + "supports only total parallelism of 1. Local parallelism must be 1.");
-            }
-            String key = getPartitionKey(newUnsecureUuidString());
-            int partitionId = context.hazelcastInstance().getPartitionService().getPartition(key).getPartitionId();
-            ownerAddress = context.partitionAssignment().entrySet().stream()
-                                  .filter(en -> arrayIndexOf(partitionId, en.getValue()) >= 0)
-                                  .findAny()
-                                  .map(Entry::getKey)
-                                  .orElseThrow(() -> new RuntimeException("Owner partition not assigned to any " +
-                                          "participating member"));
+            standardForceOnePMS.init(context);
         }
 
         if (shouldCheck) {
@@ -175,7 +156,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
     @Override
     public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
         if (forceTotalParallelismOne) {
-            return addr -> addr.equals(ownerAddress) ? processorSupplier : count -> singletonList(new ExpectNothingP());
+            return standardForceOnePMS.get(addresses);
         } else {
             return addr -> processorSupplier;
         }
