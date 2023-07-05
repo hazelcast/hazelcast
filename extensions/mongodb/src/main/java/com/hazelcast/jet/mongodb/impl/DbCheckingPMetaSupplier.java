@@ -17,6 +17,7 @@ package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.dataconnection.DataConnection;
+import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
@@ -28,6 +29,7 @@ import com.hazelcast.jet.impl.processor.ExpectNothingP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
@@ -75,7 +77,9 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
                                    @Nullable String collectionName,
                                    @Nullable SupplierEx<? extends MongoClient> clientSupplier,
                                    @Nullable DataConnectionRef dataConnectionRef,
-                                   @Nonnull ProcessorSupplier processorSupplier) {
+                                   @Nonnull ProcessorSupplier processorSupplier,
+                                   int preferredLocalParallelism
+    ) {
         this.requiredPermission = requiredPermission;
         this.shouldCheck = shouldCheck;
         this.forceTotalParallelismOne = forceTotalParallelismOne;
@@ -84,6 +88,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
         this.processorSupplier = processorSupplier;
         this.clientSupplier = clientSupplier;
         this.dataConnectionRef = dataConnectionRef;
+        this.preferredLocalParallelism = preferredLocalParallelism;
     }
 
     /**
@@ -116,7 +121,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
 
     @Override
     public boolean initIsCooperative() {
-        return true;
+        return !shouldCheck;
     }
 
     @Override
@@ -163,8 +168,8 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
             if (clientSupplier != null) {
                 return tuple2(clientSupplier.get(), null);
             } else if (dataConnectionRef != null) {
-                NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
-                InternalDataConnectionService dataConnectionService = nodeEngine.getDataConnectionService();
+                NodeEngine nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
+                DataConnectionService dataConnectionService = nodeEngine.getDataConnectionService();
                 var dataConnection = dataConnectionService.getAndRetainDataConnection(dataConnectionRef.getName(),
                         MongoDataConnection.class);
                 return tuple2(dataConnection.getClient(), dataConnection);
