@@ -298,7 +298,8 @@ public class MongoSourceTest extends AbstractMongoTest {
         String connectionString = mongoContainer.getConnectionString();
 
         Stream<?> builder = MongoSourceBuilder.stream(() -> MongoClients.create(connectionString));
-        builder = streamFilters(builder);
+        builder = streamFilters(builder)
+                .throwOnNonExisting(false);
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(builder.build())

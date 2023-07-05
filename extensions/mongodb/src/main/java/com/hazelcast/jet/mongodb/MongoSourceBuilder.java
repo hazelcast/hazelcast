@@ -20,7 +20,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.mongodb.impl.DbCheckingPMetaSupplier;
+import com.hazelcast.jet.mongodb.impl.DbCheckingPMetaSupplierBuilder;
 import com.hazelcast.jet.mongodb.impl.ReadMongoP;
 import com.hazelcast.jet.mongodb.impl.ReadMongoParams;
 import com.hazelcast.jet.pipeline.BatchSource;
@@ -414,11 +414,16 @@ public final class MongoSourceBuilder {
             final ReadMongoParams<T> localParams = params;
 
             ConnectorPermission permission = params.buildPermissions();
-            return Sources.batchFromProcessor(name, new DbCheckingPMetaSupplier(permission,
-                    localParams.isThrowOnNonExisting(), false,
-                    localParams.getDatabaseName(), localParams.getCollectionName(),
-                    localParams.getClientSupplier(), localParams.getDataConnectionRef(),
-                    ProcessorSupplier.of(() -> new ReadMongoP<>(localParams))));
+            return Sources.batchFromProcessor(name, new DbCheckingPMetaSupplierBuilder()
+                    .setRequiredPermission(permission)
+                    .setShouldCheck(localParams.isThrowOnNonExisting())
+                    .setForceTotalParallelismOne(false)
+                    .setDatabaseName(localParams.getDatabaseName())
+                    .setCollectionName(localParams.getCollectionName())
+                    .setClientSupplier(localParams.getClientSupplier())
+                    .setDataConnectionRef(localParams.getDataConnectionRef())
+                    .setProcessorSupplier(ProcessorSupplier.of(() -> new ReadMongoP<>(localParams)))
+                    .create());
         }
     }
 
@@ -614,10 +619,17 @@ public final class MongoSourceBuilder {
 
             ConnectorPermission permission = params.buildPermissions();
             return Sources.streamFromProcessorWithWatermarks(name, true,
-                    eventTimePolicy -> new DbCheckingPMetaSupplier(permission, localParams.isThrowOnNonExisting(), false,
-                            localParams.getDatabaseName(), localParams.getCollectionName(),
-                            localParams.getClientSupplier(), localParams.getDataConnectionRef(),
-                            ProcessorSupplier.of(() -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy))))
+                    eventTimePolicy -> new DbCheckingPMetaSupplierBuilder()
+                            .setRequiredPermission(permission)
+                            .setShouldCheck(localParams.isThrowOnNonExisting())
+                            .setForceTotalParallelismOne(false)
+                            .setDatabaseName(localParams.getDatabaseName())
+                            .setCollectionName(localParams.getCollectionName())
+                            .setClientSupplier(localParams.getClientSupplier())
+                            .setDataConnectionRef(localParams.getDataConnectionRef())
+                            .setProcessorSupplier(ProcessorSupplier.of(
+                                    () -> new ReadMongoP<>(localParams.setEventTimePolicy(eventTimePolicy))))
+                            .create()
             );
         }
     }

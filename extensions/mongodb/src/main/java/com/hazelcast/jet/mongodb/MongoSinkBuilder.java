@@ -21,7 +21,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.mongodb.impl.DbCheckingPMetaSupplier;
+import com.hazelcast.jet.mongodb.impl.DbCheckingPMetaSupplierBuilder;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
@@ -253,15 +253,21 @@ public final class MongoSinkBuilder<T> {
      * supplied to this builder.
      */
     @Nonnull
-        public Sink<T> build() {
+    public Sink<T> build() {
         params.checkValid();
         final WriteMongoParams<T> localParams = this.params;
 
         ConnectorPermission permission = params.buildPermission();
-        return Sinks.fromProcessor(name, new DbCheckingPMetaSupplier(permission, localParams.isThrowOnNonExisting(), false,
-                localParams.getDatabaseName(), localParams.getCollectionName(),
-                localParams.getClientSupplier(), localParams.getDataConnectionRef(),
-                ProcessorSupplier.of(() -> new WriteMongoP<>(localParams)))
+        return Sinks.fromProcessor(name, new DbCheckingPMetaSupplierBuilder()
+                .setRequiredPermission(permission)
+                .setShouldCheck(localParams.isThrowOnNonExisting())
+                .setForceTotalParallelismOne(false)
+                .setDatabaseName(localParams.getDatabaseName())
+                .setCollectionName(localParams.getCollectionName())
+                .setClientSupplier(localParams.getClientSupplier())
+                .setDataConnectionRef(localParams.getDataConnectionRef())
+                .setProcessorSupplier(ProcessorSupplier.of(() -> new WriteMongoP<>(localParams)))
+                .create()
                 .withPreferredLocalParallelism(preferredLocalParallelism));
     }
 
