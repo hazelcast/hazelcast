@@ -94,7 +94,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.488</aws.sdk.version>
+        <aws.sdk.version>1.12.493</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
         <classgraph.version>4.8.160</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
@@ -137,7 +137,7 @@
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <snakeyaml.engine.version>2.6</snakeyaml.engine.version>
-        <mongodb.version>4.9.1</mongodb.version>
+        <mongodb.version>4.10.1</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
@@ -1793,7 +1793,7 @@
             <dependency>
                 <groupId>com.google.auto.value</groupId>
                 <artifactId>auto-value-annotations</artifactId>
-                <version>1.10.1</version>
+                <version>1.10.2</version>
             </dependency>
             <dependency>
                 <groupId>com.nimbusds</groupId>
