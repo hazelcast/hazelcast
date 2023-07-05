@@ -74,6 +74,10 @@ public class DbCheckingPMetaSupplierBuilder {
         return this;
     }
 
+    /**
+     * Sets preferred local parallelism. If {@link #forceTotalParallelismOne} is selected, this
+     * method will have no effect.
+     */
     public DbCheckingPMetaSupplierBuilder setPreferredLocalParallelism(int preferredLocalParallelism) {
         this.preferredLocalParallelism = preferredLocalParallelism;
         return this;

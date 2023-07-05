@@ -18,7 +18,6 @@ package com.hazelcast.jet.mongodb.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.DataConnectionService;
-import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -30,7 +29,6 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoDatabase;
 
@@ -88,16 +86,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
         this.processorSupplier = processorSupplier;
         this.clientSupplier = clientSupplier;
         this.dataConnectionRef = dataConnectionRef;
-        this.preferredLocalParallelism = preferredLocalParallelism;
-    }
-
-    /**
-     * Sets preferred local parallelism. If {@link #forceTotalParallelismOne} is selected, this
-     * method will have no effect.
-     */
-    public DbCheckingPMetaSupplier withPreferredLocalParallelism(int preferredLocalParallelism) {
         this.preferredLocalParallelism = forceTotalParallelismOne ? 1 : preferredLocalParallelism;
-        return this;
     }
 
     @Override
