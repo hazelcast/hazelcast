@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -79,13 +80,9 @@ public class SqlQueryResultTest extends SqlTestSupport {
     }
 
     private List<SqlRow> execute(String query) {
-        List<SqlRow> rows = new ArrayList<>();
         try (SqlResult result = instance().getSql().execute(query)) {
-            for (SqlRow row : result) {
-                rows.add(row);
-            }
+            return result.stream().collect(toList());
         }
-        return rows;
     }
 
     private void checkSuccess(
