@@ -17,6 +17,7 @@ package com.hazelcast.jet.mongodb.impl;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.mongodb.client.MongoClient;
 
@@ -31,6 +32,7 @@ public class DbCheckingPMetaSupplierBuilder {
     private SupplierEx<? extends MongoClient> clientSupplier;
     private DataConnectionRef dataConnectionRef;
     private ProcessorSupplier processorSupplier;
+    private int preferredLocalParallelism = Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 
     public DbCheckingPMetaSupplierBuilder setRequiredPermission(Permission requiredPermission) {
         this.requiredPermission = requiredPermission;
@@ -72,8 +74,17 @@ public class DbCheckingPMetaSupplierBuilder {
         return this;
     }
 
+    /**
+     * Sets preferred local parallelism. If {@link #forceTotalParallelismOne} is selected, this
+     * method will have no effect.
+     */
+    public DbCheckingPMetaSupplierBuilder setPreferredLocalParallelism(int preferredLocalParallelism) {
+        this.preferredLocalParallelism = preferredLocalParallelism;
+        return this;
+    }
+
     public DbCheckingPMetaSupplier create() {
         return new DbCheckingPMetaSupplier(requiredPermission, shouldCheck, forceTotalParallelismOne, databaseName,
-                collectionName, clientSupplier, dataConnectionRef, processorSupplier);
+                collectionName, clientSupplier, dataConnectionRef, processorSupplier, preferredLocalParallelism);
     }
 }
