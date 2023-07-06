@@ -98,6 +98,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
      */
     public DbCheckingPMetaSupplier forceTotalParallelismOne(boolean forceTotalParallelismOne) {
         this.forceTotalParallelismOne = forceTotalParallelismOne;
+        this.preferredLocalParallelism = 1;
         return this;
     }
 
@@ -109,7 +110,6 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
     @Override
     public void init(@Nonnull Context context) throws Exception {
         if (forceTotalParallelismOne) {
-            preferredLocalParallelism = 1;
             standardForceOnePMS.init(context);
         }
 
