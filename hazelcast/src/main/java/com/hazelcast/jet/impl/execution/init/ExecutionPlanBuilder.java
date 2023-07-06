@@ -102,10 +102,12 @@ public final class ExecutionPlanBuilder {
                 .filter(mi -> mi.getAddress().equals(localMemberAddress))
                 .findAny()
                 .orElseThrow();
-        partitionsByMember.computeIfAbsent(localMemberInfo, (i) -> {
-            nodeEngine.getLogger(ExecutionPlanBuilder.class).info("Adding coordinator to partition-pruned job members");
-            return new int[]{};
-        });
+        if (!nodeEngine.getNode().isLiteMember()) {
+            partitionsByMember.computeIfAbsent(localMemberInfo, (i) -> {
+                nodeEngine.getLogger(ExecutionPlanBuilder.class).info("Adding coordinator to partition-pruned job members");
+                return new int[]{};
+            });
+        }
 
         final Map<Address, int[]> partitionsByAddress = partitionsByMember
                 .entrySet()
