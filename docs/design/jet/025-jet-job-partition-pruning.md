@@ -1,4 +1,4 @@
-# Member pruning
+# Jet job partition pruning
 
 |||
 |---|---|
@@ -23,14 +23,14 @@ which becomes noticeable in very small batch jobs and/or large clusters.
 
 - Member pruning - prevent cluster members which to not own requested data from being involved in job execution
 - Processor pruning - eliminate redundant stage processor creation
-- (IMap) Partition pruning - extract partition condition and assign only required partition to be read by `ReadMapOrCacheP`
+- Scan partition pruning - extract partition condition and select only required partition to be read by scanning processors (`ReadMapOrCacheP`, `MapIndexScanP`)
 
 ## Goals
 
 The goals of that initiative is corresponding with items enumerated in 'Terminology' section:
 
-- deploy a job only on members which contain required partitions.
-- limit number of partitions involved in IMap scan.
+- deploy a job only on members which contain required partitions,
+- limit number of partitions involved in IMap scans.
 
 Non-goals are:
 
@@ -97,11 +97,11 @@ There are two different approaches were considered, which differ from each other
 in the stage that we understand that some member may be pruned from job execution.
 The _generic_ approach tries to define the default behavior and applicable to DAGs from any source (SQL/Jet),
 whereas the _SQL-oriented_ approach focuses on hinting `ExecutionPlanBuilder` with
-additional meta-information from JobConfig and DAG constructed by SQL optimizer.
+additional meta-information from `JobConfig` and DAG constructed by SQL optimizer.
 
 ##### Generic approach
 
-The core idea here is that `ExecutionPlanBuilder` would have detailed analysis of the received DAG and possibly
+The core idea here is that `ExecutionPlanBuilder` would perfrom a detailed analysis of the received DAG and possibly
 try to optimize it before creating execution plans. The requirements to prune a member are:
 
 - each vertex in the DAG may work without an input;
@@ -120,9 +120,9 @@ for partitioned data querying. For that, we will use SQL optimization phase also
 partitions and for all relations. Then, we extract information about required partitions to run to `JobConfig`.
 This indicates that `ExecutionPlanBuilder` will try to choose only required members.
 
-### Scan processor partition pruning
+### Scan partition pruning
 
-Partition pruning is a pretty simple optimization: we will extract partition key condition during SQL opt phase,
+Partition pruning for IMap scan is a pretty simple optimization: we will extract partition key condition during SQL opt phase,
 pass it to specialized processor supplier which will spawn `ReadMapOrCacheP` with only required partitions to scan.
 
 ## Rejected opportunities
