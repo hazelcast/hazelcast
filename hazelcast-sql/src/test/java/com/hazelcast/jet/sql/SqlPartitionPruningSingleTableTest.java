@@ -64,7 +64,7 @@ public class SqlPartitionPruningSingleTableTest extends SqlTestSupport {
         int orderId = 1000;
         for (int custId = 1; custId < 10; ++custId) {
             // create skewed data
-            for (int i = 0; i < 3*custId; i++) {
+            for (int i = 0; i < 3 * custId; i++) {
                 OrderKey key = new OrderKey("C" + custId, orderId++, countries[custId % countries.length]);
                 Order data = new Order();
                 data.setAmount(BigDecimal.valueOf(orderId + 5));
@@ -167,7 +167,7 @@ public class SqlPartitionPruningSingleTableTest extends SqlTestSupport {
             assertRowsAnyOrder(sql, rows);
         } else {
 //            instance().getSql().execute(sql).forEach(System.out::println);
-            try(SqlResult result = instance().getSql().execute(sql)) {
+            try (SqlResult result = instance().getSql().execute(sql)) {
                 result.stream()
                         .limit(10)
                         .forEach(System.out::println);
