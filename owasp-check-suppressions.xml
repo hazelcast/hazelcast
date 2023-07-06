@@ -168,4 +168,11 @@
         <packageUrl regex="true">^pkg:maven/com\.google\.http\-client/google\-http\-client\-gson@.*$</packageUrl>
         <cpe>cpe:/a:json-java_project:json-java</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - this CVE is not a security issue according to jackson community
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+        <cve>CVE-2023-35116</cve>
+    </suppress>    
 </suppressions>
