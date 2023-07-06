@@ -112,6 +112,7 @@
         <cpe>cpe:/a:google:gson</cpe>
     </suppress>
     <suppress>
+        <notes><![CDATA[
         False positive - snakeyaml incorrectly identified as go-yaml project.
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
