@@ -42,14 +42,9 @@ class PartitionArrangement {
     PartitionArrangement(Map<Address, int[]> partitionAssignment, Address thisAddress) {
         remotePartitionAssignment = new HashMap<>(partitionAssignment);
         localPartitions = remotePartitionAssignment.remove(thisAddress);
-        int partitionCount = 0;
-        for (int[] value : partitionAssignment.values()) {
-            partitionCount += value.length;
-        }
-        allPartitions = new int[partitionCount];
-        for (int i = 0; i < allPartitions.length; i++) {
-            allPartitions[i] = i;
-        }
+        allPartitions = partitionAssignment.values().stream()
+                .flatMapToInt(a -> Arrays.stream(a))
+                .toArray();
     }
 
     Map<Address, int[]> getRemotePartitionAssignment() {

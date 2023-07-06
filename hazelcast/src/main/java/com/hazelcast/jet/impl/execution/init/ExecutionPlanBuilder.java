@@ -89,15 +89,6 @@ public final class ExecutionPlanBuilder {
         final EdgeConfig defaultEdgeConfig = nodeEngine.getConfig().getJetConfig().getDefaultEdgeConfig();
         Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
-        /*if (requiredPartitions!=null) {
-//            requiredPartitions.add(6); //TODO!!!!
-
-            requiredPartitions.addAll(Arrays.stream(
-                    getPartitionAssignment(nodeEngine, memberInfos, null).get(localMemberInfo))
-                            .boxed()
-                        .collect(Collectors.toList()));
-        }*/
-
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
 
