@@ -555,7 +555,11 @@ public class PlanExecutor {
                     partitionKey[i] = perMapCandidate.get(attribute).eval(null, evalContext);
                 }
 
-                final Partition partition = hazelcastInstance.getPartitionService().getPartition(partitionKey);
+                // In case of default strategy there is only a single key, not an array.
+                // AttributePartitioningStrategy with single attribute also does not use array.
+                // TODO: this code must be in sync with logic in other places. Do this better.
+                final Partition partition = hazelcastInstance.getPartitionService().getPartition(
+                        partitionKey.length == 1 ? partitionKey[0] : partitionKey);
                 if (partition == null) {
                     // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
                     // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.
