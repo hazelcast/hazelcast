@@ -66,7 +66,7 @@ public class AvroUpsertTargetTest {
                         .endUnion().nullDefault()
                 .endRecord();
 
-        UpsertTarget target = new AvroUpsertTarget(schema.toString());
+        UpsertTarget target = new AvroUpsertTarget(schema);
         UpsertInjector nullInjector = target.createInjector("null", QueryDataType.OBJECT);
         UpsertInjector stringInjector = target.createInjector("string", QueryDataType.VARCHAR);
         UpsertInjector booleanInjector = target.createInjector("boolean", QueryDataType.BOOLEAN);
@@ -156,7 +156,7 @@ public class AvroUpsertTargetTest {
                                      .endUnion().nullDefault()
                                      .endRecord();
 
-        UpsertTarget target = new AvroUpsertTarget(schema.toString());
+        UpsertTarget target = new AvroUpsertTarget(schema);
         UpsertInjector injector = target.createInjector("object", QueryDataType.OBJECT);
 
         target.init();

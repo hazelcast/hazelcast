@@ -94,7 +94,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         return new KvMetadata(
                 fields,
                 AvroQueryTargetDescriptor.INSTANCE,
-                new AvroUpsertTargetDescriptor(schema(fields).toString())
+                new AvroUpsertTargetDescriptor(schema(fields))
         );
     }
 
