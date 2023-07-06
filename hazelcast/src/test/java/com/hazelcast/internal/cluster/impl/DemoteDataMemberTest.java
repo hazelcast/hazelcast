@@ -44,7 +44,6 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
@@ -269,7 +268,6 @@ public class DemoteDataMemberTest extends HazelcastTestSupport {
 
         assertAllLiteMembersEventually(hz2.getCluster());
         assertAllLiteMembersEventually(hz3.getCluster());
-        waitAllForSafeState(hz1, hz2, hz3);
     }
 
     @Test

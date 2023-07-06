@@ -121,6 +121,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
     private static final int PARTITION_OWNERSHIP_WAIT_MILLIS = 10;
     private static final int SAFE_SHUTDOWN_MAX_AWAIT_STEP_MILLIS = 1000;
+    private static final int DEMOTE_MAX_AWAIT_STEP_MILLIS = 5000;
     private static final long FETCH_PARTITION_STATE_SECONDS = 5;
     private static final long TRIGGER_MASTER_DELAY_MILLIS = 1000;
 
@@ -558,9 +559,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
     }
 
-    void sendPartitionRuntimeState(Address target) {
+    CompletableFuture<Boolean> sendPartitionRuntimeState(Address target) {
         if (!isLocalMemberMaster()) {
-            return;
+            return CompletableFuture.completedFuture(false);
         }
         assert partitionStateManager.isInitialized();
 
@@ -573,21 +574,21 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
 
         OperationService operationService = nodeEngine.getOperationService();
         PartitionStateOperation op = new PartitionStateOperation(partitionState, true);
-        operationService.invokeOnTarget(SERVICE_NAME, op, target);
+        return operationService.invokeOnTarget(SERVICE_NAME, op, target);
     }
 
-    void checkClusterPartitionRuntimeStates() {
+    List<CompletableFuture<Boolean>> checkClusterPartitionRuntimeStates() {
         if (!partitionStateManager.isInitialized()) {
-            return;
+            return Collections.emptyList();
         }
 
         if (!isLocalMemberMaster()) {
-            return;
+            return Collections.emptyList();
         }
 
         if (!areMigrationTasksAllowed()) {
             // migration is disabled because of a member leave, wait till enabled!
-            return;
+            return Collections.emptyList();
         }
 
         long stamp = getPartitionStateStamp();
@@ -595,25 +596,29 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             logger.fine("Checking partition state, stamp: " + stamp);
         }
 
+        List<CompletableFuture<Boolean>> futures = new ArrayList<>();
         OperationService operationService = nodeEngine.getOperationService();
         Collection<Member> members = node.clusterService.getMembers();
         for (Member member : members) {
             if (!member.localMember()) {
                 PartitionStateCheckOperation op = new PartitionStateCheckOperation(stamp);
                 InvocationFuture<Boolean> future = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
-                future.whenCompleteAsync((response, throwable) -> {
-                    if (throwable == null) {
-                        if (!Boolean.TRUE.equals(response)) {
-                            logger.fine(member + " has a stale partition state. Will send the most recent partition state now.");
-                            sendPartitionRuntimeState(member.getAddress());
-                        }
-                    } else {
-                        logger.fine("Failure while checking partition state on " + member, throwable);
-                        sendPartitionRuntimeState(member.getAddress());
-                    }
-                }, internalAsyncExecutor);
+                futures.add(future.handleAsync((response, throwable) -> {
+                            if (throwable == null) {
+                                if (!Boolean.TRUE.equals(response)) {
+                                    logger.fine(member + " has a stale partition state. Will send the most recent partition state now.");
+                                    return sendPartitionRuntimeState(member.getAddress());
+                                }
+                                return CompletableFuture.completedFuture(true);
+                            } else {
+                                logger.fine("Failure while checking partition state on " + member, throwable);
+                                return sendPartitionRuntimeState(member.getAddress());
+                            }
+                        }, internalAsyncExecutor)
+                        .thenCompose(x -> x));
             }
         }
+        return futures;
     }
 
     /**
@@ -915,7 +920,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         OperationServiceImpl operationService = nodeEngine.getOperationService();
 
         long timeoutMillis = unit.toMillis(timeout);
-        long awaitStep = Math.min(SAFE_SHUTDOWN_MAX_AWAIT_STEP_MILLIS, timeoutMillis);
+        long awaitStep = Math.min(DEMOTE_MAX_AWAIT_STEP_MILLIS, timeoutMillis);
         try {
             do {
                 Address masterAddress = nodeEngine.getMasterAddress();
@@ -938,17 +943,22 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                         demoteInitiated = demotionInitResult.get(awaitStep, TimeUnit.MILLISECONDS);
                         long elapsed = System.currentTimeMillis() - startTime;
                         timeoutMillis -= elapsed;
+                    } catch (TimeoutException e) {
+                        // allow the loop to continue with another demote attempt
+                        demoteInitiated = false;
                     } catch (Exception e) {
+                        logger.warning("Failed to initialize member demotion", e);
                         return false;
                     }
                 }
-                if (!demoteInitiated) {
-                    return false;
-                }
                 long latchTimeout = Math.min(awaitStep, timeoutMillis);
-                if (latch.await(latchTimeout, TimeUnit.MILLISECONDS)) {
-                    return true;
+
+                if (demoteInitiated) {
+                    if (latch.await(latchTimeout, TimeUnit.MILLISECONDS)) {
+                        return true;
+                    }
                 }
+
                 timeoutMillis -= latchTimeout;
             } while (timeoutMillis > 0);
         } catch (InterruptedException e) {

@@ -48,6 +48,7 @@ import com.hazelcast.internal.partition.operation.PromotionCommitOperation;
 import com.hazelcast.internal.partition.operation.PublishCompletedMigrationsOperation;
 import com.hazelcast.internal.partition.operation.ShutdownResponseOperation;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
@@ -126,6 +127,7 @@ public class MigrationManager {
 
     private static final int MIGRATION_PAUSE_DURATION_SECONDS_ON_MIGRATION_FAILURE = 3;
     private static final int PUBLISH_COMPLETED_MIGRATIONS_BATCH_SIZE = 10;
+    private static final long CHECK_CLUSTER_PARTITION_RUNTIME_STATES_SYNC_TIMEOUT_SECONDS = 2;
 
     private static final int COMMIT_SUCCESS = 1;
     private static final int COMMIT_RETRY = 0;
@@ -1994,13 +1996,17 @@ public class MigrationManager {
                 final int demoteRequestCount = demoteRequestedMembers.size();
                 if (demoteRequestCount > 0) {
                     boolean present = false;
+                    List<Member> demotedMembers = new ArrayList<>();
                     for (Member member : demoteRequestedMembers) {
                         if (partitionStateManager.isAbsentInPartitionTable(member)) {
-                            sendDemoteResponseOperation(member);
+                            demotedMembers.add(member);
                         } else {
                             logger.warning(member + " requested to demote but still in partition table");
                             present = true;
                         }
+                    }
+                    if (!demotedMembers.isEmpty()) {
+                        migrationQueue.add(new SendDemoteResponses(demotedMembers));
                     }
                     if (present) {
                         triggerControlTask();
@@ -2008,6 +2014,27 @@ public class MigrationManager {
                 }
             } finally {
                 partitionServiceLock.unlock();
+            }
+        }
+    }
+
+    private class SendDemoteResponses implements MigrationRunnable {
+
+        private final List<Member> members;
+
+        SendDemoteResponses(List<Member> members) {
+            this.members = members;
+        }
+
+        @Override
+        public void run() {
+            // make sure that the partition table is in sync on all members
+            List<CompletableFuture<Boolean>> futures = partitionService.checkClusterPartitionRuntimeStates();
+            FutureUtil.waitWithDeadline(futures, CHECK_CLUSTER_PARTITION_RUNTIME_STATES_SYNC_TIMEOUT_SECONDS,
+                    TimeUnit.SECONDS, FutureUtil.RETHROW_ALL_EXCEPT_MEMBER_LEFT);
+
+            for (Member member : members) {
+                sendDemoteResponseOperation(member);
             }
         }
     }
