@@ -197,4 +197,11 @@
        <packageUrl regex="true">^pkg:maven/org\.apache\.kafka/kafka\-clients@.*$</packageUrl>
        <vulnerabilityName>CVE-2023-25194</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - this CVE is not a security issue according to jackson community
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+        <cve>CVE-2023-35116</cve>
+    </suppress>    
 </suppressions>
