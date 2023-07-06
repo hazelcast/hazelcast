@@ -45,7 +45,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.nio.ClassLoaderUtil.getAllInterfaces;
 import static com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
@@ -53,6 +52,7 @@ import static com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader.DELEG
 import static com.hazelcast.test.starter.HazelcastProxyFactory.ProxyPolicy.RETURN_SAME;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.newCollectionFor;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.newMapFor;
 import static com.hazelcast.test.starter.ReflectionUtils.getConstructor;
 import static com.hazelcast.test.starter.ReflectionUtils.getReflectionsForTestPackage;
 import static java.util.Arrays.asList;
@@ -74,6 +74,10 @@ public class HazelcastProxyFactory {
     // must be mapped both ways (old -> new name and vice versa) in this map
     private static final Map<String, String> REFACTORED_INTERFACES;
 
+    // interfaces that have been removed in the current version
+    // and should be skipped when proxying
+    private static final Set<String> IGNORED_INTERFACES;
+
     // <Class toProxy, ClassLoader targetClassLoader> -> Class<?> proxy mapping for subclass proxies
     // java.lang.reflect.Proxy already maintains its own cache
     private static final ConcurrentReferenceHashMap<ProxySource, Class<?>> PROXIES
@@ -88,6 +92,78 @@ public class HazelcastProxyFactory {
                 = new HashMap<String, Constructor<ConstructorFunction<Object, Object>>>();
         Set<String> subclassProxiedClasses = new HashSet<String>();
         Map<String, String> refactoredInterfaces = new HashMap<String, String>();
+        Set<String> ignoredInterfaces = new HashSet<String>();
+        refactoredInterfaces.put("com.hazelcast.core.IMap", "com.hazelcast.map.IMap");
+        refactoredInterfaces.put("com.hazelcast.core.BaseMap", "com.hazelcast.map.BaseMap");
+        refactoredInterfaces.put("com.hazelcast.map.IMap", "com.hazelcast.core.IMap");
+        refactoredInterfaces.put("com.hazelcast.map.BaseMap", "com.hazelcast.core.BaseMap");
+        refactoredInterfaces.put("com.hazelcast.spi.InitializingObject",
+                "com.hazelcast.spi.impl.InitializingObject");
+        refactoredInterfaces.put("com.hazelcast.spi.impl.InitializingObject",
+                "com.hazelcast.spi.InitializingObject");
+        refactoredInterfaces.put("com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction",
+                "com.hazelcast.quorum.QuorumFunction");
+        refactoredInterfaces.put("com.hazelcast.quorum.QuorumFunction",
+                "com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction");
+        refactoredInterfaces.put("com.hazelcast.spi.ManagedService", "com.hazelcast.internal.services.ManagedService");
+        refactoredInterfaces.put("com.hazelcast.internal.services.ManagedService", "com.hazelcast.spi.ManagedService");
+        refactoredInterfaces.put("com.hazelcast.spi.PreJoinAwareService", "com.hazelcast.internal.services.PreJoinAwareService");
+        refactoredInterfaces.put("com.hazelcast.internal.services.PreJoinAwareService", "com.hazelcast.spi.PreJoinAwareService");
+        refactoredInterfaces.put("com.hazelcast.spi.CoreService", "com.hazelcast.internal.services.CoreService");
+        refactoredInterfaces.put("com.hazelcast.internal.services.CoreService", "com.hazelcast.spi.CoreService");
+        refactoredInterfaces.put("com.hazelcast.spi.SplitBrainHandlerService", "com.hazelcast.internal.services.SplitBrainHandlerService");
+        refactoredInterfaces.put("com.hazelcast.internal.services.SplitBrainHandlerService", "com.hazelcast.spi.SplitBrainHandlerService");
+
+        refactoredInterfaces.put("com.hazelcast.wan.impl.WanReplicationService", "com.hazelcast.wan.WanReplicationService");
+        refactoredInterfaces.put("com.hazelcast.wan.WanReplicationService", "com.hazelcast.wan.impl.WanReplicationService");
+
+        refactoredInterfaces.put("com.hazelcast.internal.services.StatisticsAwareService", "com.hazelcast.spi.StatisticsAwareService");
+        refactoredInterfaces.put("com.hazelcast.spi.StatisticsAwareService", "com.hazelcast.internal.services.StatisticsAwareService");
+
+        refactoredInterfaces.put("com.hazelcast.internal.services.PostJoinAwareService", "com.hazelcast.spi.PostJoinAwareService");
+        refactoredInterfaces.put("com.hazelcast.spi.PostJoinAwareService", "com.hazelcast.internal.services.PostJoinAwareService");
+
+        refactoredInterfaces.put("com.hazelcast.internal.partition.MigrationAwareService", "com.hazelcast.spi.MigrationAwareService");
+        refactoredInterfaces.put("com.hazelcast.spi.MigrationAwareService", "com.hazelcast.internal.partition.MigrationAwareService");
+
+        refactoredInterfaces.put("com.hazelcast.internal.partition.FragmentedMigrationAwareService", "com.hazelcast.spi.FragmentedMigrationAwareService");
+        refactoredInterfaces.put("com.hazelcast.spi.FragmentedMigrationAwareService", "com.hazelcast.internal.partition.FragmentedMigrationAwareService");
+
+        refactoredInterfaces.put("com.hazelcast.spi.impl.operationservice.LiveOperationsTracker", "com.hazelcast.spi.LiveOperationsTracker");
+        refactoredInterfaces.put("com.hazelcast.spi.LiveOperationsTracker", "com.hazelcast.spi.impl.operationservice.LiveOperationsTracker");
+
+        refactoredInterfaces.put("com.hazelcast.wan.WanEventCounters", "com.hazelcast.wan.impl.DistributedServiceWanEventCounters");
+        refactoredInterfaces.put("com.hazelcast.wan.impl.DistributedServiceWanEventCounters", "com.hazelcast.wan.WanEventCounters");
+
+        refactoredInterfaces.put("com.hazelcast.partition.PartitionService", "com.hazelcast.core.PartitionService");
+        refactoredInterfaces.put("com.hazelcast.core.PartitionService", "com.hazelcast.partition.PartitionService");
+
+        refactoredInterfaces.put("com.hazelcast.partition.Partition", "com.hazelcast.core.Partition");
+        refactoredInterfaces.put("com.hazelcast.core.Partition", "com.hazelcast.partition.Partition");
+        refactoredInterfaces.put("com.hazelcast.core.Member", "com.hazelcast.cluster.Member");
+        refactoredInterfaces.put("com.hazelcast.cluster.Member", "com.hazelcast.core.Member");
+        refactoredInterfaces.put("com.hazelcast.core.Endpoint", "com.hazelcast.cluster.Endpoint");
+        refactoredInterfaces.put("com.hazelcast.cluster.Endpoint", "com.hazelcast.core.Endpoint");
+
+        refactoredInterfaces.put("com.hazelcast.cluster.Cluster", "com.hazelcast.core.Cluster");
+        refactoredInterfaces.put("com.hazelcast.core.Cluster", "com.hazelcast.cluster.Cluster");
+
+        refactoredInterfaces.put("com.hazelcast.internal.services.TransactionalService", "com.hazelcast.spi.TransactionalService");
+        refactoredInterfaces.put("com.hazelcast.spi.TransactionalService", "com.hazelcast.internal.services.TransactionalService");
+
+        refactoredInterfaces.put("com.hazelcast.spi.impl.eventservice.EventPublishingService", "com.hazelcast.spi.EventPublishingService");
+        refactoredInterfaces.put("com.hazelcast.spi.EventPublishingService", "com.hazelcast.spi.impl.eventservice.EventPublishingService");
+
+        refactoredInterfaces.put("com.hazelcast.internal.nio.ConnectionListener", "com.hazelcast.nio.ConnectionListener");
+        refactoredInterfaces.put("com.hazelcast.nio.ConnectionListener", "com.hazelcast.internal.nio.ConnectionListener");
+
+        refactoredInterfaces.put("com.hazelcast.nio.Address", "com.hazelcast.cluster.Address");
+        refactoredInterfaces.put("com.hazelcast.cluster.Address", "com.hazelcast.nio.Address");
+
+        ignoredInterfaces.add("com.hazelcast.map.impl.LegacyAsyncMap");
+        ignoredInterfaces.add("com.hazelcast.core.IEnterpriseMap");
+        ignoredInterfaces.add("com.hazelcast.spi.merge.SplitBrainMergeTypeProvider");
+        ignoredInterfaces.add("com.hazelcast.internal.metrics.DynamicMetricsProvider");
 
         Reflections reflections = getReflectionsForTestPackage("com.hazelcast.test.starter.constructor");
         Set<Class<?>> constructorClasses = reflections.getTypesAnnotatedWith(HazelcastStarterConstructor.class);
@@ -118,6 +194,7 @@ public class HazelcastProxyFactory {
         NO_PROXYING_WHITELIST = notProxiedClasses;
         SUBCLASS_PROXYING_WHITELIST = subclassProxiedClasses;
         REFACTORED_INTERFACES = refactoredInterfaces;
+        IGNORED_INTERFACES = ignoredInterfaces;
     }
 
     /**
@@ -164,7 +241,7 @@ public class HazelcastProxyFactory {
             }
             return targetCollection;
         } else if (isJDKClass(arg.getClass()) && Map.class.isAssignableFrom(arg.getClass())) {
-            Map<Object, Object> targetMap = new ConcurrentHashMap<Object, Object>();
+            Map<Object, Object> targetMap = newMapFor(arg.getClass());
             Map mapArg = (Map) arg;
             for (Object entry : mapArg.entrySet()) {
                 Object key = proxyObjectForStarter(targetClassLoader, ((Map.Entry) entry).getKey());
@@ -181,7 +258,6 @@ public class HazelcastProxyFactory {
         }
 
         Class<?>[] ifaces = getAllInterfacesIncludingSelf(arg.getClass());
-        Class<?>[] delegateIfaces = new Class<?>[ifaces.length];
         Object newArg;
         ProxyPolicy proxyPolicy = shouldProxy(arg.getClass(), ifaces);
         debug("Proxy policy for %s is %s", arg.getClass(), proxyPolicy);
@@ -193,7 +269,7 @@ public class HazelcastProxyFactory {
                 newArg = constructWithSubclassProxy(targetClassLoader, arg);
                 break;
             case JDK_PROXY:
-                newArg = constructWithJdkProxy(targetClassLoader, arg, ifaces, delegateIfaces);
+                newArg = constructWithJdkProxy(targetClassLoader, arg, ifaces);
                 break;
             case RETURN_SAME:
                 newArg = arg;
@@ -244,8 +320,8 @@ public class HazelcastProxyFactory {
         return HazelcastAPIDelegatingClassloader.class.equals(clazz);
     }
 
-    private static Object constructWithJdkProxy(ClassLoader targetClassLoader, Object arg, Class<?>[] ifaces,
-                                                Class<?>[] delegateIfaces) throws ClassNotFoundException {
+    private static Object constructWithJdkProxy(ClassLoader targetClassLoader, Object arg, Class<?>[] ifaces) throws ClassNotFoundException {
+        Collection<Class<?>> delegateIfaces = new ArrayList<>();
         for (int j = 0; j < ifaces.length; j++) {
             Class<?> clazz = ifaces[j];
             String className = clazz.getName();
@@ -253,10 +329,13 @@ public class HazelcastProxyFactory {
             if (REFACTORED_INTERFACES.containsKey(className)) {
                 classNameOnTargetClassLoader = REFACTORED_INTERFACES.get(className);
             }
+            if (IGNORED_INTERFACES.contains(className)) {
+                continue;
+            }
             Class<?> delegateInterface = targetClassLoader.loadClass(classNameOnTargetClassLoader);
-            delegateIfaces[j] = delegateInterface;
+            delegateIfaces.add(delegateInterface);
         }
-        return generateProxyForInterface(arg, targetClassLoader, delegateIfaces);
+        return generateProxyForInterface(arg, targetClassLoader, delegateIfaces.toArray(new Class[0]));
     }
 
     private static Object constructWithSubclassProxy(ClassLoader targetClassLoader, Object arg) throws ClassNotFoundException {
@@ -270,8 +349,12 @@ public class HazelcastProxyFactory {
             return arg;
         }
 
-        // obtain class in targetClassLoader
-        Class<?> targetClass = targetClassLoader.loadClass(arg.getClass().getName());
+        String className = arg.getClass().getName();
+        String classNameOnTargetClassLoader = className;
+        if (REFACTORED_INTERFACES.containsKey(className)) {
+            classNameOnTargetClassLoader = REFACTORED_INTERFACES.get(className);
+        }
+        Class<?> targetClass = targetClassLoader.loadClass(classNameOnTargetClassLoader);
         return construct(targetClass, arg);
     }
 

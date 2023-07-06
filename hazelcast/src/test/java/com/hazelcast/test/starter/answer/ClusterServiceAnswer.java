@@ -31,7 +31,14 @@ class ClusterServiceAnswer extends AbstractAnswer {
 
     ClusterServiceAnswer(Object delegate) throws Exception {
         super(delegate);
-        delegateMemberClass = delegateClassloader.loadClass(Member.class.getName());
+        Class delegateMemberClass;
+        try {
+            delegateMemberClass = delegateClassloader.loadClass(Member.class.getName());
+        } catch (ClassNotFoundException e) {
+            // delegate classloader is 3.x
+            delegateMemberClass = delegateClassloader.loadClass("com.hazelcast.core.Member");
+        }
+        this.delegateMemberClass = delegateMemberClass;
     }
 
     @Override

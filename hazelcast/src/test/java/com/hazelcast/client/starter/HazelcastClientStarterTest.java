@@ -17,7 +17,6 @@
 package com.hazelcast.client.starter;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
@@ -25,8 +24,6 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -51,26 +48,6 @@ public class HazelcastClientStarterTest {
             HazelcastInstance instance = HazelcastClientStarter.newHazelcastClient(version, false);
             System.out.println("Stopping client " + version);
             instance.shutdown();
-        }
-    }
-
-    @Test
-    public void testClientMap() {
-        HazelcastInstance clientInstance = null;
-        try {
-            memberInstance = HazelcastStarter.newHazelcastInstance("4.0.3");
-            clientInstance = HazelcastClientStarter.newHazelcastClient("4.0.3", false);
-
-            IMap<Integer, Integer> clientMap = clientInstance.getMap("myMap");
-            IMap<Integer, Integer> memberMap = memberInstance.getMap("myMap");
-
-            clientMap.put(1, 2);
-
-            assertEquals(2, (int) memberMap.get(1));
-        } finally {
-            if (clientInstance != null) {
-                clientInstance.shutdown();
-            }
         }
     }
 
