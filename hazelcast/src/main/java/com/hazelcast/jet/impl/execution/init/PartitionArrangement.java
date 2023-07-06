@@ -44,6 +44,7 @@ class PartitionArrangement {
         localPartitions = remotePartitionAssignment.remove(thisAddress);
         allPartitions = partitionAssignment.values().stream()
                 .flatMapToInt(a -> Arrays.stream(a))
+                .sorted()
                 .toArray();
     }
 
