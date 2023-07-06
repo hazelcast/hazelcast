@@ -54,16 +54,7 @@ public class AvroUpsertTargetTest {
                 .name("time").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
                 .name("date").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
                 .name("timestamp").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-                .name("timestampTz").type()
-                        .unionOf()
-                        .nullType()
-                        .and().booleanType()
-                        .and().intType()
-                        .and().longType()
-                        .and().floatType()
-                        .and().doubleType()
-                        .and().stringType()
-                        .endUnion().nullDefault()
+                .name("timestampTz").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
                 .endRecord();
 
         UpsertTarget target = new AvroUpsertTarget(schema);
