@@ -69,12 +69,12 @@
         <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>5.1.9</maven.bundle.plugin.version>
-        <maven.shade.plugin.version>3.4.1</maven.shade.plugin.version>
+        <maven.shade.plugin.version>3.5.0</maven.shade.plugin.version>
         <maven.dependency.plugin.version>3.6.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>3.1.0</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.3.0</maven.checkstyle.plugin.version>
         <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>3.1.2</maven.failsafe.plugin.version>
@@ -85,7 +85,7 @@
         <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
         <owasp.dependency-check.version>8.3.1</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
-        <codehause.license.plugin.version>2.1.0</codehause.license.plugin.version>
+        <codehause.license.plugin.version>2.2.0</codehause.license.plugin.version>
 
         <!-- Version of the client used in Hazelcast 3 connector -->
         <hazelcast-3.version>3.12.13</hazelcast-3.version>
@@ -94,14 +94,14 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.488</aws.sdk.version>
+        <aws.sdk.version>1.12.493</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
-        <classgraph.version>4.8.160</classgraph.version>
+        <classgraph.version>4.8.161</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
         <guava.version>32.0.1-jre</guava.version>
         <hadoop.version>3.3.5</hadoop.version>
-        <h2.version>2.1.214</h2.version>
+        <h2.version>2.2.220</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
         <jackson.version>2.14.2</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
@@ -116,7 +116,7 @@
         <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
         <mysql.connector.version>8.0.33</mysql.connector.version>
-        <netty.version>4.1.93.Final</netty.version>
+        <netty.version>4.1.94.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
@@ -137,7 +137,7 @@
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <snakeyaml.engine.version>2.6</snakeyaml.engine.version>
-        <mongodb.version>4.9.1</mongodb.version>
+        <mongodb.version>4.10.1</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
@@ -145,7 +145,7 @@
         <assertj.version>3.24.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
         <bytebuddy.version>1.14.5</bytebuddy.version>
-        <commons-codec.version>1.15</commons-codec.version>
+        <commons-codec.version>1.16.0</commons-codec.version>
         <commons-io.version>2.13.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <felix.utils.version>1.11.6</felix.utils.version>
@@ -154,15 +154,15 @@
         <http.client.version>4.5.14</http.client.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <junit.version>4.13.2</junit.version>
-        <mockito.version>5.3.1</mockito.version>
+        <mockito.version>5.4.0</mockito.version>
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.18.3</testcontainers.version>
         <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.0.1</archunit.version>
-        <errorprone.version>2.19.1</errorprone.version>
+        <errorprone.version>2.20.0</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <kubernetes-server-mock.version>6.7.1</kubernetes-server-mock.version>
+        <kubernetes-server-mock.version>6.7.2</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -1762,7 +1762,7 @@
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.1.8.4</version>
+                <version>1.1.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
@@ -1793,7 +1793,7 @@
             <dependency>
                 <groupId>com.google.auto.value</groupId>
                 <artifactId>auto-value-annotations</artifactId>
-                <version>1.10.1</version>
+                <version>1.10.2</version>
             </dependency>
             <dependency>
                 <groupId>com.nimbusds</groupId>

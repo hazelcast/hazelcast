@@ -18,6 +18,8 @@ package com.hazelcast.sql;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * SQL query result. Depending on the statement type it represents a stream of
@@ -81,6 +83,27 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
     @Nonnull
     @Override
     Iterator<SqlRow> iterator();
+
+    /**
+     * Returns a stream of result rows.
+     * <p>It uses internally {@link #iterator()} method, so it cannot be called twice.</p>
+     *
+     * <p>You should still call {@link #close()} method after the stream is used (or use this method inside
+     * {@code try-with-resources} block. You should not pass the {@link Stream} from this method outside
+     * {@code try-with-resources} block, if it's used.</p>
+     *
+     * @throws IllegalStateException if the method is invoked more than once or
+     *    if this result doesn't have rows
+     * @throws HazelcastSqlException in case of an SQL-related error condition
+     *
+     * @return Stream of result rows
+     *
+     * @since 5.4
+     */
+    @Nonnull
+    default Stream<SqlRow> stream() {
+        return StreamSupport.stream(spliterator(), false);
+    }
 
     /**
      * Returns the number of rows updated by the statement or -1 if this result

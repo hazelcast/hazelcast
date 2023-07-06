@@ -443,6 +443,10 @@ class MapServiceContextImpl implements MapServiceContext {
 
         MapContainer mapContainer = mapContainers.get(mapName);
         if (mapContainer == null) {
+            // Lite members create their own LocalMapStatsImpl whenever a new IMap is created,
+            // which can happen without a MapContainer, so we need to clean them up - since cleanup
+            // is just a simple map entry removal, we can call it without any Lite member checks
+            localMapStatsProvider.destroyLocalMapStatsImpl(mapName);
             return;
         }
 

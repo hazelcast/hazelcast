@@ -38,11 +38,13 @@ import org.jline.reader.SyntaxError;
 import org.jline.reader.UserInterruptException;
 import org.jline.reader.impl.DefaultParser;
 import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 
 import java.io.IOError;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,6 +81,7 @@ public final class SqlConsole {
                         .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR)).append("%M%P > ").toAnsi())
                 .variable(LineReader.INDENTATION, 2)
                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
+                .terminal(systemOrDumbTerminal())
                 .appName("hazelcast-sql")
                 .build();
 
@@ -163,6 +166,14 @@ public final class SqlConsole {
                 break;
             }
             executeSqlCmd(hzClient, command, reader.getTerminal(), activeSqlResult);
+        }
+    }
+
+    private static Terminal systemOrDumbTerminal() {
+        try {
+            return TerminalBuilder.builder().dumb(true).build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
