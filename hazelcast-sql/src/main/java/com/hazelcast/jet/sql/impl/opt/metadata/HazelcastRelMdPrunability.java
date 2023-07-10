@@ -121,7 +121,6 @@ public final class HazelcastRelMdPrunability
             Aggregate agg,
             RelMetadataQuery mq
     ) {
-        // Note: Aggregation breaks(?) prunability, but temporarily it forwards prunability.
 //        return extractPrunability(agg.getInput(), mq);
         return emptyMap();
     }
