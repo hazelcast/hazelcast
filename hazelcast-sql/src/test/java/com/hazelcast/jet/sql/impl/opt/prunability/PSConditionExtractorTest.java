@@ -38,6 +38,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.AND;
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.EQUALS;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.OR;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
@@ -115,10 +116,60 @@ public class PSConditionExtractorTest extends OptimizerTestSupport {
 
     @Test
     public void whenOrConditionIsPresent_thenReturnNoVariants() {
+        final PartitionedMapTable table = partitionedTable(
+                "m",
+                asList(
+                        mapField("comp0", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp1")),
+                        mapField("comp1", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp2")),
+                        mapField("comp2", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp3")),
+                        mapField(KEY, OBJECT, QueryPath.KEY_PATH),
+                        mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
+                Collections.emptyList(), 10, Arrays.asList("comp1", "comp2")).getTarget();
 
+        // comp0 = ?2 AND comp1 = ?1 AND comp2 = ?0
+        var b = new RexBuilder(typeFactory);
+        var param0 = b.makeDynamicParam(typeFactory.createSqlType(SqlTypeName.BIGINT), 0);
+        var param1 = b.makeDynamicParam(typeFactory.createSqlType(SqlTypeName.BIGINT), 1);
+        var param2 = b.makeDynamicParam(typeFactory.createSqlType(SqlTypeName.BIGINT), 2);
+        var col0 = b.makeInputRef(typeFactory.createSqlType(SqlTypeName.BIGINT), 0);
+        var col1 = b.makeInputRef(typeFactory.createSqlType(SqlTypeName.BIGINT), 1);
+        var col2 = b.makeInputRef(typeFactory.createSqlType(SqlTypeName.BIGINT), 2);
+
+        var filter = (RexCall) b.makeCall(OR,
+                b.makeCall(EQUALS, col0, param2),
+                b.makeCall(EQUALS, col1, param1),
+                b.makeCall(EQUALS, col2, param0)
+        );
+
+        var decomposedConds = extractor.extractCondition(table, filter, Set.of("comp1", "comp2"));
+        assertEquals(0, decomposedConds.size());
     }
 
+    @Test
     public void whenConditionIsIncomplete_thenReturnNoVariants() {
+        final PartitionedMapTable table = partitionedTable(
+                "m",
+                asList(
+                        mapField("comp0", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp1")),
+                        mapField("comp1", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp2")),
+                        mapField("comp2", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp3")),
+                        mapField(KEY, OBJECT, QueryPath.KEY_PATH),
+                        mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
+                Collections.emptyList(), 10, Arrays.asList("comp1", "comp2")).getTarget();
 
+        // comp0 = ?2 AND comp1 = ?1 AND comp2 = ?0
+        var b = new RexBuilder(typeFactory);
+        var param0 = b.makeDynamicParam(typeFactory.createSqlType(SqlTypeName.BIGINT), 0);
+        var param2 = b.makeDynamicParam(typeFactory.createSqlType(SqlTypeName.BIGINT), 2);
+        var col0 = b.makeInputRef(typeFactory.createSqlType(SqlTypeName.BIGINT), 0);
+        var col2 = b.makeInputRef(typeFactory.createSqlType(SqlTypeName.BIGINT), 2);
+
+        var filter = (RexCall) b.makeCall(AND,
+                b.makeCall(EQUALS, col0, param2),
+                b.makeCall(EQUALS, col2, param0)
+        );
+
+        var decomposedConds = extractor.extractCondition(table, filter, Set.of("comp1", "comp2"));
+        assertEquals(0, decomposedConds.size());
     }
 }
