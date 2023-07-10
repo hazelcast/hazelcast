@@ -117,29 +117,20 @@ public final class HazelcastRelMdPrunability
     }
 
     @SuppressWarnings("unused")
-    public Map<String, List<Map<String, RexNode>>> extractPrunability(
-            Aggregate agg,
-            RelMetadataQuery mq
-    ) {
-//        return extractPrunability(agg.getInput(), mq);
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(Aggregate agg, RelMetadataQuery mq) {
+        // TODO: Implement
         return emptyMap();
     }
 
     @SuppressWarnings("unused")
-    public Map<String, List<Map<String, RexNode>>> extractPrunability(
-            RelSubset subset,
-            RelMetadataQuery mq
-    ) {
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(RelSubset subset, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         RelNode rel = Util.first(subset.getBest(), subset.getOriginal());
         return query.extractPrunability(rel);
     }
 
     @SuppressWarnings("unused")
-    public Map<String, List<Map<String, RexNode>>> extractPrunability(
-            RelNode rel,
-            RelMetadataQuery mq
-    ) {
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(RelNode rel, RelMetadataQuery mq) {
         // For any non-mentioned rels, we assume they are prunable and forwards prunability.
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         Map<String, List<Map<String, RexNode>>> prunability = new HashMap<>();
@@ -156,10 +147,7 @@ public final class HazelcastRelMdPrunability
     }
 
     @SuppressWarnings("unused")
-    public Map<String, List<Map<String, RexNode>>> extractPrunability(
-            BiRel rel,
-            RelMetadataQuery mq
-    ) {
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(BiRel rel, RelMetadataQuery mq) {
         // For any bi-rel we (temporarily) are not propagating prunability.
         return Collections.emptyMap();
     }
