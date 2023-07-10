@@ -25,4 +25,5 @@ public class NioAsyncSocket_RpcTest extends AsyncSocket_RpcTest {
     public ReactorBuilder newReactorBuilder() {
         return new NioReactorBuilder();
     }
+
 }

@@ -16,12 +16,16 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.JVM;
 
 import java.util.Collection;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Integer.getInteger;
@@ -49,6 +53,19 @@ public class TpcTestSupport {
 
     public static void assertCompletesEventually(final Future future) {
         assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
+    }
+
+    public static <E> E assertSuccessEventually(final CompletableFuture<E> future) {
+        assertTrueEventually(() -> {
+            assertTrue("Future has not completed", future.isDone());
+        });
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void terminateAll(Collection<? extends Reactor> reactors) {
@@ -116,6 +133,11 @@ public class TpcTestSupport {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void constructComplete(IOBuffer buff) {
+        buff.putInt(0, buff.position());
+        buff.byteBuffer().flip();
     }
 
     public static void assertTrueFiveSeconds(AssertTask task) {
@@ -222,6 +244,25 @@ public class TpcTestSupport {
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         assertTrueEventually(null, task, timeoutSeconds);
     }
+
+    /**
+     * Note: the {@code cancel()} method on the returned future has no effect.
+     */
+    public static Future spawn(Runnable task) {
+        FutureTask<Runnable> futureTask = new FutureTask<>(task, null);
+        new Thread(futureTask).start();
+        return futureTask;
+    }
+
+    /**
+     * Note: the {@code cancel()} method on the returned future has no effect.
+     */
+    public static <E> Future<E> spawn(Callable<E> task) {
+        FutureTask<E> futureTask = new FutureTask<E>(task);
+        new Thread(futureTask).start();
+        return futureTask;
+    }
+
 
     public static void assumeNotIbmJDK8() {
         String vendor = System.getProperty("java.vendor");

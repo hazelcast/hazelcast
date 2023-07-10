@@ -16,38 +16,59 @@
 
 package com.hazelcast.internal.tpcengine;
 
-final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
+import com.hazelcast.internal.tpcengine.logging.TpcLogger;
+import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpcengine.util.Clock;
+import com.hazelcast.internal.tpcengine.util.Promise;
 
-    final Eventloop eventloop;
+/**
+ * A task that is going to be scheduled once or multiple times at some point
+ * in the future.
+ * <p>
+ * todo: Should the DeadlineTask be a Task implementation? Or should the
+ * DeadlineTask allow for executing
+ * a Task?
+ * <p>
+ * todo: We need to deal with yielding of the task and we need to prevent the
+ * task from being executed due to the deadline and then being executed again
+ * due to the yield.
+ */
+final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
+
     Promise promise;
     long deadlineNanos;
-    Runnable task;
+    Runnable cmd;
     long periodNanos = -1;
     long delayNanos = -1;
+    TaskQueue taskQueue;
+    private final DeadlineScheduler deadlineScheduler;
+    private final Clock clock;
+    private final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
-    ScheduledTask(Eventloop eventloop) {
-        this.eventloop = eventloop;
+    DeadlineTask(Clock clock, DeadlineScheduler deadlineScheduler) {
+        this.clock = clock;
+        this.deadlineScheduler = deadlineScheduler;
     }
 
     @Override
     public void run() {
-        if (task != null) {
-            task.run();
+        if (cmd != null) {
+            cmd.run();
         }
 
         if (periodNanos != -1 || delayNanos != -1) {
             if (periodNanos != -1) {
                 deadlineNanos += periodNanos;
             } else {
-                deadlineNanos = eventloop.nanoClock.nanoTime() + delayNanos;
+                deadlineNanos = clock.nanoTime() + delayNanos;
             }
 
             if (deadlineNanos < 0) {
                 deadlineNanos = Long.MAX_VALUE;
             }
 
-            if (!eventloop.scheduledTaskQueue.offer(this)) {
-                eventloop.logger.warning("Failed schedule task: " + this + " because there is no space in scheduledTaskQueue");
+            if (!deadlineScheduler.offer(this)) {
+                logger.warning("Failed schedule task: " + this + " because there is no space in deadlineScheduler");
             }
         } else {
             if (promise != null) {
@@ -57,7 +78,7 @@ final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
     }
 
     @Override
-    public int compareTo(ScheduledTask that) {
+    public int compareTo(DeadlineTask that) {
         if (that.deadlineNanos == this.deadlineNanos) {
             return 0;
         }
@@ -65,13 +86,12 @@ final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
         return this.deadlineNanos > that.deadlineNanos ? 1 : -1;
     }
 
-
     @Override
     public String toString() {
-        return "ScheduledTask{"
+        return "DeadlineTask{"
                 + "promise=" + promise
                 + ", deadlineNanos=" + deadlineNanos
-                + ", task=" + task
+                + ", task=" + cmd
                 + ", periodNanos=" + periodNanos
                 + ", delayNanos=" + delayNanos
                 + '}';

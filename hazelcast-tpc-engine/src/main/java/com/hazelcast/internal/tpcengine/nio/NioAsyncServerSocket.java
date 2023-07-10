@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -48,14 +49,14 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private final Thread eventloopThread;
     private final SelectionKey key;
     private final NioAsyncServerSocketOptions options;
-    private final Consumer<AcceptRequest> consumer;
+    private final Consumer<AcceptRequest> acceptConsumer;
     // only accessed from eventloop thread
     private boolean started;
 
     NioAsyncServerSocket(NioAsyncServerSocketBuilder builder) {
         try {
             this.reactor = builder.reactor;
-            this.consumer = builder.acceptConsumer;
+            this.acceptConsumer = builder.acceptConsumer;
             this.options = builder.options;
             this.eventloopThread = reactor.eventloopThread();
             this.serverSocketChannel = builder.serverSocketChannel;
@@ -105,7 +106,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to bind to " + localAddress, e);
         } catch (AlreadyBoundException | UnsupportedAddressTypeException | SecurityException e) {
-            throw new UncheckedIOException(new IOException("Failed to bind to " + localAddress, e));
+            throw newUncheckedIOException("Failed to bind to " + localAddress, e);
         }
     }
 
@@ -166,7 +167,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
             NioAcceptRequest acceptRequest = new NioAcceptRequest(socketChannel);
             try {
-                consumer.accept(acceptRequest);
+                acceptConsumer.accept(acceptRequest);
             } catch (Throwable t) {
                 closeQuietly(acceptRequest);
                 throw sneakyThrow(t);

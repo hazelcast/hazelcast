@@ -20,6 +20,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -43,6 +44,14 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class ReactorTest {
 
+    @Rule
+    public final PortFreeRule portFreeRule = new PortFreeRule(5000);
+
+    @After
+    public void after() throws InterruptedException {
+        terminateAll(reactors);
+    }
+
     private final List<Reactor> reactors = new ArrayList<>();
 
     public abstract ReactorBuilder newReactorBuilder();
@@ -58,22 +67,17 @@ public abstract class ReactorTest {
         return newReactorBuilder().type;
     }
 
-    @After
-    public void after() throws InterruptedException {
-        terminateAll(reactors);
-    }
-
     @Test
     public void test_context() {
         Reactor reactor = newReactor();
         assertNotNull(reactor.context());
     }
 
-    @Test
-    public void test_scheduler() {
-        Reactor reactor = newReactor();
-        assertNotNull(reactor.scheduler());
-    }
+//    @Test
+//    public void test_scheduler() {
+//        Reactor reactor = newReactor();
+//        assertNotNull(reactor.scheduler());
+//    }
 
     @Test(expected = NullPointerException.class)
     public void test_offer_Runnable_whenNull() {

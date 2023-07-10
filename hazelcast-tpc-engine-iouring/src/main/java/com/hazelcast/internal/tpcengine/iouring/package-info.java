@@ -14,23 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
-
 /**
- * A {@link Scheduler} that doesn't do anything.
+ * <p>Contains the IOUring Eventloop<br>
  */
-public class NopScheduler implements Scheduler {
-
-    @Override
-    public void init(Eventloop eventloop) {
-    }
-
-    @Override
-    public boolean tick() {
-        return false;
-    }
-
-    @Override
-    public void schedule(Object task) {
-    }
-}
+package com.hazelcast.internal.tpcengine.iouring;

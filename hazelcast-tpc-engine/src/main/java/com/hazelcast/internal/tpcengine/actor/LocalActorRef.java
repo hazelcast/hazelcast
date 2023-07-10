@@ -14,24 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.actor;
 
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import org.junit.Test;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
-import static org.junit.Assert.assertFalse;
+public final class LocalActorRef extends ActorRef {
 
-public class NopSchedulerTest {
+    private final Actor actor;
 
-    @Test
-    public void test() {
-        NopScheduler scheduler = new NopScheduler();
-        scheduler.schedule(new IOBuffer(64));
+    public LocalActorRef(Actor actor) {
+        this.actor = checkNotNull(actor);
     }
 
-    @Test
-    public void test_tick() {
-        NopScheduler scheduler = new NopScheduler();
-        assertFalse(scheduler.tick());
+    @Override
+    public void send(Object message) {
+        this.actor.send(message);
     }
 }

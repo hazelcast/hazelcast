@@ -16,10 +16,12 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -33,17 +35,45 @@ public abstract class EventloopTest {
 
     private Reactor reactor;
 
+    public int runQueueCapacity = 1024;
+
     public abstract ReactorBuilder newReactorBuilder();
 
     @Before
     public void before() {
         ReactorBuilder reactorBuilder = newReactorBuilder();
+        reactorBuilder.setRunQueueCapacity(runQueueCapacity);
         reactor = reactorBuilder.build().start();
     }
 
     @After
     public void after() {
         terminate(reactor);
+    }
+
+    @Test
+    public void test_tooManyTaskQueues() {
+        CompletableFuture future = new CompletableFuture();
+        reactor.offer(() -> {
+            for (int k = 0; k < runQueueCapacity - 1; k++) {
+                reactor.eventloop.newTaskQueueBuilder()
+                        .setLocal(new CircularQueue<>(10))
+                        .build();
+            }
+
+            try {
+                reactor.eventloop.newTaskQueueBuilder()
+                        .setLocal(new CircularQueue<>(10))
+                        .build();
+                future.completeExceptionally(
+                        new IllegalStateException(
+                                "Should not be able to create more than " + runQueueCapacity + " task queues"));
+            } catch (IllegalStateException e) {
+                future.complete(null);
+            }
+        });
+
+        future.join();
     }
 
     @Test

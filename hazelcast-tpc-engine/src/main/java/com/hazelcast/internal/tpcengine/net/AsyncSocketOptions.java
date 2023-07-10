@@ -87,8 +87,8 @@ public interface AsyncSocketOptions {
      * @param value  the value
      * @param <T>    the type of the value
      * @return <code>true</code> if the option was supported, <code>false</code> otherwise.
-     * @throws NullPointerException          if option or value is null.
-     * @throws java.io.UncheckedIOException  if the value could not be set.
+     * @throws NullPointerException         if option or value is null.
+     * @throws java.io.UncheckedIOException if the value could not be set.
      */
 
     <T> boolean set(Option<T> option, T value);
@@ -99,7 +99,7 @@ public interface AsyncSocketOptions {
      * @param option the option
      * @param <T>    the type of the value
      * @return the value for the option, <code>null</code> if the option was not set or is not supported.
-     * @throws java.io.UncheckedIOException  if the value could not be gotten.
+     * @throws java.io.UncheckedIOException if the value could not be gotten.
      */
     <T> T get(Option<T> option);
 }

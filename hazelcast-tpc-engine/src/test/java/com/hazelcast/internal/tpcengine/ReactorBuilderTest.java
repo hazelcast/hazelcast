@@ -92,49 +92,25 @@ public abstract class ReactorBuilderTest {
     @Test
     public void test_setScheduledTaskQueueCapacity_whenZero() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setScheduledTaskQueueCapacity(0));
+        assertThrows(IllegalArgumentException.class, () -> builder.setDeadlineRunQueueCapacity(0));
     }
 
     @Test
     public void test_setScheduledTaskQueueCapacity_whenNegative() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setScheduledTaskQueueCapacity(-1));
-    }
-
-    @Test
-    public void test_setClockRefreshPeriod_whenZero() {
-        ReactorBuilder builder = newBuilder();
-        builder.setClockRefreshPeriod(0);
-    }
-
-    @Test
-    public void test_setClockRefreshPeriod_whenNegative() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setClockRefreshPeriod(-1));
-    }
-
-    @Test
-    public void test_setBatchSize_whenZero() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setBatchSize(0));
-    }
-
-    @Test
-    public void test_setBatchSize_whenNegative() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setBatchSize(-1));
+        assertThrows(IllegalArgumentException.class, () -> builder.setDeadlineRunQueueCapacity(-1));
     }
 
     @Test
     public void test_setExternalTaskQueueCapacity_whenZero() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setExternalTaskQueueCapacity(0));
+        assertThrows(IllegalArgumentException.class, () -> builder.setGlobalTaskQueueCapacity(0));
     }
 
     @Test
     public void test_setExternalTaskQueueCapacity_whenNegative() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setExternalTaskQueueCapacity(-1));
+        assertThrows(IllegalArgumentException.class, () -> builder.setGlobalTaskQueueCapacity(-1));
     }
 
     @Test
@@ -152,7 +128,7 @@ public abstract class ReactorBuilderTest {
     @Test
     public void test_setSchedulerSupplier_whenNull() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setSchedulerSupplier(null));
+        assertThrows(NullPointerException.class, () -> builder.setTaskFactorySupplier(null));
     }
 
     @Test

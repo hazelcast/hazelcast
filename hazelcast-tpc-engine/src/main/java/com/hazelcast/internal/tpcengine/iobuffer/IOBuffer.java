@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine.iobuffer;
 
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -52,12 +53,23 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
  * https://stackoverflow.com/questions/16465477/is-there-a-way-to-create-a-direct-bytebuffer-from-a-pointer-solely-in-java
  * E.g. in case of the buffer pool (application specific page cache) we just want to take a pointer to
  * some memory in the bufferpool and pass it to the IOBuffer for reading/writing that page to disk.
+ * <p>
+ * Currently every IOBuffer is expandable. But this should not always be the case. Sometimes we just want to
+ * allocate a chunk of memory and that is it.
+ * <p>
+ * Every IOBuffer should have the ability to 'transform' itself into a ByteBuffer (one or more) This is needed for Nio.
+ * Very similar to that of Netty.
+ * <p>
+ * There should be a read/write position instead of the buffer position which depending if a buffer is in reading/writing mode.
+ * <p>
+ * The IOBuffer should be the care taker of reading/writing to the underlying byte array or pointer.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MethodCount", "java:S1149", "java:S1135"})
 public class IOBuffer {
 
-    IOBuffer next;
-    AsyncSocket socket;
+
+    public IOBuffer next;
+    public AsyncSocket socket;
 
     boolean trackRelease;
     IOBufferAllocator allocator;
@@ -67,6 +79,7 @@ public class IOBuffer {
     AtomicInteger refCount = new AtomicInteger();
 
     private ByteBuffer buff;
+    private long address;
 
     public IOBuffer(int size) {
         this(size, false);
@@ -75,10 +88,44 @@ public class IOBuffer {
     public IOBuffer(int size, boolean direct) {
         //todo: allocate power of 2.
         this.buff = direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
+        if (buff.isDirect()) {
+            address = BufferUtil.addressOf(buff);
+        } else {
+            address = 0;
+        }
+    }
+
+
+    public IOBuffer(int size, boolean direct, int alginment) {
+        //todo: allocate power of 2.
+        this.buff = direct ? BufferUtil.allocateDirect(size, alginment) : ByteBuffer.allocate(size);
+        if (buff.isDirect()) {
+            address = BufferUtil.addressOf(buff);
+        } else {
+            address = 0;
+        }
     }
 
     public IOBuffer(ByteBuffer buffer) {
         this.buff = buffer;
+        if (buff.isDirect()) {
+            address = BufferUtil.addressOf(buff);
+        } else {
+            address = 0;
+        }
+    }
+
+    public static IOBuffer allocateDirect(int capacity) {
+        return allocateDirect(capacity, 1);
+    }
+
+    public static IOBuffer allocateDirect(int capacity, int alignment) {
+        ByteBuffer byteBuffer = BufferUtil.allocateDirect(capacity, alignment);
+        return new IOBuffer(byteBuffer);
+    }
+
+    public long address() {
+        return address;
     }
 
     public ByteBuffer byteBuffer() {
@@ -136,10 +183,15 @@ public class IOBuffer {
         buff.put(value);
     }
 
-    public void writeSizedBytes(byte[] src) {
-        ensureRemaining(SIZEOF_INT + src.length);
-        buff.putInt(src.length);
-        buff.put(src);
+    public void writeSizePrefixedBytes(byte[] src) {
+        if (src == null) {
+            ensureRemaining(SIZEOF_INT);
+            buff.putInt(-1);
+        } else {
+            ensureRemaining(SIZEOF_INT + src.length);
+            buff.putInt(src.length);
+            buff.put(src);
+        }
     }
 
     public void writeBytes(byte[] src) {
@@ -169,6 +221,14 @@ public class IOBuffer {
 
     public int getInt(int index) {
         return buff.getInt(index);
+    }
+
+    public int capacity() {
+        return buff.capacity();
+    }
+
+    public byte read() {
+        return buff.get();
     }
 
     public int readInt() {
@@ -210,10 +270,25 @@ public class IOBuffer {
         buff.putLong(value);
     }
 
+
+    public void write(IOBuffer src) {
+        write(src.byteBuffer());
+    }
+
+    public void write(IOBuffer src, int count) {
+        write(src.byteBuffer(), count);
+    }
+
     public void write(ByteBuffer src) {
         write(src, src.remaining());
     }
 
+    /**
+     * Write as many bytes from the src to this buffer as there is space or until the count.
+     *
+     * @param src
+     * @param count
+     */
     public void write(ByteBuffer src, int count) {
         ensureRemaining(count);
 
@@ -229,27 +304,42 @@ public class IOBuffer {
 
     // very inefficient
     public void writeString(String s) {
-        int length = s.length();
+        if (s == null) {
+            buff.putInt(-1);
+        } else {
 
-        ensureRemaining(SIZEOF_INT + length * SIZEOF_CHAR);
+            int length = s.length();
 
-        buff.putInt(length);
-        for (int k = 0; k < length; k++) {
-            buff.putChar(s.charAt(k));
+            ensureRemaining(SIZEOF_INT + length * SIZEOF_CHAR);
+
+            buff.putInt(length);
+            for (int k = 0; k < length; k++) {
+                buff.putChar(s.charAt(k));
+            }
         }
     }
 
     // very inefficient
     public void readString(StringBuffer sb) {
         int size = buff.getInt();
+        if (size == -1) {
+            return;
+        }
+
         for (int k = 0; k < size; k++) {
             sb.append(buff.getChar());
         }
     }
 
+    // very inefficient
     public String readString() {
-        StringBuilder sb = new StringBuilder();
         int size = buff.getInt();
+        if (size == -1) {
+            return null;
+        }
+
+        StringBuilder sb = new StringBuilder();
+
         for (int k = 0; k < size; k++) {
             sb.append(buff.getChar());
         }
@@ -312,5 +402,13 @@ public class IOBuffer {
                 throw new IllegalStateException("Too many releases. Ref counter must be larger than 0, current:" + current);
             }
         }
+    }
+
+    public void clearOrCompact() {
+        BufferUtil.compactOrClear(buff);
+    }
+
+    public String toDebugString() {
+        return BufferUtil.toDebugString("iobuffer", buff);
     }
 }

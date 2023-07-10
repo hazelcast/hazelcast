@@ -145,7 +145,7 @@ public abstract class AbstractAsyncSocket implements Closeable {
                 if (reason == null) {
                     logger.info("Closing  " + this);
                 } else {
-                    logger.info("Closing " + this + " due to " + reason);
+                    logger.info("Closing " + this + ". Reason [" + reason + "]");
                 }
             }
         } else {
@@ -153,7 +153,7 @@ public abstract class AbstractAsyncSocket implements Closeable {
                 if (reason == null) {
                     logger.warning("Closing  " + this, cause);
                 } else {
-                    logger.warning("Closing " + this + " due to " + reason, cause);
+                    logger.warning("Closing " + this + ". Reason [" + reason + "]", cause);
                 }
             }
         }

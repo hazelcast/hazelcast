@@ -152,6 +152,25 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test
+    public void test_bind_randomPort() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
+                .setAcceptConsumer(acceptRequest -> {
+                })
+                .build();
+
+        socket.bind(new InetSocketAddress("127.0.0.1", 0));
+
+        SocketAddress localAddress = socket.getLocalAddress();
+        assertNotNull(localAddress);
+        assertTrue("localPort:" + socket.getLocalPort(), socket.getLocalPort() > 0);
+
+        // we need to close the socket manually only when accept is called, the AsyncSocket is part
+        // of the reactor
+        socket.close();
+    }
+
+    @Test
     public void test_bind_whenAlreadyBound() {
         Reactor reactor = newReactor();
         AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
@@ -204,6 +223,7 @@ public abstract class AsyncServerSocketTest {
                 .build();
 
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+        SocketAddress serverAddress = serverSocket.getLocalAddress();
         serverSocket.start();
 
         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
@@ -211,7 +231,7 @@ public abstract class AsyncServerSocketTest {
                 .build();
         clientSocket.start();
 
-        CompletableFuture<Void> connect = clientSocket.connect(serverSocket.getLocalAddress());
+        CompletableFuture<Void> connect = clientSocket.connect(serverAddress);
         assertCompletesEventually(connect);
         assertTrueEventually(() -> assertTrue(clientSocket.isClosed()));
     }
@@ -241,7 +261,7 @@ public abstract class AsyncServerSocketTest {
 
     @Test
     public void test_createCloseLoop_withSameReactor() {
-        SocketAddress local = new InetSocketAddress("127.0.0.1", 5001);
+        SocketAddress local = new InetSocketAddress("127.0.0.1", 0);
         Reactor reactor = newReactor();
         for (int k = 0; k < 1000; k++) {
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()

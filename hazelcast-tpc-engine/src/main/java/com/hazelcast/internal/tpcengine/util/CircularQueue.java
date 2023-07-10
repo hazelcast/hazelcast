@@ -16,7 +16,14 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
+import java.util.AbstractQueue;
+import java.util.Iterator;
 import java.util.Queue;
+import java.util.Spliterator;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -29,7 +36,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  *
  * @param <E> the type of elements in this CircularQueue.
  */
-public final class CircularQueue<E> {
+public final class CircularQueue<E> extends AbstractQueue<E> {
 
     private long head;
     private long tail = -1;
@@ -96,17 +103,14 @@ public final class CircularQueue<E> {
     }
 
     /**
-     * Adds an item to this CircularQueue.
+     * Checks if there are remaining items on this CircularQueue.
      *
-     * @param item the item to add.
-     * @throws NullPointerException  if item is null.
-     * @throws IllegalStateException when there is no more space on this CircularQueue.
+     * @return true if there are remaining items, false otherwise.
      */
-    public void add(E item) {
-        if (!offer(item)) {
-            throw new IllegalStateException("CircularQueue is full");
-        }
+    public boolean hasRemaining() {
+        return tail >= head;
     }
+
 
     /**
      * Drains as many items from the src as fit into this CircularQueue.
@@ -137,6 +141,7 @@ public final class CircularQueue<E> {
      *
      * @return the first item or null.
      */
+    @Override
     public E peek() {
         if (tail < head) {
             return null;
@@ -154,6 +159,7 @@ public final class CircularQueue<E> {
      * @return true if the item was accepted, false otherwise.
      * @throws NullPointerException if item is null.
      */
+    @Override
     public boolean offer(E item) {
         checkNotNull(item, "item");
 
@@ -173,6 +179,7 @@ public final class CircularQueue<E> {
      *
      * @return the oldest items.
      */
+    @Override
     public E poll() {
         if (tail < head) {
             return null;
@@ -184,5 +191,40 @@ public final class CircularQueue<E> {
             head = h + 1;
             return item;
         }
+    }
+
+    @Override
+    public Iterator<E> iterator() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <T> T[] toArray(IntFunction<T[]> generator) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Spliterator<E> spliterator() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Stream<E> stream() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Stream<E> parallelStream() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void forEach(Consumer<? super E> action) {
+        throw new UnsupportedOperationException();
     }
 }

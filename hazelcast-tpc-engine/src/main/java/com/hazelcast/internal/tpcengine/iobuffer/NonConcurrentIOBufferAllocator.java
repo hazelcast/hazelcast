@@ -16,25 +16,42 @@
 
 package com.hazelcast.internal.tpcengine.iobuffer;
 
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
+
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
+
 /**
- * A {@link IOBufferAllocator} that can only be used serially (so by a single thread).
- * <p>
- * {@link #allocate()} should be done by the same thread as {@link #free(IOBuffer)}.
+ * A {@link IOBufferAllocator} that can't be used concurrently. So a
+ * single thread should own this allocator and all interaction with the
+ * allocator should be done by that thread.
  */
 @SuppressWarnings("checkstyle:MagicNumber")
 public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
     private final int minSize;
     private final boolean direct;
+    private final int alignment;
     private long newAllocateCnt;
     private long allocateCnt;
     private IOBuffer[] bufs = new IOBuffer[4096];
     private int index = -1;
 
     public NonConcurrentIOBufferAllocator(int minSize, boolean direct) {
-        this.minSize = minSize;
+        this(minSize, direct, 1);
+    }
+
+    /**
+     * @param minSize
+     * @param direct    when direct is false, alignment is ignored since the address
+     *                  of the buffer can't be obtained.
+     * @param alignment
+     */
+    public NonConcurrentIOBufferAllocator(int minSize, boolean direct, int alignment) {
+        this.minSize = checkNotNegative(minSize, "minSize");
         this.direct = direct;
+        this.alignment = checkPositive(alignment, "alignment");
     }
 
     @SuppressWarnings("java:S125")
@@ -49,7 +66,10 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
             for (int k = 0; k < bufs.length; k++) {
                 //newAllocations.incrementAndGet();
                 //System.out.println(" new buf");
-                ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
+                ByteBuffer buffer = direct
+                        ? BufferUtil.allocateDirect(minSize, alignment)
+                        : ByteBuffer.allocate(minSize);
+
                 IOBuffer buf = new IOBuffer(buffer);
                 buf.concurrent = false;
                 newAllocateCnt++;

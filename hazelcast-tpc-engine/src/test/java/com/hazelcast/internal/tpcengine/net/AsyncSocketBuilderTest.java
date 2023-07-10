@@ -19,7 +19,6 @@ package com.hazelcast.internal.tpcengine.net;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.TpcTestSupport;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -53,7 +53,7 @@ public abstract class AsyncSocketBuilderTest {
 
     @After
     public void after() {
-        TpcTestSupport.terminateAll(reactors);
+        terminateAll(reactors);
     }
 
     @Test

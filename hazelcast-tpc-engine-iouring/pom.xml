@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2021 Hazelcast Inc.
+  ~
+  ~ Licensed under the Hazelcast Community License (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://hazelcast.com/hazelcast-community-license
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <name>hazelcast-tpc-engine-iouring</name>
+    <artifactId>hazelcast-tpc-engine-iouring</artifactId>
+    <description>The Hazelcast thread per core engine: io_uring</description>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast-root</artifactId>
+        <version>5.4.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <properties>
+        <!-- Needed for CheckStyle -->
+        <main.basedir>${project.parent.basedir}</main.basedir>
+        <jctools.version>4.0.1</jctools.version>
+        <maven.ant-run-plugin>3.1.0</maven.ant-run-plugin>
+        <lib.name>libiouring_hz.so</lib.name>
+    </properties>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-h</arg>
+                        <arg>${project.basedir}/src/main/c/include</arg>
+                    </compilerArgs>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${maven.ant-run-plugin}</version>
+                <executions>
+                    <execution>
+                        <id>compile-native</id>
+                        <phase>compile</phase>
+                        <configuration>
+                            <target name="compile-native">
+                                <property name="build.dir" value="target"/>
+                                <property name="src.dir" value="src"/>
+                                <property name="gcc.args" value="-O3 -fno-omit-frame-pointer -momit-leaf-frame-pointer"/>
+
+                                <echo message="Compiling native library..."/>
+
+                                <mkdir dir="${build.dir}/native"/>
+
+                                <pathconvert property="src.native" pathsep=" ">
+                                    <fileset dir="${src.dir}" includes="**/*.c"/>
+                                </pathconvert>
+
+                                <exec os="Linux" executable="gcc" failonerror="true">
+                                    <arg line="-D_GNU_SOURCE -fPIC -shared -Wl,-soname,libiouring_hz.so ${gcc.args}
+                                               -l:liburing.so
+                                               -o ${build.dir}/native/libiouring_hz.so
+                                               -I ${java.home}/include -I ${java.home}/include/linux
+                                               -I ${java.home}/../include -I ${java.home}/../include/linux
+                                               ${src.native} -ldl -lrt"/>
+                                </exec>
+
+                                <mkdir dir="${build.dir}/classes/lib/linux-x86_64"/>
+
+                                <move verbose="true"
+                                      failonerror="true"
+                                      file="${build.dir}/native/libiouring_hz.so"
+                                      todir="${build.dir}/classes/lib/linux-x86_64"/>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <index>true</index>
+                        <compress>true</compress>
+                        <manifest>
+                            <addClasspath>false</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>test-jar</id>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <!-- We must generate a -javadoc JAR file to publish on Maven Central -->
+                        <id>empty-javadoc-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>javadoc</classifier>
+                            <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
+                            <excludes>
+                                <exclude>.*</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-tpc-engine</artifactId>
+            <version>5.4.0-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-tpc-engine</artifactId>
+            <version>5.4.0-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+</project>

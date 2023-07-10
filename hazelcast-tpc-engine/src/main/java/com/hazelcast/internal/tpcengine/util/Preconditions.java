@@ -18,7 +18,19 @@ package com.hazelcast.internal.tpcengine.util;
 
 public final class Preconditions {
 
+    public static final int MAX_PORT = 65335;
+
     private Preconditions() {
+    }
+
+    public static int checkValidPort(int port, String paramName) {
+        if (port < 0) {
+            throw new IllegalArgumentException(paramName + " is " + port + " but must be >= 0");
+        } else if (port > MAX_PORT) {
+            throw new IllegalArgumentException(paramName + " is " + port + " but must be <= " + MAX_PORT);
+        } else {
+            return port;
+        }
     }
 
     public static <E> E checkInstanceOf(Class<E> type, Object object, String paramName) {
@@ -42,6 +54,22 @@ public final class Preconditions {
      * @throws IllegalArgumentException if the value is not positive.
      */
     public static int checkPositive(int value, String paramName) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(paramName + " is " + value + " but must be > 0");
+        }
+        return value;
+    }
+
+    /**
+     * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
+     *
+     * @param value     the value tested to see if it is positive.
+     * @param paramName the the name of the checked parameter that will be in exception message
+     * @param value     the value tested to see if it is positive.
+     * @return the value
+     * @throws IllegalArgumentException if the value is not positive.
+     */
+    public static long checkPositive(long value, String paramName) {
         if (value <= 0) {
             throw new IllegalArgumentException(paramName + " is " + value + " but must be > 0");
         }

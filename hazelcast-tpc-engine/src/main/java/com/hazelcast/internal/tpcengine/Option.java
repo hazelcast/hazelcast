@@ -22,6 +22,11 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * Can be used to pass options to a socket, but in the future also files.
  * <p>
  * An option is uniquely determined based on its name.
+ * <p>
+ * The builders currently only have explicit settings which can make it inflexible
+ * to add new options. With an option approach it would be a lot more flexible to
+ * pass settings. So we need to think if we want to convert builders to have a set
+ * of options instead of explicit encoded properties.
  *
  * @param <T> the type of the option.
  */

@@ -17,6 +17,8 @@
 package com.hazelcast.internal.tpcengine.util;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 
 /**
  * Utility class containing exception related functions.
@@ -24,6 +26,14 @@ import javax.annotation.Nonnull;
 public final class ExceptionUtil {
 
     private ExceptionUtil() {
+    }
+
+    public static UncheckedIOException newUncheckedIOException(String message) {
+        return new UncheckedIOException(new IOException(message));
+    }
+
+    public static UncheckedIOException newUncheckedIOException(String message, Throwable cause) {
+        return new UncheckedIOException(new IOException(message, cause));
     }
 
     /**

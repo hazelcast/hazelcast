@@ -10,6 +10,7 @@ target/
 .project
 .surefire-*
 .DS_Store
+*.log
 *.iml
 *.ipr
 *.iws
@@ -28,3 +29,12 @@ reports/
 # Hadoop files
 *.crc
 **/node_modules/**
+
+# TPC files
+/hazelcast-tpc-engine-iouring/src/main/c/include/com_hazelcast_internal_tpcengine_iouring_CompletionQueue.h
+/hazelcast-tpc-engine-iouring/src/main/c/include/com_hazelcast_internal_tpcengine_iouring_Socket.h
+/hazelcast-tpc-engine-iouring/src/main/c/include/com_hazelcast_internal_tpcengine_iouring_SubmissionQueue.h
+/hazelcast-tpc-engine-iouring/src/main/c/include/com_hazelcast_internal_tpcengine_iouring_Linux.h
+/hazelcast-tpc-engine-iouring/src/main/c/include/com_hazelcast_internal_util_ThreadAffinityHelper.h
+/hazelcast-tpc-engine-iouring/src/main/c/include/com_hazelcast_internal_tpcengine_iouring_IOUring.h
+/hazelcast-tpc-engine-iouring/src/main/c/include/com_hazelcast_internal_tpcengine_iouring_LinuxSocket.h

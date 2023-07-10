@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.PrintAtomicLongThread;
+import com.hazelcast.internal.tpcengine.util.PrintAtomicLongThread;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
@@ -64,8 +64,12 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     @Before
     public void before() {
-        clientReactor = newReactorBuilder().build().start();
-        serverReactor = newReactorBuilder().build().start();
+        clientReactor = newReactorBuilder()
+                .build()
+                .start();
+        serverReactor = newReactorBuilder()
+                .build()
+                .start();
         printThread.start();
     }
 
@@ -206,14 +210,32 @@ public abstract class AsyncSocket_LargePayloadTest {
         test(2048 * 1024, 10);
     }
 
+    @Test
+    public void test_concurrency_10_payload_4MB() throws InterruptedException {
+        test(4096 * 1024, 10);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_8MB() throws InterruptedException {
+        test(8192 * 1024, 10);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_16MB() throws InterruptedException {
+        test(16384 * 1024, 10);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_32MB() throws InterruptedException {
+        test(32768 * 1024, 10);
+    }
+
     public void test(int payloadSize, int concurrency) throws InterruptedException {
         AsyncServerSocket serverSocket = newServer();
 
         CountDownLatch completionLatch = new CountDownLatch(concurrency);
 
         AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress(), completionLatch);
-
-        System.out.println("Starting");
 
         for (int k = 0; k < concurrency; k++) {
             byte[] payload = new byte[payloadSize];
