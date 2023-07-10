@@ -171,7 +171,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private volatile UUID clusterId;
     private volatile ClientState clientState = ClientState.INITIAL;
     private volatile boolean connectToClusterTaskSubmitted;
-    private volatile boolean isConnectedClusterEnterprise;
+    private volatile boolean isConnectedToEnterpriseCluster;
     private boolean establishedInitialClusterConnection;
 
     private enum ClientState {
@@ -910,8 +910,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     @Override
-    public boolean isConnectedClusterEnterprise() {
-        return isConnectedClusterEnterprise;
+    public boolean isConnectedToEnterpriseCluster() {
+        return isConnectedToEnterpriseCluster;
     }
 
     public Credentials getCurrentCredentials() {
@@ -1094,7 +1094,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             fireConnectionEvent(connection, true);
         }
-        isConnectedClusterEnterprise = response.isFailoverSupported();
+        isConnectedToEnterpriseCluster = response.isFailoverSupported();
 
         // It could happen that this connection is already closed and
         // onConnectionClose() is called even before the synchronized block

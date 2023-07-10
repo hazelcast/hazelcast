@@ -133,7 +133,7 @@ public class ClientClusterProxy implements Cluster {
 
     @Override
     public boolean isEnterprise() {
-        return this.clusterService.getMemberList().size() > 0 && this.connectionManager.isConnectedClusterEnterprise();
+        return this.clusterService.getMemberList().size() > 0 && this.connectionManager.isConnectedToEnterpriseCluster();
     }
 
     @Override
