@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 @SerializableByConvention
-public class AttributePartitioningStrategy implements PartitioningStrategy<Object> {
+public final class AttributePartitioningStrategy implements PartitioningStrategy<Object> {
 
     private final String[] attributes;
 

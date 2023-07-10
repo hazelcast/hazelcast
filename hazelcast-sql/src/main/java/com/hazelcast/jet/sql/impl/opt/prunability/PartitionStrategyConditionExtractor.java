@@ -48,8 +48,12 @@ import static java.util.Collections.emptyMap;
 public class PartitionStrategyConditionExtractor {
 
     /**
-     * Returns tuple of table name, column name, left and right
-     * operands of comparison extracted from the analyzed condition.
+     * Returns a map of per-table candidates, structured as mapName -> [columnName -> RexLiteralOrDynamicParam]
+     * where every innermost map represents a single candidate - a conjunction (AND) of EQUALS-based conditions.
+     * Each candidate is guaranteed to "produce" a single Partition Key, meaning if it was used as a standalone filter
+     * in a query, it would limit the query to only a single Partition Key.
+     *
+     * @return map of per-table partition pruning candidates or empty list if any of the candidates are incomplete.
      */
     public Map<String, List<Map<String, RexNode>>> extractCondition(
             Table table,
