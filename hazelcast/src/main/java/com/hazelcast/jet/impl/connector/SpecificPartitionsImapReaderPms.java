@@ -1,0 +1,100 @@
+/*
+ * Copyright 2023 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.jet.impl.connector;
+
+import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.connector.HazelcastReaders.LocalMapReaderFunction;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorMetaSupplier;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorSupplier;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.Reader;
+import com.hazelcast.security.permission.MapPermission;
+
+import javax.annotation.Nonnull;
+import java.security.Permission;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+
+/**
+ * A meta-supplier that will compute required partitions to scan,
+ * if attribute partitioning strategy was applied.
+ */
+public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFuture, B, R> extends LocalProcessorMetaSupplier<F, B, R> {
+    private transient int[] partitionsToScan;
+    private transient Map<Address, int[]> partitionAssignment;
+
+    private SpecificPartitionsImapReaderPms(
+            final String mapName,
+            final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier) {
+        super(readerSupplier);
+    }
+
+    @Override
+    public void init(@Nonnull Context context) throws Exception {
+        super.init(context);
+        Set<Integer> partitions = context.jobConfig().getArgument(KEY_REQUIRED_PARTITIONS);
+        if (partitions != null) {
+            partitionsToScan = partitions.stream().sorted().mapToInt(i -> i).toArray();
+            partitionAssignment = context.partitionAssignment();
+        }
+    }
+
+    @Nonnull
+    @Override
+    public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+        if (partitionsToScan == null) {
+            return address -> new LocalProcessorSupplier<>(readerSupplier);
+        } else {
+            return address -> {
+                int[] partitions = partitionAssignment.get(address);
+                List<Integer> partitionsToScanList = new ArrayList<>();
+                // partitionAssignment is sorted, so we can use binary search
+                for (int pId : partitionsToScan) {
+                    if (Arrays.binarySearch(partitions, pId) > 0) {
+                        partitionsToScanList.add(pId);
+                    }
+                }
+
+                int[] memberPartitionsToScan = partitionsToScanList.stream().mapToInt(i -> i).toArray();
+                return new LocalProcessorSupplier<>(readerSupplier, memberPartitionsToScan);
+            };
+        }
+    }
+
+    // TODO: name it properly.
+    public static ProcessorMetaSupplier mapReader(String mapName) {
+        return new SpecificPartitionsImapReaderPms<>(mapName, new LocalMapReaderFunction(mapName)) {
+            @Override
+            public Permission getRequiredPermission() {
+                return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
+            }
+        };
+    }
+}

@@ -70,11 +70,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -273,44 +271,17 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     abstract static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
 
         private static final long serialVersionUID = 1L;
-        private final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
-        private Map<Address, int[]> partitionAssignment;
-        private int[] partitionsToScan;
+        protected final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 
         LocalProcessorMetaSupplier(
-                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
-                @Nullable int[] partitionsToScan
+                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
         ) {
             this.readerSupplier = readerSupplier;
-            this.partitionsToScan = partitionsToScan;
         }
 
         @Override @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            if (partitionsToScan == null) {
-                return address -> new LocalProcessorSupplier<>(readerSupplier);
-            } else {
-                return address -> {
-                    int[] partitions = partitionAssignment.get(address);
-                    List<Integer> partitionsToScanList = new ArrayList<>();
-                    // partitionAssignment is sorted, so we can use binary search
-                    for (int pId : partitionsToScan) {
-                        if (Arrays.binarySearch(partitions, pId) > 0) {
-                            partitionsToScanList.add(pId);
-                        }
-                    }
-
-                    int[] memberPartitionsToScan = partitionsToScanList.stream().mapToInt(i -> i).toArray();
-                    return new LocalProcessorSupplier<>(readerSupplier, memberPartitionsToScan);
-                };
-            }
-        }
-
-        @Override
-        public void init(@Nonnull Context context) throws Exception {
-            if (partitionsToScan != null) {
-                this.partitionAssignment = context.partitionAssignment();
-            }
+            return address -> new LocalProcessorSupplier<>(readerSupplier);
         }
 
         @Override
@@ -351,13 +322,13 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         public LocalProcessorSupplier() {
         }
 
-        private LocalProcessorSupplier(
+        LocalProcessorSupplier(
                 @Nonnull BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
         ) {
             this.readerSupplier = readerSupplier;
         }
 
-        private LocalProcessorSupplier(
+        LocalProcessorSupplier(
                 @Nonnull BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
                 int[] partitionsToScan
         ) {

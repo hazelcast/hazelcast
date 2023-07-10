@@ -28,7 +28,6 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
@@ -68,6 +67,7 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
+import static com.hazelcast.jet.impl.connector.SpecificPartitionsImapReaderPms.mapReader;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
@@ -199,7 +199,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         Vertex vStart = context.getDag().newUniqueVertex(
                 toString(table),
-                SourceProcessors.readMapP(table.getMapName())
+                mapReader(table.getMapName())
         );
 
         Vertex vEnd = context.getDag().newUniqueVertex(
