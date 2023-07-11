@@ -78,6 +78,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
+import com.hazelcast.partition.strategy.StrategyUtil;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -526,7 +527,8 @@ public class PlanExecutor {
             // We only support Default and Attribute strategies, even if one of the maps uses non-Default/Attribute
             // strategy, we should abort the process and clear list of already populated partitions so that partition
             // pruning doesn't get activated at all for this query.
-            if (!(strategy instanceof DefaultPartitioningStrategy)
+            if (strategy != null
+                    && !(strategy instanceof DefaultPartitioningStrategy)
                     && !(strategy instanceof AttributePartitioningStrategy)) {
                 allVariantsValid = false;
                 break;
@@ -542,7 +544,7 @@ public class PlanExecutor {
             }
 
             for (final Map<String, Expression<?>> perMapCandidate : perMapCandidates) {
-                Object[] partitionKey = new Object[orderedKeyAttributes.size()];
+                Object[] partitionKeyComponents = new Object[orderedKeyAttributes.size()];
                 for (int i = 0; i < orderedKeyAttributes.size(); i++) {
                     final String attribute = orderedKeyAttributes.get(i);
                     if (!perMapCandidate.containsKey(attribute)) {
@@ -552,14 +554,12 @@ public class PlanExecutor {
                                 + " does not contain mandatory attribute: " + attribute);
                     }
 
-                    partitionKey[i] = perMapCandidate.get(attribute).eval(null, evalContext);
+                    partitionKeyComponents[i] = perMapCandidate.get(attribute).eval(null, evalContext);
                 }
 
-                // In case of default strategy there is only a single key, not an array.
-                // AttributePartitioningStrategy with single attribute also does not use array.
-                // TODO: this code must be in sync with logic in other places. Do this better.
                 final Partition partition = hazelcastInstance.getPartitionService().getPartition(
-                        partitionKey.length == 1 ? partitionKey[0] : partitionKey);
+                        StrategyUtil.constructKey(partitionKeyComponents)
+                );
                 if (partition == null) {
                     // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
                     // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.

@@ -84,6 +84,10 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
         return indexFilter;
     }
 
+    public RexNode getIndexExp() {
+        return indexExp;
+    }
+
     public RexNode getRemainderExp() {
         return remainderExp;
     }

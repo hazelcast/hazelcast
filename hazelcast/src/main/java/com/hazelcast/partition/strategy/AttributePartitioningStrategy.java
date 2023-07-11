@@ -54,7 +54,7 @@ public final class AttributePartitioningStrategy implements PartitioningStrategy
             throw new HazelcastException("Cannot extract attributes from the key");
         }
 
-        return attributes.length == 1 ? result[0] : result;
+        return StrategyUtil.constructKey(result);
     }
 
     @Nonnull

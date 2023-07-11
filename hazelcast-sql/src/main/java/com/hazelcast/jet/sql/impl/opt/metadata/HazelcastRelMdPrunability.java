@@ -81,15 +81,7 @@ public final class HazelcastRelMdPrunability
         }
 
         final PartitionedMapTable targetTable = hazelcastTable.getTarget();
-        final HashSet<String> partitioningFiledNames = new HashSet<>(targetTable.partitioningAttributes());
-        final Set<String> partitioningColumns = targetTable.keyFields()
-                .filter(kf -> partitioningFiledNames.contains(kf.getPath().getPath()))
-                .map(TableField::getName)
-                .collect(Collectors.toSet());
-
-        if (targetTable.partitioningAttributes().isEmpty()) {
-            partitioningColumns.add(QueryPath.KEY);
-        }
+        final Set<String> partitioningColumns = extractPartitioningColumns(targetTable);
 
         final RexNode filter = hazelcastTable.getFilter();
         if (!(filter instanceof RexCall)) {
@@ -103,11 +95,25 @@ public final class HazelcastRelMdPrunability
 
     @SuppressWarnings("unused")
     public Map<String, List<Map<String, RexNode>>> extractPrunability(
-            IndexScanMapPhysicalRel scan,
+            IndexScanMapPhysicalRel indexScan,
             RelMetadataQuery mq
     ) {
-        // TODO: Implement
-        return emptyMap();
+        final HazelcastTable hazelcastTable = OptUtils.extractHazelcastTable(indexScan);
+        if (!(hazelcastTable.getTarget() instanceof PartitionedMapTable)) {
+            return emptyMap();
+        }
+
+        final PartitionedMapTable targetTable = hazelcastTable.getTarget();
+        final Set<String> partitioningColumns = extractPartitioningColumns(targetTable);
+
+        final RexNode filter = indexScan.getIndexExp();
+        if (!(filter instanceof RexCall)) {
+            return emptyMap();
+        }
+
+        final RexCall call = (RexCall) filter;
+        final var conditionExtractor = new PartitionStrategyConditionExtractor();
+        return conditionExtractor.extractCondition(targetTable, call, partitioningColumns);
     }
 
     @SuppressWarnings("unused")
@@ -150,6 +156,19 @@ public final class HazelcastRelMdPrunability
     public Map<String, List<Map<String, RexNode>>> extractPrunability(BiRel rel, RelMetadataQuery mq) {
         // For any bi-rel we (temporarily) are not propagating prunability.
         return Collections.emptyMap();
+    }
+
+    static Set<String> extractPartitioningColumns(PartitionedMapTable targetTable) {
+        final HashSet<String> partitioningFiledNames = new HashSet<>(targetTable.partitioningAttributes());
+        final Set<String> partitioningColumns = targetTable.keyFields()
+                .filter(kf -> partitioningFiledNames.contains(kf.getPath().getPath()))
+                .map(TableField::getName)
+                .collect(Collectors.toSet());
+
+        if (targetTable.partitioningAttributes().isEmpty()) {
+            partitioningColumns.add(QueryPath.KEY);
+        }
+        return partitioningColumns;
     }
 
     public interface PrunabilityMetadata extends Metadata {
