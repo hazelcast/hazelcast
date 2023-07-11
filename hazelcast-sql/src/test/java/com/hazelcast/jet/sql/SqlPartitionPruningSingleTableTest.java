@@ -60,7 +60,7 @@ public class SqlPartitionPruningSingleTableTest extends SqlTestSupport {
 
         IMap<Object, Object> map = instance().getMap(mapName);
 
-        final String[] countries = new String[] {"PL", "UA", "UK", "US"};
+        final String[] countries = new String[]{"PL", "UA", "UK", "US"};
         int orderId = 1000;
         for (int custId = 1; custId < 10; ++custId) {
             // create skewed data
@@ -74,6 +74,11 @@ public class SqlPartitionPruningSingleTableTest extends SqlTestSupport {
                 map.put(key, data);
             }
         }
+    }
+
+    @Test
+    public void test_basicSelect() {
+        analyzeQuery("SELECT * FROM " + mapName + " WHERE customerId='C2'", null);
     }
 
     @Test

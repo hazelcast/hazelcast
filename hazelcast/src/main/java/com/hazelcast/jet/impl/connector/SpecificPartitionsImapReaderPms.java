@@ -77,7 +77,7 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
                 List<Integer> partitionsToScanList = new ArrayList<>();
                 // partitionAssignment is sorted, so we can use binary search
                 for (int pId : partitionsToScan) {
-                    if (Arrays.binarySearch(partitions, pId) > 0) {
+                    if (Arrays.binarySearch(partitions, pId) >= 0) {
                         partitionsToScanList.add(pId);
                     }
                 }
