@@ -43,7 +43,6 @@ import static java.util.Collections.emptyMap;
  * Since at this point of Opt all filters are normalized and coalesced into multi-operand AND/OR operators
  * we can safely assume that something like AND(b=1, AND(a=1,c=1)) will become AND(b=1,a=1,c=1) at this point.
  * Note that this class will likely change significantly with introduction of support for more complex filters.
- *
  */
 public class PartitionStrategyConditionExtractor {
 
