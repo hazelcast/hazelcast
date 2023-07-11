@@ -565,15 +565,7 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                     + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         }
 
-        if (tpcServerBootstrap.isEnabled()) {
-            // When tpc is enabled, the partitionThread are manged by the tpcEngine.
-            TpcEngine tpcEngine = tpcServerBootstrap.getTpcEngine();
-            for (int k = 0; k < tpcEngine.reactorCount(); k++) {
-                Reactor reactor = tpcEngine.reactor(k);
-                TpcPartitionOperationThread partitionThread = (TpcPartitionOperationThread) reactor.eventloopThread();
-                partitionThread.getQueue().setReactor(reactor);
-            }
-        } else {
+        if (!tpcServerBootstrap.isEnabled()) {
             startAll(partitionThreads);
         }
         startAll(genericThreads);

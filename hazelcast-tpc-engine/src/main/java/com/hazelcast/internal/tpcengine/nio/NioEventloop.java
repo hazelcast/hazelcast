@@ -123,11 +123,11 @@ final class NioEventloop extends Eventloop {
             if (scheduleBlockedGlobal()) {
                 keyCount = selector.selectNow();
             } else {
-                System.out.println("parking");
+                //System.out.println("parking");
                 keyCount = timeoutNanos == Long.MAX_VALUE
                         ? selector.select(1)
                         : selector.select(timeoutMs);
-                System.out.println("unparked");
+                //System.out.println("unparked");
             }
             wakeupNeeded.set(false);
         }

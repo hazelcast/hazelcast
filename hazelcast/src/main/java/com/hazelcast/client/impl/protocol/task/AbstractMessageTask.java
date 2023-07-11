@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.task.map.MapPutMessageTask;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
@@ -276,6 +277,10 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     @SuppressWarnings({"java:S125", "java:S1135"})
     protected void sendClientMessage(ClientMessage resultClientMessage) {
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
+
+        if(this instanceof MapPutMessageTask){
+            System.out.println("sendClientMessage");
+        }
 
         if (asyncSocket == null) {
             connection.write(resultClientMessage);

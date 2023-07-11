@@ -27,6 +27,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
+import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.TaskQueueBuilder;
 import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.tpcengine.TpcEngineBuilder;
@@ -36,6 +37,7 @@ import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.spi.impl.operationexecutor.impl.TpcOperationQueue;
 import com.hazelcast.spi.impl.operationexecutor.impl.TpcPartitionOperationThread;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -123,6 +125,7 @@ public class TpcServerBootstrap {
     }
 
     public List<Integer> getClientPorts() {
+        System.out.println("getClientPorts: "+clientPorts);
         return clientPorts;
     }
 
@@ -132,6 +135,7 @@ public class TpcServerBootstrap {
 
     private int loadEventloopCount() {
         String eventloopCountString = nodeEngine.getProperties().getString(TPC_EVENTLOOP_COUNT);
+        System.out.println("eventloopCountString:"+eventloopCountString);
         if (eventloopCountString == null) {
             return config.getTpcConfig().getEventloopCount();
         } else {
@@ -145,18 +149,38 @@ public class TpcServerBootstrap {
         }
         logger.info("Starting TpcServerBootstrap");
 
-        // todo: Should be done based on the reactor type
-        ReactorBuilder reactorBuilder = new NioReactorBuilder();
-//        reactorBuilder.setPrimordialTaskQueueBuilder(new TaskQueueBuilder()
-//                .setTaskProcessor());
-
-        reactorBuilder.setThreadFactory(new OperationThreadFactory());
-
         TpcEngineBuilder tpcEngineBuilder = new TpcEngineBuilder();
-        tpcEngineBuilder.setReactorBuilder(reactorBuilder);
+        // todo: Should be done based on the reactor type
+        ReactorType reactorType = ReactorType.NIO;
+        tpcEngineBuilder.setReactorBuilderFn(new Supplier<>() {
+            private int threadIndex = 0;
+
+            @Override
+            public ReactorBuilder get() {
+                OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
+                        .getOperationService()
+                        .getOperationExecutor();
+                TpcPartitionOperationThread operationThread = (TpcPartitionOperationThread) operationExecutor
+                        .getPartitionThreads()[threadIndex];
+
+                ReactorBuilder builder = ReactorBuilder.newReactorBuilder(reactorType);
+
+                builder.setThreadFactory(eventloopTask -> {
+                    operationThread.setEventloopTask(eventloopTask);
+                    return operationThread;
+                });
+
+                builder.setPrimordialTaskQueueBuilder(new TaskQueueBuilder()
+                        .setTaskProcessor(operationThread)
+                        .setGlobal(operationThread.getQueue().getNormalQueue())
+                        .setLocal(operationThread.getQueue().getNormalQueue()) //ugly, but needed for now
+                );
+                threadIndex++;
+                return builder;
+            }
+        });
         tpcEngineBuilder.setReactorCount(loadEventloopCount());
         tpcEngine = tpcEngineBuilder.build();
-
         // The TpcPartitionOperationThread are created with the right TpcOperationQueue, but
         // the reactor isn't set yet.
         // The tpcEngine (and hence reactor.start) will create the appropriate happens-before
@@ -291,21 +315,5 @@ public class TpcServerBootstrap {
         }
 
         logger.info("TpcServerBootstrap terminated");
-    }
-
-    private class OperationThreadFactory implements ThreadFactory {
-        int index;
-
-        @Override
-        public Thread newThread(Runnable eventloopTask) {
-            OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
-                    .getOperationService()
-                    .getOperationExecutor();
-            TpcPartitionOperationThread operationThread = (TpcPartitionOperationThread) operationExecutor
-                    .getPartitionThreads()[index];
-            index++;
-            operationThread.setEventloopTask(eventloopTask);
-            return operationThread;
-        }
     }
 }

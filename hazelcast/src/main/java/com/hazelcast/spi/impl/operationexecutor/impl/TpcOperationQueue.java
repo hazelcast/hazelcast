@@ -34,6 +34,11 @@ public class TpcOperationQueue implements OperationQueue {
         this.priorityQueue = checkNotNull(priorityQueue, "priorityQueue");
     }
 
+
+    public Queue<Object> getNormalQueue() {
+        return normalQueue;
+    }
+
     @Override
     public void add(Object task, boolean priority) {
         if (priority) {

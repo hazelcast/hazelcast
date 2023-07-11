@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.task.map.MapPutMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 
@@ -63,11 +64,17 @@ public abstract class AbstractAsyncMessageTask<P, T> extends AbstractMessageTask
      * @param throwable The throwable to be sent to the client if an exception occurred
      */
     protected void afterSendingResponse(Object response, Throwable throwable) {
+        if(this instanceof MapPutMessageTask){
+            System.out.println("After sending response");
+        }
     }
 
     @Override
     protected void processMessage() {
         beforeProcess();
+        if(this instanceof MapPutMessageTask){
+            System.out.println("foo");
+        }
         CompletableFuture<T> internalFuture = processInternal();
         internalFuture.thenApplyAsync(this::processResponseBeforeSending, CALLER_RUNS)
                       .whenCompleteAsync(this::sendResponseOrHandleFailure, CALLER_RUNS)
