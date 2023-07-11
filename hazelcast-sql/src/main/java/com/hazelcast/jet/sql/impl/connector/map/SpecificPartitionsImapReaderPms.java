@@ -118,7 +118,7 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
 
     @Override
     public boolean isReusable() {
-        return false;
+        return requiredPartitionsExprs == null;
     }
 
     @Override

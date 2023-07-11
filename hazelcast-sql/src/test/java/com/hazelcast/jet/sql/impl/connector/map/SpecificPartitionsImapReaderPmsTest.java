@@ -19,7 +19,9 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.util.Util;
@@ -27,11 +29,13 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.List;
@@ -39,30 +43,42 @@ import java.util.Map;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.jet.sql.impl.connector.map.SpecificPartitionsImapReaderPms.mapReader;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
+import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupport {
     private static final int ITERATIONS = 1000;
     private int pKey;
     private int keyOwnerPartitionId;
-    private Address ownderAddress;
+    private String mapName;
+    private String sinkName;
+    private JobConfig jobConfig;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        initialize(1, null);
+        initialize(5, null);
     }
 
     @Before
     public void before() throws Exception {
+        mapName = randomName();
+        sinkName = randomName();
+
+        jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList());
+
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance());
         Map<Address, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
                         Util.getMembersView(nodeEngine).getMembers(), null)
                 .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Map.Entry::getValue));
-        ownderAddress = instance().getCluster().getLocalMember().getAddress();
+        Address ownderAddress = instance().getCluster().getLocalMember().getAddress();
         for (int i = 1; i < ITERATIONS; ++i) {
             int pIdCandidate = instance().getPartitionService().getPartition(i).getPartitionId();
             if (Arrays.binarySearch(partitionAssignment.get(ownderAddress), pIdCandidate) >= 0) {
@@ -73,28 +89,45 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         }
     }
 
-
     @Test
     public void test_basic() {
-        String mapName = "m";
+        // Basic test is performed as submitting job by DAG.
         IMap<Integer, Integer> map = instance().getMap(mapName);
         map.put(0, 0);
+
+        DAG dag = new DAG();
+        ProcessorMetaSupplier readPms = mapReader(mapName, List.of(
+                List.of(ConstantExpression.create(pKey, QueryDataType.INT))));
+        Vertex source = dag.newVertex("source", readPms);
+        Vertex sink = dag.newVertex("sink", writeMapP(sinkName));
+
+        dag.edge(between(source, sink));
+        instance().getJet().newLightJob(dag, jobConfig).join();
+
+        assertEquals(0, instance().getMap(sinkName).get(0));
+    }
+
+    // Note: basic functionality must work even without member pruning used.
+    @SuppressWarnings("rawtypes")
+    @Test
+    public void test_prunable() {
+        String mapName = "m";
+        IMap<Integer, Integer> map = instance().getMap(mapName);
+        map.put(pKey, pKey);
 
         // Given
         ProcessorMetaSupplier pms = mapReader(mapName, List.of(
                 List.of(ConstantExpression.create(pKey, QueryDataType.INT))
         ));
 
-        JobConfig config = new JobConfig()
-                .setArgument(SQL_ARGUMENTS_KEY_NAME, Arrays.asList(0, pKey, 2));
-
         // When & Then
+        // Note: processor verification support is bounded to one member only,
+        //  so it is applicable to this.
         TestSupport.verifyProcessor(adaptSupplier(pms))
                 .hazelcastInstance(instance())
-                .jobConfig(config)
+                .jobConfig(jobConfig)
                 .disableSnapshots()
                 .disableProgressAssertion()
-                .expectExactOutput(out(entry(0, 0)));
-
+                .expectExactOutput(out(entry(pKey, pKey)));
     }
 }
