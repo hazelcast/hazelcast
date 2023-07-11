@@ -16,17 +16,16 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import org.junit.Test;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
 
-public class NullTaskFactoryTest {
+public class SinkTaskProcessorTest {
 
     @Test
     public void test() {
-        NullTaskFactory factory = new NullTaskFactory();
-        assertNull(factory.toTask(new IOBuffer(64)));
+        SinkTaskProcessor processor = new SinkTaskProcessor();
+        assertEquals(TaskProcessor.TASK_COMPLETED, processor.process("banana"));
     }
 
 }

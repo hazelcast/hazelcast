@@ -43,7 +43,7 @@ public abstract class ReactorBuilderTest {
     @Test
     public void test_setReactorNameSupplier() {
         ReactorBuilder builder = newBuilder();
-        builder.setReactorNameSupplier(new Supplier<String>() {
+        builder.setReactorNameSupplier(new Supplier<>() {
             private AtomicInteger idGenerator = new AtomicInteger();
 
             @Override
@@ -54,6 +54,18 @@ public abstract class ReactorBuilderTest {
         Reactor reactor1 = builder.build();
         assertEquals("banana-1", reactor1.name());
         assertEquals("banana-1", reactor1.toString());
+    }
+
+    @Test
+    public void test_setStallHandler_whenNull() {
+        ReactorBuilder builder = newBuilder();
+        assertThrows(NullPointerException.class, () -> builder.setStallHandler(null));
+    }
+
+    @Test
+    public void test_setInitCommand_whenNull() {
+        ReactorBuilder builder = newBuilder();
+        assertThrows(NullPointerException.class, () -> builder.setInitCommand(null));
     }
 
     @Test
@@ -101,35 +113,7 @@ public abstract class ReactorBuilderTest {
         assertThrows(IllegalArgumentException.class, () -> builder.setDeadlineRunQueueCapacity(-1));
     }
 
-    @Test
-    public void test_setExternalTaskQueueCapacity_whenZero() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setGlobalTaskQueueCapacity(0));
-    }
-
-    @Test
-    public void test_setExternalTaskQueueCapacity_whenNegative() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setGlobalTaskQueueCapacity(-1));
-    }
-
-    @Test
-    public void test_setLocalTaskQueueCapacity_whenZero() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setLocalTaskQueueCapacity(0));
-    }
-
-    @Test
-    public void test_setLocalTaskQueueCapacity_whenNegative() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setLocalTaskQueueCapacity(-1));
-    }
-
-    @Test
-    public void test_setSchedulerSupplier_whenNull() {
-        ReactorBuilder builder = newBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setTaskFactorySupplier(null));
-    }
+    // primordial task queue builder
 
     @Test
     public void test_setThreadAffinity_nullAffinityIsAllowed() {

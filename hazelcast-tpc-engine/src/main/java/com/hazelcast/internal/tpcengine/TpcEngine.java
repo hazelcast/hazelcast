@@ -64,8 +64,8 @@ public final class TpcEngine {
 
         ReactorBuilder reactorBuilder = tpcEngineBuilder.reactorBuilder;
         reactorBuilder.engine = this;
-        for (int idx = 0; idx < reactorCount; idx++) {
-            reactors[idx] = reactorBuilder.build();
+        for (int reactorIndex = 0; reactorIndex < reactorCount; reactorIndex++) {
+            reactors[reactorIndex] = reactorBuilder.build();
         }
     }
 
@@ -92,17 +92,6 @@ public final class TpcEngine {
     }
 
     /**
-     * Returns the reactors.
-     * <p/>
-     * This method is thread-safe.
-     *
-     * @return the {@link Reactor}s.
-     */
-    public Reactor[] reactors() {
-        return reactors;
-    }
-
-    /**
      * Returns the number of {@link Reactor} instances in this TpcEngine.
      * <p/>
      * This method is thread-safe.
@@ -118,11 +107,11 @@ public final class TpcEngine {
      * <p/>
      * This method is thread-safe.
      *
-     * @param idx the index of the reactor.
+     * @param reactorIndex the index of the reactor.
      * @return The reactor at the given index.
      */
-    public Reactor reactor(int idx) {
-        return reactors[idx];
+    public Reactor reactor(int reactorIndex) {
+        return reactors[reactorIndex];
     }
 
     /**

@@ -65,7 +65,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     public static final int RUN_STATE_RUNNING = 1;
     public static final int RUN_STATE_BLOCKED = 2;
 
-
     public int pollState;
 
     // the interval in which the time on the CPU is measured. 1 means every interval.
@@ -78,7 +77,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // any runnable on the queue will be processed as is.
     // any Task on the queue will also be processed according to the contract of the task.
     // anything else is offered to the taskFactory to be wrapped inside a task.
-    public TaskFactory taskFactory;
+    public TaskProcessor processor;
     public Eventloop eventloop;
     public TaskQueueScheduler scheduler;
     // The accumulated amount of time this task has spend on the CPU
@@ -108,9 +107,52 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     public final TaskQueueMetrics metrics = new TaskQueueMetrics();
     //the weight is only used by the CfsTaskQueueScheduler.
     public int weight = 1;
+    Object task;
 
     public boolean isEmpty() {
         return (local != null && local.isEmpty()) && (global != null && global.isEmpty());
+    }
+
+    /**
+     * Selects the next task from the queues.
+     *
+     * @return true if there was a task, false otherwise.
+     */
+    public boolean next() {
+        switch (pollState) {
+            case POLL_LOCAL_ONLY:
+                task = local.poll();
+                break;
+            case POLL_GLOBAL_ONLY:
+                task = global.poll();
+                break;
+            case POLL_GLOBAL_FIRST:
+                task = global.poll();
+                if (task != null) {
+                    pollState = POLL_LOCAL_FIRST;
+                } else {
+                    task = local.poll();
+                    if (task == null) {
+                        pollState = POLL_LOCAL_FIRST;
+                    }
+                }
+                break;
+            case POLL_LOCAL_FIRST:
+                task = local.poll();
+                if (task != null) {
+                    pollState = POLL_GLOBAL_FIRST;
+                } else {
+                    task = global.poll();
+                    if (task == null) {
+                        pollState = POLL_GLOBAL_FIRST;
+                    }
+                }
+                break;
+            default:
+                throw new IllegalStateException("Unknown pollState:" + pollState);
+        }
+
+        return task != null;
     }
 
     /**
@@ -121,57 +163,32 @@ public final class TaskQueue implements Comparable<TaskQueue> {
      * @return the Runnable that is next or <code>null</code> if this TaskQueue has no more
      * tasks to execute.
      */
-    public Runnable poll() {
-        Object taskObj;
-        switch (pollState) {
-            case POLL_LOCAL_ONLY:
-                taskObj = local.poll();
-                break;
-            case POLL_GLOBAL_ONLY:
-                taskObj = global.poll();
-                break;
-            case POLL_GLOBAL_FIRST:
-                taskObj = global.poll();
-                if (taskObj != null) {
-                    pollState = POLL_LOCAL_FIRST;
-                } else {
-                    taskObj = local.poll();
-                    if (taskObj == null) {
-                        pollState = POLL_LOCAL_FIRST;
-                    }
-                }
-                break;
-            case POLL_LOCAL_FIRST:
-                taskObj = local.poll();
-                if (taskObj != null) {
-                    pollState = POLL_GLOBAL_FIRST;
-                } else {
-                    taskObj = global.poll();
-                    if (taskObj == null) {
-                        pollState = POLL_GLOBAL_FIRST;
-                    }
-                }
-                break;
-            default:
-                throw new IllegalStateException("Unknown pollState:" + pollState);
-        }
+    public void run() {
+        assert task != null;
 
-        //return (Runnable) taskObj;
-
-        if (taskObj == null) {
-            return null;
-        }
-
-        if (taskObj instanceof Runnable) {
-            return (Runnable) taskObj;
-        } else {
-            // todo: doesn't handle null
-            Task task = taskFactory.toTask(taskObj);
-            task.taskQueue = this;
-            return task;
+        try {
+            if (processor != null) {
+                processor.process(task);
+            } else {
+                ((Runnable) task).run();
+            }
+        } catch (Exception e) {
+            // todo: exception handling needs to improve.
+            e.printStackTrace();
+        } finally {
+            tasksProcessed++;
         }
     }
 
+    /**
+     * Offers a task to the local queue
+     * <p>
+     * Should only be done from the eventloop thread.
+     *
+     * @param task
+     * @return true if task was successfully offered, false if the task was rejected.
+     * @throws NullPointerException throws if task is null or when local queue is null.
+     */
     public boolean offerLocal(Object task) {
         if (!local.offer(task)) {
             return false;
@@ -189,6 +206,13 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         return true;
     }
 
+    /**
+     * Offers a task to the global queue.
+     *
+     * @param task
+     * @return true if task was successfully offered, false if the task was rejected.
+     * @throws NullPointerException if task or global is null.
+     */
     public boolean offerGlobal(Object task) {
         return global.offer(task);
     }
@@ -219,5 +243,4 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 + ", next=" + next
                 + '}';
     }
-
 }

@@ -17,11 +17,18 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * Every {@link TaskQueue} has a task factory. So arbitrary objects can be placed on the
- * {@link TaskQueue}, but once they hit the {@link Eventloop} they need to be
- * converted to some form of {@link Runnable} (also check the {@link Task} object).
+ * A {@link TaskQueue} can be configured with a {@link TaskProcessor} which will process
+ * every task issued to that TaskQueue.
  */
-public interface TaskFactory {
+public interface TaskProcessor {
+
+    // Indicates that the task is yielding; so there is more work to do but the thread is willing to
+    // give up the CPU to let other tasks run.
+    int TASK_YIELD = 2;
+    // Indicates that the task has completed and doesn't need to be reinserted into the {@link TaskQueue}.
+    int TASK_COMPLETED = 0;
+    // Indicates that the task is blocked and can be removed from the run queue of the scheduler.
+    int TASK_BLOCKED = 1;
 
     /**
      * Initializes the TaskFactory with the given eventloop.
@@ -31,10 +38,10 @@ public interface TaskFactory {
     void init(Eventloop eventloop);
 
     /**
-     * Converts the given object to a {@link Task}.
+     * Process a single task.
      *
      * @param cmd
      * @return
      */
-    Task toTask(Object cmd);
+    int process(Object cmd) throws Exception;
 }

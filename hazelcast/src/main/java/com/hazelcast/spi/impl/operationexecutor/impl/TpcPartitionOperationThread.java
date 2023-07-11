@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
  * The {@link TpcPartitionOperationThread} subclasses the {@link PartitionOperationThread} and
  * overrides the loop method. In the original PartitionOperationThread, there is a loop that
  * takes items from the operation queue and process them. With the TpcPartitionOperationThread
- * the loop method forwards to the eventloopTask. The eventloopTask loops over even sources (like
+ * the loop method forwards to the eventloopTask. The eventloopTask loops over every sources (like
  * Nio Selectors) and other queues including the OperationQueue. With the TpcPartitionOperationThread
  * the thread blocks on the OperationQueue with a take. With the TPC version, it will only poll
  * and block on the Reactor (which in Nio blocks on the selector.select).

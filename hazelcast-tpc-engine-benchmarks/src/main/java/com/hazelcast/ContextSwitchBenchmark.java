@@ -6,7 +6,7 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.Task;
-import com.hazelcast.internal.tpcengine.TaskQueueBuilder;
+import com.hazelcast.internal.tpcengine.TaskProcessor;
 import com.hazelcast.internal.tpcengine.TaskQueueHandle;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 
@@ -150,11 +150,11 @@ public class ContextSwitchBenchmark {
         public int process() {
             if (stop) {
                 latch.countDown();
-                return Task.TASK_COMPLETED;
+                return TaskProcessor.TASK_COMPLETED;
             }
 
             counter.setOpaque(counter.getOpaque() + 1);
-            return Task.TASK_YIELD;
+            return TaskProcessor.TASK_YIELD;
         }
     }
 

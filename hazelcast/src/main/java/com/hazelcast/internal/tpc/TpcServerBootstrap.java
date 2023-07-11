@@ -25,16 +25,17 @@ import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
+import com.hazelcast.internal.tpcengine.ReactorBuilder;
+import com.hazelcast.internal.tpcengine.TaskQueueBuilder;
 import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.tpcengine.TpcEngineBuilder;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
-import com.hazelcast.spi.impl.operationexecutor.impl.TpcOperationScheduler;
 import com.hazelcast.spi.impl.operationexecutor.impl.TpcPartitionOperationThread;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -125,30 +126,6 @@ public class TpcServerBootstrap {
         return clientPorts;
     }
 
-    private TpcEngine newTpcEngine() {
-        TpcEngineBuilder tpcEngineBuilder = new TpcEngineBuilder();
-        NioReactorBuilder reactorBuilder = new NioReactorBuilder();
-        reactorBuilder.setThreadFactory(new ThreadFactory() {
-            int index;
-
-            @Override
-            public Thread newThread(Runnable eventloopRunnable) {
-                OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
-                        .getOperationService()
-                        .getOperationExecutor();
-                TpcPartitionOperationThread operationThread = (TpcPartitionOperationThread) operationExecutor
-                        .getPartitionThreads()[index++];
-                operationThread.setEventloopTask(eventloopRunnable);
-                return operationThread;
-            }
-        });
-
-        reactorBuilder.setSchedulerSupplier(() -> new TpcOperationScheduler(1));
-        tpcEngineBuilder.setReactorBuilder(reactorBuilder);
-        tpcEngineBuilder.setReactorCount(loadEventloopCount());
-        return tpcEngineBuilder.build();
-    }
-
     public int eventloopCount() {
         return loadEventloopCount();
     }
@@ -168,7 +145,17 @@ public class TpcServerBootstrap {
         }
         logger.info("Starting TpcServerBootstrap");
 
-        this.tpcEngine = newTpcEngine();
+        // todo: Should be done based on the reactor type
+        ReactorBuilder reactorBuilder = new NioReactorBuilder();
+//        reactorBuilder.setPrimordialTaskQueueBuilder(new TaskQueueBuilder()
+//                .setTaskProcessor());
+
+        reactorBuilder.setThreadFactory(new OperationThreadFactory());
+
+        TpcEngineBuilder tpcEngineBuilder = new TpcEngineBuilder();
+        tpcEngineBuilder.setReactorBuilder(reactorBuilder);
+        tpcEngineBuilder.setReactorCount(loadEventloopCount());
+        tpcEngine = tpcEngineBuilder.build();
 
         // The TpcPartitionOperationThread are created with the right TpcOperationQueue, but
         // the reactor isn't set yet.
@@ -186,14 +173,14 @@ public class TpcServerBootstrap {
         }
 
         tpcEngine.start();
-        openServerSockets();
+        openTpcServerSocketsForClients();
         clientPorts = serverSockets.stream().map(AsyncServerSocket::getLocalPort).collect(Collectors.toList());
     }
 
-    private void openServerSockets() {
-        TpcSocketConfig clientSocketConfig = getClientSocketConfig();
+    private void openTpcServerSocketsForClients() {
+        TpcSocketConfig socketConfig = getClientSocketConfig();
 
-        String[] range = clientSocketConfig.getPortRange().split("-");
+        String[] range = socketConfig.getPortRange().split("-");
         int port = Integer.parseInt(range[0]);
         int limit = Integer.parseInt(range[1]);
 
@@ -207,12 +194,12 @@ public class TpcServerBootstrap {
             readHandlerSuppliers.put(reactor, readHandlerSupplier);
 
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                    .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
+                    .set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                     .setAcceptConsumer(acceptRequest -> {
                         reactor.newAsyncSocketBuilder(acceptRequest)
                                 .setReader(readHandlerSuppliers.get(reactor).get())
-                                .set(SO_SNDBUF, clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE)
-                                .set(SO_RCVBUF, clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
+                                .set(SO_SNDBUF, socketConfig.getSendBufferSizeKB() * KILO_BYTE)
+                                .set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
                                 .set(TCP_NODELAY, tcpNoDelay)
                                 .set(SO_KEEPALIVE, true)
                                 .build()
@@ -304,5 +291,21 @@ public class TpcServerBootstrap {
         }
 
         logger.info("TpcServerBootstrap terminated");
+    }
+
+    private class OperationThreadFactory implements ThreadFactory {
+        int index;
+
+        @Override
+        public Thread newThread(Runnable eventloopTask) {
+            OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
+                    .getOperationService()
+                    .getOperationExecutor();
+            TpcPartitionOperationThread operationThread = (TpcPartitionOperationThread) operationExecutor
+                    .getPartitionThreads()[index];
+            index++;
+            operationThread.setEventloopTask(eventloopTask);
+            return operationThread;
+        }
     }
 }

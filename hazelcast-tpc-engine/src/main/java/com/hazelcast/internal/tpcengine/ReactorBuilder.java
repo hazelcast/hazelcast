@@ -18,14 +18,17 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
+import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.Preconditions;
 import com.hazelcast.internal.util.ThreadAffinity;
+import org.jctools.queues.MpscArrayQueue;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -40,8 +43,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  */
 public abstract class ReactorBuilder {
 
-    public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.reactor.localTaskQueue.capacity";
-    public static final String NAME_GLOBAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.reactor.globalTaskQueue.capacity";
     public static final String NAME_SCHEDULED_RUN_QUEUE_CAPACITY = "hazelcast.tpc.reactor.deadlineRunQueue.capacity";
     public static final String NAME_REACTOR_SPIN = "hazelcast.tpc.reactor.spin";
     public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
@@ -53,7 +54,6 @@ public abstract class ReactorBuilder {
     public static final String NAME_CFS = "hazelcast.tpc.reactor.cfs";
 
     private static final int DEFAULT_LOCAL_TASK_QUEUE_CAPACITY = 65536;
-    private static final int DEFAULT_GLOBAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY = 4096;
     private static final int DEFAULT_RUN_QUEUE_CAPACITY = 1024;
     private static final long DEFAULT_STALL_THRESHOLD_NANOS = MICROSECONDS.toNanos(500);
@@ -85,7 +85,6 @@ public abstract class ReactorBuilder {
 
     protected BlockDeviceRegistry blockDeviceRegistry = new BlockDeviceRegistry();
     protected final ReactorType type;
-    Supplier<TaskFactory> taskFactorySupplier = () -> NullTaskFactory.INSTANCE;
 
     Supplier<String> threadNameSupplier;
     Supplier<String> reactorNameSupplier = new Supplier<>() {
@@ -100,23 +99,22 @@ public abstract class ReactorBuilder {
     ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity(NAME_REACTOR_AFFINITY);
     ThreadFactory threadFactory = Thread::new;
     boolean spin;
-    int localTaskQueueCapacity;
-    int globalTaskQueueCapacity;
     int deadlineRunQueueCapacity;
     TpcEngine engine;
     long stallThresholdNanos;
     long ioIntervalNanos;
     int runQueueCapacity;
-    ReactorStallHandler stallHandler = LoggingStallHandler.INSTANCE;
+    StallHandler stallHandler = LoggingStallHandler.INSTANCE;
     long targetLatencyNanos;
     long minGranularityNanos;
     boolean cfs;
+    // todo: This doesn't work because the builder can't be reused.
+    TaskQueueBuilder primordialTaskQueueBuilder;
+    Consumer<Reactor> initCommand;
 
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
 
-        setLocalTaskQueueCapacity(Integer.getInteger(NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_TASK_QUEUE_CAPACITY));
-        setGlobalTaskQueueCapacity(Integer.getInteger(NAME_GLOBAL_TASK_QUEUE_CAPACITY, DEFAULT_GLOBAL_TASK_QUEUE_CAPACITY));
         setDeadlineRunQueueCapacity(Integer.getInteger(NAME_SCHEDULED_RUN_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY));
         setRunQueueCapacity(Integer.getInteger(NAME_RUN_QUEUE_CAPACITY, DEFAULT_RUN_QUEUE_CAPACITY));
         setTargetLatency(Long.getLong(NAME_TARGET_LATENCY_NANOS, DEFAULT_TARGET_LATENCY_NANOS), NANOSECONDS);
@@ -148,8 +146,24 @@ public abstract class ReactorBuilder {
     }
 
     /**
+     * A Runnable that is executed on the eventloop as soon as the eventloop is starting.
+     *
+     * @param initCommand
+     * @throws NullPointerException if <code>initCommand</code> is null.
+     */
+    public void setInitCommand(Consumer<Reactor> initCommand) {
+        checkNotNull(initCommand, "initCommand");
+        this.initCommand = initCommand;
+    }
+
+    public void setPrimordialTaskQueueBuilder(TaskQueueBuilder primordialTaskQueueBuilder) {
+        checkNotNull(primordialTaskQueueBuilder, "primordialTaskQueueBuilder");
+        this.primordialTaskQueueBuilder = primordialTaskQueueBuilder;
+    }
+
+    /**
      * Sets the capacity for the run queue of the {@link TaskQueueScheduler}.This defines
-     * the maximum number of TaskQueues that can be created within an {@link EventLoop}.
+     * the maximum number of TaskQueues that can be created within an {@link Eventloop}.
      *
      * @param runQueueCapacity the capacity of the run queue.
      * @throws IllegalArgumentException if the capacity is not a positive number.
@@ -164,9 +178,9 @@ public abstract class ReactorBuilder {
      * this is interpreted.
      *
      * @param targetLatency the target latency.
-     * @param unit the unit of the target latency.
+     * @param unit          the unit of the target latency.
      * @throws IllegalArgumentException if the targetLatency is not a positive number.
-     * @throws NullPointerException if unit is null.
+     * @throws NullPointerException     if unit is null.
      */
     public void setTargetLatency(long targetLatency, TimeUnit unit) {
         checkPositive(targetLatency, "targetLatency");
@@ -182,9 +196,9 @@ public abstract class ReactorBuilder {
      * this value too high could lead to unresponsiveness (increased latency).
      *
      * @param minGranularity the minimum granularity.
-     * @param unit the unit of the minGranularity.
+     * @param unit           the unit of the minGranularity.
      * @throws IllegalArgumentException if the targetLatency is not a positive number.
-     * @throws NullPointerException if unit is null.
+     * @throws NullPointerException     if unit is null.
      */
     public void setMinGranularity(long minGranularity, TimeUnit unit) {
         checkPositive(minGranularity, "minGranularity");
@@ -201,9 +215,9 @@ public abstract class ReactorBuilder {
      * negatives).
      *
      * @param stallThreshold the stall threshold.
-     * @param unit the unit of the stall threshold.
+     * @param unit           the unit of the stall threshold.
      * @throws IllegalArgumentException if the targetLatency is not a positive number.
-     * @throws NullPointerException if unit is null.
+     * @throws NullPointerException     if unit is null.
      */
     public void setStallThreshold(long stallThreshold, TimeUnit unit) {
         checkPositive(stallThreshold, "stallThreshold");
@@ -212,12 +226,12 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the {@link ReactorStallHandler}.
+     * Sets the {@link StallHandler}.
      *
      * @param stallHandler the new StallHandler.
      * @throws NullPointerException if stallHandler is <code>null</code>.
      */
-    public void setStallHandler(ReactorStallHandler stallHandler) {
+    public void setStallHandler(StallHandler stallHandler) {
         this.stallHandler = checkNotNull(stallHandler, "stallHandler");
     }
 
@@ -286,28 +300,6 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the capacity of the local task queue. The local task queue is used only from the
-     * eventloop thread.
-     *
-     * @param localTaskQueueCapacity the capacity
-     * @throws IllegalArgumentException if localTaskQueueCapacity not positive.
-     */
-    public void setLocalTaskQueueCapacity(int localTaskQueueCapacity) {
-        this.localTaskQueueCapacity = checkPositive(localTaskQueueCapacity, "localTaskQueueCapacity");
-    }
-
-    /**
-     * Sets the capacity of the global task queue. The global task queue is the task queue used
-     * for other threads to communicate with the reactor.
-     *
-     * @param globalTaskQueueCapacity the capacity
-     * @throws IllegalArgumentException if externalTaskQueueCapacity not positive.
-     */
-    public void setGlobalTaskQueueCapacity(int globalTaskQueueCapacity) {
-        this.globalTaskQueueCapacity = checkPositive(globalTaskQueueCapacity, "externalTaskQueueCapacity");
-    }
-
-    /**
      * Sets the capacity of the run queue for the deadline scheduler.
      *
      * @param deadlineRunQueueCapacity the capacity
@@ -334,16 +326,6 @@ public abstract class ReactorBuilder {
         this.cfs = cfs;
     }
 
-    /**
-     * Sets the supplier function for {@link TaskFactory} instances.
-     *
-     * @param taskFactorySupplier the supplier
-     * @throws NullPointerException if taskFactorySupplier is <code>null</code>.
-     */
-    public final void setTaskFactorySupplier(Supplier<TaskFactory> taskFactorySupplier) {
-        this.taskFactorySupplier = checkNotNull(taskFactorySupplier, "taskFactorySupplier");
-    }
-
     public void setBlockDeviceRegistry(BlockDeviceRegistry blockDeviceRegistry) {
         this.blockDeviceRegistry = checkNotNull(blockDeviceRegistry, "blockDeviceRegistry");
     }
@@ -358,4 +340,14 @@ public abstract class ReactorBuilder {
      */
     public abstract Reactor build();
 
+    TaskQueueBuilder newPrimordialTaskQueueBuilder() {
+        if (primordialTaskQueueBuilder == null) {
+            primordialTaskQueueBuilder = new TaskQueueBuilder()
+                    .setName("primordial")
+                    .setGlobal(new MpscArrayQueue<>(DEFAULT_LOCAL_TASK_QUEUE_CAPACITY))
+                    .setLocal(new CircularQueue<>(DEFAULT_LOCAL_TASK_QUEUE_CAPACITY));
+        }
+
+        return primordialTaskQueueBuilder;
+    }
 }

@@ -23,6 +23,8 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
+import com.hazelcast.internal.tpcengine.Eventloop;
+import com.hazelcast.internal.tpcengine.TaskProcessor;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
@@ -56,7 +58,8 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  * The actual processing of an operation is forwarded to the {@link OperationRunner}.
  */
 @ExcludedMetricTargets(MANAGEMENT_CENTER)
-public abstract class OperationThread extends HazelcastManagedThread implements StaticMetricsProvider {
+public abstract class OperationThread extends HazelcastManagedThread
+        implements StaticMetricsProvider, TaskProcessor {
 
     final int threadId;
     final OperationQueue queue;
@@ -102,6 +105,10 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         this.priority = priority;
     }
 
+    @Override
+    public void init(Eventloop eventloop) {
+    }
+
     public int getThreadId() {
         return threadId;
     }
@@ -131,17 +138,31 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
                 continue;
             }
 
-            process(task);
+            int status = process(task);
+            switch (status) {
+                case TASK_BLOCKED:
+                    throw new UnsupportedOperationException("TASK_BLOCKING not supported for task " + task);
+                case TASK_COMPLETED:
+                    completedTotalCount.inc();
+                    break;
+                case TASK_YIELD:
+                    // retry later if not ready
+                    queue.add(task, priority);
+                    break;
+                default:
+                    throw new IllegalStateException("Unhandled status " + status);
+            }
         }
     }
 
-    void process(Object task) {
+    @Override
+    public int process(Object task) {
         try {
-            boolean putBackInQueue = false;
+            boolean yield = false;
             if (task.getClass() == Packet.class) {
-                putBackInQueue = process((Packet) task);
+                yield = process((Packet) task);
             } else if (task instanceof Operation) {
-                putBackInQueue = process((Operation) task);
+                yield = process((Operation) task);
             } else if (task instanceof PartitionSpecificRunnable) {
                 process((PartitionSpecificRunnable) task);
             } else if (task instanceof Runnable) {
@@ -151,16 +172,12 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
             } else {
                 throw new IllegalStateException("Unhandled task:" + task);
             }
-            if (putBackInQueue) {
-                // retry later if not ready
-                queue.add(task, priority);
-            } else {
-                completedTotalCount.inc();
-            }
+            return yield ? TASK_YIELD : TASK_COMPLETED;
         } catch (Throwable t) {
             errorCount.inc();
             inspectOutOfMemoryError(t);
             logger.severe("Failed to process: " + task + " on: " + getName(), t);
+            return TASK_COMPLETED;
         } finally {
             currentRunner = null;
         }

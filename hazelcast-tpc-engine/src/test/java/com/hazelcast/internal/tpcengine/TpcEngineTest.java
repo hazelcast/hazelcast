@@ -52,7 +52,7 @@ public class TpcEngineTest {
 
         engine = new TpcEngine(configuration);
 
-        assertEquals(5, engine.reactors().length);
+        assertEquals(5, engine.reactorCount());
         assertEquals(reactorCount, engine.reactorCount());
         assertEquals(ReactorType.NIO, engine.reactorType());
     }

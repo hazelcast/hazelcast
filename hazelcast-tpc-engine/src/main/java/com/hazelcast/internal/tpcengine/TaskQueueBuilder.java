@@ -36,35 +36,32 @@ public class TaskQueueBuilder {
 
     public static final int MIN_NICE = -20;
     public static final int MAX_NICE = 20;
+
     private static final AtomicLong ID = new AtomicLong();
 
-    private final Eventloop eventloop;
+    Eventloop eventloop;
     private String name;
     private int nice;
     private Queue<Object> local;
     private Queue<Object> global;
     private int clockSampleInterval = 1;
     private boolean built;
-    private TaskFactory taskFactory = NullTaskFactory.INSTANCE;
+    private TaskProcessor processor;
 
-    TaskQueueBuilder(Eventloop eventloop) {
-        this.eventloop = eventloop;
-    }
 
     /**
-     * Sets the TaskFactory that will be used to create tasks for this TaskQueue.
+     * Sets the {@link TaskProcessor} that will be used to process tasks from
+     * {@link TaskQueue}.
      *
-     * @param taskFactory the TaskFactory.
+     * @param processor the the processor.
      * @return this.
-     * @throws NullPointerException if taskFactory is null.
-     * @throws IllegalStateException if the TaskQueue is already built or when the call
-     *                               isn't made from the eventloop thread.
+     * @throws NullPointerException  if processor is null.
+     * @throws IllegalStateException if the TaskQueue is already built.
      */
-    public TaskQueueBuilder setTaskFactory(TaskFactory taskFactory) {
+    public TaskQueueBuilder setTaskProcessor(TaskProcessor processor) {
         verifyNotBuilt();
-        verifyEventloopThread();
 
-        this.taskFactory = checkNotNull(taskFactory, "taskFactory");
+        this.processor = checkNotNull(processor, "processor");
         return this;
     }
 
@@ -88,12 +85,10 @@ public class TaskQueueBuilder {
      * @param clockSampleInterval the clock sample interval. If the value is 1, then time
      *                            is measured for every task.
      * @throws IllegalArgumentException if clock sample interval is smaller than 1.
-     * @throws IllegalStateException    if the TaskQueue is already built or when the call
-     *                                  isn't made from the eventloop thread.
+     * @throws IllegalStateException    if the TaskQueue is already built.
      */
     public TaskQueueBuilder setClockSampleInterval(int clockSampleInterval) {
         verifyNotBuilt();
-        verifyEventloopThread();
 
         this.clockSampleInterval = checkPositive(clockSampleInterval, "clockSampleInterval");
         return this;
@@ -105,12 +100,10 @@ public class TaskQueueBuilder {
      * @param name the name of the TaskQueue.
      * @return this
      * @throws NullPointerException  if name is null.
-     * @throws IllegalStateException if the TaskQueue is already built or when the call
-     *                               isn't made from the eventloop thread.
+     * @throws IllegalStateException if the TaskQueue is already built.
      */
     public TaskQueueBuilder setName(String name) {
         verifyNotBuilt();
-        verifyEventloopThread();
 
         this.name = checkNotNull(name, "name");
         return this;
@@ -131,12 +124,10 @@ public class TaskQueueBuilder {
      * @param nice the nice level
      * @throws IllegalArgumentException if the nice value is smaller than MIN_NICE or
      *                                  larger than MAX_NICE.
-     * @throws IllegalStateException    if the TaskQueue is already built or when the call
-     *                                  isn't made from the eventloop thread.
+     * @throws IllegalStateException    if the TaskQueue is already built.
      */
     public TaskQueueBuilder setNice(int nice) {
         verifyNotBuilt();
-        verifyEventloopThread();
 
         if (nice < MIN_NICE) {
             throw new IllegalArgumentException();
@@ -155,12 +146,10 @@ public class TaskQueueBuilder {
      * @param local the local queue.
      * @return this.
      * @throws NullPointerException  if localQueue is null.
-     * @throws IllegalStateException if the TaskQueue is already built or when the call
-     *                               isn't made from the eventloop thread.
+     * @throws IllegalStateException if the TaskQueue is already built.
      */
     public TaskQueueBuilder setLocal(Queue<Object> local) {
         verifyNotBuilt();
-        verifyEventloopThread();
 
         this.local = checkNotNull(local, "localQueue");
         return this;
@@ -173,12 +162,10 @@ public class TaskQueueBuilder {
      * @param global the global queue.
      * @return this.
      * @throws NullPointerException  if globalQueue is null.
-     * @throws IllegalStateException if the TaskQueue is already built or when the call
-     *                               isn't made from the eventloop thread.
+     * @throws IllegalStateException if the TaskQueue is already built.
      */
     public TaskQueueBuilder setGlobal(Queue<Object> global) {
         verifyNotBuilt();
-        verifyEventloopThread();
 
         this.global = checkNotNull(global, "globalQueue");
         return this;
@@ -186,13 +173,7 @@ public class TaskQueueBuilder {
 
     private void verifyNotBuilt() {
         if (built) {
-            throw new IllegalStateException("Can't call build twice on the same AsyncSocketBuilder");
-        }
-    }
-
-    private void verifyEventloopThread() {
-        if (Thread.currentThread() != eventloop.reactor.eventloopThread()) {
-            throw new IllegalStateException("Can only call from eventloop thread");
+            throw new IllegalStateException("Can't call build twice on the same TaskQueueBuilder");
         }
     }
 
@@ -203,7 +184,11 @@ public class TaskQueueBuilder {
      */
     public TaskQueueHandle build() {
         verifyNotBuilt();
-        verifyEventloopThread();
+        checkNotNull(eventloop, "eventloop");
+
+        if (Thread.currentThread() != eventloop.reactor.eventloopThread()) {
+            throw new IllegalStateException("Can only call from eventloop thread");
+        }
         built = true;
 
         if (local == null && global == null) {
@@ -226,7 +211,7 @@ public class TaskQueueBuilder {
             taskQueue.pollState = POLL_GLOBAL_FIRST;
         }
         taskQueue.clockSampleInterval = clockSampleInterval;
-        taskQueue.taskFactory = taskFactory;
+        taskQueue.processor = processor;
         if (name == null) {
             taskQueue.name = "taskqueue-" + ID.incrementAndGet();
         } else {

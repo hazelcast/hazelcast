@@ -28,14 +28,6 @@ import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public abstract class Task implements Runnable {
 
-    // Indicates that the task has completed and doesn't need to be reinserted into the {@link TaskQueue}.
-    public static final int TASK_COMPLETED = 0;
-    // Indicates that the task is blocked and can be removed from the run queue of the scheduler.
-    public static final int TASK_BLOCKED = 1;
-    // Indicates that the task is yielding; so there is more work to do but the thread is willing to
-    // give up the CPU to let other tasks run.
-    public static final int TASK_YIELD = 2;
-
     public TaskQueue taskQueue;
 
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
@@ -47,15 +39,16 @@ public abstract class Task implements Runnable {
         try {
             int status = process();
             switch (status) {
-                case TASK_BLOCKED:
+                case TaskProcessor.TASK_BLOCKED:
                     // when the task unblocks, it will add itself to its taskqueue and get
                     // the taskqueue scheduled.
                     break;
-                case TASK_COMPLETED:
+                case TaskProcessor.TASK_COMPLETED:
                     //task.release();
                     break;
-                case TASK_YIELD:
+                case TaskProcessor.TASK_YIELD:
                     // add it to the local
+                    // todo: we should check if there is a local.
                     taskQueue.offerLocal(this);
                     break;
                 default:

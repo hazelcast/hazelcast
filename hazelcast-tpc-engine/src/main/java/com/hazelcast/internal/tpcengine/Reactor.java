@@ -37,6 +37,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.Reactor.State.NEW;
 import static com.hazelcast.internal.tpcengine.Reactor.State.RUNNING;
@@ -80,6 +81,7 @@ public abstract class Reactor implements Executor {
     private final ReactorType type;
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
     private final CountDownLatch startLatch = new CountDownLatch(1);
+    private final Consumer<Reactor> initCommand;
 
     @SuppressWarnings("java:S1845")
     protected volatile State state = NEW;
@@ -95,6 +97,7 @@ public abstract class Reactor implements Executor {
         this.type = builder.type;
         this.spin = builder.spin;
         this.engine = builder.engine;
+        this.initCommand = builder.initCommand;
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
         this.eventloopThread = builder.threadFactory.newThread(new StartEventloopTask(eventloopFuture, builder));
 
@@ -401,6 +404,11 @@ public abstract class Reactor implements Executor {
                         // to check the state first before running.
                         if (state == RUNNING) {
                             eventloop0.beforeRun();
+
+                            if (initCommand != null) {
+                                initCommand.accept(Reactor.this);
+                            }
+
                             eventloop0.run();
                         }
                     } finally {

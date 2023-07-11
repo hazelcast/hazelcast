@@ -23,14 +23,12 @@ import com.hazelcast.internal.tpcengine.file.BlockRequestScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.Clock;
 import com.hazelcast.internal.tpcengine.util.EpochClock;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.Promise;
 import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
-import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -83,7 +81,7 @@ public abstract class Eventloop {
     protected final int runQueueCapacity;
     private final long stallThresholdNanos;
     final TaskQueueScheduler taskQueueScheduler;
-    private final ReactorStallHandler stallHandler;
+    private final StallHandler stallHandler;
     private long taskDeadlineNanos;
     protected final BlockDeviceRegistry blockDeviceRegistry;
     protected final Map<BlockDevice, BlockRequestScheduler> deviceSchedulers = new HashMap<>();
@@ -95,6 +93,14 @@ public abstract class Eventloop {
         this.deadlineScheduler = new DeadlineScheduler(builder.deadlineRunQueueCapacity);
         this.runQueueCapacity = builder.runQueueCapacity;
         this.minGranularityNanos = builder.minGranularityNanos;
+        this.spin = builder.spin;
+        this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
+        this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
+        this.blockDeviceRegistry = builder.blockDeviceRegistry;
+        this.stallThresholdNanos = builder.stallThresholdNanos;
+        this.ioIntervalNanos = builder.ioIntervalNanos;
+        this.stallHandler = builder.stallHandler;
+
         if (builder.cfs) {
             this.taskQueueScheduler = new CfsTaskQueueScheduler(
                     builder.runQueueCapacity,
@@ -106,20 +112,10 @@ public abstract class Eventloop {
                     builder.targetLatencyNanos,
                     builder.minGranularityNanos);
         }
-        this.primordialTaskQueueHandle = new TaskQueueBuilder(this)
-                .setName(reactor.name + "-primordial")
-                .setGlobal(new MpscArrayQueue<>(builder.globalTaskQueueCapacity))
-                .setLocal(new CircularQueue<>(builder.localTaskQueueCapacity))
-                .setNice(1)
-                .setTaskFactory(builder.taskFactorySupplier.get())
-                .build();
-        this.spin = builder.spin;
-        this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
-        this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
-        this.blockDeviceRegistry = builder.blockDeviceRegistry;
-        this.stallThresholdNanos = builder.stallThresholdNanos;
-        this.ioIntervalNanos = builder.ioIntervalNanos;
-        this.stallHandler = builder.stallHandler;
+
+        TaskQueueBuilder primordialTaskQueueBuilder = builder.newPrimordialTaskQueueBuilder();
+        primordialTaskQueueBuilder.eventloop = this;
+        this.primordialTaskQueueHandle = primordialTaskQueueBuilder.build();
     }
 
     /**
@@ -194,7 +190,9 @@ public abstract class Eventloop {
      */
     public final TaskQueueBuilder newTaskQueueBuilder() {
         checkEventloopThread();
-        return new TaskQueueBuilder(this);
+        TaskQueueBuilder taskQueueBuilder = new TaskQueueBuilder();
+        taskQueueBuilder.eventloop = this;
+        return taskQueueBuilder;
     }
 
     /**
@@ -342,87 +340,53 @@ public abstract class Eventloop {
         long nowNanos = nanoClock.nanoTime();
         long ioDeadlineNanos = nowNanos + ioIntervalNanos;
 
-        long x = 0;
-
-        //int spinStep = 1;
         while (!stop) {
-            // Thread.sleep(100);
-
-            // There is no point in doing the deadlineScheduler tick in the queue processing loop
-            // because the queue is going to be processed till it is empty (or the quotaDeadlineNanos
-            // is exceeded).
             deadlineScheduler.tick(nowNanos);
 
             scheduleBlockedGlobal();
 
-            TaskQueue queue = taskQueueScheduler.pickNext();
-            if (queue == null) {
-                // There is no work, we need to park.
+            TaskQueue taskQueue = taskQueueScheduler.pickNext();
+            if (taskQueue == null) {
+                // There is no work and therefor we need to park.
 
                 long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
                 long timeoutNanos = earliestDeadlineNanos == -1
                         ? Long.MAX_VALUE
                         : max(0, earliestDeadlineNanos - nowNanos);
 
-                long start = nanoClock.nanoTime();
-                // experimental code to do some spinning instead of parking.
-                //if (spinStep == 1) {
-                //    spinStep = 15;
-                //} else {
-                //   Thread.onSpinWait();
-                //   spinStep--;
-                //   if (earliestDeadlineNanos == -1) {
-                //       timeoutNanos = 0;
-                //    }
-                //}
-
-                //System.out.println("park");
                 park(timeoutNanos);
 
-                //System.out.println("park done");
                 // todo: we should only need to update the clock if real parking happened and not when work was detected
                 nowNanos = nanoClock.nanoTime();
                 ioDeadlineNanos = nowNanos + ioIntervalNanos;
-                long duration = nowNanos - start;
-//                if (x % 10000 == 0) {
-//                    System.out.println("park: " +duration + " ns");
-//                }
                 continue;
             }
 
             //System.out.println("processing");
 
-            long taskQueueDeadlineNanos = nowNanos + taskQueueScheduler.timeSliceNanosActive();
+            final long taskQueueDeadlineNanos = nowNanos + taskQueueScheduler.timeSliceNanosActive();
             long taskGroupExecNanos = 0;
             int taskCount = 0;
-            boolean queueEmpty = false;
+            boolean taskQueueEmpty = false;
             // This forces immediate time measurement of the first task.
             int clockSampleRound = 1;
             // Process the tasks in a queue as long as the deadline is not exceeded.
             while (nowNanos <= taskQueueDeadlineNanos) {
-                x++;
-
-                Runnable task = queue.poll();
-                if (task == null) {
-                    queueEmpty = true;
+                if (!taskQueue.next()) {
+                    taskQueueEmpty = true;
                     // queue is empty, we are done.
                     break;
                 }
-                //System.out.println("task"+task);
+
                 taskStartNanos = nowNanos;
                 taskDeadlineNanos = nowNanos + minGranularityNanos;
-                try {
-                    task.run();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
 
-                queue.tasksProcessed++;
+                taskQueue.run();
                 taskCount++;
 
                 if (clockSampleRound == 1) {
                     nowNanos = nanoClock.nanoTime();
-                    clockSampleRound = queue.clockSampleInterval;
+                    clockSampleRound = taskQueue.clockSampleInterval;
                 } else {
                     clockSampleRound--;
                 }
@@ -433,21 +397,16 @@ public abstract class Eventloop {
                 taskGroupExecNanos += taskExecNanos;
 
                 if (taskExecNanos > stallThresholdNanos) {
-                    stallHandler.onStall(reactor, queue, task, taskStartNanos, taskExecNanos);
+                    stallHandler.onStall(reactor, taskQueue, taskQueue.task, taskStartNanos, taskExecNanos);
                 }
 
                 if (nowNanos >= ioDeadlineNanos) {
-                    long start = nanoClock.nanoTime();
                     ioSchedulerTick();
                     nowNanos = nanoClock.nanoTime();
                     ioDeadlineNanos = nowNanos + ioIntervalNanos;
-
-//                    if (x % 10000 == 0) {
-//                        System.out.println("ioSchedulerTick: " + (nowNanos - start) + " ns");
-//                    }
-                    // todo: should read out time again? Think shuld be fine since this call isn't made frequently
-                    // we could even measure latency of the ioscheduler tick.
                 }
+
+                taskQueue.task = null;
             }
 
             taskQueueScheduler.updateActive(taskGroupExecNanos);
@@ -455,25 +414,20 @@ public abstract class Eventloop {
             metrics.incCpuTimeNanos(taskGroupExecNanos);
             metrics.incContextSwitchCount();
 
-            if (queueEmpty || queue.isEmpty()) {
-                //System.out.println("park");
-                // either the empty queue was detected in the loop or
-                // the taskQueueDeadlineNanos and the queue is empty.
-
-                // remove task queue from scheduler
+            if (taskQueueEmpty || taskQueue.isEmpty()) {
+                // the taskQueue has been fully drained.
                 taskQueueScheduler.dequeueActive();
 
-                queue.runState = RUN_STATE_BLOCKED;
-                queue.blockedCount++;
+                taskQueue.runState = RUN_STATE_BLOCKED;
+                taskQueue.blockedCount++;
 
-                if (queue.global != null) {
+                if (taskQueue.global != null) {
                     // we also need to add it to the shared taskQueues so the eventloop will
-                    // see any items that are written to its global queues.
-                    addBlockedGlobal(queue);
+                    // see any items that are written to global queues.
+                    addBlockedGlobal(taskQueue);
                 }
             } else {
-                //System.out.println("yield");
-                // the queue exceeded its quota and therefor wasn't drained completely.
+                // Task queue wasn't fully drained.
                 taskQueueScheduler.yieldActive();
             }
         }

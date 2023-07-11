@@ -17,22 +17,18 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * A {@link TaskFactory} that returns null.
- * <p>
- * todo: Currently it doesn't fit well into the design. It used to be a scheduler that
- * drops all tasks.
+ * Processes a single task from the {@link TaskQueue}.
  */
-public class NullTaskFactory implements TaskFactory {
+public class SinkTaskProcessor implements TaskProcessor {
 
-    public static final NullTaskFactory INSTANCE = new NullTaskFactory();
+    public static final SinkTaskProcessor INSTANCE = new SinkTaskProcessor();
 
     @Override
-    public Task toTask(Object cmd) {
-        return null;
+    public int process(Object cmd) {
+        return TaskProcessor.TASK_COMPLETED;
     }
 
     @Override
     public void init(Eventloop eventloop) {
     }
-
 }

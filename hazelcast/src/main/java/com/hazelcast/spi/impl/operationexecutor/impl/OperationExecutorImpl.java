@@ -23,6 +23,8 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.tpc.TpcServerBootstrap;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -563,8 +565,15 @@ public final class OperationExecutorImpl implements OperationExecutor, StaticMet
                     + genericThreads.length + " generic threads (" + priorityThreadCount + " dedicated for priority tasks)");
         }
 
-        // When tpc is enabled, the partitionThread are manged bu the tpcEngine.
-        if (!tpcServerBootstrap.isEnabled()) {
+        if (tpcServerBootstrap.isEnabled()) {
+            // When tpc is enabled, the partitionThread are manged by the tpcEngine.
+            TpcEngine tpcEngine = tpcServerBootstrap.getTpcEngine();
+            for (int k = 0; k < tpcEngine.reactorCount(); k++) {
+                Reactor reactor = tpcEngine.reactor(k);
+                TpcPartitionOperationThread partitionThread = (TpcPartitionOperationThread) reactor.eventloopThread();
+                partitionThread.getQueue().setReactor(reactor);
+            }
+        } else {
             startAll(partitionThreads);
         }
         startAll(genericThreads);
