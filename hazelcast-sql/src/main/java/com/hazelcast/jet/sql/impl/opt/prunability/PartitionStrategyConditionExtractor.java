@@ -75,6 +75,7 @@ public class PartitionStrategyConditionExtractor {
             }
         }
 
+        // TODO: possibly include catalog and schema name?
         return Map.of(table.getSqlName(), variants);
     }
 

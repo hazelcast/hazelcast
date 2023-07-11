@@ -48,6 +48,10 @@ public class PartitionPruningIT extends SqlTestSupport {
                 new PartitioningAttributeConfig("comp1"),
                 new PartitioningAttributeConfig("comp2")
         )));
+        instance().getConfig().addMapConfig(new MapConfig("testMap").setPartitioningAttributeConfigs(Arrays.asList(
+                new PartitioningAttributeConfig("comp1"),
+                new PartitioningAttributeConfig("comp2")
+        )));
         instance().getSql().execute("CREATE MAPPING test1 TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='varchar')");
         instance().getSql().execute("CREATE MAPPING test2 TYPE IMap OPTIONS ("
                 + "'valueFormat'='varchar', "
@@ -63,6 +67,18 @@ public class PartitionPruningIT extends SqlTestSupport {
         instance().getSql().execute("SINK INTO test2 VALUES (4, 4, 300, 'v3')");
         instance().getSql().execute("SINK INTO test2 VALUES (5, 5, 300, 'v3')");
         instance().getSql().execute("SINK INTO test2 VALUES (6, 6, 300, 'v3')");
+
+        instance().getSql().execute("CREATE MAPPING test3 EXTERNAL NAME testMap ("
+                + "c1 BIGINT EXTERNAL NAME \"__key.comp1\","
+                + "c2 BIGINT EXTERNAL NAME \"__key.comp2\","
+                + "c3 BIGINT EXTERNAL NAME \"__key.comp3\","
+                + "this VARCHAR"
+                + ") TYPE IMap OPTIONS ("
+                + "'valueFormat'='varchar', "
+                + "'keyFormat'='java', "
+                + "'keyJavaClass'='" + KeyObj.class.getName() + "')");
+
+        instance().getSql().execute("SINK INTO test3 VALUES (1, 1, 1, 'hello')");
     }
 
     @Test
@@ -79,6 +95,14 @@ public class PartitionPruningIT extends SqlTestSupport {
         assertRowsAnyOrder("SELECT this FROM test2 WHERE comp1 = 1 AND comp2 = 1 AND comp3 = 100", rows(1, "v1"));
         // not pruned
         assertRowsAnyOrder("SELECT this FROM test2 WHERE comp1 = 1 AND comp3 = 100", rows(1, "v1"));
+    }
+
+    @Test
+    public void test_renamingKey() {
+        // pruned
+        assertRowsAnyOrder("SELECT this FROM hazelcast.public.test3 WHERE c1 = 1 AND c2 = 1", rows(1, "hello"));
+        // not pruned
+        assertRowsAnyOrder("SELECT this FROM hazelcast.public.test3 WHERE c2 = 1 AND c3 = 1", rows(1, "hello"));
     }
 
     public static class KeyObj implements Serializable {

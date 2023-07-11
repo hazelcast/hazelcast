@@ -105,6 +105,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -113,8 +114,10 @@ import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Contexts;
@@ -146,11 +149,14 @@ import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -159,6 +165,7 @@ import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.schema;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -915,16 +922,32 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         RexBuilder b = HazelcastRexBuilder.INSTANCE;
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
 
+        final Map<String, Table> tableMap = tableResolvers().stream()
+                .map(TableResolver::getTables)
+                .flatMap(Collection::stream)
+                .filter(table -> table.getSchemaName().equals(QueryUtils.SCHEMA_NAME_PUBLIC))
+                .collect(Collectors.toMap(Table::getSqlName, Function.identity()));
+
         final Map<String, List<Map<String, Expression<?>>>> result = new HashMap<>();
         for (final String tableName : prunabilityMap.keySet()) {
+            assert tableMap.get(tableName) != null && tableMap.get(tableName) instanceof PartitionedMapTable;
+            var table = (PartitionedMapTable) tableMap.get(tableName);
+
             var tableVariants = prunabilityMap.get(tableName);
             final List<Map<String, Expression<?>>> convertedList = new ArrayList<>();
 
             for (final Map<String, RexNode> variant : tableVariants) {
                 final Map<String, Expression<?>> convertedVariant = new HashMap<>();
                 for (final String columnName : variant.keySet()) {
-                    // TODO: convert column to field name?
-                    final String fieldName = columnName;
+                    final String fieldName = columnName.equals(QueryPath.KEY)
+                            ? QueryPath.KEY
+                            : table.keyFields()
+                                    .filter(f -> f.getName().equals(columnName))
+                                    .findFirst()
+                                    .map(mapTableField -> mapTableField.getPath().getPath())
+                                    .orElseThrow(() -> QueryException.error(format("Can not find column %s in table %s",
+                                            tableName, columnName)));
+
                     final RexNode rexNode = variant.get(columnName);
                     if (rexNode instanceof RexDynamicParam) {
                         convertedVariant.put(fieldName, visitor.visitDynamicParam((RexDynamicParam) rexNode));
@@ -939,8 +962,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 }
             }
 
-            // TODO: convert table name into map name?
-            final String mapName = tableName;
+            final String mapName = table.getMapName();
             result.putIfAbsent(mapName, convertedList);
         }
 

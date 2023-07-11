@@ -527,7 +527,8 @@ public class PlanExecutor {
             // We only support Default and Attribute strategies, even if one of the maps uses non-Default/Attribute
             // strategy, we should abort the process and clear list of already populated partitions so that partition
             // pruning doesn't get activated at all for this query.
-            if (!(strategy instanceof DefaultPartitioningStrategy)
+            if (strategy != null
+                    && !(strategy instanceof DefaultPartitioningStrategy)
                     && !(strategy instanceof AttributePartitioningStrategy)) {
                 allVariantsValid = false;
                 break;
