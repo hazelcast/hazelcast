@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * In the future this test will perform full cycle of testing, verifying that only desired nodes are participating in
@@ -39,7 +40,7 @@ import java.util.Arrays;
 public class PartitionPruningIT extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
-        initialize(3, null);
+        initialize(6, null);
     }
 
     @Before
@@ -82,26 +83,32 @@ public class PartitionPruningIT extends SqlTestSupport {
     }
 
     @Test
-    public void test_simpleKey() {
-        // pruned
-        assertRowsAnyOrder("SELECT this FROM test1 WHERE __key = 1 AND this = 'v1'", rows(1, "v1"));
-        // not pruned
+    public void test_simpleKeyPruned() {
+        assertRowsAnyOrder("SELECT this FROM test1 WHERE __key = ? AND this = 'v1'", List.of(1), rows(1, "v1"));
+    }
+
+    @Test
+    public void test_simpleKeyNotPruned() {
         assertRowsAnyOrder("SELECT this FROM test1 WHERE __key > 0 AND this = 'v1'", rows(1, "v1"));
     }
 
     @Test
-    public void test_compoundKey() {
-        // pruned
+    public void test_compoundKeyPruned() {
         assertRowsAnyOrder("SELECT this FROM test2 WHERE comp1 = 1 AND comp2 = 1 AND comp3 = 100", rows(1, "v1"));
-        // not pruned
+    }
+
+    @Test
+    public void test_compoundKeyNotPruned() {
         assertRowsAnyOrder("SELECT this FROM test2 WHERE comp1 = 1 AND comp3 = 100", rows(1, "v1"));
     }
 
     @Test
-    public void test_renamingKey() {
-        // pruned
+    public void test_renamingKeyPruned() {
         assertRowsAnyOrder("SELECT this FROM hazelcast.public.test3 WHERE c1 = 1 AND c2 = 1", rows(1, "hello"));
-        // not pruned
+    }
+
+    @Test
+    public void test_renamingKeyNotPruned() {
         assertRowsAnyOrder("SELECT this FROM hazelcast.public.test3 WHERE c2 = 1 AND c3 = 1", rows(1, "hello"));
     }
 
