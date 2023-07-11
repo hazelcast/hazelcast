@@ -101,10 +101,10 @@ public abstract class Reactor implements Executor {
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
         this.eventloopThread = builder.threadFactory.newThread(new StartEventloopTask(eventloopFuture, builder));
 
-        if (builder.threadNameSupplier != null) {
-            eventloopThread.setName(builder.threadNameSupplier.get());
+        if (builder.threadName != null) {
+            eventloopThread.setName(builder.threadName);
         }
-        this.name = builder.reactorNameSupplier.get();
+        this.name = builder.reactorName;
 
         // The eventloopThread is started so eventloop gets created on the eventloop thread.
         // but the actual processing of the eventloop is only done after start() is called.

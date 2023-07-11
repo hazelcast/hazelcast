@@ -33,7 +33,7 @@ public class NioReactorBuilder extends ReactorBuilder {
     }
 
     @Override
-    public Reactor build() {
+    protected Reactor build0() {
         return new NioReactor(this);
     }
 }

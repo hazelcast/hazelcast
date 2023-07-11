@@ -21,8 +21,6 @@ import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -33,27 +31,35 @@ import static org.junit.Assert.assertTrue;
 public abstract class ReactorBuilderTest {
 
     public abstract ReactorBuilder newBuilder();
+//
+//    @Test
+//    public void test_setReactorNameSupplier_whenNull() {
+//        ReactorBuilder builder = newBuilder();
+//        assertThrows(NullPointerException.class, () -> builder.setReactorNameSupplier(null));
+//    }
+//
+//    @Test
+//    public void test_setReactorNameSupplier() {
+//        ReactorBuilder builder = newBuilder();
+//        builder.setReactorNameSupplier(new Supplier<>() {
+//            private AtomicInteger idGenerator = new AtomicInteger();
+//
+//            @Override
+//            public String get() {
+//                return "banana-" + idGenerator.incrementAndGet();
+//            }
+//        });
+//        Reactor reactor1 = builder.build();
+//        assertEquals("banana-1", reactor1.name());
+//        assertEquals("banana-1", reactor1.toString());
+//    }
 
     @Test
-    public void test_setReactorNameSupplier_whenNull() {
+    public void test_build_whenAlreadyBuilt() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setReactorNameSupplier(null));
-    }
+        builder.build();
 
-    @Test
-    public void test_setReactorNameSupplier() {
-        ReactorBuilder builder = newBuilder();
-        builder.setReactorNameSupplier(new Supplier<>() {
-            private AtomicInteger idGenerator = new AtomicInteger();
-
-            @Override
-            public String get() {
-                return "banana-" + idGenerator.incrementAndGet();
-            }
-        });
-        Reactor reactor1 = builder.build();
-        assertEquals("banana-1", reactor1.name());
-        assertEquals("banana-1", reactor1.toString());
+        assertThrows(IllegalStateException.class, () -> builder.build());
     }
 
     @Test
@@ -89,16 +95,14 @@ public abstract class ReactorBuilderTest {
     }
 
     @Test
-    public void test_setThreadNameSupplier() {
+    public void test_setThreadName() {
         ReactorBuilder builder = newBuilder();
 
-        AtomicInteger id = new AtomicInteger();
-        builder.setThreadNameSupplier(() -> "thethread" + id.incrementAndGet());
+        String name = "coolthreadname";
+        builder.setThreadName(name);
 
-        Reactor reactor1 = builder.build();
-        Reactor reactor2 = builder.build();
-        assertEquals("thethread1", reactor1.eventloopThread.getName());
-        assertEquals("thethread2", reactor2.eventloopThread.getName());
+        Reactor reactor = builder.build();
+        assertEquals(name, reactor.eventloopThread.getName());
     }
 
     @Test

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
+import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
 
@@ -37,7 +38,7 @@ public class IOUringReactorBuilder extends ReactorBuilder {
     }
 
     @Override
-    public IOUringReactor build() {
+    protected Reactor build0() {
         return new IOUringReactor(this);
     }
 

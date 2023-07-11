@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
@@ -25,20 +24,43 @@ import static org.junit.Assert.assertThrows;
 
 public class TpcEngineBuilderTest {
 
+//    @Test
+//    public void test_setReactorNameSupplier_whenNull() {
+//        ReactorBuilder builder = newBuilder();
+//        assertThrows(NullPointerException.class, () -> builder.setReactorNameSupplier(null));
+//    }
+//
+//    @Test
+//    public void test_setReactorNameSupplier() {
+//        TpcEngineBuilder builder = new TpcEngineBuilder();
+//        builder.setReactorNameFn(new Supplier<>() {
+//            private AtomicInteger idGenerator = new AtomicInteger();
+//
+//            @Override
+//            public String get() {
+//                return "banana-" + idGenerator.incrementAndGet();
+//            }
+//        });
+//        Reactor reactor1 = builder.build();
+//        Assert.assertEquals("banana-1", reactor1.name());
+//        Assert.assertEquals("banana-1", reactor1.toString());
+//    }
+
+
     @Test
-    public void test_setReactorBuilderWhenNull() {
+    public void test_setReactorBuilderFn_WhenNull() {
         TpcEngineBuilder builder = new TpcEngineBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setReactorBuilder(null));
+        assertThrows(NullPointerException.class, () -> builder.setReactorBuilderFn(null));
     }
 
     @Test
-    public void test_setReactorCountWhenZero() {
+    public void test_setReactorCount_whenZero() {
         TpcEngineBuilder builder = new TpcEngineBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setReactorCount(0));
     }
 
     @Test
-    public void test_setReactorCountWhenNegative() {
+    public void test_setReactorCount_whenNegative() {
         TpcEngineBuilder builder = new TpcEngineBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setReactorCount(-1));
     }
@@ -47,7 +69,7 @@ public class TpcEngineBuilderTest {
     public void test_build() {
         TpcEngine engine = new TpcEngineBuilder()
                 .setReactorCount(2)
-                .setReactorBuilder(new NioReactorBuilder())
+                //.setReactorBuilder(new NioReactorBuilder())
                 .build();
         assertNotNull(engine);
         assertEquals(ReactorType.NIO, engine.reactorType());

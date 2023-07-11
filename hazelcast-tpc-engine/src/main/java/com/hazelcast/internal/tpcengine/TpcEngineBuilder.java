@@ -18,11 +18,17 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
  * The builder for the the {@link TpcEngine}.
+ * <p>
+ * todo: deal with affinity.
  */
 public class TpcEngineBuilder {
 
@@ -30,17 +36,53 @@ public class TpcEngineBuilder {
 
     int reactorCount = Integer.getInteger(NAME_REACTOR_COUNT, Runtime.getRuntime().availableProcessors());
 
-    ReactorBuilder reactorBuilder = new NioReactorBuilder();
+    Supplier<String> threadNameFn;
+
+    Supplier<String> reactorNameFn = new Supplier<>() {
+        private final AtomicInteger idGenerator = new AtomicInteger();
+
+        @Override
+        public String get() {
+            return "Reactor-" + idGenerator.incrementAndGet();
+        }
+    };
+
+    Supplier<ReactorBuilder> reactorBuilderFn = new Supplier<>() {
+        @Override
+        public ReactorBuilder get() {
+            NioReactorBuilder reactorBuilder = new NioReactorBuilder();
+            if (threadNameFn != null) {
+                reactorBuilder.setThreadName(threadNameFn.get());
+            }
+            reactorBuilder.setReactorName(reactorNameFn.get());
+            reactorBuilder.setThreadFactory(threadFactory);
+            return reactorBuilder;
+        }
+    };
+
+    private ThreadFactory threadFactory = Thread::new;
+
+    public void setThreadFactory(ThreadFactory threadFactory) {
+        this.threadFactory = checkNotNull(threadFactory, "threadFactory");
+    }
+
+    public void setThreadNameFn(Supplier<String> threadNameFn) {
+        this.threadNameFn = checkNotNull(threadNameFn, "threadNameFn");
+    }
+
+    public void setReactorNameFn(Supplier<String> reactorNameFn) {
+        this.reactorNameFn = checkNotNull(reactorNameFn, "reactorNameFn");
+    }
 
     /**
-     * Sets the ReactorBuilder.
+     * Sets the function that provides a ReactorBuilder instance.
      *
-     * @param reactorBuilder the reactorBuilder.
+     * @param reactorBuilderFn the reactorBuilderFn.
      * @return this
-     * @throws NullPointerException if reactorBuilder is <code>null</code>.
+     * @throws NullPointerException if reactorBuilderFn is <code>null</code>.
      */
-    public TpcEngineBuilder setReactorBuilder(ReactorBuilder reactorBuilder) {
-        this.reactorBuilder = checkNotNull(reactorBuilder, "reactorBuilder");
+    public TpcEngineBuilder setReactorBuilderFn(Supplier<ReactorBuilder> reactorBuilderFn) {
+        this.reactorBuilderFn = checkNotNull(reactorBuilderFn, "reactorBuilderFn");
         return this;
     }
 

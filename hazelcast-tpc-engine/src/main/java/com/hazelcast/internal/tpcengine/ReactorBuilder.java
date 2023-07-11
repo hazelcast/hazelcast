@@ -27,9 +27,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
@@ -86,18 +84,9 @@ public abstract class ReactorBuilder {
     protected BlockDeviceRegistry blockDeviceRegistry = new BlockDeviceRegistry();
     protected final ReactorType type;
 
-    Supplier<String> threadNameSupplier;
-    Supplier<String> reactorNameSupplier = new Supplier<>() {
-        private final AtomicInteger idGenerator = new AtomicInteger();
-
-        @Override
-        public String get() {
-            return "Reactor-" + idGenerator.incrementAndGet();
-        }
-    };
-
     ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity(NAME_REACTOR_AFFINITY);
     ThreadFactory threadFactory = Thread::new;
+
     boolean spin;
     int deadlineRunQueueCapacity;
     TpcEngine engine;
@@ -108,9 +97,11 @@ public abstract class ReactorBuilder {
     long targetLatencyNanos;
     long minGranularityNanos;
     boolean cfs;
-    // todo: This doesn't work because the builder can't be reused.
     TaskQueueBuilder primordialTaskQueueBuilder;
     Consumer<Reactor> initCommand;
+    String reactorName;
+    String threadName;
+    private boolean built;
 
     protected ReactorBuilder(ReactorType type) {
         this.type = checkNotNull(type);
@@ -257,13 +248,13 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the reactor name supplier.
+     * Sets the reactor name.
      *
-     * @param reactorNameSupplier the reactor name supplier.
-     * @throws NullPointerException if reactorNameSupplier is <code>null</code>.
+     * @param reactorName the reactor name.
+     * @throws NullPointerException if reactorName is <code>null</code>.
      */
-    public void setReactorNameSupplier(Supplier<String> reactorNameSupplier) {
-        this.reactorNameSupplier = checkNotNull(reactorNameSupplier, "reactorNameSupplier");
+    public void setReactorName(String reactorName) {
+        this.reactorName = checkNotNull(reactorName, "reactorName");
     }
 
     /**
@@ -277,16 +268,14 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the supplier for the thread name. If configured, the thread name is set
-     * after the thread is created.
-     * <p/>
-     * If <code>null</code>, there is no thread name supplier and the thread name
-     * will not be modified.
+     * Sets the name of the thread. If configured, the thread name is set
+     * after the thread is created. If not confiugured, the thread name provided
+     * by the ThreadFactory is used.
      *
-     * @param threadNameSupplier the supplier for the thread name.
+     * @param threadName the name of the thread.
      */
-    public void setThreadNameSupplier(Supplier<String> threadNameSupplier) {
-        this.threadNameSupplier = threadNameSupplier;
+    public void setThreadName(String threadName) {
+        this.threadName = threadName;
     }
 
     /**
@@ -338,7 +327,19 @@ public abstract class ReactorBuilder {
      *
      * @return the created Reactor.
      */
-    public abstract Reactor build();
+    public final Reactor build() {
+        verifyNotBuilt();
+        built = true;
+        return build0();
+    }
+
+    protected abstract Reactor build0();
+
+    protected void verifyNotBuilt() {
+        if (built) {
+            throw new IllegalStateException("Can't call build twice on the same ReactorBuilder");
+        }
+    }
 
     TaskQueueBuilder newPrimordialTaskQueueBuilder() {
         if (primordialTaskQueueBuilder == null) {

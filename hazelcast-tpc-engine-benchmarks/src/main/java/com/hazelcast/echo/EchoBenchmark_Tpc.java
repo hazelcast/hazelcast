@@ -94,7 +94,7 @@ public class EchoBenchmark_Tpc {
             b.setRegisterRingFd(registerRingFd);
         }
         clientReactorBuilder.setSpin(spin);
-        clientReactorBuilder.setThreadNameSupplier(() -> "Client-Thread");
+        clientReactorBuilder.setThreadName("Client-Thread");
         clientReactorBuilder.setThreadAffinity(cpuAffinityClient == null ? null : new ThreadAffinity(cpuAffinityClient));
         Reactor clientReactor = clientReactorBuilder.build();
         clientReactor.start();
@@ -105,7 +105,7 @@ public class EchoBenchmark_Tpc {
             b.setRegisterRingFd(registerRingFd);
         }
         serverReactorBuilder.setSpin(spin);
-        serverReactorBuilder.setThreadNameSupplier(() -> "Server-Thread");
+        serverReactorBuilder.setThreadName("Server-Thread");
         serverReactorBuilder.setThreadAffinity(cpuAffinityServer == null ? null : new ThreadAffinity(cpuAffinityServer));
         Reactor serverReactor = serverReactorBuilder.build();
         serverReactor.start();

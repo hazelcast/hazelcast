@@ -42,6 +42,7 @@ public final class TpcEngine {
     private final Reactor[] reactors;
     private final AtomicReference<State> state = new AtomicReference<>(NEW);
     private final TpcEngineBuilder configuration;
+    private final ReactorType reactorType;
 
     /**
      * Creates an TpcEngine with the default {@link TpcEngineBuilder}.
@@ -62,11 +63,15 @@ public final class TpcEngine {
         this.reactors = new Reactor[reactorCount];
         this.terminationLatch = new CountDownLatch(reactorCount);
 
-        ReactorBuilder reactorBuilder = tpcEngineBuilder.reactorBuilder;
-        reactorBuilder.engine = this;
+        ReactorType reactorType = null;
         for (int reactorIndex = 0; reactorIndex < reactorCount; reactorIndex++) {
-            reactors[reactorIndex] = reactorBuilder.build();
+            ReactorBuilder builder = tpcEngineBuilder.reactorBuilderFn.get();
+            builder.engine = this;
+            Reactor reactor = builder.build();
+            reactorType = reactor.type();
+            reactors[reactorIndex] = reactor;
         }
+        this.reactorType = reactorType;
     }
 
     /**
@@ -88,7 +93,7 @@ public final class TpcEngine {
      * @return the type of Reactor.
      */
     public ReactorType reactorType() {
-        return configuration.reactorBuilder.type;
+        return reactorType;
     }
 
     /**
