@@ -324,6 +324,7 @@ public class MergeOperation extends MapOperation
     @SuppressWarnings("checkstyle:magicnumber")
     private List toBackupListByRemovingEvictedRecords(@Nullable BitSet localNonWanReplicatedKeys) {
         List toBackupList = new ArrayList(backupPairs.size());
+        final boolean hasNonWanReplicatedKeys = localNonWanReplicatedKeys != null;
         for (int i = 0; i < backupPairs.size(); i += 2) {
             Data dataKey = ((Data) backupPairs.get(i));
             Record record = recordStore.getRecord(dataKey);
@@ -332,7 +333,7 @@ public class MergeOperation extends MapOperation
                 toBackupList.add(backupPairs.get(i + 1));
                 toBackupList.add(record);
                 toBackupList.add(recordStore.getExpirySystem().getExpiryMetadata(dataKey));
-                if (localNonWanReplicatedKeys != null && nonWanReplicatedKeys.get(i / 2)) {
+                if (hasNonWanReplicatedKeys && nonWanReplicatedKeys.get(i / 2)) {
                     localNonWanReplicatedKeys.set((toBackupList.size() - 4) / 4);
                 }
             }
