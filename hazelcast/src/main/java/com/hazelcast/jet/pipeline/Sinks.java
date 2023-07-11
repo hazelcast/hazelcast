@@ -34,6 +34,7 @@ import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.spi.annotation.Beta;
@@ -47,7 +48,10 @@ import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.function.Functions.entryKey;
@@ -84,6 +88,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @since Jet 3.0
  */
 public final class Sinks {
+    private static final int RMAP_DEFAULT_WRITE_BATCH_SIZE = 1_000_000;
 
     private Sinks() {
     }
@@ -240,6 +245,97 @@ public final class Sinks {
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> remoteMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return remoteMap(mapName, clientConfig, Entry::getKey, Entry::getValue);
+    }
+
+    /**
+     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
+     * {@code ReplicatedMap} with the specified name in a remote cluster identified by
+     * the supplied {@code ClientConfig}.
+     * <p>
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
+     * <p>
+     * The instance name of the provided configuration is modified by this method
+     * not to cause conflicts with other instances. The name format is
+     * {@code "client-for-remote-replicated-map-" + replicatedMapName + UUID.randomUUID();}
+     * <p>
+     * This method uses batching while writing to the replicated map. The default batch size is
+     * 1 million entries. Use {@link #remoteReplicatedMap(String, ClientConfig, int)} to change
+     * the batch size.
+     * <p>
+     * The default local parallelism for this sink is 1.
+     */
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName, @Nonnull ClientConfig clientConfig) {
+        return remoteReplicatedMap(replicatedMapName, clientConfig, RMAP_DEFAULT_WRITE_BATCH_SIZE);
+    }
+
+    /**
+     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
+     * {@code ReplicatedMap} with the specified name in a remote cluster identified by
+     * the supplied {@code ClientConfig}.
+     * <p>
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
+     * <p>
+     * The instance name of the provided configuration is modified by this method
+     * not to cause conflicts with other instances. The name format is
+     * {@code "client-for-remote-replicated-map-" + replicatedMapName + UUID.randomUUID();}
+     * <p>
+     * This method uses batching while writing to the replicated map. The provided batch size is
+     * used.
+     * <p>
+     * The default local parallelism for this sink is 1.
+     */
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
+                                                               @Nonnull ClientConfig clientConfig,
+                                                               int batchSize) {
+        return SinkBuilder.sinkBuilder("remoteReplicatedMapSink(" + replicatedMapName + ')', context -> {
+                    String instanceName = "client-for-remote-replicated-map-" + replicatedMapName + UUID.randomUUID();
+                    clientConfig.setInstanceName(instanceName);
+                    HazelcastInstance client = newHazelcastClient(clientConfig);
+                    return new ClientReplicatedMapBatchWriter<K, V>(client, replicatedMapName, batchSize);
+                }).<Entry<K, V>>receiveFn(ClientReplicatedMapBatchWriter::write)
+                .flushFn(ClientReplicatedMapBatchWriter::flush)
+                .destroyFn(ClientReplicatedMapBatchWriter::destroy).build();
+    }
+
+    private static class ClientReplicatedMapBatchWriter<K, V> {
+        ReplicatedMap<K, V> replicatedMap;
+        HazelcastInstance client;
+        Map<K, V> entrySet;
+        int batchSize;
+
+        public ClientReplicatedMapBatchWriter(HazelcastInstance client, String replicatedMapName, int batchSize) {
+            this.client = client;
+            this.replicatedMap = client.getReplicatedMap(replicatedMapName);
+            this.entrySet = new HashMap<>(batchSize);
+            this.batchSize = batchSize;
+        }
+
+        public void write(Map.Entry<K, V> entry) {
+            entrySet.put(entry.getKey(), entry.getValue());
+            if (entrySet.size() >= batchSize) {
+                replicatedMap.putAll(entrySet);
+                entrySet.clear();
+            }
+        }
+
+        public void flush() {
+            if (!entrySet.isEmpty()) {
+                replicatedMap.putAll(entrySet);
+                entrySet.clear();
+            }
+        }
+
+        public void destroy() {
+            this.client.shutdown();
+        }
     }
 
     /**
