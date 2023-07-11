@@ -450,6 +450,7 @@ public final class MetricDescriptorConstants {
     public static final String PERSISTENCE_METRIC_TOMB_GARBAGE = "tombGarbage";
     public static final String PERSISTENCE_METRIC_GC_LIVE_VALUES = "liveValues";
     public static final String PERSISTENCE_METRIC_GC_LIVE_TOMBSTONES = "liveTombstones";
+    public static final String PERSISTENCE_DISCRIMINATOR_STORE_NAME = "storeName";
     // ===[/PERSISTENCE]================================================
 
     // ===[PN COUNTER]==================================================
