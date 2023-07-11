@@ -109,6 +109,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
@@ -1873,6 +1874,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
                     + " must be greater or equal to minSize " + minSize);
         }
         final SerializationService ss = getSerializationService();
+        final ManagedContext context = ss.getManagedContext();
+        predicate = (java.util.function.Predicate<? super EventJournalMapEvent<K, V>>) context.initialize(predicate);
+        projection = (Function<? super EventJournalMapEvent<K, V>, ? extends T>) context.initialize(projection);
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));
         final ClientInvocationFuture fut = new ClientInvocation(getClient(), request, getName(), partitionId).invoke();

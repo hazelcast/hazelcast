@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.map.impl.querycache.utils.Employee;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.PagingPredicate;
@@ -328,8 +327,9 @@ public class PagingPredicateTest extends HazelcastTestSupport {
             map.set(i, i);
         }
 
-        int resultSize = map.entrySet(new PagingPredicateImpl<Integer, Integer>(Predicates.equal("this", size), pageSize) {
+        int resultSize = map.entrySet(new PagingPredicateImpl<>(Predicates.equal("this", size), pageSize) {
             @Override
+            @SuppressWarnings("rawtypes")
             public boolean apply(Map.Entry mapEntry) {
                 fail("full scan is not expected");
                 return false;
@@ -424,7 +424,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
         map.addIndex(IndexType.SORTED, "id");
 
-        Predicate innerPredicate = Predicates.lessThan("id", 2);
+        var innerPredicate = Predicates.lessThan("id", 2);
         PagingPredicate<Integer, Employee> predicate = Predicates.pagingPredicate(innerPredicate, 2);
 
         Collection<Employee> values;
@@ -701,6 +701,7 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class BaseEmployee implements Serializable {
 
         public static final int MAX_AGE = 75;

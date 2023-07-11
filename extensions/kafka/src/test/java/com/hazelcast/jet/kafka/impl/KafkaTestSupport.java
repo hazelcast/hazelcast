@@ -64,12 +64,22 @@ public abstract class KafkaTestSupport {
 
     public static KafkaTestSupport create() {
         if (!dockerEnabled()) {
-            if (System.getProperties().containsKey("test.kafka.version")) {
-                throw new IllegalArgumentException("'test.kafka.version' system property requires docker enabled");
-            }
+            assertPropertyNotSet("test.kafka.version");
+            assertPropertyNotSet("test.redpanda.version");
+            assertPropertyNotSet("test.kafka.use.redpanda");
             return new EmbeddedKafkaTestSupport();
         } else {
-            return new DockerizedKafkaTestSupport();
+            if (System.getProperties().containsKey("test.kafka.use.redpanda")) {
+                return new DockerizedRedPandaTestSupport();
+            } else {
+                return new DockerizedKafkaTestSupport();
+            }
+        }
+    }
+
+    private static void assertPropertyNotSet(String key) {
+        if (System.getProperties().containsKey(key)) {
+            throw new IllegalArgumentException("'" + key + "' system property requires docker enabled");
         }
     }
 

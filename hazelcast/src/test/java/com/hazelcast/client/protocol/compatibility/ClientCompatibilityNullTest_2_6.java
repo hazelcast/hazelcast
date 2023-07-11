@@ -7167,7 +7167,7 @@ public class ClientCompatibilityNullTest_2_6 {
     @Test
     public void test_JetAddJobStatusListenerCodec_encodeRequest() {
         int fileClientMessageIndex = 911;
-        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeRequest(aLong, aBoolean);
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeRequest(aLong, null, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

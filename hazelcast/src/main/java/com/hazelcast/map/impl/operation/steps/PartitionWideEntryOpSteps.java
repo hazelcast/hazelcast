@@ -44,12 +44,20 @@ public enum PartitionWideEntryOpSteps implements IMapOpStep {
     PROCESS() {
         @Override
         public void runStep(State state) {
-            RecordStore<Record> recordStore = state.getRecordStore();
-
-            if (isHDMap(recordStore) && runWithIndex(state)) {
+            if (canRunWithPartitionedIndex(state)
+                    && runWithPartitionedIndex(state)) {
                 return;
             }
             runWithPartitionScan(state);
+        }
+
+        /**
+         * Tiered storage only supports global
+         * indexes no partitioned index is supported.
+         */
+        private boolean canRunWithPartitionedIndex(State state) {
+            return isHDMap(state.getRecordStore())
+                    || !isTieredStoreMap(state.getRecordStore());
         }
 
         private boolean isHDMap(RecordStore<Record> recordStore) {
@@ -57,7 +65,12 @@ public enum PartitionWideEntryOpSteps implements IMapOpStep {
                     .getInMemoryFormat() == InMemoryFormat.NATIVE;
         }
 
-        private boolean runWithIndex(State state) {
+        private boolean isTieredStoreMap(RecordStore<Record> recordStore) {
+            return recordStore.getMapContainer().getMapConfig()
+                    .getTieredStoreConfig().isEnabled();
+        }
+
+        private boolean runWithPartitionedIndex(State state) {
             Predicate predicate = state.getPredicate();
             RecordStore recordStore = state.getRecordStore();
             MapContainer mapContainer = recordStore.getMapContainer();

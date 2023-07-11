@@ -21,7 +21,6 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,8 +38,8 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.core.StringContains.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
@@ -267,16 +266,14 @@ public class DAGTest {
            .edge(between(x, y))
            .edge(from(y).to(a, 1));
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(Matchers.anyOf(
-                Matchers.containsString("a -> b -> c -> a"),
-                Matchers.containsString("b -> c -> a -> b"),
-                Matchers.containsString("c -> a -> b -> c")
-        ));
-
-        // When
-        dag.validate();
+        // When and Then
+        assertThatThrownBy(dag::validate)
+                .isInstanceOf(IllegalArgumentException.class)
+                .satisfiesAnyOf(
+                        e -> assertThat(e).hasMessageContaining("a -> b -> c -> a"),
+                        e -> assertThat(e).hasMessageContaining("b -> c -> a -> b"),
+                        e -> assertThat(e).hasMessageContaining("c -> a -> b -> c")
+                );
     }
 
     @Test
@@ -381,12 +378,10 @@ public class DAGTest {
         Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
         dag.edge(from(a).to(c, 1));
 
-        // Then
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(not(containsString("Edge.from().to()")));
-
-        // When
-        dag.edge(from(b).to(c, 1));
+        // When and Then
+        assertThatThrownBy(() -> dag.edge(from(b).to(c, 1)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageNotContaining("Edge.from().to()");
     }
 
     @Test
@@ -431,7 +426,7 @@ public class DAGTest {
         }
     }
     @Test
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "Convert2MethodRef"})
     public void when_mutatingLockedEdgeInDag_then_fail() {
         DAG dag = new DAG();
         Vertex vertex1 = dag.newVertex("1", (ProcessorMetaSupplier) addresses -> address -> null);

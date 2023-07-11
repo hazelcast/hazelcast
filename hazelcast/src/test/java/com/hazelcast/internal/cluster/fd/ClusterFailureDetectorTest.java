@@ -41,11 +41,9 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -159,7 +157,7 @@ public class ClusterFailureDetectorTest {
         double suspicionLevel = failureDetector.suspicionLevel(member, timestamp + HEARTBEAT_TIMEOUT / 2);
 
         double failureLevel = getFailureSuspicionLevel(failureDetector);
-        assertThat(suspicionLevel, lessThan(failureLevel));
+        assertThat(suspicionLevel).isLessThan(failureLevel);
     }
 
     @Test
@@ -171,7 +169,7 @@ public class ClusterFailureDetectorTest {
         double suspicionLevel = failureDetector.suspicionLevel(member, timestamp + HEARTBEAT_TIMEOUT * 2);
 
         double failureLevel = getFailureSuspicionLevel(failureDetector);
-        assertThat(suspicionLevel, greaterThanOrEqualTo(failureLevel));
+        assertThat(suspicionLevel).isGreaterThanOrEqualTo(failureLevel);
     }
 
     private static double getFailureSuspicionLevel(ClusterFailureDetector failureDetector) {

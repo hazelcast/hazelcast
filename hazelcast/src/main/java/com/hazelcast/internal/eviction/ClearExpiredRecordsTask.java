@@ -17,6 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.Clock;
@@ -108,6 +109,9 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
     @Override
     public void run() {
         if (!nodeEngine.isStartCompleted()) {
+            return;
+        }
+        if (nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE) {
             return;
         }
         if (!singleRunPermit.compareAndSet(false, true)) {

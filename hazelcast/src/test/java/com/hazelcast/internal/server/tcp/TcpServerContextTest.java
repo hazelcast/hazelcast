@@ -33,10 +33,8 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -98,8 +96,8 @@ public class TcpServerContextTest extends HazelcastTestSupport {
         networkConfig.addOutboundPortDefinition("29000-29001");
         Collection<Integer> outboundPorts = serverContext.getOutboundPorts(MEMBER);
 
-        assertThat(outboundPorts, hasSize(2));
-        assertThat(outboundPorts, containsInAnyOrder(29000, 29001));
+        assertThat(outboundPorts).hasSize(2);
+        assertThat(outboundPorts).containsExactlyInAnyOrder(29000, 29001);
     }
 
     @Test
@@ -107,8 +105,8 @@ public class TcpServerContextTest extends HazelcastTestSupport {
         networkConfig.addOutboundPortDefinition("29000, 29001");
         Collection<Integer> outboundPorts = serverContext.getOutboundPorts(MEMBER);
 
-        assertThat(outboundPorts, hasSize(2));
-        assertThat(outboundPorts, containsInAnyOrder(29000, 29001));
+        assertThat(outboundPorts).hasSize(2);
+        assertThat(outboundPorts).containsExactlyInAnyOrder(29000, 29001);
     }
 
     @Test
@@ -116,8 +114,8 @@ public class TcpServerContextTest extends HazelcastTestSupport {
         networkConfig.addOutboundPortDefinition("29000 29001");
         Collection<Integer> outboundPorts = serverContext.getOutboundPorts(MEMBER);
 
-        assertThat(outboundPorts, hasSize(2));
-        assertThat(outboundPorts, containsInAnyOrder(29000, 29001));
+        assertThat(outboundPorts).hasSize(2);
+        assertThat(outboundPorts).containsExactlyInAnyOrder(29000, 29001);
     }
 
     @Test
@@ -125,7 +123,7 @@ public class TcpServerContextTest extends HazelcastTestSupport {
         networkConfig.addOutboundPortDefinition("29000;29001");
         Collection<Integer> outboundPorts = serverContext.getOutboundPorts(MEMBER);
 
-        assertThat(outboundPorts, hasSize(2));
-        assertThat(outboundPorts, containsInAnyOrder(29000, 29001));
+        assertThat(outboundPorts).hasSize(2);
+        assertThat(outboundPorts).containsExactlyInAnyOrder(29000, 29001);
     }
 }

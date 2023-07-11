@@ -641,7 +641,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static void createMapping(HazelcastInstance instance, String name, String keyFormat, String valueFormat) {
-        String sql = "CREATE MAPPING " + name
+        String sql = "CREATE OR REPLACE MAPPING " + name
                 + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
                 + '\'' + OPTION_KEY_FORMAT + "'='" + keyFormat + "'\n"
@@ -659,7 +659,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         createIndex(instance(), name, mapName, type, attributes);
     }
 
-    static void createIndex(HazelcastInstance instance, String name, String mapName, IndexType type, String... attributes) {
+    public static void createIndex(HazelcastInstance instance, String name, String mapName, IndexType type, String... attributes) {
         SqlService sqlService = instance.getSql();
 
         StringBuilder sb = new StringBuilder("CREATE INDEX IF NOT EXISTS ");

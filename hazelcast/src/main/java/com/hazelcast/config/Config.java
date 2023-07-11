@@ -3122,6 +3122,7 @@ public class Config {
      */
     @Beta
     public Config setDataConnectionConfigs(Map<String, DataConnectionConfig> dataConnectionConfigs) {
+        dataConnectionConfigs.values().forEach(DataConnectionConfigValidator::validate);
         this.dataConnectionConfigs.clear();
         this.dataConnectionConfigs.putAll(dataConnectionConfigs);
         for (Entry<String, DataConnectionConfig> entry : dataConnectionConfigs.entrySet()) {
@@ -3152,6 +3153,7 @@ public class Config {
      */
     @Beta
     public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
+        DataConnectionConfigValidator.validate(dataConnectionConfig);
         dataConnectionConfigs.put(dataConnectionConfig.getName(), dataConnectionConfig);
         return this;
     }
