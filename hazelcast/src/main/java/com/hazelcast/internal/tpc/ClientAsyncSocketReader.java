@@ -70,7 +70,6 @@ public class ClientAsyncSocketReader extends AsyncSocketReader {
             }
 
             ClientMessage message = clientMessageReader.getClientMessage();
-            System.out.println("Read message:"+message);
             clientMessageReader.reset();
 
             if (connection == null) {

@@ -33,11 +33,9 @@ import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.tpcengine.TpcEngineBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
-import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
-import com.hazelcast.spi.impl.operationexecutor.impl.TpcOperationQueue;
 import com.hazelcast.spi.impl.operationexecutor.impl.TpcPartitionOperationThread;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -49,7 +47,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -125,7 +122,7 @@ public class TpcServerBootstrap {
     }
 
     public List<Integer> getClientPorts() {
-        System.out.println("getClientPorts: "+clientPorts);
+        System.out.println("getClientPorts: " + clientPorts);
         return clientPorts;
     }
 
@@ -135,7 +132,7 @@ public class TpcServerBootstrap {
 
     private int loadEventloopCount() {
         String eventloopCountString = nodeEngine.getProperties().getString(TPC_EVENTLOOP_COUNT);
-        System.out.println("eventloopCountString:"+eventloopCountString);
+        System.out.println("eventloopCountString:" + eventloopCountString);
         if (eventloopCountString == null) {
             return config.getTpcConfig().getEventloopCount();
         } else {
@@ -147,13 +144,14 @@ public class TpcServerBootstrap {
         if (!enabled) {
             return;
         }
+
         logger.info("Starting TpcServerBootstrap");
 
         TpcEngineBuilder tpcEngineBuilder = new TpcEngineBuilder();
         // todo: Should be done based on the reactor type
         ReactorType reactorType = ReactorType.NIO;
         tpcEngineBuilder.setReactorBuilderFn(new Supplier<>() {
-            private int threadIndex = 0;
+            private int threadIndex;
 
             @Override
             public ReactorBuilder get() {
@@ -173,7 +171,8 @@ public class TpcServerBootstrap {
                 builder.setPrimordialTaskQueueBuilder(new TaskQueueBuilder()
                         .setTaskProcessor(operationThread)
                         .setGlobal(operationThread.getQueue().getNormalQueue())
-                        .setLocal(operationThread.getQueue().getNormalQueue()) //ugly, but needed for now
+                        //ugly, but needed for now
+                        .setLocal(operationThread.getQueue().getNormalQueue())
                 );
                 threadIndex++;
                 return builder;
