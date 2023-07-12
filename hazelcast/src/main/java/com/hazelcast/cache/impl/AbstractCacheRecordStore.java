@@ -856,13 +856,15 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    private void updateExpiryTime(R record, long expiryTime) {
+    private boolean updateExpiryTime(R record, long expiryTime) {
         if (expiryTime == TIME_NOT_AVAILABLE) {
-            return;
+            return false;
         }
 
+        boolean expiryTimeChanged = record.getExpirationTime() != expiryTime;
         markExpirable(expiryTime);
         record.setExpirationTime(expiryTime);
+        return expiryTimeChanged;
     }
 
     protected void updateExpiryPolicyOfRecord(Data key, R record, Object expiryPolicy) {
@@ -1826,9 +1828,14 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                            R record, long expiryTime, long now, boolean disableWriteThrough) {
 
         if (valueComparator.isEqual(existingValue, mergingValue, ss)) {
-            updateExpiryTime(record, expiryTime);
+            CacheMergeResponse.MergeResult result;
+            if (updateExpiryTime(record, expiryTime)) {
+                result = CacheMergeResponse.MergeResult.RECORD_EXPIRY_UPDATED;
+            } else {
+                result = CacheMergeResponse.MergeResult.RECORDS_ARE_EQUAL;
+            }
             processExpiredEntry(key, record, now);
-            return CacheMergeResponse.MergeResult.VALUES_ARE_EQUAL;
+            return result;
         }
 
         boolean updateResult = updateRecordWithExpiry(key, mergingValue, record, TIME_NOT_AVAILABLE, now, disableWriteThrough,

@@ -1101,8 +1101,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
-                mergeRecordExpiration(key, record, mergingEntry, now);
-                return MapMergeResponse.VALUES_ARE_EQUAL;
+                if (mergeRecordExpiration(key, record, mergingEntry, now)) {
+                    return MapMergeResponse.RECORD_EXPIRY_UPDATED;
+                }
+                return MapMergeResponse.RECORDS_ARE_EQUAL;
             }
 
             boolean persist = persistenceEnabledFor(provenance);

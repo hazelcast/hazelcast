@@ -232,7 +232,7 @@ public class MergeOperation extends MapOperation
 
             // Don't WAN replicate merge events where values don't change
             if (hasWanReplication) {
-                if (response != MapMergeResponse.VALUES_ARE_EQUAL) {
+                if (response != MapMergeResponse.RECORDS_ARE_EQUAL) {
                     publishWanUpdate(dataKey, dataValue);
                 } else if (hasBackups) {
                     // Mark this dataKey so we don't WAN replicate via backups

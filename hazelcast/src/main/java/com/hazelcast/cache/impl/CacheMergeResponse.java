@@ -52,7 +52,8 @@ public class CacheMergeResponse {
 
     public enum MergeResult {
         NO_MERGE_APPLIED(false),
-        VALUES_ARE_EQUAL(true),
+        RECORDS_ARE_EQUAL(true),
+        RECORD_EXPIRY_UPDATED(true),
         RECORD_CREATED(true),
         RECORD_UPDATED(true),
         ;

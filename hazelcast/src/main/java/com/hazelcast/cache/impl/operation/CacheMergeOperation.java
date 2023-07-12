@@ -78,7 +78,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
 
         CacheMergeResponse response = recordStore.merge(mergingEntry, mergePolicy, NOT_WAN);
         if (backupPairs != null && response.getResult().isMergeApplied()) {
-            if (response.getResult() == CacheMergeResponse.MergeResult.VALUES_ARE_EQUAL) {
+            if (response.getResult() == CacheMergeResponse.MergeResult.RECORDS_ARE_EQUAL) {
                 backupNonReplicatedKeys.set(backupPairs.size() / 2);
             }
             backupPairs.add(dataKey);
@@ -87,7 +87,7 @@ public class CacheMergeOperation extends CacheOperation implements BackupAwareOp
         if (recordStore.isWanReplicationEnabled()) {
             if (response.getResult().isMergeApplied()) {
                 // Don't WAN replicate merge events where values don't change
-                if (response.getResult() != CacheMergeResponse.MergeResult.VALUES_ARE_EQUAL) {
+                if (response.getResult() != CacheMergeResponse.MergeResult.RECORDS_ARE_EQUAL) {
                     publishWanUpdate(dataKey, response.getRecord());
                 }
             } else {
