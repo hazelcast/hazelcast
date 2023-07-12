@@ -43,8 +43,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.security.Permission;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -135,7 +133,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         dag.edge(between(generator, printer));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, new HashSet<>(Arrays.asList(localPtId, remotePtId)));
+        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(remotePtId));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -149,12 +147,12 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     @Test
     public void test_scanAndAgg() {
         // Given
-        final int partitionId = 1;
-        Address addr = getAddressForPartitionId(instance(), partitionId);
+        Address addr = getAddressForPartitionId(instance(), localPtId);
 
         ProcessorMetaSupplier pmsGen = ProcessorMetaSupplier.of((ProcessorSupplier) count ->
                 IntStream.range(0, count).mapToObj(GenP::new).collect(Collectors.toList()));
 
+        // Note: for SQL light jobs we need to use lazyForceTotalParallelismOne.
         ProcessorMetaSupplier pmsAgg = forceTotalParallelismOne(
                 ProcessorSupplier.of(
                         Processors.aggregateP(AggregateOperations.counting())),
@@ -166,6 +164,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         Vertex printer = dag.newVertex("Printer", consumerPms);
 
         // generator -> aggregator
+        final int partitionId = localPtId;
         dag.edge(between(generator, aggregator)
                 .distributeTo(addr)
                 .partitioned(i -> partitionId));

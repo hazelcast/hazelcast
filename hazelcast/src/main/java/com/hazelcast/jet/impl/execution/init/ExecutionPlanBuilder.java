@@ -94,15 +94,12 @@ public final class ExecutionPlanBuilder {
 
         final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos, requiredPartitions);
 
-        // TODO: ensure that local member (coordinator) belongs to set on which the query is executed.
-        //  This is necessary for RootResultConsumerSink and other forceTotalParallelismOne(localMember) uses
-        //  but may be not required in cases which do not use it.
-        Address localMemberAddress = nodeEngine.getThisAddress();
-        MemberInfo localMemberInfo = memberInfos.stream()
-                .filter(mi -> mi.getAddress().equals(localMemberAddress))
-                .findAny()
-                .orElseThrow();
         if (!nodeEngine.getNode().isLiteMember()) {
+            Address localMemberAddress = nodeEngine.getThisAddress();
+            MemberInfo localMemberInfo = memberInfos.stream()
+                    .filter(mi -> mi.getAddress().equals(localMemberAddress))
+                    .findAny()
+                    .orElseThrow();
             partitionsByMember.computeIfAbsent(localMemberInfo, (i) -> {
                 nodeEngine.getLogger(ExecutionPlanBuilder.class).info("Adding coordinator to partition-pruned job members");
                 return new int[]{};
