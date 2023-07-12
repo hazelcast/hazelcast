@@ -71,6 +71,7 @@ import static org.junit.Assert.assertTrue;
 public abstract class KafkaTestSupport {
     static final long KAFKA_MAX_BLOCK_MS = MINUTES.toMillis(2);
     private final Map<String, KafkaProducer<Object, Object>> producers = new HashMap<>();
+    private final Map<String, Properties> producerProperties = new HashMap<>();
 
     private String brokerConnectionString;
     private Admin admin;
@@ -150,17 +151,24 @@ public abstract class KafkaTestSupport {
         producers.remove(topicId); // existing producer will not see new partitions
     }
 
+    public void setSubjectNameStrategy(String topicId, boolean isKey, String strategy) {
+        producerProperties.computeIfAbsent(topicId, t -> new Properties())
+                .setProperty((isKey ? "key" : "value") + ".subject.name.strategy",
+                        "io.confluent.kafka.serializers.subject." + strategy);
+        producers.remove(topicId); // existing producer will not use new strategy
+    }
+
     public Future<RecordMetadata> produce(String topic, Object key, Object value) {
-        return producers.computeIfAbsent(topic, t -> getProducer(key, value))
+        return producers.computeIfAbsent(topic, t -> getProducer(topic, key, value))
                 .send(new ProducerRecord<>(topic, key, value));
     }
 
     public Future<RecordMetadata> produce(String topic, int partition, Long timestamp, Object key, Object value) {
-        return producers.computeIfAbsent(topic, t -> getProducer(key, value))
+        return producers.computeIfAbsent(topic, t -> getProducer(topic, key, value))
                 .send(new ProducerRecord<>(topic, partition, timestamp, key, value));
     }
 
-    private KafkaProducer<Object, Object> getProducer(Object key, Object value) {
+    private KafkaProducer<Object, Object> getProducer(String topic, Object key, Object value) {
         Properties producerProps = new Properties();
         producerProps.setProperty("bootstrap.servers", brokerConnectionString);
         producerProps.setProperty("key.serializer", resolveSerializer(key));
@@ -169,6 +177,7 @@ public abstract class KafkaTestSupport {
             producerProps.setProperty("schema.registry.url", getSchemaRegistryURI().toString());
         }
         producerProps.setProperty("max.block.ms", String.valueOf(KAFKA_MAX_BLOCK_MS));
+        Optional.ofNullable(producerProperties.get(topic)).ifPresent(producerProps::putAll);
         return new KafkaProducer<>(producerProps);
     }
 

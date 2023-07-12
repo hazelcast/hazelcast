@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
-import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.avro.Schema;
@@ -42,7 +41,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -57,25 +55,19 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 public class SqlAvroTest extends KafkaSqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 4;
 
-    private static final Schema ID_SCHEMA = SchemaBuilder.record("jet.sql")
+    static final Schema ID_SCHEMA = SchemaBuilder.record("jet.sql")
             .fields()
             .name("id").type().unionOf().nullType().and().intType().endUnion().nullDefault()
             .endRecord();
-    private static final Schema NAME_SCHEMA = SchemaBuilder.record("jet.sql")
+    static final Schema NAME_SCHEMA = SchemaBuilder.record("jet.sql")
             .fields()
             .name("name").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-            .endRecord();
-    private static final Schema NAME_SSN_SCHEMA = SchemaBuilder.record("jet.sql")
-            .fields()
-            .name("name").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-            .name("ssn").type().unionOf().nullType().and().longType().endUnion().nullDefault()
             .endRecord();
 
     @BeforeClass
@@ -165,210 +157,6 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                         new Row(13, "Alice", null),
                         new Row(69, "Bob", 123456789L)
                 )
-        );
-    }
-
-    @Test
-    public void test_autoRegisterSchema_alterSchemaExternally() throws SchemaRegistryException {
-        String name = createRandomTopic();
-        kafkaMapping(name)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR")
-                .create();
-
-        // insert initial record
-        sqlService.execute("INSERT INTO " + name + " VALUES (13, 'Alice')");
-        assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // alter schema externally
-        kafkaTestSupport.registerSchema(name + "-value", NAME_SSN_SCHEMA);
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        insertAndAssertRecords(name, false);
-    }
-
-    @Test
-    public void test_autoRegisterSchema_alterSchemaExternally_recreateMapping() throws SchemaRegistryException {
-        String name = createRandomTopic();
-        kafkaMapping(name)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR")
-                .create();
-
-        // insert initial record
-        sqlService.execute("INSERT INTO " + name + " VALUES (13, 'Alice')");
-        assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // alter schema externally
-        kafkaTestSupport.registerSchema(name + "-value", NAME_SSN_SCHEMA);
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // recreate mapping to match new schema
-        kafkaMapping(name)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR",
-                        "ssn BIGINT")
-                .createOrReplace();
-
-        insertAndAssertRecords(name, true);
-    }
-
-    @Test
-    public void test_useLatestSchema_alterSchemaExternally_then_fail() throws SchemaRegistryException {
-        String name = createRandomTopic();
-        kafkaMapping(name)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR")
-                .options("auto.register.schemas", false,
-                         "use.latest.version", true)
-                .create();
-
-        // create initial schema
-        kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA);
-        kafkaTestSupport.registerSchema(name + "-value", NAME_SCHEMA);
-
-        // insert initial record
-        sqlService.execute("INSERT INTO " + name + " VALUES (13, 'Alice')");
-        assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // alter schema externally
-        kafkaTestSupport.registerSchema(name + "-value", NAME_SSN_SCHEMA);
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // insert record against mapping's schema
-        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob')"))
-                .hasMessageContaining("Error serializing Avro message");
-    }
-
-    @Test
-    public void test_useLatestSchema_alterSchemaExternally_recreateMapping() throws SchemaRegistryException {
-        String name = createRandomTopic();
-        kafkaMapping(name)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR")
-                .options("auto.register.schemas", false,
-                         "use.latest.version", true)
-                .create();
-
-        // create initial schema
-        kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA);
-        kafkaTestSupport.registerSchema(name + "-value", NAME_SCHEMA);
-
-        // insert initial record
-        sqlService.execute("INSERT INTO " + name + " VALUES (13, 'Alice')");
-        assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // alter schema externally
-        kafkaTestSupport.registerSchema(name + "-value", NAME_SSN_SCHEMA);
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // recreate mapping to match new schema
-        kafkaMapping(name)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR",
-                        "ssn BIGINT")
-                .options("auto.register.schemas", false,
-                         "use.latest.version", true)
-                .createOrReplace();
-
-        insertAndAssertRecords(name, true);
-    }
-
-    @Test
-    public void test_useSpecificSchema_alterSchemaExternally() throws SchemaRegistryException {
-        String name = createRandomTopic();
-
-        // create initial schema
-        int keySchemaId = kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA);
-        int valueSchemaId = kafkaTestSupport.registerSchema(name + "-value", NAME_SCHEMA);
-
-        kafkaMapping(name)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR")
-                .options("auto.register.schemas", false,
-                         "key.schema.id", keySchemaId,
-                         "value.schema.id", valueSchemaId)
-                .create();
-
-        // insert initial record
-        sqlService.execute("INSERT INTO " + name + " VALUES (13, 'Alice')");
-        assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // alter schema externally
-        kafkaTestSupport.registerSchema(name + "-value", NAME_SSN_SCHEMA);
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        insertAndAssertRecords(name, false);
-    }
-
-    @Test
-    public void test_useSpecificSchema_alterSchemaExternally_recreateMapping() throws SchemaRegistryException {
-        String name = createRandomTopic();
-
-        // create initial schema
-        int keySchemaId = kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA);
-        int valueSchemaId = kafkaTestSupport.registerSchema(name + "-value", NAME_SCHEMA);
-
-        kafkaMapping(name)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR")
-                .options("auto.register.schemas", false,
-                         "key.schema.id", keySchemaId,
-                         "value.schema.id", valueSchemaId)
-                .create();
-
-        // insert initial record
-        sqlService.execute("INSERT INTO " + name + " VALUES (13, 'Alice')");
-        assertEquals(1, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // alter schema externally
-        int valueSchemaId2 = kafkaTestSupport.registerSchema(name + "-value", NAME_SSN_SCHEMA);
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // recreate mapping to match new schema
-        kafkaMapping(name)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR",
-                        "ssn BIGINT")
-                .options("auto.register.schemas", false,
-                         "key.schema.id", keySchemaId,
-                         "value.schema.id", valueSchemaId2)
-                .createOrReplace();
-
-        insertAndAssertRecords(name, true);
-    }
-
-    private void insertAndAssertRecords(String name, boolean mappingUpdated) throws SchemaRegistryException {
-        int fields = mappingUpdated ? 3 : 2;
-
-        // insert record against mapping's schema
-        sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob'" + (fields == 3 ? ", 123456789)" : ")"));
-
-        // insert record against old schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 31).build(),
-                new GenericRecordBuilder(NAME_SCHEMA).set("name", "Carol").build());
-
-        // insert record against new schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 47).build(),
-                new GenericRecordBuilder(NAME_SSN_SCHEMA).set("name", "Dave").set("ssn", 123456789L).build());
-
-        // insert record against mapping's schema again
-        sqlService.execute("INSERT INTO " + name + " VALUES (53, 'Erin'" + (fields == 3 ? ", 987654321)" : ")"));
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // assert both initial & evolved records are correctly read
-        Object[][] records = {
-                { 13, "Alice", null },
-                { 29, "Bob", 123456789L },
-                { 31, "Carol", null },
-                { 47, "Dave", 123456789L },
-                { 53, "Erin", 987654321L }
-        };
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM " + name,
-                Arrays.stream(records).map(record -> new Row(Arrays.copyOf(record, fields))).collect(toList())
         );
     }
 

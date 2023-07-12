@@ -168,6 +168,10 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
             return this;
         }
 
+        public KafkaMapping optionsIf(boolean condition, Object... options) {
+            return condition ? options(options) : this;
+        }
+
         public void create() {
             create(false);
         }

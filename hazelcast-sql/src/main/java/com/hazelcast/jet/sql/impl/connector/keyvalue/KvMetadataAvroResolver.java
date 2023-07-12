@@ -91,18 +91,19 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
+        String recordName = options.getOrDefault((isKey ? "key" : "value") + ".record.name", "jet.sql");
         return new KvMetadata(
                 fields,
                 AvroQueryTargetDescriptor.INSTANCE,
-                new AvroUpsertTargetDescriptor(schema(fields))
+                new AvroUpsertTargetDescriptor(schema(recordName, fields))
         );
     }
 
-    private Schema schema(List<TableField> fields) {
+    private Schema schema(String recordName, List<TableField> fields) {
         QueryPath[] paths = paths(fields);
         QueryDataType[] types = types(fields);
 
-        FieldAssembler<Schema> schema = SchemaBuilder.record("jet.sql").fields();
+        FieldAssembler<Schema> schema = SchemaBuilder.record(recordName).fields();
         for (int i = 0; i < fields.size(); i++) {
             String path = paths[i].getPath();
             if (path == null) {
