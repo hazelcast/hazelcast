@@ -62,14 +62,34 @@ public class TpcEngineBuilder {
 
     private ThreadFactory threadFactory = Thread::new;
 
+    /**
+     * Sets the ThreadFactory to use for creating the Reactor threads.
+     *
+     * @param threadFactory the {@link ThreadFactory}.
+     * @throws NullPointerException if threadFactory is null.
+     */
     public void setThreadFactory(ThreadFactory threadFactory) {
         this.threadFactory = checkNotNull(threadFactory, "threadFactory");
     }
 
+    /**
+     * Sets the function that provides the thread name. If this function is not set,
+     * then the thread provided by the threadFactory will be used.
+     *
+     * @param threadNameFn the function that provides the thread name.
+     * @throws NullPointerException if threadNameFn is null.
+     */
     public void setThreadNameFn(Supplier<String> threadNameFn) {
         this.threadNameFn = checkNotNull(threadNameFn, "threadNameFn");
     }
 
+    /**
+     * Sets the function that provides the reactor name. If this function isn't
+     * provided, then a default implementation will be used.
+     *
+     * @param reactorNameFn the function that provides the reactor name.
+     * @throws NullPointerException if reactorNameFn is null.
+     */
     public void setReactorNameFn(Supplier<String> reactorNameFn) {
         this.reactorNameFn = checkNotNull(reactorNameFn, "reactorNameFn");
     }

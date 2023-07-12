@@ -31,28 +31,21 @@ import static org.junit.Assert.assertTrue;
 public abstract class ReactorBuilderTest {
 
     public abstract ReactorBuilder newBuilder();
-//
-//    @Test
-//    public void test_setReactorNameSupplier_whenNull() {
-//        ReactorBuilder builder = newBuilder();
-//        assertThrows(NullPointerException.class, () -> builder.setReactorNameSupplier(null));
-//    }
-//
-//    @Test
-//    public void test_setReactorNameSupplier() {
-//        ReactorBuilder builder = newBuilder();
-//        builder.setReactorNameSupplier(new Supplier<>() {
-//            private AtomicInteger idGenerator = new AtomicInteger();
-//
-//            @Override
-//            public String get() {
-//                return "banana-" + idGenerator.incrementAndGet();
-//            }
-//        });
-//        Reactor reactor1 = builder.build();
-//        assertEquals("banana-1", reactor1.name());
-//        assertEquals("banana-1", reactor1.toString());
-//    }
+
+    @Test
+    public void test_setReactorName_whenNull() {
+        ReactorBuilder builder = newBuilder();
+        assertThrows(NullPointerException.class, () -> builder.setReactorName(null));
+    }
+
+    @Test
+    public void test_setReactorName() {
+        ReactorBuilder builder = newBuilder();
+        builder.setReactorName("banana");
+        Reactor reactor = builder.build();
+        assertEquals("banana", reactor.name());
+        assertEquals("banana", reactor.toString());
+    }
 
     @Test
     public void test_build_whenAlreadyBuilt() {

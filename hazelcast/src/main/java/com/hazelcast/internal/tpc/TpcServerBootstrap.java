@@ -254,26 +254,28 @@ public class TpcServerBootstrap {
 
     private void validateSocketConfig() {
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
-        if (advancedNetworkConfig.isEnabled()) {
-            TpcSocketConfig defaultTpcSocketConfig = new TpcSocketConfig();
-            Map<EndpointQualifier, EndpointConfig> endpointConfigs = advancedNetworkConfig.getEndpointConfigs();
+        if (!advancedNetworkConfig.isEnabled()) {
+            return;
+        }
 
-            endpointConfigs.forEach(((endpointQualifier, endpointConfig) -> {
-                if (endpointQualifier != EndpointQualifier.CLIENT
-                        && !endpointConfig.getTpcSocketConfig().equals(defaultTpcSocketConfig)) {
-                    throw new InvalidConfigurationException(
-                            "TPC socket configuration is only available for clients ports for now.");
-                }
-            }));
+        TpcSocketConfig defaultTpcSocketConfig = new TpcSocketConfig();
+        Map<EndpointQualifier, EndpointConfig> endpointConfigs = advancedNetworkConfig.getEndpointConfigs();
 
-            if (endpointConfigs.get(EndpointQualifier.CLIENT) == null) {
-                // Advanced network is enabled yet there is no configured server socket
-                // for clients. This means cluster will run but no client ports will be
-                // created, so no clients can connect to the cluster.
-                throw new InvalidConfigurationException("Missing client server socket configuration. "
-                        + "If you have enabled TPC and advanced networking, "
-                        + "please configure a client server socket.");
+        endpointConfigs.forEach(((endpointQualifier, endpointConfig) -> {
+            if (endpointQualifier != EndpointQualifier.CLIENT
+                    && !endpointConfig.getTpcSocketConfig().equals(defaultTpcSocketConfig)) {
+                throw new InvalidConfigurationException(
+                        "TPC socket configuration is only available for clients ports for now.");
             }
+        }));
+
+        if (endpointConfigs.get(EndpointQualifier.CLIENT) == null) {
+            // Advanced network is enabled yet there is no configured server socket
+            // for clients. This means cluster will run but no client ports will be
+            // created, so no clients can connect to the cluster.
+            throw new InvalidConfigurationException("Missing client server socket configuration. "
+                    + "If you have enabled TPC and advanced networking, "
+                    + "please configure a client server socket.");
         }
     }
 

@@ -29,19 +29,19 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  */
 public final class SlabAllocator<E> {
 
-    private final Supplier<E> supplier;
+    private final Supplier<E> constructorFn;
     private E[] array;
     private int index = -1;
 
-    public SlabAllocator(int capacity, Supplier<E> supplier) {
+    public SlabAllocator(int capacity, Supplier<E> constructorFn) {
         this.array = (E[]) new Object[capacity];
-        this.supplier = checkNotNull(supplier);
+        this.constructorFn = checkNotNull(constructorFn);
     }
 
     // todo: an allocator should be able to return null. Currently the capacity isn't respected.
     public E allocate() {
         if (index == -1) {
-            return supplier.get();
+            return constructorFn.get();
         }
 
         E object = array[index];
