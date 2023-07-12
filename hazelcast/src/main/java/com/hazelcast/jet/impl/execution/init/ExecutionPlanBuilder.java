@@ -102,7 +102,11 @@ public final class ExecutionPlanBuilder {
                     .orElseThrow();
             partitionsByMember.computeIfAbsent(localMemberInfo, (i) -> {
                 nodeEngine.getLogger(ExecutionPlanBuilder.class).info("Adding coordinator to partition-pruned job members");
-                return new int[]{};
+                return nodeEngine.getPartitionService()
+                        .getMemberPartitionsIfAssigned(localMemberAddress)
+                        .stream()
+                        .mapToInt(Integer::intValue)
+                        .toArray();
             });
         }
 
