@@ -30,6 +30,8 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.TestProcessors.CollectPerProcessorSink;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.jetbrains.annotations.NotNull;
@@ -41,11 +43,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.security.Permission;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -56,12 +56,15 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITION
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static java.util.Collections.singleton;
+import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     private CollectPerProcessorSink consumerPms;
+    private int localPtId;
+    private int remotePtId;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -71,6 +74,16 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     @Before
     public void setUp() throws Exception {
         consumerPms = new CollectPerProcessorSink();
+        NodeEngineImpl localNodeEngineImpl = getNodeEngineImpl(instance());
+        NodeEngineImpl remoteNodeEngineImpl = getNodeEngineImpl(instances()[1]);
+        Map<Address, int[]> ptAssignment = ExecutionPlanBuilder.getPartitionAssignment(localNodeEngineImpl,
+                        Util.getMembersView(localNodeEngineImpl).getMembers(), null)
+                .entrySet()
+                .stream()
+                .collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
+
+        localPtId = ptAssignment.get(localNodeEngineImpl.getThisAddress())[0];
+        remotePtId = ptAssignment.get(remoteNodeEngineImpl.getThisAddress())[0];
     }
 
     @Test
@@ -91,7 +104,8 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         dag.edge(between(generator, printer));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(1));
+        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPtId));
+
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -103,7 +117,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_simpleDag_takesTwoMembers() {
+    public void test_simpleDag_takesMemberAndCoordinator() {
         // Given
         int expectedTotalParallelism = 4;
         ProcessorMetaSupplier pmsGen = new ValidatingMetaSupplier(
@@ -118,13 +132,8 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         Vertex printer = dag.newVertex("Printer", consumerPms);
         dag.edge(between(generator, printer));
 
-        Map<Address, int[]> partitionAssignment = getPartitionAssignment(instance());
-        assertEquals(3, partitionAssignment.size());
-        Iterator<Address> it = partitionAssignment.keySet().iterator();
-
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, new HashSet<>(Arrays.asList(
-                partitionAssignment.get(it.next())[0], partitionAssignment.get(it.next())[0])));
+        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(remotePtId));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -138,12 +147,12 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     @Test
     public void test_scanAndAgg() {
         // Given
-        final int partitionId = 1;
-        Address addr = getAddressForPartitionId(instance(), partitionId);
+        Address addr = getAddressForPartitionId(instance(), localPtId);
 
         ProcessorMetaSupplier pmsGen = ProcessorMetaSupplier.of((ProcessorSupplier) count ->
                 IntStream.range(0, count).mapToObj(GenP::new).collect(Collectors.toList()));
 
+        // Note: for SQL light jobs we need to use lazyForceTotalParallelismOne.
         ProcessorMetaSupplier pmsAgg = forceTotalParallelismOne(
                 ProcessorSupplier.of(
                         Processors.aggregateP(AggregateOperations.counting())),
@@ -155,6 +164,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         Vertex printer = dag.newVertex("Printer", consumerPms);
 
         // generator -> aggregator
+        final int partitionId = localPtId;
         dag.edge(between(generator, aggregator)
                 .distributeTo(addr)
                 .partitioned(i -> partitionId));
@@ -164,7 +174,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(1));
+        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPtId));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -197,7 +207,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         dag.edge(Edge.from(generatorRight).to(consumer, 1).distributed().broadcast());
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(1));
+        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPtId));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -213,7 +223,6 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     private static class ValidatingMetaSupplier implements ProcessorMetaSupplier {
         private final ProcessorMetaSupplier wrappingPms;
         private final int expectedTotalParallelism;
-
 
         private ValidatingMetaSupplier(ProcessorMetaSupplier wrappingPms, int expectedTotalParallelism) {
             this.wrappingPms = wrappingPms;

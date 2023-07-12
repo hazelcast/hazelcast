@@ -71,7 +71,7 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
     public static final String PASSWORD = "mysql";
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaConnectJdbcIntegrationTest.class);
 
-    private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:5.7.34")
+    private static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33")
             .withUsername(USERNAME).withPassword(PASSWORD)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER).withPrefix("Docker"));
 

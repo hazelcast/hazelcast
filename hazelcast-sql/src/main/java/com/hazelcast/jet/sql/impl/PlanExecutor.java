@@ -571,9 +571,6 @@ public class PlanExecutor {
         }
 
         if (!partitions.isEmpty() && allVariantsValid) {
-            // add partitionId required for allToOne("") routing to ClientSink
-            // TODO: this artificially adds redundant partition
-            partitions.add(hazelcastInstance.getPartitionService().getPartition("").getPartitionId());
             jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, partitions);
         }
 

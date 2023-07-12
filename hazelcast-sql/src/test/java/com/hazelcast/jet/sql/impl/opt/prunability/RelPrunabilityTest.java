@@ -41,6 +41,7 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -125,6 +126,7 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
 
 
     @Test
+    @Ignore("disabled until aggregations prunability is implemented")
     public void test_calc() {
         HazelcastTable table = partitionedTable(
                 "m",

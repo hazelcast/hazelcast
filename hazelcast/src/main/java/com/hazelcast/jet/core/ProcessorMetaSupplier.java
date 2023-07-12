@@ -133,9 +133,10 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
-     * Returns {@code true} if the {@link #init(Context)} method of this
-     * instance is cooperative. If it's not, the call to the {@code init()}
-     * method is off-loaded to another thread.
+     * Returns {@code true} if both the {@link #init(Context)} and {@link
+     * #get(List)} methods of this instance are cooperative. If they are not,
+     * the call to the {@code init()} and {@code get()} method is off-loaded to
+     * another thread.
      *
      * @since 5.2
      */
