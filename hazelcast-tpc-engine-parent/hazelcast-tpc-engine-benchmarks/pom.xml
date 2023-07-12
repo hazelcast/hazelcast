@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <name>hazelcast-tpc-engine-benchmarks</name>
     <artifactId>hazelcast-tpc-engine-benchmarks</artifactId>
-    <description>The Hazelcast thread per core engine: Benchmarks</description>
+    <description>The Hazelcast thread-per-core engine: Benchmarks</description>
     <packaging>jar</packaging>
 
     <parent>

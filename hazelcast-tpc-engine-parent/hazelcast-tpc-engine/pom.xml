@@ -22,7 +22,7 @@
 
     <name>hazelcast-tpc-engine</name>
     <artifactId>hazelcast-tpc-engine</artifactId>
-    <description>The Hazelcast thread per core engine</description>
+    <description>The Hazelcast thread-per-core engine</description>
     <packaging>jar</packaging>
 
     <parent>

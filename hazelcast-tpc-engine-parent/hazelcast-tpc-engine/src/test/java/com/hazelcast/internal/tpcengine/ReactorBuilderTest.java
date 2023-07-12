@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.ThreadAffinity;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -110,7 +111,22 @@ public abstract class ReactorBuilderTest {
         assertThrows(IllegalArgumentException.class, () -> builder.setDeadlineRunQueueCapacity(-1));
     }
 
-    // primordial task queue builder
+    @Test
+    public void test_setDefaultTaskQueueBuilder_whenNull() {
+        ReactorBuilder builder = newBuilder();
+        assertThrows(NullPointerException.class, () -> builder.setDefaultTaskQueueBuilder(null));
+    }
+
+    @Test
+    public void test_setDefaultTaskQueueBuilder() {
+        ReactorBuilder builder = newBuilder();
+        builder.setDefaultTaskQueueBuilder(new TaskQueueBuilder()
+                .setName("banana")
+                .setGlobal(new ConcurrentLinkedQueue<>()));
+
+        Reactor reactor = builder.build();
+        assertEquals(reactor.eventloop.defaultTaskQueueHandle.queue.name, "banana");
+    }
 
     @Test
     public void test_setThreadAffinity_nullAffinityIsAllowed() {

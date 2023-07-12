@@ -22,7 +22,7 @@
 
     <name>hazelcast-tpc-engine-iouring</name>
     <artifactId>hazelcast-tpc-engine-iouring</artifactId>
-    <description>The Hazelcast thread per core engine: io_uring</description>
+    <description>The Hazelcast thread per core engine: the io_uring Reactor</description>
     <packaging>jar</packaging>
 
     <parent>
