@@ -33,7 +33,7 @@
         <dependency>
             <groupId>net.openhft</groupId>
             <artifactId>affinity</artifactId>
-            <version>3.20.0</version>
+            <version>${net.openhft.affinity.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>

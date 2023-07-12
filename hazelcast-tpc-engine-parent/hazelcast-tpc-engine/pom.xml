@@ -35,7 +35,6 @@
     <properties>
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}/..</main.basedir>
-        <jctools.version>4.0.1</jctools.version>
     </properties>
 
     <build>
@@ -92,7 +91,7 @@
         <dependency>
             <groupId>net.openhft</groupId>
             <artifactId>affinity</artifactId>
-            <version>3.23.3</version>
+            <version>${net.openhft.affinity.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
