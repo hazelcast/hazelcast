@@ -28,7 +28,6 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.nio.NioAsyncSocketBuilder;
-import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.jctools.util.PaddedAtomicLong;
 
@@ -87,7 +86,7 @@ public class EchoBenchmark_Tpc {
             completedArray[k] = new PaddedAtomicLong();
         }
 
-        ReactorBuilder clientReactorBuilder = newReactorBuilder();
+        ReactorBuilder clientReactorBuilder = ReactorBuilder.newReactorBuilder(reactorType);
         if (clientReactorBuilder instanceof IOUringReactorBuilder) {
             IOUringReactorBuilder b = (IOUringReactorBuilder) clientReactorBuilder;
             b.setRegisterRingFd(registerRingFd);
@@ -98,7 +97,7 @@ public class EchoBenchmark_Tpc {
         Reactor clientReactor = clientReactorBuilder.build();
         clientReactor.start();
 
-        ReactorBuilder serverReactorBuilder = newReactorBuilder();
+        ReactorBuilder serverReactorBuilder = ReactorBuilder.newReactorBuilder(reactorType);
         if (serverReactorBuilder instanceof IOUringReactorBuilder) {
             IOUringReactorBuilder b = (IOUringReactorBuilder) serverReactorBuilder;
             b.setRegisterRingFd(registerRingFd);
@@ -167,13 +166,6 @@ public class EchoBenchmark_Tpc {
         return sum;
     }
 
-    private static ReactorBuilder newReactorBuilder() {
-        if (reactorType == ReactorType.NIO) {
-            return new NioReactorBuilder();
-        } else {
-            return new IOUringReactorBuilder();
-        }
-    }
 
     private static AsyncSocket newClient(Reactor clientReactor,
                                          SocketAddress serverAddress,
@@ -202,7 +194,7 @@ public class EchoBenchmark_Tpc {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, socketBufferSize)
                 .set(SO_REUSEPORT, true)
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                     AsyncSocketBuilder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest)
                             .set(TCP_NODELAY, tcpNoDelay)
                             .set(SO_RCVBUF, socketBufferSize)

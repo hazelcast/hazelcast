@@ -218,7 +218,7 @@ public class TpcServerBootstrap {
 
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
                     .set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
-                    .setAcceptConsumer(acceptRequest -> {
+                    .setAcceptFn(acceptRequest -> {
                         reactor.newAsyncSocketBuilder(acceptRequest)
                                 .setReader(readHandlerSuppliers.get(reactor).get())
                                 .set(SO_SNDBUF, socketConfig.getSendBufferSizeKB() * KILO_BYTE)

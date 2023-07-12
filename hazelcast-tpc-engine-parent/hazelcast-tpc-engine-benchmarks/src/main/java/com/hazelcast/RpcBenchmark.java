@@ -17,17 +17,15 @@
 package com.hazelcast;
 
 
-import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
-import com.hazelcast.internal.tpcengine.iouring.IOUringReactorBuilder;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
-import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.internal.util.ThreadAffinity;
 
 import java.net.InetSocketAddress;
@@ -36,29 +34,32 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.Util.constructComplete;
+import static com.hazelcast.internal.tpcengine.ReactorBuilder.newReactorBuilder;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 
 /**
  * A very trivial benchmark to measure the throughput we can get with a RPC system.
+ *
+ * TODO: Currently there is no fundamental difference between the EchoBenchmark_TPC and this benchmark.
+ * We should have threads that get notified to make this more like a RPC benchmark.
  * <p>
  * JMH would be better; but for now this will give some insights.
  */
 public class RpcBenchmark {
 
-    public static final int serverCpu = -1;
-    public static final int clientCpu = -1;
+    public static final int serverCpu = 1;
+    public static final int clientCpu = 2;
     public static final boolean spin = false;
-    public static final int requestTotal = 1 * 1000 * 1000;
+    public static final int requestTotal = 100 * 1000 * 1000;
     public static final int concurrency = 2000;
-    public static final ReactorType reactorType = ReactorType.IOURING;
+    public static final ReactorType reactorType = ReactorType.NIO;
 
     public static void main(String[] args) throws InterruptedException {
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
 
-        AsyncServerSocket socket = newServer(serverAddress);
-
+        AsyncServerSocket serverSocket = newServer(serverAddress);
         CountDownLatch latch = new CountDownLatch(concurrency);
 
         AsyncSocket clientSocket = newClient(serverAddress, latch);
@@ -85,16 +86,15 @@ public class RpcBenchmark {
     }
 
     private static AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
-        ReactorBuilder reactorBuilder = newReactorBuilder();
-
+        ReactorBuilder reactorBuilder = newReactorBuilder(reactorType);
         if (clientCpu >= 0) {
             reactorBuilder.setThreadAffinity(new ThreadAffinity("" + clientCpu));
         }
         reactorBuilder.setSpin(spin);
-        Reactor clientReactor = reactorBuilder.build();
-        clientReactor.start();
+        Reactor reactor = reactorBuilder.build();
+        reactor.start();
 
-        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
+        AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
                 .set(TCP_NODELAY, true)
                 .setReader(new ClientSocketReader(latch))
                 .build();
@@ -103,19 +103,8 @@ public class RpcBenchmark {
         return clientSocket;
     }
 
-    private static ReactorBuilder newReactorBuilder() {
-        switch (reactorType) {
-            case NIO:
-                return new NioReactorBuilder();
-            case IOURING:
-                return new IOUringReactorBuilder();
-            default:
-                throw new IllegalStateException();
-        }
-    }
-
     private static class ClientSocketReader extends AsyncSocketReader {
-        private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+        private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(64 * 1024, true);
         private final CountDownLatch latch;
 
         public ClientSocketReader(CountDownLatch latch) {
@@ -145,18 +134,18 @@ public class RpcBenchmark {
     }
 
     private static AsyncServerSocket newServer(SocketAddress serverAddress) {
-        ReactorBuilder reactorBuilder = newReactorBuilder();
+        ReactorBuilder reactorBuilder = newReactorBuilder(reactorType);
         reactorBuilder.setSpin(spin);
         if (serverCpu >= 0) {
             reactorBuilder.setThreadAffinity(new ThreadAffinity("" + serverCpu));
         }
-        Reactor serverReactor = reactorBuilder.build();
-        serverReactor.start();
+        Reactor reactor = reactorBuilder.build();
+        reactor.start();
 
-        AsyncServerSocket serverSocket = serverReactor
+        AsyncServerSocket serverSocket = reactor
                 .newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
-                    AsyncSocket socket = serverReactor.newAsyncSocketBuilder(acceptRequest)
+                .setAcceptFn(acceptRequest -> {
+                    AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
                             .setReader(new ServerSocketReader())
                             .set(TCP_NODELAY, true)
                             .build();
@@ -164,12 +153,13 @@ public class RpcBenchmark {
                 })
                 .build();
         serverSocket.bind(serverAddress);
+        serverSocket.start();
 
         return serverSocket;
     }
 
     private static class ServerSocketReader extends AsyncSocketReader {
-        private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+        private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(64 * 1024, true);
 
         @Override
         public void onRead(ByteBuffer src) {

@@ -63,7 +63,7 @@ public abstract class AsyncServerSocketOptionsTest {
         reactor.start();
 
         AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
 
                 })
                 .build();

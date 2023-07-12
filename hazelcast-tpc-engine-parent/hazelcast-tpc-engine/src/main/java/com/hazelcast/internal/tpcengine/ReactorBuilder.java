@@ -151,8 +151,9 @@ public abstract class ReactorBuilder {
      * A function that is executed on the eventloop as soon as the eventloop is starting.
      * <p>
      * This can be used to start tasks like opening server sockets, further customizing etc.
-     * This can also be used as an alternative to having a {@link ReactorTask} with a
-     * global queue (which causes a bit of overhead).
+     * This can also be used as an alternative to having a {@link TaskQueue} with a
+     * global queue (which causes a bit of overhead due to checking this thread-safe queue
+     * and repeated registration of the queue in the global-queue of the reactor).
      *
      * @param initFn the function to execute.
      * @throws NullPointerException  if <code>initCommand</code> is null.

@@ -113,7 +113,7 @@ public abstract class AsyncServerSocketBuilderTest {
         Reactor reactor = newReactor();
 
         AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
-        builder.setAcceptConsumer(acceptRequest -> {
+        builder.setAcceptFn(acceptRequest -> {
             AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
                     .setReader(new DevNullAsyncSocketReader())
                     .build();

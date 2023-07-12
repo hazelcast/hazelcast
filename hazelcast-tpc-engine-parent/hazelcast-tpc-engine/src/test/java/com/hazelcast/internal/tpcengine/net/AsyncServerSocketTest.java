@@ -70,7 +70,7 @@ public abstract class AsyncServerSocketTest {
     public void test_construction() {
         Reactor reactor = newReactor();
         AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                 })
                 .build();
         assertSame(reactor, socket.getReactor());
@@ -81,7 +81,7 @@ public abstract class AsyncServerSocketTest {
     public void test_getLocalPort_whenNotYetBound() {
         Reactor reactor = newReactor();
         AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                 })
                 .build();
 
@@ -93,7 +93,7 @@ public abstract class AsyncServerSocketTest {
     public void test_bind_whenLocalAddressNull() {
         Reactor reactor = newReactor();
         AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                 })
                 .build();
 
@@ -105,7 +105,7 @@ public abstract class AsyncServerSocketTest {
     public void test_getLocalAddress_whenNotBound() {
         Reactor reactor = newReactor();
         AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                 })
                 .build();
         assertNull(socket.getLocalAddress());
@@ -115,7 +115,7 @@ public abstract class AsyncServerSocketTest {
     public void test_server_andNoBind() {
         Reactor reactor = newReactor();
         AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
-        builder.setAcceptConsumer(acceptRequest -> {
+        builder.setAcceptFn(acceptRequest -> {
         });
         AsyncServerSocket socket = builder.build();
         socket.start();
@@ -125,7 +125,7 @@ public abstract class AsyncServerSocketTest {
     public void test_bind_whenBacklogNegative() {
         Reactor reactor = newReactor();
         AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                 })
                 .build();
 
@@ -136,7 +136,7 @@ public abstract class AsyncServerSocketTest {
     public void test_bind() {
         Reactor reactor = newReactor();
         AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                 })
                 .build();
 
@@ -155,7 +155,7 @@ public abstract class AsyncServerSocketTest {
     public void test_bind_randomPort() {
         Reactor reactor = newReactor();
         AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                 })
                 .build();
 
@@ -174,7 +174,7 @@ public abstract class AsyncServerSocketTest {
     public void test_bind_whenAlreadyBound() {
         Reactor reactor = newReactor();
         AsyncServerSocket socket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                 })
                 .build();
 
@@ -188,7 +188,7 @@ public abstract class AsyncServerSocketTest {
     public void test_connect() {
         Reactor reactor = newReactor();
         AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                     AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
                             .setReader(new DevNullAsyncSocketReader())
                             .build();
@@ -217,7 +217,7 @@ public abstract class AsyncServerSocketTest {
     public void test_accept_withException() {
         Reactor reactor = newReactor();
         AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                     throw new RuntimeException();
                 })
                 .build();
@@ -241,7 +241,7 @@ public abstract class AsyncServerSocketTest {
         Reactor reactor = newReactor();
         SocketAddress serverAddress;
         try (AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(CloseUtil::closeQuietly)
+                .setAcceptFn(CloseUtil::closeQuietly)
                 .build()) {
 
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
@@ -265,7 +265,7 @@ public abstract class AsyncServerSocketTest {
         Reactor reactor = newReactor();
         for (int k = 0; k < 1000; k++) {
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                    .setAcceptConsumer(acceptRequest -> {
+                    .setAcceptFn(acceptRequest -> {
                         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder(acceptRequest)
                                 .setReader(new DevNullAsyncSocketReader())
                                 .build();
@@ -284,7 +284,7 @@ public abstract class AsyncServerSocketTest {
         for (int k = 0; k < 1000; k++) {
             Reactor reactor = newReactor();
             AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                    .setAcceptConsumer(acceptRequest -> {
+                    .setAcceptFn(acceptRequest -> {
                         AsyncSocket clientSocket = reactor.newAsyncSocketBuilder(acceptRequest)
                                 .setReader(new DevNullAsyncSocketReader())
                                 .build();

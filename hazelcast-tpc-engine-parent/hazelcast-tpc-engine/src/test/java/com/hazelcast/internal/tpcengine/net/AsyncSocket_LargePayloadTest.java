@@ -269,7 +269,7 @@ public abstract class AsyncSocket_LargePayloadTest {
     private AsyncServerSocket newServer() {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                     serverReactor.newAsyncSocketBuilder(acceptRequest)
                             .set(TCP_NODELAY, true)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)

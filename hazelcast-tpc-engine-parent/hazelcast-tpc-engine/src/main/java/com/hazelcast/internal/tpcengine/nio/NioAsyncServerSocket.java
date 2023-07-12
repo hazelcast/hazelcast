@@ -49,14 +49,14 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private final Thread eventloopThread;
     private final SelectionKey key;
     private final NioAsyncServerSocketOptions options;
-    private final Consumer<AcceptRequest> acceptConsumer;
+    private final Consumer<AcceptRequest> acceptFn;
     // only accessed from eventloop thread
     private boolean started;
 
     NioAsyncServerSocket(NioAsyncServerSocketBuilder builder) {
         try {
             this.reactor = builder.reactor;
-            this.acceptConsumer = builder.acceptConsumer;
+            this.acceptFn = builder.acceptFn;
             this.options = builder.options;
             this.eventloopThread = reactor.eventloopThread();
             this.serverSocketChannel = builder.serverSocketChannel;
@@ -167,7 +167,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
             NioAcceptRequest acceptRequest = new NioAcceptRequest(socketChannel);
             try {
-                acceptConsumer.accept(acceptRequest);
+                acceptFn.accept(acceptRequest);
             } catch (Throwable t) {
                 closeQuietly(acceptRequest);
                 throw sneakyThrow(t);

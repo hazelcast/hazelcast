@@ -64,14 +64,14 @@ public interface AsyncServerSocketBuilder {
     <T> boolean setIfSupported(Option<T> option, T value);
 
     /**
-     * Sets the consumer for accept requests.
+     * Sets the acceptFn for accept requests.
      *
-     * @param consumer the consumer
+     * @param acceptFn the acceptFn
      * @return this
-     * @throws NullPointerException  if consumer is <code>null</code>.
+     * @throws NullPointerException  if acceptFn is <code>null</code>.
      * @throws IllegalStateException when build already has been called.
      */
-    AsyncServerSocketBuilder setAcceptConsumer(Consumer<AcceptRequest> consumer);
+    AsyncServerSocketBuilder setAcceptFn(Consumer<AcceptRequest> acceptFn);
 
     /**
      * Builds the AsyncServerSocket.

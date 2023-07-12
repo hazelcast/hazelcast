@@ -106,7 +106,7 @@ public abstract class AsyncSocketTest {
         Reactor reactor = newReactor();
         CompletableFuture<AsyncSocket> remoteSocketFuture = new CompletableFuture<>();
         AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                     AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
                             .setReader(new DevNullAsyncSocketReader())
                             .build();
@@ -198,7 +198,7 @@ public abstract class AsyncSocketTest {
     public void test_readable() {
         Reactor reactor = newReactor();
         AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                     AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
                             .setReader(new DevNullAsyncSocketReader())
                             .build();

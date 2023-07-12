@@ -38,7 +38,7 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
     final NioReactor reactor;
     final ServerSocketChannel serverSocketChannel;
     final NioAsyncServerSocketOptions options;
-    Consumer<AcceptRequest> acceptConsumer;
+    Consumer<AcceptRequest> acceptFn;
     private boolean built;
 
     NioAsyncServerSocketBuilder(NioReactor reactor) {
@@ -53,10 +53,10 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
     }
 
     @Override
-    public NioAsyncServerSocketBuilder setAcceptConsumer(Consumer<AcceptRequest> acceptConsumer) {
+    public NioAsyncServerSocketBuilder setAcceptFn(Consumer<AcceptRequest> acceptFn) {
         verifyNotBuilt();
 
-        this.acceptConsumer = checkNotNull(acceptConsumer, "acceptConsumer");
+        this.acceptFn = checkNotNull(acceptFn, "acceptFn");
         return this;
     }
 
@@ -72,7 +72,7 @@ public class NioAsyncServerSocketBuilder implements AsyncServerSocketBuilder {
     public AsyncServerSocket build() {
         verifyNotBuilt();
 
-        if (acceptConsumer == null) {
+        if (acceptFn == null) {
             throw new IllegalStateException("acceptConsumer not configured.");
         }
 

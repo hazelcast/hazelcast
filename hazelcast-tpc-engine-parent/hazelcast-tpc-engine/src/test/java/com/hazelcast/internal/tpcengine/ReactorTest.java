@@ -195,7 +195,7 @@ public abstract class ReactorTest {
         Reactor reactor = newReactor();
         reactor.start();
         AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                 })
                 .build();
 
@@ -211,7 +211,7 @@ public abstract class ReactorTest {
         Reactor serverReactor = newReactor();
         serverReactor.start();
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
-                .setAcceptConsumer(acceptRequest -> {
+                .setAcceptFn(acceptRequest -> {
                 })
                 .build();
 

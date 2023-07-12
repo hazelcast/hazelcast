@@ -31,7 +31,7 @@ public class IOUringAsyncServerSocketBuilder implements AsyncServerSocketBuilder
     final IOUringReactor reactor;
     final LinuxSocket nativeSocket;
     final IOUringAsyncServerSocketOptions options;
-    Consumer<AcceptRequest> acceptConsumer;
+    Consumer<AcceptRequest> acceptFn;
     private boolean build;
 
     IOUringAsyncServerSocketBuilder(IOUringReactor reactor) {
@@ -42,25 +42,25 @@ public class IOUringAsyncServerSocketBuilder implements AsyncServerSocketBuilder
     }
 
     @Override
-    public IOUringAsyncServerSocketBuilder setAcceptConsumer(Consumer<AcceptRequest> acceptConsumer) {
-        verifyNotBuild();
+    public IOUringAsyncServerSocketBuilder setAcceptFn(Consumer<AcceptRequest> acceptFn) {
+        verifyNotBuilt();
 
-        this.acceptConsumer = checkNotNull(acceptConsumer, "acceptConsumer");
+        this.acceptFn = checkNotNull(acceptFn, "acceptFn");
         return this;
     }
 
     @Override
     public <T> boolean setIfSupported(Option<T> option, T value) {
-        verifyNotBuild();
+        verifyNotBuilt();
 
         return options.set(option, value);
     }
 
     @Override
     public AsyncServerSocket build() {
-        verifyNotBuild();
+        verifyNotBuilt();
 
-        if (acceptConsumer == null) {
+        if (acceptFn == null) {
             throw new IllegalStateException("acceptConsumer not configured.");
         }
 
@@ -68,7 +68,7 @@ public class IOUringAsyncServerSocketBuilder implements AsyncServerSocketBuilder
         return new IOUringAsyncServerSocket(this);
     }
 
-    private void verifyNotBuild() {
+    private void verifyNotBuilt() {
         if (build) {
             throw new IllegalStateException("Can't call build twice on the same AsyncServerSocketBuilder");
         }

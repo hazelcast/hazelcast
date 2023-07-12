@@ -62,7 +62,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     private final AcceptMemory acceptMemory = new AcceptMemory();
     private final IOUringEventloop eventloop;
     private final SubmissionQueue sq;
-    private final Consumer<AcceptRequest> acceptConsumer;
+    private final Consumer<AcceptRequest> acceptFn;
     private final IOUringAsyncServerSocketOptions options;
     private final Thread eventloopThread;
 
@@ -76,7 +76,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         this.options = builder.options;
         this.linuxSocket = builder.nativeSocket;
         this.eventloopThread = reactor.eventloopThread();
-        this.acceptConsumer = builder.acceptConsumer;
+        this.acceptFn = builder.acceptFn;
         this.sq = eventloop.sq;
         if (!reactor.registerCloseable(this)) {
             close();
@@ -227,7 +227,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
                     LinuxSocket linuxSocket = new LinuxSocket(fd, AF_INET);
                     AcceptRequest acceptRequest = new IOUringAcceptRequest(linuxSocket);
                     try {
-                        acceptConsumer.accept(acceptRequest);
+                        acceptFn.accept(acceptRequest);
                     } catch (Throwable t) {
                         logger.severe(t);
 
