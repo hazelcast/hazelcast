@@ -652,7 +652,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // We use distribute-to-one edge to send all the items to the initiator member.
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
         // allToOne with any key, it goes to a single processor on a single member anyway.
-        connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+        connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress)
+                .allToOne(findLocalPartitioningKey()));
         return vertex;
     }
 
@@ -842,5 +843,18 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
+    }
+
+    private Object findLocalPartitioningKey() {
+        int limit = 1000;
+        for(int i = 0; i < limit; ++i) {
+            Object key = i;
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+            if (nodeEngine.getPartitionService().getPartition(partitionId).isLocal()) {
+                return key;
+            }
+        }
+        assert false : "Could not find a local partitioning key in " + limit + " tries";
+        return null;
     }
 }
