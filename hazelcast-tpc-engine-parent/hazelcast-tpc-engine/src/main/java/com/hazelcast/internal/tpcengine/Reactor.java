@@ -81,7 +81,7 @@ public abstract class Reactor implements Executor {
     private final ReactorType type;
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
     private final CountDownLatch startLatch = new CountDownLatch(1);
-    private final Consumer<Reactor> initCommand;
+    private final Consumer<Reactor> initFn;
 
     @SuppressWarnings("java:S1845")
     protected volatile State state = NEW;
@@ -97,7 +97,7 @@ public abstract class Reactor implements Executor {
         this.type = builder.type;
         this.spin = builder.spin;
         this.engine = builder.engine;
-        this.initCommand = builder.initCommand;
+        this.initFn = builder.initFn;
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
         this.eventloopThread = builder.threadFactory.newThread(new StartEventloopTask(eventloopFuture, builder));
 
@@ -372,7 +372,7 @@ public abstract class Reactor implements Executor {
     }
 
     /**
-     * The EventloopTask does a few important things:
+     * The StartEventloopTask does a few important things:
      * <ol>
      *     <li>Configure the thread affinity</li>
      *     <li>Create the eventloop</li>
@@ -405,8 +405,8 @@ public abstract class Reactor implements Executor {
                         if (state == RUNNING) {
                             eventloop0.beforeRun();
 
-                            if (initCommand != null) {
-                                initCommand.accept(Reactor.this);
+                            if (initFn != null) {
+                                initFn.accept(Reactor.this);
                             }
 
                             eventloop0.run();

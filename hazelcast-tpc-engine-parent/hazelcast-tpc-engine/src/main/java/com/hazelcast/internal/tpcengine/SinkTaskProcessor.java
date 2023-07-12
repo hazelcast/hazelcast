@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * Processes a single task from the {@link TaskQueue}.
+ * A {@link TaskProcessor} that does nothing.
  */
 public class SinkTaskProcessor implements TaskProcessor {
 
@@ -25,7 +25,7 @@ public class SinkTaskProcessor implements TaskProcessor {
 
     @Override
     public int process(Object cmd) {
-        return TaskProcessor.TASK_COMPLETED;
+        return TASK_COMPLETED;
     }
 
     @Override

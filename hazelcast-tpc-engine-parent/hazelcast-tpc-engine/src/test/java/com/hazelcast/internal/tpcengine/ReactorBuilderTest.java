@@ -22,12 +22,14 @@ import org.junit.Test;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public abstract class ReactorBuilderTest {
 
@@ -63,22 +65,46 @@ public abstract class ReactorBuilderTest {
         assertThrows(IllegalStateException.class, () -> builder.build());
     }
 
+
     @Test
     public void test_setStallHandler_whenNull() {
         ReactorBuilder builder = newBuilder();
         assertThrows(NullPointerException.class, () -> builder.setStallHandler(null));
     }
 
+
     @Test
-    public void test_setInitCommand_whenNull() {
+    public void test_setStallHandler_whenAlreadyBuilt() {
         ReactorBuilder builder = newBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setInitCommand(null));
+        builder.build();
+        assertThrows(IllegalStateException.class, () -> builder.setStallHandler(new LoggingStallHandler()));
+    }
+
+
+    @Test
+    public void test_setInitFn_whenNull() {
+        ReactorBuilder builder = newBuilder();
+        assertThrows(NullPointerException.class, () -> builder.setInitFn(null));
+    }
+
+    @Test
+    public void test_setInitFn_whenAlreadyBuilt() {
+        ReactorBuilder builder = newBuilder();
+        builder.build();
+        assertThrows(IllegalStateException.class, () -> builder.setInitFn(mock(Consumer.class)));
     }
 
     @Test
     public void test_setThreadFactory_whenNull() {
         ReactorBuilder builder = newBuilder();
         assertThrows(NullPointerException.class, () -> builder.setThreadFactory(null));
+    }
+
+    @Test
+    public void test_setThreadFactory_whenAlreadyBuilt() {
+        ReactorBuilder builder = newBuilder();
+        builder.build();
+        assertThrows(IllegalStateException.class, () -> builder.setThreadFactory(Thread::new));
     }
 
     @Test
@@ -96,6 +122,13 @@ public abstract class ReactorBuilderTest {
     }
 
     @Test
+    public void test_setThreadName_whenAlreadyBuilt() {
+        ReactorBuilder builder = newBuilder();
+        builder.build();
+        assertThrows(IllegalStateException.class, () -> builder.setThreadName("banana"));
+    }
+
+    @Test
     public void test_setThreadName() {
         ReactorBuilder builder = newBuilder();
 
@@ -107,13 +140,20 @@ public abstract class ReactorBuilderTest {
     }
 
     @Test
-    public void test_setScheduledTaskQueueCapacity_whenZero() {
+    public void test_setDeadlineRunQueueCapacity_whenAlreadyBuilt() {
+        ReactorBuilder builder = newBuilder();
+        builder.build();
+        assertThrows(IllegalStateException.class, () -> builder.setDeadlineRunQueueCapacity(10));
+    }
+
+    @Test
+    public void test_setDeadlineRunQueueCapacity_whenZero() {
         ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setDeadlineRunQueueCapacity(0));
     }
 
     @Test
-    public void test_setScheduledTaskQueueCapacity_whenNegative() {
+    public void test_setDeadlineRunQueueCapacity_whenNegative() {
         ReactorBuilder builder = newBuilder();
         assertThrows(IllegalArgumentException.class, () -> builder.setDeadlineRunQueueCapacity(-1));
     }
@@ -122,6 +162,13 @@ public abstract class ReactorBuilderTest {
     public void test_setDefaultTaskQueueBuilder_whenNull() {
         ReactorBuilder builder = newBuilder();
         assertThrows(NullPointerException.class, () -> builder.setDefaultTaskQueueBuilder(null));
+    }
+
+    @Test
+    public void test_setDefaultTaskQueueBuilder_whenAlreadyBuilt() {
+        ReactorBuilder builder = newBuilder();
+        builder.build();
+        assertThrows(IllegalStateException.class, () -> builder.setDefaultTaskQueueBuilder(new TaskQueueBuilder()));
     }
 
     @Test
@@ -143,6 +190,15 @@ public abstract class ReactorBuilderTest {
         assertNull(builder.threadAffinity);
     }
 
+
+    @Test
+    public void test_setAffinity_whenAlreadyBuilt() {
+        ReactorBuilder builder = newBuilder();
+        builder.build();
+        ThreadAffinity affinity = new ThreadAffinity("1-5");
+        assertThrows(IllegalStateException.class, () -> builder.setThreadAffinity(affinity));
+    }
+
     @Test
     public void test_setThreadAffinity() {
         ReactorBuilder builder = newBuilder();
@@ -150,6 +206,13 @@ public abstract class ReactorBuilderTest {
         builder.setThreadAffinity(affinity);
 
         assertSame(affinity, builder.threadAffinity);
+    }
+
+    @Test
+    public void test_setSpin_whenAlreadyBuilt() {
+        ReactorBuilder builder = newBuilder();
+        builder.build();
+        assertThrows(IllegalStateException.class, () -> builder.setSpin(false));
     }
 
     @Test

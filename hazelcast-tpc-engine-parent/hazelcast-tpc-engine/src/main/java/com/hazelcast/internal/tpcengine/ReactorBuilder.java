@@ -99,7 +99,7 @@ public abstract class ReactorBuilder {
     long minGranularityNanos;
     boolean cfs;
     TaskQueueBuilder defaultTaskQueueBuilder;
-    Consumer<Reactor> initCommand;
+    Consumer<Reactor> initFn;
     String reactorName;
     String threadName;
     private boolean built;
@@ -148,16 +148,20 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * A command that is executed on the eventloop as soon as the eventloop is starting.
+     * A function that is executed on the eventloop as soon as the eventloop is starting.
+     * <p>
+     * This can be used to start tasks like opening server sockets, further customizing etc.
+     * This can also be used as an alternative to having a {@link ReactorTask} with a
+     * global queue (which causes a bit of overhead).
      *
-     * @param initCommand the command to execute.
+     * @param initFn the function to execute.
      * @throws NullPointerException  if <code>initCommand</code> is null.
      * @throws IllegalStateException if the Reactor has already been built.
      */
-    public void setInitCommand(Consumer<Reactor> initCommand) {
+    public void setInitFn(Consumer<Reactor> initFn) {
         verifyNotBuilt();
-        checkNotNull(initCommand, "initCommand");
-        this.initCommand = initCommand;
+        checkNotNull(initFn, "initFn");
+        this.initFn = initFn;
     }
 
     /**
