@@ -13,12 +13,12 @@ import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.tpcengine.TaskQueueBuilder.MAX_NICE;
 import static com.hazelcast.internal.tpcengine.TaskQueueBuilder.MIN_NICE;
+import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -28,14 +28,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Make sure the following JVM parameter is added:
  * --add-opens java.base/sun.nio.ch=ALL-UNNAMED
  */
-
 public class ContextSwitchBenchmark {
 
     public static final int durationSeconds = 600;
-    public static final int operations = 100 * 1000 * 1000;
     public static final int tasksPerTaskGroup = 1;
     public static final boolean useEventloopDirectly = true;
-    public static final ReactorType reactorType = ReactorType.IOURING;
+    public static final ReactorType reactorType = ReactorType.NIO;
     public static final boolean useTask = true;
     public static final int clockSampleInterval = 1;
     public static final int taskGroupCount = 10;
@@ -46,7 +44,7 @@ public class ContextSwitchBenchmark {
     private static volatile boolean stop = false;
     private static final AtomicLong counter = new AtomicLong();
 
-    public static final Function<Eventloop, TaskQueueHandle> taskGroupFactor = eventloop -> {
+    public static final Function<Eventloop, TaskQueueHandle> taskGroupFactory = eventloop -> {
         Random random = new Random();
         int priority = randomNiceLevel
                 ? random.nextInt(MAX_NICE - MIN_NICE + 1) + MIN_NICE
@@ -60,8 +58,6 @@ public class ContextSwitchBenchmark {
     };
 
     public static void main(String[] args) throws InterruptedException {
-        CountDownLatch completionLatch = new CountDownLatch(taskGroupCount * tasksPerTaskGroup);
-
         ReactorBuilder reactorBuilder = ReactorBuilder.newReactorBuilder(reactorType);
         reactorBuilder.setCfs(useCfs);
         reactorBuilder.setRunQueueCapacity(taskGroupCount + 1);
@@ -70,24 +66,24 @@ public class ContextSwitchBenchmark {
         Reactor reactor = reactorBuilder.build();
         reactor.start();
 
-        long start = System.currentTimeMillis();
+        long start = currentTimeMillis();
 
         reactor.execute(() -> {
             if (taskGroupCount == 0) {
                 handles.add(reactor.eventloop().defaultTaskQueueHandle());
             } else {
                 for (int k = 0; k < taskGroupCount; k++) {
-                    handles.add(taskGroupFactor.apply(reactor.eventloop()));
+                    handles.add(taskGroupFactory.apply(reactor.eventloop()));
                 }
             }
 
             for (TaskQueueHandle handle : handles) {
                 for (int k = 0; k < tasksPerTaskGroup; k++) {
                     if (useTask) {
-                        RunnableJob task = new RunnableJob(reactor, handle, completionLatch, useEventloopDirectly);
+                        RunnableJob task = new RunnableJob(reactor, handle, useEventloopDirectly);
                         reactor.offer(task, handle);
                     } else {
-                        TaskJob task = new TaskJob(completionLatch);
+                        TaskJob task = new TaskJob();
                         reactor.offer(task, handle);
                     }
                 }
@@ -100,14 +96,12 @@ public class ContextSwitchBenchmark {
 
         long count = counter.get();
 
-        long duration = System.currentTimeMillis() - start;
+        long duration = currentTimeMillis() - start;
         System.out.println("Duration " + duration + " ms");
         System.out.println("Throughput:" + (count * 1000f / duration) + " tasks/second");
-
     }
 
     private static class RunnableJob implements Runnable {
-        private final CountDownLatch latch;
         private final Eventloop eventloop;
         private final boolean useEventloopDirectly;
         private final Reactor reactor;
@@ -115,12 +109,10 @@ public class ContextSwitchBenchmark {
 
         public RunnableJob(Reactor reactor,
                            TaskQueueHandle taskGroupHandle,
-                           CountDownLatch latch,
                            boolean useEventloopDirectly) {
             this.reactor = reactor;
             this.eventloop = reactor.eventloop();
             this.taskGroupHandle = taskGroupHandle;
-            this.latch = latch;
             this.useEventloopDirectly = useEventloopDirectly;
         }
 
@@ -140,16 +132,10 @@ public class ContextSwitchBenchmark {
     }
 
     private static class TaskJob extends Task {
-        private final CountDownLatch latch;
-
-        public TaskJob(CountDownLatch latch) {
-            this.latch = latch;
-        }
 
         @Override
         public int process() {
             if (stop) {
-                latch.countDown();
                 return TaskProcessor.TASK_COMPLETED;
             }
 
@@ -168,8 +154,8 @@ public class ContextSwitchBenchmark {
 
         @Override
         public void run() {
-            long end = System.currentTimeMillis() + SECONDS.toMillis(durationSecond);
-            while (System.currentTimeMillis() < end) {
+            long end = currentTimeMillis() + SECONDS.toMillis(durationSecond);
+            while (currentTimeMillis() < end) {
                 try {
                     Thread.sleep(SECONDS.toMillis(1));
                 } catch (InterruptedException e) {
