@@ -18,34 +18,36 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
-import com.hazelcast.jet.impl.execution.init.Contexts;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.SpecificMemberPms {
-
-    Map<Address, int[]> partitionAssignment;
+/**
+ * A meta-supplier that will only use the given {@code ProcessorSupplier} on a node with given partition key.
+ */
+public class LazyDefiningSpecificMemberPms implements ProcessorMetaSupplier, IdentifiedDataSerializable {
     int partitionId;
 
-    // TODO: transient?
+    private ProcessorSupplier supplier;
+    private SupplierEx<Expression<?>> partitionKeyExprSupplier;
+    private Map<Address, int[]> partitionAssignment;
     private Integer partitionArgIndex;
-    private SupplierEx<?> partitionKeyExprSupplier;
 
     public LazyDefiningSpecificMemberPms() {
         super();
@@ -54,13 +56,11 @@ public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.Specifi
     private LazyDefiningSpecificMemberPms(ProcessorSupplier supplier, int partitionArgumentIndex) {
         this.supplier = supplier;
         this.partitionArgIndex = partitionArgumentIndex;
-        this.memberAddress = null;
     }
 
-    private LazyDefiningSpecificMemberPms(ProcessorSupplier supplier, SupplierEx<?> partitionKeyExprSupplier) {
+    private LazyDefiningSpecificMemberPms(ProcessorSupplier supplier, SupplierEx<Expression<?>> partitionExprSupplier) {
         this.supplier = supplier;
-        this.partitionKeyExprSupplier = partitionKeyExprSupplier;
-        this.memberAddress = null;
+        this.partitionKeyExprSupplier = partitionExprSupplier;
     }
 
     @Override
@@ -75,47 +75,48 @@ public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.Specifi
         ExpressionEvalContext eec = ExpressionEvalContext.from(context);
         Expression<?> partitionKeyExpr = null;
         if (partitionKeyExprSupplier != null) {
-            Object obj = partitionKeyExprSupplier.get();
-            if (!(obj instanceof Expression)) {
-                throw new RuntimeException("");
-            }
-            partitionKeyExpr = (Expression<?>) obj;
+            partitionKeyExpr = partitionKeyExprSupplier.get();
         }
 
-        // test path
-        if (context instanceof TestProcessorMetaSupplierContext) {
-            TestProcessorMetaSupplierContext ctx = (TestProcessorMetaSupplierContext) context;
-            this.partitionId = ctx.getNodeEngine().getPartitionService().getPartitionId(
-                    partitionArgIndex != null
-                            ? eec.getArgument(partitionArgIndex)
-                            : Objects.requireNonNull(partitionKeyExpr).eval(null, eec));
-        } else {
-            assert context instanceof Contexts.MetaSupplierCtx;
-            Contexts.MetaSupplierCtx ctx = (Contexts.MetaSupplierCtx) context;
-            this.partitionId = ctx.nodeEngine().getPartitionService()
-                    .getPartitionId(
-                            partitionArgIndex != null
-                                    ? eec.getArgument(partitionArgIndex)
-                                    : Objects.requireNonNull(partitionKeyExpr).eval(null, eec));
-        }
+        this.partitionId = Util.getNodeEngine(context.hazelcastInstance()).getPartitionService().getPartitionId(
+                partitionArgIndex != null
+                        ? eec.getArgument(partitionArgIndex)
+                        : Objects.requireNonNull(partitionKeyExpr).eval(null, eec));
         partitionAssignment = context.partitionAssignment();
     }
 
+    @Nonnull
     @Override
     public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
         Address address = null;
         for (Entry<Address, int[]> entry : partitionAssignment.entrySet()) {
-            for (int pId : entry.getValue()) {
-                if (pId == partitionId) {
-                    address = entry.getKey();
-                    break;
-                }
+            if (Arrays.binarySearch(entry.getValue(), partitionId) >= 0) {
+                address = entry.getKey();
+                break;
             }
         }
-        if (address == null && !addresses.contains(address)) {
-            throw new JetException("Cluster does not contain the required member: " + memberAddress);
+        final Address finalAddress = address;
+        // ExpectNothingProcessorSupplier may be eliminated by partition pruning, if used by SQL.
+        return addr -> addr.equals(finalAddress) ? supplier : new ExpectNothingProcessorSupplier();
+    }
+
+    @Override
+    public int preferredLocalParallelism() {
+        return 1;
+    }
+
+    @Override
+    public boolean isReusable() {
+        return false;
+    }
+
+    @Override
+    public boolean initIsCooperative() {
+        if (partitionKeyExprSupplier != null) {
+            return partitionKeyExprSupplier.get().isCooperative();
+        } else {
+            return true;
         }
-        return addr -> supplier;
     }
 
     @Override
@@ -142,7 +143,7 @@ public class LazyDefiningSpecificMemberPms extends ProcessorMetaSupplier.Specifi
 
     public static ProcessorMetaSupplier lazyForceTotalParallelismOne(
             @Nonnull ProcessorSupplier supplier,
-            @Nonnull SupplierEx<?> partitionKeyExprSupplier) {
+            @Nonnull SupplierEx<Expression<?>> partitionKeyExprSupplier) {
         return new LazyDefiningSpecificMemberPms(supplier, partitionKeyExprSupplier);
     }
 

@@ -186,16 +186,16 @@ public class EntryOperation extends LockAwareOperation
         // to enter map-store-api-offloading procedure.
         if (readOnly && existInMemory(dataKey)) {
             mapStoreOffloadEnabled = false;
-            tieredStoreAndPartitionCompactorEnabled = false;
+            tieredStoreOffloadEnabled = false;
         } else {
             mapStoreOffloadEnabled = isMapStoreOffloadEnabled();
-            tieredStoreAndPartitionCompactorEnabled = isTieredStoreAndPartitionCompactorEnabled();
+            tieredStoreOffloadEnabled = isTieredStoreOffloadEnabled();
         }
     }
 
     private boolean existInMemory(Data dataKey) {
         // When tieredStoreAndPartitionCompactorEnabled is false.
-        if (!tieredStoreAndPartitionCompactorEnabled) {
+        if (!tieredStoreOffloadEnabled) {
             return recordStore.existInMemory(dataKey);
         }
 
@@ -245,8 +245,7 @@ public class EntryOperation extends LockAwareOperation
     }
 
     private boolean steppedOperationOffloadEnabled() {
-        return mapStoreOffloadEnabled
-                || tieredStoreAndPartitionCompactorEnabled;
+        return mapStoreOffloadEnabled || tieredStoreOffloadEnabled;
     }
 
     @Override
