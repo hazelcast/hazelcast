@@ -19,6 +19,10 @@ package com.hazelcast.internal.tpcengine;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
+import static com.hazelcast.internal.tpcengine.TaskProcessor.TASK_BLOCKED;
+import static com.hazelcast.internal.tpcengine.TaskProcessor.TASK_COMPLETED;
+import static com.hazelcast.internal.tpcengine.TaskProcessor.TASK_YIELD;
+
 /**
  * A Task that gets executed on the {@link Eventloop}. A task can be blocked, completed or yield.
  * <p/>
@@ -39,14 +43,14 @@ public abstract class Task implements Runnable {
         try {
             int status = process();
             switch (status) {
-                case TaskProcessor.TASK_BLOCKED:
+                case TASK_BLOCKED:
                     // when the task unblocks, it will add itself to its taskqueue and get
                     // the taskqueue scheduled.
                     break;
-                case TaskProcessor.TASK_COMPLETED:
+                case TASK_COMPLETED:
                     //task.release();
                     break;
-                case TaskProcessor.TASK_YIELD:
+                case TASK_YIELD:
                     // add it to the local
                     // todo: we should check if there is a local.
                     taskQueue.offerLocal(this);

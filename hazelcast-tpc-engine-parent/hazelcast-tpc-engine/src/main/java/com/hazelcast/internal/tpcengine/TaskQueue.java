@@ -19,12 +19,12 @@ package com.hazelcast.internal.tpcengine;
 import java.util.Queue;
 
 /**
- * A TaskQueue is the unit of scheduling within the eventloop. Each eventloop has a primordial
- * TaskQueue which can be used as the 'default' TaskQueue. But it is also possible to create your
- * own TaskQueues. For example when you have tasks from clients, but also long running tasks from
- * e.g. some compaction process, you could give the clients and the compaction process their
- * own taskQueues. If no clients are busy, the compaction process can get all resources. But when
- * clients need to CPU, they can get it.
+ * A TaskQueue is the unit of scheduling within the eventloop. Each eventloop has a default
+ * TaskQueue. But it is also possible to create additional TaskQueues. For example when you
+ * have tasks from clients, but also long running tasks from e.g. some compaction process,
+ * you could give the clients and the compaction process their own taskQueues. If no clients
+ * are busy, the compaction process can get all resources. But when clients need to CPU,
+ * they can get it.
  * <p>
  * The TaskQueue can be configured with either either (or both):
  * <ol>

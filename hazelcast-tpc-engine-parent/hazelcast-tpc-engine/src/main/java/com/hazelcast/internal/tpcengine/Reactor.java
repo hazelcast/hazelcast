@@ -71,7 +71,7 @@ public abstract class Reactor implements Executor {
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    protected final TaskQueue primordialTaskQueue;
+    protected final TaskQueue defaultTaskQueue;
     protected final Eventloop eventloop;
     protected final boolean spin;
     protected final Thread eventloopThread;
@@ -115,7 +115,7 @@ public abstract class Reactor implements Executor {
         // There is a happens-before edge between writing to the eventloopFuture and
         // the join. So at this point we can safely read the fields that have been
         // set in the constructor of the eventloop.
-        this.primordialTaskQueue = eventloop.primordialTaskQueueHandle.queue;
+        this.defaultTaskQueue = eventloop.defaultTaskQueueHandle.queue;
         this.wakeupNeeded = eventloop.wakeupNeeded;
     }
 
@@ -323,7 +323,7 @@ public abstract class Reactor implements Executor {
     }
 
     public final boolean offer(Runnable task) {
-        return offer(task, eventloop.primordialTaskQueueHandle);
+        return offer(task, eventloop.defaultTaskQueueHandle);
     }
 
     /**
@@ -336,7 +336,7 @@ public abstract class Reactor implements Executor {
      * @throws NullPointerException if task is null.
      */
     public final boolean offer(Object task) {
-        return offer(task, eventloop.primordialTaskQueueHandle);
+        return offer(task, eventloop.defaultTaskQueueHandle);
     }
 
     public final boolean offer(Object task, TaskQueueHandle handle) {

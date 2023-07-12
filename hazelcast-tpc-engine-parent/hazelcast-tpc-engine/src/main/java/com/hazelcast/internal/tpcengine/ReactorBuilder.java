@@ -19,7 +19,6 @@ package com.hazelcast.internal.tpcengine;
 import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
-import com.hazelcast.internal.tpcengine.util.Preconditions;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.jctools.queues.MpscArrayQueue;
 
@@ -97,7 +96,7 @@ public abstract class ReactorBuilder {
     long targetLatencyNanos;
     long minGranularityNanos;
     boolean cfs;
-    TaskQueueBuilder primordialTaskQueueBuilder;
+    TaskQueueBuilder defaultTaskQueueBuilder;
     Consumer<Reactor> initCommand;
     String reactorName;
     String threadName;
@@ -116,8 +115,18 @@ public abstract class ReactorBuilder {
         setCfs(Boolean.parseBoolean(getProperty(NAME_CFS, Boolean.toString(DEFAULT_CFS))));
     }
 
+    /**
+     * Creates a new {@link ReactorBuilder} based on the {@link ReactorType}.
+     *
+     * @param type the reactor type.
+     * @return the created ReactorBuilder.
+     * @throws NullPointerException if type is null.
+     * @throws RuntimeException     if the IO_URING reactor is requested but the class is
+     *                              not found or there are other problems.
+     */
     public static ReactorBuilder newReactorBuilder(ReactorType type) {
-        Preconditions.checkNotNull(type, "type");
+        checkNotNull(type, "type");
+
         switch (type) {
             case NIO:
                 return new NioReactorBuilder();
@@ -137,9 +146,9 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * A Runnable that is executed on the eventloop as soon as the eventloop is starting.
+     * A command that is executed on the eventloop as soon as the eventloop is starting.
      *
-     * @param initCommand
+     * @param initCommand the command to execute.
      * @throws NullPointerException if <code>initCommand</code> is null.
      */
     public void setInitCommand(Consumer<Reactor> initCommand) {
@@ -147,9 +156,15 @@ public abstract class ReactorBuilder {
         this.initCommand = initCommand;
     }
 
-    public void setPrimordialTaskQueueBuilder(TaskQueueBuilder primordialTaskQueueBuilder) {
-        checkNotNull(primordialTaskQueueBuilder, "primordialTaskQueueBuilder");
-        this.primordialTaskQueueBuilder = primordialTaskQueueBuilder;
+    /**
+     * Sets the default {@link TaskQueueBuilder}.
+     *
+     * @param defaultTaskQueueBuilder the default {@link TaskQueueBuilder}.
+     * @throws NullPointerException if <code>defaultTaskQueueBuilder</code> is null.
+     */
+    public void setDefaultTaskQueueBuilder(TaskQueueBuilder defaultTaskQueueBuilder) {
+        checkNotNull(defaultTaskQueueBuilder, "defaultTaskQueueBuilder");
+        this.defaultTaskQueueBuilder = defaultTaskQueueBuilder;
     }
 
     /**
@@ -269,7 +284,7 @@ public abstract class ReactorBuilder {
 
     /**
      * Sets the name of the thread. If configured, the thread name is set
-     * after the thread is created. If not confiugured, the thread name provided
+     * after the thread is created. If not configured, the thread name provided
      * by the ThreadFactory is used.
      *
      * @param threadName the name of the thread.
@@ -326,6 +341,7 @@ public abstract class ReactorBuilder {
      * create a family of similar {@link Reactor} instances.
      *
      * @return the created Reactor.
+     * @throws IllegalStateException if the ReactorBuilder is already built.
      */
     public final Reactor build() {
         verifyNotBuilt();
@@ -341,14 +357,14 @@ public abstract class ReactorBuilder {
         }
     }
 
-    TaskQueueBuilder newPrimordialTaskQueueBuilder() {
-        if (primordialTaskQueueBuilder == null) {
-            primordialTaskQueueBuilder = new TaskQueueBuilder()
-                    .setName("primordial")
+    TaskQueueBuilder newDefaultTaskQueueBuilder() {
+        if (defaultTaskQueueBuilder == null) {
+            defaultTaskQueueBuilder = new TaskQueueBuilder()
+                    .setName("default")
                     .setGlobal(new MpscArrayQueue<>(DEFAULT_LOCAL_TASK_QUEUE_CAPACITY))
                     .setLocal(new CircularQueue<>(DEFAULT_LOCAL_TASK_QUEUE_CAPACITY));
         }
 
-        return primordialTaskQueueBuilder;
+        return defaultTaskQueueBuilder;
     }
 }

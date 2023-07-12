@@ -168,7 +168,7 @@ public class TpcServerBootstrap {
                     return operationThread;
                 });
 
-                builder.setPrimordialTaskQueueBuilder(new TaskQueueBuilder()
+                builder.setDefaultTaskQueueBuilder(new TaskQueueBuilder()
                         .setTaskProcessor(operationThread)
                         .setGlobal(operationThread.getQueue().getNormalQueue())
                         //ugly, but needed for now

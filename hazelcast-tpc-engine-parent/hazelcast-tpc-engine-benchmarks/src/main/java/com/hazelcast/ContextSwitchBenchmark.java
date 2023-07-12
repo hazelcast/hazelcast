@@ -74,7 +74,7 @@ public class ContextSwitchBenchmark {
 
         reactor.execute(() -> {
             if (taskGroupCount == 0) {
-                handles.add(reactor.eventloop().primordialTaskQueueHandle());
+                handles.add(reactor.eventloop().defaultTaskQueueHandle());
             } else {
                 for (int k = 0; k < taskGroupCount; k++) {
                     handles.add(taskGroupFactor.apply(reactor.eventloop()));

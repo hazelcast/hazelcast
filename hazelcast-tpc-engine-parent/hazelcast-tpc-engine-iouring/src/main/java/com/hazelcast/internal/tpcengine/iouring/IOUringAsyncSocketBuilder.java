@@ -49,7 +49,7 @@ public class IOUringAsyncSocketBuilder implements AsyncSocketBuilder {
             this.clientSide = false;
         }
         this.options = new IOUringAsyncSocketOptions(nativeSocket);
-        this.taskGroupHandle = reactor.eventloop().primordialTaskQueueHandle();
+        this.taskGroupHandle = reactor.eventloop().defaultTaskQueueHandle();
     }
 
     @Override

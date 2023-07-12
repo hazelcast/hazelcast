@@ -66,7 +66,7 @@ public abstract class Eventloop {
     protected final Clock nanoClock;
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
-    protected final TaskQueueHandle primordialTaskQueueHandle;
+    protected final TaskQueueHandle defaultTaskQueueHandle;
     private final ReactorMetrics metrics;
     private final long minGranularityNanos;
     protected boolean stop;
@@ -113,9 +113,9 @@ public abstract class Eventloop {
                     builder.minGranularityNanos);
         }
 
-        TaskQueueBuilder primordialTaskQueueBuilder = builder.newPrimordialTaskQueueBuilder();
-        primordialTaskQueueBuilder.eventloop = this;
-        this.primordialTaskQueueHandle = primordialTaskQueueBuilder.build();
+        TaskQueueBuilder defaultTaskQueueBuilder = builder.newDefaultTaskQueueBuilder();
+        defaultTaskQueueBuilder.eventloop = this;
+        this.defaultTaskQueueHandle = defaultTaskQueueBuilder.build();
     }
 
     /**
@@ -128,8 +128,13 @@ public abstract class Eventloop {
         return taskStartNanos;
     }
 
-    public final TaskQueueHandle primordialTaskQueueHandle() {
-        return primordialTaskQueueHandle;
+    /**
+     * Gets the {@link TaskQueueHandle} for the default {@link TaskQueue}.
+     *
+     * @return the handle for the default {@link TaskQueue}.
+     */
+    public final TaskQueueHandle defaultTaskQueueHandle() {
+        return defaultTaskQueueHandle;
     }
 
     /**
@@ -150,7 +155,7 @@ public abstract class Eventloop {
     }
 
     public final boolean offer(Object task) {
-        return offer(task, primordialTaskQueueHandle);
+        return offer(task, defaultTaskQueueHandle);
     }
 
     public final boolean offer(Object task, TaskQueueHandle handle) {
@@ -448,7 +453,7 @@ public abstract class Eventloop {
     public final boolean schedule(Runnable cmd,
                                   long delay,
                                   TimeUnit unit) {
-        return schedule(cmd, delay, unit, primordialTaskQueueHandle);
+        return schedule(cmd, delay, unit, defaultTaskQueueHandle);
     }
 
     /**
@@ -543,7 +548,7 @@ public abstract class Eventloop {
         DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
         task.promise = promise;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
-        task.taskQueue = primordialTaskQueueHandle.queue;
+        task.taskQueue = defaultTaskQueueHandle.queue;
         deadlineScheduler.offer(task);
         return promise;
     }
