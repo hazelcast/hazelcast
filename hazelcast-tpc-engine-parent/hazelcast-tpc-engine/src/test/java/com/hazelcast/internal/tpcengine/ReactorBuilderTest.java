@@ -40,6 +40,13 @@ public abstract class ReactorBuilderTest {
     }
 
     @Test
+    public void test_setReactorName_whenAlreadyBuilt() {
+        ReactorBuilder builder = newBuilder();
+        builder.build();
+        assertThrows(IllegalStateException.class, () -> builder.setReactorName("banana"));
+    }
+
+    @Test
     public void test_setReactorName() {
         ReactorBuilder builder = newBuilder();
         builder.setReactorName("banana");

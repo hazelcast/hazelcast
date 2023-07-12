@@ -37,6 +37,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * A builder for {@link Reactor} instances.
+ * <p/>
+ * Only a single Reactor can be build per builder instance.
  */
 public abstract class ReactorBuilder {
 
@@ -149,9 +151,11 @@ public abstract class ReactorBuilder {
      * A command that is executed on the eventloop as soon as the eventloop is starting.
      *
      * @param initCommand the command to execute.
-     * @throws NullPointerException if <code>initCommand</code> is null.
+     * @throws NullPointerException  if <code>initCommand</code> is null.
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setInitCommand(Consumer<Reactor> initCommand) {
+        verifyNotBuilt();
         checkNotNull(initCommand, "initCommand");
         this.initCommand = initCommand;
     }
@@ -160,9 +164,11 @@ public abstract class ReactorBuilder {
      * Sets the default {@link TaskQueueBuilder}.
      *
      * @param defaultTaskQueueBuilder the default {@link TaskQueueBuilder}.
-     * @throws NullPointerException if <code>defaultTaskQueueBuilder</code> is null.
+     * @throws NullPointerException  if <code>defaultTaskQueueBuilder</code> is null.
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setDefaultTaskQueueBuilder(TaskQueueBuilder defaultTaskQueueBuilder) {
+        verifyNotBuilt();
         checkNotNull(defaultTaskQueueBuilder, "defaultTaskQueueBuilder");
         this.defaultTaskQueueBuilder = defaultTaskQueueBuilder;
     }
@@ -173,8 +179,10 @@ public abstract class ReactorBuilder {
      *
      * @param runQueueCapacity the capacity of the run queue.
      * @throws IllegalArgumentException if the capacity is not a positive number.
+     * @throws IllegalStateException    if the Reactor has already been built.
      */
     public void setRunQueueCapacity(int runQueueCapacity) {
+        verifyNotBuilt();
         this.runQueueCapacity = checkPositive(runQueueCapacity, "runQueueCapacity");
     }
 
@@ -187,8 +195,10 @@ public abstract class ReactorBuilder {
      * @param unit          the unit of the target latency.
      * @throws IllegalArgumentException if the targetLatency is not a positive number.
      * @throws NullPointerException     if unit is null.
+     * @throws IllegalStateException    if the Reactor has already been built.
      */
     public void setTargetLatency(long targetLatency, TimeUnit unit) {
+        verifyNotBuilt();
         checkPositive(targetLatency, "targetLatency");
         checkNotNull(unit, "unit");
         this.targetLatencyNanos = unit.toNanos(targetLatency);
@@ -204,9 +214,11 @@ public abstract class ReactorBuilder {
      * @param minGranularity the minimum granularity.
      * @param unit           the unit of the minGranularity.
      * @throws IllegalArgumentException if the targetLatency is not a positive number.
-     * @throws NullPointerException     if unit is null.
+     * @throws NullPointerException     if unit is <code>null</code>.
+     * @throws IllegalStateException    if the Reactor has already been built.
      */
     public void setMinGranularity(long minGranularity, TimeUnit unit) {
+        verifyNotBuilt();
         checkPositive(minGranularity, "minGranularity");
         checkNotNull(unit, "unit");
         this.minGranularityNanos = unit.toNanos(minGranularity);
@@ -223,9 +235,11 @@ public abstract class ReactorBuilder {
      * @param stallThreshold the stall threshold.
      * @param unit           the unit of the stall threshold.
      * @throws IllegalArgumentException if the targetLatency is not a positive number.
-     * @throws NullPointerException     if unit is null.
+     * @throws NullPointerException     if unit is <code>null</code>>.
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setStallThreshold(long stallThreshold, TimeUnit unit) {
+        verifyNotBuilt();
         checkPositive(stallThreshold, "stallThreshold");
         checkNotNull(unit, "unit");
         this.stallThresholdNanos = unit.toNanos(stallThreshold);
@@ -236,8 +250,10 @@ public abstract class ReactorBuilder {
      *
      * @param stallHandler the new StallHandler.
      * @throws NullPointerException if stallHandler is <code>null</code>.
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setStallHandler(StallHandler stallHandler) {
+        verifyNotBuilt();
         this.stallHandler = checkNotNull(stallHandler, "stallHandler");
     }
 
@@ -255,8 +271,12 @@ public abstract class ReactorBuilder {
      *
      * @param ioInterval the io interval
      * @param unit       the unit for the io interval.
+     * @throws NullPointerException if unit is <code>null</code>.
+     * @throws IllegalArgumentException if ioInterval is not a positive number.
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setIoInterval(long ioInterval, TimeUnit unit) {
+        verifyNotBuilt();
         checkPositive(ioInterval, "ioInterval");
         checkNotNull(unit, "unit");
         this.ioIntervalNanos = unit.toNanos(ioInterval);
@@ -267,8 +287,10 @@ public abstract class ReactorBuilder {
      *
      * @param reactorName the reactor name.
      * @throws NullPointerException if reactorName is <code>null</code>.
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setReactorName(String reactorName) {
+        verifyNotBuilt();
         this.reactorName = checkNotNull(reactorName, "reactorName");
     }
 
@@ -277,8 +299,10 @@ public abstract class ReactorBuilder {
      *
      * @param threadFactory the ThreadFactory
      * @throws NullPointerException if threadFactory is set to <code>null</code>>.
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
+        verifyNotBuilt();
         this.threadFactory = checkNotNull(threadFactory, "threadFactory");
     }
 
@@ -288,8 +312,10 @@ public abstract class ReactorBuilder {
      * by the ThreadFactory is used.
      *
      * @param threadName the name of the thread.
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setThreadName(String threadName) {
+        verifyNotBuilt();
         this.threadName = threadName;
     }
 
@@ -298,8 +324,10 @@ public abstract class ReactorBuilder {
      * is applied.
      *
      * @param threadAffinity the ThreadAffinity.
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setThreadAffinity(ThreadAffinity threadAffinity) {
+        verifyNotBuilt();
         this.threadAffinity = threadAffinity;
     }
 
@@ -308,14 +336,25 @@ public abstract class ReactorBuilder {
      *
      * @param deadlineRunQueueCapacity the capacity
      * @throws IllegalArgumentException if scheduledTaskQueueCapacity not positive.
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setDeadlineRunQueueCapacity(int deadlineRunQueueCapacity) {
+        verifyNotBuilt();
         this.deadlineRunQueueCapacity = checkPositive(deadlineRunQueueCapacity, "deadlineRunQueueCapacity");
     }
 
-    // In the future we want to have better policies than only spinning.
-    // See BackoffIdleStrategy
+    /**
+     * Sets the spin policy. If spin is true, the reactor will spin on the run queue if there are no
+     * tasks to run. If spin is false, the reactor will park the thread if there are no tasks to run.
+     * <p/>
+     * In the future we want to have better policies than only spinning. For example, see
+     * BackoffIdleStrategy
+     *
+     * @param spin true is spin is enabled, false otherwise.
+     * @throws IllegalStateException if the Reactor has already been built.
+     */
     public final void setSpin(boolean spin) {
+        verifyNotBuilt();
         this.spin = spin;
     }
 
@@ -325,12 +364,22 @@ public abstract class ReactorBuilder {
      * and debugging purposes.
      *
      * @param cfs if true, the {@link CfsTaskQueueScheduler} is used. Otherwise the {@link FcfsTaskQueueScheduler}
+     * @throws IllegalStateException if the Reactor has already been built.
      */
     public final void setCfs(boolean cfs) {
+        verifyNotBuilt();
         this.cfs = cfs;
     }
 
+    /**
+     * Sets the BlockDeviceRegistry
+     *
+     * @param blockDeviceRegistry the BlockDeviceRegistry
+     * @throws NullPointerException if <code>blockDeviceRegistry</code> is <code>null</code>.
+     * @throws IllegalStateException if the Reactor has already been built.
+     */
     public void setBlockDeviceRegistry(BlockDeviceRegistry blockDeviceRegistry) {
+        verifyNotBuilt();
         this.blockDeviceRegistry = checkNotNull(blockDeviceRegistry, "blockDeviceRegistry");
     }
 
