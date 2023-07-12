@@ -115,7 +115,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     private final Address localMemberAddress;
     private final WatermarkKeysAssigner watermarkKeysAssigner;
     private long watermarkThrottlingFrameSize = -1;
-    private final Map<String, List<Map<String, Expression<?>>>> prunabilities;
+    private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
 
     private final DagBuildContextImpl dagBuildContext;
 
@@ -124,14 +124,14 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
             QueryParameterMetadata parameterMetadata,
             @Nullable WatermarkKeysAssigner watermarkKeysAssigner,
             Set<PlanObjectKey> usedViews,
-            @Nullable Map<String, List<Map<String, Expression<?>>>> prunabilities
+            @Nullable Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates
     ) {
         super(new DAG());
         this.nodeEngine = nodeEngine;
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.watermarkKeysAssigner = watermarkKeysAssigner;
         this.objectKeys.addAll(usedViews);
-        this.prunabilities = prunabilities;
+        this.partitionStrategyCandidates = partitionStrategyCandidates;
 
         dagBuildContext = new DagBuildContextImpl(nodeEngine, getDag(), parameterMetadata);
     }
@@ -698,7 +698,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     }
 
     private List<List<Expression<?>>> computeRequiredPartitionsToScan(String mapName) {
-        List<Map<String, Expression<?>>> candidates = prunabilities.get(mapName);
+        List<Map<String, Expression<?>>> candidates = partitionStrategyCandidates.get(mapName);
         if (candidates == null) {
             return emptyList();
         }

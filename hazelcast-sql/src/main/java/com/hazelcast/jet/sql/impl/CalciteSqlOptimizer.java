@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -732,7 +731,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     OptUtils.isUnbounded(physicalRel),
                     rowMetadata,
                     planExecutor,
-                    permissions
+                    permissions,
+                    partitionStrategyCandidates(physicalRel, parameterMetadata)
             );
         }
     }
@@ -903,7 +903,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata,
             Set<PlanObjectKey> usedViews,
-            @Nullable Map<String, List<Map<String, Expression<?>>>> prunabilities) {
+            @Nullable Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates) {
         String exceptionMessage = new ExecutionStopperFinder(physicalRel).find();
         if (exceptionMessage != null) {
             throw QueryException.error(exceptionMessage);
@@ -918,7 +918,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 parameterMetadata,
                 wmKeysAssigner,
                 usedViews,
-                prunabilities);
+                partitionStrategyCandidates);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return tuple2(visitor.getDag(), visitor.getObjectKeys());

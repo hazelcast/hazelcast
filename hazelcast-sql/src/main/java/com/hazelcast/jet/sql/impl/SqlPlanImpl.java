@@ -1055,6 +1055,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final SqlRowMetadata rowMetadata;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
 
         SelectPlan(
                 PlanKey planKey,
@@ -1065,7 +1066,8 @@ abstract class SqlPlanImpl extends SqlPlan {
                 boolean isStreaming,
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
-                List<Permission> permissions
+                List<Permission> permissions,
+                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates
         ) {
             super(planKey);
 
@@ -1077,6 +1079,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.partitionStrategyCandidates = partitionStrategyCandidates;
         }
 
         QueryParameterMetadata getParameterMetadata() {
@@ -1107,6 +1110,10 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean isPlanValid(PlanCheckContext context) {
             return context.isValid(objectKeys);
+        }
+
+        public Map<String, List<Map<String, Expression<?>>>> getPartitionStrategyCandidates() {
+            return partitionStrategyCandidates;
         }
 
         @Override
