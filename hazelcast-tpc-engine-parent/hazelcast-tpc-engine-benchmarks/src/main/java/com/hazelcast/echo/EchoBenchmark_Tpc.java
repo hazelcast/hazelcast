@@ -31,7 +31,6 @@ import com.hazelcast.internal.tpcengine.nio.NioAsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.jctools.util.PaddedAtomicLong;
-import org.jetbrains.annotations.NotNull;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -168,7 +167,6 @@ public class EchoBenchmark_Tpc {
         return sum;
     }
 
-    @NotNull
     private static ReactorBuilder newReactorBuilder() {
         if (reactorType == ReactorType.NIO) {
             return new NioReactorBuilder();

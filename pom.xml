@@ -164,7 +164,7 @@
         <awaitility.version>4.2.0</awaitility.version>
         <kubernetes-server-mock.version>6.7.2</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
-        <net.openhft.affinity.version></net.openhft.affinity.version>
+        <net.openhft.affinity.version>3.23.3</net.openhft.affinity.version>
         <jctools.version>4.0.1</jctools.version>
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 

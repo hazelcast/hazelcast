@@ -26,7 +26,6 @@ import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
 import io.netty.incubator.channel.uring.IOUringServerSocketChannel;
 import io.netty.incubator.channel.uring.IOUringSocketChannel;
 import org.jctools.util.PaddedAtomicLong;
-import org.jetbrains.annotations.NotNull;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
@@ -122,7 +121,6 @@ public class EchoBenchmark_Netty {
         System.exit(0);
     }
 
-    @NotNull
     private static Class<? extends Channel> newSocketChannel(Type type) {
         switch (type) {
             case NIO:
@@ -136,7 +134,6 @@ public class EchoBenchmark_Netty {
         }
     }
 
-    @NotNull
     private static Class<? extends ServerChannel> newServerChannel(Type type) {
         switch (type) {
             case NIO:
@@ -150,7 +147,6 @@ public class EchoBenchmark_Netty {
         }
     }
 
-    @NotNull
     private static EventLoopGroup newEventloopGroup(Type type, String affinity) {
         switch (type) {
             case NIO:
@@ -172,7 +168,7 @@ public class EchoBenchmark_Netty {
         }
 
         @Override
-        public Thread newThread(@NotNull Runnable r) {
+        public Thread newThread(Runnable r) {
             Runnable task = () -> {
                 ThreadAffinity threadAffinity = affinity == null ? null : new ThreadAffinity(affinity);
                 if (threadAffinity != null) {
