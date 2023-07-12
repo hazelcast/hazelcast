@@ -42,6 +42,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +57,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
@@ -182,31 +184,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         kafkaTestSupport.registerSchema(name + "-value", NAME_SSN_SCHEMA);
         assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
 
-        // insert record against old schema
-        sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob')");
-        // insert record against old schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 31).build(),
-                new GenericRecordBuilder(NAME_SCHEMA).set("name", "Carol").build());
-        // insert record against new schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 47).build(),
-                new GenericRecordBuilder(NAME_SSN_SCHEMA).set("name", "Dave").set("ssn", 123456789L).build());
-        // insert record against old schema again
-        sqlService.execute("INSERT INTO " + name + " VALUES (53, 'Erin')");
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // assert both initial & evolved records are correctly read
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM " + name,
-                asList(
-                        new Row(13, "Alice"),
-                        new Row(29, "Bob"),
-                        new Row(31, "Carol"),
-                        new Row(47, "Dave"),
-                        new Row(53, "Erin")
-                )
-        );
+        insertAndAssertRecords(name, false);
     }
 
     @Test
@@ -232,31 +210,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                         "ssn BIGINT")
                 .createOrReplace();
 
-        // insert record against new schema
-        sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob', 123456789)");
-        // insert record against old schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 31).build(),
-                new GenericRecordBuilder(NAME_SCHEMA).set("name", "Carol").build());
-        // insert record against new schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 47).build(),
-                new GenericRecordBuilder(NAME_SSN_SCHEMA).set("name", "Dave").set("ssn", 123456789L).build());
-        // insert record against new schema again
-        sqlService.execute("INSERT INTO " + name + " VALUES (53, 'Erin', 987654321)");
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // assert both initial & evolved records are correctly read
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM " + name,
-                asList(
-                        new Row(13, "Alice", null),
-                        new Row(29, "Bob", 123456789L),
-                        new Row(31, "Carol", null),
-                        new Row(47, "Dave", 123456789L),
-                        new Row(53, "Erin", 987654321L)
-                )
-        );
+        insertAndAssertRecords(name, true);
     }
 
     @Test
@@ -281,7 +235,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         kafkaTestSupport.registerSchema(name + "-value", NAME_SSN_SCHEMA);
         assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
 
-        // insert record against old schema
+        // insert record against mapping's schema
         assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob')"))
                 .hasMessageContaining("Error serializing Avro message");
     }
@@ -317,31 +271,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                          "use.latest.version", true)
                 .createOrReplace();
 
-        // insert record against new schema
-        sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob', 123456789)");
-        // insert record against old schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 31).build(),
-                new GenericRecordBuilder(NAME_SCHEMA).set("name", "Carol").build());
-        // insert record against new schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 47).build(),
-                new GenericRecordBuilder(NAME_SSN_SCHEMA).set("name", "Dave").set("ssn", 123456789L).build());
-        // insert record against new schema again
-        sqlService.execute("INSERT INTO " + name + " VALUES (53, 'Erin', 987654321)");
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // assert both initial & evolved records are correctly read
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM " + name,
-                asList(
-                        new Row(13, "Alice", null),
-                        new Row(29, "Bob", 123456789L),
-                        new Row(31, "Carol", null),
-                        new Row(47, "Dave", 123456789L),
-                        new Row(53, "Erin", 987654321L)
-                )
-        );
+        insertAndAssertRecords(name, true);
     }
 
     @Test
@@ -368,31 +298,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         kafkaTestSupport.registerSchema(name + "-value", NAME_SSN_SCHEMA);
         assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
 
-        // insert record against old schema
-        sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob')");
-        // insert record against old schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 31).build(),
-                new GenericRecordBuilder(NAME_SCHEMA).set("name", "Carol").build());
-        // insert record against new schema externally
-        kafkaTestSupport.produce(name,
-                new GenericRecordBuilder(ID_SCHEMA).set("id", 47).build(),
-                new GenericRecordBuilder(NAME_SSN_SCHEMA).set("name", "Dave").set("ssn", 123456789L).build());
-        // insert record against old schema again
-        sqlService.execute("INSERT INTO " + name + " VALUES (53, 'Erin')");
-        assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
-
-        // assert both initial & evolved records are correctly read
-        assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM " + name,
-                asList(
-                        new Row(13, "Alice"),
-                        new Row(29, "Bob"),
-                        new Row(31, "Carol"),
-                        new Row(47, "Dave"),
-                        new Row(53, "Erin")
-                )
-        );
+        insertAndAssertRecords(name, false);
     }
 
     @Test
@@ -429,30 +335,40 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                          "value.schema.id", valueSchemaId2)
                 .createOrReplace();
 
-        // insert record against old schema
-        sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob', 123456789)");
+        insertAndAssertRecords(name, true);
+    }
+
+    private void insertAndAssertRecords(String name, boolean mappingUpdated) throws SchemaRegistryException {
+        int fields = mappingUpdated ? 3 : 2;
+
+        // insert record against mapping's schema
+        sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob'" + (fields == 3 ? ", 123456789)" : ")"));
+
         // insert record against old schema externally
         kafkaTestSupport.produce(name,
                 new GenericRecordBuilder(ID_SCHEMA).set("id", 31).build(),
                 new GenericRecordBuilder(NAME_SCHEMA).set("name", "Carol").build());
+
         // insert record against new schema externally
         kafkaTestSupport.produce(name,
                 new GenericRecordBuilder(ID_SCHEMA).set("id", 47).build(),
                 new GenericRecordBuilder(NAME_SSN_SCHEMA).set("name", "Dave").set("ssn", 123456789L).build());
-        // insert record against old schema again
-        sqlService.execute("INSERT INTO " + name + " VALUES (53, 'Erin', 987654321)");
+
+        // insert record against mapping's schema again
+        sqlService.execute("INSERT INTO " + name + " VALUES (53, 'Erin'" + (fields == 3 ? ", 987654321)" : ")"));
         assertEquals(2, kafkaTestSupport.getLatestSchemaVersion(name + "-value"));
 
         // assert both initial & evolved records are correctly read
+        Object[][] records = {
+                { 13, "Alice", null },
+                { 29, "Bob", 123456789L },
+                { 31, "Carol", null },
+                { 47, "Dave", 123456789L },
+                { 53, "Erin", 987654321L }
+        };
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
-                asList(
-                        new Row(13, "Alice", null),
-                        new Row(29, "Bob", 123456789L),
-                        new Row(31, "Carol", null),
-                        new Row(47, "Dave", 123456789L),
-                        new Row(53, "Erin", 987654321L)
-                )
+                Arrays.stream(records).map(record -> new Row(Arrays.copyOf(record, fields))).collect(toList())
         );
     }
 
