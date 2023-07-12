@@ -268,12 +268,12 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         return result;
     }
 
-    abstract static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
+    public abstract static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
 
         private static final long serialVersionUID = 1L;
         protected final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 
-        LocalProcessorMetaSupplier(
+        protected LocalProcessorMetaSupplier(
                 @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
         ) {
             this.readerSupplier = readerSupplier;
@@ -322,13 +322,13 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         public LocalProcessorSupplier() {
         }
 
-        LocalProcessorSupplier(
+        public LocalProcessorSupplier(
                 @Nonnull BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
         ) {
             this.readerSupplier = readerSupplier;
         }
 
-        LocalProcessorSupplier(
+        public LocalProcessorSupplier(
                 @Nonnull BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
                 int[] partitionsToScan
         ) {
@@ -431,7 +431,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
      * @param <B> type of the batch object
      * @param <R> type of the record
      */
-    abstract static class Reader<F extends CompletableFuture, B, R> {
+    public abstract static class Reader<F extends CompletableFuture, B, R> {
 
         protected final String objectName;
         protected InternalSerializationService serializationService;

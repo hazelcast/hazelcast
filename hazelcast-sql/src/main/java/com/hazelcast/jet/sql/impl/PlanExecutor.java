@@ -67,18 +67,10 @@ import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.jet.sql.impl.validate.UpdateDataConnectionOperation;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
-import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
-import com.hazelcast.partition.strategy.StrategyUtil;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -91,7 +83,6 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
@@ -111,13 +102,11 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -143,6 +132,7 @@ import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHaz
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.JSON;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
+import static com.hazelcast.sql.impl.QueryUtils.getMapContainer;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
@@ -151,7 +141,7 @@ import static java.util.Comparator.comparing;
 
 public class PlanExecutor {
     private static final String LE = System.lineSeparator();
-    private static final String DEFAULT_UNIQUE_KEY = "__key";
+    public static final String DEFAULT_UNIQUE_KEY = "__key";
     private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
 
     private final TableResolverImpl catalog;
@@ -505,11 +495,6 @@ public class PlanExecutor {
 
     SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
-        ExpressionEvalContext evalContext = new ExpressionEvalContextImpl(
-                args,
-                serializationService,
-                Util.getNodeEngine(hazelcastInstance));
 
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
@@ -517,62 +502,10 @@ public class PlanExecutor {
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isStreaming())
                 .setTimeoutMillis(timeout);
 
-        final Set<Integer> partitions = new HashSet<>();
-        boolean allVariantsValid = true;
-        for (final String mapName : plan.getPartitionStrategyCandidates().keySet()) {
-            var perMapCandidates = plan.getPartitionStrategyCandidates().get(mapName);
-            final var container = getMapContainer(hazelcastInstance.getMap(mapName));
-            final PartitioningStrategy<?> strategy = container.getPartitioningStrategy();
-
-            // We only support Default and Attribute strategies, even if one of the maps uses non-Default/Attribute
-            // strategy, we should abort the process and clear list of already populated partitions so that partition
-            // pruning doesn't get activated at all for this query.
-            if (strategy != null
-                    && !(strategy instanceof DefaultPartitioningStrategy)
-                    && !(strategy instanceof AttributePartitioningStrategy)) {
-                allVariantsValid = false;
-                break;
-            }
-
-            // ordering of attributes matters for partitioning (1,2) produces different partition than (2,1).
-            final List<String> orderedKeyAttributes = new ArrayList<>();
-            if (strategy instanceof AttributePartitioningStrategy) {
-                final var attributeStrategy = (AttributePartitioningStrategy) strategy;
-                orderedKeyAttributes.addAll(asList(attributeStrategy.getPartitioningAttributes()));
-            } else {
-                orderedKeyAttributes.add(DEFAULT_UNIQUE_KEY);
-            }
-
-            for (final Map<String, Expression<?>> perMapCandidate : perMapCandidates) {
-                Object[] partitionKeyComponents = new Object[orderedKeyAttributes.size()];
-                for (int i = 0; i < orderedKeyAttributes.size(); i++) {
-                    final String attribute = orderedKeyAttributes.get(i);
-                    if (!perMapCandidate.containsKey(attribute)) {
-                        // Shouldn't happen, defensive check in case Opt logic breaks and produces variants
-                        // that do not contain all the required partitioning attributes.
-                        throw new HazelcastException("Partition Pruning candidate"
-                                + " does not contain mandatory attribute: " + attribute);
-                    }
-
-                    partitionKeyComponents[i] = perMapCandidate.get(attribute).eval(null, evalContext);
-                }
-
-                final Partition partition = hazelcastInstance.getPartitionService().getPartition(
-                        StrategyUtil.constructKey(partitionKeyComponents)
-                );
-                if (partition == null) {
-                    // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
-                    // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.
-                    allVariantsValid = false;
-                    break;
-                }
-                partitions.add(partition.getPartitionId());
-            }
-        }
-
-        if (!partitions.isEmpty() && allVariantsValid) {
-            jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, partitions);
-        }
+        // All required parameters still need to be set for member pruning to work.
+//        if (plan.requiredPartitions() != null) {
+//            jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, plan.requiredPartitions());
+//        }
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
@@ -863,13 +796,6 @@ public class PlanExecutor {
         } catch (InterruptedException | ExecutionException e) {
             throw QueryException.error(e.getMessage(), e);
         }
-    }
-
-    private static <K, V> MapContainer getMapContainer(IMap<K, V> map) {
-        MapProxyImpl<K, V> mapProxy = (MapProxyImpl<K, V>) map;
-        MapService mapService = mapProxy.getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.getMapContainer(map.getName());
     }
 
     private void broadcastUpdateDataConnectionOperations(@Nonnull String dataConnectionName) {

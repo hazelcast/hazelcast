@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.connector;
+package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -25,6 +25,8 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -32,13 +34,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
-import static com.hazelcast.jet.impl.connector.SpecificPartitionsImapReaderPms.mapReader;
+import static com.hazelcast.jet.sql.impl.connector.map.SpecificPartitionsImapReaderPms.mapReader;
 import static java.util.stream.Collectors.toMap;
 
 @Category(QuickTest.class)
@@ -78,7 +81,9 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         map.put(0, 0);
 
         // Given
-        ProcessorMetaSupplier pms = mapReader(mapName);
+        ProcessorMetaSupplier pms = mapReader(mapName, List.of(
+                List.of(ConstantExpression.create(pKey, QueryDataType.INT))
+        ));
 
         JobConfig config = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, Arrays.asList(0, pKey, 2));

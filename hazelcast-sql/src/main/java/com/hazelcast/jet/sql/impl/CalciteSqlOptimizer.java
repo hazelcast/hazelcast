@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -648,7 +649,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof UpdatePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
+                    physicalRel,
+                    parameterMetadata,
+                    context.getUsedViews(),
+                    null);
             return new DmlPlan(
                     Operation.UPDATE,
                     planKey,
@@ -675,13 +680,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndMeta = createDag(
+                    physicalRel,
+                    parameterMetadata,
+                    context.getUsedViews(),
+                    null);
             return new DmlPlan(
                     operation,
                     planKey,
                     parameterMetadata,
-                    dagAndKeys.f1(),
-                    dagAndKeys.f0(),
+                    dagAndMeta.f1(),
+                    dagAndMeta.f0(),
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
@@ -689,21 +698,25 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof DeletePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndMeta = createDag(
+                    physicalRel,
+                    parameterMetadata,
+                    context.getUsedViews(),
+                    null);
             return new DmlPlan(
                     Operation.DELETE,
                     planKey,
                     parameterMetadata,
-                    dagAndKeys.f1(),
-                    dagAndKeys.f0(),
+                    dagAndMeta.f1(),
+                    dagAndMeta.f0(),
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
                     permissions
             );
         } else {
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(new RootRel(physicalRel), parameterMetadata,
-                    context.getUsedViews());
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndMeta = createDag(new RootRel(physicalRel), parameterMetadata,
+                    context.getUsedViews(), partitionStrategyCandidates(physicalRel, parameterMetadata));
 
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
@@ -713,14 +726,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return new SelectPlan(
                     planKey,
                     parameterMetadata,
-                    dagAndKeys.f1(),
-                    dagAndKeys.f0(),
+                    dagAndMeta.f1(),
+                    dagAndMeta.f0(),
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     rowMetadata,
                     planExecutor,
-                    permissions,
-                    partitionStrategyCandidates(physicalRel, parameterMetadata)
+                    permissions
             );
         }
     }
@@ -890,8 +902,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private Tuple2<DAG, Set<PlanObjectKey>> createDag(
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata,
-            Set<PlanObjectKey> usedViews
-    ) {
+            Set<PlanObjectKey> usedViews,
+            @Nullable Map<String, List<Map<String, Expression<?>>>> prunabilities) {
         String exceptionMessage = new ExecutionStopperFinder(physicalRel).find();
         if (exceptionMessage != null) {
             throw QueryException.error(exceptionMessage);
@@ -901,7 +913,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         wmKeysAssigner.assignWatermarkKeys();
         logger.finest("Watermark keys assigned");
 
-        CreateTopLevelDagVisitor visitor = new CreateTopLevelDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
+        CreateTopLevelDagVisitor visitor = new CreateTopLevelDagVisitor(
+                nodeEngine,
+                parameterMetadata,
+                wmKeysAssigner,
+                usedViews,
+                prunabilities);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return tuple2(visitor.getDag(), visitor.getObjectKeys());
@@ -942,11 +959,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     final String fieldName = columnName.equals(QueryPath.KEY)
                             ? QueryPath.KEY
                             : table.keyFields()
-                                    .filter(f -> f.getName().equals(columnName))
-                                    .findFirst()
-                                    .map(mapTableField -> mapTableField.getPath().getPath())
-                                    .orElseThrow(() -> QueryException.error(format("Can not find column %s in table %s",
-                                            tableName, columnName)));
+                            .filter(f -> f.getName().equals(columnName))
+                            .findFirst()
+                            .map(mapTableField -> mapTableField.getPath().getPath())
+                            .orElseThrow(() -> QueryException.error(format("Can not find column %s in table %s",
+                                    tableName, columnName)));
 
                     final RexNode rexNode = variant.get(columnName);
                     if (rexNode instanceof RexDynamicParam) {

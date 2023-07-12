@@ -46,6 +46,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -67,9 +68,9 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
-import static com.hazelcast.jet.impl.connector.SpecificPartitionsImapReaderPms.mapReader;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
+import static com.hazelcast.jet.sql.impl.connector.map.SpecificPartitionsImapReaderPms.mapReader;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static java.util.Arrays.asList;
@@ -189,6 +190,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode filter,
             @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<List<Expression<?>>> requiredPartitionsExprs,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
@@ -199,7 +201,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         Vertex vStart = context.getDag().newUniqueVertex(
                 toString(table),
-                mapReader(table.getMapName())
+                mapReader(table.getMapName(), requiredPartitionsExprs)
         );
 
         Vertex vEnd = context.getDag().newUniqueVertex(

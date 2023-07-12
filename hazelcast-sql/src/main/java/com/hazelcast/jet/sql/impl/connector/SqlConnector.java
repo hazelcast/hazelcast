@@ -269,9 +269,11 @@ public interface SqlConnector {
      * {@code eventTimePolicyProvider} is not null. Streaming sources should
      * support it, batch sources don't have to.
      *
-     * @param predicate               SQL expression to filter the rows
-     * @param projection              the list of field names to return
-     * @param eventTimePolicyProvider {@link EventTimePolicy}
+     * @param predicate                SQL expression to filter the rows
+     * @param projection               the list of field names to return
+     * @param requiredPartitionsToScan the set of partitions to scan,
+     *                                 if partitioning strategy is used
+     * @param eventTimePolicyProvider  {@link EventTimePolicy}
      * @return The DAG Vertex handling the reading
      */
     @Nonnull
@@ -279,6 +281,7 @@ public interface SqlConnector {
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode predicate,
             @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<List<Expression<?>>> requiredPartitionsToScan,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
@@ -370,26 +373,26 @@ public interface SqlConnector {
      * The processor is expected to work in a different mode, depending on the
      * `hasInput` argument:<ol>
      *
-     *     <li><b>hasInput == false:</b> There will be no input to the
-     *     processor. The processor is supposed to update all rows matching the
-     *     given `predicate`. If the `predicate` is null, it's supposed to
-     *     update all rows. The `expressions` have no input references.
+     * <li><b>hasInput == false:</b> There will be no input to the
+     * processor. The processor is supposed to update all rows matching the
+     * given `predicate`. If the `predicate` is null, it's supposed to
+     * update all rows. The `expressions` have no input references.
      *
-     *     <li><b>hasInput == true:</b> The processor is supposed to update all
-     *     rows with primary keys it receives on the input. In this mode the
-     *     `predicate` is always null. The primary key fields are specified by
-     *     the {@link #getPrimaryKey(Table)} method. If {@link
-     *     #dmlSupportsPredicates()} returned false, or if {@link
-     *     #supportsExpression} always returns false, `hasInput` is always true.
-     *     The `expressions` might contain input references. The input's first
-     *     columns are the primary key values, the rest are values that might be
-     *     referenced by expressions.
+     * <li><b>hasInput == true:</b> The processor is supposed to update all
+     * rows with primary keys it receives on the input. In this mode the
+     * `predicate` is always null. The primary key fields are specified by
+     * the {@link #getPrimaryKey(Table)} method. If {@link
+     * #dmlSupportsPredicates()} returned false, or if {@link
+     * #supportsExpression} always returns false, `hasInput` is always true.
+     * The `expressions` might contain input references. The input's first
+     * columns are the primary key values, the rest are values that might be
+     * referenced by expressions.
      *
      * </ol>
      *
-     * @param fieldNames The names of fields to update
+     * @param fieldNames  The names of fields to update
      * @param expressions The expressions to assign to each field. Has the same
-     *     length as {@code fieldNames}.
+     *                    length as {@code fieldNames}.
      */
     @Nonnull
     default Vertex updateProcessor(
@@ -409,17 +412,17 @@ public interface SqlConnector {
      * The processor is expected to work in a different mode, depending on the
      * `hasInput` argument:<ol>
      *
-     *     <li><b>hasInput == false:</b> There will be no input to the
-     *     processor. The processor is supposed to update all rows matching the
-     *     given `predicate`. If the `predicate` is null, it's supposed to
-     *     update all rows.
+     * <li><b>hasInput == false:</b> There will be no input to the
+     * processor. The processor is supposed to update all rows matching the
+     * given `predicate`. If the `predicate` is null, it's supposed to
+     * update all rows.
      *
-     *     <li><b>hasInput == true:</b> The processor is supposed to delete all
-     *     rows with primary keys it receives on the input. In this mode the
-     *     `predicate` is always null. The primary key fields are specified by
-     *     the {@link #getPrimaryKey(Table)} method. If {@link
-     *     #dmlSupportsPredicates()} returned false, or if {@link
-     *     #supportsExpression} always returns false, `hasInput` is always true.
+     * <li><b>hasInput == true:</b> The processor is supposed to delete all
+     * rows with primary keys it receives on the input. In this mode the
+     * `predicate` is always null. The primary key fields are specified by
+     * the {@link #getPrimaryKey(Table)} method. If {@link
+     * #dmlSupportsPredicates()} returned false, or if {@link
+     * #supportsExpression} always returns false, `hasInput` is always true.
      *
      * </ol>
      */
@@ -458,7 +461,7 @@ public interface SqlConnector {
      * The default implementation returns true for {@link RexDynamicParam}.
      *
      * @param expression expression to be analysed. Entire expression must be
-     *     checked, not only the root node.
+     *                   checked, not only the root node.
      * @return true, iff the given expression can be evaluated remotely
      */
     default boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
