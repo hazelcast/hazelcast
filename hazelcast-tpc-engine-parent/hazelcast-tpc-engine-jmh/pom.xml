@@ -10,9 +10,9 @@
 
     <parent>
         <groupId>com.hazelcast</groupId>
-        <artifactId>hazelcast-root</artifactId>
+        <artifactId>hazelcast-tpc-engine-parent</artifactId>
         <version>5.4.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
@@ -76,7 +76,6 @@
             <groupId>net.openhft</groupId>
             <artifactId>affinity</artifactId>
             <version>3.20.0</version>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>

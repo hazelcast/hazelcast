@@ -10,9 +10,9 @@
 
     <parent>
         <groupId>com.hazelcast</groupId>
-        <artifactId>hazelcast-root</artifactId>
+        <artifactId>hazelcast-tpc-engine-parent</artifactId>
         <version>5.4.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
