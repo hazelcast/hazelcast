@@ -17,8 +17,12 @@
 package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import io.confluent.kafka.schemaregistry.avro.AvroSchema;
+import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryRestApplication;
+import io.confluent.kafka.schemaregistry.storage.KafkaSchemaRegistry;
+import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -46,6 +50,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
@@ -54,6 +59,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.test.DockerTestUtil.dockerEnabled;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -69,6 +75,7 @@ public abstract class KafkaTestSupport {
     private String brokerConnectionString;
     private Admin admin;
     private Server schemaRegistryServer;
+    private KafkaSchemaRegistry schemaRegistry;
 
     public static KafkaTestSupport create() {
         if (!dockerEnabled()) {
@@ -231,6 +238,7 @@ public abstract class KafkaTestSupport {
         SchemaRegistryRestApplication schemaRegistryApplication = new SchemaRegistryRestApplication(config);
         schemaRegistryServer = schemaRegistryApplication.createServer();
         schemaRegistryServer.start();
+        schemaRegistry = schemaRegistryApplication.schemaRegistry();
     }
 
     public void shutdownSchemaRegistry() throws Exception {
@@ -241,6 +249,16 @@ public abstract class KafkaTestSupport {
 
     public URI getSchemaRegistryURI() {
         return schemaRegistryServer.getURI();
+    }
+
+    public int registerSchema(String subject, Schema schema) throws SchemaRegistryException {
+        return schemaRegistry.register(subject, new io.confluent.kafka.schemaregistry.client.rest.entities.Schema(
+                subject, -1, -1, AvroSchema.TYPE, emptyList(), schema.toString()));
+    }
+
+    public int getLatestSchemaVersion(String subject) throws SchemaRegistryException {
+        return Optional.ofNullable(schemaRegistry.getLatestVersion(subject)).map(s -> s.getVersion())
+                .orElseThrow(() -> new SchemaRegistryException("No schema found in subject '" + subject + "'"));
     }
 
     public void assertTopicContentsEventually(
