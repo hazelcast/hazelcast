@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.google.common.collect.Lists;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
@@ -31,6 +32,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
@@ -56,13 +58,17 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
             .name("ssn").type().unionOf().nullType().and().longType().endUnion().nullDefault()
             .endRecord();
 
-    @Parameters(name = "{0}")
-    public static Iterable<String> parameters() {
-        return asList("TopicNameStrategy", "TopicRecordNameStrategy", "RecordNameStrategy");
+    @Parameters(name = "{0}, updateMapping=[{1}]")
+    public static Iterable<Object[]> parameters() {
+        return Lists.cartesianProduct(
+                asList("TopicNameStrategy", "TopicRecordNameStrategy", "RecordNameStrategy"),
+                asList(false, true)).stream().map(List::toArray).collect(toList());
     }
 
-    @Parameter
+    @Parameter(0)
     public String subjectNameStrategy;
+    @Parameter(1)
+    public boolean updateMapping;
 
     /**
      * Indicates whether {@link #subjectNameStrategy} is {@code TopicNameStrategy}.
@@ -115,28 +121,17 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
 
         insertInitialRecordAndAlterSchema();
 
-        insertAndAssertRecords(false);
-    }
+        if (updateMapping) {
+            kafkaMapping()
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR",
+                        "ssn BIGINT")
+                .optionsIf(!topicNameStrategy,
+                           "value.record.name", "jet.sql2")
+                .createOrReplace();
+        }
 
-    @Test
-    public void test_autoRegisterSchema_recreateMapping() throws SchemaRegistryException {
-        kafkaMapping()
-            .fields("id INT EXTERNAL NAME \"__key.id\"",
-                    "name VARCHAR")
-            .create();
-
-        insertInitialRecordAndAlterSchema();
-
-        // recreate mapping to match new schema
-        kafkaMapping()
-            .fields("id INT EXTERNAL NAME \"__key.id\"",
-                    "name VARCHAR",
-                    "ssn BIGINT")
-            .optionsIf(!topicNameStrategy,
-                       "value.record.name", "jet.sql2")
-            .createOrReplace();
-
-        insertAndAssertRecords(true);
+        insertAndAssertRecords();
     }
 
     @Test
@@ -154,42 +149,25 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
 
         insertInitialRecordAndAlterSchema();
 
-        if (topicNameStrategy) {
+        if (updateMapping) {
+            kafkaMapping()
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR",
+                        "ssn BIGINT")
+                .options("auto.register.schemas", false,
+                         "use.latest.version", true)
+                .optionsIf(!topicNameStrategy,
+                           "value.record.name", "jet.sql2")
+                .createOrReplace();
+        }
+
+        if (topicNameStrategy && !updateMapping) {
             // insert record against mapping's schema
             assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob')"))
                     .hasMessageContaining("Error serializing Avro message");
         } else {
-            insertAndAssertRecords(false);
+            insertAndAssertRecords();
         }
-    }
-
-    @Test
-    public void test_useLatestSchema_recreateMapping() throws SchemaRegistryException {
-        // create initial schema
-        kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA);
-        kafkaTestSupport.registerSchema(valueSubjectName, NAME_SCHEMA);
-
-        kafkaMapping()
-            .fields("id INT EXTERNAL NAME \"__key.id\"",
-                    "name VARCHAR")
-            .options("auto.register.schemas", false,
-                     "use.latest.version", true)
-            .create();
-
-        insertInitialRecordAndAlterSchema();
-
-        // recreate mapping to match new schema
-        kafkaMapping()
-            .fields("id INT EXTERNAL NAME \"__key.id\"",
-                    "name VARCHAR",
-                    "ssn BIGINT")
-            .options("auto.register.schemas", false,
-                     "use.latest.version", true)
-            .optionsIf(!topicNameStrategy,
-                       "value.record.name", "jet.sql2")
-            .createOrReplace();
-
-        insertAndAssertRecords(true);
     }
 
     @Test
@@ -206,40 +184,22 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
                      "value.schema.id", valueSchemaId)
             .create();
 
-        insertInitialRecordAndAlterSchema();
-
-        insertAndAssertRecords(false);
-    }
-
-    @Test
-    public void test_useSpecificSchema_recreateMapping() throws SchemaRegistryException {
-        // create initial schema
-        int keySchemaId = kafkaTestSupport.registerSchema(name + "-key", ID_SCHEMA);
-        int valueSchemaId = kafkaTestSupport.registerSchema(valueSubjectName, NAME_SCHEMA);
-
-        kafkaMapping()
-            .fields("id INT EXTERNAL NAME \"__key.id\"",
-                    "name VARCHAR")
-            .options("auto.register.schemas", false,
-                     "key.schema.id", keySchemaId,
-                     "value.schema.id", valueSchemaId)
-            .create();
-
         int valueSchemaId2 = insertInitialRecordAndAlterSchema();
 
-        // recreate mapping to match new schema
-        kafkaMapping()
-            .fields("id INT EXTERNAL NAME \"__key.id\"",
-                    "name VARCHAR",
-                    "ssn BIGINT")
-            .options("auto.register.schemas", false,
-                     "key.schema.id", keySchemaId,
-                     "value.schema.id", valueSchemaId2)
-            .optionsIf(!topicNameStrategy,
-                       "value.record.name", "jet.sql2")
-            .createOrReplace();
+        if (updateMapping) {
+            kafkaMapping()
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR",
+                        "ssn BIGINT")
+                .options("auto.register.schemas", false,
+                         "key.schema.id", keySchemaId,
+                         "value.schema.id", valueSchemaId2)
+                .optionsIf(!topicNameStrategy,
+                           "value.record.name", "jet.sql2")
+                .createOrReplace();
+        }
 
-        insertAndAssertRecords(true);
+        insertAndAssertRecords();
     }
 
     private int insertInitialRecordAndAlterSchema() throws SchemaRegistryException {
@@ -260,8 +220,8 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
         return valueSchemaId;
     }
 
-    private void insertAndAssertRecords(boolean mappingUpdated) throws SchemaRegistryException {
-        int fields = mappingUpdated ? 3 : 2;
+    private void insertAndAssertRecords() throws SchemaRegistryException {
+        int fields = updateMapping ? 3 : 2;
 
         // insert record against mapping's schema
         sqlService.execute("INSERT INTO " + name + " VALUES (29, 'Bob'" + (fields == 3 ? ", 123456789)" : ")"));
