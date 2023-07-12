@@ -20,6 +20,7 @@ import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -27,28 +28,53 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class KafkaSqlTestSupport extends SqlTestSupport {
-    protected static final KafkaTestSupport kafkaTestSupport = KafkaTestSupport.create();
+    protected static KafkaTestSupport kafkaTestSupport;
     protected static SqlService sqlService;
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
-        kafkaTestSupport.createKafkaCluster();
+    public static void setup() throws Exception {
         initialize(1, null);
         sqlService = instance().getSql();
+
+        kafkaTestSupport = KafkaTestSupport.create();
+        kafkaTestSupport.createKafkaCluster();
+    }
+
+    protected static void createSchemaRegistry() throws Exception {
+        Properties properties = new Properties();
+        properties.put("listeners", "http://0.0.0.0:0");
+        properties.put(SchemaRegistryConfig.KAFKASTORE_BOOTSTRAP_SERVERS_CONFIG, kafkaTestSupport.getBrokerConnectionString());
+        //When Kafka is under load the schema registry may give
+        //io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Register operation timed out; error code: 50002
+        //Because the default timeout is 500 ms. Use a bigger timeout value to avoid it
+        properties.put(SchemaRegistryConfig.KAFKASTORE_TIMEOUT_CONFIG, "5000");
+        SchemaRegistryConfig config = new SchemaRegistryConfig(properties);
+        kafkaTestSupport.createSchemaRegistry(config);
     }
 
     @AfterClass
-    public static void afterClass() {
-        kafkaTestSupport.shutdownKafkaCluster();
+    public static void teardown() throws Exception {
+        if (kafkaTestSupport != null) {
+            kafkaTestSupport.shutdownSchemaRegistry();
+            kafkaTestSupport.shutdownKafkaCluster();
+        }
     }
 
     protected static String createRandomTopic(int partitionCount) {
-        String topicName = randomName();
+        String topicName = "t_" + randomString().replace('-', '_');
         kafkaTestSupport.createTopic(topicName, partitionCount);
         return topicName;
     }
@@ -119,5 +145,46 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
     protected static String constructMappingOptions(String keyFormat, String valueFormat) {
         return "OPTIONS ('" + OPTION_KEY_FORMAT + "'='" + keyFormat + "'"
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + valueFormat + "')";
+    }
+
+    protected static class KafkaMapping {
+        protected final String name;
+        protected final List<String> fields = new ArrayList<>();
+        protected final Map<Object, Object> options = new HashMap<>();
+
+        public KafkaMapping(String name) {
+            this.name = name;
+        }
+
+        public KafkaMapping fields(String... fields) {
+            this.fields.addAll(asList(fields));
+            return this;
+        }
+
+        public KafkaMapping options(Object... options) {
+            for (int i = 0; i < options.length / 2; i++) {
+                this.options.put(options[2 * i], options[2 * i + 1]);
+            }
+            return this;
+        }
+
+        public void create() {
+            create(false);
+        }
+
+        public void createOrReplace() {
+            create(true);
+        }
+
+        protected void create(boolean replace) {
+            sqlService.execute("CREATE " + (replace ? "OR REPLACE " : "") + "MAPPING " + name + " ("
+                    + String.join(",", fields)
+                    + ")"
+                    + "TYPE " + KafkaSqlConnector.TYPE_NAME + " "
+                    + "OPTIONS (" + options.entrySet().stream()
+                            .map(e -> "'" + e.getKey() + "'='" + e.getValue() + "'").collect(joining(","))
+                    + ")"
+            );
+        }
     }
 }

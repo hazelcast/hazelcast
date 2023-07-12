@@ -605,7 +605,6 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         assertEquals(entry(0, "0"), consumeEventually(processor, outbox));
 
         kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 2);
-        kafkaTestSupport.resetProducer(); // this allows production to the added partition
 
         boolean somethingInPartition1 = false;
         for (int i = 1; i < 11; i++) {
@@ -654,7 +653,6 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         assertEquals(entry(1, "1"), consumeEventually(processor, outbox));
 
         kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 2);
-        kafkaTestSupport.resetProducer(); // this allows production to the added partition
 
         boolean somethingInPartition1 = false;
         for (int i = 2; i < 12; i++) {
@@ -923,8 +921,6 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     private Entry<Integer, String> produceEventToNewPartition(int partitionId) throws Exception {
         String value;
         while (true) {
-            // reset the producer for each attempt as it might not see the new partition yet
-            kafkaTestSupport.resetProducer();
             value = UuidUtil.newUnsecureUuidString();
             Future<RecordMetadata> future = kafkaTestSupport.produce(topic1Name, partitionId, null, 0, value);
             RecordMetadata recordMetadata = future.get();
