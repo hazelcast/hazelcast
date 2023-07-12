@@ -171,6 +171,9 @@ public class MasterContext implements DynamicMetricsProvider {
         if (jobStatus.isTerminal()) {
             jobEventService.removeAllEventListeners(jobId);
         }
+        if (metricsEnabled()) {
+            jobContext.setJobMetrics(jobStatus);
+        }
     }
 
     void setJobStatus(JobStatus jobStatus) {

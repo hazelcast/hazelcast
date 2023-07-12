@@ -1037,7 +1037,7 @@ public class MasterJobContext {
      *
      * @see MasterContext#provideDynamicMetrics
      */
-    private void setJobMetrics(JobStatus status) {
+    void setJobMetrics(JobStatus status) {
         if (!mc.metricsEnabled()) {
             return;
         }
@@ -1067,7 +1067,6 @@ public class MasterJobContext {
                     false
             );
         } else {
-            setJobMetrics(mc.jobStatus());
             clientFuture.complete(metrics);
         }
     }
@@ -1092,7 +1091,6 @@ public class MasterJobContext {
         if (firstThrowable != null) {
             clientFuture.completeExceptionally(firstThrowable);
         } else {
-            setJobMetrics(mc.jobStatus());
             setExecutionMetrics(toList(metrics, e -> (RawJobMetrics) e.getValue()));
             clientFuture.complete(this.metrics);
         }
