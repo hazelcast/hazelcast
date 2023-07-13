@@ -53,6 +53,8 @@ import java.util.Queue;
  * In Linux terms the TaskQueue would be the sched_entity.
  * <p>
  * The TaskQueue is inspired by the <a href="https://github.com/DataDog/glommio">Glommio</> TaskQueue.
+ * <p>
+ * The TaskQueue isn't threadsafe and should only be used from the eventloop thread. It
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public final class TaskQueue implements Comparable<TaskQueue> {
@@ -65,51 +67,51 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     public static final int RUN_STATE_RUNNING = 1;
     public static final int RUN_STATE_BLOCKED = 2;
 
-    public int pollState;
+    int pollState;
 
     // the interval in which the time on the CPU is measured. 1 means every interval.
-    public int clockSampleInterval;
-    public int runState = RUN_STATE_BLOCKED;
-    public String name;
-    public Queue<Object> local;
-    public Queue<Object> global;
+    int clockSampleInterval;
+    int runState = RUN_STATE_BLOCKED;
+    String name;
+    Queue<Object> local;
+    Queue<Object> global;
 
     // any runnable on the queue will be processed as is.
     // any Task on the queue will also be processed according to the contract of the task.
     // anything else is offered to the taskFactory to be wrapped inside a task.
-    public TaskProcessor processor;
-    public Eventloop eventloop;
-    public TaskQueueScheduler scheduler;
+    TaskProcessor processor;
+    Eventloop eventloop;
+    TaskQueueScheduler scheduler;
     // The accumulated amount of time this task has spend on the CPU
     // If there are other threads running on the same processor, sumExecRuntimeNanos can be
     // distorted because these threads can contribute to the runtime of this taskQueue if such
     // a thread gets context switched while a task of the TaskQueue is running.
-    public long actualRuntimeNanos;
+    long actualRuntimeNanos;
     // Field is only used when the TaskQueue is scheduled by the CfsTaskQueueScheduler.
     // the virtual runtime. The vruntime is weighted + also when reinserted into the tree,
     // the vruntime is always updated to the min_vruntime. So the vruntime isn't the actual
     // amount of time spend on the CPU
-    public long virtualRuntimeNanos;
-    public long tasksProcessed;
+    long virtualRuntimeNanos;
+    long tasksProcessed;
     // the number of times this taskQueue has been blocked
-    public long blockedCount;
+    long blockedCount;
     // the number of times this taskQueue has been context switched.
-    public long contextSwitchCount;
+    long contextSwitchCount;
 
     // the start time of this TaskQueue
-    public long startNanos;
+    long startNanos;
 
     // The TakGroup is an intrusive double-linked-list-node. This is used to keep track
     // of blocked shared tasksGroups.
-    public TaskQueue prev;
-    public TaskQueue next;
+    TaskQueue prev;
+    TaskQueue next;
 
-    public final TaskQueueMetrics metrics = new TaskQueueMetrics();
+    final TaskQueueMetrics metrics = new TaskQueueMetrics();
     //the weight is only used by the CfsTaskQueueScheduler.
-    public int weight = 1;
+    int weight = 1;
     Object task;
 
-    public boolean isEmpty() {
+    boolean isEmpty() {
         return (local != null && local.isEmpty()) && (global != null && global.isEmpty());
     }
 
@@ -118,7 +120,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
      *
      * @return true if there was a task, false otherwise.
      */
-    public boolean next() {
+    boolean next() {
         switch (pollState) {
             case POLL_LOCAL_ONLY:
                 task = local.poll();
@@ -163,7 +165,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
      * @return the Runnable that is next or <code>null</code> if this TaskQueue has no more
      * tasks to execute.
      */
-    public void run() {
+    void run() {
         assert task != null;
 
         try {
@@ -213,7 +215,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
      * @return true if task was successfully offered, false if the task was rejected.
      * @throws NullPointerException if task or global is null.
      */
-    public boolean offerGlobal(Object task) {
+    boolean offerGlobal(Object task) {
         return global.offer(task);
     }
 

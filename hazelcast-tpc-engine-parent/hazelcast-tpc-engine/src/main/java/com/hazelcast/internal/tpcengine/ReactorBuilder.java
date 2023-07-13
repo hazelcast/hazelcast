@@ -44,13 +44,13 @@ public abstract class ReactorBuilder {
 
     public static final String NAME_SCHEDULED_RUN_QUEUE_CAPACITY = "hazelcast.tpc.reactor.deadlineRunQueue.capacity";
     public static final String NAME_REACTOR_SPIN = "hazelcast.tpc.reactor.spin";
-    public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
     public static final String NAME_RUN_QUEUE_CAPACITY = "hazelcast.tpc.reactor.runQueue.capacity";
     public static final String NAME_TARGET_LATENCY_NANOS = "hazelcast.tpc.reactor.targetLatency.ns";
     public static final String NAME_MIN_GRANULARITY_NANOS = "hazelcast.tpc.reactor.minGranularity.ns";
     public static final String NAME_STALL_THRESHOLD_NANOS = "hazelcast.tpc.reactor.stallThreshold.ns";
     public static final String NAME_IO_INTERVAL_NANOS = "hazelcast.tpc.reactor.ioInterval.ns";
     public static final String NAME_CFS = "hazelcast.tpc.reactor.cfs";
+    public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
 
     private static final int DEFAULT_LOCAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY = 4096;
@@ -61,6 +61,7 @@ public abstract class ReactorBuilder {
     private static final long DEFAULT_MIN_GRANULARITY_NANOS = MICROSECONDS.toNanos(100);
     private static final boolean DEFAULT_CFS = true;
     private static final boolean DEFAULT_SPIN = false;
+    private static final ThreadAffinity DEFAULT_THREAD_AFFINITY = ThreadAffinity.newSystemThreadAffinity(NAME_REACTOR_AFFINITY);
 
     private static final Constructor<ReactorBuilder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
 
@@ -85,7 +86,7 @@ public abstract class ReactorBuilder {
     protected BlockDeviceRegistry blockDeviceRegistry = new BlockDeviceRegistry();
     protected final ReactorType type;
 
-    ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity(NAME_REACTOR_AFFINITY);
+    ThreadAffinity threadAffinity;
     ThreadFactory threadFactory = Thread::new;
 
     boolean spin;
@@ -115,6 +116,7 @@ public abstract class ReactorBuilder {
         setIoInterval(Long.getLong(NAME_IO_INTERVAL_NANOS, DEFAULT_IO_INTERVAL_NANOS), NANOSECONDS);
         setSpin(Boolean.parseBoolean(getProperty(NAME_REACTOR_SPIN, Boolean.toString(DEFAULT_SPIN))));
         setCfs(Boolean.parseBoolean(getProperty(NAME_CFS, Boolean.toString(DEFAULT_CFS))));
+        setThreadAffinity(DEFAULT_THREAD_AFFINITY);
     }
 
     /**

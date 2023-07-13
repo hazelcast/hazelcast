@@ -18,90 +18,34 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
- * The builder for the the {@link TpcEngine}.
- * <p>
- * todo: deal with affinity.
+ * The builder for the the {@link TpcEngine}. Can only be used once.
  */
-public class TpcEngineBuilder {
+public final class TpcEngineBuilder {
 
     public static final String NAME_REACTOR_COUNT = "hazelcast.tpc.reactor.count";
 
     int reactorCount = Integer.getInteger(NAME_REACTOR_COUNT, Runtime.getRuntime().availableProcessors());
+    Supplier<ReactorBuilder> reactorBuilderFn = NioReactorBuilder::new;
+    private boolean built;
 
-    Supplier<String> threadNameFn;
-
-    Supplier<String> reactorNameFn = new Supplier<>() {
-        private final AtomicInteger idGenerator = new AtomicInteger();
-
-        @Override
-        public String get() {
-            return "Reactor-" + idGenerator.incrementAndGet();
-        }
-    };
-
-    Supplier<ReactorBuilder> reactorBuilderFn = new Supplier<>() {
-        @Override
-        public ReactorBuilder get() {
-            NioReactorBuilder reactorBuilder = new NioReactorBuilder();
-            if (threadNameFn != null) {
-                reactorBuilder.setThreadName(threadNameFn.get());
-            }
-            reactorBuilder.setReactorName(reactorNameFn.get());
-            reactorBuilder.setThreadFactory(threadFactory);
-            return reactorBuilder;
-        }
-    };
-
-    private ThreadFactory threadFactory = Thread::new;
-
-    /**
-     * Sets the ThreadFactory to use for creating the Reactor threads.
-     *
-     * @param threadFactory the {@link ThreadFactory}.
-     * @throws NullPointerException if threadFactory is null.
-     */
-    public void setThreadFactory(ThreadFactory threadFactory) {
-        this.threadFactory = checkNotNull(threadFactory, "threadFactory");
-    }
-
-    /**
-     * Sets the function that provides the thread name. If this function is not set,
-     * then the thread provided by the threadFactory will be used.
-     *
-     * @param threadNameFn the function that provides the thread name.
-     * @throws NullPointerException if threadNameFn is null.
-     */
-    public void setThreadNameFn(Supplier<String> threadNameFn) {
-        this.threadNameFn = checkNotNull(threadNameFn, "threadNameFn");
-    }
-
-    /**
-     * Sets the function that provides the reactor name. If this function isn't
-     * provided, then a default implementation will be used.
-     *
-     * @param reactorNameFn the function that provides the reactor name.
-     * @throws NullPointerException if reactorNameFn is null.
-     */
-    public void setReactorNameFn(Supplier<String> reactorNameFn) {
-        this.reactorNameFn = checkNotNull(reactorNameFn, "reactorNameFn");
-    }
 
     /**
      * Sets the function that provides a ReactorBuilder instance.
      *
      * @param reactorBuilderFn the reactorBuilderFn.
      * @return this
-     * @throws NullPointerException if reactorBuilderFn is <code>null</code>.
+     * @throws NullPointerException  if <code>reactorBuilderFn</code> is <code>null</code>.
+     * @throws IllegalStateException if a TpcEngine already has already been built.
      */
     public TpcEngineBuilder setReactorBuilderFn(Supplier<ReactorBuilder> reactorBuilderFn) {
+        verifyNotBuilt();
+
         this.reactorBuilderFn = checkNotNull(reactorBuilderFn, "reactorBuilderFn");
         return this;
     }
@@ -111,21 +55,32 @@ public class TpcEngineBuilder {
      *
      * @param reactorCount the number of reactors.
      * @return this
-     * @throws IllegalArgumentException if reactorCount smaller than 1.
+     * @throws IllegalArgumentException if <code>reactorCount</code> is smaller than 1.
+     * @throws IllegalStateException    if a TpcEngine already has already been built.
      */
     public TpcEngineBuilder setReactorCount(int reactorCount) {
+        verifyNotBuilt();
+
         this.reactorCount = checkPositive(reactorCount, "reactorCount");
         return this;
     }
 
     /**
      * Builds a single TpcEngine instance.
-     * <p/>
-     * This method can be called multiple times although in practice is unlikely to happen.
      *
      * @return the created instance.
+     * @throws IllegalStateException if a TpcEngine already has already been built.
      */
     public TpcEngine build() {
+        verifyNotBuilt();
+
+        built = true;
         return new TpcEngine(this);
+    }
+
+    private void verifyNotBuilt() {
+        if (built) {
+            throw new IllegalStateException("Can't call build twice on the same ReactorBuilder");
+        }
     }
 }

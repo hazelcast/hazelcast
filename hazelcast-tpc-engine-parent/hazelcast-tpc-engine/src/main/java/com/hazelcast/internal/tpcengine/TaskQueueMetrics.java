@@ -21,6 +21,8 @@ import java.lang.invoke.VarHandle;
 
 /**
  * Contains the metrics for a {@link TaskQueue}.
+ * <p/>
+ * The metrics should only be updated by the event loop thread, but can be read by any thread.
  */
 public class TaskQueueMetrics {
     private static final VarHandle TASKS_PROCESSED_COUNT;

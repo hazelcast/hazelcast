@@ -23,25 +23,25 @@ import static org.junit.Assert.assertThrows;
 public class TaskQueueBuilderTest {
 
     @Test
-    public void test_setName_whenNull(){
+    public void test_setName_whenNull() {
         TaskQueueBuilder builder = new TaskQueueBuilder();
         assertThrows(NullPointerException.class, () -> builder.setName(null));
     }
 
     @Test
-    public void test_setTaskProcess_whenNull(){
+    public void test_setTaskProcess_whenNull() {
         TaskQueueBuilder builder = new TaskQueueBuilder();
         assertThrows(NullPointerException.class, () -> builder.setTaskProcessor(null));
     }
 
     @Test
-    public void test_setLocal_whenNull(){
+    public void test_setLocal_whenNull() {
         TaskQueueBuilder builder = new TaskQueueBuilder();
         assertThrows(NullPointerException.class, () -> builder.setLocal(null));
     }
 
     @Test
-    public void test_setGlobal_whenNull(){
+    public void test_setGlobal_whenNull() {
         TaskQueueBuilder builder = new TaskQueueBuilder();
         assertThrows(NullPointerException.class, () -> builder.setGlobal(null));
     }

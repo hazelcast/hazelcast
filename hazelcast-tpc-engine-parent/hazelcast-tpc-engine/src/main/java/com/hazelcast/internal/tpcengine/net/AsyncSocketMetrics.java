@@ -23,6 +23,8 @@ import java.lang.invoke.VarHandle;
 
 /**
  * Contains the metrics for an {@link AsyncSocket}.
+ * <p/>
+ * The metrics should only be updated by the event loop thread, but can be read by any thread.
  */
 @SuppressWarnings("checkstyle:ConstantName")
 public class AsyncSocketMetrics {

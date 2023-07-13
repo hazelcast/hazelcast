@@ -18,39 +18,25 @@ package com.hazelcast.internal.tpcengine;
 
 import org.junit.Test;
 
+import static com.hazelcast.internal.tpcengine.ReactorBuilder.newReactorBuilder;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
 public class TpcEngineBuilderTest {
 
-//    @Test
-//    public void test_setReactorNameSupplier_whenNull() {
-//        ReactorBuilder builder = newBuilder();
-//        assertThrows(NullPointerException.class, () -> builder.setReactorNameSupplier(null));
-//    }
-//
-//    @Test
-//    public void test_setReactorNameSupplier() {
-//        TpcEngineBuilder builder = new TpcEngineBuilder();
-//        builder.setReactorNameFn(new Supplier<>() {
-//            private AtomicInteger idGenerator = new AtomicInteger();
-//
-//            @Override
-//            public String get() {
-//                return "banana-" + idGenerator.incrementAndGet();
-//            }
-//        });
-//        Reactor reactor1 = builder.build();
-//        Assert.assertEquals("banana-1", reactor1.name());
-//        Assert.assertEquals("banana-1", reactor1.toString());
-//    }
-
-
     @Test
     public void test_setReactorBuilderFn_WhenNull() {
         TpcEngineBuilder builder = new TpcEngineBuilder();
         assertThrows(NullPointerException.class, () -> builder.setReactorBuilderFn(null));
+    }
+
+    @Test
+    public void test_setReactorBuilderFn_whenAlreadyBuilt() {
+        TpcEngineBuilder builder = new TpcEngineBuilder();
+        builder.build();
+
+        assertThrows(IllegalStateException.class, () -> builder.setReactorBuilderFn(() -> newReactorBuilder(ReactorType.NIO)));
     }
 
     @Test
@@ -66,13 +52,28 @@ public class TpcEngineBuilderTest {
     }
 
     @Test
+    public void test_setReactorCount_whenAlreadyBuilt() {
+        TpcEngineBuilder builder = new TpcEngineBuilder();
+        builder.build();
+
+        assertThrows(IllegalStateException.class, () -> builder.setReactorCount(0));
+    }
+
+    @Test
     public void test_build() {
         TpcEngine engine = new TpcEngineBuilder()
                 .setReactorCount(2)
-                //.setReactorBuilder(new NioReactorBuilder())
                 .build();
         assertNotNull(engine);
         assertEquals(ReactorType.NIO, engine.reactorType());
         assertEquals(2, engine.reactorCount());
+    }
+
+    @Test
+    public void test_build_whenAlreadyBuilt() {
+        TpcEngineBuilder tpcEngineBuilder = new TpcEngineBuilder();
+        tpcEngineBuilder.build();
+
+        assertThrows(IllegalStateException.class, tpcEngineBuilder::build);
     }
 }

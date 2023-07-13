@@ -22,11 +22,11 @@ import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 /**
  * A {@link StallHandler} that writes a log entry when a stall is detected.
  */
-public class LoggingStallHandler implements StallHandler {
+public final class LoggingStallHandler implements StallHandler {
 
     public static final LoggingStallHandler INSTANCE = new LoggingStallHandler();
 
-    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    private final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
     @Override
     public void onStall(Reactor reactor, TaskQueue taskQueue, Object task, long startNanos, long durationNanos) {

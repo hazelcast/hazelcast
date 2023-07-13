@@ -276,6 +276,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
                 // todo: return value
+                // todo: local not guaranteed to be set.
                 localTaskQueue.offerLocal(handler);
             } else if (writeThrough) {
                 handler.run();

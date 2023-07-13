@@ -21,6 +21,8 @@ import java.lang.invoke.VarHandle;
 
 /**
  * Contains the metrics for the {@link AsyncFile}.
+ * <p/>
+ * The metrics should only be updated by the event loop thread, but can be read by any thread.
  */
 @SuppressWarnings("checkstyle:ConstantName")
 public final class AsyncFileMetrics {
@@ -55,7 +57,6 @@ public final class AsyncFileMetrics {
             throw new ExceptionInInitializerError(e);
         }
     }
-
 
     /**
      * Returns the number of read operations that have been successfully performed on the file.

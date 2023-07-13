@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.internal.tpcengine.TpcEngine.State.NEW;
 import static com.hazelcast.internal.tpcengine.TpcEngine.State.RUNNING;
 import static com.hazelcast.internal.tpcengine.TpcEngine.State.SHUTDOWN;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
  * The TpcEngine is effectively an array of reactors.
@@ -41,7 +40,6 @@ public final class TpcEngine {
     private final int reactorCount;
     private final Reactor[] reactors;
     private final AtomicReference<State> state = new AtomicReference<>(NEW);
-    private final TpcEngineBuilder configuration;
     private final ReactorType reactorType;
 
     /**
@@ -58,7 +56,6 @@ public final class TpcEngine {
      * @throws NullPointerException when tpcEngineBuilder is null.
      */
     TpcEngine(TpcEngineBuilder tpcEngineBuilder) {
-        this.configuration = checkNotNull(tpcEngineBuilder, "tpcEngineBuilder");
         this.reactorCount = tpcEngineBuilder.reactorCount;
         this.reactors = new Reactor[reactorCount];
         this.terminationLatch = new CountDownLatch(reactorCount);

@@ -52,9 +52,9 @@
  * In theory it is also possible to let each reactor process the work it received
  * and rely on some locking schema to ensure that only 1 thread is active within
  * a certain domain. THe problem is that this approach isn't very scalable due
- * to contention (Amdahls law), and coherence (universal scalability law) that can
- * even cause retrograde scalability. Another problem is with this approach you also
- * have no control on accessing foreign memory (so memory on a different NUMA node).
+ * to contention (Amdahls law), and coherence delay (universal scalability law)
+ * that can even cause retrograde scalability. Another problem is that you have
+ * no control on accessing foreign memory (so memory on a different NUMA node).
  * <p/>
  * In theory also a SEDA like system could be written with TPC; so a system where
  * every core has a different task. It is just a matter of sharing the appropriate

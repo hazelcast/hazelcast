@@ -32,7 +32,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * <p>
  * A {@link TaskQueue} can have both a local and global task queue.
  */
-public class TaskQueueBuilder {
+public final class TaskQueueBuilder {
 
     public static final int MIN_NICE = -20;
     public static final int MAX_NICE = 20;
