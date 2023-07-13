@@ -16,8 +16,8 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 
+import com.hazelcast.jet.mongodb.ResourceExistenceChecks;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.connector.mongodb.Options.ResourceChecks;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -32,6 +32,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.ONCE_PER_JOB;
+import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.ON_EACH_CONNECT;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.CONNECTION_STRING_OPTION;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.FORCE_PARALLELISM_ONE;
 import static com.hazelcast.jet.sql.impl.connector.mongodb.Options.readExistenceChecksFlag;
@@ -53,7 +55,7 @@ class MongoTable extends JetTable {
     private final QueryDataType[] fieldTypes;
     private final BsonType[] fieldExternalTypes;
     private final boolean forceMongoParallelismOne;
-    private final ResourceChecks checkExistence;
+    private final ResourceExistenceChecks existenceChecks;
 
     MongoTable(
             @Nonnull String schemaName,
@@ -73,7 +75,7 @@ class MongoTable extends JetTable {
         this.connectionString = options.get(CONNECTION_STRING_OPTION);
         this.dataConnectionName = dataConnectionName;
         this.streaming = isStreaming(objectType);
-        this.checkExistence = readExistenceChecksFlag(options);
+        this.existenceChecks = readExistenceChecksFlag(options);
 
         this.externalNames = getFields().stream()
                                         .map(field -> ((MongoTableField) field).externalName)
@@ -109,8 +111,11 @@ class MongoTable extends JetTable {
         return fieldTypes;
     }
 
-    boolean checkExistenceAfterCreation() {
-        return checkExistence == ResourceChecks.ALWAYS;
+    boolean checkExistenceOnEachCall() {
+        return existenceChecks == ONCE_PER_JOB;
+    }
+    boolean checkExistenceOnEachConnect() {
+        return existenceChecks == ON_EACH_CONNECT;
     }
 
     QueryDataType fieldType(String externalName) {

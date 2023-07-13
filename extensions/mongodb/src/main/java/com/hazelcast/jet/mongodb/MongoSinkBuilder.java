@@ -244,7 +244,7 @@ public final class MongoSinkBuilder<T> {
      */
     @Nonnull
     public MongoSinkBuilder<T> throwOnNonExisting(boolean throwOnNonExisting) {
-        params.setThrowOnNonExisting(throwOnNonExisting);
+        params.setCheckExistenceOnEachConnect(throwOnNonExisting);
         return this;
     }
 
@@ -260,7 +260,7 @@ public final class MongoSinkBuilder<T> {
         ConnectorPermission permission = params.buildPermission();
         return Sinks.fromProcessor(name, new DbCheckingPMetaSupplierBuilder()
                 .setRequiredPermission(permission)
-                .setShouldCheck(localParams.isThrowOnNonExisting())
+                .setCheckResourceExistence(localParams.isCheckExistenceOnEachConnect())
                 .setForceTotalParallelismOne(false)
                 .setDatabaseName(localParams.getDatabaseName())
                 .setCollectionName(localParams.getCollectionName())

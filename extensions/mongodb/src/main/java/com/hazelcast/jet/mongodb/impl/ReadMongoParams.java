@@ -26,6 +26,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,6 +36,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
+import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
 import static com.hazelcast.security.permission.ConnectorPermission.mongo;
 
@@ -51,7 +53,7 @@ public class ReadMongoParams<I> implements Serializable {
     EventTimePolicy<? super I> eventTimePolicy;
     BiFunctionEx<ChangeStreamDocument<Document>, Long, I> mapStreamFn;
     boolean nonDistributed;
-    boolean throwOnNonExisting = true;
+    private boolean checkExistenceOnEachConnect;
     private Aggregates aggregates = new Aggregates();
 
     public ReadMongoParams(boolean stream) {
@@ -181,15 +183,6 @@ public class ReadMongoParams<I> implements Serializable {
         return this;
     }
 
-    public boolean isThrowOnNonExisting() {
-        return throwOnNonExisting;
-    }
-
-    public ReadMongoParams<I> setThrowOnNonExisting(boolean throwOnNonExisting) {
-        this.throwOnNonExisting = throwOnNonExisting;
-        return this;
-    }
-
     public ReadMongoParams<I> setNonDistributed(boolean nonDistributed) {
         this.nonDistributed = nonDistributed;
         return this;
@@ -197,6 +190,18 @@ public class ReadMongoParams<I> implements Serializable {
 
     public boolean isNonDistributed() {
         return nonDistributed;
+    }
+
+    public boolean isCheckExistenceOnEachConnect() {
+        return checkExistenceOnEachConnect;
+    }
+
+    /**
+     * If true, the database and collection existence checks will be performed on every reconnection.
+     */
+    public ReadMongoParams<I> setCheckExistenceOnEachConnect(boolean checkExistenceOnEachConnect) {
+        this.checkExistenceOnEachConnect = checkExistenceOnEachConnect;
+        return this;
     }
 
     public ConnectorPermission buildPermissions() {

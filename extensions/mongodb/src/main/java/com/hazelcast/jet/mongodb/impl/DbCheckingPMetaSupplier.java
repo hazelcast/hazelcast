@@ -47,7 +47,7 @@ import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkDatabaseExists;
 public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
 
     private final Permission requiredPermission;
-    private final boolean shouldCheck;
+    private final boolean shouldCheckOnEachCall;
     private final ProcessorMetaSupplier standardForceOnePMS;
     private boolean forceTotalParallelismOne;
     private final String databaseName;
@@ -61,7 +61,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
      * Creates a new instance of this meta supplier.
      */
     public DbCheckingPMetaSupplier(@Nullable Permission requiredPermission,
-                                   boolean shouldCheck,
+                                   boolean shouldCheckOnEachCall,
                                    boolean forceTotalParallelismOne,
                                    @Nullable String databaseName,
                                    @Nullable String collectionName,
@@ -71,7 +71,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
                                    int preferredLocalParallelism
     ) {
         this.requiredPermission = requiredPermission;
-        this.shouldCheck = shouldCheck;
+        this.shouldCheckOnEachCall = shouldCheckOnEachCall;
         this.forceTotalParallelismOne = forceTotalParallelismOne;
         this.databaseName = databaseName;
         this.collectionName = collectionName;
@@ -98,22 +98,22 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
      */
     public DbCheckingPMetaSupplier forceTotalParallelismOne(boolean forceTotalParallelismOne) {
         this.forceTotalParallelismOne = forceTotalParallelismOne;
+        this.preferredLocalParallelism = 1;
         return this;
     }
 
     @Override
     public boolean initIsCooperative() {
-        return !shouldCheck;
+        return !shouldCheckOnEachCall;
     }
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
         if (forceTotalParallelismOne) {
-            preferredLocalParallelism = 1;
             standardForceOnePMS.init(context);
         }
 
-        if (shouldCheck) {
+        if (shouldCheckOnEachCall) {
             Tuple2<MongoClient, DataConnection> clientAndRef = connect(context);
             MongoClient client = clientAndRef.requiredF0();
             try {

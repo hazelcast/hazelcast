@@ -203,6 +203,7 @@ public final class MongoSourceBuilder {
 
     private abstract static class Base<T> {
         protected ReadMongoParams<T> params;
+        protected ResourceExistenceChecks existenceChecks = ResourceExistenceChecks.ONCE_PER_JOB;
 
         protected String name;
 
@@ -255,15 +256,15 @@ public final class MongoSourceBuilder {
         }
 
         /**
-         * If {@code true}, the lack of database or collection will cause an error.
-         * If {@code false}, database and collection will be automatically created.
-         * Default value is {@code true}.
+         * If non {@link ResourceExistenceChecks#NEVER}, the lack of database or collection will cause an error.
+         * Otherwise, database and collection will be automatically created.
+         * Default value is {@link ResourceExistenceChecks#ONCE_PER_JOB}.
          *
-         * @param throwOnNonExisting if exception should be thrown when database or collection does not exist.
+         * @param checkResourceExistence if exception should be thrown when database or collection does not exist.
          */
         @Nonnull
-        public Batch<T> throwOnNonExisting(boolean throwOnNonExisting) {
-            params.setThrowOnNonExisting(throwOnNonExisting);
+        public Batch<T> checkResourceExistence(ResourceExistenceChecks checkResourceExistence) {
+            existenceChecks = checkResourceExistence;
             return this;
         }
 
@@ -413,11 +414,13 @@ public final class MongoSourceBuilder {
             checkNotNull(params.getMapItemFn(), "mapFn must be set");
 
             final ReadMongoParams<T> localParams = params;
+            localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceExistenceChecks.ON_EACH_CONNECT);
 
             ConnectorPermission permission = params.buildPermissions();
+            boolean checkResourceExistence = existenceChecks == ResourceExistenceChecks.ONCE_PER_JOB;
             return Sources.batchFromProcessor(name, new DbCheckingPMetaSupplierBuilder()
                     .setRequiredPermission(permission)
-                    .setShouldCheck(localParams.isThrowOnNonExisting())
+                    .setCheckResourceExistence(checkResourceExistence)
                     .setForceTotalParallelismOne(false)
                     .setDatabaseName(localParams.getDatabaseName())
                     .setCollectionName(localParams.getCollectionName())
@@ -461,15 +464,15 @@ public final class MongoSourceBuilder {
         }
 
         /**
-         * If {@code true}, the lack of database or collection will cause an error.
-         * If {@code false}, database and collection will be automatically created.
-         * Default value is {@code true}.
+         * If non {@link ResourceExistenceChecks#NEVER}, the lack of database or collection will cause an error.
+         * Otherwise, database and collection will be automatically created.
+         * Default value is {@link ResourceExistenceChecks#ONCE_PER_JOB}.
          *
-         * @param throwOnNonExisting if exception should be thrown when database or collection does not exist.
+         * @param checkResourceExistence if exception should be thrown when database or collection does not exist.
          */
         @Nonnull
-        public Stream<T> throwOnNonExisting(boolean throwOnNonExisting) {
-            params.setThrowOnNonExisting(throwOnNonExisting);
+        public Stream<T> checkResourceExistence(ResourceExistenceChecks checkResourceExistence) {
+            existenceChecks = checkResourceExistence;
             return this;
         }
 
@@ -617,12 +620,14 @@ public final class MongoSourceBuilder {
             checkNotNull(params.getMapStreamFn(), "mapFn must be set");
 
             final ReadMongoParams<T> localParams = params;
+            localParams.setCheckExistenceOnEachConnect(existenceChecks == ResourceExistenceChecks.ON_EACH_CONNECT);
 
             ConnectorPermission permission = params.buildPermissions();
+            boolean checkResourceExistence = existenceChecks == ResourceExistenceChecks.ONCE_PER_JOB;
             return Sources.streamFromProcessorWithWatermarks(name, true,
                     eventTimePolicy -> new DbCheckingPMetaSupplierBuilder()
                             .setRequiredPermission(permission)
-                            .setShouldCheck(localParams.isThrowOnNonExisting())
+                            .setCheckResourceExistence(checkResourceExistence)
                             .setForceTotalParallelismOne(false)
                             .setDatabaseName(localParams.getDatabaseName())
                             .setCollectionName(localParams.getCollectionName())
@@ -634,5 +639,4 @@ public final class MongoSourceBuilder {
             );
         }
     }
-
 }

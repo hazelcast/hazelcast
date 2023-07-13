@@ -70,6 +70,8 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.mongodb.impl.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkCollectionExists;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkDatabaseExists;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 import static com.mongodb.MongoException.TRANSIENT_TRANSACTION_ERROR_LABEL;
 import static com.mongodb.client.model.Filters.eq;
@@ -173,10 +175,10 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
         this.transactionOptionsSup = params.transactionOptionsSup;
 
         if (params.databaseName != null) {
-            this.collectionPicker = new ConstantCollectionPicker<>(params.throwOnNonExisting, params.databaseName,
+            this.collectionPicker = new ConstantCollectionPicker<>(params.checkExistenceOnEachConnect, params.databaseName,
                     params.collectionName);
         } else {
-            this.collectionPicker = new FunctionalCollectionPicker<>(params.throwOnNonExisting,
+            this.collectionPicker = new FunctionalCollectionPicker<>(params.checkExistenceOnEachConnect,
                     params.databaseNameSelectFn, params.collectionNameSelectFn);
         }
         this.intermediateMappingFn = params.getIntermediateMappingFn();
@@ -639,7 +641,13 @@ public class WriteMongoP<IN, I> extends AbstractProcessor {
 
         @Nonnull
         public <I> MongoCollection<I> get(MongoClient mongoClient, Class<I> documentType) {
+            if (throwOnNonExisting) {
+                checkDatabaseExists(mongoClient, databaseName);
+            }
             MongoDatabase database = mongoClient.getDatabase(databaseName);
+            if (throwOnNonExisting) {
+                checkCollectionExists(database, collectionName);
+            }
             return database.getCollection(collectionName, documentType)
                            .withCodecRegistry(defaultCodecRegistry());
         }
