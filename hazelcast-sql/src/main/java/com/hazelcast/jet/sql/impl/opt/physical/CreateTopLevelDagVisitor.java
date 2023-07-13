@@ -783,8 +783,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     }
 
     private Object findLocalPartitioningKey() {
-        int limit = 1000;
-        for(int i = 0; i < limit; ++i) {
+        final int limit = 1000;
+        for (int i = 0; i < limit; ++i) {
             Object key = i;
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (nodeEngine.getPartitionService().getPartition(partitionId).isLocal()) {
