@@ -27,10 +27,10 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.volcano.RelSubset;
-import org.apache.calcite.rel.BiRel;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.Calc;
+import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.metadata.Metadata;
 import org.apache.calcite.rel.metadata.MetadataDef;
 import org.apache.calcite.rel.metadata.MetadataHandler;
@@ -122,11 +122,18 @@ public final class HazelcastRelMdPrunability
         return emptyMap();
     }
 
+    // It is done to support usage of this metadata query during opt phase.
     @SuppressWarnings("unused")
     public Map<String, List<Map<String, RexNode>>> extractPrunability(RelSubset subset, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         RelNode rel = Util.first(subset.getBest(), subset.getOriginal());
         return query.extractPrunability(rel);
+    }
+
+    @SuppressWarnings("unused")
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(Join rel, RelMetadataQuery mq) {
+        // For any bi-rel (Joins) we (temporarily) are not propagating prunability.
+        return Collections.emptyMap();
     }
 
     @SuppressWarnings("unused")
@@ -144,12 +151,6 @@ public final class HazelcastRelMdPrunability
             }
         }
         return prunability;
-    }
-
-    @SuppressWarnings("unused")
-    public Map<String, List<Map<String, RexNode>>> extractPrunability(BiRel rel, RelMetadataQuery mq) {
-        // For any bi-rel we (temporarily) are not propagating prunability.
-        return Collections.emptyMap();
     }
 
     public interface PrunabilityMetadata extends Metadata {
