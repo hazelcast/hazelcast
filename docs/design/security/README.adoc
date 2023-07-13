@@ -53,6 +53,10 @@ and access decisions are made based on permissions granted to client's roles
 * Auditlog - allows gathering cluster events and storing them in an external system (file, syslog, …)
 * Confidentiality - sensitive data protection on the communication level (TLS) and storage level (persistence encryption)
 
+=== Security architecture
+
+image::images/hazelcast_security_architecture.png[Hazelcast Security Architecture]
+
 == Encryption
 
 Encryption is used to protect sensitive information and maintain privacy,
