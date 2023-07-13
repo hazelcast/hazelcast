@@ -17,15 +17,12 @@ package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
-
 import com.hazelcast.jet.mongodb.impl.UpdateMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Field;
@@ -57,18 +54,12 @@ import static java.util.Objects.requireNonNull;
  * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance,
  *  that will update given items.
  */
-public class UpdateProcessorSupplier implements ProcessorSupplier {
+public class UpdateProcessorSupplier extends MongoProcessorSupplier {
 
-    private final String connectionString;
-    private final String databaseName;
-    private final String collectionName;
     private final List<String> updatedFieldNames;
     private final List<? extends Serializable> updates;
-    private final String dataConnectionName;
-    private final String[] externalNames;
     private final boolean afterScan;
     private ExpressionEvalContext evalContext;
-    private transient SupplierEx<MongoClient> clientSupplier;
     private final String pkExternalName;
     private final Serializable predicate;
 
@@ -76,18 +67,13 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                             List<? extends Serializable> updates,
                             Serializable predicate,
                             boolean hasInput) {
-        this.connectionString = table.connectionString;
-        this.dataConnectionName = table.dataConnectionName;
-        this.databaseName = table.databaseName;
-        this.collectionName = table.collectionName;
-
+        super(table);
         // update-specific
         this.updatedFieldNames = updatedFieldNames;
         this.updates = updates;
         this.pkExternalName = table.primaryKeyExternalName();
         this.predicate = predicate;
 
-        this.externalNames = table.externalNames();
         this.afterScan = hasInput;
     }
 
@@ -123,7 +109,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                                 .setDatabaseName(databaseName)
                                 .setCollectionName(collectionName)
                                 .setDocumentType(Document.class)
-                                .setThrowOnNonExisting(false),
+                                .setCheckExistenceOnEachConnect(checkExistenceOnEachConnect),
                         writeModelNoScan(predicateWithReplacements)
                 );
 
@@ -144,7 +130,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier {
                             .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToUpdateDoc)
                             .setWriteModelFn(this::writeModelAfterScan)
-                            .setThrowOnNonExisting(false)
+                            .setCheckExistenceOnEachConnect(checkExistenceOnEachConnect)
             );
 
             processors[i] = processor;

@@ -131,7 +131,7 @@ public class MongoSourceTest extends AbstractMongoTest {
                                                .database(defaultDatabase())
                                                .collection(testName.getMethodName())
                                                .sort(ascending("key"))
-                                               .throwOnNonExisting(false);
+                                               .checkResourceExistence(ResourceExistenceChecks.ONCE_PER_JOB);
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
                 .setLocalParallelism(2)
@@ -299,7 +299,7 @@ public class MongoSourceTest extends AbstractMongoTest {
 
         Stream<?> builder = MongoSourceBuilder.stream(() -> MongoClients.create(connectionString));
         builder = streamFilters(builder)
-                .throwOnNonExisting(false);
+                .checkResourceExistence(ResourceExistenceChecks.ONLY_INITIAL);
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(builder.build())

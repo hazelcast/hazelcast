@@ -57,6 +57,8 @@ import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkCollectionExists;
+import static com.hazelcast.jet.mongodb.impl.MongoUtilities.checkDatabaseExists;
 import static com.hazelcast.jet.mongodb.impl.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.sort;
@@ -82,6 +84,7 @@ import static com.mongodb.client.model.changestream.FullDocument.UPDATE_LOOKUP;
 public class ReadMongoP<I> extends AbstractProcessor {
 
     private static final int BATCH_SIZE = 1000;
+    private final boolean checkExistenceOnEachConnect;
     private ILogger logger;
 
     private int totalParallelism;
@@ -123,6 +126,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 params.clientSupplier, params.dataConnectionRef, client -> reader.connect(client, snapshotsEnabled)
         );
         this.nonDistributed = params.isNonDistributed();
+        this.checkExistenceOnEachConnect = params.isCheckExistenceOnEachConnect();
     }
 
     @Override
@@ -255,12 +259,19 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 logger.fine("(Re)connecting to MongoDB");
                 if (databaseName != null) {
                     this.database = newClient.getDatabase(databaseName);
+
+                    if (checkExistenceOnEachConnect) {
+                        checkDatabaseExists(newClient, databaseName);
+                    }
                 }
                 if (collectionName != null) {
                     checkState(databaseName != null, "you have to provide database name if collection name" +
                             " is specified");
-                    //noinspection ConstantValue false warn by intellij
                     checkState(database != null, "database " + databaseName + " does not exists");
+
+                    if (checkExistenceOnEachConnect) {
+                        checkCollectionExists(database, collectionName);
+                    }
                     this.collection = database.getCollection(collectionName);
                 }
 

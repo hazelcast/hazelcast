@@ -25,7 +25,7 @@ import java.security.Permission;
 
 public class DbCheckingPMetaSupplierBuilder {
     private Permission requiredPermission;
-    private boolean shouldCheck;
+    private boolean checkResourceExistence;
     private boolean forceTotalParallelismOne;
     private String databaseName;
     private String collectionName;
@@ -39,8 +39,8 @@ public class DbCheckingPMetaSupplierBuilder {
         return this;
     }
 
-    public DbCheckingPMetaSupplierBuilder setShouldCheck(boolean shouldCheck) {
-        this.shouldCheck = shouldCheck;
+    public DbCheckingPMetaSupplierBuilder setCheckResourceExistence(boolean checkResourceExistence) {
+        this.checkResourceExistence = checkResourceExistence;
         return this;
     }
 
@@ -84,7 +84,8 @@ public class DbCheckingPMetaSupplierBuilder {
     }
 
     public DbCheckingPMetaSupplier create() {
-        return new DbCheckingPMetaSupplier(requiredPermission, shouldCheck, forceTotalParallelismOne, databaseName,
-                collectionName, clientSupplier, dataConnectionRef, processorSupplier, preferredLocalParallelism);
+        return new DbCheckingPMetaSupplier(requiredPermission, checkResourceExistence, forceTotalParallelismOne,
+                databaseName, collectionName, clientSupplier, dataConnectionRef, processorSupplier,
+                preferredLocalParallelism);
     }
 }

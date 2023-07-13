@@ -15,16 +15,13 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.WriteMode;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.bson.BsonType;
 import org.bson.Document;
@@ -45,25 +42,15 @@ import static java.util.Collections.singletonList;
  * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance
  * that will insert given item.
  */
-public class InsertProcessorSupplier implements ProcessorSupplier {
+public class InsertProcessorSupplier extends MongoProcessorSupplier {
 
-    private final String connectionString;
-    private final String databaseName;
-    private final String collectionName;
-    private final String[] paths;
     private final WriteMode writeMode;
     private final QueryDataType[] types;
     private final BsonType[] externalTypes;
-    private transient SupplierEx<MongoClient> clientSupplier;
-    private final String dataConnectionName;
     private final String idField;
 
     InsertProcessorSupplier(MongoTable table, WriteMode writeMode) {
-        this.connectionString = table.connectionString;
-        this.databaseName = table.databaseName;
-        this.dataConnectionName = table.dataConnectionName;
-        this.collectionName = table.collectionName;
-        this.paths = table.externalNames();
+        super(table);
         this.types = table.fieldTypes();
         this.externalTypes = table.externalTypes();
         this.writeMode = writeMode;
@@ -103,6 +90,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
                             .setCommitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY)
                             .setTransactionOptionsSup(() -> DEFAULT_TRANSACTION_OPTION)
                             .setIntermediateMappingFn(this::rowToDoc)
+                            .setCheckExistenceOnEachConnect(checkExistenceOnEachConnect)
                             .setWriteMode(writeMode)
                     );
 
@@ -117,7 +105,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier {
 
         // assuming values is exactly the length of schema
         for (int i = 0; i < row.getFieldCount(); i++) {
-            String fieldName = paths[i];
+            String fieldName = externalNames[i];
             Object value = values[i];
 
             if (fieldName.equals("_id") && value == null) {

@@ -29,6 +29,9 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import static com.hazelcast.jet.mongodb.MongoSources.batch;
+import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.NEVER;
+import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.ONCE_PER_JOB;
+import static com.hazelcast.jet.mongodb.ResourceExistenceChecks.ON_EACH_CONNECT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -40,20 +43,24 @@ public class MongoSourceResourceExistenceTest extends AbstractMongoTest {
     @Parameter(1)
     public boolean collectionExists;
     @Parameter(2)
-    public boolean checkRequested;
+    public ResourceExistenceChecks checkRequested;
     @Parameter(3)
     public boolean shouldFail;
 
     @Parameters(name = "dbExists: {0} | collectionExists: {1} | checkRequested: {2} | shouldFail:{3}")
     public static Object[] filterProjectionSortMatrix() {
         return new Object[][] {
-                new Object[] { true, true, true, false },
-                new Object[] { true, true, false, false },
-                new Object[] { false, true, false, false },
-                new Object[] { true, false, false, false },
-                new Object[] { false, true, true, true },
-                new Object[] { true, false, true, true },
-                new Object[] { false, false, true, true },
+                new Object[] { true, true, ONCE_PER_JOB, false },
+                new Object[] { true, true, ON_EACH_CONNECT, false },
+                new Object[] { true, true, NEVER, false },
+                new Object[] { false, true, NEVER, false },
+                new Object[] { true, false, NEVER, false },
+                new Object[] { false, true, ONCE_PER_JOB, true },
+                new Object[] { false, true, ON_EACH_CONNECT, true },
+                new Object[] { true, false, ONCE_PER_JOB, true },
+                new Object[] { true, false, ON_EACH_CONNECT, true },
+                new Object[] { false, false, ONCE_PER_JOB, true },
+                new Object[] { false, false, ON_EACH_CONNECT, true },
         };
     }
 
@@ -67,7 +74,7 @@ public class MongoSourceResourceExistenceTest extends AbstractMongoTest {
         pipeline.readFrom(batch(() -> MongoClients.create(connectionString))
                         .database(dbName)
                         .collection(colName)
-                        .throwOnNonExisting(checkRequested)
+                        .checkResourceExistence(checkRequested)
                         .build()
                 )
                 .setLocalParallelism(2)

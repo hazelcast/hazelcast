@@ -16,8 +16,8 @@
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hazelcast.jet.mongodb.ResourceExistenceChecks;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
-import com.hazelcast.jet.sql.impl.connector.mongodb.Options.ResourceChecks;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -172,8 +172,8 @@ class FieldResolver {
         try (MongoClient client = connect(dataConnectionName, options)) {
             requireNonNull(client);
 
-            ResourceChecks resourceChecks = readExistenceChecksFlag(options);
-            if (resourceChecks == ResourceChecks.ALWAYS || resourceChecks == ResourceChecks.ONLY_INITIAL) {
+            ResourceExistenceChecks resourceChecks = readExistenceChecksFlag(options);
+            if (resourceChecks.isEverPerformed()) {
                 checkDatabaseAndCollectionExists(client, databaseName, collectionName);
             }
 

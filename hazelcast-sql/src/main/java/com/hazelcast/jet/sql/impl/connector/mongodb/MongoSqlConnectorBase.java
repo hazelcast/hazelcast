@@ -207,7 +207,7 @@ public abstract class MongoSqlConnectorBase implements SqlConnector {
                 : () -> MongoClients.create(connectionString);
         return new DbCheckingPMetaSupplierBuilder()
                 .setRequiredPermission(null)
-                .setShouldCheck(table.checkExistenceAfterCreation())
+                .setCheckResourceExistence(table.checkExistenceOnEachCall())
                 .setForceTotalParallelismOne(table.isForceMongoParallelismOne())
                 .setDatabaseName(table.databaseName)
                 .setCollectionName(table.collectionName)

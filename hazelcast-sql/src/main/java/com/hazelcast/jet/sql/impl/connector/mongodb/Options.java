@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.sql.impl.connector.mongodb;
 
+import com.hazelcast.jet.mongodb.ResourceExistenceChecks;
 import com.hazelcast.jet.mongodb.dataconnection.MongoDataConnection;
 import com.hazelcast.jet.mongodb.impl.MongoUtilities;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -22,7 +23,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
 import org.bson.BsonTimestamp;
 
-import java.io.Serializable;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
@@ -136,26 +136,7 @@ final class Options {
         }
     }
 
-    static ResourceChecks readExistenceChecksFlag(Map<String, String> options) {
-        return ResourceChecks.fromString(options.getOrDefault(CHECK_EXISTENCE, "only-initial"));
-    }
-
-    enum ResourceChecks implements Serializable {
-        ALWAYS,
-        ONLY_INITIAL,
-        NEVER;
-
-        static ResourceChecks fromString(String code) {
-            if (ALWAYS.name().equalsIgnoreCase(code)) {
-                return ALWAYS;
-            }
-            if (ONLY_INITIAL.name().equalsIgnoreCase(code) || "only-initial".equalsIgnoreCase(code)) {
-                return ONLY_INITIAL;
-            }
-            if (NEVER.name().equalsIgnoreCase(code)) {
-                return NEVER;
-            }
-            throw new IllegalArgumentException("Unknown value for " + CHECK_EXISTENCE + " flag:" + code);
-        }
+    static ResourceExistenceChecks readExistenceChecksFlag(Map<String, String> options) {
+        return ResourceExistenceChecks.fromString(options.getOrDefault(CHECK_EXISTENCE, "only-initial"));
     }
 }
