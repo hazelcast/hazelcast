@@ -108,6 +108,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     private final DagBuildContextImpl dagBuildContext;
 
+    @SuppressWarnings("checkstyle:ExplicitInitialization")
+    private Integer requiredRootPartitionId = null;
+
     public CreateTopLevelDagVisitor(
             NodeEngine nodeEngine,
             QueryParameterMetadata parameterMetadata,
@@ -680,6 +683,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         return objectKeys;
     }
 
+    @Nullable
+    public Integer requiredRootPartitionId() {
+        return requiredRootPartitionId;
+    }
+
     /**
      * Converts the {@code inputRel} into a {@code Vertex} by visiting it and
      * create an edge from the input vertex into {@code thisVertex}.
@@ -788,6 +796,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
             Object key = i;
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (nodeEngine.getPartitionService().getPartition(partitionId).isLocal()) {
+                this.requiredRootPartitionId = partitionId;
                 return key;
             }
         }
