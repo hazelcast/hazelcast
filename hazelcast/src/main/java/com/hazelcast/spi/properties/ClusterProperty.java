@@ -1889,6 +1889,14 @@ public final class ClusterProperty {
      * from {@link IMap} objects.
      * <p>
      * The default value is {@code false}.
+     * <p>
+     * NOTE: The expected use-case for this property to be enabled is very specific, namely where
+     * an exact copy of a source is wanted on a target with no evictions enabled; however in this
+     * scenario, the target cluster would need to have evictions enabled if it were to become the
+     * active cluster - failing to do so could lead to Out Of Memory or data inconsistency issues.
+     * The reverse would also be necessary if returning back to the original cluster. Ensure you
+     * have a plan for handling these scenarios (such as using Management Centre to configure
+     * evictions manually) before enabling this property and changing between active clusters.
      *
      * @since 5.4
      */
@@ -1900,6 +1908,14 @@ public final class ClusterProperty {
      * from {@link com.hazelcast.cache.ICache} objects.
      * <p>
      * The default value is {@code false}.
+     * <p>
+     * NOTE: The expected use-case for this property to be enabled is very specific, namely where
+     * an exact copy of a source is wanted on a target with no evictions enabled; however in this
+     * scenario, the target cluster would need to have evictions enabled if it were to become the
+     * active cluster - failing to do so could lead to Out Of Memory or data inconsistency issues.
+     * The reverse would also be necessary if returning back to the original cluster. Ensure you
+     * have a plan for handling these scenarios (such as using Management Centre to configure
+     * evictions manually) before enabling this property and changing between active clusters.
      *
      * @since 5.4
      */
