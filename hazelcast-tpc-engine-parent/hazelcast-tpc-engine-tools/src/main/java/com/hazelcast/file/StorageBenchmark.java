@@ -107,7 +107,7 @@ public class StorageBenchmark {
     public int iodepth;
     public long fileSize;
     public int bs;
-    public String drive;
+    public String directory;
     // the type of workload.
     public int readwrite;
     public boolean enableMonitor;
@@ -131,7 +131,7 @@ public class StorageBenchmark {
         benchmark.iodepth = 64;
         benchmark.fileSize = 4 * 1024 * 1024L;
         benchmark.bs = 4 * 1024;
-        benchmark.drive = "/mnt/benchdrive1/";
+        benchmark.directory = "/mnt/benchdrive1/";
         benchmark.readwrite = READWRITE_READ;
         benchmark.enableMonitor = true;
         benchmark.deleteFilesOnExit = true;
@@ -376,7 +376,7 @@ public class StorageBenchmark {
             Reactor reactor = reactors.get(jobIndex);
 
             reactor.offer(() -> {
-                String path = randomTmpFile(drive);
+                String path = randomTmpFile(directory);
                 System.out.println("Creating file " + path);
                 filePaths.add(path);
                 AsyncFile file = reactor.eventloop().newAsyncFile(path);

@@ -33,8 +33,8 @@
     <modules>
         <module>hazelcast-tpc-engine</module>
         <module>hazelcast-tpc-engine-iouring</module>
-        <module>hazelcast-tpc-engine-benchmarks</module>
         <module>hazelcast-tpc-engine-jmh</module>
+        <module>hazelcast-tpc-engine-tools</module>
     </modules>
 
 </project>
