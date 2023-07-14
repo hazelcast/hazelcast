@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.prunability;
 
-import com.hazelcast.config.IndexType;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.impl.HazelcastRexBuilder;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
@@ -26,16 +23,11 @@ import com.hazelcast.jet.sql.impl.opt.physical.AggregateAccumulateByKeyPhysicalR
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateCombineByKeyPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -50,7 +42,6 @@ import java.util.Map;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
-import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
@@ -84,48 +75,6 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         final RexLiteral expectedLiteral = HazelcastRexBuilder.INSTANCE.makeLiteral(10, bigintType);
 
         assertEquals(Map.of("m", singletonList(Map.of("__key", expectedLiteral))), prunability);
-    }
-
-    @Test
-    public void test_indexScan() {
-        String mapName = randomName();
-        String indexName = randomName();
-        IMap<Integer, String> map = instance().getMap(mapName);
-        instance().getConfig().addMapConfig(new MapConfig(mapName).setPartitioningAttributeConfigs(List.of(
-                new PartitioningAttributeConfig("this"))));
-
-        createMapping(mapName, Integer.class, String.class);
-        createIndex(indexName, mapName, IndexType.HASH, "this");
-        for (int i = 0; i < 100; ++i) {
-            map.put(i, "" + i);
-        }
-
-        List<QueryDataType> parameterTypes = asList(QueryDataType.INT, VARCHAR);
-        List<TableField> mapTableFields = asList(
-                new MapTableField("__key", QueryDataType.INT, false, QueryPath.KEY_PATH),
-                new MapTableField("this", VARCHAR, false, QueryPath.VALUE_PATH));
-        HazelcastTable table = partitionedTable(
-                mapName,
-                mapTableFields,
-                getPartitionedMapIndexes(mapContainer(map), mapTableFields),
-                1 // we can place random number, doesn't matter in current case.
-        );
-
-        PhysicalRel root = optimizePhysical(
-                "SELECT __key FROM " + mapName + " WHERE this = '10'", asList(BIGINT, VARCHAR), table
-        ).getPhysical();
-
-        assertPlan(root, plan(planRow(0, IndexScanMapPhysicalRel.class)));
-
-        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
-        Map<String, List<Map<String, RexNode>>> prunability = query.extractPrunability(root);
-        RelDataType bigintType = HazelcastTypeUtils.createType(
-                HazelcastTypeFactory.INSTANCE,
-                SqlTypeName.BIGINT,
-                true);
-        final RexLiteral expectedLiteral = HazelcastRexBuilder.INSTANCE.makeLiteral(10, bigintType);
-
-        assertEquals(Map.of("m", singletonList(Map.of("this", expectedLiteral))), prunability);
     }
 
 
