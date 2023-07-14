@@ -571,10 +571,10 @@ public class PlanExecutor {
         }
 
         if (!partitions.isEmpty() && allVariantsValid) {
-            jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, partitions);
             if (plan.requiredRootPartitionId() != null) {
                 partitions.add(plan.requiredRootPartitionId());
             }
+            jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, partitions);
         }
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
