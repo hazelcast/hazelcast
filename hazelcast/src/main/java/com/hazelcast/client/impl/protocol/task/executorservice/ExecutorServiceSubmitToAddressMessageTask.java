@@ -95,7 +95,7 @@ public class ExecutorServiceSubmitToAddressMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "submitToAddress";
     }
 
     @Override

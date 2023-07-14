@@ -81,7 +81,7 @@ public class CacheListenerRegistrationMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "listenerRegistration";
     }
 
     @Override

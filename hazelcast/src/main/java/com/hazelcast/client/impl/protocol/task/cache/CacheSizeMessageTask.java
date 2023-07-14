@@ -80,4 +80,9 @@ public class CacheSizeMessageTask
     public String getDistributedObjectName() {
         return parameters;
     }
+
+    @Override
+    public String getMethodName() {
+        return "size";
+    }
 }

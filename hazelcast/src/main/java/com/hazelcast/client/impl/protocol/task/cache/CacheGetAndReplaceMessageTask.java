@@ -68,4 +68,9 @@ public class CacheGetAndReplaceMessageTask
     public String getDistributedObjectName() {
         return parameters.name;
     }
+
+    @Override
+    public String getMethodName() {
+        return "getAndReplace";
+    }
 }

@@ -86,7 +86,7 @@ public class TransactionCreateMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "transactionCreate";
     }
 
     @Override

@@ -69,7 +69,7 @@ public class DurableExecutorDisposeResultMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "disposeResult";
     }
 
     @Override

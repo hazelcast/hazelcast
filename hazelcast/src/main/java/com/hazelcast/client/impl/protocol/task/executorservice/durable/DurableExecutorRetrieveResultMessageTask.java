@@ -71,7 +71,7 @@ public class DurableExecutorRetrieveResultMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "retrieveResult";
     }
 
     @Override

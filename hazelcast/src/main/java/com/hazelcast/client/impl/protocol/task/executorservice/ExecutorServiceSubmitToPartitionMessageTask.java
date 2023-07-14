@@ -87,7 +87,7 @@ public class ExecutorServiceSubmitToPartitionMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "submitToPartition";
     }
 
     @Override

@@ -96,7 +96,7 @@ public class CacheLoadAllMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "loadAll";
     }
 
     @Override

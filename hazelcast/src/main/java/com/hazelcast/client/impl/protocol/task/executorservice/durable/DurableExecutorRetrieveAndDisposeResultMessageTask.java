@@ -71,7 +71,7 @@ public class DurableExecutorRetrieveAndDisposeResultMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "retrieveAndDisposeResult";
     }
 
     @Override

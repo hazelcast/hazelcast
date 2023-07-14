@@ -88,7 +88,7 @@ public class MapDestroyCacheMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "destroyCache";
     }
 
     @Override
