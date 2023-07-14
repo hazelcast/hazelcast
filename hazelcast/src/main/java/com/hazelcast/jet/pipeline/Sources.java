@@ -647,7 +647,6 @@ public final class Sources {
         }
 
         public void destroy() {
-            System.out.println("-----------Shutting down a Hazelcast client instance in Sources------------");
             getClient().shutdown();
         }
     }

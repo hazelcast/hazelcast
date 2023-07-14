@@ -396,7 +396,6 @@ public final class Sinks {
         }
 
         public void destroy() {
-            System.out.println("-----------Shutting down a Hazelcast client instance in Sinks------------");
             getClient().shutdown();
         }
 
