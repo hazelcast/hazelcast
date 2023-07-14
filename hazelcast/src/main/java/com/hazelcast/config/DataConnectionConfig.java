@@ -29,6 +29,7 @@ import com.hazelcast.spi.annotation.Beta;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -46,7 +47,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 5.3
  */
 @Beta
-public class DataConnectionConfig implements IdentifiedDataSerializable, NamedConfig {
+public class DataConnectionConfig implements IdentifiedDataSerializable, Serializable, NamedConfig {
 
     private String name;
     private String type;

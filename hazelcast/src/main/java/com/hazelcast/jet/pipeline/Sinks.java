@@ -18,8 +18,10 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Offloadable;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
@@ -34,6 +36,9 @@ import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ReliableTopicPermission;
@@ -44,6 +49,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.jms.ConnectionFactory;
 import javax.sql.CommonDataSource;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -56,6 +62,8 @@ import java.util.UUID;
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.function.Functions.entryValue;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
@@ -295,46 +303,115 @@ public final class Sinks {
     public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
                                                                @Nonnull ClientConfig clientConfig,
                                                                int batchSize) {
-        return SinkBuilder.sinkBuilder("remoteReplicatedMapSink(" + replicatedMapName + ')', context -> {
-                    String instanceName = "client-for-remote-replicated-map-" + replicatedMapName + UUID.randomUUID();
-                    clientConfig.setInstanceName(instanceName);
-                    HazelcastInstance client = newHazelcastClient(clientConfig);
-                    return new ClientReplicatedMapBatchWriter<K, V>(client, replicatedMapName, batchSize);
-                }).<Entry<K, V>>receiveFn(ClientReplicatedMapBatchWriter::write)
-                .flushFn(ClientReplicatedMapBatchWriter::flush)
-                .destroyFn(ClientReplicatedMapBatchWriter::destroy).build();
+        String xmlConfig = asXmlString(clientConfig);
+        DataConnectionConfig connectionConfig = new DataConnectionConfig("RemoteReplicatedMapSinkConfig");
+        connectionConfig.setType("ClientConnection");
+        connectionConfig.setShared(true);
+        connectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlConfig);
+        return SinkBuilder.sinkBuilder("remoteReplicatedMapSink(" + replicatedMapName + ')',
+                        new RemoteMapBatchWriterCreateFn<K, V>(connectionConfig, replicatedMapName, batchSize))
+                .receiveFn(ClientReplicatedMapBatchWriter<K, V>::write).flushFn(ClientReplicatedMapBatchWriter::flush)
+            .destroyFn(ClientReplicatedMapBatchWriter::destroy).build();
     }
 
-    private static class ClientReplicatedMapBatchWriter<K, V> {
-        ReplicatedMap<K, V> replicatedMap;
-        HazelcastInstance client;
-        Map<K, V> entrySet;
+    private static class RemoteMapBatchWriterCreateFn<K, V> implements FunctionEx<Processor.Context, ClientReplicatedMapBatchWriter<K, V>>, DataSerializable {
+        String replicatedMapName;
+        DataConnectionConfig connectionConfig;
         int batchSize;
 
-        public ClientReplicatedMapBatchWriter(HazelcastInstance client, String replicatedMapName, int batchSize) {
-            this.client = client;
-            this.replicatedMap = client.getReplicatedMap(replicatedMapName);
+        public RemoteMapBatchWriterCreateFn(DataConnectionConfig connectionConfig, String replicatedMapName, int batchSize) {
+            this.connectionConfig = connectionConfig;
+            this.replicatedMapName = replicatedMapName;
+            this.batchSize = batchSize;
+        }
+
+        @Override
+        public ClientReplicatedMapBatchWriter<K, V> applyEx(Processor.Context context) {
+            return new ClientReplicatedMapBatchWriter<>(connectionConfig, replicatedMapName, batchSize);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeString(replicatedMapName);
+            out.writeObject(connectionConfig);
+            out.writeInt(batchSize);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            replicatedMapName = in.readString();
+            connectionConfig = in.readObject();
+            batchSize = in.readInt();
+        }
+    }
+
+    private static class ClientReplicatedMapBatchWriter<K, V> implements DataSerializable {
+        HazelcastDataConnection connection;
+        private ReplicatedMap<K, V> replicatedMap;
+        private DataConnectionConfig connectionConfig;
+        private HazelcastInstance client;
+        Map<K, V> entrySet;
+        String replicatedMapName;
+        int batchSize;
+
+        public ClientReplicatedMapBatchWriter(DataConnectionConfig connectionConfig, String replicatedMapName, int batchSize) {
+            this.connectionConfig = connectionConfig;
+            this.replicatedMapName = replicatedMapName;
             this.entrySet = new HashMap<>(batchSize);
             this.batchSize = batchSize;
+        }
+
+        private ReplicatedMap<K, V> getReplicatedMap() {
+            if (replicatedMap != null ){
+                return replicatedMap;
+            }
+            replicatedMap = getClient().getReplicatedMap(replicatedMapName);
+            return replicatedMap;
+        }
+
+        private HazelcastInstance getClient() {
+            if (client != null) {
+                return client;
+            }
+            if (connection == null) {
+                connection = new HazelcastDataConnection(this.connectionConfig);
+            }
+            client = connection.getClient();
+            return client;
         }
 
         public void write(Map.Entry<K, V> entry) {
             entrySet.put(entry.getKey(), entry.getValue());
             if (entrySet.size() >= batchSize) {
-                replicatedMap.putAll(entrySet);
+                getReplicatedMap().putAll(entrySet);
                 entrySet.clear();
             }
         }
 
         public void flush() {
             if (!entrySet.isEmpty()) {
-                replicatedMap.putAll(entrySet);
+                getReplicatedMap().putAll(entrySet);
                 entrySet.clear();
             }
         }
 
         public void destroy() {
-            this.client.shutdown();
+            System.out.println("-----------Shutting down a Hazelcast client instance in Sinks------------");
+            getClient().shutdown();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(connectionConfig);
+            out.writeString(replicatedMapName);
+            writeMap(this.entrySet, out);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            connectionConfig = in.readObject();
+            replicatedMapName = in.readString();
+            this.entrySet = readMap(in);
         }
     }
 

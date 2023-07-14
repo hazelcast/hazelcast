@@ -18,9 +18,9 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.EventJournalCacheEvent;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
@@ -43,6 +43,9 @@ import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
@@ -55,6 +58,7 @@ import com.hazelcast.spi.annotation.Beta;
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.sql.Connection;
@@ -65,6 +69,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
+import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
@@ -79,6 +84,7 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
 import static com.hazelcast.jet.impl.connector.StreamEventJournalP.streamRemoteCacheSupplier;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -593,7 +599,12 @@ public final class Sources {
             @Nonnull ClientConfig clientConfig,
             int batchSize
     ) {
-        return SourceBuilder.batch("replicatedMapSource(" + replicatedMapName + ')', new RMapReaderFunction<K, V>(clientConfig, replicatedMapName)).<Entry<K, V>>fillBufferFn((rMapIterator, buf) -> {
+        DataConnectionConfig connectionConfig = new DataConnectionConfig("RemoteReplicatedMapSourceConfig");
+        connectionConfig.setShared(true);
+        connectionConfig.setType("ClientConnection");
+        connectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, asXmlString(clientConfig));
+        RMapReader<K, V> reader = new RMapReader<K, V>(connectionConfig, replicatedMapName);
+        return SourceBuilder.batch("replicatedMapSource(" + replicatedMapName + ')', reader).<Entry<K, V>>fillBufferFn((rMapIterator, buf) -> {
             int counter = 0;
             while (rMapIterator.hasNext() && counter < batchSize) {
                 buf.add(rMapIterator.next());
@@ -602,25 +613,42 @@ public final class Sources {
             if (!rMapIterator.hasNext()) {
                 buf.close();
             }
+        }).destroyFn(context -> {
+            reader.destroy();
         }).build();
     }
 
-    private static class RMapReaderFunction<K, V> implements FunctionEx<Processor.Context, Iterator<Map.Entry<K, V>>>, Serializable {
-        private final ClientConfig clientConfig;
+    private static class RMapReader<K, V> implements FunctionEx<Processor.Context, Iterator<Map.Entry<K, V>>>, Serializable {
         private final String replicatedMapName;
+        private final DataConnectionConfig connectionConfig;
+        private HazelcastInstance client;
+        private HazelcastDataConnection connection;
 
-        public RMapReaderFunction(ClientConfig clientConfig, String replicatedMapName) {
-            this.clientConfig = clientConfig;
+        public RMapReader(DataConnectionConfig connectionConfig, String replicatedMapName) {
+            this.connectionConfig = connectionConfig;
             this.replicatedMapName = replicatedMapName;
         }
 
         @Override
         public Iterator<Map.Entry<K, V>> applyEx(Processor.Context context) {
-            String instanceName = clientConfig.getInstanceName() + "-for-replicated-map-" + replicatedMapName + UUID.randomUUID();
-            clientConfig.setInstanceName(instanceName);
-            HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-            ReplicatedMap<K, V> rMap = client.getReplicatedMap(replicatedMapName);
+            ReplicatedMap<K, V> rMap = getClient().getReplicatedMap(replicatedMapName);
             return rMap.entrySet().iterator();
+        }
+
+        public HazelcastInstance getClient() {
+            if (client != null) {
+                return client;
+            }
+            if (connection == null) {
+                connection = new HazelcastDataConnection(connectionConfig);
+            }
+            client = connection.getClient();
+            return client;
+        }
+
+        public void destroy() {
+            System.out.println("-----------Shutting down a Hazelcast client instance in Sources------------");
+            getClient().shutdown();
         }
     }
 

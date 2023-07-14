@@ -83,6 +83,7 @@ public class HazelcastDataConnection extends DataConnectionBase {
         if (dataConnectionConfig.isShared()) {
 
             this.proxy = new ConcurrentMemoizingSupplier<>(() -> {
+                System.out.println("-----------Creating new Hazelcast client instance------------");
                 HazelcastClientProxy hazelcastClientProxy = (HazelcastClientProxy) HazelcastClient
                         .newHazelcastClient(clientConfig);
                 return new HazelcastClientProxy(hazelcastClientProxy.client) {
