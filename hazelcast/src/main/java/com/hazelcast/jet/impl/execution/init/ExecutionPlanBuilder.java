@@ -50,8 +50,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
@@ -61,6 +59,7 @@ import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
+import static com.hazelcast.jet.impl.util.Util.range;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -87,7 +86,7 @@ public final class ExecutionPlanBuilder {
         final VerticesIdAndOrder verticesIdAndOrder = VerticesIdAndOrder.assignVertexIds(dag);
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
         final EdgeConfig defaultEdgeConfig = nodeEngine.getConfig().getJetConfig().getDefaultEdgeConfig();
-        Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        final Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
@@ -265,9 +264,7 @@ public final class ExecutionPlanBuilder {
         int partitionCount = partitionService.getPartitionCount();
         int memberIndex = 0;
 
-        for (int partitionId : requiredPartitions != null
-                ? requiredPartitions
-                : IntStream.range(0, partitionCount).boxed().collect(Collectors.toList())) {
+        for (int partitionId : requiredPartitions != null ? requiredPartitions : range(0, partitionCount)) {
             Address address = partitionService.getPartitionOwnerOrWait(partitionId);
             MemberInfo member = membersByAddress.get(address);
             if (member == null) {

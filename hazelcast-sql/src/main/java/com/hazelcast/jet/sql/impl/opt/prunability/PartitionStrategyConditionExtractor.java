@@ -136,35 +136,14 @@ public class PartitionStrategyConditionExtractor {
     private RexInputRef extractInputRef(final RexCall call) {
         // only works for EQUALS
         assert call.isA(SqlKind.EQUALS);
-        if (call.getOperands().get(0) instanceof RexInputRef) {
-            return (RexInputRef) call.getOperands().get(0);
-        }
-
-        if (call.getOperands().get(1) instanceof RexInputRef) {
-            return (RexInputRef) call.getOperands().get(1);
-        }
-
-        return null;
+        return (RexInputRef) call.getOperands().stream()
+                .filter(operand -> operand instanceof RexInputRef).findFirst().orElse(null);
     }
 
     private RexNode extractConstantExpression(final RexCall call) {
         assert call.isA(SqlKind.EQUALS);
-        if (call.getOperands().get(0) instanceof RexDynamicParam) {
-            return call.getOperands().get(0);
-        }
-
-        if (call.getOperands().get(1) instanceof RexDynamicParam) {
-            return call.getOperands().get(1);
-        }
-
-        if (call.getOperands().get(0) instanceof RexLiteral) {
-            return call.getOperands().get(0);
-        }
-
-        if (call.getOperands().get(1) instanceof RexLiteral) {
-            return call.getOperands().get(1);
-        }
-
-        return null;
+        return call.getOperands().stream()
+                .filter(operand -> operand instanceof RexDynamicParam || operand instanceof RexLiteral)
+                .findFirst().orElse(null);
     }
 }
