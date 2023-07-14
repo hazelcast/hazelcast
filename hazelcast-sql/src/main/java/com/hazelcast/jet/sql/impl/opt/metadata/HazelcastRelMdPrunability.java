@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdPrunability.PrunabilityMetadata;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
@@ -81,14 +82,16 @@ public final class HazelcastRelMdPrunability
         }
 
         final PartitionedMapTable targetTable = hazelcastTable.getTarget();
-        final HashSet<String> partitioningFieldNames = new HashSet<>(targetTable.partitioningAttributes());
-        final Set<String> partitioningColumns = targetTable.keyFields()
-                .filter(kf -> partitioningFieldNames.contains(kf.getPath().getPath()))
-                .map(TableField::getName)
-                .collect(Collectors.toSet());
+        Set<String> partitioningColumns;
 
         if (targetTable.partitioningAttributes().isEmpty()) {
-            partitioningColumns.add(QueryPath.KEY);
+            partitioningColumns = ImmutableSet.of(QueryPath.KEY);
+        } else {
+            final HashSet<String> partitioningFieldNames = new HashSet<>(targetTable.partitioningAttributes());
+            partitioningColumns = targetTable.keyFields()
+                    .filter(kf -> partitioningFieldNames.contains(kf.getPath().getPath()))
+                    .map(TableField::getName)
+                    .collect(Collectors.toSet());
         }
 
         final RexNode filter = hazelcastTable.getFilter();
