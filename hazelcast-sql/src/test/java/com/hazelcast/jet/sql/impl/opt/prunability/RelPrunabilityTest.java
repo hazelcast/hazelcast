@@ -200,7 +200,7 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         PhysicalRel root = optimizePhysical(
                 "(SELECT * FROM m WHERE comp1 = 10 AND this IS NOT NULL)" +
                         " UNION ALL " +
-                        "(SELECT * FROM m WHERE comp0 = 10 AND this IS NULL)",
+                        "(SELECT * FROM m WHERE comp1 = 10 AND this IS NULL)",
                 asList(BIGINT, VARCHAR),
                 table
         ).getPhysical();
