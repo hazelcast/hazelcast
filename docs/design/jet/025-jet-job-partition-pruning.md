@@ -119,18 +119,20 @@ and our team effort is to replace Predicate API, where `PartitionPredicate` is a
 for partitioned data querying. For that, we will use SQL optimization phase also to determine
 partitions and for all relations. Then, we extract required partitions set to run to `JobConfig`
 baked by `__sql.requiredPartitions` argument. This indicates that `ExecutionPlanBuilder` will
-try to choose only required members.
+try to choose only the required members.
 
 ### Scan partition pruning
 
-Partition pruning for IMap scan is a pretty simple optimization: we will extract partition key condition during SQL opt phase,
-pass it to specialized processor supplier which will spawn `ReadMapOrCacheP` with only required partitions to scan.
+Partition pruning for IMap scan is a pretty simple optimization: we will extract the partition key 
+condition during SQL opt phase, pass it to a specialized processor supplier which will spawn 
+`ReadMapOrCacheP` with only required partitions to scan.
 
 ### `lazyForceTotalParallelismOne`
 
 To complement the existing `forceTotalParallelismOne` with PMS with partition pruning support we decided
-to add new partition-aware `lazyForceTotalParallelismOne` PMS builder which does not cache member address
-to prevent wrong usage of cached plan.
+to add a new partition-aware `lazyForceTotalParallelismOne` PMS builder which is dynamically calculating 
+members to reduce total parallelism to one, using provided partition key expressions. Also, it does not cache
+calculated member address to prevent the wrong usage of cached plan.
 
 ## Rejected opportunities
 
