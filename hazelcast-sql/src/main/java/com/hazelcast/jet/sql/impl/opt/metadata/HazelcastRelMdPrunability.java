@@ -81,9 +81,9 @@ public final class HazelcastRelMdPrunability
         }
 
         final PartitionedMapTable targetTable = hazelcastTable.getTarget();
-        final HashSet<String> partitioningFiledNames = new HashSet<>(targetTable.partitioningAttributes());
+        final HashSet<String> partitioningFieldNames = new HashSet<>(targetTable.partitioningAttributes());
         final Set<String> partitioningColumns = targetTable.keyFields()
-                .filter(kf -> partitioningFiledNames.contains(kf.getPath().getPath()))
+                .filter(kf -> partitioningFieldNames.contains(kf.getPath().getPath()))
                 .map(TableField::getName)
                 .collect(Collectors.toSet());
 

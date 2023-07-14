@@ -63,8 +63,8 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     private CollectPerProcessorSink consumerPms;
-    private int localPtId;
-    private int remotePtId;
+    private int localPartitionId;
+    private int remotePartitionId;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -82,8 +82,8 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
                 .stream()
                 .collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
 
-        localPtId = ptAssignment.get(localNodeEngineImpl.getThisAddress())[0];
-        remotePtId = ptAssignment.get(remoteNodeEngineImpl.getThisAddress())[0];
+        localPartitionId = ptAssignment.get(localNodeEngineImpl.getThisAddress())[0];
+        remotePartitionId = ptAssignment.get(remoteNodeEngineImpl.getThisAddress())[0];
     }
 
     @Test
@@ -104,7 +104,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         dag.edge(between(generator, printer));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPtId));
+        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
 
 
         Job job = instance().getJet().newJob(dag, jobConfig);
@@ -133,7 +133,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         dag.edge(between(generator, printer));
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(remotePtId));
+        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(remotePartitionId));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -147,7 +147,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     @Test
     public void test_scanAndAgg() {
         // Given
-        Address addr = getAddressForPartitionId(instance(), localPtId);
+        Address addr = getAddressForPartitionId(instance(), localPartitionId);
 
         ProcessorMetaSupplier pmsGen = ProcessorMetaSupplier.of((ProcessorSupplier) count ->
                 IntStream.range(0, count).mapToObj(GenP::new).collect(Collectors.toList()));
@@ -164,7 +164,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         Vertex printer = dag.newVertex("Printer", consumerPms);
 
         // generator -> aggregator
-        final int partitionId = localPtId;
+        final int partitionId = localPartitionId;
         dag.edge(between(generator, aggregator)
                 .distributeTo(addr)
                 .partitioned(i -> partitionId));
@@ -174,7 +174,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPtId));
+        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -207,7 +207,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         dag.edge(Edge.from(generatorRight).to(consumer, 1).distributed().broadcast());
 
         JobConfig jobConfig = new JobConfig();
-        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPtId));
+        jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();

@@ -108,8 +108,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     private final DagBuildContextImpl dagBuildContext;
 
-    @SuppressWarnings("checkstyle:ExplicitInitialization")
-    private Integer requiredRootPartitionId = null;
+    private Integer requiredRootPartitionId;
 
     public CreateTopLevelDagVisitor(
             NodeEngine nodeEngine,
@@ -197,7 +196,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onDelete(DeletePhysicalRel rel) {
-        // currently it's not possible to have a unbounded DELETE, but if we do, we'd need this calculation
+        // currently it's not possible to have an unbounded DELETE, but if we do, we'd need this calculation
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(rel, MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
