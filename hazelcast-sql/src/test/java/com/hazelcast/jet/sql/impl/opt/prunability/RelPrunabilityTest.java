@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.opt.prunability;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.impl.HazelcastRexBuilder;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
@@ -41,7 +43,6 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -90,6 +91,9 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         String mapName = randomName();
         String indexName = randomName();
         IMap<Integer, String> map = instance().getMap(mapName);
+        instance().getConfig().addMapConfig(new MapConfig(mapName).setPartitioningAttributeConfigs(List.of(
+                new PartitioningAttributeConfig("this"))));
+
         createMapping(mapName, Integer.class, String.class);
         createIndex(indexName, mapName, IndexType.HASH, "this");
         for (int i = 0; i < 100; ++i) {
@@ -126,7 +130,6 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
 
 
     @Test
-    @Ignore("disabled until aggregations prunability is implemented")
     public void test_calc() {
         HazelcastTable table = partitionedTable(
                 "m",
