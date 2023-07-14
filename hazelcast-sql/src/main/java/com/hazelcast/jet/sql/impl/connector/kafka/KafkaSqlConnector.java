@@ -46,6 +46,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.core.Edge.between;
@@ -132,7 +133,7 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode predicate,
             @Nonnull List<HazelcastRexNode> projection,
-            @Nullable List<List<Expression<?>>> requiredPartitionsToScan,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         KafkaTable table = context.getTable();

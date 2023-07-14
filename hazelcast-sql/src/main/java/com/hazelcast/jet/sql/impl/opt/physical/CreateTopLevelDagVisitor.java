@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
@@ -55,9 +54,6 @@ import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
-import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -74,7 +70,6 @@ import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -93,13 +88,9 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
-import static com.hazelcast.jet.sql.impl.PlanExecutor.DEFAULT_UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.connector.HazelcastRexNode.wrap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
-import static com.hazelcast.sql.impl.QueryUtils.getMapContainer;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
@@ -246,15 +237,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
         SqlConnector sqlConnector = getJetSqlConnector(table);
-        List<List<Expression<?>>> mapPartitionsToScanExprs = null;
-        if (sqlConnector.equals(IMapSqlConnector.INSTANCE)) {
-            mapPartitionsToScanExprs = computeRequiredPartitionsToScan(table.getSqlName());
-        }
         return sqlConnector.fullScanReader(
                 dagBuildContext,
                 wrap(rel.filter()),
                 wrap(rel.projection()),
-                mapPartitionsToScanExprs,
+                partitionStrategyCandidates.get(table.getSqlName()),
                 policyProvider != null
                         ? context -> policyProvider.apply(context, wmKey)
                         : null);
@@ -698,51 +685,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         return objectKeys;
     }
 
-    private List<List<Expression<?>>> computeRequiredPartitionsToScan(String mapName) {
-        List<Map<String, Expression<?>>> candidates = partitionStrategyCandidates.get(mapName);
-        if (candidates == null) {
-            return emptyList();
-        }
-
-        List<List<Expression<?>>> partitionsExpressions = new ArrayList<>();
-
-        final var container = getMapContainer(nodeEngine.getHazelcastInstance().getMap(mapName));
-        final PartitioningStrategy<?> strategy = container.getPartitioningStrategy();
-
-        // We only support Default and Attribute strategies, even if one of the maps uses non-Default/Attribute
-        // strategy, we should abort the process and clear list of already populated partitions so that partition
-        // pruning doesn't get activated at all for this query.
-        if (strategy != null
-                && !(strategy instanceof DefaultPartitioningStrategy)
-                && !(strategy instanceof AttributePartitioningStrategy)) {
-            return emptyList();
-        }
-
-        // ordering of attributes matters for partitioning (1,2) produces different partition than (2,1).
-        final List<String> orderedKeyAttributes = new ArrayList<>();
-        if (strategy instanceof AttributePartitioningStrategy) {
-            final var attributeStrategy = (AttributePartitioningStrategy) strategy;
-            orderedKeyAttributes.addAll(asList(attributeStrategy.getPartitioningAttributes()));
-        } else {
-            orderedKeyAttributes.add(DEFAULT_UNIQUE_KEY);
-        }
-
-        for (final Map<String, Expression<?>> perMapCandidate : candidates) {
-            List<Expression<?>> expressions = new ArrayList<>();
-            for (final String attribute : orderedKeyAttributes) {
-                if (!perMapCandidate.containsKey(attribute)) {
-                    // Shouldn't happen, defensive check in case Opt logic breaks and produces variants
-                    // that do not contain all the required partitioning attributes.
-                    throw new HazelcastException("Partition Pruning candidate"
-                            + " does not contain mandatory attribute: " + attribute);
-                }
-                expressions.add(perMapCandidate.get(attribute));
-            }
-            partitionsExpressions.add(expressions);
-        }
-        return partitionsExpressions;
-    }
-
     /**
      * Converts the {@code inputRel} into a {@code Vertex} by visiting it and
      * create an edge from the input vertex into {@code thisVertex}.
@@ -847,7 +789,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     private Object findLocalPartitioningKey() {
         int limit = 1000;
-        for(int i = 0; i < limit; ++i) {
+        for (int i = 0; i < limit; ++i) {
             Object key = i;
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (nodeEngine.getPartitionService().getPartition(partitionId).isLocal()) {
