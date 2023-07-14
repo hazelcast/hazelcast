@@ -200,7 +200,7 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         PhysicalRel root = optimizePhysical(
                 "(SELECT * FROM m WHERE comp1 = 10 AND this IS NOT NULL)" +
                         " UNION ALL " +
-                        "(SELECT * FROM m WHERE comp1 = 10 AND this IS NOT NULL)",
+                        "(SELECT * FROM m WHERE comp0 = 10 AND this IS NULL)",
                 asList(BIGINT, VARCHAR),
                 table
         ).getPhysical();
@@ -217,6 +217,27 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         assertEquals(
                 Map.of(MAP_NAME, asList(Map.of("comp1", l), Map.of("comp1", l))),
                 prunability);
+    }
+
+    @Test
+    public void shouldNotForwardPrunability_whenOneBranchIsNotPrunable() {
+        PhysicalRel root = optimizePhysical(
+                "(SELECT * FROM m WHERE comp1 = 10 AND this IS NOT NULL)" +
+                        " UNION ALL " +
+                        "(SELECT * FROM m WHERE comp0 = 10 AND this IS NULL)",
+                asList(BIGINT, VARCHAR),
+                table
+        ).getPhysical();
+
+        assertPlan(root, plan(
+                planRow(0, UnionPhysicalRel.class),
+                planRow(1, FullScanPhysicalRel.class),
+                planRow(1, FullScanPhysicalRel.class)
+        ));
+
+        query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
+        Map<String, List<Map<String, RexNode>>> prunability = query.extractPrunability(root);
+        assertEquals(Map.of(), prunability);
     }
 
     static class CompoundKey {
