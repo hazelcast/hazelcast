@@ -823,7 +823,7 @@
                                         com.hazelcast.test.annotation.NightlyTest
                                     </excludedGroups>
                                     <systemPropertyVariables>
-                                        <multipleJVM>true</multipleJVM>
+                                        <multipleJVM>false</multipleJVM>
                                     </systemPropertyVariables>
                                 </configuration>
                             </execution>
