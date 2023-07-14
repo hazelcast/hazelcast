@@ -1,6 +1,5 @@
 package com.hazelcast.file;
 
-import com.hazelcast.CliUtils;
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
@@ -9,7 +8,12 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
+import static com.hazelcast.CliUtils.printHelp;
+import static com.hazelcast.file.StorageBenchmark.READWRITE_NOP;
+import static com.hazelcast.file.StorageBenchmark.READWRITE_RANDREAD;
+import static com.hazelcast.file.StorageBenchmark.READWRITE_RANDWRITE;
 import static com.hazelcast.file.StorageBenchmark.READWRITE_READ;
+import static com.hazelcast.file.StorageBenchmark.READWRITE_WRITE;
 
 public class StorageBenchmarkCli {
     private final OptionParser parser = new OptionParser();
@@ -28,10 +32,13 @@ public class StorageBenchmarkCli {
             .withRequiredArg().ofType(Integer.class).defaultsTo(OS.pageSize());
 
     private final OptionSpec<Boolean> directSpec = parser.accepts("direct", "True to use Direct I/O, false for Buffered I/O (page cache)")
-            .withRequiredArg().ofType(Boolean.class).defaultsTo(true);
+            .withRequiredArg().ofType(Boolean.class).defaultsTo(false);
 
-    private final OptionSpec<String> directorySpec = parser.accepts("directectory", "The directory where fio will create the benchmark files")
+    private final OptionSpec<String> directorySpec = parser.accepts("directory", "The directory where fio will create the benchmark files")
             .withRequiredArg().ofType(String.class).defaultsTo(System.getProperty("user.dir"));
+
+    private final OptionSpec<String> readwriteSpec = parser.accepts("readwrite", "The workload (read, write, randread, randwrite, nop)")
+            .withRequiredArg().ofType(String.class).defaultsTo(System.getProperty("read"));
 
     public static void main(String[] args) {
         StorageBenchmarkCli cli = new StorageBenchmarkCli();
@@ -49,13 +56,9 @@ public class StorageBenchmarkCli {
         OptionSet options = parser.parse(args);
 
         if (options.has(helpSpec)) {
-//            if (help != null) {
-//                printHelp(help);
-//            }
-            CliUtils.printHelp(parser, System.out);
+            printHelp(parser, System.out);
             return;
         }
-
 
         StorageBenchmark benchmark = new StorageBenchmark();
         benchmark.operationCount = 10 * 1000 * 1000L;
@@ -65,7 +68,22 @@ public class StorageBenchmarkCli {
         benchmark.fileSize = 4 * 1024 * 1024L;
         benchmark.bs = options.valueOf(bsSpec);
         benchmark.directory = options.valueOf(directorySpec);
-        benchmark.readwrite = READWRITE_READ;
+
+        String readwrite = options.valueOf(readwriteSpec);
+        if ("read".equals(readwrite)) {
+            benchmark.readwrite = READWRITE_READ;
+        } else if ("write".equals(readwrite)) {
+            benchmark.readwrite = READWRITE_WRITE;
+        } else if ("randread".equals(readwrite)) {
+            benchmark.readwrite = READWRITE_RANDREAD;
+        } else if ("randwrite".equals(readwrite)) {
+            benchmark.readwrite = READWRITE_RANDWRITE;
+        } else if ("nop".equals(readwrite)) {
+            benchmark.readwrite = READWRITE_NOP;
+        } else {
+            System.out.println("Unrecognized readwrite value [" + readwrite + "]");
+        }
+
         benchmark.enableMonitor = true;
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = options.valueOf(directSpec);
