@@ -108,4 +108,8 @@ public abstract class ReadJdbcPPropertiesTest extends SimpleTestInClusterSupport
 
         instance().getJet().newJob(p).join();
     }
+    @BeforeClass
+    public static void beforeClassCheckDocker() {
+        assumeDockerEnabled();
+    }
 }
