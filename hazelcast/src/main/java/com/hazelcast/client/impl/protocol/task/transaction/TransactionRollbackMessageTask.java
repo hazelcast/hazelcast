@@ -74,7 +74,7 @@ public class TransactionRollbackMessageTask
 
     @Override
     public String getMethodName() {
-        return "transactionRollback";
+        return "rollbackTransaction";
     }
 
     @Override

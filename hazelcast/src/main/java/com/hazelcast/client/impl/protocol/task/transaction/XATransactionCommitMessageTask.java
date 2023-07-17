@@ -77,7 +77,7 @@ public class XATransactionCommitMessageTask
 
     @Override
     public String getMethodName() {
-        return "transactionCommit";
+        return "commit";
     }
 
     @Override

@@ -74,7 +74,7 @@ public class TransactionCommitMessageTask
 
     @Override
     public String getMethodName() {
-        return "transactionCommit";
+        return "commitTransaction";
     }
 
     @Override

@@ -74,7 +74,7 @@ public class XATransactionRollbackMessageTask
 
     @Override
     public String getMethodName() {
-        return "transactionRollback";
+        return "rollback";
     }
 
     @Override
