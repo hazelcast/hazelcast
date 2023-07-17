@@ -94,6 +94,30 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void test_fullScanWithDefaultKey() {
+        this.mapTableFields = asList(
+                mapField(KEY, BIGINT, QueryPath.KEY_PATH),
+                mapField(VALUE, BIGINT, QueryPath.VALUE_PATH));
+
+        this.table = partitionedTable(
+                MAP_NAME,
+                mapTableFields,
+                emptyList(),
+                10,
+                emptyList());
+
+        PhysicalRel root = optimizePhysical("SELECT * FROM m WHERE __key = 10 AND this IS NOT NULL",
+                asList(BIGINT, BIGINT), table)
+                .getPhysical();
+        assertPlan(root, plan(planRow(0, FullScanPhysicalRel.class)));
+
+        query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
+        Map<String, List<Map<String, RexNode>>> prunability = query.extractPrunability(root);
+        final RexLiteral expectedLiteral = HazelcastRexBuilder.INSTANCE.makeLiteral(10, REL_TYPE_BIGINT);
+        assertEquals(Map.of(MAP_NAME, singletonList(Map.of("__key", expectedLiteral))), prunability);
+    }
+
+    @Test
     public void test_fullScanWithStrategy() {
         PhysicalRel root = optimizePhysical("SELECT * FROM m WHERE comp1 = 10", asList(BIGINT, BIGINT), table)
                 .getPhysical();
