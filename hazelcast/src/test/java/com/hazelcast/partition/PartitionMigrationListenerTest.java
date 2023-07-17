@@ -356,7 +356,11 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         final HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         warmUpPartitions(hz1);
 
-        final Stopwatch secondInstanceStartupTimer = Stopwatch.createUnstarted();
+        // Change to NO_MIGRATION to prevent repartitioning
+        // before 2nd member started and ready.
+        hz1.getCluster().changeClusterState(ClusterState.NO_MIGRATION);
+
+        final Stopwatch migrationTimer = Stopwatch.createUnstarted();
         final CompletableFuture<MigrationState> migrationStateReference = new CompletableFuture<>();
 
         hz1.getPartitionService().addMigrationListener(new MigrationListener() {
@@ -367,7 +371,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
             @Override
             public void migrationFinished(final MigrationState migrationState) {
-                secondInstanceStartupTimer.stop();
+                migrationTimer.stop();
                 migrationStateReference.complete(migrationState);
             }
 
@@ -384,8 +388,11 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         hz1.getPartitionService().addMigrationListener(eventCollectingMigrationListener);
 
         LOGGER.fine("Starting second instance...");
-        secondInstanceStartupTimer.start();
-        factory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        // Back to ACTIVE
+        migrationTimer.start();
+        changeClusterStateEventually(hz2, ClusterState.ACTIVE);
 
         LOGGER.fine("Awaiting migration completion...");
         final Duration reportedMigrationTime = Duration
@@ -393,11 +400,11 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         assertFalse(reportedMigrationTime.isZero());
 
-        final String message = MessageFormat.format("migrationState.getTotalElapsedTime={1}, secondInstanceStartupTimer={0}",
-                secondInstanceStartupTimer.elapsed(), reportedMigrationTime);
+        final String message = MessageFormat.format("migrationState.getTotalElapsedTime={1}, migrationTimer={0}",
+                migrationTimer.elapsed(), reportedMigrationTime);
 
         LOGGER.fine(message);
-        assertTrue(message, secondInstanceStartupTimer.elapsed().compareTo(reportedMigrationTime) >= 0);
+        assertTrue(message, migrationTimer.elapsed().compareTo(reportedMigrationTime) >= 0);
     }
 
     @SuppressWarnings("SameParameterValue")
