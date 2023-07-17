@@ -147,6 +147,10 @@ public final class HazelcastRelMdPrunability
         for (int i = 0; i < rel.getInputs().size(); i++) {
             RelNode input = rel.getInput(i);
             var extractedPrunability = query.extractPrunability(input);
+            // If we detect any non-prunable input rel, we disrupt prunability.
+            if (extractedPrunability.isEmpty()) {
+                return emptyMap();
+            }
             for (final String tableName : extractedPrunability.keySet()) {
                 var tableVariants = extractedPrunability.get(tableName);
                 prunability.putIfAbsent(tableName, new ArrayList<>());
