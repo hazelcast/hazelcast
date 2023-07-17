@@ -171,7 +171,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private volatile UUID clusterId;
     private volatile ClientState clientState = ClientState.INITIAL;
     private volatile boolean connectToClusterTaskSubmitted;
-    private volatile boolean isConnectedToEnterpriseCluster;
     private boolean establishedInitialClusterConnection;
 
     private enum ClientState {
@@ -909,11 +908,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return isUnisocketClient;
     }
 
-    @Override
-    public boolean isConnectedToEnterpriseCluster() {
-        return isConnectedToEnterpriseCluster;
-    }
-
     public Credentials getCurrentCredentials() {
         return currentCredentials;
     }
@@ -1016,6 +1010,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             }
 
             UUID newClusterId = response.getClusterId();
+            boolean isFailoverSupported = response.isFailoverSupported();
             if (logger.isFineEnabled()) {
                 logger.fine("Checking the cluster: " + newClusterId + ", current cluster: " + this.clusterId);
             }
@@ -1028,7 +1023,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onConnectionToNewCluster();
+                client.onConnectionToNewCluster(isFailoverSupported);
             }
             checkClientState(connection, switchingToNextCluster);
 
@@ -1094,7 +1089,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             fireConnectionEvent(connection, true);
         }
-        isConnectedToEnterpriseCluster = response.isFailoverSupported();
 
         // It could happen that this connection is already closed and
         // onConnectionClose() is called even before the synchronized block

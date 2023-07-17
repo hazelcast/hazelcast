@@ -75,7 +75,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
 
         @Override
         public void beforeListenerRegister(Connection connection) {
-            clusterService.onClusterConnect();
+            clusterService.resetMemberSnapshot();
             if (logger.isFinestEnabled()) {
                 logger.finest("Register attempt of ClusterViewListenerHandler to " + connection);
             }

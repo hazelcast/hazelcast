@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.spi.impl;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.proxy.ClientClusterProxy;
 import com.hazelcast.client.impl.spi.ClientClusterService;
 import com.hazelcast.cluster.Address;
@@ -74,10 +73,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             new AtomicReference<>(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION, new LinkedHashMap<>(), null));
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final ILogger logger;
-    private final HazelcastClientInstanceImpl client;
     private final Object clusterViewLock = new Object();
     //read and written under clusterViewLock
     private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
+    private boolean isFailoverSupported;
 
     private static final class MemberListSnapshot {
         private final int version;
@@ -91,13 +90,16 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public ClientClusterServiceImpl(HazelcastClientInstanceImpl clientInstance, ILogger logger) {
+    public ClientClusterServiceImpl(ILogger logger) {
         this.logger = logger;
-        this.client = clientInstance;
     }
 
     public Cluster getCluster() {
-        return new ClientClusterProxy(this, this.client.getConnectionManager());
+        return new ClientClusterProxy(this);
+    }
+
+    public boolean isEnterprise() {
+        return this.getMemberList().size() > 0 && this.isFailoverSupported;
     }
 
     @Override
@@ -177,7 +179,14 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public void onClusterConnect() {
+    public void onClusterConnect(boolean isFailoverSupported) {
+        synchronized (clusterViewLock) {
+            this.isFailoverSupported = isFailoverSupported;
+            this.resetMemberSnapshot();
+        }
+    }
+
+    public void resetMemberSnapshot() {
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the member list version ");
