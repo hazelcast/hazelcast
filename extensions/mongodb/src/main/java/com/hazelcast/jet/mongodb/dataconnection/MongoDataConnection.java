@@ -51,10 +51,12 @@ import static java.util.Collections.singletonList;
  */
 @Beta
 public class MongoDataConnection extends DataConnectionBase {
+
     /**
      * Name of a property which holds connection string to the mongodb instance.
      */
     public static final String CONNECTION_STRING_PROPERTY = "connectionString";
+
     /**
      * Name of a property with a database name hint.
      * This is used as a <strong>hint</strong> only; {@link #listResources} will return only collection from db with this
@@ -67,27 +69,34 @@ public class MongoDataConnection extends DataConnectionBase {
      * Name of the property holding username.
      */
     public static final String USERNAME_PROPERTY = "username";
+
     /**
      * Name of the property holding user password.
      */
     public static final String PASSWORD_PROPERTY = "password";
+
     /**
      * Name of a property which holds host:port address of the mongodb instance.
      */
     public static final String HOST_PROPERTY = "host";
+
     /**
      * Name of the property holding the name of the database in which user is created.
      * Default value is {@code admin}.
      */
     public static final String AUTH_DB_PROPERTY = "authDb";
+
     /**
      * Name of the property holding the minimum size of Mongo Client connection pool.
      * Default is 10.
+     * @since 5.4
      */
     public static final String CONNECTION_POOL_MIN = "connectionPoolMinSize";
+
     /**
      * Name of the property holding the maximum size of Mongo Client connection pool.
      * Default is 0, which means unlimited.
+     * @since 5.4
      */
     public static final String CONNECTION_POOL_MAX = "connectionPoolMaxSize";
 
