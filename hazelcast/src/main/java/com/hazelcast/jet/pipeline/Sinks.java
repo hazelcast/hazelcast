@@ -18,7 +18,6 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
-import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.dataconnection.HazelcastDataConnection;
@@ -33,12 +32,10 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ReliableTopicPermission;
@@ -49,7 +46,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.jms.ConnectionFactory;
 import javax.sql.CommonDataSource;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -57,13 +53,10 @@ import java.sql.SQLNonTransientException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.UUID;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.function.Functions.entryValue;
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMap;
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
@@ -108,7 +101,7 @@ public final class Sinks {
      * The default local parallelism for this source is specified inside the
      * {@link ProcessorMetaSupplier#preferredLocalParallelism() metaSupplier}.
      *
-     * @param sinkName user-friendly sink name
+     * @param sinkName     user-friendly sink name
      * @param metaSupplier the processor meta-supplier
      */
     @Nonnull
@@ -126,11 +119,11 @@ public final class Sinks {
      * The default local parallelism for this source is specified inside the
      * {@link ProcessorMetaSupplier#preferredLocalParallelism() metaSupplier}.
      *
-     * @param sinkName user-friendly sink name
-     * @param metaSupplier the processor meta-supplier
+     * @param sinkName       user-friendly sink name
+     * @param metaSupplier   the processor meta-supplier
      * @param partitionKeyFn key extractor function for partitioning edges to
-     *     sink. It must be stateless and {@linkplain Processor#isCooperative()
-     *     cooperative}.
+     *                       sink. It must be stateless and {@linkplain Processor#isCooperative()
+     *                       cooperative}.
      */
     @Nonnull
     public static <T> Sink<T> fromProcessor(
@@ -276,8 +269,15 @@ public final class Sinks {
      * The default local parallelism for this sink is 1.
      */
     @Nonnull
-    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName, @Nonnull ClientConfig clientConfig) {
-        return remoteReplicatedMap(replicatedMapName, clientConfig, RMAP_DEFAULT_WRITE_BATCH_SIZE);
+    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
+                                                               @Nonnull String dataConnectionName) {
+        return remoteReplicatedMap(replicatedMapName, dataConnectionName, null, RMAP_DEFAULT_WRITE_BATCH_SIZE);
+    }
+
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
+                                                               @Nonnull ClientConfig clientConfig) {
+        return remoteReplicatedMap(replicatedMapName, null, clientConfig, RMAP_DEFAULT_WRITE_BATCH_SIZE);
     }
 
     /**
@@ -300,117 +300,78 @@ public final class Sinks {
      * The default local parallelism for this sink is 1.
      */
     @Nonnull
-    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
-                                                               @Nonnull ClientConfig clientConfig,
-                                                               int batchSize) {
-        String xmlConfig = asXmlString(clientConfig);
-        DataConnectionConfig connectionConfig = new DataConnectionConfig("RemoteReplicatedMapSinkConfig");
-        connectionConfig.setType("ClientConnection");
-        connectionConfig.setShared(true);
-        connectionConfig.setProperty(HazelcastDataConnection.CLIENT_XML, xmlConfig);
+    static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(
+            @Nonnull String replicatedMapName,
+            @Nullable String dataConnectionName,
+            @Nullable ClientConfig clientConfig,
+            int batchSize) {
+
         return SinkBuilder.sinkBuilder("remoteReplicatedMapSink(" + replicatedMapName + ')',
-                        new RemoteMapBatchWriterCreateFn<K, V>(connectionConfig, replicatedMapName, batchSize))
-                .receiveFn(ClientReplicatedMapBatchWriter<K, V>::write).flushFn(ClientReplicatedMapBatchWriter::flush)
-            .destroyFn(ClientReplicatedMapBatchWriter::destroy).build();
+                                  context -> new ClientReplicatedMapBatchWriter(
+                                          replicatedMapName,
+                                          dataConnectionName,
+                                          ImdgUtil.asXmlString(clientConfig),
+                                          batchSize,
+                                          context
+                                  ))
+                          .receiveFn(ClientReplicatedMapBatchWriter<K, V>::write)
+                          .flushFn(ClientReplicatedMapBatchWriter::flush)
+                          .destroyFn(ClientReplicatedMapBatchWriter::destroy).build();
     }
 
-    private static class RemoteMapBatchWriterCreateFn<K, V> implements FunctionEx<Processor.Context, ClientReplicatedMapBatchWriter<K, V>>, DataSerializable {
-        String replicatedMapName;
-        DataConnectionConfig connectionConfig;
-        int batchSize;
+    private static class ClientReplicatedMapBatchWriter<K, V> {
 
-        public RemoteMapBatchWriterCreateFn(DataConnectionConfig connectionConfig, String replicatedMapName, int batchSize) {
-            this.connectionConfig = connectionConfig;
-            this.replicatedMapName = replicatedMapName;
-            this.batchSize = batchSize;
-        }
+        private final ReplicatedMap<K, V> replicatedMap;
+        private final int batchSize;
 
-        @Override
-        public ClientReplicatedMapBatchWriter<K, V> applyEx(Processor.Context context) {
-            return new ClientReplicatedMapBatchWriter<>(connectionConfig, replicatedMapName, batchSize);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeString(replicatedMapName);
-            out.writeObject(connectionConfig);
-            out.writeInt(batchSize);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            replicatedMapName = in.readString();
-            connectionConfig = in.readObject();
-            batchSize = in.readInt();
-        }
-    }
-
-    private static class ClientReplicatedMapBatchWriter<K, V> implements DataSerializable {
-        HazelcastDataConnection connection;
-        private ReplicatedMap<K, V> replicatedMap;
-        private DataConnectionConfig connectionConfig;
         private HazelcastInstance client;
-        Map<K, V> entrySet;
-        String replicatedMapName;
-        int batchSize;
+        private Map<K, V> batch = new HashMap<>();
 
-        public ClientReplicatedMapBatchWriter(DataConnectionConfig connectionConfig, String replicatedMapName, int batchSize) {
-            this.connectionConfig = connectionConfig;
-            this.replicatedMapName = replicatedMapName;
-            this.entrySet = new HashMap<>(batchSize);
+        ClientReplicatedMapBatchWriter(String replicatedMapName,
+                                       String dataConnectionName,
+                                       String clientXml,
+                                       int batchSize,
+                                       Processor.Context context
+        ) {
+
+            if (dataConnectionName == null && clientXml == null) {
+                throw new IllegalArgumentException("Either dataConnectionName or clientConfig must be provided. "
+                        + "Both are null");
+            }
+
+            if (dataConnectionName != null) {
+                HazelcastDataConnection dataConnection =
+                        context.dataConnectionService()
+                               .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
+                try {
+                    this.client = dataConnection.getClient();
+                } finally {
+                    dataConnection.release();
+                }
+            } else {
+                this.client = newHazelcastClient(asClientConfig(clientXml));
+            }
+            this.replicatedMap = client.getReplicatedMap(replicatedMapName);
             this.batchSize = batchSize;
-        }
-
-        private ReplicatedMap<K, V> getReplicatedMap() {
-            if (replicatedMap != null ){
-                return replicatedMap;
-            }
-            replicatedMap = getClient().getReplicatedMap(replicatedMapName);
-            return replicatedMap;
-        }
-
-        private HazelcastInstance getClient() {
-            if (client != null) {
-                return client;
-            }
-            if (connection == null) {
-                connection = new HazelcastDataConnection(this.connectionConfig);
-            }
-            client = connection.getClient();
-            return client;
         }
 
         public void write(Map.Entry<K, V> entry) {
-            entrySet.put(entry.getKey(), entry.getValue());
-            if (entrySet.size() >= batchSize) {
-                getReplicatedMap().putAll(entrySet);
-                entrySet.clear();
+            batch.put(entry.getKey(), entry.getValue());
+            if (batch.size() >= batchSize) {
+                replicatedMap.putAll(batch);
+                batch.clear();
             }
         }
 
         public void flush() {
-            if (!entrySet.isEmpty()) {
-                getReplicatedMap().putAll(entrySet);
-                entrySet.clear();
+            if (!batch.isEmpty()) {
+                replicatedMap.putAll(batch);
+                batch.clear();
             }
         }
 
         public void destroy() {
-            getClient().shutdown();
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(connectionConfig);
-            out.writeString(replicatedMapName);
-            writeMap(this.entrySet, out);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            connectionConfig = in.readObject();
-            replicatedMapName = in.readString();
-            this.entrySet = readMap(in);
+            client.shutdown();
         }
     }
 
@@ -457,13 +418,13 @@ public final class Sinks {
      * V newValue = toValueFn.apply(item);
      * V resolved = (oldValue == null)
      *            ? newValue
-                  : mergeFn.apply(oldValue, newValue);
+     * : mergeFn.apply(oldValue, newValue);
      * if (value == null)
      *     map.remove(key);
      * else
      *     map.put(key, value);
      * </pre>
-     *
+     * <p>
      * This sink supports exactly-once processing only if the
      * supplied merge function performs <i>idempotent updates</i>, i.e.,
      * it satisfies the rule
@@ -484,9 +445,9 @@ public final class Sinks {
      * @param toValueFn function that extracts the value from the input item
      * @param mergeFn   function that merges the existing value with the value acquired from the
      *                  received item
-     * @param <T> input item type
-     * @param <K> key type
-     * @param <V> value type
+     * @param <T>       input item type
+     * @param <K>       key type
+     * @param <V>       value type
      */
     @Nonnull
     public static <T, K, V> Sink<T> mapWithMerging(
@@ -496,7 +457,7 @@ public final class Sinks {
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         return new SinkImpl<>("mapWithMergingSink(" + mapName + ')',
-                mergeMapP(mapName, toKeyFn, toValueFn,  mergeFn), toKeyFn);
+                mergeMapP(mapName, toKeyFn, toValueFn, mergeFn), toKeyFn);
     }
 
     /**
@@ -513,7 +474,7 @@ public final class Sinks {
      * V newValue = toValueFn.apply(item);
      * V resolved = (oldValue == null)
      *            ? newValue
-                  : mergeFn.apply(oldValue, newValue);
+     * : mergeFn.apply(oldValue, newValue);
      * if (value == null)
      *     map.remove(key);
      * else
@@ -544,9 +505,9 @@ public final class Sinks {
      * @param toValueFn function that extracts the value from the input item
      * @param mergeFn   function that merges the existing value with the value acquired from the
      *                  received item
-     * @param <T> input item type
-     * @param <K> key type
-     * @param <V> value type
+     * @param <T>       input item type
+     * @param <K>       key type
+     * @param <V>       value type
      */
     @Nonnull
     public static <T, K, V> Sink<T> mapWithMerging(
@@ -633,7 +594,7 @@ public final class Sinks {
      * else
      *     map.put(key, newValue);
      * </pre>
-     *
+     * <p>
      * This sink supports exactly-once processing only if the
      * supplied update function performs <i>idempotent updates</i>, i.e., it
      * satisfies the rule {@code updateFn.apply(v, e).equals(v)} for any
@@ -825,15 +786,15 @@ public final class Sinks {
      * The given functions must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      *
-     * @param maxParallelAsyncOps  maximum number of simultaneous entry
-     *                             processors affecting the map
-     * @param mapName  name of the map
-     * @param toKeyFn  function that extracts the key from the input item
-     * @param toEntryProcessorFn function that returns the {@code EntryProcessor}
-     *                           to apply to the key
-     * @param <E> input item type
-     * @param <K> key type
-     * @param <V> value type
+     * @param maxParallelAsyncOps maximum number of simultaneous entry
+     *                            processors affecting the map
+     * @param mapName             name of the map
+     * @param toKeyFn             function that extracts the key from the input item
+     * @param toEntryProcessorFn  function that returns the {@code EntryProcessor}
+     *                            to apply to the key
+     * @param <E>                 input item type
+     * @param <K>                 key type
+     * @param <V>                 value type
      */
     @Nonnull
     public static <E, K, V, R> Sink<E> mapWithEntryProcessor(
@@ -1021,10 +982,10 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> reliableTopic(@Nonnull String reliableTopicName) {
         return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
-                SecuredFunctions.reliableTopicFn(reliableTopicName))
-                .<T>receiveFn(ITopic::publish)
-                .permission(new ReliableTopicPermission(reliableTopicName, ACTION_CREATE, ACTION_PUBLISH))
-                .build();
+                                  SecuredFunctions.reliableTopicFn(reliableTopicName))
+                          .<T>receiveFn(ITopic::publish)
+                          .permission(new ReliableTopicPermission(reliableTopicName, ACTION_CREATE, ACTION_PUBLISH))
+                          .build();
     }
 
     /**
@@ -1062,7 +1023,8 @@ public final class Sinks {
      * @since Jet 4.0
      */
     @Nonnull
-    public static <T> Sink<T> remoteReliableTopic(@Nonnull String reliableTopicName, @Nonnull ClientConfig clientConfig) {
+    public static <T> Sink<T> remoteReliableTopic(@Nonnull String reliableTopicName,
+                                                  @Nonnull ClientConfig clientConfig) {
         String clientXml = asXmlString(clientConfig); //conversion needed for serializability
         return SinkBuilder
                 .sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
@@ -1089,11 +1051,11 @@ public final class Sinks {
      * <p>
      * The default local parallelism for this sink is 1.
      *
-     * @param host the host to connect to
-     * @param port the target port
+     * @param host       the host to connect to
+     * @param port       the target port
      * @param toStringFn a function to convert received items to string. It
-     *     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param charset charset used to convert the string to bytes
+     *                   must be stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param charset    charset used to convert the string to bytes
      */
     @Nonnull
     public static <T> Sink<T> socket(
@@ -1141,7 +1103,7 @@ public final class Sinks {
      * file names.
      *
      * <h3>Fault tolerance</h3>
-     *
+     * <p>
      * If the job is running in <i>exactly-once</i> mode, Jet writes the items
      * to temporary files (ending with a {@value
      * FileSinkBuilder#TEMP_FILE_SUFFIX} suffix). When Jet commits a snapshot,
@@ -1168,7 +1130,7 @@ public final class Sinks {
      * <pre>{@code
      * [<date>-]<global processor index>[-<sequence>][".tmp"]
      * }</pre>
-     *
+     * <p>
      * Description (parts in {@code []} are optional):
      * <ul>
      *     <li>{@code <date>}: the current date and time, see {@link
@@ -1191,7 +1153,7 @@ public final class Sinks {
      * </ul>
      *
      * <h3>Notes</h3>
-     *
+     * <p>
      * The target directory is not deleted before the job start. If file names
      * clash, they are appended to. This is needed to ensure at-least-once
      * behavior. In exactly-once mode the file names never clash thanks to the
@@ -1245,9 +1207,9 @@ public final class Sinks {
      * The default local parallelism for this sink is 1.
      *
      * @param toStringFn a function that returns a string representation of a
-     *     stream item. It must be stateless and {@linkplain
-     *     Processor#isCooperative() cooperative}.
-     * @param <T> stream item type
+     *                   stream item. It must be stateless and {@linkplain
+     *                   Processor#isCooperative() cooperative}.
+     * @param <T>        stream item type
      */
     @Nonnull
     public static <T> Sink<T> logger(@Nonnull FunctionEx<? super T, String> toStringFn) {
@@ -1277,9 +1239,9 @@ public final class Sinks {
      * not an instance of {@code javax.jms.Message}, the sink wraps {@code
      * item.toString()} into a {@link javax.jms.TextMessage}.
      *
-     * @param queueName the name of the queue
+     * @param queueName       the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory. It
-     *     must be stateless.
+     *                        must be stateless.
      */
     @Nonnull
     public static <T> Sink<T> jmsQueue(
@@ -1287,8 +1249,8 @@ public final class Sinks {
             @Nonnull SupplierEx<ConnectionFactory> factorySupplier
     ) {
         return Sinks.<T>jmsQueueBuilder(factorySupplier)
-                .destinationName(queueName)
-                .build();
+                    .destinationName(queueName)
+                    .build();
     }
 
     /**
@@ -1334,9 +1296,9 @@ public final class Sinks {
      * The default local parallelism for this processor is 1.
      *
      * @param factorySupplier supplier to obtain JMS connection factory. For
-     *      exactly-once the factory must implement {@link
-     *      javax.jms.XAConnectionFactory}. It must be stateless.
-     * @param <T> type of the items the sink accepts
+     *                        exactly-once the factory must implement {@link
+     *                        javax.jms.XAConnectionFactory}. It must be stateless.
+     * @param <T>             type of the items the sink accepts
      */
     @Nonnull
     public static <T> JmsSinkBuilder<T> jmsQueueBuilder(@Nonnull SupplierEx<ConnectionFactory> factorySupplier) {
@@ -1350,13 +1312,13 @@ public final class Sinks {
      *                 .destinationName(topicName)
      *                 .build();
      * }</pre>
-     *
+     * <p>
      * See {@link #jmsTopicBuilder(SupplierEx)} for more details.
      *
-     * @param topicName the name of the queue
+     * @param topicName       the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory. For
-     *      exactly-once the factory must implement {@link
-     *      javax.jms.XAConnectionFactory}. It must be stateless.
+     *                        exactly-once the factory must implement {@link
+     *                        javax.jms.XAConnectionFactory}. It must be stateless.
      */
     @Nonnull
     public static <T> Sink<T> jmsTopic(
@@ -1364,8 +1326,8 @@ public final class Sinks {
             @Nonnull SupplierEx<ConnectionFactory> factorySupplier
     ) {
         return Sinks.<T>jmsTopicBuilder(factorySupplier)
-                .destinationName(topicName)
-                .build();
+                    .destinationName(topicName)
+                    .build();
     }
 
     /**
@@ -1408,8 +1370,8 @@ public final class Sinks {
      * The default local parallelism for this processor is 1.
      *
      * @param factorySupplier supplier to obtain JMS connection factory. It
-     *     must be stateless.
-     * @param <T> type of the items the sink accepts
+     *                        must be stateless.
+     * @param <T>             type of the items the sink accepts
      */
     @Nonnull
     public static <T> JmsSinkBuilder<T> jmsTopicBuilder(@Nonnull SupplierEx<ConnectionFactory> factorySupplier) {
@@ -1425,7 +1387,7 @@ public final class Sinks {
      *             .bindFn(bindFn)
      *             .build();
      * }</pre>
-     *
+     * <p>
      * See {@link #jdbcBuilder()} for more information.
      */
     @Nonnull
@@ -1435,10 +1397,10 @@ public final class Sinks {
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
         return Sinks.<T>jdbcBuilder()
-                .updateQuery(updateQuery)
-                .dataSourceSupplier(dataSourceSupplier)
-                .bindFn(bindFn)
-                .build();
+                    .updateQuery(updateQuery)
+                    .dataSourceSupplier(dataSourceSupplier)
+                    .bindFn(bindFn)
+                    .build();
     }
 
     /**
@@ -1463,10 +1425,10 @@ public final class Sinks {
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
         return Sinks.<T>jdbcBuilder()
-                .updateQuery(updateQuery)
-                .dataConnectionRef(dataConnectionRef)
-                .bindFn(bindFn)
-                .build();
+                    .updateQuery(updateQuery)
+                    .dataConnectionRef(dataConnectionRef)
+                    .bindFn(bindFn)
+                    .build();
     }
 
     /**
@@ -1476,7 +1438,7 @@ public final class Sinks {
      *              .jdbcUrl(jdbcUrl)
      *              .build()
      * }</pre>
-     *
+     * <p>
      * See {@link #jdbcBuilder()} for more information.
      */
     @Nonnull
@@ -1486,10 +1448,10 @@ public final class Sinks {
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
         return Sinks.<T>jdbcBuilder()
-                .updateQuery(updateQuery)
-                .jdbcUrl(jdbcUrl)
-                .bindFn(bindFn)
-                .build();
+                    .updateQuery(updateQuery)
+                    .jdbcUrl(jdbcUrl)
+                    .bindFn(bindFn)
+                    .build();
     }
 
     /**
@@ -1518,14 +1480,14 @@ public final class Sinks {
      * <b>Commit behavior</b>
      * <p>
      * The commit behavior depends on the job guarantee:<ul>
-     *     <li><b>Exactly-once:</b> XA transactions will be used to commit the
-     *     work in phase two of the snapshot, that is after all other vertices
-     *     in the job have performed the snapshot. Very small state will be
-     *     saved to snapshot.
+     * <li><b>Exactly-once:</b> XA transactions will be used to commit the
+     * work in phase two of the snapshot, that is after all other vertices
+     * in the job have performed the snapshot. Very small state will be
+     * saved to snapshot.
      *
-     *     <li><b>At-least-once or no guarantee:</b> Records will be committed
-     *     in batches. A batch is created from records that are readily available
-     *     at the sink.
+     * <li><b>At-least-once or no guarantee:</b> Records will be committed
+     * in batches. A batch is created from records that are readily available
+     * at the sink.
      * </ul>
      * <p>
      * If the job is in exactly-once mode, the overhead in the database and the
