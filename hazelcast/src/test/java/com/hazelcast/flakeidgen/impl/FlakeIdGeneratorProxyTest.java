@@ -32,12 +32,15 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
+import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import java.net.UnknownHostException;
 import java.util.Date;
@@ -81,6 +84,11 @@ public class FlakeIdGeneratorProxyTest {
         initialize(new FlakeIdGeneratorConfig());
     }
 
+    @BeforeClass
+    public void beforeClass() {
+        Mockito.clearAllCaches();
+    }
+
     public void initialize(FlakeIdGeneratorConfig config) {
         ILogger logger = mock(ILogger.class);
         clusterService = mock(ClusterService.class);
@@ -106,6 +114,11 @@ public class FlakeIdGeneratorProxyTest {
         when(nodeEngine.getLocalMember()).thenReturn(new MemberImpl(address, MemberVersion.UNKNOWN, true, UUID.randomUUID()));
         UUID source = nodeEngine.getLocalMember().getUuid();
         gen = new FlakeIdGeneratorProxy("foo", nodeEngine, service, source);
+    }
+
+    @After
+    public void after() {
+        Mockito.validateMockitoUsage();
     }
 
     @Test
