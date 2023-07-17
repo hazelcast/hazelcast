@@ -387,8 +387,9 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         LOGGER.fine(message);
         assertTrue(message, migrationTimer.elapsed().compareTo(reportedMigrationTime) >= 0);
     }
-    
-    private HazelcastInstance createPausedMigrationCluster(final TestHazelcastInstanceFactory factory, final Optional<Config> config) {
+
+    private HazelcastInstance createPausedMigrationCluster(final TestHazelcastInstanceFactory factory,
+            final Optional<Config> config) {
         LOGGER.fine("Starting paused migration instance...");
         final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config.orElse(null));
         warmUpPartitions(hazelcastInstance);
@@ -396,7 +397,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         // Change to NO_MIGRATION to prevent repartitioning
         // before 2nd member started and ready.
         hazelcastInstance.getCluster().changeClusterState(ClusterState.NO_MIGRATION);
-        
+
         return hazelcastInstance;
     }
 
