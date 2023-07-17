@@ -1,10 +1,11 @@
 package com.hazelcast.file;
 
-import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.util.OS;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+
+import java.util.Arrays;
 
 import static com.hazelcast.CliUtils.getToolsVersion;
 import static com.hazelcast.CliUtils.printHelp;
@@ -41,7 +42,8 @@ public class StorageBenchmarkCli {
             .defaultsTo(false);
 
     private final OptionSpec<String> directorySpec = parser
-            .accepts("directory", "The directory where fio will create the benchmark files")
+            .accepts("directory", "The directory where fio will create the benchmark files. "
+                    + "To pass multiple directories, seperate them using a :")
             .withRequiredArg().ofType(String.class)
             .defaultsTo(System.getProperty("user.dir"));
 
@@ -80,7 +82,7 @@ public class StorageBenchmarkCli {
         benchmark.iodepth = options.valueOf(ioDepthSpec);
         benchmark.fileSize = 4 * 1024 * 1024L;
         benchmark.bs = options.valueOf(bsSpec);
-        benchmark.directory = options.valueOf(directorySpec);
+        benchmark.directories.addAll(Arrays.asList(options.valueOf(directorySpec).split(":")));
 
         String readwrite = options.valueOf(readwriteSpec);
         if ("read".equals(readwrite)) {
@@ -98,11 +100,11 @@ public class StorageBenchmarkCli {
         }
 
         String runtime = options.valueOf(runtimeSpec);
-        if(!runtime.endsWith("s")){
+        if (!runtime.endsWith("s")) {
             System.out.println("Runtime needs to end with 's'");
         }
 
-        String runtimeSec = runtime.substring(0, runtime.length()-1);
+        String runtimeSec = runtime.substring(0, runtime.length() - 1);
         benchmark.runtimeSeconds = Integer.parseInt(runtimeSec);
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = options.valueOf(directSpec);
