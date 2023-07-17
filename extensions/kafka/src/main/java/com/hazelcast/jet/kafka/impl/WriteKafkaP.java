@@ -151,7 +151,8 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         if (transaction == null) {
             return false;
         }
-        transaction.producer.flush();
+        transaction.flush();
+        transaction.commit();
         LoggingUtil.logFinest(context.logger(), "flush in complete() done, %s", transaction.transactionId);
         checkError();
         snapshotUtility.afterCompleted();
