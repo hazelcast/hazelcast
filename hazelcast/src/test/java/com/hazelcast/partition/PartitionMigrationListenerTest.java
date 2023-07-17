@@ -16,33 +16,6 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.partition.MigrationInfo;
-import com.hazelcast.internal.partition.MigrationStateImpl;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.partition.impl.MigrationInterceptor;
-import com.hazelcast.internal.partition.impl.MigrationStats;
-import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,9 +30,47 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.text.MessageFormat;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import com.google.common.base.Stopwatch;
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.MigrationInfo;
+import com.hazelcast.internal.partition.MigrationStateImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.MigrationInterceptor;
+import com.hazelcast.internal.partition.impl.MigrationStats;
+import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PartitionMigrationListenerTest extends HazelcastTestSupport {
+    private static final ILogger LOGGER = Logger.getLogger(PartitionMigrationListenerTest.class);
 
     @Test
     public void testMigrationStats_whenMigrationProcessCompletes() {
@@ -328,6 +339,65 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         // and verify that the listener isn't called.
         verify(listener, never()).migrationStarted(any(MigrationStateImpl.class));
         verify(listener, never()).replicaMigrationCompleted(any(ReplicaMigrationEvent.class));
+    }
+
+    /**
+     * @see <a href="https://hazelcast.atlassian.net/browse/HZ-2651">HZ-2651 - MigrationListener: Difference between
+     *      "wall clock elapsed time" and the totalElasedTime API</a>
+     */
+    @Test
+    public void testMigrationListenerElapsedTime() throws InterruptedException, ExecutionException, TimeoutException {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        // Use an arbitrarily high number of partitions to exacerbate the issue
+        final Config config = new Config().setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(1000));
+
+        LOGGER.fine("Starting first instance...");
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        warmUpPartitions(hz1);
+
+        final Stopwatch secondInstanceStartupTimer = Stopwatch.createUnstarted();
+        final CompletableFuture<MigrationState> migrationStateReference = new CompletableFuture<>();
+
+        hz1.getPartitionService().addMigrationListener(new MigrationListener() {
+            @Override
+            public void migrationStarted(final MigrationState migrationState) {
+                // Don't trust the listener start time because no guarantees as to when its executed
+            }
+
+            @Override
+            public void migrationFinished(final MigrationState migrationState) {
+                secondInstanceStartupTimer.stop();
+                migrationStateReference.complete(migrationState);
+            }
+
+            @Override
+            public void replicaMigrationCompleted(final ReplicaMigrationEvent replicaMigrationEvent) {
+            }
+
+            @Override
+            public void replicaMigrationFailed(final ReplicaMigrationEvent replicaMigrationEvent) {
+            }
+        });
+
+        final EventCollectingMigrationListener eventCollectingMigrationListener = new EventCollectingMigrationListener();
+        hz1.getPartitionService().addMigrationListener(eventCollectingMigrationListener);
+
+        LOGGER.fine("Starting second instance...");
+        secondInstanceStartupTimer.start();
+        factory.newHazelcastInstance(config);
+
+        LOGGER.fine("Awaiting migration completion...");
+        final Duration reportedMigrationTime = Duration
+                .ofMillis(migrationStateReference.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS).getTotalElapsedTime());
+
+        assertFalse(reportedMigrationTime.isZero());
+
+        final String message = MessageFormat.format("migrationState.getTotalElapsedTime={1}, secondInstanceStartupTimer={0}",
+                secondInstanceStartupTimer.elapsed(), reportedMigrationTime);
+
+        LOGGER.fine(message);
+        assertTrue(message, secondInstanceStartupTimer.elapsed().compareTo(reportedMigrationTime) >= 0);
     }
 
     @SuppressWarnings("SameParameterValue")
