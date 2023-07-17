@@ -83,6 +83,13 @@ public class PartitionPruningIT extends SqlTestSupport {
     }
 
     @Test
+    public void test_simpleKeyAndEmptyMapPruned() {
+        createMapping("test4", Integer.class, Integer.class);
+        instance().getMap("test4");
+        assertRowsAnyOrder("SELECT this FROM test4 WHERE __key = ? AND this IS NOT NULL", List.of(1), rows(0));
+    }
+
+    @Test
     public void test_simpleKeyPruned() {
         assertRowsAnyOrder("SELECT this FROM test1 WHERE __key = ? AND this = 'v1'", List.of(1), rows(1, "v1"));
     }

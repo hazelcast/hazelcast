@@ -87,20 +87,21 @@ public final class ExecutionPlanBuilder {
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
         final EdgeConfig defaultEdgeConfig = nodeEngine.getConfig().getJetConfig().getDefaultEdgeConfig();
         final Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        final boolean memberPruningUsed = requiredPartitions != null;
 
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
 
         final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos, requiredPartitions);
 
-        if (!nodeEngine.getNode().isLiteMember()) {
+        if (memberPruningUsed && !nodeEngine.getNode().isLiteMember()) {
             Address localMemberAddress = nodeEngine.getThisAddress();
             MemberInfo localMemberInfo = memberInfos.stream()
                     .filter(mi -> mi.getAddress().equals(localMemberAddress))
                     .findAny()
                     .orElseThrow();
             partitionsByMember.computeIfAbsent(localMemberInfo, (i) -> {
-                nodeEngine.getLogger(ExecutionPlanBuilder.class).info("Adding coordinator to partition-pruned job members");
+                nodeEngine.getLogger(ExecutionPlanBuilder.class).fine("Adding coordinator to partition-pruned job members");
                 return new int[]{};
             });
         }
