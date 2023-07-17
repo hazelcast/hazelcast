@@ -16,8 +16,6 @@
 
 package com.hazelcast.file;
 
-import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
-import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
@@ -25,6 +23,8 @@ import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.AsyncFileMetrics;
 import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
+import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.util.ThreadAffinity;
 
 import java.io.File;
@@ -98,7 +98,6 @@ public class StorageBenchmark {
     public static final int READWRITE_RANDREAD = 5;
 
     // Properties
-    public long operationCount;
     // the number of threads.
     public int numJobs;
     public String affinity;
@@ -110,22 +109,23 @@ public class StorageBenchmark {
     public String directory;
     // the type of workload.
     public int readwrite;
-    public boolean enableMonitor;
     public boolean deleteFilesOnExit;
     public boolean direct;
     // Can only be io_uring for now because nio doesn't support files.
     public ReactorType reactorType;
     public int fsync;
     public int fdatasync;
+    public int runtimeSeconds;
 
     private final List<String> filePaths = new ArrayList<>();
     private final List<AsyncFile> asyncFiles = Collections.synchronizedList(new ArrayList<>());
     private final BlockDeviceRegistry blockDeviceRegistry = new BlockDeviceRegistry();
     private final ArrayList<Reactor> reactors = new ArrayList<>();
+    private static volatile boolean stop;
 
     public static void main(String[] args) {
         StorageBenchmark benchmark = new StorageBenchmark();
-        benchmark.operationCount = 10 * 1000 * 1000L;
+        benchmark.runtimeSeconds = 60;
         benchmark.affinity = "1";
         benchmark.numJobs = 1;
         benchmark.iodepth = 64;
@@ -133,7 +133,6 @@ public class StorageBenchmark {
         benchmark.bs = 4 * 1024;
         benchmark.directory = "/mnt/benchdrive1/";
         benchmark.readwrite = READWRITE_READ;
-        benchmark.enableMonitor = true;
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = true;
         benchmark.spin = false;
@@ -148,12 +147,12 @@ public class StorageBenchmark {
             System.out.println("fsync and fdatasync can't both be larger than 0");
         }
 
+        System.out.println("Duration: " + runtimeSeconds + " seconds.");
         try {
             setup();
 
-            MonitorThread monitorThread = null;
+            MonitorThread monitorThread = new MonitorThread(runtimeSeconds);
 
-            CountDownLatch completionLatch = new CountDownLatch(iodepth * numJobs);
             CountDownLatch startLatch = new CountDownLatch(1);
             for (int jobIndex = 0; jobIndex < numJobs; jobIndex++) {
                 Reactor reactor = reactors.get(jobIndex);
@@ -180,26 +179,19 @@ public class StorageBenchmark {
                         }
 
                         for (int k = 0; k < iodepth; k++) {
-                            reactor.offer(new IOTask(reactor, this, file, completionLatch, k));
+                            reactor.offer(new IOTask(reactor, this, file, k));
                         }
                     });
                 });
             }
 
-            if (enableMonitor) {
-                monitorThread = new MonitorThread();
-                monitorThread.start();
-            }
+            monitorThread.start();
 
             System.out.println("Benchmark: started");
             startLatch.countDown();
             long startMs = System.currentTimeMillis();
 
-            completionLatch.await();
-            if (enableMonitor) {
-                monitorThread.shutdown();
-            }
-
+            monitorThread.join();
             long durationMs = System.currentTimeMillis() - startMs;
             System.out.println("Benchmark: completed");
 
@@ -210,7 +202,6 @@ public class StorageBenchmark {
             throw new RuntimeException(e);
         } finally {
             teardown();
-            System.exit(0);
         }
     }
 
@@ -240,10 +231,7 @@ public class StorageBenchmark {
 
 
     private static class IOTask implements Runnable, IntBiConsumer<Throwable> {
-        private long completed;
         private final AsyncFile file;
-        private long operationCount;
-        private final CountDownLatch completionLatch;
         private long block;
         private final IOBuffer writeBuffer;
         private final IOBuffer readBuffer;
@@ -255,11 +243,9 @@ public class StorageBenchmark {
         private final int syncInterval;
         private boolean fdatasync;
 
-        public IOTask(Reactor reactor, StorageBenchmark benchmark, AsyncFile file, CountDownLatch completionLatch, int taskIndex) {
+        public IOTask(Reactor reactor, StorageBenchmark benchmark, AsyncFile file, int taskIndex) {
             this.readwrite = benchmark.readwrite;
             this.file = file;
-            this.completionLatch = completionLatch;
-            this.operationCount = benchmark.operationCount/benchmark.iodepth;
             this.bs = benchmark.bs;
             this.blockCount = benchmark.fileSize / bs;
             if (benchmark.fsync > 0) {
@@ -359,12 +345,11 @@ public class StorageBenchmark {
                 System.exit(1);
             }
 
-            if (completed >= operationCount) {
-                completionLatch.countDown();
-            } else {
-                completed++;
-                run();
+            if (stop) {
+                return;
             }
+
+            run();
         }
     }
 
@@ -391,7 +376,7 @@ public class StorageBenchmark {
 
                     AtomicInteger completed = new AtomicInteger(iodepth);
                     for (int k = 0; k < iodepth; k++) {
-                        InitFileTask initFileTask = new InitFileTask(reactor,k, iodepth);
+                        InitFileTask initFileTask = new InitFileTask(reactor, k, iodepth);
                         initFileTask.startMs = startMs;
                         initFileTask.completionLatch = completionLatch;
                         initFileTask.completed = completed;
@@ -529,152 +514,168 @@ public class StorageBenchmark {
     private void printResults(long durationMs) {
         DecimalFormat longFormat = new DecimalFormat("#,###");
 
-        long totalOperations = operationCount * numJobs;
-
         System.out.println("Duration: " + longFormat.format(durationMs) + " ms");
         System.out.println("Reactors: " + numJobs);
         System.out.println("I/O depth: " + iodepth);
         System.out.println("Direct I/O: " + direct);
         System.out.println("Page size: " + pageSize() + " B");
-        System.out.println("Operations: " + humanReadableCountSI(operationCount));
         System.out.println("fsync: " + fsync);
         System.out.println("fdatasync: " + fdatasync);
-        System.out.println("Speed: " + humanReadableCountSI(totalOperations * 1000f / durationMs) + " IOPS");
+        long totalTimeMicros = MILLISECONDS.toMicros(numJobs * iodepth * durationMs);
+
+        System.out.println("Speed: " + humanReadableCountSI(sumOps() * 1000f / durationMs) + " IOPS");
+        System.out.println("File size: " + humanReadableByteCountSI(fileSize));
+        System.out.println("Block size: " + bs + " B");
         switch (readwrite) {
             case READWRITE_NOP:
                 System.out.println("Workload: nop");
+                System.out.println("Nops: " + humanReadableCountSI(sumNops()));
+                System.out.println("Average latency: " + (totalTimeMicros / sumOps()) + " us");
                 break;
             case READWRITE_WRITE:
-                System.out.println("Workload: sequential write");
+                System.out.println("Workload: sequential read");
+                System.out.println("Writes: " + humanReadableByteCountSI(sumBytesWritten()));
+                System.out.println("Bandwidth: " + humanReadableByteCountSI(sumBytesWritten() * 1000f / durationMs) + "/s");
+                System.out.println("Average latency: " + (totalTimeMicros / sumOps()) + " us");
                 break;
             case READWRITE_READ:
                 System.out.println("Workload: sequential read");
+                System.out.println("Read: " + humanReadableByteCountSI(sumBytesRead()));
+                System.out.println("Bandwidth: " + humanReadableByteCountSI(sumBytesRead() * 1000f / durationMs) + "/s");
+                System.out.println("Average latency: " + (totalTimeMicros / sumOps()) + " us");
                 break;
             case READWRITE_RANDWRITE:
                 System.out.println("Workload: random write");
+                System.out.println("Write: " + humanReadableByteCountSI(sumBytesWritten()));
+                System.out.println("Bandwidth: " + humanReadableByteCountSI(sumBytesWritten() * 1000f / durationMs) + "/s");
+                System.out.println("Average latency: " + (totalTimeMicros / sumOps()) + " us");
                 break;
             case READWRITE_RANDREAD:
                 System.out.println("Workload: random read");
+                System.out.println("Read: " + humanReadableByteCountSI(sumBytesRead()));
+                System.out.println("Bandwidth: " + humanReadableByteCountSI(sumBytesRead() * 1000f / durationMs) + "/s");
+                System.out.println("Average latency: " + (totalTimeMicros / sumOps()) + " us");
                 break;
             default:
                 System.out.println("Workload: unknown");
         }
-        System.out.println("File size: " + humanReadableByteCountSI(fileSize));
-        System.out.println("Block size: " + bs+" B");
-        long dataSize = bs * totalOperations;
-
-        if (readwrite != READWRITE_NOP) {
-            System.out.println("Read/Written: " + humanReadableByteCountSI(dataSize));
-            System.out.println("Bandwidth: " + humanReadableByteCountSI(dataSize * 1000f / durationMs ) + "/s");
-
-            long totalTimeMicros = MILLISECONDS.toMicros(numJobs * iodepth * durationMs);
-            System.out.println("Average latency: " + (totalTimeMicros / totalOperations) + " us");
-        }
     }
 
     private class MonitorThread extends Thread {
-        private boolean shutdown;
         private final StringBuffer sb = new StringBuffer();
+        private final long runtimeSeconds;
 
-        private void shutdown() {
-            shutdown = true;
-            interrupt();
+        public MonitorThread(long runtimeSeconds) {
+            super("MonitorThread");
+            this.runtimeSeconds = runtimeSeconds;
         }
 
         @Override
         public void run() {
             try {
-                long lastMs = System.currentTimeMillis();
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                }
-
-                LastAsyncFileMetrics[] metricsArray = new LastAsyncFileMetrics[asyncFiles.size()];
-                for (int k = 0; k < metricsArray.length; k++) {
-                    metricsArray[k] = new LastAsyncFileMetrics();
-                }
-                while (!shutdown) {
-                    long nowMs = System.currentTimeMillis();
-
-                    for (int k = 0; k < metricsArray.length; k++) {
-                        AsyncFile file = asyncFiles.get(k);
-                        AsyncFileMetrics metrics = file.metrics();
-                        LastAsyncFileMetrics lastMetrics = metricsArray[k];
-
-                        long reads = metrics.reads();
-                        if (reads > 0) {
-                            double readsThp = ((reads - lastMetrics.reads) * 1000d) / (nowMs - lastMs);
-                            lastMetrics.reads = reads;
-                            sb.append(" reads=");
-                            sb.append(humanReadableCountSI(readsThp));
-                            sb.append("/s");
-                        }
-
-                        long bytesRead = metrics.bytesRead();
-                        if (bytesRead > 0) {
-                            double bytesThp = ((bytesRead - lastMetrics.bytesRead) * 1000d) / (nowMs - lastMs);
-                            lastMetrics.bytesRead = bytesRead;
-                            sb.append(" read-bytes=");
-                            sb.append(humanReadableByteCountSI(bytesThp));
-                            sb.append("/s");
-                        }
-                        long writes = metrics.writes();
-                        if (writes > 0) {
-                            double writeThp = ((writes - lastMetrics.writes) * 1000d) / (nowMs - lastMs);
-                            lastMetrics.writes = writes;
-                            sb.append(" writes=");
-                            sb.append(humanReadableCountSI(writeThp));
-                            sb.append("/s");
-                        }
-                        long bytesWritten = metrics.bytesWritten();
-                        if (bytesWritten > 0) {
-                            double bytesThp = ((bytesWritten - lastMetrics.bytesWritten) * 1000d) / (nowMs - lastMs);
-                            lastMetrics.bytesWritten = bytesWritten;
-                            sb.append(" write-bytes=");
-                            sb.append(humanReadableByteCountSI(bytesThp));
-                            sb.append("/s");
-                        }
-                        long fsyncs = metrics.fsyncs();
-                        if (fsyncs > 0) {
-                            double fsyncsThp = ((fsyncs - lastMetrics.fsyncs) * 1000d) / (nowMs - lastMs);
-                            lastMetrics.fsyncs = fsyncs;
-                            sb.append(" fsyncs=");
-                            sb.append(humanReadableCountSI(fsyncsThp));
-                            sb.append("/s");
-                        }
-                        long fdatasyncs = metrics.fdatasyncs();
-                        if (fdatasyncs > 0) {
-                            double fdataSyncsThp = ((fdatasyncs - lastMetrics.fdatasyncs) * 1000d) / (nowMs - lastMs);
-                            lastMetrics.fdatasyncs = fdatasyncs;
-                            sb.append(" fdatasyncs=");
-                            sb.append(humanReadableCountSI(fdataSyncsThp));
-                            sb.append("/s");
-                        }
-
-                        long nops = metrics.nops();
-                        if (nops > 0) {
-                            double nopsThp = ((nops - lastMetrics.nops) * 1000d) / (nowMs - lastMs);
-                            lastMetrics.nops = nops;
-                            sb.append(" nops=");
-                            sb.append(humanReadableCountSI(nopsThp));
-                            sb.append("/s");
-                        }
-
-                        System.out.println(sb);
-                        sb.setLength(0);
-                    }
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        break;
-                    }
-                    lastMs = nowMs;
-                }
+                doRun();
             } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
+
+        private void doRun() {
+            long lastMs = System.currentTimeMillis();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+
+            LastAsyncFileMetrics[] metricsArray = new LastAsyncFileMetrics[asyncFiles.size()];
+            for (int k = 0; k < metricsArray.length; k++) {
+                metricsArray[k] = new LastAsyncFileMetrics();
+            }
+
+            long end = System.currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
+            while (System.currentTimeMillis() < end) {
+
+                long nowMs = System.currentTimeMillis();
+
+                for (int k = 0; k < metricsArray.length; k++) {
+                    AsyncFile file = asyncFiles.get(k);
+                    AsyncFileMetrics metrics = file.metrics();
+                    LastAsyncFileMetrics lastMetrics = metricsArray[k];
+
+                    long reads = metrics.reads();
+                    if (reads > 0) {
+                        double readsThp = ((reads - lastMetrics.reads) * 1000d) / (nowMs - lastMs);
+                        lastMetrics.reads = reads;
+                        sb.append(" reads=");
+                        sb.append(humanReadableCountSI(readsThp));
+                        sb.append("/s");
+                    }
+
+                    long bytesRead = metrics.bytesRead();
+                    if (bytesRead > 0) {
+                        double bytesThp = ((bytesRead - lastMetrics.bytesRead) * 1000d) / (nowMs - lastMs);
+                        lastMetrics.bytesRead = bytesRead;
+                        sb.append(" read-bytes=");
+                        sb.append(humanReadableByteCountSI(bytesThp));
+                        sb.append("/s");
+                    }
+                    long writes = metrics.writes();
+                    if (writes > 0) {
+                        double writeThp = ((writes - lastMetrics.writes) * 1000d) / (nowMs - lastMs);
+                        lastMetrics.writes = writes;
+                        sb.append(" writes=");
+                        sb.append(humanReadableCountSI(writeThp));
+                        sb.append("/s");
+                    }
+                    long bytesWritten = metrics.bytesWritten();
+                    if (bytesWritten > 0) {
+                        double bytesThp = ((bytesWritten - lastMetrics.bytesWritten) * 1000d) / (nowMs - lastMs);
+                        lastMetrics.bytesWritten = bytesWritten;
+                        sb.append(" write-bytes=");
+                        sb.append(humanReadableByteCountSI(bytesThp));
+                        sb.append("/s");
+                    }
+                    long fsyncs = metrics.fsyncs();
+                    if (fsyncs > 0) {
+                        double fsyncsThp = ((fsyncs - lastMetrics.fsyncs) * 1000d) / (nowMs - lastMs);
+                        lastMetrics.fsyncs = fsyncs;
+                        sb.append(" fsyncs=");
+                        sb.append(humanReadableCountSI(fsyncsThp));
+                        sb.append("/s");
+                    }
+                    long fdatasyncs = metrics.fdatasyncs();
+                    if (fdatasyncs > 0) {
+                        double fdataSyncsThp = ((fdatasyncs - lastMetrics.fdatasyncs) * 1000d) / (nowMs - lastMs);
+                        lastMetrics.fdatasyncs = fdatasyncs;
+                        sb.append(" fdatasyncs=");
+                        sb.append(humanReadableCountSI(fdataSyncsThp));
+                        sb.append("/s");
+                    }
+
+                    long nops = metrics.nops();
+                    if (nops > 0) {
+                        double nopsThp = ((nops - lastMetrics.nops) * 1000d) / (nowMs - lastMs);
+                        lastMetrics.nops = nops;
+                        sb.append(" nops=");
+                        sb.append(humanReadableCountSI(nopsThp));
+                        sb.append("/s");
+                    }
+
+                    System.out.println(sb);
+                    sb.setLength(0);
+                }
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+                lastMs = nowMs;
+            }
+
+            stop = true;
+            System.out.println("Monitor ready");
+        }
+
     }
 
     private static String humanReadableByteCountSI(double bytes) {
@@ -729,5 +730,54 @@ public class StorageBenchmark {
         private long fdatasyncs;
         private long bytesRead;
         private long bytesWritten;
+    }
+
+    private long sumOps() {
+        long result = 0;
+        for (AsyncFile f : asyncFiles) {
+            AsyncFileMetrics metrics = f.metrics();
+            result += metrics.reads() + metrics.writes() + metrics.nops() + metrics.fsyncs() + metrics.fdatasyncs();
+        }
+        return result;
+    }
+
+    private long sumReads() {
+        long result = 0;
+        for (AsyncFile f : asyncFiles) {
+            result += f.metrics().reads();
+        }
+        return result;
+    }
+
+    private long sumNops() {
+        long result = 0;
+        for (AsyncFile f : asyncFiles) {
+            result += f.metrics().nops();
+        }
+        return result;
+    }
+
+    private long sumWrites() {
+        long result = 0;
+        for (AsyncFile f : asyncFiles) {
+            result += f.metrics().writes();
+        }
+        return result;
+    }
+
+    private long sumBytesRead() {
+        long result = 0;
+        for (AsyncFile f : asyncFiles) {
+            result += f.metrics().bytesRead();
+        }
+        return result;
+    }
+
+    private long sumBytesWritten() {
+        long result = 0;
+        for (AsyncFile f : asyncFiles) {
+            result += f.metrics().bytesWritten();
+        }
+        return result;
     }
 }
