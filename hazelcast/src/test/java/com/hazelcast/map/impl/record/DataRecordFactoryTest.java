@@ -24,9 +24,11 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.Mockito;
 
 import java.util.Collection;
 
@@ -59,5 +61,10 @@ public class DataRecordFactoryTest extends AbstractRecordFactoryTest<Data> {
         MapContainer mapContainer = createMapContainer(perEntryStatsEnabled,
                 evictionPolicy, cacheDeserializedValues);
         return new DataRecordFactory(mapContainer, serializationService);
+    }
+
+    @BeforeClass
+    public static void beforeClass() {
+        Mockito.clearAllCaches();
     }
 }
