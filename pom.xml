@@ -85,7 +85,7 @@
         <maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
         <owasp.dependency-check.version>8.3.1</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
-        <codehause.license.plugin.version>2.1.0</codehause.license.plugin.version>
+        <codehause.license.plugin.version>2.2.0</codehause.license.plugin.version>
 
         <!-- Version of the client used in Hazelcast 3 connector -->
         <hazelcast-3.version>3.12.13</hazelcast-3.version>
@@ -96,12 +96,12 @@
         <avro.version>1.11.1</avro.version>
         <aws.sdk.version>1.12.493</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
-        <classgraph.version>4.8.160</classgraph.version>
+        <classgraph.version>4.8.161</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
-        <guava.version>32.0.1-jre</guava.version>
-        <hadoop.version>3.3.5</hadoop.version>
-        <h2.version>2.1.214</h2.version>
+        <guava.version>32.1.1-jre</guava.version>
+        <hadoop.version>3.3.6</hadoop.version>
+        <h2.version>2.2.220</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
         <jackson.version>2.14.2</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
@@ -137,7 +137,7 @@
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <snakeyaml.engine.version>2.6</snakeyaml.engine.version>
-        <mongodb.version>4.10.1</mongodb.version>
+        <mongodb.version>4.10.2</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
@@ -1595,7 +1595,7 @@
             <dependency>
                 <groupId>com.google.auth</groupId>
                 <artifactId>google-auth-library-bom</artifactId>
-                <version>1.17.0</version>
+                <version>1.19.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -1883,7 +1883,7 @@
             <dependency>
                 <groupId>net.minidev</groupId>
                 <artifactId>json-smart</artifactId>
-                <version>2.4.11</version>
+                <version>2.5.0</version>
             </dependency>
             <dependency>
               <groupId>org.wildfly.openssl</groupId>
@@ -2070,7 +2070,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.1.10</version>
+            <version>10.1.11</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

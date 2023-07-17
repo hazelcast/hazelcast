@@ -50,14 +50,19 @@ class MapMergeRunnable extends AbstractMergeRunnable<Object, Object, RecordStore
     protected void mergeStore(RecordStore store, BiConsumer<Integer, MapMergeTypes<Object, Object>> consumer) {
         int partitionId = store.getPartitionId();
 
-        store.forEach((BiConsumer<Data, Record>) (key, record) -> {
-            Data dataKey = toHeapData(key);
-            Data dataValue = toHeapData(record.getValue());
-            ExpiryMetadata expiryMetadata = store.getExpirySystem().getExpiryMetadata(dataKey);
-            consumer.accept(partitionId,
+        store.beforeOperation();
+        try {
+            store.forEach((BiConsumer<Data, Record>) (key, record) -> {
+                Data dataKey = toHeapData(key);
+                Data dataValue = toHeapData(record.getValue());
+                ExpiryMetadata expiryMetadata = store.getExpirySystem().getExpiryMetadata(dataKey);
+                consumer.accept(partitionId,
                     createMergingEntry(getSerializationService(), dataKey, dataValue,
-                            record, expiryMetadata));
-        }, false);
+                        record, expiryMetadata));
+            }, false);
+        } finally {
+            store.afterOperation();
+        }
     }
 
     @Override
