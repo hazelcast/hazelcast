@@ -569,21 +569,28 @@ public final class Sources {
             @Nonnull String replicatedMapName,
             @Nonnull ClientConfig clientConfig
     ) {
-        return remoteReplicatedMap(replicatedMapName, null, clientConfig, RMAP_DEFAULT_READ_BATCH_SIZE);
+        return remoteReplicatedMap(replicatedMapName, clientConfig, RMAP_DEFAULT_READ_BATCH_SIZE);
     }
 
+    /**
+     * This method does the same thing as {@link #remoteReplicatedMap(String, ClientConfig)} with a different batch
+     * size provided rather than the default batch size.
+     */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
             @Nonnull String replicatedMapName,
-            @Nonnull String dataConnectionName
+            @Nonnull ClientConfig clientConfig,
+            int batchSize
     ) {
-        return remoteReplicatedMap(replicatedMapName, dataConnectionName, null, RMAP_DEFAULT_READ_BATCH_SIZE);
+        return remoteReplicatedMapInternal(replicatedMapName, null, clientConfig, batchSize);
     }
 
     /**
      * Returns a source that fetches entries from the Hazelcast {@code ReplicatedMap}
-     * with the specified name in a remote cluster identified by the supplied
-     * {@code ClientConfig} and emits them as {@code Map.Entry}.
+     * with the specified name in a remote cluster connected via the data connection identified by the supplied
+     * data connection name and emits them as {@code Map.Entry}. You can add a data connection config by
+     * {@link com.hazelcast.config.DataConnectionConfig}. If the data connection is not found, this method
+     * will throw a {@link com.hazelcast.core.HazelcastException}.
      * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
@@ -595,22 +602,45 @@ public final class Sources {
      * still give incorrect results without reporting a failure. Concurrent
      * mutation is not detected at all.
      * <p>
-     * This method reads entries in batches of {@code batchSize}.
+     * This method reads entries in batches of 1 million by default. To change
+     * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
      * <p>
      * The default local parallelism for this processor is 1.
      */
     @Nonnull
-    static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+    public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+            @Nonnull String replicatedMapName,
+            @Nonnull String dataConnectionName
+    ) {
+        return remoteReplicatedMap(replicatedMapName, dataConnectionName, RMAP_DEFAULT_READ_BATCH_SIZE);
+    }
+
+    /**
+     * This method does the same thing as {@link #remoteReplicatedMap(String, String)} with a different batch
+     * size provided rather than the default batch size.
+     */
+    @Nonnull
+    public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+            @Nonnull String replicatedMapName,
+            @Nonnull String dataConnectionName,
+            int batchSize
+    ) {
+        return remoteReplicatedMapInternal(replicatedMapName, dataConnectionName, null, batchSize);
+    }
+
+    @Nonnull
+    static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMapInternal(
             @Nonnull String replicatedMapName,
             @Nullable String dataConnectionName,
             @Nullable ClientConfig clientConfig,
             int batchSize
     ) {
+        String xmlConfig = ImdgUtil.asXmlString(clientConfig);
         return SourceBuilder.batch("replicatedMapSource(" + replicatedMapName + ')',
                                     context -> new RMapReader<K, V>(
                                             replicatedMapName,
                                             dataConnectionName,
-                                            ImdgUtil.asXmlString(clientConfig),
+                                            xmlConfig,
                                             batchSize,
                                             context
                                     ))

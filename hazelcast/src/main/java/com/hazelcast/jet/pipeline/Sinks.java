@@ -250,6 +250,46 @@ public final class Sinks {
 
     /**
      * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
+     * {@code ReplicatedMap} with the specified name in a remote cluster connected via the data connection
+     * identified by the supplied data connection name. You can add a data connection config by
+     * {@link com.hazelcast.config.DataConnectionConfig}. If the data connection is not found, this method
+     * will throw a {@link com.hazelcast.core.HazelcastException}.
+     * <p>
+     * This sink provides the exactly-once guarantee thanks to <i>idempotent
+     * updates</i>. It means that the value with the same key is not appended,
+     * but overwritten. After the job is restarted from snapshot, duplicate
+     * items will not change the state in the target map.
+     * <p>
+     * The instance name of the provided configuration is modified by this method
+     * not to cause conflicts with other instances. The name format is
+     * {@code "client-for-remote-replicated-map-" + replicatedMapName + UUID.randomUUID();}
+     * <p>
+     * This method uses batching while writing to the replicated map. The default batch size is
+     * 1 million entries. Use {@link #remoteReplicatedMap(String, String, int)} to change
+     * the batch size.
+     * <p>
+     * The default local parallelism for this sink is 1.
+     */
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
+                                                               @Nonnull String dataConnectionName) {
+        return remoteReplicatedMap(replicatedMapName, dataConnectionName, RMAP_DEFAULT_WRITE_BATCH_SIZE);
+    }
+
+
+    /**
+     * This method does the same thing as {@link #remoteReplicatedMap(String, String)} with a different batch
+     * size provided rather than the default batch size.
+     */
+    @Nonnull
+    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
+                                                               @Nonnull String dataConnectionName,
+                                                               int batchSize) {
+        return remoteReplicatedMapInternal(replicatedMapName, dataConnectionName, null, batchSize);
+    }
+
+    /**
+     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
      * {@code ReplicatedMap} with the specified name in a remote cluster identified by
      * the supplied {@code ClientConfig}.
      * <p>
@@ -270,47 +310,33 @@ public final class Sinks {
      */
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
-                                                               @Nonnull String dataConnectionName) {
-        return remoteReplicatedMap(replicatedMapName, dataConnectionName, null, RMAP_DEFAULT_WRITE_BATCH_SIZE);
-    }
-
-    @Nonnull
-    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
                                                                @Nonnull ClientConfig clientConfig) {
-        return remoteReplicatedMap(replicatedMapName, null, clientConfig, RMAP_DEFAULT_WRITE_BATCH_SIZE);
+        return remoteReplicatedMap(replicatedMapName, clientConfig, RMAP_DEFAULT_WRITE_BATCH_SIZE);
     }
 
     /**
-     * Returns a sink that puts {@code Map.Entry}s it receives into a Hazelcast
-     * {@code ReplicatedMap} with the specified name in a remote cluster identified by
-     * the supplied {@code ClientConfig}.
-     * <p>
-     * This sink provides the exactly-once guarantee thanks to <i>idempotent
-     * updates</i>. It means that the value with the same key is not appended,
-     * but overwritten. After the job is restarted from snapshot, duplicate
-     * items will not change the state in the target map.
-     * <p>
-     * The instance name of the provided configuration is modified by this method
-     * not to cause conflicts with other instances. The name format is
-     * {@code "client-for-remote-replicated-map-" + replicatedMapName + UUID.randomUUID();}
-     * <p>
-     * This method uses batching while writing to the replicated map. The provided batch size is
-     * used.
-     * <p>
-     * The default local parallelism for this sink is 1.
+     * This method does the same thing as {@link #remoteReplicatedMap(String, ClientConfig)} with a different batch
+     * size provided rather than the default batch size.
      */
     @Nonnull
-    static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(
+    public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
+                                                               @Nonnull ClientConfig clientConfig,
+                                                               int batchSize) {
+        return remoteReplicatedMapInternal(replicatedMapName, null, clientConfig, batchSize);
+    }
+
+    @Nonnull
+    static <K, V> Sink<Entry<K, V>> remoteReplicatedMapInternal(
             @Nonnull String replicatedMapName,
             @Nullable String dataConnectionName,
             @Nullable ClientConfig clientConfig,
             int batchSize) {
-
+        String xmlConfig = ImdgUtil.asXmlString(clientConfig);
         return SinkBuilder.sinkBuilder("remoteReplicatedMapSink(" + replicatedMapName + ')',
-                                  context -> new ClientReplicatedMapBatchWriter(
+                                  context -> new ClientReplicatedMapBatchWriter<K, V>(
                                           replicatedMapName,
                                           dataConnectionName,
-                                          ImdgUtil.asXmlString(clientConfig),
+                                          xmlConfig,
                                           batchSize,
                                           context
                                   ))
