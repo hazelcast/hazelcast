@@ -85,7 +85,7 @@ public class FlakeIdGeneratorProxyTest {
     }
 
     @BeforeClass
-    public void beforeClass() {
+    public static void beforeClass() {
         Mockito.clearAllCaches();
     }
 
