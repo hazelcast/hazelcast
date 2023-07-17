@@ -20,7 +20,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,7 +36,7 @@ import java.util.List;
  * the job execution.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
+@Category({SlowTest.class})
 public class PartitionPruningIT extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
