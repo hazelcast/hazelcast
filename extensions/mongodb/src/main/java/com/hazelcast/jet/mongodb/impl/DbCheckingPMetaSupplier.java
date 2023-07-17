@@ -115,8 +115,7 @@ public class DbCheckingPMetaSupplier implements ProcessorMetaSupplier {
 
         if (shouldCheckOnEachCall) {
             Tuple2<MongoClient, DataConnection> clientAndRef = connect(context);
-            MongoClient client = clientAndRef.requiredF0();
-            try {
+            try (MongoClient client = clientAndRef.requiredF0()) {
                 if (databaseName != null) {
                     checkDatabaseExists(client, databaseName);
                     MongoDatabase database = client.getDatabase(databaseName);
