@@ -87,6 +87,8 @@ public final class HazelcastRelMdPrunability
         if (targetTable.partitioningAttributes().isEmpty()) {
             partitioningColumns = ImmutableSet.of(QueryPath.KEY);
         } else {
+            // PartitioningColumns contains field names rather than columns names,
+            // we have to convert it to column names if EXTERNAL NAME is used.
             final HashSet<String> partitioningFieldNames = new HashSet<>(targetTable.partitioningAttributes());
             partitioningColumns = targetTable.keyFields()
                     .filter(kf -> partitioningFieldNames.contains(kf.getPath().getPath()))
