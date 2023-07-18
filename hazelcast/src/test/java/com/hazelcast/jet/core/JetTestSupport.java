@@ -46,6 +46,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
+import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.rules.Timeout;
@@ -70,6 +71,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -299,6 +301,21 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         } while (executionId == null || executionId.equals(ignoredExecutionId));
         return executionId;
     }
+
+    /**
+     * Asserts that the {@code job} is eventually SUSPENDED and waits until the suspension cause is set.
+     */
+    public static void assertJobSuspendedEventually(Job job) {
+        assertJobStatusEventually(job, SUSPENDED);
+        assertTrueEventually(() -> {
+            try {
+                assertNotNull(job.getSuspensionCause());
+            } catch (IllegalStateException notSuspended) {
+                Assertions.fail("Suspension cause is not set yet", notSuspended);
+            }
+        });
+    }
+
 
     public static void assertJobStatusEventually(Job job, JobStatus expected, int timeoutSeconds) {
         assertNotNull(job);
