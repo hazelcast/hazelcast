@@ -1,11 +1,13 @@
 package com.hazelcast.file;
 
+import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.util.OS;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 import static com.hazelcast.CliUtils.getToolsVersion;
 import static com.hazelcast.CliUtils.printHelp;
@@ -56,6 +58,11 @@ public class StorageBenchmarkCli {
             .accepts("runtime", "The duration of the test, e.g. 60s")
             .withRequiredArg().ofType(String.class)
             .defaultsTo("60s");
+
+    private final OptionSpec<String> reactorTypeSpec = parser
+            .accepts("reactortype", "The type of reactor (either iouring or nio)")
+            .withRequiredArg().ofType(String.class)
+            .defaultsTo("iouring");
 
     public static void main(String[] args) {
         StorageBenchmarkCli cli = new StorageBenchmarkCli();
@@ -109,7 +116,7 @@ public class StorageBenchmarkCli {
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = options.valueOf(directSpec);
         benchmark.spin = false;
-        benchmark.reactorType = IOURING;
+        benchmark.reactorType = ReactorType.fromString(options.valueOf(reactorTypeSpec));
         benchmark.fsync = 0;
         benchmark.fdatasync = 0;
         benchmark.run();

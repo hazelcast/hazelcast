@@ -127,13 +127,13 @@ public class StorageBenchmark {
 
     public static void main(String[] args) {
         StorageBenchmark benchmark = new StorageBenchmark();
-        benchmark.runtimeSeconds = 60;
+        benchmark.runtimeSeconds = 20;
         benchmark.affinity = "1";
         benchmark.numJobs = 1;
         benchmark.iodepth = 64;
         benchmark.fileSize = 4 * 1024 * 1024L;
         benchmark.bs = 4 * 1024;
-        benchmark.directories.add("/mnt/benchdrive1/");
+        benchmark.directories.add("/home/pveentjer/");
         benchmark.readwrite = READWRITE_READ;
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = true;
@@ -402,7 +402,8 @@ public class StorageBenchmark {
                         }
 
                         AtomicInteger completed = new AtomicInteger(iodepth);
-                        // we write to the file concurrently to make sure the file is properly created
+                        // we write content fo the file so that the file content actually exists.
+                        // and we do it concurrently to speed up this process.
                         for (int k = 0; k < iodepth; k++) {
                             InitFileTask initFileTask = new InitFileTask(reactor, k, iodepth);
                             initFileTask.startMs = startMs;
@@ -761,7 +762,7 @@ public class StorageBenchmark {
         private long bytesWritten;
 
         private long ops() {
-            return reads = writes + fsyncs + fdatasyncs + nops;
+            return reads + writes + fsyncs + fdatasyncs + nops;
         }
 
         private void clear() {
