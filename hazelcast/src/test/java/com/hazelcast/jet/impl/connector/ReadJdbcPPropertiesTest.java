@@ -58,6 +58,7 @@ public abstract class ReadJdbcPPropertiesTest extends SimpleTestInClusterSupport
     public static void beforeClassCheckDocker() {
         assumeDockerEnabled();
     }
+
     protected static void initializeBeforeClass(TestDatabaseProvider testDatabaseProvider, String... args) throws SQLException {
         databaseProvider = testDatabaseProvider;
         dbConnectionUrl = databaseProvider.createDatabase(ReadJdbcPPropertiesTest.class.getName());
