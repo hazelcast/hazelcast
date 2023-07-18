@@ -69,9 +69,6 @@ public abstract class AbstractParameterizedHazelcastClassRunner extends BlockJUn
 
     @Override
     public Object createTest() throws Exception {
-        // Fix Mockito related issues on Zing JVMs - no negative impact elsewhere
-        Mockito.clearAllCaches();
-
         if (isParameterized) {
             if (fieldsAreAnnotated()) {
                 return createTestUsingFieldInjection();
