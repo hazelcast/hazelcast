@@ -29,7 +29,6 @@ import com.hazelcast.spi.annotation.Beta;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.Properties;
 
