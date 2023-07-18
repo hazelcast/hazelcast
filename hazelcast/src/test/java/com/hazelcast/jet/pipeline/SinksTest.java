@@ -280,18 +280,22 @@ public class SinksTest extends PipelineTestSupport {
     }
 
     @Test
-    public void remoteReplicatedMap_clientConfig() {
-
+    public void remoteReplicatedMap() {
+        // Given
         List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getReplicatedMap(srcName), input);
 
-        p.readFrom(Sources.<String, Integer>remoteReplicatedMap(srcName, clientConfig))
-                .writeTo(Sinks.remoteReplicatedMap(sinkName, clientConfig));
+        // When
+        Sink<Entry<String, Integer>> sink = Sinks.remoteReplicatedMap(sinkName, clientConfig);
 
+        // Then
+        p.readFrom(Sources.<String, Integer>remoteReplicatedMap(srcName, clientConfig))
+                .writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
                 .map(i -> entry(String.valueOf(i), i))
                 .collect(toList());
+
         Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getReplicatedMap(sinkName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
@@ -299,23 +303,26 @@ public class SinksTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_dataConnectionName() {
-
+        // Given
         List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getReplicatedMap(srcName), input);
 
+        // When
         String dataConnectionName = "remoteHz";
         hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
                 .setType("Hz")
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        Sink<Entry<String, Integer>> sink = Sinks.remoteReplicatedMap(sinkName, dataConnectionName);
 
+        // Then
         p.readFrom(Sources.<String, Integer>remoteReplicatedMap(srcName, dataConnectionName))
-         .writeTo(Sinks.remoteReplicatedMap(sinkName, dataConnectionName));
-
+                .writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
                 .map(i -> entry(String.valueOf(i), i))
                 .collect(toList());
+
         Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getReplicatedMap(sinkName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));

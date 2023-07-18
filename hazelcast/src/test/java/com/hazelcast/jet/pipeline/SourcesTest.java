@@ -20,11 +20,14 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.test.annotation.QuickTest;
@@ -241,6 +244,47 @@ public class SourcesTest extends PipelineTestSupport {
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i))
                                                      .collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void remoteReplicatedMap() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getReplicatedMap(srcName), input);
+
+        // When
+        BatchSource<Entry<Object, Object>> source = Sources.remoteReplicatedMap(srcName, clientConfig);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        execute();
+        List<Entry<String, Integer>> expected = input.stream()
+                .map(i -> entry(String.valueOf(i), i))
+                .collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void remoteReplicatedMap_dataConnectionName() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getReplicatedMap(srcName), input);
+
+        // When
+        String dataConnectionName = "remoteHz";
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        BatchSource<Entry<Object, Object>> source = Sources.remoteReplicatedMap(srcName, dataConnectionName);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        execute();
+        List<Entry<String, Integer>> expected = input.stream()
+                .map(i -> entry(String.valueOf(i), i))
+                .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 
