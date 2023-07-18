@@ -101,6 +101,6 @@ public class CacheLoadAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{parameters.keys, parameters.replaceExistingValues};
     }
 }

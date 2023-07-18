@@ -91,7 +91,7 @@ public class CacheCreateConfigMessageTask
 
     @Override
     public String getMethodName() {
-        return "createConfig";
+        return null;
     }
 
     @Override

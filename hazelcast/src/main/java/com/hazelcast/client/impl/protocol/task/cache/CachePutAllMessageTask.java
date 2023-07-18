@@ -21,12 +21,16 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CachePutAllCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.security.Permission;
+import java.util.Map;
+
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 /**
  * This client request specifically calls {@link com.hazelcast.cache.impl.operation.CachePutAllOperation} on the server side.
@@ -70,14 +74,24 @@ public class CachePutAllMessageTask
 
     @Override
     public Object[] getParameters() {
+        Map<Data, Data> map = createMap();
+
         if (parameters.expiryPolicy == null) {
-            return new Object[]{parameters.entries};
+            return new Object[]{map};
         }
-        return new Object[]{parameters.entries, parameters.expiryPolicy};
+        return new Object[]{map, parameters.expiryPolicy};
     }
 
     @Override
     public String getMethodName() {
         return "putAll";
+    }
+
+    private Map<Data, Data> createMap() {
+        Map<Data, Data> map = createHashMap(parameters.entries.size());
+        for (Map.Entry<Data, Data> entry : parameters.entries) {
+            map.put(entry.getKey(), entry.getValue());
+        }
+        return map;
     }
 }

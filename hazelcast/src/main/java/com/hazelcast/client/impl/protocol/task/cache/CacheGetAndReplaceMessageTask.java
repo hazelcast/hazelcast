@@ -73,4 +73,9 @@ public class CacheGetAndReplaceMessageTask
     public String getMethodName() {
         return "getAndReplace";
     }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{parameters.key, parameters.value};
+    }
 }
