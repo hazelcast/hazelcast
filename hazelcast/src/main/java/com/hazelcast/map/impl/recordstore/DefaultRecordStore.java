@@ -58,6 +58,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
@@ -83,6 +84,7 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.map.impl.record.Record.UNSET;
@@ -128,6 +130,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      * key loading.
      */
     private boolean loadedOnPreMigration;
+    /**
+     * Defined by {@link com.hazelcast.spi.properties.ClusterProperty#WAN_REPLICATE_IMAP_EVICTIONS},
+     * if set to true then eviction operations by this RecordStore will be WAN replicated
+     */
+    private boolean wanReplicateEvictions;
 
     private final IPartitionService partitionService;
     private final InterceptorRegistry interceptorRegistry;
@@ -145,6 +152,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
         this.interceptorRegistry = mapContainer.getInterceptorRegistry();
+        this.wanReplicateEvictions = mapContainer.isWanReplicationEnabled()
+                && mapServiceContext.getNodeEngine().getProperties().getBoolean(ClusterProperty.WAN_REPLICATE_IMAP_EVICTIONS);
         initJsonMetadataStore();
     }
 
@@ -555,6 +564,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         removeKeyFromExpirySystem(dataKey);
         storage.removeRecord(dataKey, record);
+
+        if (wanReplicateEvictions && eviction) {
+            mapEventPublisher.publishWanRemove(name, toHeapData(dataKey));
+        }
     }
 
     @Override
@@ -569,6 +582,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.removeRecord(key, record);
             if (!backup) {
                 mapServiceContext.interceptRemove(interceptorRegistry, value);
+            }
+            if (wanReplicateEvictions) {
+                mapEventPublisher.publishWanRemove(name, toHeapData(key));
             }
         }
         return value;
