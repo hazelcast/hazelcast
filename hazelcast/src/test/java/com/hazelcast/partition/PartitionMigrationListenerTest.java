@@ -382,13 +382,19 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         assertFalse(reportedMigrationDuration.isZero());
 
         final String message = MessageFormat.format("migrationState.getTotalElapsedTime={1}, migrationTimer={0}",
-                migrationTimer.elapsed().toMillis(),
-                reportedMigrationDuration.toMillis());
+                formatDuration(migrationTimer.elapsed()), formatDuration(reportedMigrationDuration));
 
         LOGGER.fine(message);
         assertTrue(MessageFormat.format("Reported migrationState.getTotalElapsedTime() was greater than the migration"
                         + " execution time recorded - {0}", message),
                 migrationTimer.elapsed().compareTo(reportedMigrationDuration) >= 0);
+    }
+
+    /**
+     * @see <a href="https://github.com/hazelcast/hazelcast/pull/25028#discussion_r1266692838">Discussion</a>
+     */
+    private static String formatDuration(final Duration duration) {
+        return MessageFormat.format("{0} {1}", duration.toMillis(), TimeUnit.MILLISECONDS.name().toLowerCase());
     }
 
     private HazelcastInstance createPausedMigrationCluster(final TestHazelcastInstanceFactory factory,
