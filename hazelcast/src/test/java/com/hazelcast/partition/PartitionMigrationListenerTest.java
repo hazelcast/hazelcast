@@ -44,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -75,7 +74,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
     @Test
     public void testMigrationStats_whenMigrationProcessCompletes() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance hz1 = createPausedMigrationCluster(factory, Optional.empty());
+        HazelcastInstance hz1 = createPausedMigrationCluster(factory, null);
 
         EventCollectingMigrationListener listener = new EventCollectingMigrationListener();
         hz1.getPartitionService().addMigrationListener(listener);
@@ -98,13 +97,14 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         config.setProperty(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS.getName(), String.valueOf(1));
 
-        HazelcastInstance hz1 = createPausedMigrationCluster(factory, Optional.of(config));
+        HazelcastInstance hz1 = createPausedMigrationCluster(factory, config);
 
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(hz1);
         AtomicReference<HazelcastInstance> newInstanceRef = new AtomicReference<>();
         partitionService.setMigrationInterceptor(new MigrationInterceptor() {
             @Override
-            public void onMigrationComplete(MigrationParticipant participant, MigrationInfo migration, boolean success) {
+            public void onMigrationComplete(MigrationParticipant participant, MigrationInfo migration,
+                                            boolean success) {
                 MigrationStats stats = partitionService.getMigrationManager().getStats();
                 if (stats.getRemainingMigrations() < 50) {
                     // start a new member to restart migrations
@@ -333,7 +333,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
     /**
      * @see <a href="https://hazelcast.atlassian.net/browse/HZ-2651">HZ-2651 - MigrationListener: Difference between
-     *      "wall clock elapsed time" and the totalElasedTime API</a>
+     * "wall clock elapsed time" and the totalElasedTime API</a>
      */
     @Test
     public void testMigrationListenerElapsedTime() throws InterruptedException, ExecutionException, TimeoutException {
@@ -342,10 +342,10 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         // Use an arbitrarily high number of partitions to exacerbate the issue
         final Config config = new Config().setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(1000));
 
-        final HazelcastInstance hz1 = createPausedMigrationCluster(factory, Optional.of(config));
+        final HazelcastInstance hz1 = createPausedMigrationCluster(factory, config);
 
         final Stopwatch migrationTimer = Stopwatch.createUnstarted();
-        final CompletableFuture<MigrationState> migrationStateReference = new CompletableFuture<>();
+        final CompletableFuture<Duration> migrationDurationReference = new CompletableFuture<>();
 
         hz1.getPartitionService().addMigrationListener(new MigrationListener() {
             @Override
@@ -356,7 +356,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
             @Override
             public void migrationFinished(final MigrationState migrationState) {
                 migrationTimer.stop();
-                migrationStateReference.complete(migrationState);
+                migrationDurationReference.complete(Duration.ofMillis(migrationState.getTotalElapsedTime()));
             }
 
             @Override
@@ -376,22 +376,25 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         changeClusterStateEventually(hz2, ClusterState.ACTIVE);
 
         LOGGER.fine("Awaiting migration completion...");
-        final Duration reportedMigrationTime = Duration
-                .ofMillis(migrationStateReference.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS).getTotalElapsedTime());
+        final Duration reportedMigrationDuration = migrationDurationReference.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT,
+                TimeUnit.SECONDS);
 
-        assertFalse(reportedMigrationTime.isZero());
+        assertFalse(reportedMigrationDuration.isZero());
 
         final String message = MessageFormat.format("migrationState.getTotalElapsedTime={1}, migrationTimer={0}",
-                migrationTimer.elapsed(), reportedMigrationTime);
+                migrationTimer.elapsed().toMillis(),
+                reportedMigrationDuration.toMillis());
 
         LOGGER.fine(message);
-        assertTrue(message, migrationTimer.elapsed().compareTo(reportedMigrationTime) >= 0);
+        assertTrue(MessageFormat.format("Reported migrationState.getTotalElapsedTime() was greater than the migration"
+                        + " execution time recorded - {0}", message),
+                migrationTimer.elapsed().compareTo(reportedMigrationDuration) >= 0);
     }
 
     private HazelcastInstance createPausedMigrationCluster(final TestHazelcastInstanceFactory factory,
-            final Optional<Config> config) {
+                                                           final Config config) {
         LOGGER.fine("Starting paused migration instance...");
-        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config.orElse(null));
+        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config);
         warmUpPartitions(hazelcastInstance);
 
         // Change to NO_MIGRATION to prevent repartitioning

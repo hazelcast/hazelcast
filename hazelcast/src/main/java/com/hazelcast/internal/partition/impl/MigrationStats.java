@@ -45,89 +45,40 @@ import static com.hazelcast.internal.metrics.ProbeUnit.NS;
  */
 public class MigrationStats {
 
-    /**
-     * In {@link TimeUnit#MILLISECONDS}
-     *
-     * @see #getLastRepartitionTime()
-     */
     @Probe(name = MIGRATION_METRIC_LAST_REPARTITION_TIME, unit = MS)
     private final AtomicLong lastRepartitionTime = new AtomicLong();
 
-    /**
-     * In {@link TimeUnit#NANOSECONDS}
-     *
-     * @see #getPlannedMigrations()
-     */
     @Probe(name = MIGRATION_METRIC_PLANNED_MIGRATIONS)
     private volatile int plannedMigrations;
 
-    /**
-     * In {@link TimeUnit#NANOSECONDS}
-     *
-     * @see #getCompletedMigrations()
-     */
     @Probe(name = MIGRATION_METRIC_COMPLETED_MIGRATIONS)
     private final AtomicInteger completedMigrations = new AtomicInteger();
 
-    /**
-     * In {@link TimeUnit#NANOSECONDS}
-     *
-     * @see #getTotalCompletedMigrations()
-     */
     @Probe(name = MIGRATION_METRIC_TOTAL_COMPLETED_MIGRATIONS)
     private final AtomicInteger totalCompletedMigrations = new AtomicInteger();
 
-    /**
-     * In {@link TimeUnit#NANOSECONDS}
-     *
-     * @see #getElapsedMigrationOperationTime()
-     */
     @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_OPERATION_TIME, unit = NS)
     private final AtomicLong elapsedMigrationOperationTime = new AtomicLong();
 
-    /**
-     * In {@link TimeUnit#NANOSECONDS}
-     *
-     * @see #getElapsedDestinationCommitTime()
-     */
     @Probe(name = MIGRATION_METRIC_ELAPSED_DESTINATION_COMMIT_TIME, unit = NS)
     private final AtomicLong elapsedDestinationCommitTime = new AtomicLong();
 
-    /**
-     * In {@link TimeUnit#NANOSECONDS}
-     *
-     * @see #getElapsedMigrationTime()
-     */
     @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_TIME, unit = NS)
     private final AtomicLong elapsedMigrationTime = new AtomicLong();
 
-    /**
-     * In {@link TimeUnit#NANOSECONDS}
-     *
-     * @see #getTotalElapsedMigrationOperationTime()
-     */
     @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_OPERATION_TIME, unit = NS)
     private final AtomicLong totalElapsedMigrationOperationTime = new AtomicLong();
 
-    /**
-     * In {@link TimeUnit#NANOSECONDS}
-     *
-     * @see #getTotalElapsedDestinationCommitTime()
-     */
     @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_DESTINATION_COMMIT_TIME, unit = NS)
     private final AtomicLong totalElapsedDestinationCommitTime = new AtomicLong();
 
-    /**
-     * In {@link TimeUnit#NANOSECONDS}
-     *
-     * @see #getTotalElapsedMigrationTime()
-     */
     @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME, unit = NS)
     private final AtomicLong totalElapsedMigrationTime = new AtomicLong();
 
     /**
      * Marks start of new repartitioning.
      * Resets stats from previous repartitioning round.
+     *
      * @param migrations number of planned migration tasks
      */
     void markNewRepartition(int migrations) {
