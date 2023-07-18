@@ -56,7 +56,7 @@ public class TpcIntegrationTest extends HazelcastTestSupport {
     @Test
     public void testMap() {
         System.setProperty(TPC_ENABLED.getName(), "true");
-        System.setProperty(TPC_EVENTLOOP_COUNT.getName(), ""+Runtime.getRuntime().availableProcessors());
+        System.setProperty(TPC_EVENTLOOP_COUNT.getName(), "" + Runtime.getRuntime().availableProcessors());
         server = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();

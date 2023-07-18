@@ -30,3 +30,4 @@ reports/
 *.crc
 **/node_modules/**
 
+hazelcast-tpc-engine-parent/hazelcast-tpc-engine-tools/src/main/resources/tpc-tools-git.properties
