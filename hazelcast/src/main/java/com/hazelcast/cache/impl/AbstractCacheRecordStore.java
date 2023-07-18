@@ -62,6 +62,7 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.tenantcontrol.TenantContextual;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -148,6 +149,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected Iterator<Map.Entry<Data, R>> expirationIterator;
     protected InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<ExpiredKey>();
     protected boolean hasEntryWithExpiration;
+    protected boolean wanReplicateEvictions;
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:executablestatementcount", "checkstyle:methodlength"})
     public AbstractCacheRecordStore(String cacheNameWithPrefix, int partitionId, NodeEngine nodeEngine,
@@ -187,6 +189,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (cacheConfig.isStatisticsEnabled()) {
             statistics = cacheService.createCacheStatIfAbsent(cacheNameWithPrefix);
         }
+
+        this.wanReplicateEvictions = isWanReplicationEnabled()
+                && cacheService.getNodeEngine().getProperties().getBoolean(ClusterProperty.WAN_REPLICATE_ICACHE_EVICTIONS);
 
         TenantControl tenantControl = nodeEngine
                 .getTenantControlService()
@@ -566,6 +571,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             compositeCacheRSMutationObserver.onEvict(key, record.getValue());
         }
         invalidateEntry(key);
+
+        if (wanReplicateEvictions) {
+            cacheService.getCacheWanEventPublisher().publishWanRemove(name, toHeapData(key));
+        }
     }
 
     protected void invalidateEntry(Data key, UUID source) {
