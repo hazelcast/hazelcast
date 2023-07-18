@@ -1049,8 +1049,7 @@ public final class Sinks {
      * @since Jet 4.0
      */
     @Nonnull
-    public static <T> Sink<T> remoteReliableTopic(@Nonnull String reliableTopicName,
-                                                  @Nonnull ClientConfig clientConfig) {
+    public static <T> Sink<T> remoteReliableTopic(@Nonnull String reliableTopicName, @Nonnull ClientConfig clientConfig) {
         String clientXml = asXmlString(clientConfig); //conversion needed for serializability
         return SinkBuilder
                 .sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
