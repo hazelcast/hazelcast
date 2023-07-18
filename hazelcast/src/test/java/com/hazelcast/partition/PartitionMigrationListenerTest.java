@@ -20,6 +20,8 @@ import com.google.common.base.Stopwatch;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.MetricDescriptorConstants;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -53,6 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -388,6 +391,59 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         assertTrue(MessageFormat.format("Reported migrationState.getTotalElapsedTime() was greater than the migration"
                         + " execution time recorded - {0}", message),
                 migrationTimer.elapsed().compareTo(reportedMigrationDuration) >= 0);
+    }
+
+    /**
+     * @see <a href="https://github.com/hazelcast/hazelcast/pull/25028#discussion_r1266664004">Discussion</a>
+     */
+    @Test
+    public void testMigrationListenerTotalElapsedTime() {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+        LOGGER.fine("Setting starting up instances...");
+        final HazelcastInstance hz1 = factory.newHazelcastInstance();
+        warmUpPartitions(hz1);
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        waitAllForSafeState(hz1, hz2);
+
+        final MetricsRegistry metricsRegistry = getNode(hz1).nodeEngine.getMetricsRegistry();
+
+        long totalElapsedMigrationTime = getMetric(metricsRegistry,
+                MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME);
+        long elapsedMigrationTime = getMetric(metricsRegistry,
+                MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_TIME);
+
+        assertNotEquals(MessageFormat.format("{0} should not be instantaneous",
+                        MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME), 0,
+                totalElapsedMigrationTime);
+        assertNotEquals(MessageFormat.format("{0} should not be instantaneous",
+                        MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_TIME), 0,
+                elapsedMigrationTime);
+
+        assertEquals(MessageFormat.format("With only one migration, {0} ({2}) and {1} ({3}) times should be equal",
+                        MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME,
+                        MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_TIME,
+                        totalElapsedMigrationTime, elapsedMigrationTime), totalElapsedMigrationTime,
+                elapsedMigrationTime);
+
+        LOGGER.fine("Triggering another migration...");
+        hz2.shutdown();
+        hz2 = factory.newHazelcastInstance();
+        waitAllForSafeState(hz1, hz2);
+
+        totalElapsedMigrationTime = getMetric(metricsRegistry,
+                MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME);
+        elapsedMigrationTime = getMetric(metricsRegistry,
+                MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_TIME);
+
+        assertTrue(MessageFormat.format("After multiple migrations, {0} ({2}) should be greater than {1} ({3})",
+                MetricDescriptorConstants.MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME,
+                MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_MIGRATION_TIME, totalElapsedMigrationTime,
+                elapsedMigrationTime), totalElapsedMigrationTime > elapsedMigrationTime);
+    }
+
+    private long getMetric(final MetricsRegistry metricsRegistry, final String metric) {
+        return metricsRegistry.newLongGauge(MetricDescriptorConstants.PARTITIONS_PREFIX + '.' + metric).read();
     }
 
     /**

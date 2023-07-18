@@ -96,8 +96,16 @@ public class MigrationStats {
     }
 
     private void calculateElapsed(final AtomicLong elapsedTime, final AtomicLong totalElapsedTime) {
-        elapsedTime.set(Duration.ofMillis(Clock.currentTimeMillis()).minusMillis(lastRepartitionTime.get()).toNanos());
-        totalElapsedTime.set(elapsedTime.get());
+        // This is called from each migration thread, so calculate the wall-clock time, rather than summing each
+        // individual threads execution time
+        final long newElapsed =
+                Duration.ofMillis(Clock.currentTimeMillis()).minusMillis(lastRepartitionTime.get()).toNanos();
+
+        final long oldElapsed = elapsedTime.getAndSet(newElapsed);
+
+        // To ensure the total is kept accurate, add the difference between the previous elapsedTime and this one for
+        // this execution
+        totalElapsedTime.addAndGet(newElapsed - oldElapsed);
     }
 
     void recordMigrationOperationTime() {
