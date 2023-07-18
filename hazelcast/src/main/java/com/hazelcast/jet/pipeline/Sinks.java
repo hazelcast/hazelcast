@@ -101,7 +101,7 @@ public final class Sinks {
      * The default local parallelism for this source is specified inside the
      * {@link ProcessorMetaSupplier#preferredLocalParallelism() metaSupplier}.
      *
-     * @param sinkName     user-friendly sink name
+     * @param sinkName user-friendly sink name
      * @param metaSupplier the processor meta-supplier
      */
     @Nonnull
@@ -119,11 +119,11 @@ public final class Sinks {
      * The default local parallelism for this source is specified inside the
      * {@link ProcessorMetaSupplier#preferredLocalParallelism() metaSupplier}.
      *
-     * @param sinkName       user-friendly sink name
-     * @param metaSupplier   the processor meta-supplier
+     * @param sinkName user-friendly sink name
+     * @param metaSupplier the processor meta-supplier
      * @param partitionKeyFn key extractor function for partitioning edges to
-     *                       sink. It must be stateless and {@linkplain Processor#isCooperative()
-     *                       cooperative}.
+     *     sink. It must be stateless and {@linkplain Processor#isCooperative()
+     *     cooperative}.
      */
     @Nonnull
     public static <T> Sink<T> fromProcessor(
@@ -444,13 +444,13 @@ public final class Sinks {
      * V newValue = toValueFn.apply(item);
      * V resolved = (oldValue == null)
      *            ? newValue
-     * : mergeFn.apply(oldValue, newValue);
+                  : mergeFn.apply(oldValue, newValue);
      * if (value == null)
      *     map.remove(key);
      * else
      *     map.put(key, value);
      * </pre>
-     * <p>
+     *
      * This sink supports exactly-once processing only if the
      * supplied merge function performs <i>idempotent updates</i>, i.e.,
      * it satisfies the rule
@@ -471,9 +471,9 @@ public final class Sinks {
      * @param toValueFn function that extracts the value from the input item
      * @param mergeFn   function that merges the existing value with the value acquired from the
      *                  received item
-     * @param <T>       input item type
-     * @param <K>       key type
-     * @param <V>       value type
+     * @param <T> input item type
+     * @param <K> key type
+     * @param <V> value type
      */
     @Nonnull
     public static <T, K, V> Sink<T> mapWithMerging(
@@ -483,7 +483,7 @@ public final class Sinks {
             @Nonnull BinaryOperatorEx<V> mergeFn
     ) {
         return new SinkImpl<>("mapWithMergingSink(" + mapName + ')',
-                mergeMapP(mapName, toKeyFn, toValueFn, mergeFn), toKeyFn);
+                mergeMapP(mapName, toKeyFn, toValueFn,  mergeFn), toKeyFn);
     }
 
     /**
@@ -500,7 +500,7 @@ public final class Sinks {
      * V newValue = toValueFn.apply(item);
      * V resolved = (oldValue == null)
      *            ? newValue
-     * : mergeFn.apply(oldValue, newValue);
+                  : mergeFn.apply(oldValue, newValue);
      * if (value == null)
      *     map.remove(key);
      * else
@@ -531,9 +531,9 @@ public final class Sinks {
      * @param toValueFn function that extracts the value from the input item
      * @param mergeFn   function that merges the existing value with the value acquired from the
      *                  received item
-     * @param <T>       input item type
-     * @param <K>       key type
-     * @param <V>       value type
+     * @param <T> input item type
+     * @param <K> key type
+     * @param <V> value type
      */
     @Nonnull
     public static <T, K, V> Sink<T> mapWithMerging(
@@ -620,7 +620,7 @@ public final class Sinks {
      * else
      *     map.put(key, newValue);
      * </pre>
-     * <p>
+     *
      * This sink supports exactly-once processing only if the
      * supplied update function performs <i>idempotent updates</i>, i.e., it
      * satisfies the rule {@code updateFn.apply(v, e).equals(v)} for any
@@ -812,15 +812,15 @@ public final class Sinks {
      * The given functions must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      *
-     * @param maxParallelAsyncOps maximum number of simultaneous entry
-     *                            processors affecting the map
-     * @param mapName             name of the map
-     * @param toKeyFn             function that extracts the key from the input item
-     * @param toEntryProcessorFn  function that returns the {@code EntryProcessor}
-     *                            to apply to the key
-     * @param <E>                 input item type
-     * @param <K>                 key type
-     * @param <V>                 value type
+     * @param maxParallelAsyncOps  maximum number of simultaneous entry
+     *                             processors affecting the map
+     * @param mapName  name of the map
+     * @param toKeyFn  function that extracts the key from the input item
+     * @param toEntryProcessorFn function that returns the {@code EntryProcessor}
+     *                           to apply to the key
+     * @param <E> input item type
+     * @param <K> key type
+     * @param <V> value type
      */
     @Nonnull
     public static <E, K, V, R> Sink<E> mapWithEntryProcessor(
@@ -1008,10 +1008,10 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> reliableTopic(@Nonnull String reliableTopicName) {
         return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
-                                  SecuredFunctions.reliableTopicFn(reliableTopicName))
-                          .<T>receiveFn(ITopic::publish)
-                          .permission(new ReliableTopicPermission(reliableTopicName, ACTION_CREATE, ACTION_PUBLISH))
-                          .build();
+                SecuredFunctions.reliableTopicFn(reliableTopicName))
+                .<T>receiveFn(ITopic::publish)
+                .permission(new ReliableTopicPermission(reliableTopicName, ACTION_CREATE, ACTION_PUBLISH))
+                .build();
     }
 
     /**
@@ -1077,11 +1077,11 @@ public final class Sinks {
      * <p>
      * The default local parallelism for this sink is 1.
      *
-     * @param host       the host to connect to
-     * @param port       the target port
+     * @param host the host to connect to
+     * @param port the target port
      * @param toStringFn a function to convert received items to string. It
-     *                   must be stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param charset    charset used to convert the string to bytes
+     *     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param charset charset used to convert the string to bytes
      */
     @Nonnull
     public static <T> Sink<T> socket(
@@ -1129,7 +1129,7 @@ public final class Sinks {
      * file names.
      *
      * <h3>Fault tolerance</h3>
-     * <p>
+     *
      * If the job is running in <i>exactly-once</i> mode, Jet writes the items
      * to temporary files (ending with a {@value
      * FileSinkBuilder#TEMP_FILE_SUFFIX} suffix). When Jet commits a snapshot,
@@ -1156,7 +1156,7 @@ public final class Sinks {
      * <pre>{@code
      * [<date>-]<global processor index>[-<sequence>][".tmp"]
      * }</pre>
-     * <p>
+     *
      * Description (parts in {@code []} are optional):
      * <ul>
      *     <li>{@code <date>}: the current date and time, see {@link
@@ -1179,7 +1179,7 @@ public final class Sinks {
      * </ul>
      *
      * <h3>Notes</h3>
-     * <p>
+     *
      * The target directory is not deleted before the job start. If file names
      * clash, they are appended to. This is needed to ensure at-least-once
      * behavior. In exactly-once mode the file names never clash thanks to the
@@ -1233,9 +1233,9 @@ public final class Sinks {
      * The default local parallelism for this sink is 1.
      *
      * @param toStringFn a function that returns a string representation of a
-     *                   stream item. It must be stateless and {@linkplain
-     *                   Processor#isCooperative() cooperative}.
-     * @param <T>        stream item type
+     *     stream item. It must be stateless and {@linkplain
+     *     Processor#isCooperative() cooperative}.
+     * @param <T> stream item type
      */
     @Nonnull
     public static <T> Sink<T> logger(@Nonnull FunctionEx<? super T, String> toStringFn) {
@@ -1265,9 +1265,9 @@ public final class Sinks {
      * not an instance of {@code javax.jms.Message}, the sink wraps {@code
      * item.toString()} into a {@link javax.jms.TextMessage}.
      *
-     * @param queueName       the name of the queue
+     * @param queueName the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory. It
-     *                        must be stateless.
+     *     must be stateless.
      */
     @Nonnull
     public static <T> Sink<T> jmsQueue(
@@ -1275,8 +1275,8 @@ public final class Sinks {
             @Nonnull SupplierEx<ConnectionFactory> factorySupplier
     ) {
         return Sinks.<T>jmsQueueBuilder(factorySupplier)
-                    .destinationName(queueName)
-                    .build();
+                .destinationName(queueName)
+                .build();
     }
 
     /**
@@ -1322,9 +1322,9 @@ public final class Sinks {
      * The default local parallelism for this processor is 1.
      *
      * @param factorySupplier supplier to obtain JMS connection factory. For
-     *                        exactly-once the factory must implement {@link
-     *                        javax.jms.XAConnectionFactory}. It must be stateless.
-     * @param <T>             type of the items the sink accepts
+     *      exactly-once the factory must implement {@link
+     *      javax.jms.XAConnectionFactory}. It must be stateless.
+     * @param <T> type of the items the sink accepts
      */
     @Nonnull
     public static <T> JmsSinkBuilder<T> jmsQueueBuilder(@Nonnull SupplierEx<ConnectionFactory> factorySupplier) {
@@ -1338,13 +1338,13 @@ public final class Sinks {
      *                 .destinationName(topicName)
      *                 .build();
      * }</pre>
-     * <p>
+     *
      * See {@link #jmsTopicBuilder(SupplierEx)} for more details.
      *
-     * @param topicName       the name of the queue
+     * @param topicName the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory. For
-     *                        exactly-once the factory must implement {@link
-     *                        javax.jms.XAConnectionFactory}. It must be stateless.
+     *      exactly-once the factory must implement {@link
+     *      javax.jms.XAConnectionFactory}. It must be stateless.
      */
     @Nonnull
     public static <T> Sink<T> jmsTopic(
@@ -1352,8 +1352,8 @@ public final class Sinks {
             @Nonnull SupplierEx<ConnectionFactory> factorySupplier
     ) {
         return Sinks.<T>jmsTopicBuilder(factorySupplier)
-                    .destinationName(topicName)
-                    .build();
+                .destinationName(topicName)
+                .build();
     }
 
     /**
@@ -1396,8 +1396,8 @@ public final class Sinks {
      * The default local parallelism for this processor is 1.
      *
      * @param factorySupplier supplier to obtain JMS connection factory. It
-     *                        must be stateless.
-     * @param <T>             type of the items the sink accepts
+     *     must be stateless.
+     * @param <T> type of the items the sink accepts
      */
     @Nonnull
     public static <T> JmsSinkBuilder<T> jmsTopicBuilder(@Nonnull SupplierEx<ConnectionFactory> factorySupplier) {
@@ -1413,7 +1413,7 @@ public final class Sinks {
      *             .bindFn(bindFn)
      *             .build();
      * }</pre>
-     * <p>
+     *
      * See {@link #jdbcBuilder()} for more information.
      */
     @Nonnull
@@ -1423,10 +1423,10 @@ public final class Sinks {
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
         return Sinks.<T>jdbcBuilder()
-                    .updateQuery(updateQuery)
-                    .dataSourceSupplier(dataSourceSupplier)
-                    .bindFn(bindFn)
-                    .build();
+                .updateQuery(updateQuery)
+                .dataSourceSupplier(dataSourceSupplier)
+                .bindFn(bindFn)
+                .build();
     }
 
     /**
@@ -1451,10 +1451,10 @@ public final class Sinks {
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
         return Sinks.<T>jdbcBuilder()
-                    .updateQuery(updateQuery)
-                    .dataConnectionRef(dataConnectionRef)
-                    .bindFn(bindFn)
-                    .build();
+                .updateQuery(updateQuery)
+                .dataConnectionRef(dataConnectionRef)
+                .bindFn(bindFn)
+                .build();
     }
 
     /**
@@ -1464,7 +1464,7 @@ public final class Sinks {
      *              .jdbcUrl(jdbcUrl)
      *              .build()
      * }</pre>
-     * <p>
+     *
      * See {@link #jdbcBuilder()} for more information.
      */
     @Nonnull
@@ -1474,10 +1474,10 @@ public final class Sinks {
             @Nonnull BiConsumerEx<PreparedStatement, T> bindFn
     ) {
         return Sinks.<T>jdbcBuilder()
-                    .updateQuery(updateQuery)
-                    .jdbcUrl(jdbcUrl)
-                    .bindFn(bindFn)
-                    .build();
+                .updateQuery(updateQuery)
+                .jdbcUrl(jdbcUrl)
+                .bindFn(bindFn)
+                .build();
     }
 
     /**
@@ -1506,14 +1506,14 @@ public final class Sinks {
      * <b>Commit behavior</b>
      * <p>
      * The commit behavior depends on the job guarantee:<ul>
-     * <li><b>Exactly-once:</b> XA transactions will be used to commit the
-     * work in phase two of the snapshot, that is after all other vertices
-     * in the job have performed the snapshot. Very small state will be
-     * saved to snapshot.
+     *     <li><b>Exactly-once:</b> XA transactions will be used to commit the
+     *     work in phase two of the snapshot, that is after all other vertices
+     *     in the job have performed the snapshot. Very small state will be
+     *     saved to snapshot.
      *
-     * <li><b>At-least-once or no guarantee:</b> Records will be committed
-     * in batches. A batch is created from records that are readily available
-     * at the sink.
+     *     <li><b>At-least-once or no guarantee:</b> Records will be committed
+     *     in batches. A batch is created from records that are readily available
+     *     at the sink.
      * </ul>
      * <p>
      * If the job is in exactly-once mode, the overhead in the database and the

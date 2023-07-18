@@ -111,7 +111,7 @@ public final class Sources {
      * Returns a bounded (batch) source constructed directly from the given
      * Core API processor meta-supplier.
      *
-     * @param sourceName   user-friendly source name
+     * @param sourceName user-friendly source name
      * @param metaSupplier the processor meta-supplier
      */
     @Nonnull
@@ -135,11 +135,11 @@ public final class Sources {
      * the {@link EventTimeMapper} class that will help you correctly implement
      * watermark emission.
      *
-     * @param sourceName               user-friendly source name
+     * @param sourceName user-friendly source name
      * @param supportsNativeTimestamps true, if the processor is able to work
-     * @param metaSupplierFn           factory of processor meta-suppliers. Since Jet
-     *                                 4.3 this argument changed from Function to FunctionEx
-     *                                 to support serializability.
+     * @param metaSupplierFn factory of processor meta-suppliers. Since Jet
+     *                      4.3 this argument changed from Function to FunctionEx
+     *                      to support serializability.
      */
     @Nonnull
     public static <T> StreamSource<T> streamFromProcessorWithWatermarks(
@@ -154,7 +154,7 @@ public final class Sources {
      * Returns an unbounded (event stream) source constructed directly from the given
      * Core API processor meta-supplier.
      *
-     * @param sourceName   user-friendly source name
+     * @param sourceName user-friendly source name
      * @param metaSupplier the processor meta-supplier
      */
     @Nonnull
@@ -218,7 +218,7 @@ public final class Sources {
      * transforms you allow the source to apply these functions early, before
      * generating any output, with the potential of significantly reducing
      * data traffic. If your data is stored in the IMDG using the <a href=
-     * "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
+     *     "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
      * portable serialization format</a>, there are additional optimizations
      * available when using {@link Projections#singleAttribute} and
      * {@link Projections#multiAttribute}) to create your projection instance and
@@ -243,7 +243,7 @@ public final class Sources {
      * The default local parallelism for this processor is 1.
      *
      * <h4>Predicate/projection class requirements</h4>
-     * <p>
+     *
      * The classes implementing {@code predicate} and {@code projection} need
      * to be available on the cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
@@ -252,16 +252,16 @@ public final class Sources {
      * requirements, use {@link #map(String)} and add a subsequent
      * {@link GeneralStage#map map} or {@link GeneralStage#filter filter} stage.
      *
-     * @param mapName    the name of the map
-     * @param predicate  the predicate to filter the events. If you want to specify just the
-     *                   projection, use {@link Predicates#alwaysTrue()} as a pass-through
-     *                   predicate. It must be stateless and {@linkplain
-     *                   Processor#isCooperative() cooperative}.
+     * @param mapName the name of the map
+     * @param predicate the predicate to filter the events. If you want to specify just the
+     *                  projection, use {@link Predicates#alwaysTrue()} as a pass-through
+     *                  predicate. It must be stateless and {@linkplain
+     *                  Processor#isCooperative() cooperative}.
      * @param projection the projection to map the events. If the projection returns a {@code
      *                   null} for an item, that item will be filtered out. If you want to
      *                   specify just the predicate, use {@link Projections#identity()}. It must
      *                   be stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T>        type of emitted item
+     * @param <T> type of emitted item
      */
     @Nonnull
     public static <T, K, V> BatchSource<T> map(
@@ -285,7 +285,7 @@ public final class Sources {
      * this.
      * <p>
      * If your data is stored in the IMDG using the <a href=
-     * "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
+     *   "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
      * portable serialization format</a>, there are additional optimizations
      * available when using {@link Projections#singleAttribute} and
      * {@link Projections#multiAttribute}) to create your projection instance
@@ -366,7 +366,7 @@ public final class Sources {
      * CPU is available).
      *
      * <h4>Predicate/projection class requirements</h4>
-     * <p>
+     *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
      * need to be available on the cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
@@ -433,7 +433,7 @@ public final class Sources {
      * CPU is available).
      *
      * <h4>Predicate/projection class requirements</h4>
-     * <p>
+     *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
      * need to be available on the cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
@@ -444,7 +444,7 @@ public final class Sources {
      * {@link GeneralStage#filter filter} stage.
      *
      * <h4>Issue when "catching up"</h4>
-     * <p>
+     *
      * This processor does not coalesce watermarks from partitions. It reads
      * partitions one by one: it emits events from one partition and then from
      * another one in batches. This adds time disorder to events: it might emit
@@ -711,7 +711,7 @@ public final class Sources {
      * transforms you allow the source to apply these functions early, before
      * generating any output, with the potential of significantly reducing
      * data traffic. If your data is stored in the IMDG using the <a href=
-     * "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
+     *     "http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#implementing-portable-serialization">
      * portable serialization format</a>, there are additional optimizations
      * available when using {@link Projections#singleAttribute} and {@link
      * Projections#multiAttribute}) to create your projection instance and
@@ -736,7 +736,7 @@ public final class Sources {
      * The default local parallelism for this processor is 1.
      *
      * <h4>Predicate/projection class requirements</h4>
-     * <p>
+     *
      * The classes implementing {@code predicate} and {@code projection} need
      * to be available on the remote cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
@@ -746,16 +746,16 @@ public final class Sources {
      * subsequent {@link GeneralStage#map map} or {@link GeneralStage#filter
      * filter} stage.
      *
-     * @param mapName    the name of the map
-     * @param predicate  the predicate to filter the events. If you want to specify just the
-     *                   projection, use {@link Predicates#alwaysTrue()} as a pass-through
-     *                   predicate. It must be stateless and {@linkplain
-     *                   Processor#isCooperative() cooperative}.
+     * @param mapName the name of the map
+     * @param predicate the predicate to filter the events. If you want to specify just the
+     *                  projection, use {@link Predicates#alwaysTrue()} as a pass-through
+     *                  predicate. It must be stateless and {@linkplain
+     *                  Processor#isCooperative() cooperative}.
      * @param projection the projection to map the events. If the projection returns a {@code
      *                   null} for an item, that item will be filtered out. If you want to
      *                   specify just the predicate, use {@link Projections#identity()}. It must
      *                   be stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T>        type of emitted item
+     * @param <T> type of emitted item
      */
     @Nonnull
     public static <T, K, V> BatchSource<T> remoteMap(
@@ -792,7 +792,7 @@ public final class Sources {
      * The default local parallelism for this processor is 1.
      *
      * <h4>Predicate/projection class requirements</h4>
-     * <p>
+     *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
      * need to be available on the remote cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
@@ -801,21 +801,20 @@ public final class Sources {
      * requirements, use {@link #remoteMapJournal(String, ClientConfig, JournalInitialPosition)}
      * and add a subsequent {@link GeneralStage#map map} or
      * {@link GeneralStage#filter filter} stage.
-     *
-     * @param <K>          type of key
-     * @param <V>          type of value
-     * @param <T>          type of emitted item
-     * @param mapName      the name of the map
+     *  @param <K> type of key
+     * @param <V> type of value
+     * @param <T> type of emitted item
+     * @param mapName the name of the map
      * @param clientConfig configuration for the client to connect to the remote cluster
-     * @param initialPos   describes which event to start receiving from
+     * @param initialPos describes which event to start receiving from
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
      *                     Util#mapEventToEntry()} to extract just the key and the new value. It
      *                     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param predicateFn  the predicate to filter the events. You may use {@link
-     *                     Util#mapPutEvents} to pass only {@link EntryEventType#ADDED ADDED} and
-     *                     {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
-     *                     {@linkplain Processor#isCooperative() cooperative}.
+     * @param predicateFn the predicate to filter the events. You may use {@link
+     *                    Util#mapPutEvents} to pass only {@link EntryEventType#ADDED ADDED} and
+     *                    {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
+     *                    {@linkplain Processor#isCooperative() cooperative}.
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> remoteMapJournal(
@@ -865,22 +864,22 @@ public final class Sources {
      *  ));
      *  }</pre>
      *
-     * @param mapName           the name of the map
+     * @param mapName the name of the map
      * @param dataConnectionRef the reference to DataConnectionConfig
-     * @param initialPos        describes which event to start receiving from
-     * @param projectionFn      the projection to map the events. If the projection returns a {@code
-     *                          null} for an item, that item will be filtered out. You may use {@link
-     *                          Util#mapEventToEntry()} to extract just the key and
-     *                          the new value. It must be stateless and {@linkplain
-     *                          Processor#isCooperative() cooperative}.
-     * @param predicateFn       the predicate to filter the events. If you want to specify just the
-     *                          projection, use {@link Util#mapPutEvents} to pass
-     *                          only {@link EntryEventType#ADDED ADDED} and
-     *                          {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
-     *                          {@linkplain Processor#isCooperative() cooperative}.
-     * @param <T>               is the return type of the stream
-     * @param <K>               is the key type of EventJournalMapEvent
-     * @param <V>               is the vale type of EventJournalMapEvent
+     * @param initialPos describes which event to start receiving from
+     * @param projectionFn the projection to map the events. If the projection returns a {@code
+     *                      null} for an item, that item will be filtered out. You may use {@link
+     *                      Util#mapEventToEntry()} to extract just the key and
+     *                      the new value. It must be stateless and {@linkplain
+     *                      Processor#isCooperative() cooperative}.
+     * @param predicateFn the predicate to filter the events. If you want to specify just the
+     *                      projection, use {@link Util#mapPutEvents} to pass
+     *                      only {@link EntryEventType#ADDED ADDED} and
+     *                      {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
+     *                      {@linkplain Processor#isCooperative() cooperative}.
+     * @param <T> is the return type of the stream
+     * @param <K> is the key type of EventJournalMapEvent
+     * @param <V> is the vale type of EventJournalMapEvent
      * @return a stream that can be used as a source
      * @since 5.3
      */
@@ -915,12 +914,10 @@ public final class Sources {
     }
 
     /**
-     * Convenience for
-     * {@link #remoteMapJournal(String, DataConnectionRef, JournalInitialPosition, FunctionEx, PredicateEx)}
+     * Convenience for {@link #remoteMapJournal(String, DataConnectionRef, JournalInitialPosition, FunctionEx, PredicateEx)}
      * which will pass only {@link EntryEventType#ADDED ADDED}
      * and {@link EntryEventType#UPDATED UPDATED} events and will
      * project the event's key and new value into a {@code Map.Entry}.
-     *
      * @since 5.3
      */
     @Nonnull
@@ -980,7 +977,7 @@ public final class Sources {
      * CPU is available).
      *
      * <h4>Predicate/projection class requirements</h4>
-     * <p>
+     *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
      * need to be available on the cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
@@ -990,17 +987,17 @@ public final class Sources {
      * and add a subsequent {@link GeneralStage#map map} or
      * {@link GeneralStage#filter filter} stage.
      *
-     * @param <T>          type of emitted item
-     * @param cacheName    the name of the cache
-     * @param initialPos   describes which event to start receiving from
+     * @param <T> type of emitted item
+     * @param cacheName the name of the cache
+     * @param initialPos describes which event to start receiving from
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
      *                     Util#cacheEventToEntry()} to extract just the key and the new value. It
      *                     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param predicateFn  the predicate to filter the events. You may use {@link
-     *                     Util#cachePutEvents()} to pass only {@link CacheEventType#CREATED
-     *                     CREATED} and {@link CacheEventType#UPDATED UPDATED} events. It must be
-     *                     stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param predicateFn the predicate to filter the events. You may use {@link
+     *                    Util#cachePutEvents()} to pass only {@link CacheEventType#CREATED
+     *                    CREATED} and {@link CacheEventType#UPDATED UPDATED} events. It must be
+     *                    stateless and {@linkplain Processor#isCooperative() cooperative}.
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> cacheJournal(
@@ -1075,7 +1072,7 @@ public final class Sources {
      * The default local parallelism for this processor is 1.
      *
      * <h4>Predicate/projection class requirements</h4>
-     * <p>
+     *
      * The classes implementing {@code predicateFn} and {@code projectionFn}
      * need to be available on the cluster's classpath or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
@@ -1085,18 +1082,18 @@ public final class Sources {
      * and add a subsequent {@link GeneralStage#map map} or
      * {@link GeneralStage#filter filter} stage.
      *
-     * @param <T>          type of emitted item
-     * @param cacheName    the name of the cache
+     * @param <T> type of emitted item
+     * @param cacheName the name of the cache
      * @param clientConfig configuration for the client to connect to the remote cluster
-     * @param initialPos   describes which event to start receiving from
+     * @param initialPos describes which event to start receiving from
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
      *                     Util#cacheEventToEntry()} to extract just the key and the new value. It
      *                     must be stateless and {@linkplain Processor#isCooperative() cooperative}.
-     * @param predicateFn  the predicate to filter the events. You may use {@link
-     *                     Util#cachePutEvents()} to pass only {@link CacheEventType#CREATED
-     *                     CREATED} and {@link CacheEventType#UPDATED UPDATED} events. It must be
-     *                     stateless and {@linkplain Processor#isCooperative() cooperative}.
+     * @param predicateFn the predicate to filter the events. You may use {@link
+     *                    Util#cachePutEvents()} to pass only {@link CacheEventType#CREATED
+     *                    CREATED} and {@link CacheEventType#UPDATED UPDATED} events. It must be
+     *                    stateless and {@linkplain Processor#isCooperative() cooperative}.
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> remoteCacheJournal(
@@ -1113,8 +1110,7 @@ public final class Sources {
     }
 
     /**
-     * Convenience for
-     * {@link #remoteCacheJournal(String, ClientConfig, JournalInitialPosition, FunctionEx, PredicateEx)}
+     * Convenience for {@link #remoteCacheJournal(String, ClientConfig, JournalInitialPosition, FunctionEx, PredicateEx)}
      * which will pass only
      * {@link CacheEventType#CREATED CREATED}
      * and {@link CacheEventType#UPDATED UPDATED}
@@ -1255,7 +1251,7 @@ public final class Sources {
      * If files are appended to while being read, the addition might or might
      * not be emitted or part of a line can be emitted. If files are modified
      * in more complex ways, the behavior is undefined.
-     * <p>
+     *
      * See {@link #filesBuilder(String)}.
      */
     @Nonnull
@@ -1283,7 +1279,7 @@ public final class Sources {
      * not be emitted or part of a line can be emitted. If files are modified
      * in more complex ways, the behavior is undefined.
      * <p>
-     * <p>
+     *
      * See {@link #filesBuilder(String)}, {@link #files(String)}.
      *
      * @since Jet 4.2
@@ -1327,7 +1323,7 @@ public final class Sources {
      * editors write to a temp file and then rename it or append extra newline
      * character at the end which gets overwritten if more text is added in the
      * editor. The best way to append is to use {@code echo text >> yourFile}.
-     * <p>
+     *
      * See {@link #filesBuilder(String)}.
      */
     @Nonnull
@@ -1355,7 +1351,7 @@ public final class Sources {
      * editors write to a temp file and then rename it or append extra newline
      * character at the end which gets overwritten if more text is added in the
      * editor. The best way to append is to use {@code echo text >> yourFile}.
-     * <p>
+     *
      * See {@link #filesBuilder(String)}, {@link #fileWatcher(String)}.
      *
      * @since Jet 4.2
@@ -1397,7 +1393,7 @@ public final class Sources {
      *                 .destinationName(name)
      *                 .build();
      * </pre>
-     * <p>
+     *
      * This version creates a connection without any authentication parameters.
      * JMS {@link javax.jms.Message} objects are emitted to downstream.
      * <p>
@@ -1407,7 +1403,8 @@ public final class Sources {
      *
      * @param name            the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory. It
-     *                        must be stateless.
+     *     must be stateless.
+     *
      * @since Jet 4.1
      */
     @Nonnull
@@ -1441,7 +1438,7 @@ public final class Sources {
      * The default local parallelism for this processor is 1.
      *
      * @param factorySupplier supplier to obtain JMS connection factory. It
-     *                        must be stateless.
+     *     must be stateless.
      */
     @Nonnull
     public static JmsSourceBuilder jmsQueueBuilder(SupplierEx<? extends ConnectionFactory> factorySupplier) {
@@ -1467,7 +1464,7 @@ public final class Sources {
      *                 .destinationName(name)
      *                 .build();
      * </pre>
-     * <p>
+     *
      * This version creates a connection without any authentication parameters.
      * A non-durable, non-shared consumer is used, only one member will connect
      * to the broker. JMS {@link javax.jms.Message} objects are emitted to
@@ -1479,7 +1476,8 @@ public final class Sources {
      *
      * @param name            the name of the queue
      * @param factorySupplier supplier to obtain JMS connection factory. It
-     *                        must be stateless.
+     *     must be stateless.
+     *
      * @since Jet 4.1
      */
     @Nonnull
@@ -1518,7 +1516,7 @@ public final class Sources {
      * The default local parallelism for this processor is 1.
      *
      * @param factorySupplier supplier to obtain JMS connection factory. It
-     *                        must be stateless.
+     *     must be stateless.
      */
     @Nonnull
     public static JmsSourceBuilder jmsTopicBuilder(SupplierEx<? extends ConnectionFactory> factorySupplier) {
@@ -1572,10 +1570,10 @@ public final class Sources {
      * The given functions must be stateless.
      *
      * @param newConnectionFn creates the connection
-     * @param resultSetFn     creates a {@link ResultSet} using the connection,
-     *                        total parallelism and index
-     * @param createOutputFn  creates output objects from {@link ResultSet}
-     * @param <T>             type of output objects
+     * @param resultSetFn creates a {@link ResultSet} using the connection,
+     *                    total parallelism and index
+     * @param createOutputFn creates output objects from {@link ResultSet}
+     * @param <T> type of output objects
      */
     public static <T> BatchSource<T> jdbc(
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
@@ -1625,7 +1623,7 @@ public final class Sources {
      * <p>
      * <p>
      * See also {@link Sources#jdbc(SupplierEx, ToResultSetFunction, FunctionEx)}.
-     * </p>
+     *</p>
      *
      * @since 5.3
      */
@@ -1656,7 +1654,7 @@ public final class Sources {
      *         "select ID, NAME from PERSON",
      *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      * }</pre>
-     * <p>
+     *
      * The given function must be stateless.
      */
     public static <T> BatchSource<T> jdbc(
