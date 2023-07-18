@@ -47,7 +47,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 5.3
  */
 @Beta
-public class DataConnectionConfig implements IdentifiedDataSerializable, Serializable, NamedConfig {
+public class DataConnectionConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String name;
     private String type;
