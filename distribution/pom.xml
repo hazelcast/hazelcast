@@ -39,7 +39,17 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>license-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-third-party</id>
+                        <goals>
+                            <goal>add-third-party</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                    </execution>
+                </executions>
                 <configuration>
+                    <force>true</force>
                     <acceptPomPackaging>true</acceptPomPackaging>
                     <includedLicenses combine.children="append">
                         <includedLicense>CDDL</includedLicense>
@@ -294,23 +304,6 @@
             <artifactId>hazelcast-jet-elasticsearch-7</artifactId>
             <version>${project.version}</version>
             <classifier>${fat.dependency.classifier}</classifier>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-elasticsearch-6</artifactId>
-            <version>${project.version}</version>
-            <classifier>${fat.dependency.classifier}</classifier>
-            <exclusions>
-                <!--
-                Exclude the elastic client for version 6 reported by enforcer plugin
-                It actually doesn't exclude the client, because we use fat jar.
-                The elastic clients can't be used together. Version 6 is in opt.
-                -->
-                <exclusion>
-                    <groupId>org.elasticsearch.client</groupId>
-                    <artifactId>elasticsearch-rest-high-level-client</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>

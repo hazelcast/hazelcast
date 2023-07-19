@@ -713,11 +713,11 @@ public final class TestProcessors {
         static List<Address> members;
         static List<List<Object>> lists;
 
-        List<Object> getListAt(int i) {
+        public List<Object> getListAt(int i) {
             return lists.get(i);
         }
 
-        List<List<Object>> getLists() {
+        public List<List<Object>> getLists() {
             return lists;
         }
 

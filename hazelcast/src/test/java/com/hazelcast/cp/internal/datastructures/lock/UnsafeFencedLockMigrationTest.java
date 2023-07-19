@@ -32,8 +32,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -87,10 +86,10 @@ public class UnsafeFencedLockMigrationTest extends HazelcastRaftTestSupport {
         LockService lockService = getNodeEngineImpl(hz1).getService(LockService.SERVICE_NAME);
         assertTrueEventually(() -> {
             LockRegistry registry1 = lockService.getRegistryOrNull(lock1.getGroupId());
-            assertThat(registry1.getLiveOperations(), hasSize(1));
+            assertThat(registry1.getLiveOperations()).hasSize(1);
 
             LockRegistry registry2 = lockService.getRegistryOrNull(lock2.getGroupId());
-            assertThat(registry2.getLiveOperations(), hasSize(1));
+            assertThat(registry2.getLiveOperations()).hasSize(1);
         });
 
         // Start new instance to trigger migration
@@ -124,7 +123,7 @@ public class UnsafeFencedLockMigrationTest extends HazelcastRaftTestSupport {
             LockService lockService = getNodeEngineImpl(hz1).getService(LockService.SERVICE_NAME);
             assertTrueEventually(() -> {
                 LockRegistry registry = lockService.getRegistryOrNull(lock.getGroupId());
-                assertThat(registry.getLiveOperations(), hasSize(1));
+                assertThat(registry.getLiveOperations()).hasSize(1);
             });
             lock.unlock();
         });

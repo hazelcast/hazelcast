@@ -179,7 +179,7 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         assertRowsOrdered(sql, asList(
                 new Row("CalcPhysicalRel(expr#0..5=[{inputs}], __key=[$t0], name=[$t4])"),
-                new Row("  JoinNestedLoopPhysicalRel(condition=[=($0, $3)], joinType=[inner])"),
+                new Row("  JoinNestedLoopPhysicalRel(condition=[=($0, $3)], joinType=[inner], conditionType=[equiJoin])"),
                 new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map1[projects=[$0, $1]]]], discriminator=[0])"),
                 new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map2[projects=[$0, $1, $2, $3]]]], discriminator=[0])")
         ));

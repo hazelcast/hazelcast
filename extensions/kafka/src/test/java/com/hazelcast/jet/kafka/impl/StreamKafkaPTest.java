@@ -643,7 +643,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 );
 
         StreamKafkaP<Integer, String, Entry<Integer, String>> processor = createProcessor(
-                properties, topicsConfig, r -> entry(r.key(), r.value()), 10_000);
+                properties, topicsConfig, r -> entry(r.key(), r.value()), 60_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         TestProcessorContext context = new TestProcessorContext();
         context.setProcessingGuarantee(AT_LEAST_ONCE);

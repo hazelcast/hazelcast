@@ -73,7 +73,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.assertWriteBehindQueuesEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.CoreMatchers.startsWith;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -179,10 +179,10 @@ public class MapStoreTest extends AbstractMapStoreTest {
         HazelcastInstance node = createHazelcastInstance(config);
         IMap<String, String> map = node.getMap(randomName());
 
-        expectedException.expect(NullPointerException.class);
-        expectedException.expectMessage(startsWith("Neither key nor value can be loaded as null"));
         // load entries.
-        map.getAll(new HashSet<>(asList("key1", "key2", "key3")));
+        assertThatThrownBy(() -> map.getAll(new HashSet<>(asList("key1", "key2", "key3"))))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("Neither key nor value can be loaded as null");
     }
 
     /**

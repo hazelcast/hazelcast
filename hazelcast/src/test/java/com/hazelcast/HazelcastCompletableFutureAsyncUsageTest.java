@@ -17,6 +17,7 @@
 package com.hazelcast;
 
 import com.hazelcast.test.archunit.ArchUnitRules;
+import com.hazelcast.test.archunit.ArchUnitTestSupport;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import org.junit.Test;
@@ -25,8 +26,7 @@ import static com.hazelcast.test.archunit.ModuleImportOptions.onlyCurrentModule;
 import static com.tngtech.archunit.base.DescribedPredicate.not;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
 import static com.tngtech.archunit.lang.conditions.ArchPredicates.are;
-
-public class HazelcastCompletableFutureAsyncUsageTest {
+public class HazelcastCompletableFutureAsyncUsageTest extends ArchUnitTestSupport {
 
     @Test
     public void noClassUsesCompletableFuture() {

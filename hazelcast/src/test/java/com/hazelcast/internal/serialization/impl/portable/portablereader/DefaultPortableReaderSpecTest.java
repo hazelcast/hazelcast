@@ -27,10 +27,10 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.Rule;
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
+import org.assertj.core.util.Arrays;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameters;
 
@@ -54,9 +54,9 @@ import static com.hazelcast.internal.serialization.impl.portable.portablereader.
 import static com.hazelcast.internal.serialization.impl.portable.portablereader.DefaultPortableReaderTestStructure.nested;
 import static com.hazelcast.internal.serialization.impl.portable.portablereader.DefaultPortableReaderTestStructure.prim;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isA;
-import static org.junit.Assert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.util.Arrays.asObjectArray;
 
 /**
  * Tests that verifies the behavior of the DefaultPortableReader.
@@ -76,6 +76,7 @@ import static org.junit.Assert.assertThat;
  * - check the test output - analyse the test scenario
  * - check in which method the scenario is generated - narrow down the scope of the tests run
  */
+@SuppressWarnings("FieldMayBeFinal")
 @RunWith(HazelcastParametrizedRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
@@ -83,9 +84,6 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     private static final PrimitivePortable P_NON_EMPTY = new PrimitivePortable(0, PrimitivePortable.Init.FULL);
     private static final GroupPortable G_NON_EMPTY = group(FULL);
     private static final NestedGroupPortable N_NON_EMPTY = nested(new Portable[]{G_NON_EMPTY, G_NON_EMPTY});
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     // input object
     private Portable inputObject;
@@ -121,39 +119,50 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void executeTestScenario() throws Exception {
+    public void executeTestScenario() throws Throwable {
         // handle result
-        Object resultToMatch = expectedResult;
-        if (expectedResult instanceof Class) {
-            // expected exception case
-            expected.expect(isA((Class) expectedResult));
-        } else if (expectedResult instanceof List) {
+        Object resultToMatchVar = expectedResult;
+        if (expectedResult instanceof List) {
             // just convenience -> if result is a list if will be compared to an array, so it has to be converted
-            resultToMatch = ((List) resultToMatch).toArray();
+            resultToMatchVar = ((List<?>) resultToMatchVar).toArray();
         }
 
-        // print test scenario for debug purposes
-        // it makes debugging easier since all scenarios are generated
-        printlnScenarioDescription(resultToMatch);
+        final var resultToMatch = resultToMatchVar;
 
-        // assert the condition
-        Object result = reader(inputObject).read(pathToRead);
-        if (result instanceof MultiResult) {
-            MultiResult multiResult = (MultiResult) result;
-            if (multiResult.getResults().size() == 1
-                    && multiResult.getResults().get(0) == null && multiResult.isNullEmptyTarget()) {
-                // explode null in case of a single multi-result target result
-                result = null;
+        ThrowingCallable test = () -> {
+
+            // print test scenario for debug purposes
+            // it makes debugging easier since all scenarios are generated
+            printlnScenarioDescription(resultToMatch);
+
+            // assert the condition
+            Object result = reader(inputObject).read(pathToRead);
+            if (result instanceof MultiResult) {
+                MultiResult<?> multiResult = (MultiResult<?>) result;
+                if (multiResult.getResults().size() == 1
+                        && multiResult.getResults().get(0) == null && multiResult.isNullEmptyTarget()) {
+                    // explode null in case of a single multi-result target result
+                    result = null;
+                } else {
+                    // in case of multi result while invoking generic "read" method deal with the multi results
+                    result = ((MultiResult<?>) result).getResults().toArray();
+                }
+
+                if (Arrays.isArray(resultToMatch)) {
+                    assertThat(asObjectArray((result))).containsExactlyInAnyOrder(asObjectArray(resultToMatch));
+                } else {
+                    assertThat(result).isEqualTo(resultToMatch);
+                }
             } else {
-                // in case of multi result while invoking generic "read" method deal with the multi results
-                result = ((MultiResult) result).getResults().toArray();
+                assertThat(result).isEqualTo(resultToMatch);
             }
-            assertThat(result, equalTo(resultToMatch));
-        } else {
-            assertThat(result, equalTo(resultToMatch));
-        }
+        };
 
+        if (expectedResult instanceof Class) {
+            assertThatThrownBy(test).isInstanceOf((Class<?>) expectedResult);
+        } else {
+            test.call();
+        }
     }
 
     private void printlnScenarioDescription(Object resultToMatch) {
@@ -284,7 +293,6 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
      * The expected result should be the object that contains the portable array - that's the general contract.
      * The result for assertion will be automatically calculated
      */
-    @SuppressWarnings({"unchecked"})
     private static Collection<Object[]> expandPortableArrayPrimitiveScenario(Portable input, GroupPortable result,
                                                                              String pathToExplode, String parent) {
         List<Object[]> scenarios = new ArrayList<>();
@@ -296,7 +304,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                 // B. case with [any] operator on portable array
                 // expansion of the primitive fields
                 for (PrimitiveFields primitiveFields : getPrimitives()) {
-                    List resultToMatch = new ArrayList();
+                    List<Object> resultToMatch = new ArrayList<>();
                     int portableCount = 0;
                     try {
                         portableCount = result.portables.length;
@@ -320,8 +328,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
                     try {
                         PrimitivePortable portable = (PrimitivePortable) result.portables[Integer.parseInt(token)];
                         resultToMatch = portable.getPrimitive(primitiveFields);
-                    } catch (NullPointerException ignored) {
-                    } catch (IndexOutOfBoundsException ignored) {
+                    } catch (NullPointerException | IndexOutOfBoundsException ignored) {
                     }
 
                     if (result == null || result.portables == null || result.portables.length == 0) {
