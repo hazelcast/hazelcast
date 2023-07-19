@@ -33,11 +33,9 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -55,12 +53,6 @@ public class LazyEvictableEntryViewTest {
     private Record<Data> recordInstance;
     private LazyEvictableEntryView view;
     private EntryCostEstimator costEstimator;
-
-
-    @BeforeClass
-    public static void beforeClass() {
-        Mockito.clearAllCaches();
-    }
 
     @Before
     public void setUp() throws Exception {

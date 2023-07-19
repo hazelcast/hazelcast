@@ -89,8 +89,6 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
               .setImplementation(new AlwaysFailingMapStore());
         config.getJetConfig().setEnabled(true);
 
-        Mockito.framework().clearInlineMocks();
-
         HazelcastInstance instance = createHazelcastInstance(config);
         nodeEngine = Util.getNodeEngine(instance);
         serializationService = Util.getSerializationService(instance);
