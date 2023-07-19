@@ -123,16 +123,15 @@ try to choose only the required members.
 
 ### Scan partition pruning
 
-Partition pruning for IMap scan supposed to be a pretty simple optimization: we should extract 
-the partition key condition(s) during SQL opt phase, pass it to a specialized processor meta supplier 
-which will spawn `ReadMapOrCacheP` with only required partitions to scan. We designed this solution with 
-an additional steps to improve solution architecture, which are described below.
+Key principle of scan partition pruning is that specialized processor meta supplier which will spawn scan processors 
+should be able to self-sufficiently calculate exact set of partitions to scan. To achieve it, we designed a convenient 
+API on a SQL side to be able to pass a minimum required information to PMS constructor.
 
-#### Implementation details
-First of all, for all prunable `FullScan`-s in resulting plan we want to have a **precise** partition set to scan. 
-To make it possible, and also isolate the implementation for each specific connector, we move the computational process
-to `SqlConnector`. We extended `fullScanReader` method in `SqlConnector` interface to accept extracted all 
-partition pruning candidates as a parameter and calculate it in connector-specific way:
+#### SQL side design details (should be moved to SQL design doc)
+Our goal is to have a **precise** partition set to scan for all prunable `FullScan`-s in resulting plan. 
+To make it possible, and also isolate the implementation for each specific connector, we would like to move 
+the computational process to `SqlConnector`. We extended `fullScanReader` method in `SqlConnector` interface 
+to accept extracted all partition pruning candidates as a parameter and calculate it in connector-specific way:
 ```
     @Override
     @Nonnull
@@ -148,15 +147,15 @@ The new parameter `partitionPruningCandidates` is a list of maps, where for each
 the column name maps to the extracted comparison expression. The connector-specific implementation should
 filter predicates for columns where partitioning strategy is applicable, and check if partitioning strategy 
 is applicable generally, and in case of success transform the input to the **list of inner list of expressions**. 
-Each inner list of expressions contains comparison expressions, and may be **one-sized**, 
-if the partitioning strategy key is **simple**, and **multi-sized**, if the partitioning strategy key is **composite**. 
-If we have more than one prunable filter predicate, outer list will be multi-sized. 
+Each inner list of expressions contains comparison expressions, and may be **single-element**, if the partitioning 
+strategy key is **simple**, and **multi-element**, if the partitioning strategy key is **composite**.  
+If we have more than one prunable filter predicate, outer list will be multi-element. 
 
-**Currently, it is implemented only for IMap connector, where all expressions are available.**
+**Currently, it is implemented only for IMap connector, where all expressions are supported.**
 
 For better imagination we prepared an example below.
 
-#### Successful case example 
+#### Successful case example (should be moved to SQL design doc)
 Let's assume we have an IMap `map` with composite key {comp1, comp2, comp3} and applied partitioning strategy for
 `comp1` and `comp2`. Let's have the following synthetic query, where filter matches the partitioning strategy:
 ```
@@ -167,41 +166,24 @@ IMap-specific `fullScanReader` receives the following list of maps as a paramete
 [{"__key.comp1" = Expression(`__key.comp1 = 1`)}, {"__key.comp2" = Expression(`__key.comp2 = 2`)}]
 ```
 
-After the described computation above, `fullScanReader` implementation should return the following list of expressions:
+After the described computation above, `fullScanReader` implementation should pass the following list of expressions
+to processor meta supplier described in the next section:
 ```
 [[Expression(`__key.comp1 = 2`], [Expression(`__key.comp1 = 2`]]
 ```
 
-#### Not successful case example
-
-For same `map` as above, let's have the following synthetic query, where filter does not match the partitioning strategy:
-```
-SELECT * FROM map WHERE __key.comp1 = 1 AND __key.comp3 = 3
-```
-
-IMap-specific `fullScanReader` receives the following list of maps as a parameter:
-```
-[{"__key.comp1" = Expression(`__key.comp1 = 1`)}, {"__key.comp2" = Expression(`__key.comp3 = 3)}]
-```
-
-but, instead of example below, it will return an empty list, because partition pruning is not applicable due to presence
-of `__key.comp3` in the filter, which was not declared as part of partitioning strategy.
-
-**Important note : simple `__key` is always participates in default partitioning strategy, since IMap is partitioned
-by __key**.
-
-#### IMap-specific prunable meta supplier implementation details
+#### IMap-specific prunable scan processor meta supplier design and implementation details
 
 `SpecificPartitionsImapReaderPms` is a new meta supplier to perform IMap scans. It was designed with ability 
-to self-sufficiently calculate exact set of partitions to scan, similarly to `lazyForceTotalParallelismOne` 
-described below. As a parameter, it accepts an optional list of lists of expressions (see previous section), 
-which triggers the code path for partition pruning. Also, `SpecificPartitionsImapReaderPms` has a possibility not to do
-any partitions' calculation, if partitioning strategy is not available for the given IMap.
+to self-sufficiently calculate exact set of partitions to scan and have a possibility not to do any partitions' 
+calculation, if partitioning strategy is not available for the given IMap.
 
-Regarding partition pruning case, the related calculation is performed by evaluating received list of expressions in 
-`init` method, where partition assignment is available, and as a result, we receive available partition set. Later,
-in `get` method we compute required partitions subset per member (stored in `ProcessorSupplier`), and then each
-`ProcessorSupplier` spawns `ReadMapOrCacheP` with only required partitions to scan.
+In case of partition prunability: when partition assignment is available, PMS should calculate an available 
+partition set by evaluating accepted filtering expressions. During `ProcessorSupplier` spawn process  PMS computes 
+precise partitions subset per member (stored in `ProcessorSupplier`), and then each `ProcessorSupplier` spawns 
+`ReadMapOrCacheP` with only required partitions to scan.
+
+[//]: # (TODO: describe if scan partition pruning will work in cases when member pruning is not possible.)
 
 ### `lazyForceTotalParallelismOne`
 
