@@ -78,7 +78,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
-import com.hazelcast.partition.strategy.StrategyUtil;
+import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -521,8 +521,8 @@ public class PlanExecutor {
         boolean allVariantsValid = true;
         for (final String mapName : plan.getPartitionStrategyCandidates().keySet()) {
             var perMapCandidates = plan.getPartitionStrategyCandidates().get(mapName);
-            final var container = getMapContainer(hazelcastInstance.getMap(mapName));
-            final PartitioningStrategy<?> strategy = container.getPartitioningStrategy();
+            final PartitioningStrategy<?> strategy = ((MapProxyImpl) hazelcastInstance.getMap(mapName))
+                    .getPartitionStrategy();
 
             // We only support Default and Attribute strategies, even if one of the maps uses non-Default/Attribute
             // strategy, we should abort the process and clear list of already populated partitions so that partition
@@ -558,7 +558,7 @@ public class PlanExecutor {
                 }
 
                 final Partition partition = hazelcastInstance.getPartitionService().getPartition(
-                        StrategyUtil.constructKey(partitionKeyComponents)
+                        PartitioningStrategyUtil.constructAttributeBasedKey(partitionKeyComponents)
                 );
                 if (partition == null) {
                     // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to

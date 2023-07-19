@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.PartitioningStrategy;
@@ -54,7 +55,7 @@ public final class AttributePartitioningStrategy implements PartitioningStrategy
             throw new HazelcastException("Cannot extract attributes from the key");
         }
 
-        return StrategyUtil.constructKey(result);
+        return PartitioningStrategyUtil.constructAttributeBasedKey(result);
     }
 
     @Nonnull

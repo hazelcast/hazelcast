@@ -24,11 +24,12 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import static java.util.Collections.emptyList;
 
 public class PartitionedMapTable extends AbstractMapTable {
 
@@ -86,14 +87,14 @@ public class PartitionedMapTable extends AbstractMapTable {
                 getKeyJetMetadata(),
                 getValueJetMetadata(),
                 getIndexes(),
-                isHd()
-        );
+                isHd(),
+                partitioningAttributes());
     }
 
     public List<MapTableIndex> getIndexes() {
         checkException();
 
-        return indexes != null ? indexes : Collections.emptyList();
+        return indexes != null ? indexes : emptyList();
     }
 
     public boolean isHd() {
@@ -124,8 +125,15 @@ public class PartitionedMapTable extends AbstractMapTable {
         return valueFields().map(TableField::getType).toArray(QueryDataType[]::new);
     }
 
+    /**
+     * Returns list of Partitioning Attribute names if the corresponding map uses AttributePartitioningStrategy,
+     * otherwise returns an empty list. Note that attribute names are not the same as column names as key fields
+     * can be renamed during Mapping creation.
+     *
+     * @return list of partitioning attribute names or empty list.
+     */
     public List<String> partitioningAttributes() {
-        return partitioningAttributes;
+        return partitioningAttributes != null ? partitioningAttributes : emptyList();
     }
 
     static class PartitionedMapPlanObjectKey implements PlanObjectKey {
@@ -141,6 +149,7 @@ public class PartitionedMapTable extends AbstractMapTable {
         private final List<MapTableIndex> indexes;
         private final boolean hd;
         private final Set<String> conflictingSchemas;
+        private final List<String> partitioningAttributes;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         PartitionedMapPlanObjectKey(
@@ -154,8 +163,8 @@ public class PartitionedMapTable extends AbstractMapTable {
                 Object keyJetMetadata,
                 Object valueJetMetadata,
                 List<MapTableIndex> indexes,
-                boolean hd
-        ) {
+                boolean hd,
+                final List<String> partitioningAttributes) {
             this.schemaName = schemaName;
             this.tableName = tableName;
             this.mapName = mapName;
@@ -167,6 +176,7 @@ public class PartitionedMapTable extends AbstractMapTable {
             this.indexes = indexes;
             this.hd = hd;
             this.conflictingSchemas = conflictingSchemas;
+            this.partitioningAttributes = partitioningAttributes;
         }
 
         @Override
@@ -192,7 +202,8 @@ public class PartitionedMapTable extends AbstractMapTable {
                     && Objects.equals(keyJetMetadata, that.keyJetMetadata)
                     && Objects.equals(valueJetMetadata, that.valueJetMetadata)
                     && indexes.equals(that.indexes)
-                    && conflictingSchemas.equals(that.conflictingSchemas);
+                    && conflictingSchemas.equals(that.conflictingSchemas)
+                    && partitioningAttributes.equals(that.partitioningAttributes);
         }
 
         @Override
@@ -208,6 +219,7 @@ public class PartitionedMapTable extends AbstractMapTable {
             result = 31 * result + indexes.hashCode();
             result = 31 * result + (hd ? 1 : 0);
             result = 31 * result + conflictingSchemas.hashCode();
+            result = 31 * result + partitioningAttributes.hashCode();
             return result;
         }
     }
