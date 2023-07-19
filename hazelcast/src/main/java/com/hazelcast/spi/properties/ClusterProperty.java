@@ -1917,7 +1917,7 @@ public final class ClusterProperty {
      * have a plan for handling these scenarios (such as using Management Centre to configure
      * evictions manually) before enabling this property and changing between active clusters.
      *
-     * @since 5.4
+     * @since 5.3.2
      */
     public static final HazelcastProperty WAN_REPLICATE_ICACHE_EVICTIONS
             = new HazelcastProperty("hazelcast.wan.replicate.icache.evictions", false);
