@@ -179,6 +179,16 @@ public class GlobalPerIndexStats implements PerIndexStats {
     }
 
     @Override
+    public void updateMemoryCost(long delta) {
+        // no-op
+    }
+
+    @Override
+    public void resetMemoryCost() {
+        // no-op
+    }
+
+    @Override
     public void onInsert(long timestampNanos, IndexOperationStats operationStats, Index.OperationSource operationSource) {
         if (operationStats.getEntryCountDelta() == 0) {
             // no entries were inserted

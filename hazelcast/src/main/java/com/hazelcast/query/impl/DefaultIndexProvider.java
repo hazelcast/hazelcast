@@ -26,6 +26,8 @@ import com.hazelcast.query.impl.getters.Extractors;
  * Provides on-heap indexes.
  */
 public class DefaultIndexProvider implements IndexProvider {
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
     @Override
     public InternalIndex createIndex(
             Node node,
@@ -35,6 +37,7 @@ public class DefaultIndexProvider implements IndexProvider {
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
             int partitionCount,
+            int partitionId,
             String mapName) {
         return new IndexImpl(node, config, ss, extractors, copyBehavior, stats, partitionCount, mapName);
     }

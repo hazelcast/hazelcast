@@ -104,9 +104,10 @@ public class PartitionContainer {
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getEvictionConfig()));
         keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
         keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
+        int partitionId = getPartitionId();
 
         if (!mapContainer.isGlobalIndexEnabled()) {
-            Indexes indexesForMap = mapContainer.createIndexes(false);
+            Indexes indexesForMap = mapContainer.createIndexes(false, partitionId);
             indexes.putIfAbsent(name, indexesForMap);
         }
         RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
@@ -274,8 +275,9 @@ public class PartitionContainer {
             if (mapContainer.isGlobalIndexEnabled()) {
                 throw new IllegalStateException("Can't use a partitioned-index in the context of a global-index.");
             }
+            int partitionId = getPartitionId();
 
-            Indexes indexesForMap = mapContainer.createIndexes(false);
+            Indexes indexesForMap = mapContainer.createIndexes(false, partitionId);
             ixs = indexes.putIfAbsent(name, indexesForMap);
             if (ixs == null) {
                 ixs = indexesForMap;

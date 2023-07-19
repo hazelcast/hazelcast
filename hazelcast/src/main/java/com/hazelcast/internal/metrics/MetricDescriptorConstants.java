@@ -621,6 +621,8 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MAX = "tstore.hlog.paging.frequency.max";
 
     public static final String TSTORE_HLOG_COMPACTION_PREFIX = "tstore.hlog.compaction.";
+
+    public static final String TSTORE_INDEX_HLOG_COMPACTION_PREFIX = "tstore.hlog.compaction.index.";
     public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX
             + "dummyRecords.count";
     public static final String TSTORE_HLOG_COMPACTION_DUMMY_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
@@ -642,6 +644,8 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_COMPACTION_VISITED_RECORDS_SIZE = TSTORE_HLOG_COMPACTION_PREFIX
             + "visitedRecords.size";
     public static final String TSTORE_HLOG_COMPACTION_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "count";
+
+    public static final String TSTORE_INDEX_HLOG_COMPACTION_COUNT = TSTORE_INDEX_HLOG_COMPACTION_PREFIX + "index.count";
     public static final String TSTORE_HLOG_COMPACTION_QUEUE_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "queue.count";
     public static final String TSTORE_HLOG_COMPACTION_FAILED_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "failed.count";
     public static final String TSTORE_HLOG_COMPACTION_IN_PROGRESS_COUNT = TSTORE_HLOG_COMPACTION_PREFIX + "inProgress.count";

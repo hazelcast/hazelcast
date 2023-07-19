@@ -84,11 +84,13 @@ public class PartitionPerIndexStats implements PerIndexStats {
         this.creationTime = Clock.currentTimeMillis();
     }
 
-    private void updateMemoryCost(long delta) {
+    @Override
+    public void updateMemoryCost(long delta) {
         MEMORY_COST.lazySet(this, memoryCost + delta);
     }
 
-    private void resetMemoryCost() {
+    @Override
+    public void resetMemoryCost() {
         MEMORY_COST.lazySet(PartitionPerIndexStats.this, 0);
     }
 

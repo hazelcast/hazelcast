@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.map.impl.recordstore.StepAwareStorage;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
 /**
@@ -112,4 +113,13 @@ public interface InternalIndex extends Index {
      * @return {@code true} if the stamp is still valid, {@code false} otherwise
      */
     boolean validatePartitionStamp(long stamp);
+
+    /**
+     * @return Step-aware storage that backs the Index.
+     * By default returns {@code null} that indicates the
+     * backed storage is not Step-aware.
+     */
+    default StepAwareStorage getStepAwareStorage() {
+        return null;
+    }
 }
