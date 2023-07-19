@@ -57,9 +57,6 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.T
  */
 public class CompactStreamSerializer implements StreamSerializer<Object> {
 
-    private static final CompactSerializableRegistration GENERIC_RECORD_REGISTRATION
-            = new CompactSerializableRegistration(null, null, null);
-
     private final Map<Class, CompactSerializableRegistration> classToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<String, CompactSerializableRegistration> typeNameToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<Class, Schema> classToSchemaMap = new ConcurrentHashMap<>();
@@ -182,7 +179,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         Schema schema = getOrReadSchema(input, schemaIncludedInBinary);
         CompactSerializableRegistration registration = getOrCreateRegistration(schema.getTypeName());
 
-        if (registration == GENERIC_RECORD_REGISTRATION) {
+        if (registration == CompactSerializableRegistration.GENERIC_RECORD_REGISTRATION) {
             // We have tried to load class via class loader, it did not work.
             // We are returning a GenericRecord.
             return readGenericRecord(input, schema, schemaIncludedInBinary);
@@ -239,7 +236,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                 // should read instances of this typeName as GenericRecords,
                 // instead of trying to load a class with that name over
                 // and over.
-                return GENERIC_RECORD_REGISTRATION;
+                return CompactSerializableRegistration.GENERIC_RECORD_REGISTRATION;
             }
 
             return getOrCreateRegistration(clazz);
