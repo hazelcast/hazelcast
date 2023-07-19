@@ -40,8 +40,7 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class MemberSelectorsTest {
 
-    @Mock
-    private Member member = mock(Member.class);
+    private final Member member = mock(Member.class);
 
     @Test
     public void testLiteMemberSelector() {

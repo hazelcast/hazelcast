@@ -70,8 +70,7 @@ public class DiscoveryJoinerTest {
     @Parameterized.Parameter
     public boolean discoveryBehaviourFallbackEnabled;
 
-    @Mock
-    private DiscoveryService service = mock(DiscoveryService.class);
+    private final DiscoveryService service = mock(DiscoveryService.class);
 
     private List<DiscoveryNode> discoveryNodes;
     private TestHazelcastInstanceFactory factory;

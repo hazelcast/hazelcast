@@ -59,18 +59,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SuppressWarnings("ConstantConditions")
 public class SecondsBasedEntryTaskSchedulerTest {
 
-    @Mock
-    private TaskScheduler taskScheduler = mock(TaskScheduler.class);
+    private final TaskScheduler taskScheduler = mock(TaskScheduler.class);
 
-    @Mock
     @SuppressWarnings("unchecked")
-    private ScheduledEntryProcessor<String, String> entryProcessor = mock(ScheduledEntryProcessor.class);
+    private final ScheduledEntryProcessor<String, String> entryProcessor = mock(ScheduledEntryProcessor.class);
 
     private SecondsBasedEntryTaskScheduler<String, String> scheduler;
 
     @Before
     @SuppressWarnings("unchecked")
     public void mockScheduleMethod() {
+        // TODO: Mocking non-owned class
         when(taskScheduler.schedule(any(Runnable.class), anyLong(), any(TimeUnit.class)))
                 .thenReturn(mock(ScheduledFuture.class));
     }
@@ -215,6 +214,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
     @SuppressWarnings("unchecked")
     public void test_executeScheduledEntries_postpone() {
         ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+        // TODO: Mocking non-owned class
         when(taskScheduler.schedule(runnableCaptor.capture(), anyLong(), any(TimeUnit.class)))
                 .thenReturn(mock(ScheduledFuture.class));
 
@@ -243,6 +243,7 @@ public class SecondsBasedEntryTaskSchedulerTest {
     @SuppressWarnings("unchecked")
     public void test_executeScheduledEntries_foreach() {
         ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
+        // TODO: Mocking non-owned class
         when(taskScheduler.schedule(runnableCaptor.capture(), anyLong(), any(TimeUnit.class)))
                 .thenReturn(mock(ScheduledFuture.class));
 
