@@ -110,6 +110,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     private final DagBuildContextImpl dagBuildContext;
 
+    private Integer requiredRootPartitionId;
+
     public CreateTopLevelDagVisitor(
             NodeEngine nodeEngine,
             QueryParameterMetadata parameterMetadata,
@@ -198,7 +200,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onDelete(DeletePhysicalRel rel) {
-        // currently it's not possible to have a unbounded DELETE, but if we do, we'd need this calculation
+        // currently it's not possible to have an unbounded DELETE, but if we do, we'd need this calculation
         watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate(rel, MOCK_EEC);
 
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
@@ -685,6 +687,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         return objectKeys;
     }
 
+    @Nullable
+    public Integer requiredRootPartitionId() {
+        return requiredRootPartitionId;
+    }
+
     /**
      * Converts the {@code inputRel} into a {@code Vertex} by visiting it and
      * create an edge from the input vertex into {@code thisVertex}.
@@ -788,11 +795,12 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     }
 
     private Object findLocalPartitioningKey() {
-        int limit = 1000;
+        final int limit = 1000;
         for (int i = 0; i < limit; ++i) {
             Object key = i;
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (nodeEngine.getPartitionService().getPartition(partitionId).isLocal()) {
+                this.requiredRootPartitionId = partitionId;
                 return key;
             }
         }

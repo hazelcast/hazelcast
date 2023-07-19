@@ -33,17 +33,23 @@ class PartitionArrangement {
      */
     private final Map<Address, int[]> remotePartitionAssignment;
 
-    /** An array of [0, 1, 2, ... partitionCount-1] */
+    /**
+     * An array of partitions involved in Jet job.
+     * By default, it is an array [0, 1, 2, ... partitionCount-1].
+     * It may be reduced if partition pruning was applied.
+     */
     private final int[] allPartitions;
 
-    /** Array of local partitions */
+    /**
+     * Array of local partitions
+     */
     private final int[] localPartitions;
 
     PartitionArrangement(Map<Address, int[]> partitionAssignment, Address thisAddress) {
         remotePartitionAssignment = new HashMap<>(partitionAssignment);
         localPartitions = remotePartitionAssignment.remove(thisAddress);
         allPartitions = partitionAssignment.values().stream()
-                .flatMapToInt(a -> Arrays.stream(a))
+                .flatMapToInt(Arrays::stream)
                 .sorted()
                 .toArray();
     }
@@ -60,7 +66,7 @@ class PartitionArrangement {
      * partition ID will be assigned. Repeating the invocation with the same
      * arguments will always yield the same result.
      *
-     * @param localParallelism    number of processor instances
+     * @param localParallelism  number of processor instances
      * @param isEdgeDistributed whether the edge is distributed
      * @return a 2D-array where the major index is the index of a processor and
      * the {@code int[]} at that index is the array of partition IDs assigned to
