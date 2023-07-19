@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.JoinNestedLoopPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.SortPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
@@ -123,6 +124,23 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         PhysicalRel root = optimizePhysical("SELECT * FROM m WHERE comp1 = 10", asList(BIGINT, BIGINT), table)
                 .getPhysical();
         assertPlan(root, plan(planRow(0, FullScanPhysicalRel.class)));
+
+        query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
+        Map<String, List<Map<String, RexNode>>> prunability = query.extractPrunability(root);
+        final RexLiteral expectedLiteral = HazelcastRexBuilder.INSTANCE.makeLiteral(10, REL_TYPE_BIGINT);
+        assertEquals(Map.of(MAP_NAME, singletonList(Map.of("comp1", expectedLiteral))), prunability);
+    }
+
+    @Test
+    public void test_sort() {
+        PhysicalRel root = optimizePhysical("SELECT * FROM m WHERE comp1 = 10 ORDER BY comp0",
+                asList(BIGINT, BIGINT), table)
+                .getPhysical();
+
+        assertPlan(root, plan(
+                planRow(0, SortPhysicalRel.class),
+                planRow(1, FullScanPhysicalRel.class)
+        ));
 
         query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
         Map<String, List<Map<String, RexNode>>> prunability = query.extractPrunability(root);
