@@ -19,6 +19,7 @@ package com.hazelcast.jet.cdc.mysql;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.archunit.ArchUnitRules;
+import com.hazelcast.test.archunit.ArchUnitTestSupport;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import org.junit.Test;
@@ -29,7 +30,7 @@ import static com.hazelcast.test.archunit.ModuleImportOptions.onlyCurrentModule;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(ParallelJVMTest.class)
-public class CdcMysqlSerializableTest {
+public class CdcMysqlSerializableTest extends ArchUnitTestSupport {
 
     @Test
     public void serializable_classes_should_have_valid_serialVersionUID() {

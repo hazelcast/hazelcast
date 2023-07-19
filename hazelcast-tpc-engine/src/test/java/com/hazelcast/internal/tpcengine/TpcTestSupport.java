@@ -41,6 +41,12 @@ public class TpcTestSupport {
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 30;
 
+    public static void assumeNotWindows() {
+        String property = System.getProperty("os.name");
+        boolean windowsOS = property.toLowerCase().startsWith("win");
+        assumeFalse("Skipping on Windows", windowsOS);
+    }
+
     public static void assertCompletesEventually(final Future future) {
         assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
     }

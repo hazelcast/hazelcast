@@ -43,11 +43,9 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newRaftMember;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.lessThan;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * Represents a local single Raft group, provides methods to access specific nodes, to terminate nodes,
@@ -498,8 +496,8 @@ public class LocalRaftGroup {
      * Split nodes with these indexes from rest of the cluster.
      */
     public void split(int... indexes) {
-        assertThat(indexes.length, greaterThan(0));
-        assertThat(indexes.length, lessThan(size()));
+        assertThat(indexes.length).isGreaterThan(0);
+        assertThat(indexes.length).isLessThan(size());
         Arrays.sort(indexes);
 
         int runningMemberCount = 0;

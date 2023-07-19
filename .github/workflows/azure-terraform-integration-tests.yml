@@ -33,11 +33,12 @@ jobs:
       )
     steps:
       - name: Setup JDK
-        uses: actions/setup-java@v2.1.0
+        uses: actions/setup-java@v3
         with:
           java-version: 11
           architecture: x64
           distribution: adopt
+          cache: 'maven'
 
       - name: Decide which ref to checkout
         id: decide-ref
@@ -49,17 +50,9 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v3.3.0
+        uses: actions/checkout@v3
         with:
           ref: ${{steps.decide-ref.outputs.ref}}
-
-      - name: Setup Local Maven Cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
 
       - name: Build hazelcast jar
         run: |
@@ -75,7 +68,6 @@ jobs:
           -Drat.skip=true \
           -Dspotless.check.skip=true \
           -Dattribution.skip \
-          -Danimal.sniffer.skip=true \
           -Dmaven.source.skip=true
           echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
           cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar

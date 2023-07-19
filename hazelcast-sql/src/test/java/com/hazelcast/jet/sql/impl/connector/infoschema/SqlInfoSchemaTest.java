@@ -111,7 +111,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     @Test
     public void test_dataConnections() {
         // given
-        String type = "DUMMY";
+        String type = "dummy";
         // create config-originated data connection
         getNodeEngineImpl(instance()).getDataConnectionService().createConfigDataConnection(
                 new DataConnectionConfig()

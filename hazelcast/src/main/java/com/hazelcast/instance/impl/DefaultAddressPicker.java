@@ -31,6 +31,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -214,8 +215,7 @@ class DefaultAddressPicker
         }
 
         if (interfacesConfig.isEnabled()) {
-            String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
-                    + "Interface matching must be either disabled or updated in the hazelcast.xml config file.";
+            String msg = errorMsgForNoMatchingInterface();
             logger.severe(msg);
             throw new RuntimeException(msg);
         }
@@ -223,6 +223,15 @@ class DefaultAddressPicker
             logger.warning("Could not find a matching address to start with! Picking one of non-loopback addresses.");
         }
         return pickMatchingAddress(null);
+    }
+
+    private String errorMsgForNoMatchingInterface() {
+        File file = config.getConfigurationFile();
+        String configSource = file != null && file.exists() && file.isFile()
+                ? "the " + file.getName() + " config file." : "the member configuration.";
+        String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
+                + "Interface matching must be either disabled or updated in " + configSource;
+        return msg;
     }
 
     private List<InterfaceDefinition> getInterfaces() {
@@ -323,7 +332,10 @@ class DefaultAddressPicker
         }
         if (address != null) {
             address = address.trim();
-            if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
+            if (address.isEmpty()) {
+                throw new IllegalArgumentException("Public address cannot be blank. Configure it to a"
+                        + " non-blank value or remove it from configuration.");
+            } else if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress(address, port);
             } else {
                 // allow port to be defined in same string in the form of <host>:<port>, e.g. 10.0.0.0:1234

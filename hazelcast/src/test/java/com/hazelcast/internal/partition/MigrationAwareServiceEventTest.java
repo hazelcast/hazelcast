@@ -32,7 +32,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,8 +43,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.Accessors.getNode;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -105,7 +104,7 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
         }
         waitAllForSafeState(hz);
 
-        assertThat(responseHandler.failures, Matchers.empty());
+        assertThat(responseHandler.failures).isEmpty();
     }
 
     private Config newConfig(FailingOperationResponseHandler responseHandler) {

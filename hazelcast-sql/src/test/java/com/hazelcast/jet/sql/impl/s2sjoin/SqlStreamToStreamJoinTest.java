@@ -608,6 +608,24 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_joinWithoutViewsAndSubqueries() {
+        TestStreamSqlConnector.create(
+                sqlService,
+                "stream1",
+                singletonList("a"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(42L)));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " +
+                        "TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS)) s1 " +
+                        "INNER JOIN " +
+                        "TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS)) s2 " +
+                        "ON s1.a=s2.a",
+                singletonList(new Row(timestampTz(42L), timestampTz(42L))));
+    }
+
+    @Test
     public void test_joinWithUsingClause() {
         TestStreamSqlConnector.create(
                 sqlService,
@@ -630,5 +648,58 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         assertThatThrownBy(() ->
                 sqlService.execute("SELECT 1 from TABLE(GENERATE_STREAM(1)) JOIN TABLE(GENERATE_STREAM(3)) on 1=1;"))
                 .hasMessageContaining("For stream-to-stream join, both joined sides must have an order imposed");
+    }
+
+    @Test
+    public void test_joinWithImplicitCastsInJoinCondition() {
+        String stream = "stream1";
+        TestStreamSqlConnector.create(
+                sqlService,
+                stream,
+                singletonList("a"),
+                singletonList(INTEGER),
+                row(0));
+
+        String stream2 = "stream2";
+        TestStreamSqlConnector.create(
+                sqlService,
+                stream2,
+                singletonList("b"),
+                singletonList(INTEGER),
+                row(0));
+
+        sqlService.execute("CREATE VIEW s1 AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), 1))");
+        sqlService.execute("CREATE VIEW s2 AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), 1))");
+
+        assertTipOfStream(
+                "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + 1",
+                singletonList(new Row(0, 0)));
+    }
+
+    @Test
+    public void test_joinWithUnsupportedCastsInJoinCondition() {
+        String stream = "stream1";
+        TestStreamSqlConnector.create(
+                sqlService,
+                stream,
+                singletonList("a"),
+                singletonList(INTEGER),
+                row(0));
+
+        String stream2 = "stream2";
+        TestStreamSqlConnector.create(
+                sqlService,
+                stream2,
+                singletonList("b"),
+                singletonList(INTEGER),
+                row(0));
+
+        sqlService.execute("CREATE VIEW s1 AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), 1))");
+        sqlService.execute("CREATE VIEW s2 AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), 1))");
+
+        assertThatThrownBy(() ->
+                sqlService.execute("SELECT * FROM s1 JOIN s2 ON s2.b " +
+                        "BETWEEN s1.a AND CAST(CAST(s1.a as VARCHAR) AS TIMESTAMP) + INTERVAL '10' SECONDS"))
+                .hasMessageContaining("A stream-to-stream join must have a join condition constraining");
     }
 }

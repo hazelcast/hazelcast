@@ -88,7 +88,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -96,7 +95,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -134,8 +133,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Before
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
-        Config config = getConfig();
-        instances = factory.newInstances(config);
+        instances = factory.newInstances(getConfig());
     }
 
     @Override
@@ -163,7 +161,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    @SuppressWarnings("UnnecessaryBoxing")
+    @SuppressWarnings({"UnnecessaryBoxing", "CachedNumberConstructorCall"})
     public void testBoxedPrimitives() {
         IMap<String, Object> map = getInstance().getMap("testPrimitives");
 
@@ -812,7 +810,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("OverwrittenKey")
     public void testEntryView() {
-        assumeThat(perEntryStatsEnabled, is(true));
+        assumeThat(perEntryStatsEnabled).isTrue();
 
         HazelcastInstance instance = getInstance();
 
@@ -881,7 +879,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testEntryViewLastUpdateTimeSet_whenEntryIsExpirable() {
         // statisticsEnabled shouldn't change anything, no need to test same scenario twice
-        assumeThat(statisticsEnabled, is(false));
+        assumeThat(statisticsEnabled).isFalse();
 
         HazelcastInstance instance = getInstance();
         IMap<Integer, Integer> map = instance.getMap("testEntryViewLastUpdateTimeSet_whenEntryIsExpirable");
@@ -895,10 +893,10 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testEntryViewLastUpdateTimeSet_whenEntryIsNotExpirable_butPerEntryStatsEnabled() {
         // statisticsEnabled shouldn't change anything, no need to test same scenario twice
-        assumeThat(statisticsEnabled, is(false));
+        assumeThat(statisticsEnabled).isFalse();
 
         // test condition
-        assumeThat(perEntryStatsEnabled, is(true));
+        assumeThat(perEntryStatsEnabled).isTrue();
 
         HazelcastInstance instance = getInstance();
         IMap<Integer, Integer> map = instance.getMap(
@@ -913,10 +911,10 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testEntryViewLastUpdateTimeIsNotSet_whenEntryIsNotExpirable_andPerEntryStatsDisabled() {
         // statisticsEnabled shouldn't change anything, no need to test same scenario twice
-        assumeThat(statisticsEnabled, is(false));
+        assumeThat(statisticsEnabled).isFalse();
 
         // test condition
-        assumeThat(perEntryStatsEnabled, is(false));
+        assumeThat(perEntryStatsEnabled).isFalse();
 
         HazelcastInstance instance = getInstance();
         IMap<Integer, Integer> map = instance.getMap(

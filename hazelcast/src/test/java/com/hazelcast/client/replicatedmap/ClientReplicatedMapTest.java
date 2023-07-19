@@ -43,7 +43,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -67,7 +66,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.is;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -83,8 +82,8 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     @Parameter
     public InMemoryFormat inMemoryFormat;
 
-    private Config config = new Config();
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final Config config = new Config();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
@@ -540,7 +539,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance node = factory.newHazelcastInstance(config);
         HazelcastInstance client = factory.newHazelcastClient();
 
-        ReplicatedMap map = client.getReplicatedMap(mapName);
+        ReplicatedMap<Integer, Integer> map = client.getReplicatedMap(mapName);
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i, 100, TimeUnit.DAYS);
@@ -557,7 +556,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance node = factory.newHazelcastInstance(config);
         HazelcastInstance client = factory.newHazelcastClient();
 
-        ReplicatedMap map = client.getReplicatedMap(mapName);
+        ReplicatedMap<Integer, Integer> map = client.getReplicatedMap(mapName);
 
         for (int i = 0; i < 1000; i++) {
             map.put(i, i, 100, TimeUnit.DAYS);
@@ -573,7 +572,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     @Test
     public void no_key_value_deserialization_on_server_when_entry_is_removed() {
         // only run this test for BINARY replicated maps.
-        Assume.assumeThat(inMemoryFormat, is(BINARY));
+        assumeThat(inMemoryFormat).isEqualTo(BINARY);
 
         Config config = new Config();
         config.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);
@@ -598,7 +597,7 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
     @Test
     public void no_key_value_deserialization_on_server_when_entry_is_get() {
         // only run this test for BINARY replicated maps.
-        Assume.assumeThat(inMemoryFormat, is(BINARY));
+        assumeThat(inMemoryFormat).isEqualTo(BINARY);
 
         Config config = new Config();
         config.getReplicatedMapConfig("default").setInMemoryFormat(inMemoryFormat);

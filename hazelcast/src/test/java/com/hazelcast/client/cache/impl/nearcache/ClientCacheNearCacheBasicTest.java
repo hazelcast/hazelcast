@@ -41,9 +41,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.Matchers;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,6 +61,7 @@ import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -87,9 +86,9 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
 
     @Test
     public void putAsyncToCacheAndThenGetFromClientNearCacheImmediately() {
-        Assume.assumeThat("Tests behaviour specific to CACHE_ON_UPDATE policy",
-                nearCacheConfig.getLocalUpdatePolicy(),
-                Matchers.equalTo(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE));
+        assumeThat(nearCacheConfig.getLocalUpdatePolicy())
+                .as("Tests behaviour specific to CACHE_ON_UPDATE policy")
+                .isEqualTo(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE);
         // putAsync future is completed -> near cache contains the new value only with CACHE_ON_UPDATE policy
         NearCacheTestContext context = createContext(false);
 

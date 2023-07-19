@@ -20,6 +20,8 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ConnectorPermission;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonTimestamp;
@@ -36,6 +38,7 @@ import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.mongodb.impl.Mappers.bsonToDocument;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
+import static com.hazelcast.security.permission.ConnectorPermission.mongo;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class ReadMongoParams<I> implements Serializable {
@@ -189,5 +192,12 @@ public class ReadMongoParams<I> implements Serializable {
 
     public boolean isNonDistributed() {
         return nonDistributed;
+    }
+
+    public ConnectorPermission buildPermissions() {
+        return mongo(dataConnectionRef == null ? null : dataConnectionRef.getName(),
+                getDatabaseName(),
+                getCollectionName(),
+                ActionConstants.ACTION_READ);
     }
 }

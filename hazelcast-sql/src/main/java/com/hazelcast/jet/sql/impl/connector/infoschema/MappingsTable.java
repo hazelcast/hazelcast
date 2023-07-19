@@ -51,13 +51,15 @@ public class MappingsTable extends InfoSchemaTable {
     private final String mappingsSchema;
     private final Collection<Mapping> mappings;
     private final Function<String, String> dataConnectionTypeResolver;
+    private final boolean securityEnabled;
 
     public MappingsTable(
             String catalog,
             String schemaName,
             String mappingsSchema,
             Collection<Mapping> mappings,
-            Function<String, String> dataConnectionTypeResolver
+            Function<String, String> dataConnectionTypeResolver,
+            boolean securityEnabled
     ) {
         super(
                 FIELDS,
@@ -70,6 +72,7 @@ public class MappingsTable extends InfoSchemaTable {
         this.mappingsSchema = mappingsSchema;
         this.mappings = mappings;
         this.dataConnectionTypeResolver = dataConnectionTypeResolver;
+        this.securityEnabled = securityEnabled;
     }
 
     @Override
@@ -82,7 +85,7 @@ public class MappingsTable extends InfoSchemaTable {
                     mapping.name(),
                     quoteCompoundIdentifier(mapping.externalName()),
                     Optional.ofNullable(mapping.dataConnection()).map(dataConnectionTypeResolver).orElse(mapping.connectorType()),
-                    uncheckCall(() -> JsonUtil.toJson(mapping.options()))
+                    securityEnabled ? null : uncheckCall(() -> JsonUtil.toJson(mapping.options()))
             };
             rows.add(row);
         }

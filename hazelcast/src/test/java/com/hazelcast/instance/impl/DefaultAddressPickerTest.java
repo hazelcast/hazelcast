@@ -38,8 +38,10 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
+import java.io.File;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -60,6 +62,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -78,6 +81,8 @@ public class DefaultAddressPickerTest {
     public final OverridePropertyRule ruleSysPropPreferIpv4Stack = set(PREFER_IPV4_STACK, "false");
     @Rule
     public final OverridePropertyRule ruleSysPropPreferIpv6Addresses = clear(PREFER_IPV6_ADDRESSES);
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     private final ILogger logger = Logger.getLogger(AddressPicker.class);
     private final Config config = new Config();
@@ -290,12 +295,29 @@ public class DefaultAddressPickerTest {
         assertEquals(new Address(host, port), addressPicker.getPublicAddress(null));
     }
 
-    @Test(expected = UnknownHostException.class)
+
+    @Test
+    public void testPublicAddress_whenBlankViaProperty() throws Exception {
+        config.setProperty("hazelcast.local.publicAddress", " ");
+
+        addressPicker = new DefaultAddressPicker(config, logger);
+        assertThrows(IllegalArgumentException.class, () -> addressPicker.pickAddress());
+    }
+
+    @Test
     public void testPublicAddress_withInvalidAddress() throws Exception {
         config.getNetworkConfig().setPublicAddress("invalid");
 
         addressPicker = new DefaultAddressPicker(config, logger);
-        addressPicker.pickAddress();
+        assertThrows(UnknownHostException.class, () -> addressPicker.pickAddress());
+    }
+
+    @Test
+    public void testPublicAddress_withBlankAddress() throws Exception {
+        config.getNetworkConfig().setPublicAddress(" ");
+
+        addressPicker = new DefaultAddressPicker(config, logger);
+        assertThrows(IllegalArgumentException.class, () -> addressPicker.pickAddress());
     }
 
     @Test
@@ -364,6 +386,29 @@ public class DefaultAddressPickerTest {
         assertNotEquals(addressDefinition.hashCode(), addressDefinitionOtherInetAddress.hashCode());
     }
 
+    @Test
+    public void testNotMatchingInterface_forCustomConfigFile() throws Exception {
+        Config config = new Config();
+        File cfgFile = tempFolder.newFile("custom_file.xml");
+        config.setConfigurationFile(cfgFile);
+        config.getNetworkConfig().getInterfaces().setEnabled(true);
+        config.getNetworkConfig().getInterfaces().addInterface("123.456.789");
+        RuntimeException thrown =  assertThrows(RuntimeException.class,
+                () -> HazelcastInstanceFactory.newHazelcastInstance(config));
+        assertTrue(thrown.getMessage().contentEquals("Hazelcast CANNOT start on this node. No matching network interface found.\n"
+                + "Interface matching must be either disabled or updated in the custom_file.xml config file."));
+    }
+
+    @Test
+    public void testNotMatchingInterface_forNoConfigFile() throws Exception {
+        Config config = new Config();
+        config.getNetworkConfig().getInterfaces().setEnabled(true);
+        config.getNetworkConfig().getInterfaces().addInterface("123.456.789");
+        RuntimeException thrown =  assertThrows(RuntimeException.class,
+                () -> HazelcastInstanceFactory.newHazelcastInstance(config));
+        assertTrue(thrown.getMessage().contentEquals("Hazelcast CANNOT start on this node. No matching network interface found.\n"
+                + "Interface matching must be either disabled or updated in the member configuration."));
+    }
     private static InetAddress findAnyNonLoopbackInterface() {
         return findNonLoopbackInterface(false, false);
     }

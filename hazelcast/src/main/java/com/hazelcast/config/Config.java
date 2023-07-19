@@ -2733,11 +2733,13 @@ public class Config {
 
     /**
      * Adds the device configuration.
+     * Removes the default device config if present.
      *
      * @param deviceConfig device config
      * @return this config instance
      */
     public Config addDeviceConfig(DeviceConfig deviceConfig) {
+        deviceConfigs.remove(DEFAULT_DEVICE_NAME);
         deviceConfigs.put(deviceConfig.getName(), deviceConfig);
         return this;
     }
@@ -3122,6 +3124,7 @@ public class Config {
      */
     @Beta
     public Config setDataConnectionConfigs(Map<String, DataConnectionConfig> dataConnectionConfigs) {
+        dataConnectionConfigs.values().forEach(DataConnectionConfigValidator::validate);
         this.dataConnectionConfigs.clear();
         this.dataConnectionConfigs.putAll(dataConnectionConfigs);
         for (Entry<String, DataConnectionConfig> entry : dataConnectionConfigs.entrySet()) {
@@ -3152,6 +3155,7 @@ public class Config {
      */
     @Beta
     public Config addDataConnectionConfig(DataConnectionConfig dataConnectionConfig) {
+        DataConnectionConfigValidator.validate(dataConnectionConfig);
         dataConnectionConfigs.put(dataConnectionConfig.getName(), dataConnectionConfig);
         return this;
     }

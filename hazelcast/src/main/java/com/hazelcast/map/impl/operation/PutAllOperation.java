@@ -17,18 +17,16 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.PutAllOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -53,7 +51,7 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  */
 public class PutAllOperation extends MapOperation
         implements PartitionAwareOperation, BackupAwareOperation,
-        MutatingOperation, Versioned {
+        MutatingOperation {
 
     private transient int currentIndex;
     private MapEntries mapEntries;
@@ -261,20 +259,14 @@ public class PutAllOperation extends MapOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(mapEntries);
-        if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            out.writeBoolean(triggerMapLoader);
-        }
+        out.writeBoolean(triggerMapLoader);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mapEntries = in.readObject();
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
-            triggerMapLoader = in.readBoolean();
-        } else {
-            triggerMapLoader = true;
-        }
+        triggerMapLoader = in.readBoolean();
     }
 
     @Override
