@@ -78,7 +78,7 @@ enum AwsProperties {
     TAG_VALUE("tag-value", STRING, true),
 
     /**
-     * Sets the connect timeout in seconds.
+     * Sets the connection timeout in seconds.
      * <p>
      * Its default value is 10.
      */

@@ -73,6 +73,7 @@
         <maven.dependency.plugin.version>3.6.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
+        <maven.deploy.plugin.version>3.1.1</maven.deploy.plugin.version>
 
         <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.3.0</maven.checkstyle.plugin.version>
@@ -94,7 +95,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.493</aws.sdk.version>
+        <aws.sdk.version>1.12.505</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
         <classgraph.version>4.8.161</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
@@ -122,7 +123,7 @@
         <parquet.version>1.13.1</parquet.version>
         <picocli.version>4.7.4</picocli.version>
         <postgresql.version>42.6.0</postgresql.version>
-        <prometheus.version>0.18.0</prometheus.version>
+        <prometheus.version>0.19.0</prometheus.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
@@ -768,6 +769,11 @@
                             <exclusionPattern>inside edge crossings that are between</exclusionPattern>
                         </exclusionPatterns>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven.deploy.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1853,7 +1859,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.35.0</version>
+                <version>3.36.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
