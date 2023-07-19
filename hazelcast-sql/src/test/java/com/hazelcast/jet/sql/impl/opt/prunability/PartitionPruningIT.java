@@ -110,7 +110,7 @@ public class PartitionPruningIT extends SqlTestSupport {
 
     @Test
     public void test_simpleKeyPrunedOrderBy() {
-        assertRowsAnyOrder("SELECT this FROM test1 WHERE __key = ? AND this = 'v1'  order by __key", List.of(1), rows(1, "v1"));
+        assertRowsAnyOrder("SELECT this FROM test2 WHERE comp1 = 1 AND comp2 = ? ORDER BY comp2", List.of(1), rows(1, "v1"));
     }
 
     @Test

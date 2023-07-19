@@ -109,6 +109,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     private final DagBuildContextImpl dagBuildContext;
 
     private Integer requiredRootPartitionId;
+    private Object coordinatorPartitioningKey;
 
     public CreateTopLevelDagVisitor(
             NodeEngine nodeEngine,
@@ -123,6 +124,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         this.objectKeys.addAll(usedViews);
 
         dagBuildContext = new DagBuildContextImpl(nodeEngine, getDag(), parameterMetadata);
+        findLocalPartitioningKey();
     }
 
     @Override
@@ -313,7 +315,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Edge edge = between(sortVertex, combineVertex)
                 .ordered(comparator)
                 .distributeTo(localMemberAddress)
-                .allToOne("");
+                .allToOne(coordinatorPartitioningKey);
         dag.edge(edge);
 
         return combineVertex;
@@ -330,7 +332,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         localMemberAddress
                 )
         );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+        connectInput(rel.getInput(), vertex, edge ->
+                edge.distributeTo(localMemberAddress).allToOne(coordinatorPartitioningKey));
         return vertex;
     }
 
@@ -357,7 +360,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         localMemberAddress
                 )
         );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+        connectInput(rel.getInput(), vertex, edge ->
+                edge.distributeTo(localMemberAddress).allToOne(coordinatorPartitioningKey));
         return vertex;
     }
 
@@ -453,7 +457,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             aggregateOperation,
                             resultMapping,
                             watermarkKey));
-            connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+            connectInput(rel.getInput(), vertex, edge ->
+                    edge.distributeTo(localMemberAddress).allToOne(coordinatorPartitioningKey));
             return vertex;
         } else {
             assert rel.numStages() == 2;
@@ -637,7 +642,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
         // allToOne with any key, it goes to a single processor on a single member anyway.
         connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress)
-                .allToOne(findLocalPartitioningKey()));
+                .allToOne(coordinatorPartitioningKey));
         return vertex;
     }
 
@@ -789,17 +794,17 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         }
     }
 
-    private Object findLocalPartitioningKey() {
+    private void findLocalPartitioningKey() {
         final int limit = 1000;
         for (int i = 0; i < limit; ++i) {
             Object key = i;
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (nodeEngine.getPartitionService().getPartition(partitionId).isLocal()) {
+                this.coordinatorPartitioningKey = key;
                 this.requiredRootPartitionId = partitionId;
-                return key;
+                return;
             }
         }
         assert false : "Could not find a local partitioning key in " + limit + " tries";
-        return null;
     }
 }
