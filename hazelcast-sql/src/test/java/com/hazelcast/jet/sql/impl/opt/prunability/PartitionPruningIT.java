@@ -19,8 +19,10 @@ package com.hazelcast.jet.sql.impl.opt.prunability;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,6 +32,9 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+
+import static java.util.Collections.singletonList;
 
 /**
  * In the future this test will perform full cycle of testing, verifying that only desired nodes are participating in
@@ -117,6 +122,72 @@ public class PartitionPruningIT extends SqlTestSupport {
     @Test
     public void test_renamingKeyNotPruned() {
         assertRowsAnyOrder("SELECT this FROM hazelcast.public.test3 WHERE c2 = 1 AND c3 = 1", rows(1, "hello"));
+    }
+
+    @Test
+    public void test_partitionAwareKeyNonMappedShouldNotBePruned() {
+        instance().getSql().execute("CREATE MAPPING test4 TYPE IMap OPTIONS ("
+                + "'valueFormat'='varchar', "
+                + "'keyFormat'='java', "
+                + "'keyJavaClass'='" + PAKey.class.getName() + "')");
+
+        instance().getMap("test4").put(new PAKey(1L, "1"), "v1");
+
+        assertRowsAnyOrder("SELECT this FROM test4 WHERE __key = ? AND this = 'v1'", singletonList(new PAKey(1L, "1")), rows(1, "v1"));
+    }
+
+    @Test
+    public void test_partitionAwareKeyMappedShouldNotBePruned() {
+        instance().getSql().execute("CREATE MAPPING test5 ("
+                + "id BIGINT EXTERNAL NAME \"__key.id\", "
+                + "name VARCHAR EXTERNAL NAME \"__key.name\", "
+                + "this VARCHAR"
+                + ") TYPE IMap OPTIONS ("
+                + "'valueFormat'='varchar', "
+                + "'keyFormat'='java', "
+                + "'keyJavaClass'='" + PAKey.class.getName() + "')");
+        instance().getMap("test5").put(new PAKey(1L, "1"), "v1");
+
+        assertRowsAnyOrder("SELECT this FROM test5 WHERE id = 1 AND name = '1' AND this = 'v1'", rows(1, "v1"));
+    }
+
+    public static class PAKey implements Serializable, PartitionAware<String>, Comparable<PAKey> {
+        public Long id;
+        public String name;
+
+        public PAKey() { }
+
+        public PAKey(final Long id, final String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        @Override
+        public String getPartitionKey() {
+            return "hello";
+        }
+
+        @Override
+        public int compareTo(@NotNull final PAKey o) {
+            return hashCode() - o.hashCode();
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final PAKey paKey = (PAKey) o;
+            return Objects.equals(id, paKey.id) && Objects.equals(name, paKey.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id, name);
+        }
     }
 
     public static class KeyObj implements Serializable {
