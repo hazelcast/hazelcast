@@ -151,6 +151,9 @@ Each inner list of expressions contains comparison expressions, and may be **sin
 strategy key is **simple**, and **multi-element**, if the partitioning strategy key is **composite**.  
 If we have more than one prunable filter predicate, outer list will be multi-element. 
 
+With such design there is a case, when same IMap is used for multiple scans. Self-join and self-union queries are pretty
+uncommon cases, so we can sacrifice precision for simplicity in that case. 
+
 **Currently, it is implemented only for IMap connector, where all expressions are supported.**
 
 For better imagination we prepared an example below.
