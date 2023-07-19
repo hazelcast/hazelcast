@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastReaders.LocalMapReaderFunction;
@@ -27,7 +28,6 @@ import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorMetaSuppli
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorSupplier;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.Reader;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.strategy.StrategyUtil;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -51,8 +51,8 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
  */
 public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFuture, B, R>
         extends LocalProcessorMetaSupplier<F, B, R> {
+    transient int[] partitionsToScan;
     private final List<List<Expression<?>>> requiredPartitionsExprs;
-    private transient int[] partitionsToScan;
     private transient Map<Address, int[]> partitionAssignment;
 
     private SpecificPartitionsImapReaderPms(
@@ -80,7 +80,7 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
                 }
 
                 final Partition partition = hazelcastInstance.getPartitionService().getPartition(
-                        StrategyUtil.constructKey(partitionKeyComponents)
+                        PartitioningStrategyUtil.constructAttributeBasedKey(partitionKeyComponents)
                 );
                 if (partition == null) {
                     // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to

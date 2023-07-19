@@ -31,6 +31,7 @@ import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -120,7 +121,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
                 List.of(ConstantExpression.create(pKey, QueryDataType.INT))
         ));
 
-        // When & Then
+        // When
         // Note: processor verification support is bounded to one member only,
         //  so it is applicable to this.
         TestSupport.verifyProcessor(adaptSupplier(pms))
@@ -129,5 +130,9 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectExactOutput(out(entry(pKey, pKey)));
+
+        // Then
+        Assert.assertEquals(1, ((SpecificPartitionsImapReaderPms) pms).partitionsToScan.length);
+        Assert.assertEquals(keyOwnerPartitionId, ((SpecificPartitionsImapReaderPms) pms).partitionsToScan[0]);
     }
 }
