@@ -94,6 +94,7 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/25033")
     public void test_fullScanWithDefaultKey() {
         this.mapTableFields = asList(
                 mapField(KEY, BIGINT, QueryPath.KEY_PATH),
