@@ -56,7 +56,6 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.T
  * </ul>
  */
 public class CompactStreamSerializer implements StreamSerializer<Object> {
-
     private final Map<Class, CompactSerializableRegistration> classToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<String, CompactSerializableRegistration> typeNameToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<Class, Schema> classToSchemaMap = new ConcurrentHashMap<>();
