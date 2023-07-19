@@ -99,6 +99,9 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
     @Override
     public void submit(BlockRequest req) {
         if (concurrent < concurrentLimit) {
+            // The request should not immediately be offered to
+            // io_uring; only when there is a scheduler tick, the
+            // request should be flushed.
             offer((IOUringBlockRequest) req);
         } else if (!waitQueue.offer((IOUringBlockRequest) req)) {
             throw new IllegalStateException("Too many concurrent IOs");
@@ -137,13 +140,11 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
 
         void writeSqe(int sqIndex, long userdata) {
             long sqeAddr = sq.sqesAddr + sqIndex * SIZEOF_SQE;
-
             byte sqe_opcode;
             int sqe_fd = 0;
             long sqe_addr = 0;
-            long sqe_off = 0;
-            int sqe_len = 0;
             int sqe_rw_flags = 0;
+            int sqe_len = 0;
             switch (opcode) {
                 case BLK_REQ_OP_NOP:
                     sqe_opcode = IORING_OP_NOP;
@@ -158,7 +159,6 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                     sqe_opcode = IORING_OP_WRITE;
                     sqe_fd = file.fd;
                     sqe_addr = buffer.address();
-                    sqe_off = this.offset;
                     sqe_len = length;
                     break;
                 case BLK_REQ_OP_FSYNC:
@@ -168,14 +168,15 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                 case BLK_REQ_OP_FDATASYNC:
                     sqe_opcode = IORING_OP_FSYNC;
                     sqe_fd = file.fd;
+                    // todo: //            request.opcode = IORING_OP_FSYNC;
+                    ////            // The IOURING_FSYNC_DATASYNC maps to the same position as the rw-flags
+                    ////            request.rwFlags = IORING_FSYNC_DATASYNC;
                     sqe_rw_flags = IORING_FSYNC_DATASYNC;
                     break;
                 case BLK_REQ_OP_OPEN:
                     sqe_opcode = IORING_OP_OPENAT;
                     buffer = pathAsIOBuffer();
-                    sqe_fd = file.fd;
                     sqe_addr = buffer.address();
-                    // at the position of the length field, the permissions are stored.
                     sqe_len = permissions;
                     sqe_rw_flags = flags;
                     break;
@@ -185,19 +186,19 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                     break;
                 case BLK_REQ_OP_FALLOCATE:
                     sqe_opcode = IORING_OP_FALLOCATE;
-                    //todo:
                     break;
                 default:
-                    throw new IllegalStateException("Unknown request type: " + opcode);
+                    throw new RuntimeException("Unknown opcode: " + opcode + " this=" + this);
             }
 
             UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, sqe_opcode);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, sqe_fd);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_addr);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, sqe_off);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, sqe_len);
             UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
             UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, sqe_fd);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, offset);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_addr);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, sqe_len);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, sqe_rw_flags);
             UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
         }
@@ -242,6 +243,7 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                         metrics.incFdatasyncs();
                         break;
                     case BLK_REQ_OP_OPEN:
+                        // this buffer is not passed from the outside, it is passed in the writeSqe function above.
                         buffer.release();
                         file.fd = res;
                         break;
