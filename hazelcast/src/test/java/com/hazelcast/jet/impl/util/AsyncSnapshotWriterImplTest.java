@@ -44,6 +44,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -87,6 +88,8 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
               .setEnabled(true)
               .setImplementation(new AlwaysFailingMapStore());
         config.getJetConfig().setEnabled(true);
+
+        Mockito.framework().clearInlineMocks();
 
         HazelcastInstance instance = createHazelcastInstance(config);
         nodeEngine = Util.getNodeEngine(instance);
