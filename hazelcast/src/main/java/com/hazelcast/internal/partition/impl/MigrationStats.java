@@ -105,7 +105,7 @@ public class MigrationStats {
     private void calculateElapsed(final AtomicLong elapsedTime, final AtomicLong totalElapsedTime) {
         // This is called from each migration thread, so calculate the wall-clock time, rather than summing each
         // individual threads execution time
-        final long newElapsed = TimeUnit.MILLISECONDS.toNanos(Clock.currentTimeMillis()) - lastRepartitionNanos.get();
+        final long newElapsed = System.nanoTime() - lastRepartitionNanos.get();
 
         final long oldElapsed = elapsedTime.getAndSet(newElapsed);
 
