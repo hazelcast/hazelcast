@@ -7,7 +7,6 @@ import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
 import java.util.Arrays;
-import java.util.Locale;
 
 import static com.hazelcast.CliUtils.getToolsVersion;
 import static com.hazelcast.CliUtils.printHelp;
@@ -18,7 +17,6 @@ import static com.hazelcast.file.StorageBenchmark.READWRITE_RANDREAD;
 import static com.hazelcast.file.StorageBenchmark.READWRITE_RANDWRITE;
 import static com.hazelcast.file.StorageBenchmark.READWRITE_READ;
 import static com.hazelcast.file.StorageBenchmark.READWRITE_WRITE;
-import static com.hazelcast.internal.tpcengine.ReactorType.IOURING;
 
 public class StorageBenchmarkCli {
     private final OptionParser parser = new OptionParser();
@@ -59,8 +57,10 @@ public class StorageBenchmarkCli {
             .withRequiredArg().ofType(String.class)
             .defaultsTo("60s");
 
-    private final OptionSpec<String> reactorTypeSpec = parser
-            .accepts("reactortype", "The type of reactor (either iouring or nio)")
+    private final OptionSpec<String> ioengineSpec = parser
+            .accepts("ioengine", "The type of ioengine (AKA reactortype). "
+                    + "Available options: iouring or nio. "
+                    + "The nio option can't be used with fio. ")
             .withRequiredArg().ofType(String.class)
             .defaultsTo("iouring");
 
@@ -116,7 +116,7 @@ public class StorageBenchmarkCli {
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = options.valueOf(directSpec);
         benchmark.spin = false;
-        benchmark.reactorType = ReactorType.fromString(options.valueOf(reactorTypeSpec));
+        benchmark.reactorType = ReactorType.fromString(options.valueOf(ioengineSpec));
         benchmark.fsync = 0;
         benchmark.fdatasync = 0;
         benchmark.run();
