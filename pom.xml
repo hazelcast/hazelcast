@@ -108,7 +108,7 @@
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jline.version>3.23.0</jline.version>
-        <jms.api.version>2.0.1</jms.api.version>
+        <jms.api.version>3.1.0</jms.api.version>
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
@@ -141,7 +141,7 @@
         <mongodb.version>4.10.2</mongodb.version>
 
         <!-- test dependencies -->
-        <activemq-artemis.version>2.11.0</activemq-artemis.version>
+        <activemq-artemis.version>2.28.0</activemq-artemis.version>
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.24.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
