@@ -48,6 +48,18 @@ public class NotifyMapFlushOperation extends MapOperation
     }
 
     @Override
+    protected void innerBeforeRun() throws Exception {
+        // No need registration for tstore
+        // This op has an empty runInternal
+    }
+
+    @Override
+    public void afterRunFinal() {
+        // No need registration for tstore
+        // This op has an empty runInternal
+    }
+
+    @Override
     protected void runInternal() {
         // NOP.
     }

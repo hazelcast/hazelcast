@@ -66,7 +66,7 @@ public class ReplicatedMapTtlTest extends ReplicatedMapAbstractTest {
                                 boolean causeMigration) {
         TimeUnit timeUnit = TimeUnit.MILLISECONDS;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance[] instances = factory.newInstances(null, nodeCount);
+        HazelcastInstance[] instances = factory.newInstances(() -> null, nodeCount);
         String mapName = randomMapName();
         List<ReplicatedMap<String, Object>> maps = createMapOnEachInstance(instances, mapName);
         ArrayList<Integer> keys = generateRandomIntegerList(keyCount);
