@@ -24,7 +24,7 @@ public class StorageBenchmarkCli {
     private final OptionParser parser = new OptionParser();
 
     private final OptionSpec<Integer> ioDepthSpec = parser
-            .accepts("iodepth", "The io depth. AKA: The concurrency per reactor.")
+            .accepts("iodepth", "The io depth. AKA: The number of concurrent file I/O operations per reactor.")
             .withRequiredArg().ofType(Integer.class)
             .defaultsTo(1);
 
