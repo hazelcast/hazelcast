@@ -21,7 +21,6 @@ import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.partition.MigrationState;
 
-import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -98,8 +97,7 @@ public class MigrationStats {
     private void calculateElapsed(final AtomicLong elapsedTime, final AtomicLong totalElapsedTime) {
         // This is called from each migration thread, so calculate the wall-clock time, rather than summing each
         // individual threads execution time
-        final long newElapsed =
-                Duration.ofMillis(Clock.currentTimeMillis()).minusMillis(lastRepartitionTime.get()).toNanos();
+        final long newElapsed = TimeUnit.MILLISECONDS.toNanos(Clock.currentTimeMillis() - lastRepartitionTime.get());
 
         final long oldElapsed = elapsedTime.getAndSet(newElapsed);
 
