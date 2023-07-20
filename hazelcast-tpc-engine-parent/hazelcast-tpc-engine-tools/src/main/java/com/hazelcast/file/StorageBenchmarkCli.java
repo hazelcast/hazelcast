@@ -64,6 +64,18 @@ public class StorageBenchmarkCli {
             .withRequiredArg().ofType(String.class)
             .defaultsTo("iouring");
 
+    private final OptionSpec<String> cpusAllowedSpec = parser
+            .accepts("cpus_allowed", "The cpu affinity")
+            .withRequiredArg().ofType(String.class)
+            .defaultsTo(null);
+
+    private final OptionSpec<String> cpusAllowedPolicySpec = parser
+            .accepts("cpus_allowed_policy", "If the cpus from the cpus_allowed are shared or split. "
+                    + "If you specify a cpus_allowed, you need to specify --cpus_allowed_policy=split"
+                    + "for fio compatibility. THe 'shared' option isn't supported.")
+            .withRequiredArg().ofType(String.class)
+            .defaultsTo("split");
+
     public static void main(String[] args) {
         StorageBenchmarkCli cli = new StorageBenchmarkCli();
         cli.run(args);
@@ -111,7 +123,15 @@ public class StorageBenchmarkCli {
             System.out.println("Runtime needs to end with 's'");
         }
 
-        String runtimeSec = runtime.substring(0, runtime.length() - 1);
+        if (options.has(cpusAllowedSpec)) {
+            if (!"split".equals(options.valueOf(cpusAllowedPolicySpec))) {
+                throw new RuntimeException("If you specify --cpus_allowed, you need to configure --cpus_allowed_policy=split. " +
+                        "This is needed for fio compatibility");
+            }
+            benchmark.affinity = options.valueOf(cpusAllowedSpec);
+        }
+
+        String runtimeSec = runtime.substring(0, runtime.length() - 1).trim();
         benchmark.runtimeSeconds = Integer.parseInt(runtimeSec);
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = options.valueOf(directSpec);
