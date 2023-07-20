@@ -138,7 +138,7 @@ public class StorageBenchmark {
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = true;
         benchmark.spin = false;
-        benchmark.reactorType = ReactorType.IOURING;
+        benchmark.reactorType = ReactorType.NIO;
         benchmark.fsync = 0;
         benchmark.fdatasync = 0;
         benchmark.run();

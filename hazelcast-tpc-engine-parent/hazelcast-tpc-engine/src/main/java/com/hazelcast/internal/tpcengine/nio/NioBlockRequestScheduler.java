@@ -31,6 +31,8 @@ import java.nio.channels.CompletionHandler;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -184,42 +186,40 @@ public class NioBlockRequestScheduler implements BlockRequestScheduler {
         }
     }
 
+    // todo: The opts list and array can be pooled to reduce litter.
     private OpenOption[] flagsToOpenOptions(int flags) {
         int p = (flags & 3);
         int supportedOpsExceptRW = (O_CREAT | O_TRUNC | O_DIRECT | O_SYNC);
         int len = Integer.bitCount(flags & supportedOpsExceptRW) + p == O_RDWR ? 2 : 1;
         // can be pooled
-        OpenOption[] opts = new OpenOption[len];
-        int i = 0;
+        List<OpenOption> opts = new ArrayList<OpenOption>();
 
         if (p == O_RDONLY) {
-            opts[i++] = StandardOpenOption.READ;
+            opts.add(StandardOpenOption.READ);
         } else if (p == O_WRONLY) {
-            opts[i++] = StandardOpenOption.WRITE;
+            opts.add(StandardOpenOption.WRITE);
         } else if (p == O_RDWR) {
-            opts[i++] = StandardOpenOption.READ;
-            opts[i++] = StandardOpenOption.WRITE;
+            opts.add(StandardOpenOption.READ);
+            opts.add(StandardOpenOption.WRITE);
         }
 
         if ((flags & O_CREAT) != 0) {
-            opts[i++] = StandardOpenOption.CREATE;
+            opts.add(StandardOpenOption.CREATE);
         }
 
         if ((flags & O_TRUNC) != 0) {
-            opts[i++] = StandardOpenOption.TRUNCATE_EXISTING;
+            opts.add(StandardOpenOption.TRUNCATE_EXISTING);
         }
 
         if ((flags & O_DIRECT) != 0) {
-            opts[i++] = ExtendedOpenOption.DIRECT;
+            opts.add(ExtendedOpenOption.DIRECT);
         }
 
         if ((flags & O_SYNC) != 0) {
-            opts[i++] = StandardOpenOption.SYNC;
+            opts.add(StandardOpenOption.SYNC);
         }
 
-        assert i == len;
-
-        return opts;
+        return opts.toArray(new OpenOption[0]);
     }
 
     void complete(NioBlockRequest req) {
