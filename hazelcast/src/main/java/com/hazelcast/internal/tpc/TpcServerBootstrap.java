@@ -27,7 +27,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.TaskQueueBuilder;
 import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.tpcengine.TpcEngineBuilder;
@@ -47,6 +46,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -148,20 +148,16 @@ public class TpcServerBootstrap {
         logger.info("Starting TpcServerBootstrap");
 
         TpcEngineBuilder tpcEngineBuilder = new TpcEngineBuilder();
-        // todo: Should be done based on the reactor type
-        ReactorType reactorType = ReactorType.NIO;
-        tpcEngineBuilder.setReactorBuilderFn(new Supplier<>() {
+        tpcEngineBuilder.setReactorBuilderConfigureFn(new Consumer<>() {
             private int threadIndex;
 
             @Override
-            public ReactorBuilder get() {
+            public void accept(ReactorBuilder builder) {
                 OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
                         .getOperationService()
                         .getOperationExecutor();
                 TpcPartitionOperationThread operationThread = (TpcPartitionOperationThread) operationExecutor
                         .getPartitionThreads()[threadIndex];
-
-                ReactorBuilder builder = ReactorBuilder.newReactorBuilder(reactorType);
 
                 builder.setThreadFactory(eventloopTask -> {
                     operationThread.setEventloopTask(eventloopTask);
@@ -175,7 +171,6 @@ public class TpcServerBootstrap {
                         .setLocal(operationThread.getQueue().getNormalQueue())
                 );
                 threadIndex++;
-                return builder;
             }
         });
         tpcEngineBuilder.setReactorCount(loadEventloopCount());

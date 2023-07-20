@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
-
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
@@ -29,24 +27,42 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 public final class TpcEngineBuilder {
 
     public static final String NAME_REACTOR_COUNT = "hazelcast.tpc.reactor.count";
+    public static final String NAME_REACTOR_TYPE = "hazelcast.tpc.reactor.type";
 
     int reactorCount = Integer.getInteger(NAME_REACTOR_COUNT, Runtime.getRuntime().availableProcessors());
-    Supplier<ReactorBuilder> reactorBuilderFn = NioReactorBuilder::new;
+    Consumer<ReactorBuilder> reactorBuilderFn = reactorBuilder -> {
+    };
     private boolean built;
+    ReactorType reactorType = ReactorType.fromString(System.getProperty(NAME_REACTOR_TYPE, "nio"));
 
 
     /**
-     * Sets the function that provides a ReactorBuilder instance.
+     * Sets the function that configures the ReactorBuilder instance.
      *
      * @param reactorBuilderFn the reactorBuilderFn.
      * @return this
      * @throws NullPointerException  if <code>reactorBuilderFn</code> is <code>null</code>.
      * @throws IllegalStateException if a TpcEngine already has already been built.
      */
-    public TpcEngineBuilder setReactorBuilderFn(Supplier<ReactorBuilder> reactorBuilderFn) {
+    public TpcEngineBuilder setReactorBuilderConfigureFn(Consumer<ReactorBuilder> reactorBuilderFn) {
         verifyNotBuilt();
 
         this.reactorBuilderFn = checkNotNull(reactorBuilderFn, "reactorBuilderFn");
+        return this;
+    }
+
+    /**
+     * Sets the {@link ReactorType} for the Reactor instances inside the {@link TpcEngine}.
+     *
+     * @param reactorType the ReactorType.
+     * @return this
+     * @throws NullPointerException  if <code>reactorType</code> is <code>null</code>.
+     * @throws IllegalStateException if a TpcEngine already has already been built.
+     */
+    public TpcEngineBuilder setReactorType(ReactorType reactorType) {
+        verifyNotBuilt();
+
+        this.reactorType = checkNotNull(reactorType, "reactorType");
         return this;
     }
 

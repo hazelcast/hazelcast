@@ -18,7 +18,6 @@ package com.hazelcast.internal.tpcengine;
 
 import org.junit.Test;
 
-import static com.hazelcast.internal.tpcengine.ReactorBuilder.newReactorBuilder;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
@@ -28,15 +27,16 @@ public class TpcEngineBuilderTest {
     @Test
     public void test_setReactorBuilderFn_WhenNull() {
         TpcEngineBuilder builder = new TpcEngineBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setReactorBuilderFn(null));
+        assertThrows(NullPointerException.class, () -> builder.setReactorBuilderConfigureFn(null));
     }
 
     @Test
-    public void test_setReactorBuilderFn_whenAlreadyBuilt() {
+    public void test_setReactorBuilderCOnfigureFn_whenAlreadyBuilt() {
         TpcEngineBuilder builder = new TpcEngineBuilder();
         builder.build();
 
-        assertThrows(IllegalStateException.class, () -> builder.setReactorBuilderFn(() -> newReactorBuilder(ReactorType.NIO)));
+        assertThrows(IllegalStateException.class, () -> builder.setReactorBuilderConfigureFn(reactorBuilder -> {
+        }));
     }
 
     @Test

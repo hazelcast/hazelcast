@@ -59,16 +59,14 @@ public final class TpcEngine {
         this.reactorCount = tpcEngineBuilder.reactorCount;
         this.reactors = new Reactor[reactorCount];
         this.terminationLatch = new CountDownLatch(reactorCount);
-
-        ReactorType reactorType = null;
+        this.reactorType = tpcEngineBuilder.reactorType;
         for (int reactorIndex = 0; reactorIndex < reactorCount; reactorIndex++) {
-            ReactorBuilder builder = tpcEngineBuilder.reactorBuilderFn.get();
+            ReactorBuilder builder = ReactorBuilder.newReactorBuilder(reactorType);
+            tpcEngineBuilder.reactorBuilderFn.accept(builder);
             builder.engine = this;
             Reactor reactor = builder.build();
-            reactorType = reactor.type();
             reactors[reactorIndex] = reactor;
         }
-        this.reactorType = reactorType;
     }
 
     /**
