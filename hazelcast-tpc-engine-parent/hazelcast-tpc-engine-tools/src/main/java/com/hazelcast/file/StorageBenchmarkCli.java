@@ -36,6 +36,11 @@ public class StorageBenchmarkCli {
             .withRequiredArg().ofType(Integer.class)
             .defaultsTo(OS.pageSize());
 
+    private final OptionSpec<Integer> filesizeSpec = parser
+            .accepts("filesize", "The size of the files.")
+            .withRequiredArg().ofType(Integer.class)
+            .defaultsTo(OS.pageSize());
+
     private final OptionSpec<Boolean> directSpec = parser
             .accepts("direct", "True to use Direct I/O, false for Buffered I/O (page cache)")
             .withRequiredArg().ofType(Boolean.class)
@@ -96,10 +101,12 @@ public class StorageBenchmarkCli {
         }
 
         StorageBenchmark benchmark = new StorageBenchmark();
-        benchmark.affinity = "1";
         benchmark.numJobs = options.valueOf(numJobsSpec);
         benchmark.iodepth = options.valueOf(ioDepthSpec);
-        benchmark.fileSize = 4 * 1024 * 1024L;
+        if(!options.has(filesizeSpec)){
+            throw new RuntimeException("--filesize option is mandatory for fio compatibility.");
+        }
+        benchmark.fileSize = options.valueOf(filesizeSpec);
         benchmark.bs = options.valueOf(bsSpec);
         benchmark.directories.addAll(Arrays.asList(options.valueOf(directorySpec).split(":")));
 
