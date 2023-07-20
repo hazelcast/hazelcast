@@ -129,15 +129,13 @@ public abstract class MapOperation extends AbstractNamedOperation
         // check if mapStoreOffloadEnabled is true for this operation
         mapStoreOffloadEnabled = recordStore != null
                 && hasUserConfiguredOffload
-                && getStartingStep() != null
-                && !mapConfig.getTieredStoreConfig().isEnabled();
+                && getStartingStep() != null;
 
         // check if tieredStoreOffloadEnabled for this operation
         tieredStoreOffloadEnabled = recordStore != null
                 && isTieredStoreAndPartitionCompactorEnabled()
                 && getStartingStep() != null;
 
-        assertOnlyOneOfMapStoreOrTieredStoreEnabled();
         assertNativeMapOnPartitionThread();
 
         innerBeforeRun();
@@ -146,24 +144,6 @@ public abstract class MapOperation extends AbstractNamedOperation
     public boolean isTieredStoreAndPartitionCompactorEnabled() {
         return recordStore.getStorage().isPartitionCompactorEnabled()
                 && mapContainer.getMapConfig().getTieredStoreConfig().isEnabled();
-    }
-
-    // Currently we don't allow both map-store and
-    // tiered-store configured for the same map
-    private void assertOnlyOneOfMapStoreOrTieredStoreEnabled() {
-        if (!ASSERTION_ENABLED) {
-            return;
-        }
-
-        if (mapStoreOffloadEnabled) {
-            assert !tieredStoreOffloadEnabled;
-            return;
-        }
-
-        if (tieredStoreOffloadEnabled) {
-            assert !mapStoreOffloadEnabled;
-            return;
-        }
     }
 
     @Nullable

@@ -56,7 +56,8 @@ public class AwaitMapFlushOperation
 
     @Override
     public void innerBeforeRun() throws Exception {
-        super.innerBeforeRun();
+        // No need registration for tstore
+        // This op has an empty runInternal
 
         MapDataStore mapDataStore = recordStore.getMapDataStore();
         if (!(mapDataStore instanceof WriteBehindStore)) {
@@ -64,6 +65,12 @@ public class AwaitMapFlushOperation
         }
 
         store = (WriteBehindStore) mapDataStore;
+    }
+
+    @Override
+    public void afterRunFinal() {
+        // No need de-registration for tstore
+        // This op has an empty runInternal
     }
 
     @Override
