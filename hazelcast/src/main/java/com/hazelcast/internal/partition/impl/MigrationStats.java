@@ -47,6 +47,13 @@ public class MigrationStats {
     @Probe(name = MIGRATION_METRIC_LAST_REPARTITION_TIME, unit = MS)
     private final AtomicLong lastRepartitionTime = new AtomicLong();
 
+    /**
+     * Exists only as a monotonic reference for timing executions
+     *
+     * @see <a href="https://github.com/hazelcast/hazelcast/pull/25028#discussion_r1269604720">Discussion</a>
+     */
+    private final AtomicLong lastRepartitionNanos = new AtomicLong();
+
     @Probe(name = MIGRATION_METRIC_PLANNED_MIGRATIONS)
     private volatile int plannedMigrations;
 
@@ -82,6 +89,7 @@ public class MigrationStats {
      */
     void markNewRepartition(int migrations) {
         lastRepartitionTime.set(Clock.currentTimeMillis());
+        lastRepartitionNanos.set(System.nanoTime());
         plannedMigrations = migrations;
         elapsedMigrationOperationTime.set(0);
         elapsedDestinationCommitTime.set(0);
@@ -97,7 +105,7 @@ public class MigrationStats {
     private void calculateElapsed(final AtomicLong elapsedTime, final AtomicLong totalElapsedTime) {
         // This is called from each migration thread, so calculate the wall-clock time, rather than summing each
         // individual threads execution time
-        final long newElapsed = TimeUnit.MILLISECONDS.toNanos(Clock.currentTimeMillis() - lastRepartitionTime.get());
+        final long newElapsed = TimeUnit.MILLISECONDS.toNanos(Clock.currentTimeMillis()) - lastRepartitionNanos.get();
 
         final long oldElapsed = elapsedTime.getAndSet(newElapsed);
 
