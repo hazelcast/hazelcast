@@ -178,8 +178,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         Schema schema = getOrReadSchema(input, schemaIncludedInBinary);
         CompactSerializableRegistration registration = getOrCreateRegistration(schema.getTypeName());
 
-        if (registration == null) {
-            //we have tried to load class via class loader, it did not work. We are returning a GenericRecord.
+        if (registration == CompactSerializableRegistration.GENERIC_RECORD_REGISTRATION) {
+            // We have tried to load class via class loader, it did not work.
+            // We are returning a GenericRecord.
             return readGenericRecord(input, schema, schemaIncludedInBinary);
         }
 
@@ -187,7 +188,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                 registration.getClazz(), schemaIncludedInBinary);
         Object object = registration.getSerializer().read(reader);
         return managedContext != null ? managedContext.initialize(object) : object;
-
     }
 
     private Schema getOrReadSchema(ObjectDataInput input, boolean schemaIncludedInBinary) throws IOException {
@@ -225,17 +225,20 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         return typeNameToRegistrationMap.computeIfAbsent(typeName, s -> {
             Class<?> clazz;
             try {
-                //when the registration does not exist, we treat typeName as className to check if there is a class
-                //with the given name in the classpath.
+                // When the registration does not exist, we treat typeName as className
+                // to check if there is a class with the given name in the classpath.
                 clazz = ClassLoaderUtil.loadClass(classLoader, typeName);
             } catch (Exception e) {
-                return null;
+                // There is no such class that has typeName as its name.
+                // We should try to read this as GenericRecord. We are
+                // returning this registration here to remember that we
+                // should read instances of this typeName as GenericRecords,
+                // instead of trying to load a class with that name over
+                // and over.
+                return CompactSerializableRegistration.GENERIC_RECORD_REGISTRATION;
             }
-            try {
-                return getOrCreateRegistration(clazz);
-            } catch (Exception e) {
-                throw new HazelcastSerializationException("Class " + clazz + " must have an empty constructor", e);
-            }
+
+            return getOrCreateRegistration(clazz);
         });
     }
 
