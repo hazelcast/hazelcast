@@ -51,6 +51,9 @@ import static java.util.Collections.emptyList;
 class KubernetesClient {
     private static final ILogger LOGGER = Logger.getLogger(KubernetesClient.class);
 
+    private static final int CONNECTION_TIMEOUT_SECONDS = 10;
+    private static final int READ_TIMEOUT_SECONDS = 10;
+
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList(
             "\"reason\":\"Forbidden\"",
             "\"reason\":\"Unauthorized\"",
@@ -565,6 +568,8 @@ class KubernetesClient {
         return RetryUtils.retry(() -> Json
                 .parse(RestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
                         .withCaCertificates(caCertificate)
+                        .withConnectTimeoutSeconds(CONNECTION_TIMEOUT_SECONDS)
+                        .withReadTimeoutSeconds(READ_TIMEOUT_SECONDS)
                         .get()
                         .getBody())
                 .asObject(), retries, NON_RETRYABLE_KEYWORDS);
