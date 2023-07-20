@@ -40,6 +40,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nullable;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -454,7 +455,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
     }
 
     private HazelcastInstance createPausedMigrationCluster(final TestHazelcastInstanceFactory factory,
-                                                           final Config config) {
+                                                           @Nullable final Config config) {
         LOGGER.fine("Starting paused migration instance...");
         final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config);
         warmUpPartitions(hazelcastInstance);
