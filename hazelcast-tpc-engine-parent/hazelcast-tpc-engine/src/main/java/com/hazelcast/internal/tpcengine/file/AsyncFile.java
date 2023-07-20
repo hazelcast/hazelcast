@@ -39,13 +39,17 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * This class isn't thread-safe. It should only be processed by the owning {@link Eventloop}.
  * <p/>
  * If in the future we want to support Virtual Threads, we do not need to introduce a new
- * 'SyncFile'. It would be sufficient to offer blocking operations which acts like scheduling points.
- * This way you can use the API from virtual threads and from platform threads. The platform threads
- * should probably run into an exception when they call a blocking method.
+ * 'SyncFile'. It would be sufficient to offer blocking operations which acts like scheduling
+ * points. This way you can use the API from virtual threads and from platform threads. The platform
+ * threads should probably run into an exception when they call a blocking method.
  * <p>
- * The {@link IOBuffer} used for reading/writing be created using the {@link Eventloop#blockIOBufferAllocator()}
- * because depending on the AsyncFile implementation/configuration, there are special requirements e.g.
- * 4K alignment in case of Direct I/O.
+ * The {@link IOBuffer} used for reading/writing be created using the
+ * {@link Eventloop#blockIOBufferAllocator()} because depending on the AsyncFile
+ * implementation/configuration, there are special requirements e.g. 4K alignment in
+ * case of Direct I/O.
+ * <p/>
+ * The primary functionality of the AsyncFile is to issue {@link BlockRequest} to the
+ * {@link BlockRequestScheduler}. The actual I/O is done by this scheduler.
  */
 @SuppressWarnings({"checkstyle:IllegalTokenText", "checkstyle:VisibilityModifier"})
 public abstract class AsyncFile {
