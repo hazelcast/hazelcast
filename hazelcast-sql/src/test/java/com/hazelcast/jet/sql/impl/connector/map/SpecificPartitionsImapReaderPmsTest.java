@@ -90,6 +90,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         }
     }
 
+    // Note: basic functionality must work even without member pruning used.
     @Test
     public void test_basic() {
         // Basic test is performed as submitting job by DAG.
@@ -108,7 +109,6 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         assertEquals(0, instance().getMap(sinkName).get(0));
     }
 
-    // Note: basic functionality must work even without member pruning used.
     @SuppressWarnings("rawtypes")
     @Test
     public void test_prunable() {
@@ -123,7 +123,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
 
         // When
         // Note: processor verification support is bounded to one member only,
-        //  so it is applicable to this.
+        //  so it is applicable to make this test in 'processor verification' way.
         TestSupport.verifyProcessor(adaptSupplier(pms))
                 .hazelcastInstance(instance())
                 .jobConfig(jobConfig)
