@@ -84,6 +84,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.execution.TaskletExecutionService.TASKLET_INIT_CLOSE_EXECUTOR_NAME;
@@ -191,7 +192,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return procSuppliersInitFuture.thenAccept(r -> {
             initDag(jobSerializationService);
 
-            this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
+            this.ptionArrgmt = new PartitionArrangement(
+                    partitionAssignment,
+                    nodeEngine.getThisAddress(),
+                    jobConfig.getArgument(KEY_REQUIRED_PARTITIONS) != null);
             Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
             for (Address destAddr : remoteMembers.get()) {
                 Connection conn = getMemberConnection(nodeEngine, destAddr);

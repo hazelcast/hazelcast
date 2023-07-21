@@ -20,7 +20,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -51,6 +51,7 @@ import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.opt.physical.AssignDiscriminatorToScansRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcLimitTransposeRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
@@ -68,6 +69,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.ShouldNotExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdatePhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
@@ -102,6 +104,8 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -110,8 +114,10 @@ import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Contexts;
@@ -130,6 +136,10 @@ import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexDynamicParam;
+import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.apache.calcite.sql.util.SqlString;
@@ -139,16 +149,23 @@ import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.cluster.Versions.V5_3;
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataConnectionPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.schema;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -631,7 +648,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof UpdatePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
+            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+                    physicalRel,
+                    parameterMetadata,
+                    context.getUsedViews());
             return new DmlPlan(
                     Operation.UPDATE,
                     planKey,
@@ -658,7 +678,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
+            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+                    physicalRel,
+                    parameterMetadata,
+                    context.getUsedViews());
             return new DmlPlan(
                     operation,
                     planKey,
@@ -672,7 +695,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof DeletePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
+            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+                    physicalRel,
+                    parameterMetadata,
+                    context.getUsedViews());
             return new DmlPlan(
                     Operation.DELETE,
                     planKey,
@@ -685,8 +711,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(new RootRel(physicalRel), parameterMetadata,
+            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+                    new RootRel(physicalRel),
+                    parameterMetadata,
                     context.getUsedViews());
+
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -701,7 +730,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     OptUtils.isUnbounded(physicalRel),
                     rowMetadata,
                     planExecutor,
-                    permissions
+                    permissions,
+                    partitionStrategyCandidates(physicalRel, parameterMetadata),
+                    dagAndKeys.f2()
             );
         }
     }
@@ -868,7 +899,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new SqlRowMetadata(columns);
     }
 
-    private Tuple2<DAG, Set<PlanObjectKey>> createDag(
+    private Tuple3<DAG, Set<PlanObjectKey>, Integer> createDag(
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata,
             Set<PlanObjectKey> usedViews
@@ -885,7 +916,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         CreateTopLevelDagVisitor visitor = new CreateTopLevelDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
-        return tuple2(visitor.getDag(), visitor.getObjectKeys());
+        return tuple3(visitor.getDag(), visitor.getObjectKeys(), visitor.requiredRootPartitionId());
     }
 
     private void checkDmlOperationWithView(PhysicalRel rel) {
@@ -894,6 +925,62 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             throw QueryException.error("DML operations not supported for views");
         }
     }
+
+    private Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates(
+            PhysicalRel root, QueryParameterMetadata parameterMetadata) {
+        HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
+        final Map<String, List<Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
+
+        RexBuilder b = HazelcastRexBuilder.INSTANCE;
+        RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
+
+        final Map<String, Table> tableMap = tableResolvers().stream()
+                .map(TableResolver::getTables)
+                .flatMap(Collection::stream)
+                .filter(table -> table.getSchemaName().equals(QueryUtils.SCHEMA_NAME_PUBLIC))
+                .collect(Collectors.toMap(Table::getSqlName, Function.identity()));
+
+        final Map<String, List<Map<String, Expression<?>>>> result = new HashMap<>();
+        for (final String tableName : prunabilityMap.keySet()) {
+            assert tableMap.get(tableName) != null && tableMap.get(tableName) instanceof PartitionedMapTable;
+            var table = (PartitionedMapTable) tableMap.get(tableName);
+
+            var tableVariants = prunabilityMap.get(tableName);
+            final List<Map<String, Expression<?>>> convertedList = new ArrayList<>();
+
+            for (final Map<String, RexNode> variant : tableVariants) {
+                final Map<String, Expression<?>> convertedVariant = new HashMap<>();
+                for (final String columnName : variant.keySet()) {
+                    final String fieldName = columnName.equals(QueryPath.KEY)
+                            ? QueryPath.KEY
+                            : table.keyFields()
+                                    .filter(f -> f.getName().equals(columnName))
+                                    .findFirst()
+                                    .map(mapTableField -> mapTableField.getPath().getPath())
+                                    .orElseThrow(() -> QueryException.error(format("Can not find column %s in table %s",
+                                            tableName, columnName)));
+
+                    final RexNode rexNode = variant.get(columnName);
+                    if (rexNode instanceof RexDynamicParam) {
+                        convertedVariant.put(fieldName, visitor.visitDynamicParam((RexDynamicParam) rexNode));
+                    }
+
+                    if (rexNode instanceof RexLiteral) {
+                        convertedVariant.put(fieldName, visitor.visitLiteral((RexLiteral) rexNode));
+                    }
+                }
+                if (!convertedVariant.isEmpty()) {
+                    convertedList.add(convertedVariant);
+                }
+            }
+
+            final String mapName = table.getMapName();
+            result.putIfAbsent(mapName, convertedList);
+        }
+
+        return result;
+    }
+
 
     /**
      * Tries to find {@link ShouldNotExecuteRel} or {@link MustNotExecutePhysicalRel}

@@ -152,6 +152,7 @@ public final class LightMasterContext {
             logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
                             + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.",
                     jobIdString, dotRepresentation);
+            logFine(logger, "Job config for %s: %s", jobIdString, jobConfig);
             logFine(logger, "Building execution plan for %s", jobIdString);
         }
 

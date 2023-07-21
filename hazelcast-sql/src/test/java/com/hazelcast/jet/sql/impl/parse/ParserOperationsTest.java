@@ -194,8 +194,8 @@ public class ParserOperationsTest extends SqlTestSupport {
                 null,
                 null,
                 null,
-                false
-        );
+                false,
+                Collections.emptyList());
 
         TableResolver resolver = TestTableResolver.create(
                 "public",

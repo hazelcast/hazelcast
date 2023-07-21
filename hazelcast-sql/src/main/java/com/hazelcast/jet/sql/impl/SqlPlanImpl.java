@@ -46,6 +46,7 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
+import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
@@ -1055,7 +1056,12 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final SqlRowMetadata rowMetadata;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        // map of per-table partition pruning candidates, structured as
+        // mapName -> { columnName -> RexLiteralOrDynamicParam }
+        private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
+        private final Integer requiredRootPartitionId;
 
+        @SuppressWarnings("checkstyle:ParameterNumber")
         SelectPlan(
                 PlanKey planKey,
                 QueryParameterMetadata parameterMetadata,
@@ -1065,8 +1071,9 @@ abstract class SqlPlanImpl extends SqlPlan {
                 boolean isStreaming,
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
-                List<Permission> permissions
-        ) {
+                List<Permission> permissions,
+                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates,
+                @Nullable Integer requiredRootPartitionId) {
             super(planKey);
 
             this.objectKeys = objectKeys;
@@ -1077,6 +1084,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.partitionStrategyCandidates = partitionStrategyCandidates;
+            this.requiredRootPartitionId = requiredRootPartitionId;
         }
 
         QueryParameterMetadata getParameterMetadata() {
@@ -1109,6 +1118,10 @@ abstract class SqlPlanImpl extends SqlPlan {
             return context.isValid(objectKeys);
         }
 
+        public Map<String, List<Map<String, Expression<?>>>> getPartitionStrategyCandidates() {
+            return partitionStrategyCandidates;
+        }
+
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             checkPermissions(context, dag);
@@ -1118,6 +1131,11 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean producesRows() {
             return true;
+        }
+
+        @Nullable
+        public Integer requiredRootPartitionId() {
+            return requiredRootPartitionId;
         }
 
         @Override
