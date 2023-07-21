@@ -65,8 +65,8 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
     @Test(timeout = MINUTE)
     public void testDoesntLoadAgain_whenLoaderNodeGoesDown() {
-        Config cfg = newConfig("default", LAZY);
-        HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
+        HazelcastInstance[] nodes
+                = nodeFactory.newInstances(() -> newConfig("default", LAZY), 3);
         HazelcastInstance hz3 = nodes[2];
 
         String mapName = generateKeyOwnedBy(hz3);
@@ -84,8 +84,8 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
     @Test(timeout = MINUTE)
     public void testLoads_whenInitialLoaderNodeRemoved() {
-        Config cfg = newConfig("default", LAZY);
-        HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
+        HazelcastInstance[] nodes
+                = nodeFactory.newInstances(() -> newConfig("default", LAZY), 3);
         HazelcastInstance hz3 = nodes[2];
 
         String mapName = generateKeyOwnedBy(hz3);
@@ -102,8 +102,8 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     @Test(timeout = MINUTE)
     // FIXES https://github.com/hazelcast/hazelcast/issues/6056
     public void testLoadsAll_whenInitialLoaderNodeRemovedAfterLoading() {
-        Config cfg = newConfig("default", LAZY);
-        HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
+        HazelcastInstance[] nodes
+                = nodeFactory.newInstances(() -> newConfig("default", LAZY), 3);
         HazelcastInstance hz3 = nodes[2];
 
         String mapName = generateKeyOwnedBy(hz3);
@@ -125,9 +125,8 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     @Test(timeout = MINUTE)
     public void testLoadsAll_whenInitialLoaderNodeRemovedWhileLoading() throws Exception {
         PausingMapLoader<Integer, Integer> pausingLoader = new PausingMapLoader<>(mapLoader, 5000);
-
-        Config cfg = newConfig("default", LAZY, 1, pausingLoader);
-        HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
+        HazelcastInstance[] nodes
+                = nodeFactory.newInstances(() ->  newConfig("default", LAZY, 1, pausingLoader), 3);
         HazelcastInstance hz3 = nodes[2];
 
         String mapName = generateKeyOwnedBy(hz3);
@@ -214,7 +213,8 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         return newConfig(mapName, loadMode, 1, mapLoader);
     }
 
-    private Config newConfig(String mapName, MapStoreConfig.InitialLoadMode loadMode, int backups, MapLoader loader) {
+    protected Config newConfig(String mapName, MapStoreConfig.InitialLoadMode loadMode,
+                               int backups, MapLoader loader) {
         Config config = new Config().setClusterName(getClass().getSimpleName())
                 .setProperty(ClusterProperty.MAP_LOAD_CHUNK_SIZE.getName(), Integer.toString(BATCH_SIZE))
                 .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "13");

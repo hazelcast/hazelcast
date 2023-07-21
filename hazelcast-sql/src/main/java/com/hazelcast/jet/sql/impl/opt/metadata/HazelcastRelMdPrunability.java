@@ -30,6 +30,8 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.Join;
+import org.apache.calcite.rel.core.Sort;
+import org.apache.calcite.rel.core.Union;
 import org.apache.calcite.rel.metadata.Metadata;
 import org.apache.calcite.rel.metadata.MetadataDef;
 import org.apache.calcite.rel.metadata.MetadataHandler;
@@ -52,6 +54,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 
+@SuppressWarnings("DuplicatedCode")
 public final class HazelcastRelMdPrunability
         implements MetadataHandler<PrunabilityMetadata> {
 
@@ -140,8 +143,9 @@ public final class HazelcastRelMdPrunability
     }
 
     @SuppressWarnings("unused")
-    public Map<String, List<Map<String, RexNode>>> extractPrunability(RelNode rel, RelMetadataQuery mq) {
-        // For any non-mentioned rels, we assume they are prunable and forwards prunability.
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(Union rel, RelMetadataQuery mq) {
+        // Union is prunable, if all inputs of Union is prunable.
+        // It collects prunability metadata from all inputs and forwards it.
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         Map<String, List<Map<String, RexNode>>> prunability = new HashMap<>();
         for (int i = 0; i < rel.getInputs().size(); i++) {
@@ -158,6 +162,17 @@ public final class HazelcastRelMdPrunability
             }
         }
         return prunability;
+    }
+
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(Sort rel, RelMetadataQuery mq) {
+        // Sort is prunable and forwards prunability.
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
+        return query.extractPrunability(rel.getInput());
+    }
+
+    public Map<String, List<Map<String, RexNode>>> extractPrunability(RelNode rel, RelMetadataQuery mq) {
+        // For any non-mentioned rels, we assume they are not prunable and breaks prunability.
+        return emptyMap();
     }
 
     public interface PrunabilityMetadata extends Metadata {

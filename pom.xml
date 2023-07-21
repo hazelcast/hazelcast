@@ -73,6 +73,7 @@
         <maven.dependency.plugin.version>3.6.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.22</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
+        <maven.deploy.plugin.version>3.1.1</maven.deploy.plugin.version>
 
         <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.3.0</maven.checkstyle.plugin.version>
@@ -94,20 +95,20 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.493</aws.sdk.version>
+        <aws.sdk.version>1.12.505</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
         <classgraph.version>4.8.161</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
-        <guava.version>32.0.1-jre</guava.version>
-        <hadoop.version>3.3.5</hadoop.version>
+        <guava.version>32.1.1-jre</guava.version>
+        <hadoop.version>3.3.6</hadoop.version>
         <h2.version>2.2.220</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
         <jackson.version>2.14.2</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jline.version>3.23.0</jline.version>
-        <jms.api.version>2.0.1</jms.api.version>
+        <jms.api.version>3.1.0</jms.api.version>
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
@@ -115,14 +116,14 @@
         <kotlin.version>1.8.22</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
-        <mysql.connector.version>8.0.33</mysql.connector.version>
+        <mysql.connector.version>8.1.0</mysql.connector.version>
         <netty.version>4.1.94.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
         <picocli.version>4.7.4</picocli.version>
         <postgresql.version>42.6.0</postgresql.version>
-        <prometheus.version>0.18.0</prometheus.version>
+        <prometheus.version>0.19.0</prometheus.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
@@ -137,10 +138,10 @@
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <snakeyaml.engine.version>2.6</snakeyaml.engine.version>
-        <mongodb.version>4.10.1</mongodb.version>
+        <mongodb.version>4.10.2</mongodb.version>
 
         <!-- test dependencies -->
-        <activemq-artemis.version>2.11.0</activemq-artemis.version>
+        <activemq-artemis.version>2.28.0</activemq-artemis.version>
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.24.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
@@ -768,6 +769,11 @@
                             <exclusionPattern>inside edge crossings that are between</exclusionPattern>
                         </exclusionPatterns>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven.deploy.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1595,7 +1601,7 @@
             <dependency>
                 <groupId>com.google.auth</groupId>
                 <artifactId>google-auth-library-bom</artifactId>
-                <version>1.17.0</version>
+                <version>1.19.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -1833,7 +1839,7 @@
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.5-4</version>
+                <version>1.5.5-5</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1853,7 +1859,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.35.0</version>
+                <version>3.36.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1883,7 +1889,7 @@
             <dependency>
                 <groupId>net.minidev</groupId>
                 <artifactId>json-smart</artifactId>
-                <version>2.4.11</version>
+                <version>2.5.0</version>
             </dependency>
             <dependency>
               <groupId>org.wildfly.openssl</groupId>
@@ -2070,7 +2076,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.1.10</version>
+            <version>10.1.11</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

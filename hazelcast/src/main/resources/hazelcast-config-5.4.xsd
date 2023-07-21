@@ -4327,7 +4327,7 @@
                 </xs:simpleType>
             </xs:element>
         </xs:all>
-        <xs:attribute name="name" type="xs:string" default="default-tiered-store-device">
+        <xs:attribute name="name" type="xs:string" use="required">
             <xs:annotation>
                 <xs:documentation>
                     Name of the device.

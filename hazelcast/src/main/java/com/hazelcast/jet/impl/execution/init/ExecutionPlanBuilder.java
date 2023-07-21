@@ -94,6 +94,8 @@ public final class ExecutionPlanBuilder {
 
         final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos, requiredPartitions);
 
+        // If member pruning is used, we need to add the coordinator to the list of members, because at the moment
+        // we implement member pruning for the interactive queries which required the coordinator for query result.
         if (memberPruningUsed && !nodeEngine.getNode().isLiteMember()) {
             Address localMemberAddress = nodeEngine.getThisAddress();
             MemberInfo localMemberInfo = memberInfos.stream()

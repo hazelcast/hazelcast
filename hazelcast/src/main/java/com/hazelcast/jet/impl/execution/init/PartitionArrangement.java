@@ -45,13 +45,27 @@ class PartitionArrangement {
      */
     private final int[] localPartitions;
 
-    PartitionArrangement(Map<Address, int[]> partitionAssignment, Address thisAddress) {
+    PartitionArrangement(Map<Address, int[]> partitionAssignment, Address thisAddress, boolean prunabilityEnabled) {
         remotePartitionAssignment = new HashMap<>(partitionAssignment);
         localPartitions = remotePartitionAssignment.remove(thisAddress);
-        allPartitions = partitionAssignment.values().stream()
-                .flatMapToInt(Arrays::stream)
-                .sorted()
-                .toArray();
+        // For the default case (non-prunable), the complexity of constructing allPartitions should be O(N).
+        // For prunable case, partitionAssignment is a HashMap, ordering of partitions is not guaranteed,
+        // and it implies sorting, what increases the complexity to O(N*log(N)).
+        if (prunabilityEnabled) {
+            allPartitions = partitionAssignment.values().stream()
+                    .flatMapToInt(Arrays::stream)
+                    .sorted()
+                    .toArray();
+        } else {
+            int partitionCount = 0;
+            for (int[] value : partitionAssignment.values()) {
+                partitionCount += value.length;
+            }
+            allPartitions = new int[partitionCount];
+            for (int i = 0; i < allPartitions.length; i++) {
+                allPartitions[i] = i;
+            }
+        }
     }
 
     Map<Address, int[]> getRemotePartitionAssignment() {

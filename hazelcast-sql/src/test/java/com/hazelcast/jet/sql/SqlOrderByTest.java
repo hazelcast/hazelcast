@@ -22,6 +22,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
@@ -296,7 +297,7 @@ public class SqlOrderByTest extends HazelcastTestSupport {
     public void testSelectWithOrderByAndProject() {
         // SELECT intVal, intVal + bigIntVal FROM t ORDER BY intVal, bigIntVal
         String sql = sqlWithOrderBy(Arrays.asList("intVal",
-                "intVal + bigIntVal"),
+                        "intVal + bigIntVal"),
                 Arrays.asList("intVal", "bigIntVal"), Arrays.asList(true, true));
 
         checkSelectWithOrderBy(Arrays.asList("intVal", "bigIntVal"),
@@ -596,20 +597,20 @@ public class SqlOrderByTest extends HazelcastTestSupport {
                 .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
 
-    @Test
+    @Test(timeout = 10 * 60 * 1000)
     public void testConcurrentPutAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
         IndexConfig indexConfig = new IndexConfig()
-            .setName("Index_" + randomName())
-            .setType(SORTED);
+                .setName("Index_" + randomName())
+                .setType(SORTED);
 
         indexConfig.addAttribute("intVal");
         map.addIndex(indexConfig);
 
-        ExecutorService executor = Executors.newFixedThreadPool(10);
+        int threadsCount = RuntimeAvailableProcessors.get() - 2;
+        ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
 
-        int threadsCount = 10;
         int keysPerThread = 5000;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -644,25 +645,25 @@ public class SqlOrderByTest extends HazelcastTestSupport {
             });
         }
 
-        assertOpenEventually(latch, 240000);
+        assertOpenEventually(latch, 400);
         assertNull(exception.get());
-        executor.shutdown();
+        executor.shutdownNow();
     }
 
-    @Test
+    @Test(timeout = 10 * 60 * 1000)
     public void testConcurrentUpdateAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
         IndexConfig indexConfig = new IndexConfig()
-            .setName("Index_" + randomName())
-            .setType(SORTED);
+                .setName("Index_" + randomName())
+                .setType(SORTED);
 
         indexConfig.addAttribute("intVal");
         map.addIndex(indexConfig);
 
-        ExecutorService executor = Executors.newFixedThreadPool(10);
+        int threadsCount = RuntimeAvailableProcessors.get() - 2;
+        ExecutorService executor = Executors.newFixedThreadPool(threadsCount);
 
-        int threadsCount = 10;
         int keysPerThread = 2500;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
@@ -705,9 +706,9 @@ public class SqlOrderByTest extends HazelcastTestSupport {
             });
         }
 
-        assertOpenEventually(latch, 240000);
+        assertOpenEventually(latch, 400);
         assertNull(exception.get());
-        executor.shutdown();
+        executor.shutdownNow();
     }
 
     private void addIndex(List<String> fieldNames, IndexType type) {
