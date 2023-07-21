@@ -95,7 +95,7 @@ public class MongoDataConnection extends DataConnectionBase {
 
     /**
      * Name of the property holding the maximum size of Mongo Client connection pool.
-     * Default is 0, which means unlimited.
+     * Default is 10.
      * @since 5.4
      */
     public static final String CONNECTION_POOL_MAX = "connectionPoolMaxSize";
@@ -125,7 +125,10 @@ public class MongoDataConnection extends DataConnectionBase {
         this.host = config.getProperty(HOST_PROPERTY);
         this.authDb = config.getProperty(AUTH_DB_PROPERTY, "admin");
         this.connectionPoolMinSize = Integer.parseInt(config.getProperty(CONNECTION_POOL_MIN, "10"));
-        this.connectionPoolMaxSize = Integer.parseInt(config.getProperty(CONNECTION_POOL_MAX, "0"));
+        this.connectionPoolMaxSize = Integer.parseInt(config.getProperty(CONNECTION_POOL_MAX, "10"));
+
+        checkState(connectionPoolMinSize <= connectionPoolMaxSize, "connection pool max size" +
+                " cannot be lower than min size");
 
         checkState(allSame((username == null), (password == null), (host == null)),
         "You have to provide connectionString property or combination of username, password and host");
@@ -149,7 +152,6 @@ public class MongoDataConnection extends DataConnectionBase {
         return true;
     }
 
-    @SuppressWarnings("checkstyle:MagicNumber")
     private MongoClient createClient() {
         try {
             if (connectionString != null) {
@@ -168,8 +170,8 @@ public class MongoDataConnection extends DataConnectionBase {
                                                  .credential(credential);
             return MongoClients.create(builder.build());
         } catch (Exception e) {
-            throw new HazelcastException("Unable to create Mongo client for data connection '" + name + "'",
-                    e);
+            throw new HazelcastException("Unable to create Mongo client for data connection '" + name + "'"
+                    + e.getMessage(), e);
         }
     }
 
@@ -263,7 +265,7 @@ public class MongoDataConnection extends DataConnectionBase {
         dataConnectionConfig.setName(name);
         dataConnectionConfig.setShared(true);
         dataConnectionConfig.setProperty(CONNECTION_STRING_PROPERTY, connectionString);
-        dataConnectionConfig.setType("MongoDB");
+        dataConnectionConfig.setType("Mongo");
         return dataConnectionConfig;
     }
 }
