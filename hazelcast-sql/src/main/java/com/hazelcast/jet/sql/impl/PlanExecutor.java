@@ -27,6 +27,7 @@ import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.RestartableException;
@@ -78,7 +79,6 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
-import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -137,6 +137,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataConnectionPlan;
+import static com.hazelcast.jet.sql.impl.connector.map.QueryUtil.DEFAULT_UNIQUE_KEY;
+import static com.hazelcast.jet.sql.impl.connector.map.QueryUtil.DEFAULT_UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
@@ -151,8 +153,6 @@ import static java.util.Comparator.comparing;
 
 public class PlanExecutor {
     private static final String LE = System.lineSeparator();
-    private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
-    public static final String DEFAULT_UNIQUE_KEY = "__key";
 
     private final TableResolverImpl catalog;
     private final DataConnectionResolver dataConnectionCatalog;
