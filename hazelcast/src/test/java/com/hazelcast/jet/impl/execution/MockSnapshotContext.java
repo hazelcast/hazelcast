@@ -27,11 +27,14 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
  * avoid non-deterministic Mockito-related failures on certain JVMs like Zing
  */
 public class MockSnapshotContext extends SnapshotContext {
-    private String currentMapName;
-    private long currentSnapshotId;
+    private String currentMapName = "";
+    private long currentSnapshotId = 0L;
 
     public MockSnapshotContext() {
         super(Logger.getLogger(MockSnapshotContext.class), randomString(), 0L, ProcessingGuarantee.NONE);
+
+        // initialize these values to avoid assert exceptions in some tests
+        initTaskletCount(1, 1,1);
     }
 
     @Override
