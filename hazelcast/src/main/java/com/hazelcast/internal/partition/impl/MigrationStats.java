@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.partition.MigrationState;
 
 import java.util.Date;
@@ -46,6 +47,13 @@ public class MigrationStats {
 
     @Probe(name = MIGRATION_METRIC_LAST_REPARTITION_TIME, unit = MS)
     private final AtomicLong lastRepartitionTime = new AtomicLong();
+
+    /**
+     * Exists only as a monotonic reference for timing executions
+     *
+     * @see <a href="https://github.com/hazelcast/hazelcast/pull/25028#discussion_r1269604720">Discussion</a>
+     */
+    private final AtomicLong lastRepartitionNanos = new AtomicLong();
 
     @Probe(name = MIGRATION_METRIC_PLANNED_MIGRATIONS)
     private volatile int plannedMigrations;
@@ -77,10 +85,12 @@ public class MigrationStats {
     /**
      * Marks start of new repartitioning.
      * Resets stats from previous repartitioning round.
+     *
      * @param migrations number of planned migration tasks
      */
     void markNewRepartition(int migrations) {
         lastRepartitionTime.set(Clock.currentTimeMillis());
+        lastRepartitionNanos.set(Timer.nanos());
         plannedMigrations = migrations;
         elapsedMigrationOperationTime.set(0);
         elapsedDestinationCommitTime.set(0);
@@ -93,19 +103,28 @@ public class MigrationStats {
         totalCompletedMigrations.incrementAndGet();
     }
 
-    void recordMigrationOperationTime(long time) {
-        elapsedMigrationOperationTime.addAndGet(time);
-        totalElapsedMigrationOperationTime.addAndGet(time);
+    private void calculateElapsed(final AtomicLong elapsedTime, final AtomicLong totalElapsedTime) {
+        // This is called from each migration thread, so calculate the wall-clock time, rather than summing each
+        // individual threads execution time
+        final long newElapsed = Timer.nanosElapsed(lastRepartitionNanos.get());
+
+        final long oldElapsed = elapsedTime.getAndSet(newElapsed);
+
+        // To ensure the total is kept accurate, add the difference between the previous elapsedTime and this one for
+        // this execution
+        totalElapsedTime.addAndGet(newElapsed - oldElapsed);
     }
 
-    void recordDestinationCommitTime(long time) {
-        elapsedDestinationCommitTime.addAndGet(time);
-        totalElapsedDestinationCommitTime.addAndGet(time);
+    void recordMigrationOperationTime() {
+        calculateElapsed(elapsedMigrationOperationTime, totalElapsedMigrationOperationTime);
     }
 
-    void recordMigrationTaskTime(long time) {
-        elapsedMigrationTime.addAndGet(time);
-        totalElapsedMigrationTime.addAndGet(time);
+    void recordDestinationCommitTime() {
+        calculateElapsed(elapsedDestinationCommitTime, totalElapsedDestinationCommitTime);
+    }
+
+    void recordMigrationTaskTime() {
+        calculateElapsed(elapsedMigrationTime, totalElapsedMigrationTime);
     }
 
     /**
