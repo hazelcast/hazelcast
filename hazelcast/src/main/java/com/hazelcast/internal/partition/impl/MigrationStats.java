@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.partition.MigrationState;
 
 import java.util.Date;
@@ -89,7 +90,7 @@ public class MigrationStats {
      */
     void markNewRepartition(int migrations) {
         lastRepartitionTime.set(Clock.currentTimeMillis());
-        lastRepartitionNanos.set(System.nanoTime());
+        lastRepartitionNanos.set(Timer.nanos());
         plannedMigrations = migrations;
         elapsedMigrationOperationTime.set(0);
         elapsedDestinationCommitTime.set(0);
@@ -105,7 +106,7 @@ public class MigrationStats {
     private void calculateElapsed(final AtomicLong elapsedTime, final AtomicLong totalElapsedTime) {
         // This is called from each migration thread, so calculate the wall-clock time, rather than summing each
         // individual threads execution time
-        final long newElapsed = System.nanoTime() - lastRepartitionNanos.get();
+        final long newElapsed = Timer.nanosElapsed(lastRepartitionNanos.get());
 
         final long oldElapsed = elapsedTime.getAndSet(newElapsed);
 
