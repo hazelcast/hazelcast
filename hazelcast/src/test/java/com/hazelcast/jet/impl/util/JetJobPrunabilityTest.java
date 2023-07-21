@@ -52,6 +52,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_COORDINATOR;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
@@ -77,7 +78,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         NodeEngineImpl localNodeEngineImpl = getNodeEngineImpl(instance());
         NodeEngineImpl remoteNodeEngineImpl = getNodeEngineImpl(instances()[1]);
         Map<Address, int[]> ptAssignment = ExecutionPlanBuilder.getPartitionAssignment(localNodeEngineImpl,
-                        Util.getMembersView(localNodeEngineImpl).getMembers(), null)
+                        Util.getMembersView(localNodeEngineImpl).getMembers(), null, false)
                 .entrySet()
                 .stream()
                 .collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
@@ -105,7 +106,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
-
+        jobConfig.setArgument(KEY_REQUIRED_COORDINATOR, true);
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -134,6 +135,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(remotePartitionId));
+        jobConfig.setArgument(KEY_REQUIRED_COORDINATOR, true);
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -172,9 +174,9 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         // aggregator -> printer
         dag.edge(between(aggregator, printer).isolated());
 
-
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
+        jobConfig.setArgument(KEY_REQUIRED_COORDINATOR, true);
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -208,6 +210,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
+        jobConfig.setArgument(KEY_REQUIRED_COORDINATOR, true);
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();

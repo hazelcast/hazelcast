@@ -52,6 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_COORDINATOR;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -87,26 +88,13 @@ public final class ExecutionPlanBuilder {
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
         final EdgeConfig defaultEdgeConfig = nodeEngine.getConfig().getJetConfig().getDefaultEdgeConfig();
         final Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
-        final boolean memberPruningUsed = requiredPartitions != null;
+        final boolean shouldUseCoordinator = Boolean.TRUE.equals(jobConfig.getArgument(KEY_REQUIRED_COORDINATOR));
 
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
 
-        final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos, requiredPartitions);
-
-        // If member pruning is used, we need to add the coordinator to the list of members, because at the moment
-        // we implement member pruning for the interactive queries which required the coordinator for query result.
-        if (memberPruningUsed && !nodeEngine.getNode().isLiteMember()) {
-            Address localMemberAddress = nodeEngine.getThisAddress();
-            MemberInfo localMemberInfo = memberInfos.stream()
-                    .filter(mi -> mi.getAddress().equals(localMemberAddress))
-                    .findAny()
-                    .orElseThrow();
-            partitionsByMember.computeIfAbsent(localMemberInfo, (i) -> {
-                nodeEngine.getLogger(ExecutionPlanBuilder.class).fine("Adding coordinator to partition-pruned job members");
-                return new int[]{};
-            });
-        }
+        final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(
+                nodeEngine, memberInfos, requiredPartitions, shouldUseCoordinator);
 
         final Map<Address, int[]> partitionsByAddress = partitionsByMember
                 .entrySet()
@@ -256,8 +244,12 @@ public final class ExecutionPlanBuilder {
      * round-robin way.
      */
     public static Map<MemberInfo, int[]> getPartitionAssignment(
-            NodeEngine nodeEngine, List<MemberInfo> memberList, @Nullable Set<Integer> requiredPartitions) {
+            NodeEngine nodeEngine,
+            List<MemberInfo> memberList,
+            @Nullable Set<Integer> requiredPartitions,
+            boolean shouldUseCoordinator) {
         IPartitionService partitionService = nodeEngine.getPartitionService();
+        Address localMemberAddress = nodeEngine.getThisAddress();
         Map<Address, MemberInfo> membersByAddress = new HashMap<>();
         for (MemberInfo memberInfo : memberList) {
             membersByAddress.put(memberInfo.getAddress(), memberInfo);
@@ -266,6 +258,11 @@ public final class ExecutionPlanBuilder {
         Map<MemberInfo, FixedCapacityIntArrayList> partitionsForMember = new HashMap<>();
         int partitionCount = partitionService.getPartitionCount();
         int memberIndex = 0;
+
+        MemberInfo localMemberInfo = memberList.stream()
+                .filter(mi -> mi.getAddress().equals(localMemberAddress))
+                .findAny()
+                .orElseThrow();
 
         for (int partitionId : requiredPartitions != null ? requiredPartitions : range(0, partitionCount)) {
             Address address = partitionService.getPartitionOwnerOrWait(partitionId);
@@ -279,10 +276,23 @@ public final class ExecutionPlanBuilder {
                     .add(partitionId);
         }
 
+        // Interactive queries may require for coordinator to be present
+        if (shouldUseCoordinator) {
+            // If coordinator still not captured to participate in the job -- do it.
+            partitionsForMember.computeIfAbsent(localMemberInfo, (i) -> {
+                nodeEngine.getLogger(ExecutionPlanBuilder.class).fine("Adding coordinator to partition-pruned job members");
+                var partitionContainer = new FixedCapacityIntArrayList(partitionCount);
+                // TODO: temporarily we're using "" key. Change after allToOne support...
+                partitionContainer.add(partitionService.getPartitionId(""));
+                return partitionContainer;
+            });
+        }
+
         Map<MemberInfo, int[]> partitionAssignment = new HashMap<>();
         for (Entry<MemberInfo, FixedCapacityIntArrayList> memberWithPartitions : partitionsForMember.entrySet()) {
             partitionAssignment.put(memberWithPartitions.getKey(), memberWithPartitions.getValue().asArray());
         }
+
         return partitionAssignment;
     }
 

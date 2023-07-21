@@ -648,7 +648,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof UpdatePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
-            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+            Tuple3<DAG, Set<PlanObjectKey>, Boolean> dagAndKeys = createDag(
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews());
@@ -678,7 +678,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+            Tuple3<DAG, Set<PlanObjectKey>, Boolean> dagAndKeys = createDag(
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews());
@@ -695,7 +695,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof DeletePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
-            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+            Tuple3<DAG, Set<PlanObjectKey>, Boolean> dagAndKeys = createDag(
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews());
@@ -711,7 +711,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+            Tuple3<DAG, Set<PlanObjectKey>, Boolean> dagAndKeys = createDag(
                     new RootRel(physicalRel),
                     parameterMetadata,
                     context.getUsedViews());
@@ -899,7 +899,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new SqlRowMetadata(columns);
     }
 
-    private Tuple3<DAG, Set<PlanObjectKey>, Integer> createDag(
+    private Tuple3<DAG, Set<PlanObjectKey>, Boolean> createDag(
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata,
             Set<PlanObjectKey> usedViews
@@ -916,7 +916,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         CreateTopLevelDagVisitor visitor = new CreateTopLevelDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
-        return tuple3(visitor.getDag(), visitor.getObjectKeys(), visitor.requiredRootPartitionId());
+        return tuple3(visitor.getDag(), visitor.getObjectKeys(), visitor.shouldUseCoordinator());
     }
 
     private void checkDmlOperationWithView(PhysicalRel rel) {
@@ -954,11 +954,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     final String fieldName = columnName.equals(QueryPath.KEY)
                             ? QueryPath.KEY
                             : table.keyFields()
-                                    .filter(f -> f.getName().equals(columnName))
-                                    .findFirst()
-                                    .map(mapTableField -> mapTableField.getPath().getPath())
-                                    .orElseThrow(() -> QueryException.error(format("Can not find column %s in table %s",
-                                            tableName, columnName)));
+                            .filter(f -> f.getName().equals(columnName))
+                            .findFirst()
+                            .map(mapTableField -> mapTableField.getPath().getPath())
+                            .orElseThrow(() -> QueryException.error(format("Can not find column %s in table %s",
+                                    tableName, columnName)));
 
                     final RexNode rexNode = variant.get(columnName);
                     if (rexNode instanceof RexDynamicParam) {

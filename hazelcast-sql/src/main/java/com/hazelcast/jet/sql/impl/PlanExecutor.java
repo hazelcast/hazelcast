@@ -27,6 +27,7 @@ import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.RestartableException;
@@ -78,7 +79,6 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
-import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -571,10 +571,8 @@ public class PlanExecutor {
         }
 
         if (!partitions.isEmpty() && allVariantsValid) {
-            if (plan.requiredRootPartitionId() != null) {
-                partitions.add(plan.requiredRootPartitionId());
-            }
             jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, partitions);
+            jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_COORDINATOR, plan.shouldUseCoordinator());
         }
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());

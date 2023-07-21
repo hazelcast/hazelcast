@@ -46,7 +46,6 @@ import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
-import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
@@ -1059,7 +1058,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         // map of per-table partition pruning candidates, structured as
         // mapName -> { columnName -> RexLiteralOrDynamicParam }
         private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
-        private final Integer requiredRootPartitionId;
+        private final boolean shouldUseCoordinator;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         SelectPlan(
@@ -1073,7 +1072,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 PlanExecutor planExecutor,
                 List<Permission> permissions,
                 Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates,
-                @Nullable Integer requiredRootPartitionId) {
+                boolean shouldUseCoordinator) {
             super(planKey);
 
             this.objectKeys = objectKeys;
@@ -1085,7 +1084,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.planExecutor = planExecutor;
             this.permissions = permissions;
             this.partitionStrategyCandidates = partitionStrategyCandidates;
-            this.requiredRootPartitionId = requiredRootPartitionId;
+            this.shouldUseCoordinator = shouldUseCoordinator;
         }
 
         QueryParameterMetadata getParameterMetadata() {
@@ -1133,9 +1132,8 @@ abstract class SqlPlanImpl extends SqlPlan {
             return true;
         }
 
-        @Nullable
-        public Integer requiredRootPartitionId() {
-            return requiredRootPartitionId;
+        public boolean shouldUseCoordinator() {
+            return shouldUseCoordinator;
         }
 
         @Override

@@ -64,7 +64,7 @@ public class LazyDefiningPMSTest extends SimpleTestInClusterSupport {
     public void setUp() throws Exception {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance());
         Map<Address, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
-                        Util.getMembersView(nodeEngine).getMembers(), null)
+                        Util.getMembersView(nodeEngine).getMembers(), null, false)
                 .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
         ownderAddress = instance().getCluster().getLocalMember().getAddress();
         for (int i = 1; i < ITERATIONS; ++i) {

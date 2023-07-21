@@ -40,5 +40,12 @@ public final class JobConfigArguments {
      */
     public static final String KEY_REQUIRED_PARTITIONS = "__sql.requiredPartitions";
 
-    private JobConfigArguments() { }
+    /**
+     * The key under which the SQL engine stores boolean flag if coordinator member
+     * is required to be included to the job with applied member pruning technique.
+     */
+    public static final String KEY_REQUIRED_COORDINATOR = "__sql.requiredCoordinator";
+
+    private JobConfigArguments() {
+    }
 }
