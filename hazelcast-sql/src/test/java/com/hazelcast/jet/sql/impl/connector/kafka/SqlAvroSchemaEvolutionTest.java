@@ -127,7 +127,7 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
                         "name VARCHAR",
                         "ssn BIGINT")
                 .optionsIf(!topicNameStrategy,
-                           "value.record.name", "jet.sql2")
+                           "valueAvroRecordName", "jet.sql2")
                 .createOrReplace();
         }
 
@@ -157,7 +157,7 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
                 .options("auto.register.schemas", false,
                          "use.latest.version", true)
                 .optionsIf(!topicNameStrategy,
-                           "value.record.name", "jet.sql2")
+                           "valueAvroRecordName", "jet.sql2")
                 .createOrReplace();
         }
 
@@ -195,7 +195,7 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
                          "key.schema.id", keySchemaId,
                          "value.schema.id", valueSchemaId2)
                 .optionsIf(!topicNameStrategy,
-                           "value.record.name", "jet.sql2")
+                           "valueAvroRecordName", "jet.sql2")
                 .createOrReplace();
         }
 

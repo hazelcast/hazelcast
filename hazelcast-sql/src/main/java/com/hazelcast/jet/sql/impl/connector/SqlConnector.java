@@ -134,6 +134,20 @@ public interface SqlConnector {
     String OPTION_VALUE_COMPACT_TYPE_NAME = "valueCompactTypeName";
 
     /**
+     * Key record name for in generated Avro schema if {@value
+     * #OPTION_KEY_FORMAT} is {@value AVRO_FORMAT}. If not specified, defaults
+     * to {@code "jet.sql"}.
+     */
+    String OPTION_KEY_AVRO_RECORD_NAME = "keyAvroRecordName";
+
+    /**
+     * Value record name for in generated Avro schema if {@value
+     * #OPTION_KEY_FORMAT} is {@value AVRO_FORMAT}. If not specified, defaults
+     * to {@code "jet.sql"}.
+     */
+    String OPTION_VALUE_AVRO_RECORD_NAME = "valueAvroRecordName";
+
+    /**
      * The class name of the Custom Type's underlying Java Class
      */
     String OPTION_TYPE_JAVA_CLASS = "javaClass";
