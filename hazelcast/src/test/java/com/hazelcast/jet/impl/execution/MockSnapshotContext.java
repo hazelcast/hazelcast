@@ -34,7 +34,7 @@ public class MockSnapshotContext extends SnapshotContext {
         super(Logger.getLogger(MockSnapshotContext.class), randomString(), 0L, ProcessingGuarantee.NONE);
 
         // initialize these values to avoid assert exceptions in some tests
-        initTaskletCount(1, 1,1);
+        initTaskletCount(1, 1, 1);
     }
 
     @Override
