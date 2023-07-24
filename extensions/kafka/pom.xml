@@ -118,7 +118,7 @@
         <dependency>
             <groupId>io.confluent</groupId>
             <artifactId>kafka-schema-registry</artifactId>
-            <version>6.2.2</version>
+            <version>${confluent.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
