@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.impl.operation.AddJobStatusListenerOperation;
 import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -176,10 +177,10 @@ public abstract class AbstractJobProxy<C, M> implements Job {
      * {@code ??} if it is not loaded yet via {@link #getName()} or {@link #getConfig()}.
      * Otherwise, it is single-quoted and also empty for unnamed jobs.
      */
-    @SuppressWarnings({"StringEquality", "java:S4973"})
+    @SuppressWarnings("StringEquality")
     private String idAndName() {
         return getIdString() + " (name " +
-                (name != NOT_LOADED ? "'" + (name != null ? name : "") + "'" : "??") + ")";
+                (name == NOT_LOADED ? "??" : "'" + (name != null ? name : "") + "'") + ")";
     }
 
     @Nonnull @Override
@@ -278,7 +279,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
                         // This scenario is possible only on the client or lite member. On normal member,
                         // the submit op is executed directly.
                         assert joinedJob.get() : "not joined";
-                        if (getFuture().isDone()) {
+                        if (future.isDone()) {
                             return;
                         }
                     } else {
@@ -401,7 +402,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     protected abstract LoggingService loggingService();
 
-    protected abstract boolean isRunning();
+    protected abstract boolean isContainerRunning();
 
     protected C container() {
         return container;
@@ -414,16 +415,18 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         return submitFuture;
     }
 
+    /** @see ExceptionUtil#isRestartableException */
     private boolean isRestartable(Throwable t) {
         if (isLightJob()) {
             return false;
         }
         // These exceptions are restartable only for non-light jobs. If the light job coordinator
         // leaves or disconnects, the job fails. For normal jobs, the new master will take over.
-        return t instanceof MemberLeftException
+        return isContainerRunning()
+                && (t instanceof MemberLeftException
                 || t instanceof TargetDisconnectedException
                 || t instanceof TargetNotMemberException
-                || t instanceof HazelcastInstanceNotActiveException && isRunning();
+                || t instanceof HazelcastInstanceNotActiveException);
     }
 
     private void doInvokeJoinJob() {

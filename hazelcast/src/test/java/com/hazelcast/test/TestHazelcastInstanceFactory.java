@@ -24,13 +24,20 @@ import com.hazelcast.config.YamlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.impl.MetricsService;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.metrics.MetricsRule;
@@ -48,6 +55,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
@@ -77,6 +85,7 @@ public class TestHazelcastInstanceFactory {
     private final int count;
 
     private MetricsRule metricsRule;
+    private UnaryOperator<NodeContext> delegateNodeContext = UnaryOperator.identity();
 
     public TestHazelcastInstanceFactory() {
         this(0);
@@ -105,6 +114,10 @@ public class TestHazelcastInstanceFactory {
 
     protected TestNodeRegistry createRegistry() {
         return new TestNodeRegistry(getKnownAddresses(), DefaultNodeContext.EXTENSION_PRIORITY_LIST);
+    }
+
+    public void delegateNodeContext(UnaryOperator<NodeContext> delegateNodeContext) {
+        this.delegateNodeContext = delegateNodeContext;
     }
 
     public int getCount() {
@@ -152,8 +165,8 @@ public class TestHazelcastInstanceFactory {
         if (isMockNetwork) {
             config = initOrCreateConfig(config);
             NodeContext nodeContext = registry.createNodeContext(address);
-            HazelcastInstance hazelcastInstance =
-                    HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            HazelcastInstance hazelcastInstance = HazelcastInstanceFactory
+                    .newHazelcastInstance(config, instanceName, delegateNodeContext.apply(nodeContext));
             registerTestMetricsPublisher(hazelcastInstance);
 
             return hazelcastInstance;
@@ -199,8 +212,8 @@ public class TestHazelcastInstanceFactory {
                     blockedAddresses == null
                             ? Collections.emptySet()
                             : new HashSet<>(asList(blockedAddresses)));
-            HazelcastInstance hazelcastInstance =
-                    HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+            HazelcastInstance hazelcastInstance = HazelcastInstanceFactory
+                    .newHazelcastInstance(config, instanceName, delegateNodeContext.apply(nodeContext));
             registerTestMetricsPublisher(hazelcastInstance);
 
             return hazelcastInstance;
@@ -228,16 +241,19 @@ public class TestHazelcastInstanceFactory {
      * @param config the config to use; use {@code null} to get the default config
      */
     public HazelcastInstance newHazelcastInstance(Config config) {
-        String instanceName = config != null ? config.getInstanceName() : null;
+        NodeContext nodeContext;
         if (isMockNetwork) {
             config = initOrCreateConfig(config);
-            NodeContext nodeContext = registry.createNodeContext(nextAddress(config.getNetworkConfig().getPort()));
-            HazelcastInstance hazelcastInstance = HazelcastInstanceFactory
-                    .newHazelcastInstance(config, instanceName, nodeContext);
-            registerTestMetricsPublisher(hazelcastInstance);
-            return hazelcastInstance;
+            nodeContext = registry.createNodeContext(nextAddress(config.getNetworkConfig().getPort()));
+        } else {
+            if (config == null) {
+                Config.load();
+            }
+            nodeContext = new DefaultNodeContext();
         }
-        HazelcastInstance hazelcastInstance = HazelcastInstanceFactory.newHazelcastInstance(config);
+        String instanceName = config != null ? config.getInstanceName() : null;
+        HazelcastInstance hazelcastInstance = HazelcastInstanceFactory
+                .newHazelcastInstance(config, instanceName, delegateNodeContext.apply(nodeContext));
         registerTestMetricsPublisher(hazelcastInstance);
         return hazelcastInstance;
     }
@@ -474,6 +490,35 @@ public class TestHazelcastInstanceFactory {
         final TestNodeRegistry registry = getRegistry();
         synchronized (addressMap) {
             addressMap.entrySet().removeIf(entry -> registry.getInstance(entry.getValue()) == null);
+        }
+    }
+
+    public abstract static class DelegatingNodeContext implements NodeContext {
+        private final NodeContext delegate;
+
+        public DelegatingNodeContext(NodeContext delegate) {
+            super();
+            this.delegate = delegate;
+        }
+
+        @Override
+        public NodeExtension createNodeExtension(Node node) {
+            return delegate.createNodeExtension(node);
+        }
+
+        @Override
+        public AddressPicker createAddressPicker(Node node) {
+            return delegate.createAddressPicker(node);
+        }
+
+        @Override
+        public Joiner createJoiner(Node node) {
+            return delegate.createJoiner(node);
+        }
+
+        @Override
+        public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
+            return delegate.createServer(node, registry, addressRegistry);
         }
     }
 }

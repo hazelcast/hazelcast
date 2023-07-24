@@ -22,19 +22,12 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.AddressPicker;
-import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.DefaultNodeExtension;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.instance.impl.NodeExtension;
-import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.server.Server;
-import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
-import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -50,8 +43,8 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.TestHazelcastInstanceFactory.DelegatingNodeContext;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -412,7 +405,9 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     // Before and After actions are dismissed.
     @Test
     public void testMigration() {
-        HazelcastInstance instance = new CustomTestInstanceFactory().newHazelcastInstance(config);
+        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+        factory.delegateNodeContext(MockNodeContext::new);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         List<Person> people = new ArrayList<>(
@@ -444,7 +439,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         } catch (Exception e) {
             assertInstanceOf(MissingPartitionException.class, e.getCause());
         } finally {
-            instance.shutdown();
+            factory.shutdownAll();
         }
     }
 
@@ -574,7 +569,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
     // Mocking for getMigrationStamp() method.
     // Other overrides are required to prevent exceptions.
-    static class MockMapService extends MapService {
+    private static class MockMapService extends MapService {
         private final MapService delegate;
         private int methodCalled = 0;
 
@@ -612,60 +607,23 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         }
     }
 
-    private static class MockingNodeContext implements NodeContext {
-        private final NodeContext delegate;
-
-        MockingNodeContext(NodeContext delegate) {
-            super();
-            this.delegate = delegate;
+    private static class MockNodeContext extends DelegatingNodeContext {
+        MockNodeContext(NodeContext delegate) {
+            super(delegate);
         }
 
         @Override
         public NodeExtension createNodeExtension(Node node) {
-            return new CustomMapServiceNodeExtension(node);
-        }
-
-        @Override
-        public AddressPicker createAddressPicker(Node node) {
-            return delegate.createAddressPicker(node);
-        }
-
-        @Override
-        public Joiner createJoiner(Node node) {
-            return delegate.createJoiner(node);
-        }
-
-        @Override
-        public Server createServer(Node node, ServerSocketRegistry registry, LocalAddressRegistry addressRegistry) {
-            return delegate.createServer(node, registry, addressRegistry);
-        }
-    }
-
-    private static class CustomMapServiceNodeExtension extends DefaultNodeExtension {
-        CustomMapServiceNodeExtension(Node node) {
-            super(node);
-        }
-
-        @Override
-        public <T> T createService(Class<T> clazz, Object... params) {
-            return clazz.isAssignableFrom(MapService.class)
-                    ? (T) new MockMapService((MapService) super.createService(clazz, params)) : super.createService(clazz, params);
-        }
-    }
-
-    private static class CustomTestInstanceFactory extends TestHazelcastInstanceFactory {
-
-        @Override
-        public HazelcastInstance newHazelcastInstance(Config config) {
-            String instanceName = config != null ? config.getInstanceName() : null;
-            NodeContext nodeContext;
-            if (TestEnvironment.isMockNetwork()) {
-                config = initOrCreateConfig(config);
-                nodeContext = this.registry.createNodeContext(this.nextAddress(config.getNetworkConfig().getPort()));
-            } else {
-                nodeContext = new DefaultNodeContext();
-            }
-            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, new MockingNodeContext(nodeContext));
+            return new DefaultNodeExtension(node) {
+                @Override
+                @SuppressWarnings("unchecked")
+                public <T> T createService(Class<T> clazz, Object... params) {
+                    if (clazz.isAssignableFrom(MapService.class)) {
+                        return (T) new MockMapService((MapService) super.createService(clazz, params));
+                    }
+                    return super.createService(clazz, params);
+                }
+            };
         }
     }
 }

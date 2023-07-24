@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.google.common.collect.Lists;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
@@ -98,6 +99,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -349,6 +351,13 @@ public abstract class HazelcastTestSupport {
             }
         }
         return false;
+    }
+
+    /**
+     * Returns the cartesian product of the specified lists.
+     */
+    public static List<Object[]> parameters(List<?>... lists) {
+        return Lists.cartesianProduct(lists).stream().map(List::toArray).collect(toList());
     }
 
     // ###########################
@@ -1013,8 +1022,7 @@ public abstract class HazelcastTestSupport {
     }
 
     private static int getClusterSize(HazelcastInstance instance) {
-        Set<Member> members = instance.getCluster().getMembers();
-        return members == null ? 0 : members.size();
+        return instance.getCluster().getMembers().size();
     }
 
     public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance... instances) {
@@ -1284,7 +1292,6 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertFalseEventually(AssertTask task, long timeoutSeconds) {
-        AssertionError error = null;
         // we are going to check five times a second
         int sleepMillis = 200;
         long iterations = timeoutSeconds * 5;

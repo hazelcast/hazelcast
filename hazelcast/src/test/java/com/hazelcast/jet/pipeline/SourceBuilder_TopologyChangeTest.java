@@ -112,7 +112,7 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 .writeTo(Sinks.list(result));
 
         Job job = hz.getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(500));
-        assertJobVisible(hz, job, "test job");
+        assertJobVisibleEventually(hz, job);
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         assertJobStatusEventually(job, JobStatus.RUNNING);
         JobRepository jr = new JobRepository(hz);

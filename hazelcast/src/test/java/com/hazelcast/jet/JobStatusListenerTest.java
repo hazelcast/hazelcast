@@ -402,7 +402,7 @@ public class JobStatusListenerTest extends SimpleTestInClusterSupport {
         public void runLightJob() {
             run((jet, p) -> {
                 Job job = jet.newLightJob(p);
-                assertJobVisible(instance.get(), job, job.getIdString());
+                assertJobVisibleEventually(instance.get(), job);
                 return job;
             }, JobStatusListenerTest::assertEqualsEventually);
         }

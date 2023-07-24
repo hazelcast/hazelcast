@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.google.common.collect.Lists;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import io.confluent.kafka.schemaregistry.exceptions.SchemaRegistryException;
@@ -32,7 +31,6 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
@@ -60,9 +58,9 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
 
     @Parameters(name = "{0}, updateMapping=[{1}]")
     public static Iterable<Object[]> parameters() {
-        return Lists.cartesianProduct(
+        return parameters(
                 asList("TopicNameStrategy", "TopicRecordNameStrategy", "RecordNameStrategy"),
-                asList(false, true)).stream().map(List::toArray).collect(toList());
+                asList(false, true));
     }
 
     @Parameter(0)

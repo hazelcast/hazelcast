@@ -127,6 +127,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.JOB_SCAN_PERIOD;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.failedFuture;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -193,7 +194,7 @@ public class JobCoordinationService {
         this.nodeEngine = nodeEngine;
         this.jetServiceBackend = jetServiceBackend;
         this.config = config;
-        this.pipelineToDagContext = () -> this.config.getCooperativeThreadCount();
+        this.pipelineToDagContext = config::getCooperativeThreadCount;
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
 
@@ -362,12 +363,16 @@ public class JobCoordinationService {
         return jobSubmitted.get();
     }
 
-    public JobConfig getLightJobConfig(long jobId) {
+    private LightMasterContext getLightJob(long jobId) {
         Object mc = lightMasterContexts.get(jobId);
         if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
             throw new JobNotFoundException(jobId);
         }
-        return ((LightMasterContext) mc).getJobConfig();
+        return (LightMasterContext) mc;
+    }
+
+    public JobConfig getLightJobConfig(long jobId) {
+        return getLightJob(jobId).getJobConfig();
     }
 
     private void checkPermissions(Subject subject, DAG dag) {
@@ -467,11 +472,7 @@ public class JobCoordinationService {
     }
 
     public CompletableFuture<Void> joinLightJob(long jobId) {
-        Object mc = lightMasterContexts.get(jobId);
-        if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
-            throw new JobNotFoundException(jobId);
-        }
-        return ((LightMasterContext) mc).getCompletionFuture();
+        return getLightJob(jobId).getCompletionFuture();
     }
 
     public CompletableFuture<Void> terminateJob(long jobId, TerminationMode terminationMode, boolean userInitiated) {
@@ -513,11 +514,7 @@ public class JobCoordinationService {
     }
 
     public void terminateLightJob(long jobId, boolean userInitiated) {
-        Object mc = lightMasterContexts.get(jobId);
-        if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
-            throw new JobNotFoundException(jobId);
-        }
-        ((LightMasterContext) mc).requestTermination(userInitiated);
+        getLightJob(jobId).requestTermination(userInitiated);
     }
 
     /**
@@ -705,11 +702,7 @@ public class JobCoordinationService {
      */
     public CompletableFuture<Long> getJobSubmissionTime(long jobId, boolean isLightJob) {
         if (isLightJob) {
-            Object mc = lightMasterContexts.get(jobId);
-            if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
-                throw new JobNotFoundException(jobId);
-            }
-            return completedFuture(((LightMasterContext) mc).getStartTime());
+            return completedFuture(getLightJob(jobId).getStartTime());
         }
         return callWithJob(jobId,
                 mc -> mc.jobRecord().getCreationTime(),
@@ -847,12 +840,7 @@ public class JobCoordinationService {
      */
     public CompletableFuture<UUID> addJobStatusListener(long jobId, boolean isLightJob, Registration registration) {
         if (isLightJob) {
-            Object mc = lightMasterContexts.get(jobId);
-            if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
-                throw new JobNotFoundException(jobId);
-            } else {
-                return completedFuture(((LightMasterContext) mc).addStatusListener(registration));
-            }
+            return completedFuture(getLightJob(jobId).addStatusListener(registration));
         }
         return callWithJob(jobId,
                 masterContext -> masterContext.addStatusListener(registration),
@@ -1460,7 +1448,7 @@ public class JobCoordinationService {
             } catch (Throwable e) {
                 // most callers ignore the failure on the returned future, let's log it at least
                 logger.warning(null, e);
-                return com.hazelcast.jet.impl.util.Util.exceptionallyCompletedFuture(e);
+                return failedFuture(e);
             }
         }
 

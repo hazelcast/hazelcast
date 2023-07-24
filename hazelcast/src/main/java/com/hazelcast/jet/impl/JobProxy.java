@@ -28,7 +28,6 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.metrics.JobMetrics;
-import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.AddJobStatusListenerOperation;
 import com.hazelcast.jet.impl.operation.GetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.GetJobMetricsOperation;
@@ -48,13 +47,11 @@ import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 /**
  * {@link Job} proxy on member.
@@ -77,42 +74,25 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     @Nonnull @Override
     protected JobStatus getStatus0() {
         assert !isLightJob();
-        try {
-            return this.<JobStatus>invokeOp(new GetJobStatusOperation(getId())).get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return invoke(new GetJobStatusOperation(getId()));
     }
 
     @Override
     protected boolean isUserCancelled0() {
         assert !isLightJob();
-        try {
-            return this.<Boolean>invokeOp(new IsJobUserCancelledOperation(getId())).get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return invoke(new IsJobUserCancelledOperation(getId()));
     }
 
     @Nonnull @Override
     public JobSuspensionCause getSuspensionCause() {
         checkNotLightJob("suspensionCause");
-        try {
-            return this.<JobSuspensionCause>invokeOp(new GetJobSuspensionCauseOperation(getId())).get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return invoke(new GetJobSuspensionCauseOperation(getId()));
     }
 
     @Nonnull @Override
     public JobMetrics getMetrics() {
         checkNotLightJob("metrics");
-        try {
-            List<RawJobMetrics> shards = this.<List<RawJobMetrics>>invokeOp(new GetJobMetricsOperation(getId())).get();
-            return toJobMetrics(shards);
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return toJobMetrics(invoke(new GetJobMetricsOperation(getId())));
     }
 
     @Override
@@ -138,31 +118,27 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         if (serialize) {
             Data configData = serializationService().toData(config);
             Data jobDefinitionData = serializationService().toData(jobDefinition);
-            return invokeOp(new SubmitJobOperation(
+            return invokeAsync(new SubmitJobOperation(
                     getId(), null, null, jobDefinitionData, configData, isLightJob(), null));
         }
-        return invokeOp(new SubmitJobOperation(
+        return invokeAsync(new SubmitJobOperation(
                 getId(), jobDefinition, config, null, null, isLightJob(), null));
     }
 
     @Override
     protected CompletableFuture<Void> invokeJoinJob() {
-        return invokeOp(new JoinSubmittedJobOperation(getId(), isLightJob()));
+        return invokeAsync(new JoinSubmittedJobOperation(getId(), isLightJob()));
     }
 
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
-        return invokeOp(new TerminateJobOperation(getId(), mode, isLightJob()));
+        return invokeAsync(new TerminateJobOperation(getId(), mode, isLightJob()));
     }
 
     @Override
     public void resume() {
         checkNotLightJob("resume");
-        try {
-            invokeOp(new ResumeJobOperation(getId())).get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        invoke(new ResumeJobOperation(getId()));
     }
 
     @Override
@@ -178,40 +154,23 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
         checkNotLightJob("export snapshot");
         JetServiceBackend jetServiceBackend = container().getService(JetServiceBackend.SERVICE_NAME);
-        try {
-            Operation operation = jetServiceBackend.createExportSnapshotOperation(getId(), name, cancelJob);
-            invokeOp(operation).get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
+        invoke(jetServiceBackend.createExportSnapshotOperation(getId(), name, cancelJob));
         return jetServiceBackend.getJet().getJobStateSnapshot(name);
     }
 
     @Override
     protected long doGetJobSubmissionTime() {
-        try {
-            return this.<Long>invokeOp(new GetJobSubmissionTimeOperation(getId(), isLightJob())).get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return invoke(new GetJobSubmissionTimeOperation(getId(), isLightJob()));
     }
 
     @Override
     protected JobConfig doGetJobConfig() {
-        try {
-            return this.<JobConfig>invokeOp(new GetJobConfigOperation(getId(), isLightJob())).get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return invoke(new GetJobConfigOperation(getId(), isLightJob()));
     }
 
     @Override
     protected JobConfig doUpdateJobConfig(@Nonnull DeltaJobConfig deltaConfig) {
-        try {
-            return this.<JobConfig>invokeOp(new UpdateJobConfigOperation(getId(), deltaConfig)).get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        return invoke(new UpdateJobConfigOperation(getId(), deltaConfig));
     }
 
     @Override
@@ -225,15 +184,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    protected boolean isRunning() {
+    protected boolean isContainerRunning() {
         return container().isRunning();
-    }
-
-    private <T> CompletableFuture<T> invokeOp(Operation op) {
-        return container()
-                .getOperationService()
-                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, coordinatorId())
-                .invoke();
     }
 
     @Nonnull @Override
@@ -248,13 +200,9 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     @Override
     protected UUID doAddStatusListener(@Nonnull JobStatusListener listener) {
         checkJobStatusListenerSupported(container());
-        try {
-            JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
-            Registration registration = jobEventService.prepareRegistration(getId(), listener, false);
-            return this.<UUID>invokeOp(new AddJobStatusListenerOperation(getId(), isLightJob(), registration)).get();
-        } catch (Throwable t) {
-            throw rethrow(t);
-        }
+        JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
+        Registration registration = jobEventService.prepareRegistration(getId(), listener, false);
+        return invoke(new AddJobStatusListenerOperation(getId(), isLightJob(), registration));
     }
 
     @Override
@@ -262,6 +210,17 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         checkJobStatusListenerSupported(container());
         JobEventService jobEventService = container().getService(JobEventService.SERVICE_NAME);
         return jobEventService.removeEventListener(getId(), id);
+    }
+
+    private <T> T invoke(Operation op) {
+        return this.<T>invokeAsync(op).get();
+    }
+
+    private <T> CompletableFuture<T> invokeAsync(Operation op) {
+        return container()
+                .getOperationService()
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, coordinatorId())
+                .invoke();
     }
 
     public static void checkJobStatusListenerSupported(NodeEngine nodeEngine) {
