@@ -25,7 +25,7 @@ import java.lang.invoke.VarHandle;
  * The metrics should only be updated by the event loop thread, but can be
  * read by any thread.
  */
-public class TaskQueueMetrics {
+public final class TaskQueueMetrics {
     private static final VarHandle TASKS_PROCESSED_COUNT;
     private static final VarHandle CPU_TIME_NANOS;
 

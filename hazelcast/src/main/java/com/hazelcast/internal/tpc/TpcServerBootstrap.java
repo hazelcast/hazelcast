@@ -148,9 +148,9 @@ public class TpcServerBootstrap {
         logger.info("Starting TpcServerBootstrap");
 
         TpcEngineBuilder tpcEngineBuilder = new TpcEngineBuilder();
-        // they way we allow for the OperationThreads to become the reactor threads
-        // is done to lower the risk to introduce TPC next to the classic design.
-        // But eventually the system needs be be build around the TPC engine.
+        // The current approach for allowing the OperationThreads to become the reactor threads
+        // is done to lower the risk to introduce TPC next to the classic design. But eventually
+        // the system needs be be build around the TPC engine.
         tpcEngineBuilder.setReactorBuilderConfigureFn(new Consumer<>() {
             private int threadIndex;
 

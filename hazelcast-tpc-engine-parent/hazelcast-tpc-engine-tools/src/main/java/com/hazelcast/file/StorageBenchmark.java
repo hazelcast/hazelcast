@@ -16,6 +16,7 @@
 
 package com.hazelcast.file;
 
+import com.hazelcast.Util;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
@@ -29,9 +30,7 @@ import com.hazelcast.internal.util.ThreadAffinity;
 
 import java.io.File;
 import java.nio.file.FileSystems;
-import java.text.CharacterIterator;
 import java.text.DecimalFormat;
-import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.Util.humanReadableByteCountSI;
 import static com.hazelcast.internal.tpcengine.ReactorBuilder.newReactorBuilder;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_CREAT;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_DIRECT;
@@ -133,7 +133,7 @@ public class StorageBenchmark {
         benchmark.iodepth = 64;
         benchmark.fileSize = 4 * 1024 * 1024L;
         benchmark.bs = 4 * 1024;
-        benchmark.directories.add("/home/pveentjer/");
+        benchmark.directories.add("/mnt/benchdrive1");
         benchmark.readwrite = READWRITE_READ;
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = true;
@@ -553,13 +553,13 @@ public class StorageBenchmark {
         System.out.println("fdatasync: " + fdatasync);
         long totalTimeMicros = MILLISECONDS.toMicros(numJobs * iodepth * durationMs);
 
-        System.out.println("Speed: " + humanReadableCountSI(metrics.ops() * 1000f / durationMs) + " IOPS");
+        System.out.println("Speed: " + Util.humanReadableCountSI(metrics.ops() * 1000f / durationMs) + " IOPS");
         System.out.println("File size: " + humanReadableByteCountSI(fileSize));
         System.out.println("Block size: " + bs + " B");
         switch (readwrite) {
             case READWRITE_NOP:
                 System.out.println("Workload: nop");
-                System.out.println("Nops: " + humanReadableCountSI(metrics.ops()));
+                System.out.println("Nops: " + Util.humanReadableCountSI(metrics.ops()));
                 System.out.println("Average latency: " + (totalTimeMicros / metrics.ops()) + " us");
                 break;
             case READWRITE_WRITE:
@@ -603,83 +603,73 @@ public class StorageBenchmark {
         @Override
         public void run() {
             try {
-                doRun();
+                run0();
             } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
 
-        private void doRun() {
+        private void run0() throws Exception {
             long lastMs = System.currentTimeMillis();
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-            }
+            Thread.sleep(1000);
 
             long end = System.currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
             Metrics lastMetrics = new Metrics();
             Metrics metrics = new Metrics();
             while (System.currentTimeMillis() < end) {
-
                 long nowMs = System.currentTimeMillis();
+                long durationMs = nowMs - lastMs;
                 collect(metrics);
 
                 long reads = metrics.reads;
                 if (reads > 0) {
-                    double readsThp = ((reads - lastMetrics.reads) * 1000d) / (nowMs - lastMs);
-                    lastMetrics.reads = reads;
+                    double readsThp = ((reads - lastMetrics.reads) * 1000d) / durationMs;
                     sb.append(" reads=");
-                    sb.append(humanReadableCountSI(readsThp));
+                    sb.append(Util.humanReadableCountSI(readsThp));
                     sb.append("/s");
                 }
 
                 long bytesRead = metrics.bytesRead;
                 if (bytesRead > 0) {
-                    double bytesThp = ((bytesRead - lastMetrics.bytesRead) * 1000d) / (nowMs - lastMs);
-                    lastMetrics.bytesRead = bytesRead;
+                    double bytesThp = ((bytesRead - lastMetrics.bytesRead) * 1000d) / durationMs;
                     sb.append(" read-bytes=");
                     sb.append(humanReadableByteCountSI(bytesThp));
                     sb.append("/s");
                 }
                 long writes = metrics.writes;
                 if (writes > 0) {
-                    double writeThp = ((writes - lastMetrics.writes) * 1000d) / (nowMs - lastMs);
-                    lastMetrics.writes = writes;
+                    double writeThp = ((writes - lastMetrics.writes) * 1000d) / durationMs;
                     sb.append(" writes=");
-                    sb.append(humanReadableCountSI(writeThp));
+                    sb.append(Util.humanReadableCountSI(writeThp));
                     sb.append("/s");
                 }
                 long bytesWritten = metrics.bytesWritten;
                 if (bytesWritten > 0) {
-                    double bytesThp = ((bytesWritten - lastMetrics.bytesWritten) * 1000d) / (nowMs - lastMs);
-                    lastMetrics.bytesWritten = bytesWritten;
+                    double bytesThp = ((bytesWritten - lastMetrics.bytesWritten) * 1000d) / durationMs;
                     sb.append(" write-bytes=");
                     sb.append(humanReadableByteCountSI(bytesThp));
                     sb.append("/s");
                 }
                 long fsyncs = metrics.fsyncs;
                 if (fsyncs > 0) {
-                    double fsyncsThp = ((fsyncs - lastMetrics.fsyncs) * 1000d) / (nowMs - lastMs);
-                    lastMetrics.fsyncs = fsyncs;
+                    double fsyncsThp = ((fsyncs - lastMetrics.fsyncs) * 1000d) / durationMs;
                     sb.append(" fsyncs=");
-                    sb.append(humanReadableCountSI(fsyncsThp));
+                    sb.append(Util.humanReadableCountSI(fsyncsThp));
                     sb.append("/s");
                 }
                 long fdatasyncs = metrics.fdatasyncs;
                 if (fdatasyncs > 0) {
-                    double fdataSyncsThp = ((fdatasyncs - lastMetrics.fdatasyncs) * 1000d) / (nowMs - lastMs);
-                    lastMetrics.fdatasyncs = fdatasyncs;
+                    double fdataSyncsThp = ((fdatasyncs - lastMetrics.fdatasyncs) * 1000d) / durationMs;
                     sb.append(" fdatasyncs=");
-                    sb.append(humanReadableCountSI(fdataSyncsThp));
+                    sb.append(Util.humanReadableCountSI(fdataSyncsThp));
                     sb.append("/s");
                 }
 
                 long nops = metrics.nops;
                 if (nops > 0) {
-                    double nopsThp = ((nops - lastMetrics.nops) * 1000d) / (nowMs - lastMs);
-                    lastMetrics.nops = nops;
+                    double nopsThp = ((nops - lastMetrics.nops) * 1000d) / durationMs;
                     sb.append(" nops=");
-                    sb.append(humanReadableCountSI(nopsThp));
+                    sb.append(Util.humanReadableCountSI(nopsThp));
                     sb.append("/s");
                 }
 
@@ -690,61 +680,13 @@ public class StorageBenchmark {
                 lastMetrics = metrics;
                 metrics = tmp;
 
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    break;
-                }
+                Thread.sleep(1000);
                 lastMs = nowMs;
             }
 
             stop = true;
             System.out.println("Monitor ready");
         }
-    }
-
-    private static String humanReadableByteCountSI(double bytes) {
-        if (Double.isInfinite(bytes)) {
-            return "Infinite";
-        }
-
-        if (-1000 < bytes && bytes < 1000) {
-            return bytes + "B";
-        }
-        CharacterIterator ci = new StringCharacterIterator("kMGTPE");
-        while (bytes <= -999_950 || bytes >= 999_950) {
-            bytes /= 1000;
-            ci.next();
-        }
-        return String.format("%.2f %cB", bytes / 1000.0, ci.current());
-    }
-
-    private static String humanReadableByteCountSI(long bytes) {
-        if (-1000 < bytes && bytes < 1000) {
-            return bytes + "B";
-        }
-        CharacterIterator ci = new StringCharacterIterator("kMGTPE");
-        while (bytes <= -999_950 || bytes >= 999_950) {
-            bytes /= 1000;
-            ci.next();
-        }
-        return String.format("%.2f %cB", bytes / 1000.0, ci.current());
-    }
-
-    private static String humanReadableCountSI(double count) {
-        if (Double.isInfinite(count)) {
-            return "Infinite";
-        }
-
-        if (-1000 < count && count < 1000) {
-            return String.valueOf(count);
-        }
-        CharacterIterator ci = new StringCharacterIterator("kMGTPE");
-        while (count <= -999_950 || count >= 999_950) {
-            count /= 1000;
-            ci.next();
-        }
-        return String.format("%.2f%c", count / 1000.0, ci.current());
     }
 
     private static class Metrics {

@@ -201,7 +201,7 @@ public final class TaskQueueBuilder {
         }
 
         TaskQueue taskQueue = eventloop.taskQueueAllocator.allocate();
-        taskQueue.startNanos = eventloop.nanoClock.nanoTime();
+        taskQueue.startNanos = eventloop.epochClock.nanoTime();
         taskQueue.local = local;
         taskQueue.global = global;
         if (local == null) {

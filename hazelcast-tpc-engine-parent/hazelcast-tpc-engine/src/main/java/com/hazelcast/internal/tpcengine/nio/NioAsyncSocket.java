@@ -410,7 +410,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
 
         private void handleRead() throws IOException {
-            metrics.incReadEvents();
+            metrics.incReads();
 
             LAST_READ_TIME_NANOS.setOpaque(NioAsyncSocket.this, eventloop.taskStartNanos());
 
@@ -437,7 +437,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             // called without the flushThread being set.
             // So we can't do an assert flushThread!=null.
 
-            metrics.incWriteEvents();
+            metrics.incWrites();
 
             ioVector.populate(writeQueue);
 

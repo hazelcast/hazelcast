@@ -25,7 +25,7 @@ import java.lang.invoke.VarHandle;
  * The metrics should only be updated by the event loop thread, but can be read by any thread.
  */
 @SuppressWarnings("checkstyle:ConstantName")
-public class AsyncServerSocketMetrics {
+public final class AsyncServerSocketMetrics {
 
     private static final VarHandle ACCEPTED;
 

@@ -55,21 +55,21 @@ public class AsyncSocketMetricsTest {
     public void test_writeEvents() {
         AsyncSocketMetrics metrics = new AsyncSocketMetrics();
 
-        metrics.incWriteEvents();
-        assertEquals(1, metrics.writeEvents());
+        metrics.incWrites();
+        assertEquals(1, metrics.writes());
 
-        metrics.incWriteEvents();
-        assertEquals(2, metrics.writeEvents());
+        metrics.incWrites();
+        assertEquals(2, metrics.writes());
     }
 
     @Test
     public void test_readEvents() {
         AsyncSocketMetrics metrics = new AsyncSocketMetrics();
 
-        metrics.incReadEvents();
-        assertEquals(1, metrics.readEvents());
+        metrics.incReads();
+        assertEquals(1, metrics.reads());
 
-        metrics.incReadEvents();
-        assertEquals(2, metrics.readEvents());
+        metrics.incReads();
+        assertEquals(2, metrics.reads());
     }
 }

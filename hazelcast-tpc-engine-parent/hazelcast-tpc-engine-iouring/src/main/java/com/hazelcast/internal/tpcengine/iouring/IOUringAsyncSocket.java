@@ -461,7 +461,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                 if (res > 0) {
                     int bytesRead = res;
                     LAST_READ_TIME_NANOS.setOpaque(IOUringAsyncSocket.this, eventloop.taskStartNanos());
-                    metrics.incReadEvents();
+                    metrics.incReads();
                     metrics.incBytesRead(bytesRead);
 
                     // io_uring has written the new data into the byteBuffer, but the position we

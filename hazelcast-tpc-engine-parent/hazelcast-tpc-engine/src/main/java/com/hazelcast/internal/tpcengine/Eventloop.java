@@ -63,7 +63,7 @@ public abstract class Eventloop {
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     // todo:padding to prevent false sharing
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
-    protected final Clock nanoClock;
+    protected final Clock epochClock;
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
     protected final TaskQueueHandle defaultTaskQueueHandle;
@@ -86,9 +86,8 @@ public abstract class Eventloop {
     protected final BlockDeviceRegistry blockDeviceRegistry;
     protected final Map<BlockDevice, BlockRequestScheduler> deviceSchedulers = new HashMap<>();
 
-
     protected Eventloop(Reactor reactor, ReactorBuilder builder) {
-        this.nanoClock = new EpochClock();
+        this.epochClock = new EpochClock();
         this.reactor = reactor;
         this.metrics = reactor.metrics;
         this.deadlineScheduler = new DeadlineScheduler(builder.deadlineRunQueueCapacity);
@@ -149,20 +148,22 @@ public abstract class Eventloop {
     }
 
     /**
-     * Checks if the current task that is performed should yield. So if there is some long running
-     * tasks, it periodically checks this method. As long as it returns false, it can keep running.
-     * When true is returned, the task should yield (see {@link Task#process()} for more details) and
-     * the task will be scheduled again at some point in the future.
+     * This method should be called by the current task to check if it should yield.
      * <p/>
-     * This method is pretty expensive due to the overhead of {@link System#nanoTime()} which is roughly
-     * between 15/30 nanoseconds. So you want to prevent calling this method too often because you will
-     * loose a lot of performance. But if you don't call it often enough, you can into problems because
-     * you could end up stalling the reactor. So it is a tradeoff.
+     * So if there is some long running tasks, it periodically checks this method.
+     * As long as it returns false, it can keep running. When true is returned, the
+     * task should yield (see {@link Task#process()} for more details) and the task
+     * will be scheduled again at some point in the future.
+     * <p/>
+     * This method is pretty expensive due to the overhead of {@link System#nanoTime()} which
+     * is roughly between 15/30 nanoseconds. So you want to prevent calling this method too
+     * often because you will loose a lot of performance. But if you don't call it often enough,
+     * you can into problems because you could end up stalling the reactor. So it is a tradeoff.
      *
-     * @return
+     * @return true if the caller should yield, false otherwise.
      */
     public final boolean shouldYield() {
-        return nanoClock.nanoTime() > taskDeadlineNanos;
+        return epochClock.nanoTime() > taskDeadlineNanos;
     }
 
     public final boolean offer(Object task) {
@@ -335,7 +336,7 @@ public abstract class Eventloop {
      * When you override it, make sure you call {@code super.beforeRun()}.
      */
     protected void beforeRun() {
-        this.taskStartNanos = nanoClock.nanoTime();
+        this.taskStartNanos = epochClock.nanoTime();
     }
 
     /**
@@ -357,7 +358,7 @@ public abstract class Eventloop {
             "checkstyle:MagicNumber"})
     public final void run() throws Exception {
         //System.out.println("eventloop.run");
-        long nowNanos = nanoClock.nanoTime();
+        long nowNanos = epochClock.nanoTime();
         long ioDeadlineNanos = nowNanos + ioIntervalNanos;
 
         while (!stop) {
@@ -377,7 +378,7 @@ public abstract class Eventloop {
                 park(timeoutNanos);
 
                 // todo: we should only need to update the clock if real parking happened and not when work was detected
-                nowNanos = nanoClock.nanoTime();
+                nowNanos = epochClock.nanoTime();
                 ioDeadlineNanos = nowNanos + ioIntervalNanos;
                 continue;
             }
@@ -405,7 +406,7 @@ public abstract class Eventloop {
                 taskCount++;
 
                 if (clockSampleRound == 1) {
-                    nowNanos = nanoClock.nanoTime();
+                    nowNanos = epochClock.nanoTime();
                     clockSampleRound = taskQueue.clockSampleInterval;
                 } else {
                     clockSampleRound--;
@@ -422,7 +423,7 @@ public abstract class Eventloop {
 
                 if (nowNanos >= ioDeadlineNanos) {
                     ioSchedulerTick();
-                    nowNanos = nanoClock.nanoTime();
+                    nowNanos = epochClock.nanoTime();
                     ioDeadlineNanos = nowNanos + ioIntervalNanos;
                 }
 
@@ -501,7 +502,7 @@ public abstract class Eventloop {
         checkNotNull(unit);
         checkNotNull(handle);
 
-        DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
+        DeadlineTask task = new DeadlineTask(epochClock, deadlineScheduler);
         task.cmd = cmd;
         task.taskQueue = handle.queue;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
@@ -529,7 +530,7 @@ public abstract class Eventloop {
         checkNotNull(unit);
         checkNotNull(handle);
 
-        DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
+        DeadlineTask task = new DeadlineTask(epochClock, deadlineScheduler);
         task.cmd = cmd;
         task.taskQueue = handle.queue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
@@ -557,7 +558,7 @@ public abstract class Eventloop {
         checkNotNull(unit);
         checkNotNull(handle);
 
-        DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
+        DeadlineTask task = new DeadlineTask(epochClock, deadlineScheduler);
         task.cmd = cmd;
         task.taskQueue = handle.queue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
@@ -570,7 +571,7 @@ public abstract class Eventloop {
         checkNotNull(unit, "unit");
 
         Promise promise = promiseAllocator.allocate();
-        DeadlineTask task = new DeadlineTask(nanoClock, deadlineScheduler);
+        DeadlineTask task = new DeadlineTask(epochClock, deadlineScheduler);
         task.promise = promise;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
         task.taskQueue = defaultTaskQueueHandle.queue;
@@ -579,7 +580,7 @@ public abstract class Eventloop {
     }
 
     private long toDeadlineNanos(long delay, TimeUnit unit) {
-        long deadlineNanos = nanoClock.nanoTime() + unit.toNanos(delay);
+        long deadlineNanos = epochClock.nanoTime() + unit.toNanos(delay);
         if (deadlineNanos < 0) {
             // protection against overflow
             deadlineNanos = Long.MAX_VALUE;

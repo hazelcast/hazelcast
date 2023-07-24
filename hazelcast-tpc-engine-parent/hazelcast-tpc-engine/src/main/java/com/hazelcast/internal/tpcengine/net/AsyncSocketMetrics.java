@@ -27,20 +27,20 @@ import java.lang.invoke.VarHandle;
  * The metrics should only be updated by the event loop thread, but can be read by any thread.
  */
 @SuppressWarnings("checkstyle:ConstantName")
-public class AsyncSocketMetrics {
+public final class AsyncSocketMetrics {
 
     private static final VarHandle BYTES_READ;
     private static final VarHandle BYTES_WRITTEN;
-    private static final VarHandle WRITE_EVENTS;
-    private static final VarHandle READ_EVENTS;
+    private static final VarHandle WRITES;
+    private static final VarHandle READS;
 
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
             BYTES_READ = l.findVarHandle(AsyncSocketMetrics.class, "bytesRead", long.class);
             BYTES_WRITTEN = l.findVarHandle(AsyncSocketMetrics.class, "bytesWritten", long.class);
-            WRITE_EVENTS = l.findVarHandle(AsyncSocketMetrics.class, "writeEvents", long.class);
-            READ_EVENTS = l.findVarHandle(AsyncSocketMetrics.class, "readEvents", long.class);
+            WRITES = l.findVarHandle(AsyncSocketMetrics.class, "writes", long.class);
+            READS = l.findVarHandle(AsyncSocketMetrics.class, "reads", long.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -48,8 +48,8 @@ public class AsyncSocketMetrics {
 
     private volatile long bytesRead;
     private volatile long bytesWritten;
-    private volatile long writeEvents;
-    private volatile long readEvents;
+    private volatile long writes;
+    private volatile long reads;
 
     /**
      * Returns bytes read.
@@ -93,15 +93,15 @@ public class AsyncSocketMetrics {
      *
      * @return number of write events.
      */
-    public long writeEvents() {
-        return (long) WRITE_EVENTS.getOpaque(this);
+    public long writes() {
+        return (long) WRITES.getOpaque(this);
     }
 
     /**
      * Increases the number of write events by 1.
      */
-    public void incWriteEvents() {
-        WRITE_EVENTS.setOpaque(this, (long) WRITE_EVENTS.getOpaque(this) + 1);
+    public void incWrites() {
+        WRITES.setOpaque(this, (long) WRITES.getOpaque(this) + 1);
     }
 
     /**
@@ -110,14 +110,14 @@ public class AsyncSocketMetrics {
      *
      * @return number of read events.
      */
-    public long readEvents() {
-        return (long) READ_EVENTS.getOpaque(this);
+    public long reads() {
+        return (long) READS.getOpaque(this);
     }
 
     /**
      * Increases the number of read events by 1.
      */
-    public void incReadEvents() {
-        READ_EVENTS.setOpaque(this, (long) READ_EVENTS.getOpaque(this) + 1);
+    public void incReads() {
+        READS.setOpaque(this, (long) READS.getOpaque(this) + 1);
     }
 }

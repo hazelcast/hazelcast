@@ -26,6 +26,7 @@ import com.hazelcast.internal.tpcengine.iouring.IOUringReactorBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.nio.NioAsyncSocketBuilder;
 import com.hazelcast.internal.util.ThreadAffinity;
@@ -34,8 +35,12 @@ import org.jctools.util.PaddedAtomicLong;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.Util.humanReadableByteCountSI;
+import static com.hazelcast.Util.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEPORT;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
@@ -48,10 +53,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * A benchmarks that test the throughput of 2 sockets that are bouncing packets
  * with some payload between them.
- *
+ * <p>
  * Make sure you add the following the JVM options, otherwise the selector will create
  * garbage:
- *
+ * <p>
  * --add-opens java.base/sun.nio.ch=ALL-UNNAMED
  *
  * <p>
@@ -63,25 +68,32 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * https://www.alibabacloud.com/blog/599544
  */
 public class EchoBenchmark_Tpc {
-    public static final int port = 5006;
-    public static final int durationSeconds = 60;
-    public static final int socketBufferSize = 128 * 1024;
-    public static final boolean useDirectByteBuffers = true;
-    public static final int payloadSize = 0;
+    public int port = 5006;
+    public int durationSeconds = 60;
+    public int socketBufferSize = 128 * 1024;
+    public boolean useDirectByteBuffers = true;
+    public int payloadSize = 0;
     // the number of client/server pair sockets.
-    public static final int concurrency = 1;
-    public static final boolean tcpNoDelay = true;
-    public static final boolean spin = false;
-    public static final boolean regularSchedule = true;
-    public static final ReactorType reactorType = ReactorType.IOURING;
-    public static final String cpuAffinityClient = null;//"1";
-    public static final String cpuAffinityServer = null;//"4";
-    public static final boolean registerRingFd = false;
-    public static final int connections = 100;
-    public static volatile boolean stop;
+    public int concurrency = 1;
+    public boolean tcpNoDelay = true;
+    public boolean spin = false;
+    public boolean regularSchedule = true;
+    public ReactorType reactorType = ReactorType.NIO;
+    public String cpuAffinityClient = null;//"1";
+    public String cpuAffinityServer = null;//"4";
+    public boolean registerRingFd = false;
+    public int connections = 100;
+    private volatile boolean stop;
+    private final List<Reactor> reactors = new ArrayList<>();
+    private PaddedAtomicLong[] completedArray;
 
     public static void main(String[] args) throws InterruptedException {
-        PaddedAtomicLong[] completedArray = new PaddedAtomicLong[connections];
+        EchoBenchmark_Tpc benchmark = new EchoBenchmark_Tpc();
+        benchmark.run();
+    }
+
+    public void run() throws InterruptedException {
+        completedArray = new PaddedAtomicLong[connections];
         for (int k = 0; k < completedArray.length; k++) {
             completedArray[k] = new PaddedAtomicLong();
         }
@@ -95,6 +107,7 @@ public class EchoBenchmark_Tpc {
         clientReactorBuilder.setThreadName("Client-Thread");
         clientReactorBuilder.setThreadAffinity(cpuAffinityClient == null ? null : new ThreadAffinity(cpuAffinityClient));
         Reactor clientReactor = clientReactorBuilder.build();
+        reactors.add(clientReactor);
         clientReactor.start();
 
         ReactorBuilder serverReactorBuilder = ReactorBuilder.newReactorBuilder(reactorType);
@@ -106,6 +119,7 @@ public class EchoBenchmark_Tpc {
         serverReactorBuilder.setThreadName("Server-Thread");
         serverReactorBuilder.setThreadAffinity(cpuAffinityServer == null ? null : new ThreadAffinity(cpuAffinityServer));
         Reactor serverReactor = serverReactorBuilder.build();
+        reactors.add(serverReactor);
         serverReactor.start();
 
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", port);
@@ -166,11 +180,10 @@ public class EchoBenchmark_Tpc {
         return sum;
     }
 
-
-    private static AsyncSocket newClient(Reactor clientReactor,
-                                         SocketAddress serverAddress,
-                                         CountDownLatch latch,
-                                         PaddedAtomicLong completed) {
+    private AsyncSocket newClient(Reactor clientReactor,
+                                  SocketAddress serverAddress,
+                                  CountDownLatch latch,
+                                  PaddedAtomicLong completed) {
         AsyncSocketBuilder socketBuilder = clientReactor.newAsyncSocketBuilder()
                 .set(TCP_NODELAY, tcpNoDelay)
                 .set(SO_SNDBUF, socketBufferSize)
@@ -190,7 +203,7 @@ public class EchoBenchmark_Tpc {
         return clientSocket;
     }
 
-    private static AsyncServerSocket newServer(Reactor serverReactor, SocketAddress serverAddress) {
+    private AsyncServerSocket newServer(Reactor serverReactor, SocketAddress serverAddress) {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, socketBufferSize)
                 .set(SO_REUSEPORT, true)
@@ -215,7 +228,7 @@ public class EchoBenchmark_Tpc {
         return serverSocket;
     }
 
-    private static class ServerAsyncSocketReader extends AsyncSocketReader {
+    private class ServerAsyncSocketReader extends AsyncSocketReader {
         private ByteBuffer payloadBuffer;
         private long round;
         private int payloadSize = -1;
@@ -260,7 +273,7 @@ public class EchoBenchmark_Tpc {
         }
     }
 
-    private static class ClientAsyncSocketReader extends AsyncSocketReader {
+    private class ClientAsyncSocketReader extends AsyncSocketReader {
         private final CountDownLatch latch;
         private final PaddedAtomicLong completed;
         private ByteBuffer payloadBuffer;
@@ -324,10 +337,11 @@ public class EchoBenchmark_Tpc {
         }
     }
 
-    private static class Monitor extends Thread {
+    private class Monitor extends Thread {
         private final int durationSecond;
         private final PaddedAtomicLong[] completedArray;
         private long last = 0;
+        private final StringBuffer sb = new StringBuffer();
 
         public Monitor(int durationSecond, PaddedAtomicLong[] completedArray) {
             this.durationSecond = durationSecond;
@@ -336,20 +350,100 @@ public class EchoBenchmark_Tpc {
 
         @Override
         public void run() {
-            long end = System.currentTimeMillis() + SECONDS.toMillis(durationSecond);
-            while (System.currentTimeMillis() < end) {
-                try {
-                    Thread.sleep(SECONDS.toMillis(1));
-                } catch (InterruptedException e) {
-                }
+            try {
+                run0();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
 
+        private void run0() throws InterruptedException {
+            long end = System.currentTimeMillis() + SECONDS.toMillis(durationSecond);
+            Metrics lastMetrics = new Metrics();
+            Metrics metrics = new Metrics();
+            long lastMs = System.currentTimeMillis();
+            while (System.currentTimeMillis() < end) {
+                Thread.sleep(SECONDS.toMillis(1));
+                long nowMs = System.currentTimeMillis();
+
+                collect(metrics);
+
+                // todo: this needs to be cleaned up. Should go through metrics.
                 long total = sum(completedArray);
                 long diff = total - last;
                 last = total;
-                System.out.println("  thp " + diff + " echo/sec");
+                long durationMs = nowMs - lastMs;
+                double echoThp = ((diff) * 1000d) / durationMs;
+                sb.append("   echo=");
+                sb.append(humanReadableCountSI(echoThp));
+                sb.append("/s");
+
+                long reads = metrics.reads;
+                double readsThp = ((reads - lastMetrics.reads) * 1000d) / durationMs;
+                sb.append(" reads=");
+                sb.append(humanReadableCountSI(readsThp));
+                sb.append("/s");
+
+                long bytesRead = metrics.bytesRead;
+                double bytesReadThp = ((bytesRead - lastMetrics.bytesRead) * 1000d) / durationMs;
+                sb.append(" read-bytes=");
+                sb.append(humanReadableByteCountSI(bytesReadThp));
+                sb.append("/s");
+
+                long writes = metrics.writes;
+                double writesThp = ((writes - lastMetrics.writes) * 1000d) / durationMs;
+                sb.append(" writes=");
+                sb.append(humanReadableCountSI(writesThp));
+                sb.append("/s");
+
+                long bytesWritten = metrics.bytesWritten;
+                double bytesWrittehThp = ((bytesWritten - lastMetrics.bytesWritten) * 1000d) / durationMs;
+                sb.append(" write-bytes=");
+                sb.append(humanReadableByteCountSI(bytesWrittehThp));
+                sb.append("/s");
+                System.out.println(sb);
+                sb.setLength(0);
+
+                Metrics tmp = lastMetrics;
+                lastMetrics = metrics;
+                metrics = tmp;
+                lastMs = nowMs;
             }
 
             stop = true;
+        }
+    }
+
+    private void collect(Metrics target) {
+        target.clear();
+
+        target.ops = sum(completedArray);
+
+        for (Reactor reactor : reactors) {
+            reactor.sockets().foreach(s -> {
+                AsyncSocketMetrics metrics = s.metrics();
+
+                target.reads += metrics.reads();
+                target.writes += metrics.writes();
+                target.bytesWritten += metrics.bytesWritten();
+                target.bytesRead += metrics.bytesRead();
+            });
+        }
+    }
+
+    private static class Metrics {
+        private long reads;
+        private long writes;
+        private long bytesRead;
+        private long bytesWritten;
+        private long ops;
+
+        private void clear() {
+            reads = 0;
+            writes = 0;
+            bytesRead = 0;
+            bytesWritten = 0;
+            ops = 0;
         }
     }
 }

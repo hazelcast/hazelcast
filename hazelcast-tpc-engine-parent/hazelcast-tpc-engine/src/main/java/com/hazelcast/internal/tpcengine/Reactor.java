@@ -97,7 +97,6 @@ public abstract class Reactor implements Executor {
     protected volatile State state = NEW;
     protected final ReactorMetrics metrics = new ReactorMetrics();
 
-
     /**
      * Creates a new {@link Reactor}.
      *
@@ -233,7 +232,7 @@ public abstract class Reactor implements Executor {
     }
 
     /**
-     * Returns the state of the Reactor.
+     * Returns the {@link State} of the Reactor.
      * <p/>
      * This method is thread-safe.
      *
