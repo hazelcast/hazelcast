@@ -44,6 +44,7 @@ import java.util.Map.Entry;
 
 import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.EMPTY_PRUNING;
 import static com.hazelcast.jet.sql.impl.connector.map.LazyDefiningSpecificMemberPms.lazyForceTotalParallelismOne;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.stream.Collectors.toMap;
@@ -64,7 +65,7 @@ public class LazyDefiningPMSTest extends SimpleTestInClusterSupport {
     public void setUp() throws Exception {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance());
         Map<Address, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
-                        Util.getMembersView(nodeEngine).getMembers(), null, false)
+                        Util.getMembersView(nodeEngine).getMembers(), null, EMPTY_PRUNING)
                 .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
         ownderAddress = instance().getCluster().getLocalMember().getAddress();
         for (int i = 1; i < ITERATIONS; ++i) {

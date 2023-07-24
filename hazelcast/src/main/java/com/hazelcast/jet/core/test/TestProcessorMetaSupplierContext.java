@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
+import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.EMPTY_PRUNING;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -93,7 +94,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         if (this.instance instanceof HazelcastInstanceProxy || this.instance instanceof HazelcastInstanceImpl) {
             NodeEngineImpl nodeEngine = Util.getNodeEngine(this.instance);
             this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
-                            Util.getMembersView(nodeEngine).getMembers(), null, false)
+                            Util.getMembersView(nodeEngine).getMembers(), null, EMPTY_PRUNING)
                     .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
         }
         return this;

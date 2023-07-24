@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -39,12 +40,15 @@ import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -52,8 +56,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
-import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_COORDINATOR;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_MEMBER_PRUNING_LEVEL;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
+import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.ALL_PARTITIONS_REQUIRED;
+import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.COORDINATOR_REQUIRED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
@@ -88,13 +95,15 @@ public final class ExecutionPlanBuilder {
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
         final EdgeConfig defaultEdgeConfig = nodeEngine.getConfig().getJetConfig().getDefaultEdgeConfig();
         final Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
-        final boolean shouldUseCoordinator = Boolean.TRUE.equals(jobConfig.getArgument(KEY_REQUIRED_COORDINATOR));
+        final EnumSet<PartitionPruningLevel> ppl = requiredPartitions != null
+                ? Objects.requireNonNull(jobConfig.getArgument(KEY_MEMBER_PRUNING_LEVEL))
+                : EnumSet.noneOf(PartitionPruningLevel.class);
 
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
 
         final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(
-                nodeEngine, memberInfos, requiredPartitions, shouldUseCoordinator);
+                nodeEngine, memberInfos, requiredPartitions, ppl);
 
         final Map<Address, int[]> partitionsByAddress = partitionsByMember
                 .entrySet()
@@ -240,16 +249,24 @@ public final class ExecutionPlanBuilder {
 
     /**
      * Assign the partitions to their owners. Partitions whose owner isn't in
-     * the {@code memberList}, are assigned to one of the members in a
-     * round-robin way.
+     * the {@code memberList}, are assigned to one of the members in a round-robin way.
      */
+    @SuppressWarnings("DataFlowIssue")
     public static Map<MemberInfo, int[]> getPartitionAssignment(
             NodeEngine nodeEngine,
             List<MemberInfo> memberList,
             @Nullable Set<Integer> requiredPartitions,
-            boolean shouldUseCoordinator) {
+            EnumSet<PartitionPruningLevel> pruningLevels) {
+        if (!pruningLevels.isEmpty()) {
+            checkNotNull(requiredPartitions);
+        }
+
+        // TODO: TEST IT PROPERLY!!!!!!!!!!!!!!!
+
         IPartitionService partitionService = nodeEngine.getPartitionService();
         Address localMemberAddress = nodeEngine.getThisAddress();
+        MemberInfo localMemberInfo = new MemberInfo((MemberImpl) nodeEngine.getLocalMember());
+
         Map<Address, MemberInfo> membersByAddress = new HashMap<>();
         for (MemberInfo memberInfo : memberList) {
             membersByAddress.put(memberInfo.getAddress(), memberInfo);
@@ -259,14 +276,12 @@ public final class ExecutionPlanBuilder {
         int partitionCount = partitionService.getPartitionCount();
         int memberIndex = 0;
 
-        MemberInfo localMemberInfo = memberList.stream()
-                .filter(mi -> mi.getAddress().equals(localMemberAddress))
-                .findAny()
-                .orElseThrow();
-
-        for (int partitionId : requiredPartitions != null ? requiredPartitions : range(0, partitionCount)) {
+        // By default, partition pruning won't be applied, and for this code path
+        // it is guaranteed to be only partition assignment loop.
+        for (int partitionId : requiredPartitions == null ? range(0, partitionCount) : requiredPartitions) {
             Address address = partitionService.getPartitionOwnerOrWait(partitionId);
             MemberInfo member = membersByAddress.get(address);
+
             if (member == null) {
                 // if the partition owner isn't in the current memberList, assign to one of the other members in
                 // round-robin fashion
@@ -276,16 +291,42 @@ public final class ExecutionPlanBuilder {
                     .add(partitionId);
         }
 
-        // Interactive queries may require for coordinator to be present
-        if (shouldUseCoordinator) {
+        // Interactive prunable queries may require coordinator to be present
+        if (pruningLevels.contains(COORDINATOR_REQUIRED)) {
             // If coordinator still not captured to participate in the job -- do it.
             partitionsForMember.computeIfAbsent(localMemberInfo, (i) -> {
                 nodeEngine.getLogger(ExecutionPlanBuilder.class).fine("Adding coordinator to partition-pruned job members");
                 var partitionContainer = new FixedCapacityIntArrayList(partitionCount);
-                // TODO: temporarily we're using "" key. Change after allToOne support...
-                partitionContainer.add(partitionService.getPartitionId(""));
+                // If DAG has not only DISTRIBUTE_TO_ALL edge -> we will assign all partitions afterwards.
+                if (!pruningLevels.contains(ALL_PARTITIONS_REQUIRED)) {
+                    // TODO: temporarily we're using "" key. Change after allToOne support...
+                    partitionContainer.add(partitionService.getPartitionId(""));
+                }
                 return partitionContainer;
             });
+        }
+
+        // There is a special case of partition/member pruning: when DAG contains distributed-partitioned edge,
+        // we still want to apply member pruning, but we must redirect partitioned items to limited cluster subset.
+        // To do that, we assign all unassigned (also they are a non-required) partitions to all required members
+        // which are already was filtered by main assignment loop above.
+        if (pruningLevels.contains(ALL_PARTITIONS_REQUIRED)) {
+            Set<Integer> partitionsToAssign = new HashSet<>(range(0, partitionCount));
+            // Guarded by checkNotNull(requiredPartitions);
+            partitionsToAssign.removeAll(requiredPartitions);
+
+            List<MemberInfo> requiredMembers = new ArrayList<>(partitionsForMember.keySet());
+            for (int partitionId : partitionsToAssign) {
+                Address address = partitionService.getPartitionOwnerOrWait(partitionId);
+                MemberInfo member = membersByAddress.get(address);
+
+                if (member == null) {
+                    // if the partition owner isn't in the current memberList, assign to one of the other members in
+                    // round-robin fashion
+                    member = requiredMembers.get(memberIndex++ % requiredMembers.size());
+                    partitionsForMember.get(member).add(partitionId);
+                }
+            }
         }
 
         Map<MemberInfo, int[]> partitionAssignment = new HashMap<>();

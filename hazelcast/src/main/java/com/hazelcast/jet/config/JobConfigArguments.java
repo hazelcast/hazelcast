@@ -41,10 +41,10 @@ public final class JobConfigArguments {
     public static final String KEY_REQUIRED_PARTITIONS = "__sql.requiredPartitions";
 
     /**
-     * The key under which the SQL engine stores boolean flag if coordinator member
-     * is required to be included to the job with applied member pruning technique.
+     * The key under which the SQL engine stores boolean flag
+     * if DAG contains distributed-partitioned vertex.
      */
-    public static final String KEY_REQUIRED_COORDINATOR = "__sql.requiredCoordinator";
+    public static final String KEY_MEMBER_PRUNING_LEVEL = "__sql.memberPruningLevel";
 
     private JobConfigArguments() {
     }

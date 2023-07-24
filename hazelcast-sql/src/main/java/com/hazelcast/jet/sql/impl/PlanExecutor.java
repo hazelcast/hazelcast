@@ -572,7 +572,7 @@ public class PlanExecutor {
 
         if (!partitions.isEmpty() && allVariantsValid) {
             jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_PARTITIONS, partitions);
-            jobConfig.setArgument(JobConfigArguments.KEY_REQUIRED_COORDINATOR, plan.shouldUseCoordinator());
+            jobConfig.setArgument(JobConfigArguments.KEY_MEMBER_PRUNING_LEVEL, plan.partitionPruningLevel());
         }
 
         QueryResultProducerImpl queryResultProducer = new QueryResultProducerImpl(!plan.isStreaming());
