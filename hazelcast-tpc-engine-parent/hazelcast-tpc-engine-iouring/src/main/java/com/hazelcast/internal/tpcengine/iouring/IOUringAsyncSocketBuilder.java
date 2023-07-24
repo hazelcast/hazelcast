@@ -90,8 +90,8 @@ public class IOUringAsyncSocketBuilder implements AsyncSocketBuilder {
             CompletableFuture<IOUringAsyncSocket> future = new CompletableFuture<>();
             reactor.execute(() -> {
                 try {
-                    IOUringAsyncSocket asyncSocket = new IOUringAsyncSocket(IOUringAsyncSocketBuilder.this);
-                    future.complete(asyncSocket);
+                    IOUringAsyncSocket socket = new IOUringAsyncSocket(IOUringAsyncSocketBuilder.this);
+                    future.complete(socket);
                 } catch (Throwable e) {
                     future.completeExceptionally(e);
                     throw sneakyThrow(e);

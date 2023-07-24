@@ -78,10 +78,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         this.eventloopThread = reactor.eventloopThread();
         this.acceptFn = builder.acceptFn;
         this.sq = eventloop.sq;
-        if (!reactor.registerCloseable(this)) {
-            close();
-            throw new IllegalStateException("Reactor is not running");
-        }
+        reactor.serverSockets().add(this);
 
         // todo: return value not checked.
         reactor.offer(() -> {
@@ -125,7 +122,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void close0() throws IOException {
-        reactor.deregisterCloseable(this);
+        reactor.serverSockets().remove(this);
         linuxSocket.close();
     }
 

@@ -140,13 +140,11 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         this.userdata_OP_WRITEV = eventloop.nextPermanentHandlerId();
         eventloop.handlers.put(userdata_OP_WRITEV, handler_op_WRITEV);
 
-        // todo: deal with return value
-        reactor.registerCloseable(IOUringAsyncSocket.this);
-
-        // todo: on closing of the socket we need to deregister the event handlers.
+       // todo: on closing of the socket we need to deregister the event handlers.
 
         this.reader = builder.reader;
         reader.init(this);
+        reactor.sockets().add(this);
     }
 
     @Override
@@ -286,11 +284,8 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     @Override
     protected void close0() {
+        reactor.sockets().remove(this);
         //todo: also think about releasing the resources like IOBuffers
-
-        if (reactor != null) {
-            reactor.deregisterCloseable(this);
-        }
 
         if (linuxSocket != null) {
             linuxSocket.close();

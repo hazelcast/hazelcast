@@ -86,6 +86,7 @@ public abstract class Eventloop {
     protected final BlockDeviceRegistry blockDeviceRegistry;
     protected final Map<BlockDevice, BlockRequestScheduler> deviceSchedulers = new HashMap<>();
 
+
     protected Eventloop(Reactor reactor, ReactorBuilder builder) {
         this.nanoClock = new EpochClock();
         this.reactor = reactor;
@@ -117,6 +118,7 @@ public abstract class Eventloop {
         defaultTaskQueueBuilder.eventloop = this;
         this.defaultTaskQueueHandle = defaultTaskQueueBuilder.build();
     }
+
 
     /**
      * Returns the Reactor this Eventloop belongs to.
@@ -265,6 +267,9 @@ public abstract class Eventloop {
      */
     @SuppressWarnings("java:S112")
     protected void destroy() throws Exception {
+        reactor.files().foreach(AsyncFile::close);
+        reactor.sockets().foreach(socket -> socket.close("Reactor is shutting down", null));
+        reactor.serverSockets().foreach(serverSocket -> serverSocket.close("Reactor is shutting down", null));
     }
 
     protected final boolean scheduleBlockedGlobal() {

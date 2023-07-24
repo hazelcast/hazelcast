@@ -61,6 +61,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             this.eventloopThread = reactor.eventloopThread();
             this.serverSocketChannel = builder.serverSocketChannel;
             this.key = serverSocketChannel.register(reactor.selector, 0, new Handler());
+            reactor.serverSockets().add(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -88,8 +89,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void close0() throws IOException {
+        reactor.serverSockets().remove(this);
         closeQuietly(serverSocketChannel);
-
         key.cancel();
     }
 

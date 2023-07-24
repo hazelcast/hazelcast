@@ -142,8 +142,8 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
             CompletableFuture<NioAsyncSocket> future = new CompletableFuture<>();
             reactor.execute(() -> {
                 try {
-                    NioAsyncSocket asyncSocket = new NioAsyncSocket(NioAsyncSocketBuilder.this);
-                    future.complete(asyncSocket);
+                    NioAsyncSocket socket = new NioAsyncSocket(NioAsyncSocketBuilder.this);
+                    future.complete(socket);
                 } catch (Throwable e) {
                     future.completeExceptionally(e);
                     throw sneakyThrow(e);

@@ -118,7 +118,7 @@ public class StorageBenchmark {
     public int fdatasync;
     public int runtimeSeconds;
 
-    private final Map<Reactor, List<AsyncFile>> filesMap = new ConcurrentHashMap<>();
+    //  private final Map<Reactor, List<AsyncFile>> filesMap = new ConcurrentHashMap<>();
     private final Map<Reactor, List<String>> pathsMap = new ConcurrentHashMap<>();
 
     private final BlockDeviceRegistry blockDeviceRegistry = new BlockDeviceRegistry();
@@ -185,7 +185,6 @@ public class StorageBenchmark {
                             opened.incrementAndGet();
 
                             if (opened.get() == files.size()) {
-                                filesMap.put(reactor, files);
                                 // when the last file is opened, we schedule the IOTasks.
                                 for (int k = 0; k < iodepth; k++) {
                                     reactor.offer(new IOTask(reactor, this, files, k));
@@ -372,10 +371,6 @@ public class StorageBenchmark {
     }
 
     private void setupFiles() throws InterruptedException {
-        for (Reactor value : reactors) {
-            filesMap.put(value, new ArrayList<>());
-        }
-
         int iodepth = 128;
 
         CountDownLatch completionLatch = new CountDownLatch(iodepth * numJobs);
@@ -776,21 +771,20 @@ public class StorageBenchmark {
         }
     }
 
-    private void collect(Metrics collected) {
-        collected.clear();
+    private void collect(Metrics target) {
+        target.clear();
 
         for (Reactor reactor : reactors) {
-            for (AsyncFile f : filesMap.get(reactor)) {
+            reactor.files().foreach(f -> {
                 AsyncFileMetrics metrics = f.metrics();
-                collected.reads += metrics.reads();
-                collected.writes += metrics.writes();
-                collected.nops += metrics.nops();
-                collected.bytesWritten += metrics.bytesWritten();
-                collected.bytesRead += metrics.bytesRead();
-                collected.fsyncs += metrics.fsyncs();
-                collected.fdatasyncs += metrics.fdatasyncs();
-            }
+                target.reads += metrics.reads();
+                target.writes += metrics.writes();
+                target.nops += metrics.nops();
+                target.bytesWritten += metrics.bytesWritten();
+                target.bytesRead += metrics.bytesRead();
+                target.fsyncs += metrics.fsyncs();
+                target.fdatasyncs += metrics.fdatasyncs();
+            });
         }
     }
-
 }

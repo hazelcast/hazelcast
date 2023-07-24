@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine;
 
 
+import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.net.AcceptRequest;
@@ -88,10 +89,14 @@ public abstract class Reactor implements Executor {
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
     private final CountDownLatch startLatch = new CountDownLatch(1);
     private final Consumer<Reactor> initFn;
+    private final AsyncResources<AsyncSocket> asyncSockets = new AsyncResources<>();
+    private final AsyncResources<AsyncServerSocket> asyncServerSockets = new AsyncResources<>();
+    private final AsyncResources<AsyncFile> asyncFiles = new AsyncResources<>();
 
     @SuppressWarnings("java:S1845")
     protected volatile State state = NEW;
     protected final ReactorMetrics metrics = new ReactorMetrics();
+
 
     /**
      * Creates a new {@link Reactor}.
@@ -123,6 +128,40 @@ public abstract class Reactor implements Executor {
         // set in the constructor of the eventloop.
         this.defaultTaskQueue = eventloop.defaultTaskQueueHandle.queue;
         this.wakeupNeeded = eventloop.wakeupNeeded;
+    }
+
+    /**
+     * Gets all the AsyncSockets that belong to this Reactor.
+     * <p/>
+     * This method is threadsafe.
+     *
+     * @return the async sockets that belong to this Reactor.
+     */
+    public final AsyncResources<AsyncSocket> sockets() {
+        return asyncSockets;
+    }
+
+
+    /**
+     * Gets all the AsyncServerSockets that belong to this Reactor.
+     * <p/>
+     * This method is threadsafe.
+     *
+     * @return the AsyncServerSockets that belong to this Reactor.
+     */
+    public final AsyncResources<AsyncServerSocket> serverSockets() {
+        return asyncServerSockets;
+    }
+
+    /**
+     * Gets all the AsyncFiles that belong to this Reactor.
+     * <p/>
+     * This method is threadsafe.
+     *
+     * @return the AsyncFiles that belong to this Reactors.
+     */
+    public final AsyncResources<AsyncFile> files() {
+        return asyncFiles;
     }
 
     /**

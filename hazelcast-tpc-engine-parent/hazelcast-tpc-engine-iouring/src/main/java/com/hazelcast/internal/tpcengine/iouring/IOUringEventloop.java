@@ -32,7 +32,6 @@ import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMESPEC;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
-import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeAllQuietly;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
@@ -187,11 +186,11 @@ public final class IOUringEventloop extends Eventloop {
     }
 
     @Override
-    protected void destroy() {
+    protected void destroy() throws Exception {
+        super.destroy();
+
         closeQuietly(uring);
         closeQuietly(eventfd);
-        closeAllQuietly(ioUringReactor.closeables);
-        ioUringReactor.closeables.clear();
 
         if (timeoutSpecAddr != 0) {
             UNSAFE.freeMemory(timeoutSpecAddr);

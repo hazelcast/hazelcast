@@ -97,6 +97,8 @@ public final class NioAsyncSocket extends AsyncSocket {
             this.key = socketChannel.register(reactor.selector, 0, handler);
             this.reader = builder.reader;
             reader.init(this);
+
+            reactor.sockets().add(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -356,6 +358,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     protected void close0() throws IOException {
+        reactor.sockets().remove(this);
         closeQuietly(socketChannel);
         key.cancel();
         super.close0();
@@ -367,10 +370,10 @@ public final class NioAsyncSocket extends AsyncSocket {
         private final AsyncSocketMetrics metrics = NioAsyncSocket.this.metrics;
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
-            int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
+            int rcvBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
             this.rcvBuffer = builder.receiveBufferIsDirect
-                    ? ByteBuffer.allocateDirect(receiveBufferSize)
-                    : ByteBuffer.allocate(receiveBufferSize);
+                    ? ByteBuffer.allocateDirect(rcvBufferSize)
+                    : ByteBuffer.allocate(rcvBufferSize);
         }
 
         @Override

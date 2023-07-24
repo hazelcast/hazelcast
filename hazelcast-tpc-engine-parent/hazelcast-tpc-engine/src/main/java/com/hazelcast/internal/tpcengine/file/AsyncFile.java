@@ -80,6 +80,7 @@ public abstract class AsyncFile {
         this.eventloop = eventloop;
         this.promiseAllocator = eventloop.intPromiseAllocator();
         this.scheduler = scheduler;
+        this.eventloop.getReactor().files().add(this);
     }
 
     /**
@@ -284,6 +285,8 @@ public abstract class AsyncFile {
      * @return a Promise holding the result of the close.
      */
     public IntPromise close() {
+        eventloop.getReactor().files().remove(this);
+
         IntPromise promise = promiseAllocator.allocate();
         BlockRequest request = scheduler.reserve();
         if (request == null) {
