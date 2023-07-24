@@ -1,24 +1,5 @@
 # SQL Optimization for Partition Pruning
 
-### Table of Contents
-
-+ [Background](#background)
-  - [Description](#description)
-  - [Terminology](#terminology)
-  - [Actors and Scenarios](#actors-and-scenarios)
-+ [Functional Design](#functional-design)
-  * [Summary of Functionality](#summary-of-functionality)
-  * [Additional Functional Design Topics](#additional-functional-design-topics)
-    + [Notes/Questions/Issues](#notesquestionsissues)
-+ [User Interaction](#user-interaction)
-  - [API design and/or Prototypes](#api-design-andor-prototypes)
-+ [Client Related Changes](#client-related-changes)
-+ [Technical Design](#technical-design)
-+ [Testing Criteria](#testing-criteria)
-+ [Other Artifacts](#other-artifacts)
-
-
-
 |                                |                                                           |
 |--------------------------------|-----------------------------------------------------------|
 | Related Jira                   | [HZ-1605](https://hazelcast.atlassian.net/browse/HZ-1605) |
@@ -124,50 +105,6 @@ Clarifications:
 - Building a `__key` from constituent attributes, eg. if `__key` has 2 attributes, we could convert
   `__key.a1=X and __key.a2=Y` to `__key=(X,Y)`. 
   TODO: maybe we already do that?
-
-### Functional Design
-#### Summary of Functionality
-
-Provide a list of functions user(s) can perform.
-
-#### Additional Functional Design Topics
-
-Provide functional design details that are pertinent to this specific design spec. Use the h3 heading tag to distinguish topic titles.
-
-##### Notes/Questions/Issues
-
-- Document notes, questions, and issues identified with this functional design topic.
-- List drawbacks - why should we *not* do this? If applicable, list mitigating factors that may make each drawback acceptable. Investigate the consequences of the proposed change onto other areas
-  of Hazelcast. If other features are impacted, especially UX, list this impact as a reason not to do the change. If possible, also investigate and suggest mitigating actions that would reduce the impact. You can for example consider additional validation testing, additional documentation or doc changes, new user research, etc.
-- What parts of the design do you expect to resolve through the design process before this gets merged?
-- What parts of the design do you expect to resolve through the implementation of this feature before stabilization?
-- What related issues do you consider out of scope for this document that could be addressed in the future independently of the solution that comes out of this change?
-- How does this functionality impact/augment our Viridian Cloud offering? 
-- What changes, if any, are needed in Viridian to explose this functionality? 
-
-Use the ⚠️ or ❓icon to indicate an outstanding issue or question, and use the ✅ or ℹ️ icon to indicate a resolved issue or question.
-
-### User Interaction
-#### API design and/or Prototypes
-
-Listing of associated prototypes (latest versions) and any API design samples. How do we teach this?
-
-Explain the proposal as if it was already included in the project and you were teaching it to an end-user, or a Hazelcast team member in a different project area.
-
-Consider the following writing prompts:
-- Which new concepts have been introduced to end-users? Can you provide examples for each?
-- How would end-users change their apps or thinking to use the change?
-- Are there new error messages introduced? Can you provide examples?
-- Are there new deprecation warnings? Can you provide examples?
-- How are clusters affected that were created before this change? Are there migrations to consider?
-- How can this be leveraged in Viridian Cloud? 
-
-#### Client Related Changes
-Please identify if any client code change is required. If so, please provide a list of client code changes.
-The changes may include API changes, serialization changes or other client related code changes.
-
-Please notify the APIs team if any change is documented in this section. 
-The changes may need to be handled for non-Java clients as well.
 
 ### Technical Design
 
@@ -399,7 +336,3 @@ TDB: is it possible to measure impact for query optimization time?
 
 Soak tests for SQL queries should include some test cases with queries eligible for partition pruning
 to test the stability of them (eg. in presence of concurrent partition migrations).
-
-### Other Artifacts
-
-Links to additional artifacts go here.
