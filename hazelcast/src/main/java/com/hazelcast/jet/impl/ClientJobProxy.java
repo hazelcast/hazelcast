@@ -330,8 +330,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     private ClientInvocation invocation(ClientMessage request, UUID invocationUuid) {
-        return new ClientInvocation(
-                container(), request, "jobId=" + getIdString(), invocationUuid);
+        return new ClientInvocation(container(), request, "jobId=" + getIdString(), invocationUuid);
     }
 
     private <T> T callAndRetryIfTargetNotFound(Callable<T> action) {

@@ -138,7 +138,6 @@ import static java.util.stream.Collectors.toList;
  * Job-control operations from client are handled here.
  */
 public class JobCoordinationService {
-
     private static final String COORDINATOR_EXECUTOR_NAME = "jet:coordinator";
 
     /**
@@ -168,7 +167,7 @@ public class JobCoordinationService {
     private final ConcurrentMap<Long, ScheduledFuture<?>> scheduledJobTimeouts = new ConcurrentHashMap<>();
     /**
      * Map of {memberUuid; removeTime}.
-     *
+     * <p>
      * A collection of UUIDs of members which left the cluster and for which we
      * didn't receive {@link NotifyMemberShutdownOperation}.
      */
@@ -266,8 +265,8 @@ public class JobCoordinationService {
                 checkPermissions(subject, dag);
 
                 Set<String> ownedObservables = ownedObservables(dag);
-                JobRecord jobRecord = new JobRecord(nodeEngine.getClusterService().getClusterVersion(), jobId, serializedDag,
-                        dagToJson(dag), jobConfig, ownedObservables, subject);
+                JobRecord jobRecord = new JobRecord(nodeEngine.getClusterService().getClusterVersion(), jobId,
+                        serializedDag, dagToJson(dag), jobConfig, ownedObservables, subject);
                 JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize);
                 masterContext = createMasterContext(jobRecord, jobExecutionRecord);
 
@@ -464,8 +463,7 @@ public class JobCoordinationService {
                 null
         );
 
-        return future
-                .thenCompose(identity()); // unwrap the inner future
+        return future.thenCompose(identity()); // unwrap the inner future
     }
 
     public CompletableFuture<Void> joinLightJob(long jobId) {
@@ -1545,5 +1543,4 @@ public class JobCoordinationService {
     boolean isMemberShuttingDown(UUID uuid) {
         return membersShuttingDown.containsKey(uuid);
     }
-
 }

@@ -86,7 +86,6 @@ import static org.junit.Assert.fail;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobTest extends SimpleTestInClusterSupport {
-
     private static final int NODE_COUNT = 2;
     private static final int LOCAL_PARALLELISM = 1;
     private static final int TOTAL_PARALLELISM = NODE_COUNT * LOCAL_PARALLELISM;
@@ -455,8 +454,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Then
         assertJobVisible(instance, job, "job");
         Job trackedJob = instance.getJet().getJob(jobName);
-
         assertNotNull(trackedJob);
+
         assertEquals(jobName, trackedJob.getName());
         assertEquals(job.getId(), trackedJob.getId());
         assertJobStatusEventually(trackedJob, RUNNING);
@@ -486,8 +485,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Then
         assertJobVisible(instance, job, "job");
         Job trackedJob = instance.getJet().getJob(job.getId());
-
         assertNotNull(trackedJob);
+
         assertEquals(job.getId(), trackedJob.getId());
         assertJobStatusEventually(trackedJob, RUNNING);
         assertJobIsUserCancelledCannotBeQueried(trackedJob);
@@ -510,8 +509,8 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // Then
         Job trackedJob = instance().getJet().getJob(jobName);
-
         assertNotNull(trackedJob);
+
         assertEquals(jobName, trackedJob.getName());
         assertEquals(job.getId(), trackedJob.getId());
         assertEquals(COMPLETED, trackedJob.getStatus());
@@ -530,8 +529,8 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // Then
         Job trackedJob = instance().getJet().getJob(job.getId());
-
         assertNotNull(trackedJob);
+
         assertEquals(job.getId(), trackedJob.getId());
         assertEquals(COMPLETED, trackedJob.getStatus());
         assertFalse(job.isUserCancelled());
@@ -651,8 +650,8 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // Then
         Job trackedJob = instance().getJet().getJob(jobName);
-
         assertNotNull(trackedJob);
+
         assertEquals(jobName, trackedJob.getName());
         assertNotEquals(job1.getId(), trackedJob.getId());
         assertEquals(job2.getId(), trackedJob.getId());
@@ -743,6 +742,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertEquals(config.getName(), trackedJob1.getName());
         assertEquals(COMPLETED, trackedJob1.getStatus());
         assertFalse(trackedJob1.isUserCancelled());
+
         assertEquals(job1.getId(), trackedJob2.getId());
         assertEquals(config.getName(), trackedJob2.getName());
         assertEquals(COMPLETED, trackedJob2.getStatus());
@@ -800,8 +800,7 @@ public class JobTest extends SimpleTestInClusterSupport {
             job.cancel();
             try {
                 job.join();
-            } catch (CancellationException ignored) {
-            }
+            } catch (CancellationException ignored) { }
         }
     }
 
@@ -837,9 +836,9 @@ public class JobTest extends SimpleTestInClusterSupport {
         // The light job is submitted in JobCoordinationService.submitLightJob. The order of instructions is:
         // - LightMasterContext.createContext()
         // - thenComposeAsync -> lightMasterContexts.put(jobId, mc)
-        // As long as the context is not put in the lightMasterContexts we cannot get the job by id. The tasklets are added
-        // to workers in the execution of LightMasterContext.createContext(), so the tasklet may start before the
-        // lightMasterContexts is filled.
+        // As long as the context is not put in the lightMasterContexts we cannot get the job by id. The
+        // tasklets are added to workers in the execution of LightMasterContext.createContext(), so the
+        // tasklet may start before the lightMasterContexts is filled.
         assertTrueEventually(() -> {
             assertNotNull(instance.getJet().getJob(job.getId()));
         });
@@ -920,7 +919,8 @@ public class JobTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_manyJobs_member() {
-        // we use a standalone cluster here - this test looks at all the jobs and it must not see completed jobs from other tests
+        // We use a standalone cluster here. This test looks at all the jobs,
+        // so it must not see completed jobs from other tests.
         HazelcastInstance inst = createHazelcastInstance();
         createHazelcastInstance();
 
@@ -929,7 +929,8 @@ public class JobTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_manyJobs_client() {
-        // we use a standalone cluster here - this test looks at all the jobs and it must not see completed jobs from other tests
+        // We use a standalone cluster here. This test looks at all the jobs,
+        // so it must not see completed jobs from other tests.
         createHazelcastInstance();
         createHazelcastInstance();
         HazelcastInstance client = createHazelcastClient();
@@ -983,8 +984,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         lightBatchJob1.join();
         lightBatchJob2.join();
 
-        List<Job> allJobsExceptCompletedLightJobs =
-                asList(streamingJob, batchJob1, batchJob2, namedStreamingJob1, namedStreamingJob2, namedStreamingJob2_1, lightStreamingJob);
+        List<Job> allJobsExceptCompletedLightJobs = asList(streamingJob, batchJob1, batchJob2,
+                namedStreamingJob1, namedStreamingJob2, namedStreamingJob2_1, lightStreamingJob);
 
         List<Job> allJobs = new ArrayList<>(allJobsExceptCompletedLightJobs);
         allJobs.add(lightStreamingJobCancelled);
@@ -1091,8 +1092,6 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig())).hasMessage("Job not suspended, but FAILED");
     }
 
-    // ### Tests for light jobs
-
     @Test
     public void test_tryUpdatingLightJobConfig_then_fail_member() {
         test_tryUpdatingLightJobConfig_then_fail(instances()[1]);
@@ -1153,8 +1152,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     public void test_nonSmartClient() {
         HazelcastInstance client = factory().newHazelcastClient(configForNonSmartClientConnectingTo(instance()));
 
-        // try multiple times - we test the case when the client randomly picks a member it's not connected to.
-        // It should not pick such a member.
+        // Test whether the client will randomly pick a member it's not connected to
         for (int i = 0; i < 10; i++) {
             Job job = client.getJet().newLightJob(streamingDag());
             assertTrueEventually(() -> assertJobExecuting(job, instance()));
@@ -1172,7 +1170,6 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     private static final class PSThatWaitsOnInit implements ProcessorSupplier {
-
         public static volatile CountDownLatch initLatch;
         private final SupplierEx<Processor> supplier;
 
@@ -1193,7 +1190,6 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     private static final class Value {
-
         private final int value;
 
         private Value(int value) {
@@ -1202,7 +1198,6 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     private static class ValueSerializer implements StreamSerializer<Value> {
-
         @Override
         public int getTypeId() {
             return 1;

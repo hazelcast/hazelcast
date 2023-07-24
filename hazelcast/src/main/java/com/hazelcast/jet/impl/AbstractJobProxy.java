@@ -64,10 +64,9 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * @param <M> the type of member ID (UUID or Address)
  */
 public abstract class AbstractJobProxy<C, M> implements Job {
-
     private static final long TERMINATE_RETRY_DELAY_NS = MILLISECONDS.toNanos(100);
 
-    // we intentionally do a `new String` to not have an interned copy of the string
+    // We intentionally do a `new String` to not have an interned copy of the string.
     @SuppressWarnings("StringOperationCanBeSimplified")
     private static final String NOT_LOADED = new String("NOT_LOADED");
 
@@ -85,7 +84,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
      */
     private final NonCompletableFuture future;
 
-    // Flag which indicates if this proxy has sent a request to join the job result or not
+    /** Indicates whether this proxy has sent a request to join the job result or not. */
     private final AtomicBoolean joinedJob = new AtomicBoolean();
     private final BiConsumer<Void, Throwable> joinJobCallback;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
@@ -173,16 +172,14 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     }
 
     /**
-     * Returns the string {@code <jobId> (name <jobName>)} without risking
-     * triggering of lazy-loading of JobConfig: if we don't have it, it will
-     * say {@code name ??}. If we have it and it is null, it will say {@code
-     * name ''}.
+     * Returns the string {@code <jobId> (name <jobName>)}, where {@code <jobName>} is
+     * {@code ??} if it is not loaded yet via {@link #getName()} or {@link #getConfig()}.
+     * Otherwise, it is single-quoted and also empty for unnamed jobs.
      */
     @SuppressWarnings({"StringEquality", "java:S4973"})
     private String idAndName() {
-        return getIdString() + " (name "
-                + (name != NOT_LOADED ? "'" + (name != null ? name : "") + "'" : "??")
-                + ')';
+        return getIdString() + " (name " +
+                (name != NOT_LOADED ? "'" + (name != null ? name : "") + "'" : "??") + ")";
     }
 
     @Nonnull @Override
@@ -273,11 +270,11 @@ public abstract class AbstractJobProxy<C, M> implements Job {
                         throw e;
                     }
                     if (submittingInstance) {
-                        // it can happen that we enqueued the submit operation, but the master handled
-                        // the terminate op before the submit op and doesn't yet know about the job. But
-                        // it can be that the job already completed, we don't know. We'll look at the submit
-                        // future, if it's done, the job is done. Otherwise we'll retry - the job will eventually
-                        // start or complete.
+                        // It can happen that we enqueued the submit operation, but the master handled
+                        // the terminate op before the submit op and doesn't yet know about the job.
+                        // But it can be that the job already completed, we don't know. We'll look at
+                        // the submit future, if it's done, the job is done. Otherwise, we'll retry -
+                        // the job will eventually start or complete.
                         // This scenario is possible only on the client or lite member. On normal member,
                         // the submit op is executed directly.
                         assert joinedJob.get() : "not joined";
@@ -286,8 +283,8 @@ public abstract class AbstractJobProxy<C, M> implements Job {
                         }
                     } else {
                         // This instance is an output of one of the JetService.getJob() or getJobs() methods.
-                        // That means that the job was already known to some member and since it's not
-                        // known anymore, it's safe to assume it already completed.
+                        // That means that the job was already known to some member and since it's not known
+                        // anymore, it's safe to assume it already completed.
                         return;
                     }
                 }
@@ -421,8 +418,8 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         if (isLightJob()) {
             return false;
         }
-        // these exceptions are restartable only for non-light jobs. If the light job coordinator leaves
-        // or disconnects, the job fails. For normal jobs, the new master will take over.
+        // These exceptions are restartable only for non-light jobs. If the light job coordinator
+        // leaves or disconnects, the job fails. For normal jobs, the new master will take over.
         return t instanceof MemberLeftException
                 || t instanceof TargetDisconnectedException
                 || t instanceof TargetNotMemberException
@@ -481,10 +478,10 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
         private void retryAction(Throwable t) {
             try {
-                // calling for the side-effect of throwing ISE if master not known
+                // Calling for the side effect of throwing IllegalStateException if master is not known
                 masterId();
             } catch (IllegalStateException e) {
-                // job data will be cleaned up eventually by the coordinator
+                // Job data will be cleaned up eventually by the coordinator
                 String msg = operationName() + " failed for job " + idAndName() + " because the cluster " +
                         "is performing split-brain merge and the coordinator is not known";
                 logger.warning(msg, t);
