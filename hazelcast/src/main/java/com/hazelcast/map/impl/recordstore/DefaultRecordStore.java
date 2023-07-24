@@ -30,7 +30,6 @@ import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.internal.util.ToHeapDataConverter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryLoader.MetadataAwareValue;
@@ -1454,7 +1453,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             @Override
             public void accept(Data dataKey, Record record) {
                 if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                    keys.add(ToHeapDataConverter.toHeapData(dataKey));
+                    keys.add(toHeapData(dataKey));
                     records.add(record);
                 }
 
@@ -1479,7 +1478,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             @Override
             public void accept(Data dataKey, Record record) {
                 if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                    keys.add(ToHeapDataConverter.toHeapData(dataKey));
+                    keys.add(toHeapData(dataKey));
                     records.add(record);
                 }
 

@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation.steps;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.ToHeapDataConverter;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
@@ -28,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.function.BiConsumer;
+
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 
 public enum ClearOpSteps implements IMapOpStep {
 
@@ -50,7 +51,7 @@ public enum ClearOpSteps implements IMapOpStep {
                 @Override
                 public void accept(Data dataKey, Record record) {
                     if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                        keys.add(ToHeapDataConverter.toHeapData(dataKey));
+                        keys.add(toHeapData(dataKey));
                         records.add(record);
                     }
 
