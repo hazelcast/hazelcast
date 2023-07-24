@@ -169,7 +169,8 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     public abstract void start();
 
     /**
-     * Ensures that any scheduled IOBuffers are flushed to the socket.
+     * Ensures that any scheduled IOBuffers are flushed to the socket at some point
+     * in the future.
      * <p>
      * What happens under the hood is that the AsyncSocket is scheduled in the
      * {@link Reactor} where at some point in the future the IOBuffers get written
@@ -222,7 +223,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * Should only be called from the reactor-thread.
      */
     public abstract boolean unsafeWriteAndFlush(IOBuffer buf);
-
 
     /**
      * Connects asynchronously to some address.

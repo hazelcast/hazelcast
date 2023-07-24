@@ -53,7 +53,7 @@ public final class TpcEngine {
      * Creates an TpcEngine with the given TpcEngineBuilder.
      *
      * @param tpcEngineBuilder the TpcEngineBuilder for the TpcEngine.
-     * @throws NullPointerException when tpcEngineBuilder is null.
+     * @throws NullPointerException when tpcEngineBuilder is <code>null</code>.
      */
     TpcEngine(TpcEngineBuilder tpcEngineBuilder) {
         this.reactorCount = tpcEngineBuilder.reactorCount;
@@ -176,9 +176,9 @@ public final class TpcEngine {
      *
      * @param timeout the timeout. If the timeout is 0, then this call will not wait.
      * @param unit    the TimeUnit
-     * @return true if the TpcEngine is terminated.
+     * @return <code>true</code> if the TpcEngine is terminated.
      * @throws InterruptedException if the calling thread got interrupted while waiting.
-     * @throws NullPointerException if unit is null.
+     * @throws NullPointerException if unit is <code>null</code>.
      */
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         return terminationLatch.await(timeout, unit);

@@ -465,17 +465,19 @@ public abstract class Reactor implements Executor {
         private void configureThreadAffinity() {
             ThreadAffinity threadAffinity = builder.threadAffinity;
             BitSet allowedCpus = threadAffinity == null ? null : threadAffinity.nextAllowedCpus();
-            if (allowedCpus != null) {
-                ThreadAffinityHelper.setAffinity(allowedCpus);
-                BitSet actualCpus = ThreadAffinityHelper.getAffinity();
-                if (!actualCpus.equals(allowedCpus)) {
-                    logger.warning(Thread.currentThread().getName() + " affinity was not applied successfully. "
-                            + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
-                } else {
-                    if (logger.isFineEnabled()) {
-                        logger.fine(Thread.currentThread().getName() + " has affinity for CPUs:" + allowedCpus);
-                    }
+            if (allowedCpus == null) {
+                return;
+            }
+
+            ThreadAffinityHelper.setAffinity(allowedCpus);
+            BitSet actualCpus = ThreadAffinityHelper.getAffinity();
+            if (actualCpus.equals(allowedCpus)) {
+                if (logger.isFineEnabled()) {
+                    logger.fine(Thread.currentThread().getName() + " has affinity for CPUs:" + allowedCpus);
                 }
+            } else {
+                logger.warning(Thread.currentThread().getName() + " affinity was not applied successfully. "
+                        + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
             }
         }
     }

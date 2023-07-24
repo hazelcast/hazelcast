@@ -119,6 +119,15 @@ public abstract class Eventloop {
     }
 
     /**
+     * Returns the Reactor this Eventloop belongs to.
+     *
+     * @return the reactor.
+     */
+    public final Reactor getReactor() {
+        return reactor;
+    }
+
+    /**
      * Returns the current epoch time in nanos of when the active task started. Outside of
      * the execution active task, this value is undefined.
      *
@@ -244,7 +253,8 @@ public abstract class Eventloop {
      * @param path the path of the AsyncFile.
      * @return the created AsyncFile.
      * @throws NullPointerException          if path is null.
-     * @throws UnsupportedOperationException if the operation eventloop doesn't support creating AsyncFile instances.
+     * @throws UnsupportedOperationException if the eventloop doesn't support
+     *                                       creating AsyncFile instances.
      */
     public abstract AsyncFile newAsyncFile(String path);
 
@@ -319,7 +329,7 @@ public abstract class Eventloop {
      * Override this method to execute some logic before the {@link #run()} method is called.
      * When you override it, make sure you call {@code super.beforeRun()}.
      */
-    public void beforeRun() {
+    protected void beforeRun() {
         this.taskStartNanos = nanoClock.nanoTime();
     }
 
@@ -450,6 +460,16 @@ public abstract class Eventloop {
      */
     protected abstract void park(long timeoutNanos) throws IOException;
 
+    /**
+     * Schedules a task to be performed with some delay.
+     *
+     * @param cmd   the task to perform.
+     * @param delay the delay
+     * @param unit  the unit of the delay
+     * @return true if the task was scheduled, false if the task was rejected.
+     * @throws NullPointerException     if cmd or unit is null.
+     * @throws IllegalArgumentException when delay smaller than 0.
+     */
     public final boolean schedule(Runnable cmd,
                                   long delay,
                                   TimeUnit unit) {
@@ -560,9 +580,5 @@ public abstract class Eventloop {
             deadlineNanos = Long.MAX_VALUE;
         }
         return deadlineNanos;
-    }
-
-    public final Reactor getReactor() {
-        return reactor;
     }
 }
