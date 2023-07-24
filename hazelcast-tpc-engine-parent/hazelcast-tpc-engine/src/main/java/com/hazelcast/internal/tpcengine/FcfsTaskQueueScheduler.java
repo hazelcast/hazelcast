@@ -21,9 +21,9 @@ import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import static java.lang.Math.max;
 
 /**
- * A first come first serve (FIFO) {@link TaskQueueScheduler}. So task
+ * A first come first serve (FIFO) {@link TaskQueueScheduler}. So tasks
  * are added to a queue and the first task in the queue is picked. On yield
- * or new task queues are added to the end of the queue.
+ * the task queue added to the end of the queue.
  * <p>
  * The time slice is calculated as by dividing the target latency by
  * the number of running taskQueues. To prevent very small time slices,

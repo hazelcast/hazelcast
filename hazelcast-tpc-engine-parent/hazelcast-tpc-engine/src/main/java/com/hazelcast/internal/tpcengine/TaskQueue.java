@@ -221,11 +221,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
     @Override
     public int compareTo(TaskQueue that) {
-        if (that.virtualRuntimeNanos == this.virtualRuntimeNanos) {
-            return 0;
-        }
-
-        return this.virtualRuntimeNanos > that.virtualRuntimeNanos ? 1 : -1;
+        return Long.compare(this.virtualRuntimeNanos, that.virtualRuntimeNanos);
     }
 
     @Override

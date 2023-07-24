@@ -159,10 +159,10 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     }
 
     /**
-     * @inheritDoc The vruntime of the taskQueue is updated to the max of the min_vruntime
-     * and its own vruntime. This is done to prevent that when a task had very
-     * little vruntime compared to the other tasks, it is going to own the CPU
-     * for a very long time.
+     * @inheritDoc The vruntime of the taskQueue is updated to the max of the
+     * min_vruntime and its own vruntime. This is done to prevent that when a
+     * task had very little vruntime compared to the other tasks, it is going
+     * to own the CPU for a very long time.
      */
     @Override
     public void enqueue(TaskQueue taskQueue) {
@@ -175,5 +175,4 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
         taskQueue.virtualRuntimeNanos = max(taskQueue.virtualRuntimeNanos, min_virtualRuntimeNanos);
         runQueue.add(taskQueue);
     }
-
 }

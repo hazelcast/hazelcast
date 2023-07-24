@@ -24,7 +24,7 @@ public class SinkTaskProcessor implements TaskProcessor {
     public static final SinkTaskProcessor INSTANCE = new SinkTaskProcessor();
 
     @Override
-    public int process(Object cmd) {
+    public int process(Object task) {
         return TASK_COMPLETED;
     }
 

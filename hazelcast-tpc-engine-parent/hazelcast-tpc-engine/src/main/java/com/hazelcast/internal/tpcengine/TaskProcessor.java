@@ -40,8 +40,8 @@ public interface TaskProcessor {
     /**
      * Process a single task.
      *
-     * @param cmd
-     * @return
+     * @param task the task.
+     * @return the task state.
      */
-    int process(Object cmd) throws Exception;
+    int process(Object task) throws Exception;
 }

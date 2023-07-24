@@ -129,7 +129,7 @@ public abstract class Reactor implements Executor {
      * Allows for objects to be bound to this Reactor. Useful for the lookup
      * of services and other dependencies.
      * <p/>
-     * This method is thread-safe.
+     * This method is thread-safe and can be called independent of the state of the Reactor.
      */
     public final ConcurrentMap<?, ?> context() {
         return context;
@@ -453,7 +453,7 @@ public abstract class Reactor implements Executor {
                     }
 
                     if (logger.isInfoEnabled()) {
-                        logger.info(Thread.currentThread().getName() + " terminated");
+                        logger.info(Thread.currentThread().getName() + " terminated.");
                     }
                 }
             } catch (Throwable e) {

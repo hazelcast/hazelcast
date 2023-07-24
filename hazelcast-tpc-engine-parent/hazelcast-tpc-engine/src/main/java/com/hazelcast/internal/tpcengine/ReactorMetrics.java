@@ -24,7 +24,7 @@ import java.lang.invoke.VarHandle;
 /**
  * Contains metrics for a {@link Reactor}.
  *
- * The metrics should only be updated by the event loop thread, but can be read by any thread.
+ * The metrics should only be updated by the eventloop thread, but can be read by any thread.
  */
 public final class ReactorMetrics {
 
@@ -52,10 +52,20 @@ public final class ReactorMetrics {
         return startTimeNanos;
     }
 
+    /**
+     * Returns the number of tasks that have run on the Reactor.
+     *
+     * @return the number of tasks.
+     */
     public long taskProcessCount() {
         return (long) TASKS_PROCESSED_COUNT.getOpaque(this);
     }
 
+    /**
+     * Increases the number of tasks that have run on the Reactor.
+     *
+     * @param delta the increment
+     */
     public void incTasksProcessedCount(int delta) {
         TASKS_PROCESSED_COUNT.setOpaque(this, (long) TASKS_PROCESSED_COUNT.getOpaque(this) + delta);
     }
@@ -68,10 +78,18 @@ public final class ReactorMetrics {
         CPU_TIME_NANOS.setOpaque(this, (long) CPU_TIME_NANOS.getOpaque(this) + delta);
     }
 
+    /**
+     * Returns the number of task context switches the Reactor has performed.
+     *
+     * @return the number of task context switches.
+     */
     public long contextSwitchCount() {
         return (long) CONTEXT_SWITCH_COUNT.getOpaque(this);
     }
 
+    /**
+     * Increases the number of task context switches the Reactor has performed by 1.
+     */
     public void incContextSwitchCount() {
         CONTEXT_SWITCH_COUNT.setOpaque(this, (long) CONTEXT_SWITCH_COUNT.getOpaque(this) + 1);
     }

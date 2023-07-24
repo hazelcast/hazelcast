@@ -35,6 +35,8 @@ import com.hazelcast.internal.tpcengine.util.Promise;
  */
 final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
 
+    private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(DeadlineTask.class);
+
     Promise promise;
     long deadlineNanos;
     Runnable cmd;
@@ -43,7 +45,6 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
     TaskQueue taskQueue;
     private final DeadlineScheduler deadlineScheduler;
     private final Clock clock;
-    private final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
     DeadlineTask(Clock clock, DeadlineScheduler deadlineScheduler) {
         this.clock = clock;
@@ -68,7 +69,7 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
             }
 
             if (!deadlineScheduler.offer(this)) {
-                logger.warning("Failed schedule task: " + this + " because there is no space in deadlineScheduler");
+                LOGGER.warning("Failed schedule task: " + this + " because there is no space in deadlineScheduler");
             }
         } else {
             if (promise != null) {
@@ -79,11 +80,7 @@ final class DeadlineTask implements Runnable, Comparable<DeadlineTask> {
 
     @Override
     public int compareTo(DeadlineTask that) {
-        if (that.deadlineNanos == this.deadlineNanos) {
-            return 0;
-        }
-
-        return this.deadlineNanos > that.deadlineNanos ? 1 : -1;
+        return Long.compare(this.deadlineNanos, that.deadlineNanos);
     }
 
     @Override

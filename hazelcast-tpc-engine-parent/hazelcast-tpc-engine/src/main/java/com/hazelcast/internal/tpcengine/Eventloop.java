@@ -562,7 +562,7 @@ public abstract class Eventloop {
         return deadlineNanos;
     }
 
-    public Reactor getReactor() {
+    public final Reactor getReactor() {
         return reactor;
     }
 }

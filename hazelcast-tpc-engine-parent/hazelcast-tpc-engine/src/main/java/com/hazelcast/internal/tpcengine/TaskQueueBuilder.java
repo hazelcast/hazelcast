@@ -184,12 +184,13 @@ public final class TaskQueueBuilder {
      */
     public TaskQueueHandle build() {
         verifyNotBuilt();
+        built = true;
+
         checkNotNull(eventloop, "eventloop");
 
         if (Thread.currentThread() != eventloop.reactor.eventloopThread()) {
             throw new IllegalStateException("Can only call from eventloop thread");
         }
-        built = true;
 
         if (local == null && global == null) {
             throw new IllegalStateException("The local and global queue can't both be null.");

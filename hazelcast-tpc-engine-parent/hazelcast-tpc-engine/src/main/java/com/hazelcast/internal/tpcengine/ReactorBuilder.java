@@ -38,7 +38,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * A builder for {@link Reactor} instances.
  * <p/>
- * Only a single Reactor can be build per builder instance.
+ * Every ReactorBuilder can build only 1 {@link Reactor}.
  */
 public abstract class ReactorBuilder {
 
@@ -243,7 +243,7 @@ public abstract class ReactorBuilder {
      * @param unit           the unit of the stall threshold.
      * @throws IllegalArgumentException if the targetLatency is not a positive number.
      * @throws NullPointerException     if unit is <code>null</code>>.
-     * @throws IllegalStateException if the Reactor has already been built.
+     * @throws IllegalStateException    if the Reactor has already been built.
      */
     public void setStallThreshold(long stallThreshold, TimeUnit unit) {
         verifyNotBuilt();
@@ -256,7 +256,7 @@ public abstract class ReactorBuilder {
      * Sets the {@link StallHandler}.
      *
      * @param stallHandler the new StallHandler.
-     * @throws NullPointerException if stallHandler is <code>null</code>.
+     * @throws NullPointerException  if stallHandler is <code>null</code>.
      * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setStallHandler(StallHandler stallHandler) {
@@ -278,9 +278,9 @@ public abstract class ReactorBuilder {
      *
      * @param ioInterval the io interval
      * @param unit       the unit for the io interval.
-     * @throws NullPointerException if unit is <code>null</code>.
+     * @throws NullPointerException     if unit is <code>null</code>.
      * @throws IllegalArgumentException if ioInterval is not a positive number.
-     * @throws IllegalStateException if the Reactor has already been built.
+     * @throws IllegalStateException    if the Reactor has already been built.
      */
     public void setIoInterval(long ioInterval, TimeUnit unit) {
         verifyNotBuilt();
@@ -293,7 +293,7 @@ public abstract class ReactorBuilder {
      * Sets the reactor name.
      *
      * @param reactorName the reactor name.
-     * @throws NullPointerException if reactorName is <code>null</code>.
+     * @throws NullPointerException  if reactorName is <code>null</code>.
      * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setReactorName(String reactorName) {
@@ -305,7 +305,7 @@ public abstract class ReactorBuilder {
      * Sets the ThreadFactory used to create the Thread that runs the {@link Reactor}.
      *
      * @param threadFactory the ThreadFactory
-     * @throws NullPointerException if threadFactory is set to <code>null</code>>.
+     * @throws NullPointerException  if threadFactory is set to <code>null</code>>.
      * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setThreadFactory(ThreadFactory threadFactory) {
@@ -343,7 +343,7 @@ public abstract class ReactorBuilder {
      *
      * @param deadlineRunQueueCapacity the capacity
      * @throws IllegalArgumentException if scheduledTaskQueueCapacity not positive.
-     * @throws IllegalStateException if the Reactor has already been built.
+     * @throws IllegalStateException    if the Reactor has already been built.
      */
     public void setDeadlineRunQueueCapacity(int deadlineRunQueueCapacity) {
         verifyNotBuilt();
@@ -366,11 +366,12 @@ public abstract class ReactorBuilder {
     }
 
     /**
-     * Sets the scheduler to use. If cfs is true, the {@link CfsTaskQueueScheduler} it used. Otherwise the
-     * {@link FcfsTaskQueueScheduler} is used. Primary reason to set cfs=false is for performance testing
-     * and debugging purposes.
+     * Sets the scheduler to use. If cfs is true, the {@link CfsTaskQueueScheduler} it used.
+     * Otherwise the {@link FcfsTaskQueueScheduler} is used. Primary reason to set cfs=false
+     * is for performance testing and debugging purposes.
      *
-     * @param cfs if true, the {@link CfsTaskQueueScheduler} is used. Otherwise the {@link FcfsTaskQueueScheduler}
+     * @param cfs if true, the {@link CfsTaskQueueScheduler} is used. Otherwise the
+     *            {@link FcfsTaskQueueScheduler}
      * @throws IllegalStateException if the Reactor has already been built.
      */
     public final void setCfs(boolean cfs) {
@@ -382,7 +383,7 @@ public abstract class ReactorBuilder {
      * Sets the BlockDeviceRegistry
      *
      * @param blockDeviceRegistry the BlockDeviceRegistry
-     * @throws NullPointerException if <code>blockDeviceRegistry</code> is <code>null</code>.
+     * @throws NullPointerException  if <code>blockDeviceRegistry</code> is <code>null</code>.
      * @throws IllegalStateException if the Reactor has already been built.
      */
     public void setBlockDeviceRegistry(BlockDeviceRegistry blockDeviceRegistry) {

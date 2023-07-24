@@ -30,14 +30,14 @@ public final class TpcEngineBuilder {
     public static final String NAME_REACTOR_TYPE = "hazelcast.tpc.reactor.type";
 
     int reactorCount = Integer.getInteger(NAME_REACTOR_COUNT, Runtime.getRuntime().availableProcessors());
-    Consumer<ReactorBuilder> reactorBuilderFn = reactorBuilder -> {
+    Consumer<ReactorBuilder> reactorBuilderConfigureFn = reactorBuilder -> {
     };
     private boolean built;
     ReactorType reactorType = ReactorType.fromString(System.getProperty(NAME_REACTOR_TYPE, "nio"));
 
 
     /**
-     * Sets the function that configures the ReactorBuilder instance.
+     * Sets the function that configures the ReactorBuilder instances.
      *
      * @param reactorBuilderFn the reactorBuilderFn.
      * @return this
@@ -47,7 +47,7 @@ public final class TpcEngineBuilder {
     public TpcEngineBuilder setReactorBuilderConfigureFn(Consumer<ReactorBuilder> reactorBuilderFn) {
         verifyNotBuilt();
 
-        this.reactorBuilderFn = checkNotNull(reactorBuilderFn, "reactorBuilderFn");
+        this.reactorBuilderConfigureFn = checkNotNull(reactorBuilderFn, "reactorBuilderFn");
         return this;
     }
 
