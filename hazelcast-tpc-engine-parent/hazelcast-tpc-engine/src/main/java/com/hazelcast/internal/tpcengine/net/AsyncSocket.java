@@ -26,6 +26,8 @@ import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+
 /**
  * A Socket that is asynchronous. So reads and writes do not block,
  * but are executed on an {@link Reactor}.
@@ -54,9 +56,12 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     protected volatile SocketAddress localAddress;
     protected final AsyncSocketMetrics metrics = new AsyncSocketMetrics();
     protected final boolean clientSide;
+    protected final Reactor reactor;
 
-    protected AsyncSocket(boolean clientSide) {
+    protected AsyncSocket(Reactor reactor, boolean clientSide) {
         this.clientSide = clientSide;
+        this.reactor = checkNotNull(reactor, "reactor");
+        reactor.sockets().add(this);
     }
 
     /**
@@ -75,7 +80,9 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      *
      * @return the {@link Reactor} this AsyncSocket belongs.
      */
-    public abstract Reactor reactor();
+    public final Reactor reactor() {
+        return reactor;
+    }
 
     /**
      * Returns the {@link AsyncSocketOptions} of this AsyncSocket.
@@ -241,6 +248,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
     @Override
     protected void close0() throws IOException {
+        reactor.sockets().remove(this);
         localAddress = null;
         remoteAddress = null;
     }
@@ -249,6 +257,4 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     public final String toString() {
         return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
     }
-
-
 }

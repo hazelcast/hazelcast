@@ -23,6 +23,8 @@ import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+
 /**
  * A server socket that is asynchronous. So accepting incoming connections does not block,
  * but are executed on a {@link Reactor}.
@@ -30,8 +32,11 @@ import java.util.function.Consumer;
 public abstract class AsyncServerSocket extends AbstractAsyncSocket {
 
     protected final AsyncServerSocketMetrics metrics = new AsyncServerSocketMetrics();
+    protected final Reactor reactor;
 
-    protected AsyncServerSocket() {
+    protected AsyncServerSocket(Reactor reactor) {
+        this.reactor = checkNotNull(reactor, "reactor");
+        reactor.serverSockets().add(this);
     }
 
     /**
@@ -76,7 +81,14 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      *
      * @return the Reactor.
      */
-    public abstract Reactor getReactor();
+    public final Reactor getReactor() {
+        return reactor;
+    }
+
+    @Override
+    protected void close0() throws IOException {
+        reactor.serverSockets().remove(this);
+    }
 
     /**
      * Gets the local port of the {@link AsyncServerSocket}.

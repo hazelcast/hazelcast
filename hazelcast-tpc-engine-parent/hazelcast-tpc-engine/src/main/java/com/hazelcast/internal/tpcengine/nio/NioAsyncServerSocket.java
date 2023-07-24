@@ -45,7 +45,6 @@ import static java.nio.channels.SelectionKey.OP_ACCEPT;
 public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     private final ServerSocketChannel serverSocketChannel;
-    private final NioReactor reactor;
     private final Thread eventloopThread;
     private final SelectionKey key;
     private final NioAsyncServerSocketOptions options;
@@ -54,14 +53,13 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private boolean started;
 
     NioAsyncServerSocket(NioAsyncServerSocketBuilder builder) {
+        super(builder.reactor);
         try {
-            this.reactor = builder.reactor;
             this.acceptFn = builder.acceptFn;
             this.options = builder.options;
             this.eventloopThread = reactor.eventloopThread();
             this.serverSocketChannel = builder.serverSocketChannel;
-            this.key = serverSocketChannel.register(reactor.selector, 0, new Handler());
-            reactor.serverSockets().add(this);
+            this.key = serverSocketChannel.register(builder.reactor.selector, 0, new Handler());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -70,11 +68,6 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public AsyncSocketOptions options() {
         return options;
-    }
-
-    @Override
-    public NioReactor getReactor() {
-        return reactor;
     }
 
     @Override
@@ -89,7 +82,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void close0() throws IOException {
-        reactor.serverSockets().remove(this);
+        super.close0();
+
         closeQuietly(serverSocketChannel);
         key.cancel();
     }

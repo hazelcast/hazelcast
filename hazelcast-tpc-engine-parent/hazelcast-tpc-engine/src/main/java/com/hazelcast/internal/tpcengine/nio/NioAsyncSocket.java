@@ -58,7 +58,6 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final MpmcArrayQueue<IOBuffer> writeQueue;
     private final Handler handler;
     private final SocketChannel socketChannel;
-    private final NioReactor reactor;
     private final Thread eventloopThread;
     private final SelectionKey key;
     private final IOVector ioVector = new IOVector();
@@ -75,12 +74,11 @@ public final class NioAsyncSocket extends AsyncSocket {
     private volatile CompletableFuture<Void> connectFuture;
 
     NioAsyncSocket(NioAsyncSocketBuilder builder) {
-        super(builder.clientSide);
+        super(builder.reactor, builder.clientSide);
 
         assert currentThread() == builder.reactor.eventloopThread();
 
         try {
-            this.reactor = builder.reactor;
             this.localTaskQueue = reactor.eventloop().getTaskQueue(builder.taskQueueHandle);
             this.options = builder.options;
             this.eventloopThread = reactor.eventloopThread();
@@ -94,11 +92,9 @@ public final class NioAsyncSocket extends AsyncSocket {
             this.regularSchedule = builder.regularSchedule;
             this.writeQueue = new MpmcArrayQueue<>(builder.writeQueueCapacity);
             this.handler = new Handler(builder);
-            this.key = socketChannel.register(reactor.selector, 0, handler);
+            this.key = socketChannel.register(builder.reactor.selector, 0, handler);
             this.reader = builder.reader;
             reader.init(this);
-
-            reactor.sockets().add(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -107,11 +103,6 @@ public final class NioAsyncSocket extends AsyncSocket {
     @Override
     public AsyncSocketOptions options() {
         return options;
-    }
-
-    @Override
-    public NioReactor reactor() {
-        return reactor;
     }
 
     @Override
@@ -358,10 +349,10 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     protected void close0() throws IOException {
-        reactor.sockets().remove(this);
+        super.close0();
+
         closeQuietly(socketChannel);
         key.cancel();
-        super.close0();
     }
 
     @SuppressWarnings("java:S125")

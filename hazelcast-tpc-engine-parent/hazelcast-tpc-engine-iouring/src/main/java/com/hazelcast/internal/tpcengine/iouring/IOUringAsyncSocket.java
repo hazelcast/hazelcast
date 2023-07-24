@@ -72,7 +72,6 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final IOUringEventloop eventloop;
-    private final IOUringReactor reactor;
     private final Thread eventloopThread;
     private final SubmissionQueue sq;
 
@@ -110,7 +109,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     private boolean started;
 
     IOUringAsyncSocket(IOUringAsyncSocketBuilder builder) {
-        super(builder.clientSide);
+        super(builder.reactor, builder.clientSide);
 
         assert Thread.currentThread() == builder.reactor.eventloopThread();
 
@@ -121,7 +120,6 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             this.remoteAddress = linuxSocket.getRemoteAddress();
         }
 
-        this.reactor = builder.reactor;
         this.eventloop = (IOUringEventloop) reactor.eventloop();
         this.sq = eventloop.sq;
         this.localTaskQueue = eventloop.getTaskQueue(builder.taskGroupHandle);
@@ -145,11 +143,6 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         this.reader = builder.reader;
         reader.init(this);
         reactor.sockets().add(this);
-    }
-
-    @Override
-    public IOUringReactor reactor() {
-        return reactor;
     }
 
     public LinuxSocket nativeSocket() {
@@ -283,8 +276,8 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    protected void close0() {
-        reactor.sockets().remove(this);
+    protected void close0() throws IOException {
+        super.close0();
         //todo: also think about releasing the resources like IOBuffers
 
         if (linuxSocket != null) {

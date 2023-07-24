@@ -23,7 +23,7 @@ import java.lang.invoke.VarHandle;
 
 /**
  * Contains metrics for a {@link Reactor}.
- *
+ * <p/>
  * The metrics should only be updated by the eventloop thread, but can be read by any thread.
  */
 public final class ReactorMetrics {

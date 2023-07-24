@@ -20,25 +20,48 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+
 /**
- * Contains a collection of resources like the AsyncSocket that are
+ * Contains a collection of async resources like the AsyncSocket that are
  * specific to the Reactor.
+ * <p/>
+ * All methods on this class are thread-safe.
  *
- * @param <E>
+ * @param <E> the type of the resource.
  */
-public final class AsyncResources<E> {
+public final class ReactorResources<E> {
 
     private final ConcurrentMap<E, E> map = new ConcurrentHashMap<>();
 
+    /**
+     * Adds a resource. If already added, call is ignored.
+     *
+     * @param e the resource to add.
+     * @throws NullPointerException if e is null.
+     */
     public void add(E e) {
         map.put(e, e);
     }
 
+    /**
+     * Removes a resource. If already removed, call is ignored.
+     *
+     * @param e the resource to remove.
+     * @throws NullPointerException if e is null.
+     */
     public void remove(E e) {
         map.remove(e);
     }
 
+    /**
+     * Applies a fn on each resource.
+     *
+     * @param fn the function to apply.
+     * @throws NullPointerException if fn is null.
+     */
     public void foreach(Consumer<E> fn) {
+        checkNotNull(fn, "fn");
         map.values().forEach(fn);
     }
 }

@@ -58,7 +58,6 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
     private final LinuxSocket linuxSocket;
 
-    private final IOUringReactor reactor;
     private final AcceptMemory acceptMemory = new AcceptMemory();
     private final IOUringEventloop eventloop;
     private final SubmissionQueue sq;
@@ -71,14 +70,13 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     private boolean started;
 
     IOUringAsyncServerSocket(IOUringAsyncServerSocketBuilder builder) {
-        this.reactor = builder.reactor;
+        super(builder.reactor);
         this.eventloop = (IOUringEventloop) reactor.eventloop();
         this.options = builder.options;
         this.linuxSocket = builder.nativeSocket;
         this.eventloopThread = reactor.eventloopThread();
         this.acceptFn = builder.acceptFn;
         this.sq = eventloop.sq;
-        reactor.serverSockets().add(this);
 
         // todo: return value not checked.
         reactor.offer(() -> {
@@ -107,11 +105,6 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public IOUringReactor getReactor() {
-        return reactor;
-    }
-
-    @Override
     protected SocketAddress getLocalAddress0() {
         if (!bind) {
             return null;
@@ -122,7 +115,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void close0() throws IOException {
-        reactor.serverSockets().remove(this);
+        super.close0();
         linuxSocket.close();
     }
 

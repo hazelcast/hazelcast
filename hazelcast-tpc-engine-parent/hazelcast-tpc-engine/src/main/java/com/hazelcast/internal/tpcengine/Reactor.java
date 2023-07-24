@@ -89,9 +89,9 @@ public abstract class Reactor implements Executor {
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
     private final CountDownLatch startLatch = new CountDownLatch(1);
     private final Consumer<Reactor> initFn;
-    private final AsyncResources<AsyncSocket> asyncSockets = new AsyncResources<>();
-    private final AsyncResources<AsyncServerSocket> asyncServerSockets = new AsyncResources<>();
-    private final AsyncResources<AsyncFile> asyncFiles = new AsyncResources<>();
+    private final ReactorResources<AsyncSocket> sockets = new ReactorResources<>();
+    private final ReactorResources<AsyncServerSocket> serverSockets = new ReactorResources<>();
+    private final ReactorResources<AsyncFile> files = new ReactorResources<>();
 
     @SuppressWarnings("java:S1845")
     protected volatile State state = NEW;
@@ -131,14 +131,14 @@ public abstract class Reactor implements Executor {
     }
 
     /**
-     * Gets all the AsyncSockets that belong to this Reactor.
+     * Gets the sockets that belong to this Reactor.
      * <p/>
      * This method is threadsafe.
      *
      * @return the async sockets that belong to this Reactor.
      */
-    public final AsyncResources<AsyncSocket> sockets() {
-        return asyncSockets;
+    public final ReactorResources<AsyncSocket> sockets() {
+        return sockets;
     }
 
 
@@ -149,8 +149,8 @@ public abstract class Reactor implements Executor {
      *
      * @return the AsyncServerSockets that belong to this Reactor.
      */
-    public final AsyncResources<AsyncServerSocket> serverSockets() {
-        return asyncServerSockets;
+    public final ReactorResources<AsyncServerSocket> serverSockets() {
+        return serverSockets;
     }
 
     /**
@@ -160,8 +160,8 @@ public abstract class Reactor implements Executor {
      *
      * @return the AsyncFiles that belong to this Reactors.
      */
-    public final AsyncResources<AsyncFile> files() {
-        return asyncFiles;
+    public final ReactorResources<AsyncFile> files() {
+        return files;
     }
 
     /**
