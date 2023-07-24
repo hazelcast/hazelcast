@@ -29,6 +29,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import javax.annotation.Nonnull;
 import java.util.function.BiConsumer;
 
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
 
 public class IndexingMutationObserver<R extends Record> implements MutationObserver<R> {
@@ -157,7 +158,7 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
         CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(ss, mapContainer.getExtractors());
         recordStore.forEach((BiConsumer<Data, Record>) (dataKey, record) -> {
             Object value = getValueOrCachedValue(record, ss);
-            entry.init(dataKey, value);
+            entry.init(toHeapData(dataKey), value);
             indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
         }, false);
 

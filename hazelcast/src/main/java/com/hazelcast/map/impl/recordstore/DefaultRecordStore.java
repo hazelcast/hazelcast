@@ -1454,7 +1454,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             @Override
             public void accept(Data dataKey, Record record) {
                 if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                    keys.add(dataKey);
+                    keys.add(ToHeapDataConverter.toHeapData(dataKey));
                     records.add(record);
                 }
 

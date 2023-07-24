@@ -456,6 +456,24 @@ public class BasicMapTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testMap_evictAll_nonEmptyMap() {
+        int entryCount = 100_000;
+        Random random = new Random();
+
+        IMap<String, String> map = getInstance().getMap("testMap_evictAll_nonEmptyMap");
+        for (int i = 0; i < entryCount; i++) {
+            map.put("key" + i, toRandomStringValue(random));
+        }
+
+        map.evictAll();
+        assertEquals(0, map.size());
+
+        for (int i = 0; i < entryCount; i++) {
+            assertEquals(null, map.get("key" + i));
+        }
+    }
+
 
     String toRandomStringValue(Random random) {
         int sz = RandomPicker.getInt(1, 1_000);
