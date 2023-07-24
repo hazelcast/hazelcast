@@ -1447,7 +1447,7 @@ public class MigrationManager {
             }
 
             return future.handleAsync((done, t) -> {
-                stats.recordMigrationOperationTime(Timer.nanosElapsed(start));
+                stats.recordMigrationOperationTime();
                 logger.fine("Migration operation response received -> " + migration + ", success: " + done + ", failure: " + t);
 
                 if (t != null) {
@@ -1476,12 +1476,10 @@ public class MigrationManager {
                     return CompletableFuture.completedFuture(false);
                 }
             }, asyncExecutor).handleAsync((result, t) -> {
-                long elapsed = Timer.nanosElapsed(start);
-                stats.recordMigrationTaskTime(elapsed);
+                stats.recordMigrationTaskTime();
 
-                PartitionEventManager partitionEventManager = partitionService.getPartitionEventManager();
-                partitionEventManager.sendMigrationEvent(stats.toMigrationState(), migration,
-                        TimeUnit.NANOSECONDS.toMillis(elapsed));
+                partitionService.getPartitionEventManager().sendMigrationEvent(stats.toMigrationState(), migration,
+                        TimeUnit.NANOSECONDS.toMillis(Timer.nanosElapsed(start)));
 
                 if (t != null) {
                     Level level = nodeEngine.isRunning() ? Level.WARNING : Level.FINE;
@@ -1571,11 +1569,10 @@ public class MigrationManager {
          */
         private CompletionStage<Boolean> migrationOperationSucceeded() {
             migrationInterceptor.onMigrationComplete(MigrationParticipant.MASTER, migration, true);
-            long start = System.nanoTime();
 
             CompletionStage<Boolean> f = commitMigrationToDestinationAsync(migration);
             f = f.thenApplyAsync(commitSuccessful -> {
-                stats.recordDestinationCommitTime(System.nanoTime() - start);
+                stats.recordDestinationCommitTime();
 
                 partitionServiceLock.lock();
                 try {

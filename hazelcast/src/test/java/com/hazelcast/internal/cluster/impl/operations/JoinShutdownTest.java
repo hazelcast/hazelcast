@@ -51,7 +51,7 @@ import static com.hazelcast.instance.impl.TestUtil.toData;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfigWithoutJetAndMetrics;
-import static org.jgroups.util.Util.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)

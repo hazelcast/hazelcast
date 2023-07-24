@@ -64,7 +64,7 @@
             *.concurrent:*.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:
             *.transaction.client:*.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
         </maven.javadoc.plugin.excludePackageNames>
-        <maven.antrun.plugin.version>3.0.0</maven.antrun.plugin.version>
+        <maven.antrun.plugin.version>3.1.0</maven.antrun.plugin.version>
         <maven.gpg.plugin.version>3.1.0</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
@@ -88,9 +88,6 @@
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.2.0</codehause.license.plugin.version>
 
-        <!-- Version of the client used in Hazelcast 3 connector -->
-        <hazelcast-3.version>3.12.13</hazelcast-3.version>
-
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
@@ -108,7 +105,7 @@
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jaxb.version>2.3.1</jaxb.version>
         <jline.version>3.23.0</jline.version>
-        <jms.api.version>2.0.1</jms.api.version>
+        <jms.api.version>3.1.0</jms.api.version>
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
@@ -116,14 +113,14 @@
         <kotlin.version>1.8.22</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
-        <mysql.connector.version>8.0.33</mysql.connector.version>
+        <mysql.connector.version>8.1.0</mysql.connector.version>
         <netty.version>4.1.94.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
         <picocli.version>4.7.4</picocli.version>
         <postgresql.version>42.6.0</postgresql.version>
-        <prometheus.version>0.18.0</prometheus.version>
+        <prometheus.version>0.19.0</prometheus.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
@@ -141,7 +138,7 @@
         <mongodb.version>4.10.2</mongodb.version>
 
         <!-- test dependencies -->
-        <activemq-artemis.version>2.11.0</activemq-artemis.version>
+        <activemq-artemis.version>2.28.0</activemq-artemis.version>
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.24.2</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
@@ -613,13 +610,6 @@
                         </goals>
                         <phase>generate-test-resources</phase>
                         <configuration>
-                            <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}</artifact>
-                            <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}:jar:tests</artifact>
-
-                            <!-- Below are the jars used in compatibility tests. Install them to local repository -->
-                            <artifact>com.hazelcast:hazelcast:3.12.13</artifact>
-                            <artifact>com.hazelcast:hazelcast:3.12.13:jar:tests</artifact>
-
                             <artifact>com.hazelcast:hazelcast:4.0</artifact>
                             <artifact>com.hazelcast:hazelcast:4.0:jar:tests</artifact>
 
@@ -1839,7 +1829,7 @@
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.5.5-4</version>
+                <version>1.5.5-5</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1859,7 +1849,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.35.0</version>
+                <version>3.36.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
