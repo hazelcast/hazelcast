@@ -1,4 +1,4 @@
-# Design document template
+# SQL Optimization for Partition Pruning
 
 ### Table of Contents
 
@@ -43,8 +43,6 @@ Predicate API queries using `PartitionPredicate`.
 
 Knowing which partitions are needed allows also to eliminate some members completely from the query execution.
 Such members do not have any data related to the query.
-
-
 
 
 #### Terminology
