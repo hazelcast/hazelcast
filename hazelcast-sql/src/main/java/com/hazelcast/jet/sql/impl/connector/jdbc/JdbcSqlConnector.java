@@ -549,6 +549,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 return QueryDataType.TIME;
 
             case "TIMESTAMP":
+            case "DATETIME":
                 return QueryDataType.TIMESTAMP;
 
             case "TIMESTAMP WITH TIME ZONE":

@@ -37,7 +37,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static java.util.Arrays.asList;
 
@@ -106,7 +108,12 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
         execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
 
+        List<Class<?>> columnTypes = new ArrayList<>();
+        columnTypes.add(Integer.class);
+        columnTypes.add(jdbcValue.getClass());
+
         assertJdbcRowsAnyOrder(tableName,
+                columnTypes,
                 new Row(0, jdbcValue),
                 new Row(1, jdbcValue)
         );
