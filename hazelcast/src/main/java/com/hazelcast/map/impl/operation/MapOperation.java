@@ -422,7 +422,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     public ObjectNamespace getServiceNamespace() {
         MapContainer container = mapContainer;
         if (container == null) {
-            throw new IllegalStateException("There is no such map with name " + name + " exists ");
+            return MapService.getObjectNamespace(name);
         }
         return container.getObjectNamespace();
     }
