@@ -16,7 +16,7 @@
 
 package com.hazelcast.file;
 
-import com.hazelcast.Util;
+import com.hazelcast.FormatUtil;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.Util.humanReadableByteCountSI;
+import static com.hazelcast.FormatUtil.humanReadableByteCountSI;
 import static com.hazelcast.internal.tpcengine.ReactorBuilder.newReactorBuilder;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_CREAT;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_DIRECT;
@@ -138,7 +138,7 @@ public class StorageBenchmark {
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = true;
         benchmark.spin = false;
-        benchmark.reactorType = ReactorType.NIO;
+        benchmark.reactorType = ReactorType.IOURING;
         benchmark.fsync = 0;
         benchmark.fdatasync = 0;
         benchmark.run();
@@ -149,6 +149,7 @@ public class StorageBenchmark {
             System.out.println("fsync and fdatasync can't both be larger than 0");
         }
 
+        System.out.println("Reactor:" + reactorType);
         System.out.println("Duration: " + runtimeSeconds + " seconds.");
         try {
             setup();
@@ -553,13 +554,13 @@ public class StorageBenchmark {
         System.out.println("fdatasync: " + fdatasync);
         long totalTimeMicros = MILLISECONDS.toMicros(numJobs * iodepth * durationMs);
 
-        System.out.println("Speed: " + Util.humanReadableCountSI(metrics.ops() * 1000f / durationMs) + " IOPS");
+        System.out.println("Speed: " + FormatUtil.humanReadableCountSI(metrics.ops() * 1000f / durationMs) + " IOPS");
         System.out.println("File size: " + humanReadableByteCountSI(fileSize));
         System.out.println("Block size: " + bs + " B");
         switch (readwrite) {
             case READWRITE_NOP:
                 System.out.println("Workload: nop");
-                System.out.println("Nops: " + Util.humanReadableCountSI(metrics.ops()));
+                System.out.println("Nops: " + FormatUtil.humanReadableCountSI(metrics.ops()));
                 System.out.println("Average latency: " + (totalTimeMicros / metrics.ops()) + " us");
                 break;
             case READWRITE_WRITE:
@@ -625,7 +626,7 @@ public class StorageBenchmark {
                 if (reads > 0) {
                     double readsThp = ((reads - lastMetrics.reads) * 1000d) / durationMs;
                     sb.append(" reads=");
-                    sb.append(Util.humanReadableCountSI(readsThp));
+                    sb.append(FormatUtil.humanReadableCountSI(readsThp));
                     sb.append("/s");
                 }
 
@@ -640,7 +641,7 @@ public class StorageBenchmark {
                 if (writes > 0) {
                     double writeThp = ((writes - lastMetrics.writes) * 1000d) / durationMs;
                     sb.append(" writes=");
-                    sb.append(Util.humanReadableCountSI(writeThp));
+                    sb.append(FormatUtil.humanReadableCountSI(writeThp));
                     sb.append("/s");
                 }
                 long bytesWritten = metrics.bytesWritten;
@@ -654,14 +655,14 @@ public class StorageBenchmark {
                 if (fsyncs > 0) {
                     double fsyncsThp = ((fsyncs - lastMetrics.fsyncs) * 1000d) / durationMs;
                     sb.append(" fsyncs=");
-                    sb.append(Util.humanReadableCountSI(fsyncsThp));
+                    sb.append(FormatUtil.humanReadableCountSI(fsyncsThp));
                     sb.append("/s");
                 }
                 long fdatasyncs = metrics.fdatasyncs;
                 if (fdatasyncs > 0) {
                     double fdataSyncsThp = ((fdatasyncs - lastMetrics.fdatasyncs) * 1000d) / durationMs;
                     sb.append(" fdatasyncs=");
-                    sb.append(Util.humanReadableCountSI(fdataSyncsThp));
+                    sb.append(FormatUtil.humanReadableCountSI(fdataSyncsThp));
                     sb.append("/s");
                 }
 
@@ -669,7 +670,7 @@ public class StorageBenchmark {
                 if (nops > 0) {
                     double nopsThp = ((nops - lastMetrics.nops) * 1000d) / durationMs;
                     sb.append(" nops=");
-                    sb.append(Util.humanReadableCountSI(nopsThp));
+                    sb.append(FormatUtil.humanReadableCountSI(nopsThp));
                     sb.append("/s");
                 }
 

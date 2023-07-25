@@ -103,7 +103,7 @@ public class StorageBenchmarkCli {
         StorageBenchmark benchmark = new StorageBenchmark();
         benchmark.numJobs = options.valueOf(numJobsSpec);
         benchmark.iodepth = options.valueOf(ioDepthSpec);
-        if(!options.has(filesizeSpec)){
+        if (!options.has(filesizeSpec)) {
             throw new RuntimeException("--filesize option is mandatory for fio compatibility.");
         }
         benchmark.fileSize = options.valueOf(filesizeSpec);

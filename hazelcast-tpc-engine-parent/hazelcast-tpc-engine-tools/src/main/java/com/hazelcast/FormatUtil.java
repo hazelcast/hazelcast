@@ -1,16 +1,9 @@
 package com.hazelcast;
 
-import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 
-public class Util {
-
-    public static void constructComplete(IOBuffer buff) {
-        buff.putInt(0, buff.position());
-        buff.byteBuffer().flip();
-    }
+public class FormatUtil {
 
     public static String humanReadableByteCountSI(double bytes) {
         if (Double.isInfinite(bytes)) {

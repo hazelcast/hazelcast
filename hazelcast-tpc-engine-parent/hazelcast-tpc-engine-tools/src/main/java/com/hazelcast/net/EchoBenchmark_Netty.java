@@ -1,4 +1,4 @@
-package com.hazelcast.echo;
+package com.hazelcast.net;
 
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
@@ -31,6 +31,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
 
+import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -40,7 +41,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * --add-opens java.base/sun.nio.ch=ALL-UNNAMED
  */
 public class EchoBenchmark_Netty {
-    public static final int durationSeconds = 600;
+    public static final int runtimeSeconds = 600;
     public static final int port = 5000;
     public static final int concurrency = 1;
     public static final Type type = Type.EPOLL;
@@ -94,7 +95,7 @@ public class EchoBenchmark_Netty {
             channels[k] = cf.channel();
         }
 
-        long start = System.currentTimeMillis();
+        long start = currentTimeMillis();
         for (Channel channel : channels) {
             for (int k = 0; k < concurrency; k++) {
                 ByteBuffer byteBuffer = ByteBuffer.allocate(8);
@@ -115,7 +116,7 @@ public class EchoBenchmark_Netty {
 
         countDownLatch.await();
         long count = sum(completedArray);
-        long duration = System.currentTimeMillis() - start;
+        long duration = currentTimeMillis() - start;
         System.out.println("Duration " + duration + " ms");
         System.out.println("Throughput:" + (count * 1000 / duration) + " ops");
         System.exit(0);
@@ -271,8 +272,8 @@ public class EchoBenchmark_Netty {
 
         @Override
         public void run() {
-            long end = System.currentTimeMillis() + SECONDS.toMillis(durationSeconds);
-            while (System.currentTimeMillis() < end) {
+            long end = currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
+            while (currentTimeMillis() < end) {
                 try {
                     Thread.sleep(SECONDS.toMillis(1));
                 } catch (InterruptedException e) {

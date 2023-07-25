@@ -1,4 +1,4 @@
-package com.hazelcast.echo;
+package com.hazelcast.net;
 
 import com.hazelcast.internal.tpcengine.iouring.AcceptMemory;
 import com.hazelcast.internal.tpcengine.iouring.CompletionQueue;

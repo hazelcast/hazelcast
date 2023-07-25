@@ -1,4 +1,4 @@
-package com.hazelcast.echo;
+package com.hazelcast.net;
 
 
 import com.hazelcast.internal.tpcengine.iouring.AcceptMemory;
@@ -98,7 +98,7 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
 
         private void doRun() throws IOException {
             final IOUring uring = new IOUring(4096, iouringSetupFlags);
-            if(registerRingFd) {
+            if (registerRingFd) {
                 uring.registerRingFd();
             }
             final SubmissionQueue sq = uring.submissionQueue();
@@ -176,7 +176,7 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
                     localHead++;
                 }
 
-                 // release-store.
+                // release-store.
                 UNSAFE.putOrderedInt(null, headAddr, localHead);
             }
         }
@@ -204,7 +204,7 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
             final Handler[] handlers = new Handler[1024];
             int handlerIdGenerator = 0;
             final IOUring uring = new IOUring(4096, iouringSetupFlags);
-            if(registerRingFd) {
+            if (registerRingFd) {
                 uring.registerRingFd();
             }
             final SubmissionQueue sq = uring.submissionQueue();
