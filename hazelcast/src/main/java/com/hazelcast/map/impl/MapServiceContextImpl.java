@@ -478,7 +478,8 @@ class MapServiceContextImpl implements MapServiceContext {
         final List<LocalRetryableExecution> executions = new ArrayList<>();
 
         for (PartitionContainer container : partitionContainers) {
-            Operation op = new MapPartitionDestroyOperation(container, mapContainer)
+            Operation op = new MapPartitionDestroyOperation(mapContainer.getName())
+                    .setPartitionId(container.getPartitionId())
                     .setNodeEngine(nodeEngine)
                     .setCallerUuid(nodeEngine.getLocalMember().getUuid())
                     .setServiceName(SERVICE_NAME);

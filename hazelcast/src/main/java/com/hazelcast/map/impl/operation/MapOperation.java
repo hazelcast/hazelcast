@@ -121,14 +121,10 @@ public abstract class MapOperation extends AbstractNamedOperation
         MapConfig mapConfig = mapContainer.getMapConfig();
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
 
-        boolean hasUserConfiguredOffload = mapServiceContext.isForceOffloadEnabled()
-                || (mapStoreConfig.isOffload()
-                && recordStore != null
-                && recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE);
-
         // check if mapStoreOffloadEnabled is true for this operation
         mapStoreOffloadEnabled = recordStore != null
-                && hasUserConfiguredOffload
+                && (mapServiceContext.isForceOffloadEnabled()
+                || (mapStoreConfig.isOffload() && hasMapStoreImplementation()))
                 && getStartingStep() != null;
 
         // check if tieredStoreOffloadEnabled for this operation
@@ -139,6 +135,10 @@ public abstract class MapOperation extends AbstractNamedOperation
         assertNativeMapOnPartitionThread();
 
         innerBeforeRun();
+    }
+
+    private boolean hasMapStoreImplementation() {
+        return recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE;
     }
 
     public boolean isTieredStoreAndPartitionCompactorEnabled() {

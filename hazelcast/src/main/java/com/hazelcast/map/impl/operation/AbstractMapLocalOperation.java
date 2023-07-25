@@ -23,6 +23,9 @@ import java.io.IOException;
 
 abstract class AbstractMapLocalOperation extends MapOperation {
 
+    AbstractMapLocalOperation() {
+    }
+
     AbstractMapLocalOperation(String name) {
         super(name);
     }

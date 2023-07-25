@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
@@ -30,19 +29,17 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 public class MapPartitionDestroyOperation extends AbstractMapLocalOperation
         implements PartitionAwareOperation, AllowedDuringPassiveState {
 
-    private final PartitionContainer partitionContainer;
-    private final MapContainer mapContainer;
+    public MapPartitionDestroyOperation() {
+    }
 
-    public MapPartitionDestroyOperation(PartitionContainer container, MapContainer mapContainer) {
-        super(mapContainer.getName());
-
-        this.partitionContainer = container;
-        this.mapContainer = mapContainer;
-        setPartitionId(partitionContainer.getPartitionId());
+    public MapPartitionDestroyOperation(String mapName) {
+        super(mapName);
     }
 
     @Override
     protected void runInternal() {
+        PartitionContainer partitionContainer = getMapContainer().getMapServiceContext()
+                .getPartitionContainer(getPartitionId());
         partitionContainer.destroyMap(mapContainer);
     }
 
