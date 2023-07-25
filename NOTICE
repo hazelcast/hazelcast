@@ -45,5 +45,6 @@ and updated within the WildFly project (https://github.com/wildfly/wildfly).
 The classes:
 com.hazelcast.cp.internal.raft.impl.state.FollowerState
 com.hazelcast.cp.internal.raft.impl.state.FollowerStateTest
+com.hazelcast.cp.internal.raft.impl.SlowFollowerBackoffTest
 
-contains code originating from the MicroRaft project (https://github.com/MicroRaft/MicroRaft)
+contain code originating from the MicroRaft project (https://github.com/MicroRaft/MicroRaft)
