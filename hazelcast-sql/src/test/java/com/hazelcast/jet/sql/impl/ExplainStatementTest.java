@@ -17,8 +17,11 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
+import com.hazelcast.jet.sql.impl.opt.prunability.PartitionPruningIT;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
@@ -29,6 +32,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Arrays;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -298,5 +303,53 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> instance().getSql().execute(sql))
                 .hasMessageContaining("Incorrect syntax near the keyword 'SHOW'");
+    }
+
+    @Test
+    public void test_partitioningKeyInfoWithSimpleKey() {
+        createMapping("test", Long.class, String.class);
+        // non-prunable
+        assertRowsOrdered("EXPLAIN PLAN FOR SELECT this FROM test WHERE this = '1'", rows(1,
+                "FullScanPhysicalRel(table=[[hazelcast, public, test[projects=[$1], filter==($1, _UTF-16LE'1')]]], discriminator=[0])"
+        ));
+        // prunable
+        assertRowsOrdered("EXPLAIN PLAN FOR SELECT this FROM test WHERE __key = 1 AND this = '1'", rows(1,
+                "FullScanPhysicalRel(table=[[hazelcast, public, test[projects=[$1], filter=AND(=($0, 1), =($1, _UTF-16LE'1'))]]], discriminator=[0], partitioningKey=[$0], partitioningKeyValues=[(1:BIGINT(63))])"
+        ));
+    }
+
+    @Test
+    public void test_partitioningKeyInfoWithComplexKey() {
+        instance().getConfig().addMapConfig(new MapConfig("testMap").setPartitioningAttributeConfigs(Arrays.asList(
+                new PartitioningAttributeConfig("comp1"),
+                new PartitioningAttributeConfig("comp2")
+        )));
+
+        instance().getSql().execute("CREATE MAPPING test EXTERNAL NAME \"testMap\" ("
+                + "c1 BIGINT EXTERNAL NAME \"__key.comp3\","
+                + "c2 BIGINT EXTERNAL NAME \"__key.comp2\","
+                + "c3 BIGINT EXTERNAL NAME \"__key.comp1\","
+                + "this VARCHAR"
+                + ") TYPE IMap OPTIONS ("
+                + "'valueFormat'='varchar', "
+                + "'keyFormat'='java', "
+                + "'keyJavaClass'='" + PartitionPruningIT.KeyObj.class.getName() + "')");
+
+        // non-prunable
+        assertRowsOrdered("EXPLAIN PLAN FOR SELECT this FROM test WHERE c1 = ? AND c2 = ?", rows(1,
+                "FullScanPhysicalRel(table=[[hazelcast, public, "
+                        + "test[projects=[$4], "
+                        + "filter=AND(=($0, ?0), =($1, ?1))]]], "
+                        + "discriminator=[0])"
+        ));
+        // prunable
+        assertRowsOrdered("EXPLAIN PLAN FOR SELECT this FROM test WHERE c3 = 1 AND c2 = ?", rows(1,
+                "FullScanPhysicalRel(table=[[hazelcast, public, "
+                        + "test[projects=[$4], "
+                        + "filter=AND(=($2, 1), =($1, ?0))]]], "
+                        + "discriminator=[0], "
+                        + "partitioningKey=[$1, $2], "
+                        + "partitioningKeyValues=[(?0, 1:BIGINT(63))])"
+        ));
     }
 }
