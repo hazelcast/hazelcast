@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAccumulator;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.unmodifiableMap;
@@ -50,30 +51,25 @@ final class ProbeUtils {
     private static final Map<Class<?>, Integer> TYPES;
 
     static {
-        final Map<Class<?>, Integer> types = createHashMap(18);
+        final Map<Class<?>, Integer> types = createHashMap(20);
 
-        types.put(byte.class, TYPE_PRIMITIVE_LONG);
-        types.put(short.class, TYPE_PRIMITIVE_LONG);
-        types.put(int.class, TYPE_PRIMITIVE_LONG);
-        types.put(long.class, TYPE_PRIMITIVE_LONG);
+        Stream.of(byte.class, short.class, int.class, long.class).forEach(clazz -> types.put(clazz,
+                TYPE_PRIMITIVE_LONG));
 
-        types.put(Byte.class, TYPE_LONG_NUMBER);
-        types.put(Short.class, TYPE_LONG_NUMBER);
-        types.put(Integer.class, TYPE_LONG_NUMBER);
-        types.put(Long.class, TYPE_LONG_NUMBER);
-        types.put(AtomicInteger.class, TYPE_LONG_NUMBER);
-        types.put(AtomicLong.class, TYPE_LONG_NUMBER);
-        types.put(LongAdder.class, TYPE_LONG_NUMBER);
-        types.put(LongAccumulator.class, TYPE_LONG_NUMBER);
+        Stream.of(Byte.class, Integer.class, Long.class, AtomicInteger.class, AtomicLong.class, LongAdder.class,
+                LongAccumulator.class).forEach(clazz -> types.put(clazz,
+                TYPE_LONG_NUMBER));
 
-        types.put(double.class, TYPE_DOUBLE_PRIMITIVE);
-        types.put(float.class, TYPE_DOUBLE_PRIMITIVE);
+        Stream.of(double.class, float.class).forEach(clazz -> types.put(clazz,
+                TYPE_DOUBLE_PRIMITIVE));
 
-        types.put(Double.class, TYPE_DOUBLE_NUMBER);
-        types.put(Float.class, TYPE_DOUBLE_NUMBER);
+        Stream.of(Double.class, Float.class).forEach(clazz -> types.put(clazz,
+                TYPE_DOUBLE_NUMBER));
 
         types.put(Collection.class, TYPE_COLLECTION);
+
         types.put(Map.class, TYPE_MAP);
+
         types.put(Counter.class, TYPE_COUNTER);
 
         types.put(Semaphore.class, TYPE_SEMAPHORE);
