@@ -58,7 +58,8 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_MEMBER_PRUNING_LEV
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.*;
+import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.ALL_PARTITIONS_REQUIRED;
+import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.COORDINATOR_REQUIRED;
 import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.EMPTY_PRUNING;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
