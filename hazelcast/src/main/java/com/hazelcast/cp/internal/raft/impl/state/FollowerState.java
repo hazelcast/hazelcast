@@ -142,7 +142,7 @@ public class FollowerState {
         boolean success = this.flowControlSequenceNumber == flowControlSequenceNumber;
 
         // TODO RU_COMPAT_5_3 added for Version 5.3 compatibility. Should be removed at Version 5.5
-        if (flowControlSequenceNumber == 0) {
+        if (flowControlSequenceNumber == -1) {
             success = true;
         }
 

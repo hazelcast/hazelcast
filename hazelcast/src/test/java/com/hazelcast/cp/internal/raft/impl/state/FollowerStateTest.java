@@ -56,11 +56,12 @@ public class FollowerStateTest {
 
     // TODO RU_COMPAT_5_3 test Version 5.3 compatibility. Test should be removed at Version 5.5
     @Test
-    public void compatibilityTestBackoffIsRetestedIfFlowControlIsZero() {
+    public void compatibilityTestBackoffIsRetestedIfFlowControlIsMinusOne() {
         long flowControlSeqNum = followerState.setAppendRequestBackoff();
-        boolean success = followerState.appendRequestAckReceived(0);
+        boolean success = followerState.appendRequestAckReceived(-1);
 
         assertThat(success).isTrue();
+        assertThat(flowControlSeqNum).isGreaterThanOrEqualTo(1);
         assertThat(followerState.flowControlSequenceNumber()).isEqualTo(flowControlSeqNum);
         assertThat(followerState.backoffRound()).isEqualTo(0);
     }

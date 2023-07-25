@@ -96,7 +96,7 @@ public class AppendFailureResponse implements IdentifiedDataSerializable {
             flowControlSequenceNumber = in.readLong();
             // TODO RU_COMPAT_5_3 added for Version 5.3 compatibility. Should be removed at Version 5.5
         } catch (EOFException e) {
-            flowControlSequenceNumber = 0;
+            flowControlSequenceNumber = -1;
         }
     }
 
