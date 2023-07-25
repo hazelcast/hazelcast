@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAccumulator;
+import java.util.concurrent.atomic.LongAdder;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static java.util.Collections.unmodifiableMap;
@@ -61,6 +63,8 @@ final class ProbeUtils {
         types.put(Long.class, TYPE_LONG_NUMBER);
         types.put(AtomicInteger.class, TYPE_LONG_NUMBER);
         types.put(AtomicLong.class, TYPE_LONG_NUMBER);
+        types.put(LongAdder.class, TYPE_LONG_NUMBER);
+        types.put(LongAccumulator.class, TYPE_LONG_NUMBER);
 
         types.put(double.class, TYPE_DOUBLE_PRIMITIVE);
         types.put(float.class, TYPE_DOUBLE_PRIMITIVE);
