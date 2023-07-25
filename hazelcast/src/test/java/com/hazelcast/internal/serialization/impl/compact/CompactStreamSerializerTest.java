@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -43,6 +44,8 @@ import example.serialization.MainDTO;
 import example.serialization.MainDTOSerializer;
 import example.serialization.NamedDTO;
 import example.serialization.NodeDTO;
+import example.serialization.CompactWithInnerFieldAsUuid;
+import example.serialization.CustomUUIDSerializer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -56,6 +59,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedSizeFieldsDTO;
@@ -465,6 +469,31 @@ public class CompactStreamSerializerTest {
         assertFalse(employeeDTO.usedExternalizableSerialization());
 
         assertEquals(employeeDTO, actual);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCompactInnerFieldCanNotOverrideDefaultSerializer() {
+        testUsageOfCompactClassInnerFieldAsCustomSerializer(false);
+    }
+
+    @Test
+    public void testCompactInnerFieldCanOverrideDefaultSerializer() {
+        testUsageOfCompactClassInnerFieldAsCustomSerializer(true);
+    }
+
+    private void testUsageOfCompactClassInnerFieldAsCustomSerializer(boolean allowOverrideDefaultSerializers) {
+        final SerializationConfig config = new SerializationConfig().setAllowOverrideDefaultSerializers(allowOverrideDefaultSerializers);
+
+        config.getCompactSerializationConfig().addSerializer(new CustomUUIDSerializer());
+
+        final SerializationService ss = createSerializationService(config);
+
+        UUID innerField = UUID.randomUUID();
+        CompactWithInnerFieldAsUuid compactWithUuidField = new CompactWithInnerFieldAsUuid(innerField);
+        final Data d = ss.toData(compactWithUuidField);
+        final CompactWithInnerFieldAsUuid deserializedAnswer = ss.toObject(d);
+
+        assertEquals(compactWithUuidField, deserializedAnswer);
     }
 
     @Test

@@ -700,12 +700,18 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     /**
      * Makes sure that the classes registered as Compact serializable are not
-     * overriding the default serializers.
+     * overriding the default serializers if the user did not explicitly set
+     * {@link com.hazelcast.config.SerializationConfig#setAllowOverrideDefaultSerializers(boolean)} to
+     * true.
      * <p>
      * Must be called in the constructor of the child classes after they
      * complete registering default serializers.
      */
     protected void verifyDefaultSerializersNotOverriddenWithCompact() {
+        if (allowOverrideDefaultSerializers) {
+            return;
+        }
+
         for (Class clazz : compactStreamSerializer.getCompactSerializableClasses()) {
             if (!constantTypesMap.containsKey(clazz)) {
                 continue;
