@@ -98,13 +98,13 @@ final class ProbeUtils {
      * @param classType the class object type.
      * @return the accessible object probe type.
      */
-    static int getType(Class classType) {
+    static int getType(Class<?> classType) {
         Integer type = TYPES.get(classType);
         if (type != null) {
             return type;
         }
 
-        List<Class<?>> flattenedClasses = new ArrayList<Class<?>>();
+        List<Class<?>> flattenedClasses = new ArrayList<>();
 
         flatten(classType, flattenedClasses);
 
@@ -118,7 +118,7 @@ final class ProbeUtils {
         return -1;
     }
 
-    static void flatten(Class clazz, List<Class<?>> result) {
+    static void flatten(Class<?> clazz, List<Class<?>> result) {
         if (!result.contains(clazz)) {
             result.add(clazz);
         }
@@ -127,7 +127,7 @@ final class ProbeUtils {
             flatten(clazz.getSuperclass(), result);
         }
 
-        for (Class interfaze : clazz.getInterfaces()) {
+        for (Class<?> interfaze : clazz.getInterfaces()) {
             if (!result.contains(interfaze)) {
                 result.add(interfaze);
             }
