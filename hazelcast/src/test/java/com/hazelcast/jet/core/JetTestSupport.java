@@ -112,7 +112,8 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(JetTestSupport.class);
 
-    protected static EnumSet<PartitionPruningLevel> ALL = EnumSet.of(ALL_PARTITIONS_REQUIRED, COORDINATOR_REQUIRED);
+    protected static EnumSet<PartitionPruningLevel> ALL_LEVELS = EnumSet.of(
+            ALL_PARTITIONS_REQUIRED, COORDINATOR_REQUIRED);
 
     protected ILogger logger = Logger.getLogger(getClass());
     private TestHazelcastFactory instanceFactory;

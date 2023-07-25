@@ -183,7 +183,7 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
                 nodeEngine,
                 members,
                 Set.of(requiredNonCoordinatorOwnedPartition, requiredCoordinatorOwnedPartition),
-                ALL);
+                ALL_LEVELS);
 
         List<Integer> actualAssignedPartitions = partitionAssignment
                 .values()
