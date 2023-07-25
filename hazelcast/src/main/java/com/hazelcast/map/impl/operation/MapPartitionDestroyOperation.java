@@ -34,10 +34,15 @@ public class MapPartitionDestroyOperation extends AbstractMapLocalOperation
 
     public MapPartitionDestroyOperation(String mapName) {
         super(mapName);
+        this.createRecordStoreOnDemand = false;
     }
 
     @Override
     protected void runInternal() {
+        if (recordStore == null || mapContainer == null) {
+            return;
+        }
+
         PartitionContainer partitionContainer = getMapContainer().getMapServiceContext()
                 .getPartitionContainer(getPartitionId());
         partitionContainer.destroyMap(mapContainer);

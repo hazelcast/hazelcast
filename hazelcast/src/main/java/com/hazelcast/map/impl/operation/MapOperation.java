@@ -107,6 +107,9 @@ public abstract class MapOperation extends AbstractNamedOperation
         try {
             recordStore = getRecordStoreOrNull();
             if (recordStore == null) {
+                if (!createRecordStoreOnDemand) {
+                    return;
+                }
                 mapContainer = mapServiceContext.getMapContainer(name);
             } else {
                 mapContainer = recordStore.getMapContainer();
@@ -419,8 +422,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     public ObjectNamespace getServiceNamespace() {
         MapContainer container = mapContainer;
         if (container == null) {
-            MapService service = getService();
-            container = service.getMapServiceContext().getMapContainer(name);
+            throw new IllegalStateException("There is no such map with name " + name + " exists ");
         }
         return container.getObjectNamespace();
     }
