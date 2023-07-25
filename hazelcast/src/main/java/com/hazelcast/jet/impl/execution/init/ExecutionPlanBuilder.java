@@ -261,10 +261,7 @@ public final class ExecutionPlanBuilder {
             checkNotNull(requiredPartitions);
         }
 
-        // TODO: TEST IT PROPERLY!!!!!!!!!!!!!!!
-
         IPartitionService partitionService = nodeEngine.getPartitionService();
-        Address localMemberAddress = nodeEngine.getThisAddress();
         MemberInfo localMemberInfo = new MemberInfo((MemberImpl) nodeEngine.getLocalMember());
 
         Map<Address, MemberInfo> membersByAddress = new HashMap<>();
@@ -297,9 +294,9 @@ public final class ExecutionPlanBuilder {
             partitionsForMember.computeIfAbsent(localMemberInfo, (i) -> {
                 nodeEngine.getLogger(ExecutionPlanBuilder.class).fine("Adding coordinator to partition-pruned job members");
                 var partitionContainer = new FixedCapacityIntArrayList(partitionCount);
-                // If DAG has not only DISTRIBUTE_TO_ALL edge -> we will assign all partitions afterwards.
+                // If DAG has any other distributed-partitioned edge -> we will assign all partitions afterwards.
                 if (!pruningLevels.contains(ALL_PARTITIONS_REQUIRED)) {
-                    // TODO: temporarily we're using "" key. Change after allToOne support...
+                    // TODO: temporarily we're using "" key.
                     partitionContainer.add(partitionService.getPartitionId(""));
                 }
                 return partitionContainer;
@@ -312,20 +309,18 @@ public final class ExecutionPlanBuilder {
         // which are already was filtered by main assignment loop above.
         if (pruningLevels.contains(ALL_PARTITIONS_REQUIRED)) {
             Set<Integer> partitionsToAssign = new HashSet<>(range(0, partitionCount));
-            // Guarded by checkNotNull(requiredPartitions);
             partitionsToAssign.removeAll(requiredPartitions);
 
             List<MemberInfo> requiredMembers = new ArrayList<>(partitionsForMember.keySet());
             for (int partitionId : partitionsToAssign) {
                 Address address = partitionService.getPartitionOwnerOrWait(partitionId);
                 MemberInfo member = membersByAddress.get(address);
-
-                if (member == null) {
-                    // if the partition owner isn't in the current memberList, assign to one of the other members in
-                    // round-robin fashion
+                if (member == null || !partitionsForMember.containsKey(member)) {
+                    // if the partition owner isn't in the current required member list,
+                    // assign to one of the other members in round-robin fashion
                     member = requiredMembers.get(memberIndex++ % requiredMembers.size());
-                    partitionsForMember.get(member).add(partitionId);
                 }
+                partitionsForMember.get(member).add(partitionId);
             }
         }
 

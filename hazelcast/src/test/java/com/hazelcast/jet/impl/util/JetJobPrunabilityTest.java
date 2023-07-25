@@ -31,6 +31,7 @@ import com.hazelcast.jet.core.TestProcessors.CollectPerProcessorSink;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
+import com.hazelcast.jet.impl.execution.init.PartitionPruningLevel;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,6 +44,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.security.Permission;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,9 +54,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_MEMBER_PRUNING_LEVEL;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
+import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.*;
 import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.EMPTY_PRUNING;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
@@ -63,6 +67,8 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
+    static EnumSet<PartitionPruningLevel> ALL = EnumSet.of(ALL_PARTITIONS_REQUIRED, COORDINATOR_REQUIRED);
+
     private CollectPerProcessorSink consumerPms;
     private int localPartitionId;
     private int remotePartitionId;
@@ -106,6 +112,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
+        jobConfig.setArgument(KEY_MEMBER_PRUNING_LEVEL, EnumSet.of(COORDINATOR_REQUIRED));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -134,6 +141,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(remotePartitionId));
+        jobConfig.setArgument(KEY_MEMBER_PRUNING_LEVEL, EnumSet.of(COORDINATOR_REQUIRED));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -174,6 +182,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
+        jobConfig.setArgument(KEY_MEMBER_PRUNING_LEVEL, ALL);
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -207,6 +216,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
+        jobConfig.setArgument(KEY_MEMBER_PRUNING_LEVEL, EnumSet.of(COORDINATOR_REQUIRED));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
