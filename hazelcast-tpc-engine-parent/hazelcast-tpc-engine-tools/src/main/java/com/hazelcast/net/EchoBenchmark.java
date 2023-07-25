@@ -71,15 +71,15 @@ public class EchoBenchmark {
     // Properties of the benchmark
     public int port = 5006;
     public int runtimeSeconds = 60;
-    public int socketBufferSize = 128 * 1024;
+    public int socketBufferSize = 256 * 1024;
     public boolean useDirectByteBuffers = true;
-    public int payloadSize = 0;
+    public int payloadSize = 100000;
     // the number of client/server pair sockets.
-    public int concurrency = 1;
+    public int concurrency = 100;
     public boolean tcpNoDelay = true;
     public boolean spin = false;
     public boolean regularSchedule = true;
-    public ReactorType reactorType = ReactorType.NIO;
+    public ReactorType reactorType = ReactorType.IOURING;
     public String cpuAffinityClient = "1";
     public String cpuAffinityServer = "4";
     public int connections = 100;

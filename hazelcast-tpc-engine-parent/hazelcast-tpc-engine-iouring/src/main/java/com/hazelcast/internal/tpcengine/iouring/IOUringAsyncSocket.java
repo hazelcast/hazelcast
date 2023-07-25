@@ -413,6 +413,8 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 //                }
 
                 if (res >= 0) {
+                    metrics.incBytesWritten(res);
+                    metrics.incWrites();
                     //System.out.println(IOUringAsyncSocket.this + " written " + res);
                     ioVector.compact(res);
                     resetFlushed();
@@ -439,6 +441,8 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         public void handle(int res, int flags, long userdata) {
             try {
                 if (res >= 0) {
+                    metrics.incBytesWritten(res);
+                    metrics.incWrites();
                     //System.out.println(IOUringAsyncSocket.this + " written " + res);
                     ioVector.compact(res);
                     resetFlushed();
