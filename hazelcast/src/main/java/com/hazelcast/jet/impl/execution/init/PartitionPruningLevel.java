@@ -19,10 +19,23 @@ package com.hazelcast.jet.impl.execution.init;
 import java.util.EnumSet;
 
 /**
- *
+ * The level of partition pruning that is required for a DAG to be executed.
+ * If member pruning is not possible, {@link PartitionPruningLevel#EMPTY_PRUNING} should be used.
+ * Levels are not excluding, and may be combined.
  */
 public enum PartitionPruningLevel {
+    /**
+     * For this level, the coordinator must be present in the cluster
+     * after member pruning optimization technique was applied.
+     * It is applicable, if job should return a result to root consumer.
+     */
     COORDINATOR_REQUIRED,
+
+    /**
+     * For this level, all partitions must be assigned to all required members
+     * were chosen to participate in job execution. It is applicable, if
+     * DAG contains at least one distributed-partitioned edge.
+     */
     ALL_PARTITIONS_REQUIRED;
 
     public static final EnumSet<PartitionPruningLevel> EMPTY_PRUNING = EnumSet.noneOf(PartitionPruningLevel.class);
