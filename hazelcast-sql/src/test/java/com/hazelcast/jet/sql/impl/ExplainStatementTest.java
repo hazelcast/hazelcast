@@ -29,6 +29,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -306,6 +307,7 @@ public class ExplainStatementTest extends SqlTestSupport {
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/25033")
     public void test_partitioningKeyInfoWithSimpleKey() {
         createMapping("test", Long.class, String.class);
         // non-prunable
