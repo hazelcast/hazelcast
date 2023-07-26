@@ -16,6 +16,7 @@
 
 package com.hazelcast.dataconnection.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -38,6 +39,7 @@ import org.junit.runner.RunWith;
 import java.util.Collections;
 import java.util.Map;
 
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -64,8 +66,12 @@ public class DataConnectionConsistencyCheckerTest extends SimpleTestInClusterSup
     public void setUp() throws Exception {
         name = randomName();
         linkService = (DataConnectionServiceImpl) getNodeEngineImpl(instance()).getDataConnectionService();
-        sqlCatalog = instance().getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         dataConnectionConsistencyChecker = new DataConnectionConsistencyChecker(instance(), Util.getNodeEngine(instance()));
+        if (getTestMethodName().contains("NoPartitionAssignment")) {
+            // do not proceed with actions that may trigger initial parttion assignment
+            return;
+        }
+        sqlCatalog = instance().getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         dataConnectionConsistencyChecker.init();
     }
 
@@ -148,5 +154,20 @@ public class DataConnectionConsistencyCheckerTest extends SimpleTestInClusterSup
         // then-2 - dynamic config has higher priority, and __sql.catalog should NOT contain old version
         assertFalse(linkService.existsSqlDataConnection(name));
         assertFalse(sqlCatalog.containsKey(QueryUtils.wrapDataConnectionKey(name)));
+    }
+
+    /**
+     * When partition assignment is not yet done, then the data connection
+     * consistency check should not fail with an exception.
+     */
+    @Test
+    public void test_dataConnectionCheckDoesNotThrow_whenNoPartitionAssignment() {
+        // ensure test setup is correct
+        assertFalse(getNodeEngineImpl(instance()).getPartitionService().isPartitionAssignmentDone());
+        // switch to FROZEN state so partition assignments cannot be done
+        instance().getCluster().changeClusterState(ClusterState.FROZEN);
+        dataConnectionConsistencyChecker.init();
+        // the check should not fail with exception
+        dataConnectionConsistencyChecker.check();
     }
 }
