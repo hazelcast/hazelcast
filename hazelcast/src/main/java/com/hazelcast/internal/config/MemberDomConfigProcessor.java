@@ -264,6 +264,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     protected final Config config;
 
+    // Flag that indicates if DOM processor is called for
+    // external configuration (system properties or environment variables)
+    protected boolean forExternalConfiguration;
+
     public MemberDomConfigProcessor(boolean domLevel3, Config config, boolean strict) {
         super(domLevel3, strict);
         this.config = config;
@@ -272,6 +276,11 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     public MemberDomConfigProcessor(boolean domLevel3, Config config) {
         super(domLevel3);
         this.config = config;
+    }
+
+    public MemberDomConfigProcessor setForExternalConfiguration() {
+        this.forExternalConfiguration = true;
+        return this;
     }
 
     @Override
@@ -1657,7 +1666,14 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 tcpIpConfig.setRequiredMember(getTextContent(n));
             } else if (memberTags.contains(cleanNodeName(n))) {
                 String textContent = getTextContent(n);
-                tcpIpConfig.setMembers(List.of(textContent));
+                // If DOM processor is configured for ExternalConfiguration then replace all members
+                // with external values
+                if (forExternalConfiguration) {
+                    tcpIpConfig.setMembers(List.of(textContent));
+                } else {
+                    // If DOM processor is configured for XML/YAML then append the value
+                    tcpIpConfig.addMember(textContent);
+                }
             }
         }
     }

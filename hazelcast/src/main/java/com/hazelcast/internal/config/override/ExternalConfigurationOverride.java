@@ -60,6 +60,7 @@ public class ExternalConfigurationOverride {
         return overwrite(config, (provider, rootNode, target) -> {
                     try {
                         new YamlMemberDomConfigProcessor(true, target, false)
+                                .setForExternalConfiguration()
                                 .buildConfig(new ConfigOverrideElementAdapter(rootNode));
                     } catch (Exception e) {
                         throw new InvalidConfigurationException("failed to overwrite configuration coming from " + provider, e);
