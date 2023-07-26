@@ -56,8 +56,8 @@ final class ProbeUtils {
         Stream.of(byte.class, short.class, int.class, long.class).forEach(clazz -> types.put(clazz,
                 TYPE_PRIMITIVE_LONG));
 
-        Stream.of(Byte.class, Integer.class, Long.class, AtomicInteger.class, AtomicLong.class, LongAdder.class,
-                LongAccumulator.class).forEach(clazz -> types.put(clazz,
+        Stream.of(Byte.class, Integer.class, Short.class, Long.class, AtomicInteger.class, AtomicLong.class,
+                LongAdder.class, LongAccumulator.class).forEach(clazz -> types.put(clazz,
                 TYPE_LONG_NUMBER));
 
         Stream.of(double.class, float.class).forEach(clazz -> types.put(clazz,
