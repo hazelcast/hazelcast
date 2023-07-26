@@ -95,10 +95,11 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
         long matchIndex = followerState.matchIndex();
         long followerLastLogIndex = resp.lastLogIndex();
 
-        if (followerLastLogIndex > matchIndex) {
-            // Received a response for the last append request. Resetting the flag...
-            followerState.appendRequestAckReceived();
+        // Received a response for the append request.
+        // Check if the backoff state should be reset.
+        followerState.appendRequestAckReceived(resp.flowControlSequenceNumber());
 
+        if (followerLastLogIndex > matchIndex) {
             long newNextIndex = followerLastLogIndex + 1;
             followerState.matchIndex(followerLastLogIndex);
             followerState.nextIndex(newNextIndex);
@@ -109,9 +110,6 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
             }
 
             return true;
-        } else if (followerLastLogIndex == matchIndex) {
-            // Received a response for the last append request. Resetting the flag...
-            followerState.appendRequestAckReceived();
         } else if (logger.isFineEnabled()) {
             logger.fine("Will not update match index for follower: " + follower + ". follower last log index: "
                     + followerLastLogIndex + ", match index: " + matchIndex);
