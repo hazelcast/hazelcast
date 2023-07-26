@@ -23,6 +23,7 @@ import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngine;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
@@ -43,6 +44,9 @@ public interface ExpressionEvalContext {
                     ((Contexts.ProcSupplierCtx) ctx).serializationService(),
                     ((Contexts.ProcSupplierCtx) ctx).nodeEngine());
         } else {
+            if (arguments == null) {
+                arguments = new ArrayList<>();
+            }
             return new ExpressionEvalContextImpl(
                     arguments,
                     new DefaultSerializationServiceBuilder().build(),

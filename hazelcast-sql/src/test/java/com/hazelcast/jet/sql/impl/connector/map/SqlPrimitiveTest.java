@@ -66,7 +66,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                 createMap(0, "value-0", 1, "value-1", 2, "value-2", 3, "value-3")
         );
         assertRowsAnyOrder(
-                "SELECT * FROM " + name + " WHERE __key = 0 AND TRUE",
+                "SELECT * FROM " + name + " WHERE __key > 0 AND __key < 3",
                 asList(
                         new Row(1, "value-1"),
                         new Row(2, "value-2")
