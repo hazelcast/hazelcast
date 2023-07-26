@@ -240,12 +240,18 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
+
+        List<Map<String, Expression<?>>> partitionStrategyCandidate = null;
+        if (partitionStrategyCandidates != null) {
+            partitionStrategyCandidate = partitionStrategyCandidates.get(table.getSqlName());
+        }
+
         SqlConnector sqlConnector = getJetSqlConnector(table);
         return sqlConnector.fullScanReader(
                 dagBuildContext,
                 wrap(rel.filter()),
                 wrap(rel.projection()),
-                partitionStrategyCandidates.get(table.getSqlName()),
+                partitionStrategyCandidate,
                 policyProvider != null
                         ? context -> policyProvider.apply(context, wmKey)
                         : null);
