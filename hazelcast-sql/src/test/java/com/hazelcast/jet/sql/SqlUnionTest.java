@@ -242,16 +242,16 @@ public class SqlUnionTest extends SqlTestSupport {
         ResultIterator<SqlRow> iterator = (ResultIterator<SqlRow>) result.iterator();
         List<Row> actualRows = new ArrayList<>();
         assertTrueEventually(() -> {
-            while (iterator.hasNext(50, TimeUnit.MILLISECONDS) == HasNextResult.YES) {
-                actualRows.add(new Row(iterator.next()));
-            }
-            if (actualRows.size() == 7 && expected.size() < 7) {
-                // Because we drop late items after union all (thanks to UnionDropLateItemsTransposeRule),
-                // it can happen that one of the late items makes it through. But both will never make it.
-                expected.add(new Row(timestampTz(0L), 4));
-            }
-            assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expected);
-        },
+                    while (iterator.hasNext(50, TimeUnit.MILLISECONDS) == HasNextResult.YES) {
+                        actualRows.add(new Row(iterator.next()));
+                    }
+                    if (actualRows.size() == 7 && expected.size() < 7) {
+                        // Because we drop late items after union all (thanks to UnionDropLateItemsTransposeRule),
+                        // it can happen that one of the late items makes it through. But both will never make it.
+                        expected.add(new Row(timestampTz(0L), 4));
+                    }
+                    assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expected);
+                },
                 5);
     }
 
@@ -308,6 +308,51 @@ public class SqlUnionTest extends SqlTestSupport {
         }
 
         String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION (SELECT this FROM pMap2 WHERE id = 1)";
+        expected.add(new Row("1"));
+
+        assertRowsAnyOrder(sql, expected);
+    }
+
+    @Test
+    public void prunableSelfUnionAllTest() {
+        instance().getConfig().addMapConfig(
+                new MapConfig("pMap1").setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+
+        IMap<Person, String> prunableMap1 = instance().getMap("pMap1");
+
+        createMapping("pMap1", Person.class, String.class);
+
+        for (int i = 0; i < 5; ++i) {
+            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
+        }
+
+        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION ALL (SELECT this FROM pMap1 WHERE id = 1 OR id = 2)";
+        expected.add(new Row("1"));
+        expected.add(new Row("1"));
+        expected.add(new Row("2"));
+
+        assertRowsAnyOrder(sql, expected);
+    }
+
+    @Test
+    public void prunableSelfUnionTest() {
+        instance().getConfig().addMapConfig(
+                new MapConfig("pMap1").setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+
+        IMap<Person, String> prunableMap1 = instance().getMap("pMap1");
+
+        createMapping("pMap1", Person.class, String.class);
+        createMapping("pMap2", Person.class, String.class);
+
+        for (int i = 0; i < 5; ++i) {
+            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
+        }
+
+        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION (SELECT this FROM pMap1 WHERE id = 1)";
         expected.add(new Row("1"));
 
         assertRowsAnyOrder(sql, expected);
