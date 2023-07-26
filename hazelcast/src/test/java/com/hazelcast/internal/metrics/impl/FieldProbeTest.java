@@ -70,7 +70,6 @@ public class FieldProbeTest extends HazelcastTestSupport {
         getLong("atomicLongField", 10);
         getLong("longAccumulatorField", 10);
         getLong("longAdderField", 10);
-        getLong("atomicLongField", 10);
         getLong("atomicIntegerField", 10);
         getLong("counterField", 10);
         getLong("collectionField", 10);
