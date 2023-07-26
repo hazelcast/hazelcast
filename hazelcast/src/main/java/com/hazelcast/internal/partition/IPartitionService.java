@@ -35,6 +35,7 @@ import javax.annotation.Nonnull;
 /**
  * An SPI service for accessing partition related information.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public interface IPartitionService extends CoreService {
 
     /**
