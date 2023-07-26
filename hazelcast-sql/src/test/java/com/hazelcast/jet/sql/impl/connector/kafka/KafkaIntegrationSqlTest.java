@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.sql.SqlResult;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -24,7 +27,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
@@ -44,7 +46,7 @@ public class KafkaIntegrationSqlTest extends KafkaSqlTestSupport {
                    "  (1, 'ABCD', 5.5, 10),\n" +
                    "  (2, 'EFGH', 14, 20);");
 
-        assertMapContents(mapName, Map.of(
+        assertMapContents(mapName, ImmutableMap.of(
                 1, new HazelcastJsonValue("{\"ticker\":\"ABCD\",\"price\":\"5.5\",\"amount\":10}"),
                 2, new HazelcastJsonValue("{\"ticker\":\"EFGH\",\"price\":\"14\",\"amount\":20}"))
         );
@@ -58,15 +60,15 @@ public class KafkaIntegrationSqlTest extends KafkaSqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT __key,this FROM " + topicName,
-                List.of(new Row(
+                ImmutableList.of(new Row(
                         1,
-                        Map.of(
+                        ImmutableMap.of(
                                 "ticker", "ABCD",
                                 "price", "5.5",
                                 "amount", 10)
                 ), new Row(
                         2,
-                        Map.of(
+                        ImmutableMap.of(
                                 "ticker", "EFGH",
                                 "price", "14",
                                 "amount", 20)
@@ -74,14 +76,14 @@ public class KafkaIntegrationSqlTest extends KafkaSqlTestSupport {
         );
 
         try (KafkaConsumer<Integer, String> consumer = kafkaTestSupport.createConsumer(topicName)) {
-            assertTopicContentsEventually(consumer, Map.of(
+            assertTopicContentsEventually(consumer, ImmutableMap.of(
                     1, "{\"ticker\":\"ABCD\",\"price\":\"5.5\",\"amount\":10}",
                     2, "{\"ticker\":\"EFGH\",\"price\":\"14\",\"amount\":20}"));
         }
     }
 
     private static void assertMapContents(String mapName, Map<Integer, HazelcastJsonValue> expected) {
-        var mapContents = new HashMap<>(instance().getMap(mapName));
+        Map<Integer, HazelcastJsonValue> mapContents = new HashMap<>(instance().getMap(mapName));
         assertTrueEventually(() -> assertThat(mapContents).containsAllEntriesOf(expected));
     }
 
@@ -120,7 +122,7 @@ public class KafkaIntegrationSqlTest extends KafkaSqlTestSupport {
     private void executeSql(String query) {
         logger.info("Execute sql: " + query);
         try {
-            try (var ignored = sqlService.execute(query)) {
+            try (SqlResult ignored = sqlService.execute(query)) {
                 //nop
             }
         } catch (Exception ex) {
@@ -130,7 +132,7 @@ public class KafkaIntegrationSqlTest extends KafkaSqlTestSupport {
     }
 
     public void assertTopicContentsEventually(KafkaConsumer<Integer, String> consumer, Map<Integer, String> expected) {
-        var collected = new HashMap<Integer, String>();
+        Map<Integer, String> collected = new HashMap<>();
         assertTrueEventually(() -> {
             ConsumerRecords<Integer, String> records = consumer.poll(Duration.ofSeconds(5));
             logger.info("Polled records: " + records.count());
