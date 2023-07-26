@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
@@ -51,7 +53,7 @@ public class SqlUnionTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, null);
+        initialize(3, null);
     }
 
     @Before
@@ -251,6 +253,64 @@ public class SqlUnionTest extends SqlTestSupport {
             assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expected);
         },
                 5);
+    }
+
+    @Test
+    public void prunableUnionAllTest() {
+        instance().getConfig().addMapConfig(
+                new MapConfig("pMap1").setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+        instance().getConfig().addMapConfig(
+                new MapConfig("pMap2").setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+
+        IMap<Person, String> prunableMap1 = instance().getMap("pMap1");
+        IMap<Person, String> prunableMap2 = instance().getMap("pMap2");
+
+        createMapping("pMap1", Person.class, String.class);
+        createMapping("pMap2", Person.class, String.class);
+
+        for (int i = 0; i < 5; ++i) {
+            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
+            prunableMap2.put(new Person(i, "ABC" + i), "" + i);
+        }
+
+        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION ALL (SELECT this FROM pMap2 WHERE id = 1 OR id = 2)";
+        expected.add(new Row("1"));
+        expected.add(new Row("1"));
+        expected.add(new Row("2"));
+
+        assertRowsAnyOrder(sql, expected);
+    }
+
+    @Test
+    public void prunableUnionTest() {
+        instance().getConfig().addMapConfig(
+                new MapConfig("pMap1").setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+        instance().getConfig().addMapConfig(
+                new MapConfig("pMap2").setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("id")
+                )));
+
+        IMap<Person, String> prunableMap1 = instance().getMap("pMap1");
+        IMap<Person, String> prunableMap2 = instance().getMap("pMap2");
+
+        createMapping("pMap1", Person.class, String.class);
+        createMapping("pMap2", Person.class, String.class);
+
+        for (int i = 0; i < 5; ++i) {
+            prunableMap1.put(new Person(i, "ABC" + i), "" + i);
+            prunableMap2.put(new Person(i, "ABC" + i), "" + i);
+        }
+
+        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION (SELECT this FROM pMap2 WHERE id = 1)";
+        expected.add(new Row("1"));
+
+        assertRowsAnyOrder(sql, expected);
     }
 
     private static String createTable(Object[]... values) {
