@@ -65,7 +65,7 @@ public class DataConnectionConsistencyChecker {
             return;
         }
 
-        if (nodeEngine.getPartitionService().isPartitionAssignmentDone()
+        if (!nodeEngine.getPartitionService().isPartitionAssignmentDone()
             && !hazelcastInstance.getCluster().getClusterState().isMigrationAllowed()) {
             // partitions have not been assigned yet and migrations are not allowed
             // so sql catalog can have no values -> skip check, because we anyway cannot
