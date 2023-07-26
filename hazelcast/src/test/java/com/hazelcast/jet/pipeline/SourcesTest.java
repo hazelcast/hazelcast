@@ -20,11 +20,14 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.test.annotation.QuickTest;
@@ -234,6 +237,29 @@ public class SourcesTest extends PipelineTestSupport {
 
         // When
         BatchSource<Object> source = Sources.remoteMapKeys(srcName, clientConfig);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        execute();
+        List<String> expected = input.stream()
+                .map(String::valueOf)
+                .collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void remoteMapKeys_dataConnectionName() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getMap(srcName), input);
+
+        // When
+        String dataConnectionName = "remoteHz";
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        BatchSource<Object> source = Sources.remoteMapKeys(srcName, dataConnectionName);
 
         // Then
         p.readFrom(source).writeTo(sink);

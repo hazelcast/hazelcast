@@ -211,6 +211,9 @@
     <!-- SQL -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]sql[\\/]impl[\\/]SqlPlanImpl"/>
 
+    <!-- Jet -->
+    <suppress checks="FileLength" files="[\\/]src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/]Sources.java"/>
+
     <!-- Security -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]security[\\/]"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com[\\/]hazelcast[\\/]security[\\/]permission[\\/]ActionConstants"/>
