@@ -20,10 +20,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.RestServerEndpointConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -36,11 +39,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.config.RestEndpointGroup.DATA;
 import static com.hazelcast.config.RestEndpointGroup.PERSISTENCE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -52,7 +57,7 @@ import static org.junit.Assert.assertTrue;
 public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSupport {
 
     @Test
-    public void shouldExtractConfigFromEnv() throws Exception {
+    public void shouldExtractConfigFromEnv() {
         Config config = new Config();
 
         Map<String, String> envVariables = new HashMap<>();
@@ -80,7 +85,24 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
 
     @Test
-    public void shouldHandleCustomPropertiesConfig() throws Exception {
+    public void shouldHandle_Network_Join_TcpIp_Members() {
+        // Start with a config object that has TcpIpConfig members
+        Config config = new Config();
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        JoinConfig joinConfig = networkConfig.getJoin();
+        TcpIpConfig tcpIpConfig = joinConfig.getTcpIpConfig();
+        tcpIpConfig.setMembers(List.of("127.0.0.1"));
+
+        // Check that TcpIpConfig members is replaced by new variables
+        Map<String, String> envVariables = new HashMap<>();
+        envVariables.put("HZ_NETWORK_JOIN_TCPIP_MEMBERS", "10.0.0.1,10.0.0.2,10.0.0.2");
+        new ExternalConfigurationOverride(envVariables, System::getProperties).overwriteMemberConfig(config);
+
+        assertThat(tcpIpConfig.getMembers()).containsExactlyInAnyOrder("10.0.0.1","10.0.0.2","10.0.0.2");
+    }
+
+    @Test
+    public void shouldHandleCustomPropertiesConfig() {
         Config config = new Config();
 
         Map<String, String> envVariables = new HashMap<>();
@@ -91,7 +113,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleAdvancedNetworkEndpointConfiguration() throws Exception {
+    public void shouldHandleAdvancedNetworkEndpointConfiguration() {
         Config config = new Config();
         config.getAdvancedNetworkConfig().setClientEndpointConfig(new ServerSocketEndpointConfig()
                 .setPort(9000)
@@ -129,7 +151,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleNetworkRestApiConfig() throws Exception {
+    public void shouldHandleNetworkRestApiConfig() {
         Config config = new Config();
         config.getNetworkConfig()
                 .getRestApiConfig()
@@ -143,7 +165,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleHotRestartPersistenceConfig() throws Exception {
+    public void shouldHandleHotRestartPersistenceConfig() {
         Config config = new Config();
         config.getHotRestartPersistenceConfig()
                 .setEnabled(true)
@@ -158,7 +180,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleUserCodeDeploymentConfig() throws Exception {
+    public void shouldHandleUserCodeDeploymentConfig() {
         Config config = new Config();
         config.getUserCodeDeploymentConfig()
                 .setEnabled(true)
@@ -173,7 +195,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleExecutorServiceConfig() throws Exception {
+    public void shouldHandleExecutorServiceConfig() {
         Config config = new Config();
         config.getExecutorConfig("foo1")
                 .setPoolSize(1)
@@ -190,7 +212,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleDurableExecutorServiceConfig() throws Exception {
+    public void shouldHandleDurableExecutorServiceConfig() {
         Config config = new Config();
         config.getDurableExecutorConfig("foo1")
                 .setPoolSize(1)
@@ -207,7 +229,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleScheduledServiceConfig() throws Exception {
+    public void shouldHandleScheduledServiceConfig() {
         Config config = new Config();
         config.getScheduledExecutorConfig("foo1")
                 .setPoolSize(1)
@@ -224,7 +246,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleScheduledServiceConfigMergePolicy() throws Exception {
+    public void shouldHandleScheduledServiceConfigMergePolicy() {
         Config config = new Config();
         config.getScheduledExecutorConfig("foo1")
                 .getMergePolicyConfig()
@@ -240,7 +262,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleCardinalityEstimatorConfig() throws Exception {
+    public void shouldHandleCardinalityEstimatorConfig() {
         Config config = new Config();
         config.getCardinalityEstimatorConfig("foo")
                 .setAsyncBackupCount(4);
@@ -254,7 +276,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleCardinalityEstimatorConfigMergePolicy() throws Exception {
+    public void shouldHandleCardinalityEstimatorConfigMergePolicy() {
         Config config = new Config();
         config.getCardinalityEstimatorConfig("foo")
                 .getMergePolicyConfig()
@@ -270,7 +292,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleSplitBrainProtectionConfig() throws Exception {
+    public void shouldHandleSplitBrainProtectionConfig() {
         Config config = new Config();
         config.getSplitBrainProtectionConfig("foo")
                 .setEnabled(true)
@@ -287,7 +309,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandlePNCounterConfig() throws Exception {
+    public void shouldHandlePNCounterConfig() {
         Config config = new Config();
         config.getPNCounterConfig("foo")
                 .setStatisticsEnabled(false)
@@ -302,7 +324,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleMemcachedProtocolConfig() throws Exception {
+    public void shouldHandleMemcachedProtocolConfig() {
         Config config = new Config();
         config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(false);
 
@@ -314,7 +336,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleRingBufferConfig() throws Exception {
+    public void shouldHandleRingBufferConfig() {
         Config config = new Config();
         config.getRingbufferConfig("foo")
                 .setAsyncBackupCount(2)
@@ -329,7 +351,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleRingBufferConfigMergePolicy() throws Exception {
+    public void shouldHandleRingBufferConfigMergePolicy() {
         Config config = new Config();
         config.getRingbufferConfig("foo")
                 .getMergePolicyConfig()
@@ -345,7 +367,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleCacheConfig() throws Exception {
+    public void shouldHandleCacheConfig() {
         Config config = new Config();
         config.getCacheConfig("foo")
                 .setStatisticsEnabled(false)
@@ -360,7 +382,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleCacheConfigMergePolicy() throws Exception {
+    public void shouldHandleCacheConfigMergePolicy() {
         Config config = new Config();
         config.getCacheConfig("foo")
                 .getMergePolicyConfig()
@@ -376,7 +398,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleFlakeIdConfig() throws Exception {
+    public void shouldHandleFlakeIdConfig() {
         Config config = new Config();
         config.getFlakeIdGeneratorConfig("foo")
                 .setStatisticsEnabled(false)
@@ -391,7 +413,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleQueueConfig() throws Exception {
+    public void shouldHandleQueueConfig() {
         Config config = new Config();
         config.getQueueConfig("foo")
                 .setBackupCount(4)
@@ -406,7 +428,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleQueueConfigMergePolicy() throws Exception {
+    public void shouldHandleQueueConfigMergePolicy() {
         Config config = new Config();
         config.getQueueConfig("foo")
                 .getMergePolicyConfig()
@@ -422,7 +444,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleListConfig() throws Exception {
+    public void shouldHandleListConfig() {
         Config config = new Config();
         config.getListConfig("foo")
                 .setBackupCount(4)
@@ -437,7 +459,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleListConfigMergePolicy() throws Exception {
+    public void shouldHandleListConfigMergePolicy() {
         Config config = new Config();
         config.getListConfig("foo")
                 .getMergePolicyConfig()
@@ -453,7 +475,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleSetConfig() throws Exception {
+    public void shouldHandleSetConfig() {
         Config config = new Config();
         config.getSetConfig("foo")
                 .setBackupCount(4)
@@ -468,7 +490,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleSetConfigMergePolicy() throws Exception {
+    public void shouldHandleSetConfigMergePolicy() {
         Config config = new Config();
         config.getSetConfig("foo")
                 .getMergePolicyConfig()
@@ -484,7 +506,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleMapConfig() throws Exception {
+    public void shouldHandleMapConfig() {
         Config config = new Config();
         config.getMapConfig("foo")
                 .setBackupCount(4)
@@ -499,7 +521,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleMapConfigMergePolicy() throws Exception {
+    public void shouldHandleMapConfigMergePolicy() {
         Config config = new Config();
         config.getMapConfig("foo")
                 .getMergePolicyConfig()
@@ -515,7 +537,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleMapConfigNearCache() throws Exception {
+    public void shouldHandleMapConfigNearCache() {
         Config config = new Config();
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
                 .setMaxIdleSeconds(10)
@@ -531,7 +553,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleMapMerkleTreeConfig() throws Exception {
+    public void shouldHandleMapMerkleTreeConfig() {
         Config config = new Config();
         MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig()
                 .setEnabled(false)
@@ -547,12 +569,12 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         new ExternalConfigurationOverride(envVariables, System::getProperties).overwriteMemberConfig(config);
 
         assertEquals(2, config.getMapConfig("foo1").getBackupCount());
-        assertTrue(config.getMapConfig("foo1").getMerkleTreeConfig().isEnabled());
+        assertTrue(config.getMapConfig("foo1").getMerkleTreeConfig().getEnabled());
         assertEquals(5, config.getMapConfig("foo1").getMerkleTreeConfig().getDepth());
     }
 
     @Test
-    public void shouldHandleMapEventJournalConfig() throws Exception {
+    public void shouldHandleMapEventJournalConfig() {
         Config config = new Config();
         EventJournalConfig eventJournalConfig = new EventJournalConfig()
                 .setEnabled(false)
@@ -573,7 +595,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleMapMapStoreConfig() throws Exception {
+    public void shouldHandleMapMapStoreConfig() {
         Config config = new Config();
         config.getMapConfig("foo")
                 .getMapStoreConfig()
@@ -589,7 +611,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleReplicatedMapConfig() throws Exception {
+    public void shouldHandleReplicatedMapConfig() {
         Config config = new Config();
         config.getReplicatedMapConfig("foo")
                 .setAsyncFillup(false)
@@ -604,7 +626,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleReplicatedMapConfigMergePolicy() throws Exception {
+    public void shouldHandleReplicatedMapConfigMergePolicy() {
         Config config = new Config();
         config.getReplicatedMapConfig("foo")
                 .getMergePolicyConfig()
@@ -620,7 +642,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleMultiMapConfig() throws Exception {
+    public void shouldHandleMultiMapConfig() {
         Config config = new Config();
         config.getMultiMapConfig("foo")
                 .setBackupCount(4)
@@ -635,7 +657,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleMultiMapConfigMergePolicy() throws Exception {
+    public void shouldHandleMultiMapConfigMergePolicy() {
         Config config = new Config();
         config.getMultiMapConfig("foo")
                 .getMergePolicyConfig()
@@ -651,7 +673,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleAuditLogConfig() throws Exception {
+    public void shouldHandleAuditLogConfig() {
         Config config = new Config();
         config.getAuditlogConfig()
                 .setEnabled(false)
@@ -672,7 +694,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleRestApiConfig() throws Exception {
+    public void shouldHandleRestApiConfig() {
         Config config = new Config();
 
         Map<String, String> envVariables = new HashMap<>();
@@ -686,7 +708,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleRestApiConfig_whenPersistenceEnabled() throws Exception {
+    public void shouldHandleRestApiConfig_whenPersistenceEnabled() {
         Config config = new Config();
 
         Map<String, String> envVariables = new HashMap<>();
@@ -701,7 +723,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
 
 
     @Test
-    public void shouldHandleRestApiConfig_when_bothPersistenceAndHotRestartAreEnabled() throws Exception {
+    public void shouldHandleRestApiConfig_when_bothPersistenceAndHotRestartAreEnabled() {
         Config config = new Config();
 
         Map<String, String> envVariables = new HashMap<>();
@@ -716,7 +738,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleEmptyLicenseKey() throws Exception {
+    public void shouldHandleEmptyLicenseKey() {
         Config config = new Config();
 
         Map<String, String> envVariables = new HashMap<>();
@@ -726,7 +748,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldHandleShortLicenseKey() throws Exception {
+    public void shouldHandleShortLicenseKey() {
         Config config = new Config();
 
         Map<String, String> envVariables = new HashMap<>();
@@ -736,7 +758,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void shouldHandleRestApiConfigInvalidEntry() throws Exception {
+    public void shouldHandleRestApiConfigInvalidEntry() {
         Config config = new Config();
 
         Map<String, String> envVariables = new HashMap<>();
@@ -746,7 +768,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldDisallowConflictingEntries() throws Exception {
+    public void shouldDisallowConflictingEntries() {
         Map<String, String> envVariables = new HashMap<>();
         envVariables.put("HZ_CLUSTERNAME", "test");
         Properties systemProperties = new Properties();
@@ -759,7 +781,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
-    public void shouldUseSystem_SystemPropertiesAsDefault() throws Exception {
+    public void shouldUseSystem_SystemPropertiesAsDefault() {
         Config config = new Config();
         String randomPropertyName = randomString();
         System.setProperty("hz.properties." + randomPropertyName, "123");

@@ -1656,7 +1656,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 }
                 tcpIpConfig.setRequiredMember(getTextContent(n));
             } else if (memberTags.contains(cleanNodeName(n))) {
-                tcpIpConfig.addMember(getTextContent(n));
+                String textContent = getTextContent(n);
+                tcpIpConfig.setMembers(List.of(textContent));
             }
         }
     }
