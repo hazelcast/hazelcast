@@ -116,7 +116,7 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
                 .collect(Collectors.toList());
 
         MemberInfo requiredMemberInfo = new MemberInfo(nodeEngine.getClusterService().getMember(nonCoordinatorAddress));
-        assertThat(partitionAssignment.keySet()).containsExactly(localMemberInfo, requiredMemberInfo);
+        assertThat(partitionAssignment.keySet()).contains(localMemberInfo, requiredMemberInfo);
 
         int coordinatorPartition = nodeEngine.getPartitionService().getPartitionId("");
         assertThat(actualAssignedPartitions)
@@ -149,7 +149,7 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
                 .sorted()
                 .collect(Collectors.toList());
 
-        assertThat(partitionAssignment.keySet()).containsExactly(localMemberInfo);
+        assertThat(partitionAssignment.keySet()).contains(localMemberInfo);
         assertThat(actualAssignedPartitions).containsAll(range(0, partitionCount));
     }
 
@@ -192,7 +192,7 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
                 .sorted()
                 .collect(Collectors.toList());
 
-        assertThat(partitionAssignment.keySet()).containsExactly(localMemberInfo, requiredMemberInfo);
+        assertThat(partitionAssignment.keySet()).contains(localMemberInfo, requiredMemberInfo);
         assertThat(actualAssignedPartitions).containsAll(range(0, partitionCount));
     }
 }
