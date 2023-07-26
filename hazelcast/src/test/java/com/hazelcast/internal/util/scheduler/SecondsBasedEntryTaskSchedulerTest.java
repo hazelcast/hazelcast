@@ -68,7 +68,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
     @Before
     @SuppressWarnings("unchecked")
     public void mockScheduleMethod() {
-        // TODO: Mocking non-owned class
         when(taskScheduler.schedule(any(Runnable.class), anyLong(), any(TimeUnit.class)))
                 .thenReturn(mock(ScheduledFuture.class));
     }
@@ -213,7 +212,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
     @SuppressWarnings("unchecked")
     public void test_executeScheduledEntries_postpone() {
         ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
-        // TODO: Mocking non-owned class
         when(taskScheduler.schedule(runnableCaptor.capture(), anyLong(), any(TimeUnit.class)))
                 .thenReturn(mock(ScheduledFuture.class));
 
@@ -242,7 +240,6 @@ public class SecondsBasedEntryTaskSchedulerTest {
     @SuppressWarnings("unchecked")
     public void test_executeScheduledEntries_foreach() {
         ArgumentCaptor<Runnable> runnableCaptor = ArgumentCaptor.forClass(Runnable.class);
-        // TODO: Mocking non-owned class
         when(taskScheduler.schedule(runnableCaptor.capture(), anyLong(), any(TimeUnit.class)))
                 .thenReturn(mock(ScheduledFuture.class));
 
