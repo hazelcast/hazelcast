@@ -98,7 +98,7 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         envVariables.put("HZ_NETWORK_JOIN_TCPIP_MEMBERS", "10.0.0.1,10.0.0.2,10.0.0.2");
         new ExternalConfigurationOverride(envVariables, System::getProperties).overwriteMemberConfig(config);
 
-        assertThat(tcpIpConfig.getMembers()).containsExactlyInAnyOrder("10.0.0.1","10.0.0.2","10.0.0.2");
+        assertThat(tcpIpConfig.getMembers()).containsExactlyInAnyOrder("10.0.0.1", "10.0.0.2", "10.0.0.2");
     }
 
     @Test
