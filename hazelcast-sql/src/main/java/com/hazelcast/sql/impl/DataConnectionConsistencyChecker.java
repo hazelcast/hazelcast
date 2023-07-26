@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
@@ -30,7 +31,9 @@ import java.util.List;
 @NotThreadSafe
 public class DataConnectionConsistencyChecker {
     private final HazelcastInstance hazelcastInstance;
+    private final NodeEngine nodeEngine;
     private final DataConnectionServiceImpl dataConnectionService;
+    private final ILogger logger;
     // sqlCatalog supposed to be initialized lazily
     private IMap<Object, Object> sqlCatalog;
 
@@ -38,7 +41,9 @@ public class DataConnectionConsistencyChecker {
 
     public DataConnectionConsistencyChecker(HazelcastInstance instance, NodeEngine nodeEngine) {
         this.hazelcastInstance = instance;
+        this.nodeEngine = nodeEngine;
         this.dataConnectionService = (DataConnectionServiceImpl) nodeEngine.getDataConnectionService();
+        this.logger = nodeEngine.getLogger(DataConnectionConsistencyChecker.class);
     }
 
     /**
@@ -57,6 +62,17 @@ public class DataConnectionConsistencyChecker {
      */
     public void check() {
         if (!initialized) {
+            return;
+        }
+
+        if (!nodeEngine.getPartitionService().isPartitionAssignmentDone()
+            && !hazelcastInstance.getCluster().getClusterState().isMigrationAllowed()) {
+            // partitions have not been assigned yet and migrations are not allowed
+            // so sql catalog can have no values -> skip check, because we anyway cannot
+            // iterate over sqlCatalog values (operation will fail with exception, since
+            // partition assignments do not exist and cannot be triggered).
+            logger.info("Skipping data connection consistency check because"
+                    + " initial partition assignment is not done yet.");
             return;
         }
 
