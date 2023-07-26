@@ -34,7 +34,9 @@ import com.hazelcast.test.ExceptionRecorder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.example.Person;
 import org.junit.Before;
@@ -44,8 +46,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
 
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -59,6 +64,7 @@ import static com.hazelcast.mapstore.GenericMapLoader.LOAD_ALL_KEYS_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -68,6 +74,9 @@ import static org.assertj.core.util.Lists.newArrayList;
 public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
     private static Config memberConfig;
+
+    @Parameter
+    public TestDatabaseProvider provider;
 
     @Rule
     public TestName testName = new TestName();
@@ -80,31 +89,37 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         this.prefix = prefix;
     }
 
-    @BeforeClass
-    public static void beforeClass() {
-        assumeDockerEnabled();
-        initializeBeforeClass(new H2DatabaseProvider());
+    @Parameterized.Parameters(name = "provider={0}")
+    public static Collection<Object> parameters() {
+        return asList(
+                new MySQLDatabaseProvider(),
+                new MSSQLDatabaseProvider(),
+                new PostgresDatabaseProvider()
+        );
     }
 
-    protected static void initializeBeforeClass(TestDatabaseProvider testDatabaseProvider) {
-        databaseProvider = testDatabaseProvider;
-        dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
-
+    @BeforeClass
+    public static void beforeClass() {
         // Do not use small config to run with more threads and partitions
         memberConfig = new Config()
                 // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
-                .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
-                .addDataConnectionConfig(
-                        new DataConnectionConfig(TEST_DATABASE_REF)
-                                .setType("jdbc")
-                                .setProperty("jdbcUrl", dbConnectionUrl)
-                );
+                .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null));
         memberConfig.getJetConfig().setEnabled(true);
 
         ClientConfig clientConfig = new ClientConfig();
 
         initializeWithClient(2, memberConfig, clientConfig);
         sqlService = instance().getSql();
+    }
+
+    @Before
+    public void before() {
+        assumeDockerEnabled();
+        databaseProvider = provider;
+        dbConnectionUrl = databaseProvider.createDatabase(GenericMapStoreIntegrationTest.class.getName());
+
+        sqlService.executeUpdate(String.format("CREATE DATA CONNECTION %s TYPE Jdbc OPTIONS ('jdbcUrl' = '%s')",
+                TEST_DATABASE_REF, dbConnectionUrl));
     }
 
     @Before
@@ -229,7 +244,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     /**
-     * https://github.com/hazelcast/hazelcast/issues/22570
+     * <a href="https://github.com/hazelcast/hazelcast/issues/22570">related issue</a>
      */
     @Test
     public void testExecuteOnEntries() {
@@ -393,7 +408,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     /**
-     * Regression test for https://github.com/hazelcast/hazelcast/issues/22567
+     * Regression test for <a href="https://github.com/hazelcast/hazelcast/issues/22567">this issue</a>
      */
     @Test(timeout = 90_000L)
     @Category(NightlyTest.class)

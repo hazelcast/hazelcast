@@ -20,21 +20,31 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
+import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -43,6 +53,7 @@ import static com.hazelcast.mapstore.GenericMapStore.DATA_CONNECTION_REF_PROPERT
 import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.MAPPING_PREFIX;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -52,11 +63,38 @@ import static org.junit.Assert.assertTrue;
 /**
  * This test runs the MapStore methods directly, but it runs within real Hazelcast instance
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class, SerialTest.class})
 public class GenericMapStoreTest extends GenericMapLoaderTest {
 
+    @Parameter
+    public TestDatabaseProvider provider;
+
     private GenericMapStore<Integer> mapStore;
+
+    @Parameterized.Parameters(name = "provider={0}")
+    public static Collection<Object> parameters() {
+        return asList(
+                new MySQLDatabaseProvider(),
+                new MSSQLDatabaseProvider(),
+                new PostgresDatabaseProvider()
+        );
+    }
+
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(2, smallInstanceConfig());
+        sqlService = instance().getSql();
+    }
+
+    @Before
+    public void before() {
+        databaseProvider = provider;
+        dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
+
+        sqlService.executeUpdate(String.format("CREATE DATA CONNECTION %s TYPE Jdbc OPTIONS ('jdbcUrl' = '%s')",
+                TEST_DATABASE_REF, dbConnectionUrl));
+    }
 
     @After
     public void after() {
@@ -64,6 +102,8 @@ public class GenericMapStoreTest extends GenericMapLoaderTest {
             mapStore.destroy();
             mapStore = null;
         }
+
+        sqlService.executeUpdate("DROP DATA CONNECTION " + TEST_DATABASE_REF);
     }
 
     @Test
