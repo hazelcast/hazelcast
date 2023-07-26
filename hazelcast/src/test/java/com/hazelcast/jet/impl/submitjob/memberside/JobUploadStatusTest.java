@@ -49,7 +49,6 @@ import static org.mockito.MockitoAnnotations.openMocks;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobUploadStatusTest {
 
-    // TODO: Mocking non-owned class
     @Mock
     Clock clock;
     @Mock
