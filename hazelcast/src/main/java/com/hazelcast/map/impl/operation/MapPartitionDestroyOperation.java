@@ -39,11 +39,7 @@ public class MapPartitionDestroyOperation extends AbstractMapLocalOperation
 
     @Override
     protected void runInternal() {
-        if (recordStore == null || mapContainer == null) {
-            return;
-        }
-
-        PartitionContainer partitionContainer = getMapContainer().getMapServiceContext()
+        PartitionContainer partitionContainer = mapContainer.getMapServiceContext()
                 .getPartitionContainer(getPartitionId());
         partitionContainer.destroyMap(mapContainer);
     }

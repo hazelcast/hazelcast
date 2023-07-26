@@ -106,13 +106,10 @@ public abstract class MapOperation extends AbstractNamedOperation
 
         try {
             recordStore = getRecordStoreOrNull();
-            if (recordStore == null) {
-                if (!createRecordStoreOnDemand) {
-                    return;
-                }
-                mapContainer = mapServiceContext.getMapContainer(name);
-            } else {
-                mapContainer = recordStore.getMapContainer();
+            mapContainer = getMapContainerOrNull();
+            if (mapContainer == null) {
+                // no map exists
+                return;
             }
         } catch (Throwable t) {
             disposeDeferredBlocks();
@@ -138,6 +135,16 @@ public abstract class MapOperation extends AbstractNamedOperation
         assertNativeMapOnPartitionThread();
 
         innerBeforeRun();
+    }
+
+    private MapContainer getMapContainerOrNull() {
+        if (recordStore == null) {
+            return createRecordStoreOnDemand
+                    ? mapServiceContext.getMapContainer(name)
+                    : mapServiceContext.getExistingMapContainer(name);
+        }
+
+        return recordStore.getMapContainer();
     }
 
     private boolean hasMapStoreImplementation() {
@@ -388,7 +395,6 @@ public abstract class MapOperation extends AbstractNamedOperation
      */
     protected final void invalidateAllKeysInNearCaches() {
         if (mapContainer.hasInvalidationListener()) {
-
             int partitionId = getPartitionId();
             Invalidator invalidator = getNearCacheInvalidator();
 
