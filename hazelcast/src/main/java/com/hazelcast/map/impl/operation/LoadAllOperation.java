@@ -19,6 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.UtilSteps;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
@@ -60,6 +62,11 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
     protected void runInternal() {
         keys = selectThisPartitionsKeys();
         recordStore.loadAllFromStore(keys, replaceExistingValues);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return UtilSteps.DIRECT_RUN_STEP;
     }
 
     @Override
