@@ -44,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class SqlAvroTest extends SqlTestSupport {
     private static final File AVRO_FILE = FileUtil.createAvroFile(FileUtil.AVRO_RECORD);
     private static final File AVRO_NULLABLE_FILE = FileUtil.createAvroFile(FileUtil.AVRO_NULLABLE_RECORD);
+    private static final File AVRO_NULL_FILE = FileUtil.createAvroFile(FileUtil.AVRO_NULL_RECORD);
 
     private static SqlService sqlService;
 
@@ -139,6 +140,11 @@ public class SqlAvroTest extends SqlTestSupport {
         test_schemaDiscovery(AVRO_NULLABLE_FILE);
     }
 
+    @Test
+    public void test_schemaDiscovery_nulls() {
+        test_schemaDiscovery(AVRO_NULL_FILE);
+    }
+
     private void test_schemaDiscovery(File avroFile) {
         String name = randomName();
         fileMapping(name, avroFile).create();
@@ -161,7 +167,7 @@ public class SqlAvroTest extends SqlTestSupport {
                         + ", \"null\""
                         + ", object "
                         + "FROM " + name,
-                singletonList(new Row(
+                singletonList(avroFile == AVRO_NULL_FILE ? new Row(new Object[15]) : new Row(
                         "string",
                         true,
                         127,
@@ -191,6 +197,11 @@ public class SqlAvroTest extends SqlTestSupport {
         test_tableFunction(AVRO_NULLABLE_FILE);
     }
 
+    @Test
+    public void test_tableFunction_nulls() {
+        test_tableFunction(AVRO_NULL_FILE);
+    }
+
     private void test_tableFunction(File avroFile) {
         assertRowsAnyOrder(
                 "SELECT "
@@ -212,7 +223,7 @@ public class SqlAvroTest extends SqlTestSupport {
                         + "FROM TABLE("
                         + "  AVRO_FILE('" + avroFile.getParent() + "')"
                         + ")",
-                singletonList(new Row(
+                singletonList(avroFile == AVRO_NULL_FILE ? new Row(new Object[15]) : new Row(
                         "string",
                         true,
                         127,

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericData.Record;
@@ -58,8 +59,8 @@ final class FileUtil {
                      .endRecord()
             ).set("string", "string")
              .set("boolean", true)
-             .set("byte", Byte.MAX_VALUE)
-             .set("short", Short.MAX_VALUE)
+             .set("byte", (int) Byte.MAX_VALUE)
+             .set("short", (int) Short.MAX_VALUE)
              .set("int", Integer.MAX_VALUE)
              .set("long", Long.MAX_VALUE)
              .set("float", 1234567890.1F)
@@ -74,7 +75,8 @@ final class FileUtil {
              .build();
 
     static final Record AVRO_NULLABLE_RECORD =
-            new GenericRecordBuilder(SchemaBuilder.record("name")
+            AVRO_RECORD.getSchema().getFields().stream().collect(
+                () -> new GenericRecordBuilder(SchemaBuilder.record("name")
                     .fields()
                     .name("string").type().nullable().stringType().noDefault()
                     .name("boolean").type().nullable().booleanType().noDefault()
@@ -91,11 +93,39 @@ final class FileUtil {
                     .name("timestampTz").type().nullable().stringType().noDefault()
                     .name("null").type().nullable().record("nul").fields().endRecord().noDefault()
                     .name("object").type().nullable().record("object").fields().endRecord().noDefault()
+                    .endRecord()),
+                (builder, field) -> builder.set(field, AVRO_RECORD.get(field.pos())),
+                ExceptionUtil::combinerUnsupported
+            ).build();
+
+    static final Record AVRO_NULL_RECORD =
+            AVRO_NULLABLE_RECORD.getSchema().getFields().stream().collect(
+                    () -> new GenericRecordBuilder(AVRO_NULLABLE_RECORD.getSchema()),
+                    (builder, field) -> builder.set(field, null),
+                    ExceptionUtil::combinerUnsupported
+            ).build();
+
+    private static final Record PARQUET_RECORD =
+            new GenericRecordBuilder(SchemaBuilder.record("name")
+                    .fields()
+                    .name("string").type().stringType().noDefault()
+                    .name("boolean").type().booleanType().noDefault()
+                    .name("byte").type().intType().noDefault()
+                    .name("short").type().intType().noDefault()
+                    .name("int").type().intType().noDefault()
+                    .name("long").type().longType().noDefault()
+                    .name("float").type().floatType().noDefault()
+                    .name("double").type().doubleType().noDefault()
+                    .name("decimal").type().stringType().noDefault()
+                    .name("time").type().stringType().noDefault()
+                    .name("date").type().stringType().noDefault()
+                    .name("timestamp").type().stringType().noDefault()
+                    .name("timestampTz").type().stringType().noDefault()
                     .endRecord()
             ).set("string", "string")
              .set("boolean", true)
-             .set("byte", (int) Byte.MAX_VALUE)
-             .set("short", (int) Short.MAX_VALUE)
+             .set("byte", Byte.MAX_VALUE)
+             .set("short", Short.MAX_VALUE)
              .set("int", Integer.MAX_VALUE)
              .set("long", Long.MAX_VALUE)
              .set("float", 1234567890.1F)
@@ -105,45 +135,9 @@ final class FileUtil {
              .set("date", "2020-04-15")
              .set("timestamp", "2020-04-15T12:23:34.001")
              .set("timestampTz", "2020-04-15T12:23:34.200Z")
-             .set("null", null)
-             .set("object", new GenericRecordBuilder(SchemaBuilder.record("object").fields().endRecord()).build())
              .build();
 
-    private static final Record PARQUET_RECORD =
-            new GenericRecordBuilder(
-                    SchemaBuilder.record("name")
-                                 .fields()
-                                 .name("string").type().stringType().noDefault()
-                                 .name("boolean").type().booleanType().noDefault()
-                                 .name("byte").type().intType().noDefault()
-                                 .name("short").type().intType().noDefault()
-                                 .name("int").type().intType().noDefault()
-                                 .name("long").type().longType().noDefault()
-                                 .name("float").type().floatType().noDefault()
-                                 .name("double").type().doubleType().noDefault()
-                                 .name("decimal").type().stringType().noDefault()
-                                 .name("time").type().stringType().noDefault()
-                                 .name("date").type().stringType().noDefault()
-                                 .name("timestamp").type().stringType().noDefault()
-                                 .name("timestampTz").type().stringType().noDefault()
-                                 .endRecord()
-            ).set("string", "string")
-             .set("boolean", true)
-             .set("byte", (byte) 127)
-             .set("short", (short) 32767)
-             .set("int", 2147483647)
-             .set("long", 9223372036854775807L)
-             .set("float", 1234567890.1F)
-             .set("double", 123451234567890.1D)
-             .set("decimal", "9223372036854775.123")
-             .set("time", "12:23:34")
-             .set("date", "2020-04-15")
-             .set("timestamp", "2020-04-15T12:23:34.001")
-             .set("timestampTz", "2020-04-15T12:23:34.200Z")
-             .build();
-
-    private FileUtil() {
-    }
+    private FileUtil() { }
 
     /**
      * Creates a temporary directory with prefix 'sql-avro-test', writes the
