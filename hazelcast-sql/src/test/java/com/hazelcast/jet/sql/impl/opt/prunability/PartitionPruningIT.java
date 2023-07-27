@@ -25,7 +25,6 @@ import com.hazelcast.test.annotation.SlowTest;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -89,7 +88,6 @@ public class PartitionPruningIT extends SqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/25033")
     public void test_simpleKeyAndEmptyMapPruned() {
         createMapping("test4", Integer.class, Integer.class);
         instance().getMap("test4");
@@ -97,13 +95,11 @@ public class PartitionPruningIT extends SqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/25033")
     public void test_simpleKeyPruned() {
         assertRowsAnyOrder("SELECT this FROM test1 WHERE __key = ? AND this = 'v1'", List.of(1), rows(1, "v1"));
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/25033")
     public void test_simpleKeyNotPruned() {
         assertRowsAnyOrder("SELECT this FROM test1 WHERE __key > 0 AND this = 'v1'", rows(1, "v1"));
     }

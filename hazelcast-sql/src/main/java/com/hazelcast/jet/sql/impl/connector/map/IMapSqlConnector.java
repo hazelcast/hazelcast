@@ -19,10 +19,14 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.core.DefaultPartitionStrategy;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -169,7 +173,35 @@ public class IMapSqlConnector implements SqlConnector {
                 valueMetadata.getUpsertTargetDescriptor(),
                 indexes,
                 hd,
-                partitioningAttributes);
+                partitioningAttributes,
+                supportsPartitionPruning(nodeEngine, mapName));
+    }
+
+    private boolean supportsPartitionPruning(final NodeEngine nodeEngine, final String mapName) {
+        final MapConfig mapConfig = nodeEngine.getConfig().getMapConfig(mapName);
+        if (!mapConfig.getPartitioningAttributeConfigs().isEmpty()) {
+            return true;
+        }
+
+        final PartitioningStrategyConfig strategyConfig = mapConfig.getPartitioningStrategyConfig();
+        if (strategyConfig == null) {
+            return true;
+        }
+
+        if (StringUtil.isNullOrEmpty(strategyConfig.getPartitioningStrategyClass())
+                && strategyConfig.getPartitioningStrategy() == null) {
+            return true;
+        }
+
+        if (strategyConfig.getPartitioningStrategy() != null) {
+            return strategyConfig.getPartitioningStrategy() instanceof DefaultPartitionStrategy;
+        }
+
+        if (!StringUtil.isNullOrEmpty(strategyConfig.getPartitioningStrategyClass())) {
+            return strategyConfig.getPartitioningStrategyClass().equals(DefaultPartitionStrategy.class.getName());
+        }
+
+        return false;
     }
 
     private static void checkImapName(@Nonnull String[] externalName) {

@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.prunability.PartitionStrategyConditionExtractor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.linq4j.tree.Types;
@@ -83,19 +84,22 @@ public final class HazelcastRelMdPrunability
         }
 
         final PartitionedMapTable targetTable = hazelcastTable.getTarget();
-        Set<String> partitioningColumns;
-
-        if (targetTable.partitioningAttributes().isEmpty()) {
+        if (!targetTable.supportsPartitionPruning()) {
             return emptyMap();
         }
 
-        // PartitioningColumns contains field names rather than columns names,
-        // we have to convert it to column names if EXTERNAL NAME is used.
-        final HashSet<String> partitioningFieldNames = new HashSet<>(targetTable.partitioningAttributes());
-        partitioningColumns = targetTable.keyFields()
-                .filter(kf -> partitioningFieldNames.contains(kf.getPath().getPath()))
-                .map(TableField::getName)
-                .collect(Collectors.toSet());
+        final Set<String> partitioningColumns;
+        if (targetTable.partitioningAttributes().isEmpty()) {
+            partitioningColumns = Set.of(QueryPath.KEY);
+        } else {
+            // PartitioningColumns contains field names rather than columns names,
+            // we have to convert it to column names if EXTERNAL NAME is used.
+            final HashSet<String> partitioningFieldNames = new HashSet<>(targetTable.partitioningAttributes());
+            partitioningColumns = targetTable.keyFields()
+                    .filter(kf -> partitioningFieldNames.contains(kf.getPath().getPath()))
+                    .map(TableField::getName)
+                    .collect(Collectors.toSet());
+        }
 
         final RexNode filter = hazelcastTable.getFilter();
         if (!(filter instanceof RexCall)) {
