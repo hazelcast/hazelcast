@@ -158,7 +158,7 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
         CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(ss, mapContainer.getExtractors());
         recordStore.forEach((BiConsumer<Data, Record>) (dataKey, record) -> {
             Object value = getValueOrCachedValue(record, ss);
-            entry.init(toHeapData(dataKey), value);
+            entry.init(recordStore.isTieredStorageEnabled() ? toHeapData(dataKey) : dataKey, value);
             indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
         }, false);
 
