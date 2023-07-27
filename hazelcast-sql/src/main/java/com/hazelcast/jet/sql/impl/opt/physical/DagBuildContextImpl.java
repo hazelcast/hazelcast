@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.impl.execution.init.PartitionPruningLevel;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.DagBuildContext;
@@ -31,6 +32,7 @@ import org.apache.calcite.rex.RexVisitor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.EnumSet;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -41,6 +43,8 @@ public class DagBuildContextImpl implements DagBuildContext {
     private final QueryParameterMetadata parameterMetadata;
     private Table table;
     private PhysicalRel rel;
+    private EnumSet<PartitionPruningLevel> partitionPruningLevel = EnumSet.noneOf(PartitionPruningLevel.class);
+
 
     public DagBuildContextImpl(NodeEngine nodeEngine, DAG dag, QueryParameterMetadata parameterMetadata) {
         this.nodeEngine = requireNonNull(nodeEngine);
@@ -75,6 +79,16 @@ public class DagBuildContextImpl implements DagBuildContext {
 
     public void setTable(Table table) {
         this.table = table;
+    }
+
+    @Override
+    public void addPartitionPruningLevel(PartitionPruningLevel level) {
+        partitionPruningLevel.add(level);
+    }
+
+    @Override
+    public EnumSet<PartitionPruningLevel> getPartitionPruningLevels() {
+        return partitionPruningLevel;
     }
 
     @Nullable
