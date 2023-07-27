@@ -34,7 +34,6 @@ import com.hazelcast.jet.impl.operation.GetJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
-import com.hazelcast.jet.impl.operation.IsJobUserCancelledOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.jet.impl.operation.UpdateJobConfigOperation;
@@ -72,15 +71,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Nonnull @Override
-    protected JobStatus getStatus0() {
-        assert !isLightJob();
-        return invoke(new GetJobStatusOperation(getId()));
-    }
-
-    @Override
-    protected boolean isUserCancelled0() {
-        assert !isLightJob();
-        return invoke(new IsJobUserCancelledOperation(getId()));
+    protected JobStatus getStatus1() {
+        return invoke(new GetJobStatusOperation(getId(), isLightJob()));
     }
 
     @Nonnull @Override
@@ -213,7 +205,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     private <T> T invoke(Operation op) {
-        return this.<T>invokeAsync(op).get();
+        return joinAndInvoke(() -> this.<T>invokeAsync(op).get());
     }
 
     private <T> CompletableFuture<T> invokeAsync(Operation op) {

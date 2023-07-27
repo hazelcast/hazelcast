@@ -19,7 +19,9 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStatusListener;
 import com.hazelcast.jet.config.DeltaJobConfig;
@@ -43,7 +45,6 @@ import javax.annotation.Nullable;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
@@ -52,6 +53,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.ignoreException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -90,12 +92,6 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     private final BiConsumer<Void, Throwable> joinJobCallback;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
 
-    /**
-     * True if this instance submitted the job. False if it was created later
-     * to track existing job.
-     */
-    private final boolean submittingInstance;
-
     AbstractJobProxy(C container, long jobId, M lightJobCoordinator) {
         this.jobId = jobId;
         this.container = container;
@@ -104,7 +100,6 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         logger = loggingService().getLogger(AbstractJobProxy.class);
         future = new NonCompletableFuture();
         joinJobCallback = new JoinJobCallback();
-        submittingInstance = false;
     }
 
     AbstractJobProxy(C container, long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
@@ -112,7 +107,6 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         this.container = container;
         this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
         this.logger = loggingService().getLogger(Job.class);
-        submittingInstance = true;
 
         try {
             NonCompletableFuture submitFuture = doSubmitJob(jobDefinition, config);
@@ -183,53 +177,69 @@ public abstract class AbstractJobProxy<C, M> implements Job {
                 (name == NOT_LOADED ? "??" : "'" + (name != null ? name : "") + "'") + ")";
     }
 
+    @Override
+    public void join() {
+        joinFuture(false);
+        future.join();
+    }
+
     @Nonnull @Override
     public CompletableFuture<Void> getFuture() {
-        if (joinedJob.compareAndSet(false, true)) {
-            doInvokeJoinJob();
-        }
+        joinFuture(true);
         return future;
     }
 
     @Nonnull @Override
     public final JobStatus getStatus() {
-        if (isLightJob()) {
-            CompletableFuture<Void> f = getFuture();
-            if (!f.isDone()) {
-                return RUNNING;
+        if (!future.isDone()) {
+            JobStatus status = isLightJob() && joinedJob.get() ? RUNNING : getStatus0();
+            if (status != null) {
+                return status;
             }
-            return f.isCompletedExceptionally() ? FAILED : COMPLETED;
-        } else {
-            return getStatus0();
+        }
+        Throwable t = getResult();
+        if (t == null) {
+            return COMPLETED;
+        } else if (isFailureOrCancellation(t)) {
+            return FAILED;
+        }
+        throw rethrow(t);
+    }
+
+    /**
+     * Gets the job status and waits until {@link #future} is completed if the status is terminal.
+     * If the job is not found, returns null. In this case, the job status should be obtained from
+     * the result of {@code future} since {@link JobNotFoundException} causes waiting for the
+     * completion of {@code future} in {@link #joinAndInvoke}.
+     */
+    private JobStatus getStatus0() {
+        try {
+            JobStatus status = getStatus1();
+            if (status.isTerminal()) {
+                ignoreException(future::join);
+            }
+            return status;
+        } catch (JobNotFoundException ignored) {
+            return null;
         }
     }
 
-    protected abstract JobStatus getStatus0();
+    protected abstract JobStatus getStatus1();
 
     @Override
     public final boolean isUserCancelled() {
-        if (isLightJob()) {
-            CompletableFuture<Void> f = getFuture();
-            if (!f.isDone()) {
-                throw new IllegalStateException("Job not finished");
-            }
-            if (!f.isCancelled()) {
-                return false;
-            }
-            try {
-                f.getNow(null);
-                throw new AssertionError("Future changed state");
-            } catch (CancellationByUserException byUser) {
-                return true;
-            } catch (CancellationException e) {
-                return false;
-            }
-        } else {
-            return isUserCancelled0();
+        joinFuture(true);
+        if (!future.isDone()) {
+            throw new IllegalStateException("Job not finished");
         }
+        Throwable t = getResult();
+        if (t == null) {
+            return false;
+        } else if (isFailureOrCancellation(t)) {
+            return t instanceof CancellationByUserException;
+        }
+        throw rethrow(t);
     }
-
-    protected abstract boolean isUserCancelled0();
 
     @Override
     public long getSubmissionTime() {
@@ -259,43 +269,86 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         if (mode != TerminationMode.CANCEL_FORCEFUL) {
             checkNotLightJob(mode.toString());
         }
-
         logger.fine("Sending " + mode + " request for job " + idAndName());
         while (true) {
             try {
-                try {
-                    invokeTerminateJob(mode).get();
-                    break;
-                } catch (ExecutionException e) {
-                    if (!(e.getCause() instanceof JobNotFoundException) || !isLightJob()) {
-                        throw e;
-                    }
-                    if (submittingInstance) {
-                        // It can happen that we enqueued the submit operation, but the master handled
-                        // the terminate op before the submit op and doesn't yet know about the job.
-                        // But it can be that the job already completed, we don't know. We'll look at
-                        // the submit future, if it's done, the job is done. Otherwise, we'll retry -
-                        // the job will eventually start or complete.
-                        // This scenario is possible only on the client or lite member. On normal member,
-                        // the submit op is executed directly.
-                        assert joinedJob.get() : "not joined";
-                        if (future.isDone()) {
-                            return;
-                        }
-                    } else {
-                        // This instance is an output of one of the JetService.getJob() or getJobs() methods.
-                        // That means that the job was already known to some member and since it's not known
-                        // anymore, it's safe to assume it already completed.
-                        return;
-                    }
-                }
-                LockSupport.parkNanos(TERMINATE_RETRY_DELAY_NS);
+                joinAndInvoke(() -> invokeTerminateJob(mode).get());
+                break;
             } catch (Exception e) {
-                if (!isRestartable(e)) {
-                    throw rethrow(e);
+                if (e instanceof JobNotFoundException) {
+                    if (!(getResult() instanceof JobNotFoundException)) {
+                        // Job completed/failed/cancelled just before we send termination request.
+                        break;
+                    }
+                    throw e;
+                } else if (!(isRestartable(e) || e instanceof IllegalStateException)) {
+                    throw e;
                 }
-                logger.fine("Re-sending " + mode + " request for job " + idAndName());
             }
+            LockSupport.parkNanos(TERMINATE_RETRY_DELAY_NS);
+            logger.fine("Re-sending " + mode + " request for job " + idAndName());
+        }
+    }
+
+    /**
+     * Joins {@link #future} if not already joined, optionally in a synchronous manner.
+     * @implNote Joining {@link #future} is an asynchronous operation, so {@code future.isDone()}
+     * is not expected to give sensible results just after join request is sent. When we can get
+     * the first reading depends on member load and network speed, which are nondeterministic.
+     * The first reading may be improved by sending another operation, which is synchronous. <ol>
+     * <li> If the job is completed and removed from the coordinator before invoking this method,
+     *      future will be waited for completion, which will complete with JobNotFoundException.
+     * <li> If the job exists on the coordinator when this method is invoked, but removed before
+     *      sending the second operation, future will be waited for completion, which may complete
+     *      normally or exceptionally.
+     * <li> If the job exists on the coordinator throughout the invocation of this method, future
+     *      may or may not be completed on return.
+     * @see #joinAndInvoke(SupplierEx) joinAndInvoke(operation)
+     */
+    private void joinFuture(boolean synchronous) {
+        if (joinedJob.compareAndSet(false, true)) {
+            doInvokeJoinJob();
+            if (synchronous) {
+                getStatus0();
+            }
+        }
+        if (synchronous && future.isDone()) {
+            Throwable t = getResult();
+            if (t instanceof JobNotFoundException) {
+                throw rethrow(t);
+            }
+        }
+    }
+
+    /**
+     * Joins {@link #future} if not already joined and returns the result of the operation.
+     * If the operation throws {@link JobNotFoundException}, {@link #future} will be waited
+     * for completion and the exception will be rethrown. In this case, the caller will check
+     * the result of {@link #future} to decide to retry operation, throw exception, etc.
+     */
+    protected <T> T joinAndInvoke(SupplierEx<T> operation) {
+        if (joinedJob.compareAndSet(false, true)) {
+            doInvokeJoinJob();
+        }
+        try {
+            return operation.get();
+        } catch (Exception e) {
+            Throwable t = peel(e);
+            if (t instanceof JobNotFoundException) {
+                ignoreException(future::join);
+                throw jobAlreadyRemoved();
+            } else {
+                throw rethrow(t);
+            }
+        }
+    }
+
+    private Throwable getResult() {
+        try {
+            future.getNow(null);
+            return null;
+        } catch (Exception e) {
+            return peel(e);
         }
     }
 
@@ -305,14 +358,15 @@ public abstract class AbstractJobProxy<C, M> implements Job {
             return doAddStatusListener(listener);
         } catch (JobNotFoundException ignored) {
             throw cannotAddStatusListener(
-                    future.isCompletedExceptionally() ? FAILED : COMPLETED);
+                    future.isDone() ? future.isCompletedExceptionally() ? FAILED : COMPLETED : "completed/failed");
         }
     }
 
+    @SuppressWarnings("StringEquality")
     @Override
     public String toString() {
         return "Job{id=" + getIdString()
-                + ", name=" + getName()
+                + ", name=" + (name == NOT_LOADED ? "??" : name)
                 // Don't include these, they do remote calls and wreak havoc when the debugger tries to display
                 // the string value. They can also fail at runtime.
                 //+ ", submissionTime=" + toLocalDateTime(getSubmissionTime())
@@ -415,6 +469,11 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         return submitFuture;
     }
 
+    private boolean isFailureOrCancellation(Throwable t) {
+        return t instanceof CancellationException
+                || (t instanceof JetException && !(t instanceof JobNotFoundException));
+    }
+
     /** @see ExceptionUtil#isRestartableException */
     private boolean isRestartable(Throwable t) {
         if (isLightJob()) {
@@ -431,11 +490,11 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     private void doInvokeJoinJob() {
         invokeJoinJob()
-                .whenComplete(withTryCatch(logger, (r, t) -> {
-                    if (isLightJob() && t instanceof JobNotFoundException) {
-                        throw new IllegalStateException("job already completed");
+                .whenComplete((r, t) -> {
+                    if (peel(t) instanceof JobNotFoundException) {
+                        throw jobAlreadyRemoved();
                     }
-                }))
+                })
                 .whenCompleteAsync(withTryCatch(logger, joinJobCallback));
     }
 
@@ -445,8 +504,13 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         }
     }
 
-    public static IllegalStateException cannotAddStatusListener(JobStatus status) {
+    public static IllegalStateException cannotAddStatusListener(Object status) {
         return new IllegalStateException("Cannot add status listener to a " + status + " job");
+    }
+
+    private JobNotFoundException jobAlreadyRemoved() {
+        return new JobNotFoundException("Job " + idAndName() + " is already removed. Call getFuture()"
+                + " after obtaining a job reference to be able to know later how it completed/failed.");
     }
 
     private abstract class CallbackBase implements BiConsumer<Void, Throwable> {

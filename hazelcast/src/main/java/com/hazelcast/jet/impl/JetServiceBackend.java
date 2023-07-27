@@ -254,7 +254,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     // Overridden in EE with EnterpriseJobCoordinationService
-    JobCoordinationService createJobCoordinationService() {
+    protected JobCoordinationService createJobCoordinationService() {
         return new JobCoordinationService(nodeEngine, this, jetConfig, jobRepository);
     }
 

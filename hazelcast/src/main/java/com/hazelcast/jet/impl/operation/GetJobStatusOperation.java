@@ -18,26 +18,49 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
 public class GetJobStatusOperation extends AsyncJobOperation implements AllowedDuringPassiveState {
+    private boolean isLightJob;
 
     public GetJobStatusOperation() {
     }
 
-    public GetJobStatusOperation(long jobId) {
+    public GetJobStatusOperation(long jobId, boolean isLightJob) {
         super(jobId);
+        this.isLightJob = isLightJob;
     }
 
     @Override
     public CompletableFuture<JobStatus> doRun() {
-        return getJobCoordinationService().getJobStatus(jobId());
+        if (isLightJob) {
+            return completedFuture(getJobCoordinationService().getLightJobStatus(jobId()));
+        } else {
+            return getJobCoordinationService().getJobStatus(jobId());
+        }
     }
 
     @Override
     public int getClassId() {
         return JetInitDataSerializerHook.GET_JOB_STATUS_OP;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(isLightJob);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        isLightJob = in.readBoolean();
     }
 }

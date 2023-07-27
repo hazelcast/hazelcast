@@ -26,7 +26,6 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
-import com.hazelcast.client.impl.protocol.codec.JetIsJobUserCancelledCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetRemoveJobStatusListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
@@ -92,23 +91,12 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
 
     @Nonnull
     @Override
-    protected JobStatus getStatus0() {
-        assert !isLightJob();
+    protected JobStatus getStatus1() {
         return callAndRetryIfTargetNotFound(()  -> {
-            ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
-            ClientMessage response = invoke(request, masterId());
+            ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId(), lightJobCoordinator);
+            ClientMessage response = invoke(request, coordinatorId());
             int jobStatusIndex = JetGetJobStatusCodec.decodeResponse(response);
             return JobStatus.values()[jobStatusIndex];
-        });
-    }
-
-    @Override
-    protected boolean isUserCancelled0() {
-        assert !isLightJob();
-        return callAndRetryIfTargetNotFound(()  -> {
-            ClientMessage request = JetIsJobUserCancelledCodec.encodeRequest(getId());
-            ClientMessage response = invocation(request, masterId()).invoke().get();
-            return JetIsJobUserCancelledCodec.decodeResponse(response);
         });
     }
 
@@ -323,7 +311,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     private ClientMessage invoke(ClientMessage request, UUID invocationUuid) {
-        return invocation(request, invocationUuid).invoke().get();
+        return joinAndInvoke(() -> invocation(request, invocationUuid).invoke().get());
     }
 
     private CompletableFuture<Void> invokeAsync(ClientMessage request, UUID invocationUuid) {

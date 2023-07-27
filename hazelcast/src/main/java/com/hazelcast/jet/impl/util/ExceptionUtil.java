@@ -193,6 +193,12 @@ public final class ExceptionUtil {
         throw (T) t;
     }
 
+    public static void ignoreException(Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Exception ignored) { }
+    }
+
     /**
      * A {@linkplain Stream#collect(Supplier, BiConsumer, BiConsumer) combiner} that throws an
      * {@link UnsupportedOperationException}. It is useful when parallel stream is not supported.

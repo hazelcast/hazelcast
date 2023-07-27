@@ -7741,7 +7741,9 @@ public class MemberCompatibilityNullTest_2_5 {
     public void test_JetGetJobStatusCodec_decodeRequest() {
         int fileClientMessageIndex = 873;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aLong, JetGetJobStatusCodec.decodeRequest(fromFile)));
+        JetGetJobStatusCodec.RequestParameters parameters = JetGetJobStatusCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertFalse(parameters.isLightJobCoordinatorExists);
     }
 
     @Test

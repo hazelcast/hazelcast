@@ -37,6 +37,12 @@ import java.util.concurrent.CompletableFuture;
  * A handle to Jet computation job created by submitting a {@link DAG} or
  * {@link Pipeline} to the cluster. See {@link JetService} for methods to
  * submit jobs and to get a handle to an existing job.
+ * <p>
+ * In job instances that are obtained via {@link JetService#getJob(long)},
+ * {@link JetService#getJob(String)} or {@link JetService#getJobs()}, the job
+ * completion future is set up when the first time a network call is made. If
+ * the job is completed and removed from the job coordinator before making
+ * such a call, subsequent calls will throw a {@link JobNotFoundException}.
  *
  * @since Jet 3.0
  */
@@ -72,13 +78,11 @@ public interface Job {
      * Joining a suspended job will block until that job is resumed and
      * completes.
      * <p>
-     * Shorthand for <code>job.getFuture().join()</code>.
+     * Optimized version of <code>job.getFuture().join()</code>.
      *
      * @throws CancellationException if the job was cancelled
      */
-    default void join() {
-        getFuture().join();
-    }
+    void join();
 
     /**
      * Gets the future associated with the job. The returned future is
@@ -115,8 +119,6 @@ public interface Job {
      * @throws IllegalStateException if the cluster is not in a state to
      * restart the job, for example when coordinator member left and new
      * coordinator did not yet load job's metadata.
-     * @throws JobNotFoundException for light jobs, if the job already
-     * completed
      */
     void cancel();
 

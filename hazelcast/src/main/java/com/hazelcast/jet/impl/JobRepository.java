@@ -599,7 +599,7 @@ public class JobRepository {
         return Collections.emptyMap();
     }
 
-    private Map<Long, JobResult> jobResultsMap() {
+    public Map<Long, JobResult> jobResultsMap() {
         if (jobResults.remembered() != null ||
                 ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RESULTS_MAP_NAME)) {
             return jobResults.get();

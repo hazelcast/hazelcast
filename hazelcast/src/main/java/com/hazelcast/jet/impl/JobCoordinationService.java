@@ -108,6 +108,7 @@ import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
@@ -188,7 +189,7 @@ public class JobCoordinationService {
 
     private long maxJobScanPeriodInMillis;
 
-    JobCoordinationService(
+    public JobCoordinationService(
             NodeEngineImpl nodeEngine, JetServiceBackend jetServiceBackend, JetConfig config, JobRepository jobRepository
     ) {
         this.nodeEngine = nodeEngine;
@@ -363,10 +364,16 @@ public class JobCoordinationService {
         return jobSubmitted.get();
     }
 
+    /**
+     * @throws JobNotFoundException if the job is not found
+     * @throws IllegalStateException if the job is not initialized
+     */
     private LightMasterContext getLightJob(long jobId) {
         Object mc = lightMasterContexts.get(jobId);
-        if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
+        if (mc == null) {
             throw new JobNotFoundException(jobId);
+        } else if (mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
+            throw new IllegalStateException("Job is not initialized");
         }
         return (LightMasterContext) mc;
     }
@@ -593,6 +600,12 @@ public class JobCoordinationService {
         });
     }
 
+    public JobStatus getLightJobStatus(long jobId) {
+        LightMasterContext mc = getLightJob(jobId);
+        CompletableFuture<Void> f = mc.getCompletionFuture();
+        return !f.isDone() ? RUNNING : f.isCompletedExceptionally() ? FAILED : COMPLETED;
+    }
+
     /**
      * Returns the job status or fails with {@link JobNotFoundException}
      * if the requested job is not found.
@@ -697,8 +710,8 @@ public class JobCoordinationService {
     }
 
     /**
-     * Returns the job submission time or fails with {@link JobNotFoundException}
-     * if the requested job is not found.
+     * @throws JobNotFoundException if the job is not found
+     * @throws IllegalStateException if the job is not initialized
      */
     public CompletableFuture<Long> getJobSubmissionTime(long jobId, boolean isLightJob) {
         if (isLightJob) {
@@ -1070,8 +1083,8 @@ public class JobCoordinationService {
      * Completes the job which is coordinated with the given master context object.
      */
     @CheckReturnValue
-    CompletableFuture<Void> completeJob(MasterContext masterContext, Throwable error, long completionTime,
-                                        boolean userCancelled) {
+    protected CompletableFuture<Void> completeJob(MasterContext masterContext, Throwable error, long completionTime,
+                                                  boolean userCancelled) {
         return submitToCoordinatorThread(() -> {
             // the order of operations is important.
             List<RawJobMetrics> jobMetrics =
