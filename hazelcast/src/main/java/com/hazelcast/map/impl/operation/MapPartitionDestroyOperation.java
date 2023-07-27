@@ -39,6 +39,10 @@ public class MapPartitionDestroyOperation extends AbstractMapLocalOperation
 
     @Override
     protected void runInternal() {
+        if (mapContainer == null) {
+            // if we are here, this means no such map exists
+            return;
+        }
         PartitionContainer partitionContainer = mapContainer.getMapServiceContext()
                 .getPartitionContainer(getPartitionId());
         partitionContainer.destroyMap(mapContainer);

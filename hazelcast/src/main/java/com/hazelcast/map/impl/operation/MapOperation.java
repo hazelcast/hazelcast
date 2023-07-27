@@ -67,6 +67,7 @@ import static com.hazelcast.map.impl.operation.steps.engine.StepRunner.isStepRun
 import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
+import static java.lang.String.format;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
@@ -108,7 +109,7 @@ public abstract class MapOperation extends AbstractNamedOperation
             recordStore = getRecordStoreOrNull();
             mapContainer = getMapContainerOrNull();
             if (mapContainer == null) {
-                // no map exists
+                logNoSuchMapExists();
                 return;
             }
         } catch (Throwable t) {
@@ -135,6 +136,14 @@ public abstract class MapOperation extends AbstractNamedOperation
         assertNativeMapOnPartitionThread();
 
         innerBeforeRun();
+    }
+
+    private void logNoSuchMapExists() {
+        ILogger logger = logger();
+        if (logger.isFinestEnabled()) {
+            logger.finest(format("No such map exists [mapName=%s, operation=%s]",
+                    name, getClass().getName()));
+        }
     }
 
     private MapContainer getMapContainerOrNull() {

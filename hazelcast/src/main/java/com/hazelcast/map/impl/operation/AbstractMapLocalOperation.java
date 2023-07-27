@@ -21,6 +21,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/**
+ * Used when no serialization of {@link MapOperation} is desired.
+ *
+ * @see com.hazelcast.spi.impl.operationservice.AbstractLocalOperation
+ */
 abstract class AbstractMapLocalOperation extends MapOperation {
 
     AbstractMapLocalOperation() {
