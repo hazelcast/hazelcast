@@ -53,14 +53,20 @@ public class SqlAvroTest extends SqlTestSupport {
         sqlService = instance().getSql();
     }
 
+    private static SqlMapping fileMapping(String name, File file) {
+        return new SqlMapping(name, FileSqlConnector.TYPE_NAME).options(
+                OPTION_FORMAT, AVRO_FORMAT,
+                OPTION_PATH, file.getParent(),
+                OPTION_GLOB, file.getName()
+        );
+    }
+
     @Test
     public void test_nulls() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "nonExistingField VARCHAR"
-                + ") TYPE " + FileSqlConnector.TYPE_NAME
-                + createMappingOptions(AVRO_FILE)
-        );
+        fileMapping(name, AVRO_FILE)
+                .fields("nonExistingField VARCHAR")
+                .create();
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
@@ -71,12 +77,10 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void test_fieldsMapping() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "id TINYINT EXTERNAL NAME byte"
-                + ", name VARCHAR EXTERNAL NAME string"
-                + ") TYPE " + FileSqlConnector.TYPE_NAME
-                + createMappingOptions(AVRO_FILE)
-        );
+        fileMapping(name, AVRO_FILE)
+                .fields("id TINYINT EXTERNAL NAME byte",
+                        "name VARCHAR EXTERNAL NAME string")
+                .create();
 
         assertRowsAnyOrder(
                 "SELECT id, name FROM " + name,
@@ -87,24 +91,22 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void test_allTypes() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "string VARCHAR"
-                + ", \"boolean\" BOOLEAN"
-                + ", byte TINYINT"
-                + ", short SMALLINT"
-                + ", \"int\" INT"
-                + ", long BIGINT"
-                + ", \"float\" REAL"
-                + ", \"double\" DOUBLE"
-                + ", \"decimal\" DECIMAL"
-                + ", \"time\" TIME"
-                + ", \"date\" DATE"
-                + ", \"timestamp\" TIMESTAMP"
-                + ", timestampTz TIMESTAMP WITH TIME ZONE"
-                + ", object OBJECT"
-                + ") TYPE " + FileSqlConnector.TYPE_NAME
-                + createMappingOptions(AVRO_FILE)
-        );
+        fileMapping(name, AVRO_FILE)
+                .fields("string VARCHAR",
+                        "\"boolean\" BOOLEAN",
+                        "byte TINYINT",
+                        "short SMALLINT",
+                        "\"int\" INT",
+                        "long BIGINT",
+                        "\"float\" REAL",
+                        "\"double\" DOUBLE",
+                        "\"decimal\" DECIMAL",
+                        "\"time\" TIME",
+                        "\"date\" DATE",
+                        "\"timestamp\" TIMESTAMP",
+                        "timestampTz TIMESTAMP WITH TIME ZONE",
+                        "object OBJECT")
+                .create();
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
@@ -139,10 +141,7 @@ public class SqlAvroTest extends SqlTestSupport {
 
     private void test_schemaDiscovery(File avroFile) {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + ' '
-                + "TYPE " + FileSqlConnector.TYPE_NAME
-                + createMappingOptions(avroFile)
-        );
+        fileMapping(name, avroFile).create();
 
         assertRowsAnyOrder(
                 "SELECT "
@@ -236,10 +235,9 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void when_conversionFails_then_queryFails() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " (string INT) "
-                + "TYPE " + FileSqlConnector.TYPE_NAME
-                + createMappingOptions(AVRO_FILE)
-        );
+        fileMapping(name, AVRO_FILE)
+                .fields("string INT")
+                .create();
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + name).iterator().hasNext())
                 .hasMessageContaining("Cannot parse VARCHAR value to INTEGER");
@@ -248,43 +246,26 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void when_columnsSpecified_then_fileNotAccessed() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " (field INT) "
-                + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_PATH + "'='/non-existent-directory'"
-                + ", '" + OPTION_GLOB + "'='" + "foo.avro" + '\''
-                + ")"
-        );
+        fileMapping(name, new File("/non-existent-directory/foo.avro"))
+                .fields("field INT")
+                .create();
     }
 
     @Test
     public void when_fileDoesNotExist_then_fails() {
         String name = randomName();
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING " + name + ' '
-                        + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ( "
-                        + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                        + ", '" + OPTION_PATH + "'='" + AVRO_FILE.getParent() + '\''
-                        + ", '" + OPTION_GLOB + "'='" + "foo.avro" + '\''
-                        + ")"
-                )
+                fileMapping(name, new File(AVRO_FILE.getParent(), "foo.avro")).create()
         ).hasMessageContaining("matches no files");
     }
 
     @Test
     public void when_fileDoesNotExistAndIgnoreFileNotFound_then_returnNoResults() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " (field INT) "
-                + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_PATH + "'='" + AVRO_FILE.getParent() + '\''
-                + ", '" + OPTION_GLOB + "'='" + "foo.avro" + '\''
-                + ", '" + OPTION_IGNORE_FILE_NOT_FOUND + "'='" + "true" + '\''
-                + ")"
-        );
+        fileMapping(name, new File(AVRO_FILE.getParent(), "foo.avro"))
+                .fields("field INT")
+                .options(OPTION_IGNORE_FILE_NOT_FOUND, true)
+                .create();
 
         assertThat(sqlService.execute("SELECT * FROM " + name).iterator().hasNext())
                 .describedAs("no results from non existing file")
@@ -312,13 +293,5 @@ public class SqlAvroTest extends SqlTestSupport {
                 "  )" +
                 ")")
         ).hasMessageContaining("matches no files");
-    }
-
-    private static String createMappingOptions(File file) {
-        return " OPTIONS ("
-                + '\'' + OPTION_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_PATH + "'='" + file.getParent() + '\''
-                + ", '" + OPTION_GLOB + "'='" + file.getName() + '\''
-                + ")";
     }
 }
