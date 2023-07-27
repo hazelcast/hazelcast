@@ -91,7 +91,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         if (this.instance instanceof HazelcastInstanceProxy || this.instance instanceof HazelcastInstanceImpl) {
             NodeEngineImpl nodeEngine = Util.getNodeEngine(this.instance);
             this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
-                    Util.getMembersView(nodeEngine).getMembers())
+                    Util.getMembersView(nodeEngine).getMembers(), null)
                     .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
         }
         return this;
@@ -262,6 +262,10 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     @Override
     public DataConnectionService dataConnectionService() {
         return Util.getNodeEngine(instance).getDataConnectionService();
+    }
+
+    public NodeEngineImpl getNodeEngine() {
+        return Util.getNodeEngine(hazelcastInstance());
     }
 
     @Nonnull

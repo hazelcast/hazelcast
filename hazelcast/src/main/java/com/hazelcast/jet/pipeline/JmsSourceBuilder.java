@@ -21,14 +21,14 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.Session;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamJmsQueueP;

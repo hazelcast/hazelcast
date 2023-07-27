@@ -283,8 +283,8 @@ public class CompactStreamSerializerTest {
     public void testBits() throws IOException {
         // Share schemaService to make schema available to ss2
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        InternalSerializationService ss1 = (InternalSerializationService) createSerializationService(schemaService);
-        InternalSerializationService ss2 = (InternalSerializationService) createSerializationService(schemaService);
+        InternalSerializationService ss1 = createSerializationService(schemaService);
+        InternalSerializationService ss2 = createSerializationService(schemaService);
 
         BitsDTO bitsDTO = new BitsDTO();
         bitsDTO.a = true;

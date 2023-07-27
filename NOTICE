@@ -41,3 +41,10 @@ code derived from the Apache Flink project.
 
 The class com.hazelcast.internal.util.ConcurrentReferenceHashMap contains code written by Doug Lea
 and updated within the WildFly project (https://github.com/wildfly/wildfly).
+
+The classes:
+com.hazelcast.cp.internal.raft.impl.state.FollowerState
+com.hazelcast.cp.internal.raft.impl.state.FollowerStateTest
+com.hazelcast.cp.internal.raft.impl.SlowFollowerBackoffTest
+
+contain code originating from the MicroRaft project (https://github.com/MicroRaft/MicroRaft)

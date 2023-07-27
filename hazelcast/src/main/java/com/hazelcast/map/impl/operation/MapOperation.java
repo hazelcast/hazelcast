@@ -83,8 +83,8 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     protected transient boolean createRecordStoreOnDemand = true;
     protected transient boolean disposeDeferredBlocks = true;
-    protected transient boolean tieredStoreAndPartitionCompactorEnabled;
     protected transient boolean mapStoreOffloadEnabled;
+    protected transient boolean tieredStoreOffloadEnabled;
 
     private transient boolean canPublishWanEvent;
 
@@ -129,38 +129,21 @@ public abstract class MapOperation extends AbstractNamedOperation
         // check if mapStoreOffloadEnabled is true for this operation
         mapStoreOffloadEnabled = recordStore != null
                 && hasUserConfiguredOffload
-                && getStartingStep() != null
-                && !mapConfig.getTieredStoreConfig().isEnabled();
+                && getStartingStep() != null;
 
-        // check if tieredStore and partitionCompactor
-        // are both enabled for this operation
-        tieredStoreAndPartitionCompactorEnabled = recordStore != null
-                && recordStore.getStorage().isPartitionCompactorEnabled()
-                && getStartingStep() != null
-                && mapConfig.getTieredStoreConfig().isEnabled();
+        // check if tieredStoreOffloadEnabled for this operation
+        tieredStoreOffloadEnabled = recordStore != null
+                && isTieredStoreAndPartitionCompactorEnabled()
+                && getStartingStep() != null;
 
-        assertOnlyOneOfMapStoreOrTieredStoreEnabled();
         assertNativeMapOnPartitionThread();
 
         innerBeforeRun();
     }
 
-    // Currently we don't allow both map-store and
-    // tiered-store configured for the same map
-    private void assertOnlyOneOfMapStoreOrTieredStoreEnabled() {
-        if (!ASSERTION_ENABLED) {
-            return;
-        }
-
-        if (mapStoreOffloadEnabled) {
-            assert !tieredStoreAndPartitionCompactorEnabled;
-            return;
-        }
-
-        if (tieredStoreAndPartitionCompactorEnabled) {
-            assert !mapStoreOffloadEnabled;
-            return;
-        }
+    public boolean isTieredStoreAndPartitionCompactorEnabled() {
+        return recordStore.getStorage().isPartitionCompactorEnabled()
+                && mapContainer.getMapConfig().getTieredStoreConfig().isEnabled();
     }
 
     @Nullable
@@ -172,7 +155,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         // when tieredStoreAndPartitionCompactorEnabled is true,
         // StepSupplier calls beforeOperation and afterOperation
         if (recordStore != null
-                && !tieredStoreAndPartitionCompactorEnabled) {
+                && !tieredStoreOffloadEnabled) {
             recordStore.beforeOperation();
         }
         // Concrete classes can override this method.
@@ -196,7 +179,7 @@ public abstract class MapOperation extends AbstractNamedOperation
             }
         }
 
-        if (isMapStoreOffloadEnabled() || tieredStoreAndPartitionCompactorEnabled) {
+        if (isMapStoreOffloadEnabled() || tieredStoreOffloadEnabled) {
             assert recordStore != null;
             return offloadOperation();
         }
@@ -216,15 +199,15 @@ public abstract class MapOperation extends AbstractNamedOperation
         return mapStoreOffloadEnabled;
     }
 
-    public final boolean isTieredStoreAndPartitionCompactorEnabled() {
+    public final boolean isTieredStoreOffloadEnabled() {
         // This is for nested calls from partition thread. When we see
         // nested call we directly run the call without offloading.
-        if (tieredStoreAndPartitionCompactorEnabled
+        if (tieredStoreOffloadEnabled
                 && ThreadUtil.isRunningOnPartitionThread()
                 && isStepRunnerCurrentlyExecutingOnPartitionThread()) {
             return false;
         }
-        return tieredStoreAndPartitionCompactorEnabled;
+        return tieredStoreOffloadEnabled;
     }
 
     protected Offload offloadOperation() {
@@ -261,7 +244,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     @Override
     public final void afterRun() throws Exception {
         if (mapStoreOffloadEnabled
-                || tieredStoreAndPartitionCompactorEnabled) {
+                || tieredStoreOffloadEnabled) {
             return;
         }
         afterRunInternal();
@@ -278,7 +261,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     public void afterRunFinal() {
         // when tieredStoreAndPartitionCompactorEnabled is
         // true, we handle afterOperation in StepSupplier
-        if (!tieredStoreAndPartitionCompactorEnabled
+        if (!tieredStoreOffloadEnabled
                 && recordStore != null) {
             recordStore.afterOperation();
         }

@@ -17,31 +17,49 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LocalMapStatsProviderTest extends HazelcastTestSupport {
+    private static final String MAP_NAME = "test_map_1";
+    private final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
+    @After
+    public void tearDown() {
+        factory.shutdownAll();
+    }
 
     //https://github.com/hazelcast/hazelcast/issues/11598
     @Test
     public void testRedundantPartitionMigrationWhenManagementCenterConfigured() {
-        Config config = new Config();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
 
         //don't need start management center, just configure it
-        final HazelcastInstance instance = createHazelcastInstance(config);
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
 
         assertTrueEventually(() -> {
             ManagementCenterService mcs = getNode(instance).getManagementCenterService();
@@ -56,5 +74,72 @@ public class LocalMapStatsProviderTest extends HazelcastTestSupport {
             long partitionStateStamp = getNode(instance).getPartitionService().getPartitionStateStamp();
             assertEquals(0, partitionStateStamp);
         }, 5);
+    }
+
+    @Test
+    public void testLiteMembersProvideLocalMapStatsForInvocations() {
+        // Create a regular member which will own partitions and execute MapOperations
+        Config nonLiteConfig = createMetricsBasedConfig();
+        HazelcastInstance hzFull = factory.newHazelcastInstance(nonLiteConfig);
+        // Create a Lite member which will only invoke MapOperations
+        Config liteConfig = createMetricsBasedConfig().setLiteMember(true);
+        HazelcastInstance hzLite = factory.newHazelcastInstance(liteConfig);
+
+        waitAllForSafeState(hzFull, hzLite);
+
+        // From the Lite member, access and put data into a map
+        IMap<Object, Object> map1 = hzLite.getMap(MAP_NAME);
+        map1.put("myKey", "myValue");
+
+        // Collect metrics from the Lite member
+        MetricsRegistry metricsRegistry = getNode(hzLite).getNodeEngine().getMetricsRegistry();
+        MapPutCountMetricsCollector metricsCollector = new MapPutCountMetricsCollector();
+        metricsRegistry.collect(metricsCollector);
+
+        // Confirm 1 putCount metric was collected for the Lite member
+        assertEquals(1, metricsCollector.totalCollected.get());
+
+        // Destroy the map and ensure metrics are cleaned up
+        map1.destroy();
+        MapService mapService = getNode(hzLite).getNodeEngine().getService(MapService.SERVICE_NAME);
+        LocalMapStatsProvider statsProvider = mapService.getMapServiceContext().getLocalMapStatsProvider();
+        assertFalse(statsProvider.hasLocalMapStatsImpl(MAP_NAME));
+    }
+
+    private Config createMetricsBasedConfig() {
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.setClusterName("dev");
+        config.getMetricsConfig().setEnabled(true);
+        MapConfig map = config.getMapConfig(MAP_NAME);
+        map.setStatisticsEnabled(true);
+        map.setPerEntryStatsEnabled(true);
+        return config;
+    }
+
+    private static class MapPutCountMetricsCollector implements MetricsCollector {
+        final AtomicInteger totalCollected = new AtomicInteger(0);
+
+        @Override
+        public void collectLong(MetricDescriptor descriptor, long value) {
+            if (descriptor.metric().equals("putCount")) {
+                String discriminator = descriptor.discriminatorValue();
+                String prefix = descriptor.prefix();
+                if (prefix != null && prefix.equals("map") && discriminator != null && discriminator.equals(MAP_NAME)) {
+                    totalCollected.addAndGet((int) value);
+                }
+            }
+        }
+
+        @Override
+        public void collectDouble(MetricDescriptor descriptor, double value) {
+        }
+
+        @Override
+        public void collectException(MetricDescriptor descriptor, Exception e) {
+        }
+
+        @Override
+        public void collectNoValue(MetricDescriptor descriptor) {
+        }
     }
 }

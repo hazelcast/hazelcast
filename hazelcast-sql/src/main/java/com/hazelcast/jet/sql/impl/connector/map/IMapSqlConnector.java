@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -150,6 +151,12 @@ public class IMapSqlConnector implements SqlConnector {
                 ? MapTableUtils.getPartitionedMapIndexes(container, fields)
                 : emptyList();
 
+        final List<String> partitioningAttributes = nodeEngine.getConfig()
+                .getMapConfig(mapName)
+                .getPartitioningAttributeConfigs().stream()
+                .map(PartitioningAttributeConfig::getAttributeName)
+                .collect(toList());
+
         return new PartitionedMapTable(
                 schemaName,
                 mappingName,
@@ -161,8 +168,8 @@ public class IMapSqlConnector implements SqlConnector {
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getUpsertTargetDescriptor(),
                 indexes,
-                hd
-        );
+                hd,
+                partitioningAttributes);
     }
 
     private static void checkImapName(@Nonnull String[] externalName) {

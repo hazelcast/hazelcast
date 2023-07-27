@@ -43,7 +43,7 @@ public class GenericRecordBuilderTest {
 
     @Test
     public void testBuildFromCompactInternalGenericRecord() throws IOException {
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        InternalSerializationService serializationService = createSerializationService();
 
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);

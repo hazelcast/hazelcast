@@ -256,10 +256,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * After all expected rows are received, the method further waits a little
      * more if any extra rows are received, and fails, if they are.
      *
-     * @param instance     The HZ instance
-     * @param sql          The query
-     * @param arguments    The query arguments
-     * @param expectedRows Expected rows
+     * @param instance         The HZ instance
+     * @param sql              The query
+     * @param arguments        The query arguments
+     * @param expectedRows     Expected rows
      * @param timeoutForNextMs The number of ms to wait for more rows after all the
      *                         expected rows were received
      */
@@ -641,7 +641,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static void createMapping(HazelcastInstance instance, String name, String keyFormat, String valueFormat) {
-        String sql = "CREATE MAPPING " + name
+        String sql = "CREATE OR REPLACE MAPPING " + name
                 + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
                 + '\'' + OPTION_KEY_FORMAT + "'='" + keyFormat + "'\n"
@@ -659,7 +659,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         createIndex(instance(), name, mapName, type, attributes);
     }
 
-    static void createIndex(HazelcastInstance instance, String name, String mapName, IndexType type, String... attributes) {
+    public static void createIndex(HazelcastInstance instance, String name, String mapName, IndexType type, String... attributes) {
         SqlService sqlService = instance.getSql();
 
         StringBuilder sb = new StringBuilder("CREATE INDEX IF NOT EXISTS ");
@@ -719,7 +719,6 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     *
      * Compares two lists. The lists are expected to contain elements of type
      * {@link JetSqlRow} or {@link Watermark}.
      * Useful for {@link TestSupport#outputChecker(BiPredicate)}.
@@ -777,6 +776,11 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static List<Row> rows(final int rowLength, final Object... values) {
+        if (rowLength == 0) {
+            assertThat(values).isEmpty();
+            return emptyList();
+        }
+
         if ((values.length % rowLength) != 0) {
             throw new HazelcastException("Number of row value args is not divisible by row length");
         }

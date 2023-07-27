@@ -103,6 +103,10 @@ public class LocalMapStatsProvider {
         return mapServiceContext;
     }
 
+    public boolean hasLocalMapStatsImpl(String name) {
+        return statsMap.containsKey(name);
+    }
+
     public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, constructorFunction);
     }
@@ -176,7 +180,10 @@ public class LocalMapStatsProvider {
             String mapName = mapProxy.getName();
 
             if (mapConfig.isStatisticsEnabled() && !statsPerMap.containsKey(mapName)) {
-                statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
+                // Lite members can invoke MapOperations, and their statistics are of importance for monitoring
+                // when Lite members are in use - so we should include these stats as well if they exist
+                LocalMapStatsImpl localMapStats = statsMap.get(mapName);
+                statsPerMap.put(mapName, localMapStats != null ? localMapStats : EMPTY_LOCAL_MAP_STATS);
             }
         }
     }
@@ -343,7 +350,10 @@ public class LocalMapStatsProvider {
     }
 
     private void addIndexStats(String mapName, LocalMapStatsImpl localMapStats) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MapContainer mapContainer = mapServiceContext.getExistingMapContainer(mapName);
+        if (mapContainer == null) {
+            return;
+        }
         Indexes globalIndexes = mapContainer.getIndexes();
 
         Map<String, OnDemandIndexStats> freshStats = null;
