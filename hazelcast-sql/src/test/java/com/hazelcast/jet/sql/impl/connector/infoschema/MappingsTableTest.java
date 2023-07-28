@@ -108,8 +108,8 @@ public class MappingsTableTest extends SimpleTestInClusterSupport {
                 , "table-schema"
                 , "table-name"
                 , "\"external-schema\".\"table-external-name\""
-                , "table-type"
-                , null
+                , "IMap"
+                , "{}"
         });
     }
 
