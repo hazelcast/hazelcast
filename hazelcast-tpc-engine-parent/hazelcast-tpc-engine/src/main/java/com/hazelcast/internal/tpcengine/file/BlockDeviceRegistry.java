@@ -29,7 +29,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * This class isn't thread-safe.
  */
 public class BlockDeviceRegistry {
-    private final BlockDevice root = new BlockDevice("/", 128, 4096);
+    private final BlockDevice root = new BlockDevice("/", 4096, 4096);
     private final List<BlockDevice> devs = new ArrayList<>();
 
     /**

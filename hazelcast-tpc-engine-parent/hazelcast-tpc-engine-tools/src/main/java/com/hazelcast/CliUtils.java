@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast;
 
 import joptsimple.BuiltinHelpFormatter;
@@ -30,7 +31,7 @@ public final class CliUtils {
 
     public static String getToolsVersion() {
         String implementationVersion = CliUtils.class.getPackage().getImplementationVersion();
-        return (implementationVersion != null) ? implementationVersion : "SNAPSHOT";
+        return implementationVersion != null ? implementationVersion : "SNAPSHOT";
     }
 
     public static void printHelp(OptionParser parser, OutputStream sink) {

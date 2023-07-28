@@ -66,5 +66,8 @@
  * A long story short; there are many ways to design a TPC system. The tpc-engine is a
  * flexible design (it doesn't impose restrictions) and therefor can be used in many
  * different ways.
+ * <p/>
+ * Good read how to design a fast database on top of modenr NVMe based SSDs
+ * https://www.vldb.org/pvldb/vol16/p2090-haas.pdf
  */
 package com.hazelcast.internal.tpcengine;

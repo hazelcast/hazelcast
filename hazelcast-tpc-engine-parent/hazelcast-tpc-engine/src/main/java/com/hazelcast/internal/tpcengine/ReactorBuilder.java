@@ -26,6 +26,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -52,6 +53,7 @@ public abstract class ReactorBuilder {
     public static final String NAME_CFS = "hazelcast.tpc.reactor.cfs";
     public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
 
+    private static final AtomicInteger ID_GENERATOR = new AtomicInteger();
     private static final int DEFAULT_LOCAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY = 4096;
     private static final int DEFAULT_RUN_QUEUE_CAPACITY = 1024;
@@ -67,6 +69,12 @@ public abstract class ReactorBuilder {
 
     private static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
             = "com.hazelcast.internal.tpcengine.iouring.IOUringReactorBuilder";
+
+    private static final ThreadFactory DEFAULT_THREAD_FACTORY = r -> {
+        Thread thread = new Thread(r);
+        thread.setName("ReactorThread-" + ID_GENERATOR.getAndIncrement());
+        return thread;
+    };
 
     static {
         Constructor<ReactorBuilder> constructor = null;
@@ -87,7 +95,7 @@ public abstract class ReactorBuilder {
     protected final ReactorType type;
 
     ThreadAffinity threadAffinity;
-    ThreadFactory threadFactory = Thread::new;
+    ThreadFactory threadFactory = DEFAULT_THREAD_FACTORY;
 
     boolean spin;
     int deadlineRunQueueCapacity;
@@ -163,8 +171,7 @@ public abstract class ReactorBuilder {
      */
     public void setInitFn(Consumer<Reactor> initFn) {
         verifyNotBuilt();
-        checkNotNull(initFn, "initFn");
-        this.initFn = initFn;
+        this.initFn = checkNotNull(initFn, "initFn");
     }
 
     /**

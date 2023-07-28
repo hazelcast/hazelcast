@@ -68,13 +68,22 @@ public abstract class AsyncFile {
 
     // todo: should be made private and using a varhandle it should be modified
     public int fd = -1;
-    protected final AsyncFileMetrics metrics = new AsyncFileMetrics();
-    protected final Eventloop eventloop;
-    protected final String path;
-    protected final BlockRequestScheduler scheduler;
-    protected final IntPromiseAllocator promiseAllocator;
+    private final AsyncFileMetrics metrics = new AsyncFileMetrics();
+    private final Eventloop eventloop;
+    private final String path;
+    private final BlockRequestScheduler scheduler;
+    private final IntPromiseAllocator promiseAllocator;
 
     // todo: Using path as a string forces creating litter.
+
+    /**
+     * Creates an AsyncFile. The constructor should not be called directly, use the
+     * {@link Eventloop#newAsyncFile(String)} to create instances.
+     *
+     * @param path
+     * @param eventloop
+     * @param scheduler
+     */
     public AsyncFile(String path, Eventloop eventloop, BlockRequestScheduler scheduler) {
         this.path = path;
         this.eventloop = eventloop;
@@ -86,9 +95,9 @@ public abstract class AsyncFile {
     /**
      * Returns the file descriptor.
      * <p/>
-     * If {@link #open(int, int)} hasn't been called, then the value is undefined. todo: perhaps better to return -1?
+     * If the file isn't opened, the fd is -1.
      *
-     * @return the file decriptor.
+     * @return the file descriptor.
      */
     public final int fd() {
         return fd;
@@ -124,6 +133,13 @@ public abstract class AsyncFile {
     public abstract long size();
 
     /**
+     * Deletes the AsyncFile.
+     *
+     * @return
+     */
+    public abstract IntPromise delete();
+
+    /**
      * Executes a nop asynchronously. This method exists purely for benchmarking
      * purposes and is made for the IORING_OP_NOP.
      * </p>
@@ -156,7 +172,7 @@ public abstract class AsyncFile {
 //        promise.completeWithIOException(
 //                "Overload. Max concurrent operations " + maxConcurrent + " dev: [" + dev.path() + "]", null);
 
-        promise.completeWithIOException("No more IO available ", null);
+        promise.completeWithIOException("No free BlockRequests available ", null);
         return promise;
     }
 
@@ -255,8 +271,13 @@ public abstract class AsyncFile {
         return promise;
     }
 
-    public abstract IntPromise delete();
-
+    /**
+     * Opens the file with the given flags and permissions.
+     *
+     * @param flags       the flags
+     * @param permissions the permissions
+     * @return IntPromise with the result of opening this file.
+     */
     public IntPromise open(int flags, int permissions) {
         IntPromise promise = promiseAllocator.allocate();
 
@@ -276,7 +297,7 @@ public abstract class AsyncFile {
     }
 
     /**
-     * Closes the open file.
+     * Closes the file.
      * <p/>
      * todo: semantics of close on an already closed file.
      * <p/>
@@ -288,6 +309,11 @@ public abstract class AsyncFile {
         eventloop.getReactor().files().remove(this);
 
         IntPromise promise = promiseAllocator.allocate();
+        if (fd == -1) {
+            promise.complete(0);
+            return promise;
+        }
+
         BlockRequest request = scheduler.reserve();
         if (request == null) {
             return failOnOverload(promise);

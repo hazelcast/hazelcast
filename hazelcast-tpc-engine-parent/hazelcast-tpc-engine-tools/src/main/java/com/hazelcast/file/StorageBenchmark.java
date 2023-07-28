@@ -128,12 +128,14 @@ public class StorageBenchmark {
     public static void main(String[] args) {
         StorageBenchmark benchmark = new StorageBenchmark();
         benchmark.runtimeSeconds = 20;
-        benchmark.affinity = "1";
-        benchmark.numJobs = 1;
+        benchmark.affinity = "0,1,8";
+        benchmark.numJobs = 3;
         benchmark.iodepth = 64;
         benchmark.fileSize = 4 * 1024 * 1024L;
         benchmark.bs = 4 * 1024;
         benchmark.directories.add("/mnt/benchdrive1");
+        benchmark.directories.add("/mnt/benchdrive2");
+        benchmark.directories.add("/mnt/benchdrive3");
         benchmark.readwrite = READWRITE_READ;
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = true;
@@ -149,12 +151,9 @@ public class StorageBenchmark {
             System.out.println("fsync and fdatasync can't both be larger than 0");
         }
 
-        System.out.println("Reactor:" + reactorType);
-        System.out.println("Duration: " + runtimeSeconds + " seconds.");
+        printConfig();
         try {
             setup();
-
-            MonitorThread monitorThread = new MonitorThread(runtimeSeconds);
 
             CountDownLatch startLatch = new CountDownLatch(1);
             for (int jobIndex = 0; jobIndex < numJobs; jobIndex++) {
@@ -197,6 +196,7 @@ public class StorageBenchmark {
                 });
             }
 
+            MonitorThread monitorThread = new MonitorThread();
             monitorThread.start();
 
             System.out.println("Benchmark: started");
@@ -215,6 +215,23 @@ public class StorageBenchmark {
         } finally {
             teardown();
         }
+    }
+
+    private void printConfig() {
+        System.out.println("Reactor:" + reactorType);
+        System.out.println("Duration: " + runtimeSeconds + " seconds.");
+        System.out.println("numJobs: " + numJobs);
+        System.out.println("affinity: " + affinity);
+        System.out.println("spin: " + spin);
+        System.out.println("iodepth: " + iodepth);
+        System.out.println("fileSize: " + fileSize);
+
+        System.out.println("blockSize: " + bs);
+        System.out.println("directories: " + directories);
+        System.out.println("readwrite: " + readwrite);
+        System.out.println("deleteFilesOnExit: " + deleteFilesOnExit);
+        System.out.println("fsync: " + fsync);
+        System.out.println("fdatasync: " + fdatasync);
     }
 
     private void setup() throws Exception {
@@ -593,12 +610,9 @@ public class StorageBenchmark {
     }
 
     private class MonitorThread extends Thread {
-        private final StringBuffer sb = new StringBuffer();
-        private final long runtimeSeconds;
 
-        public MonitorThread(long runtimeSeconds) {
+        public MonitorThread() {
             super("MonitorThread");
-            this.runtimeSeconds = runtimeSeconds;
         }
 
         @Override
@@ -608,16 +622,18 @@ public class StorageBenchmark {
             } catch (Throwable e) {
                 e.printStackTrace();
             }
+            stop = true;
         }
 
         private void run0() throws Exception {
             long lastMs = System.currentTimeMillis();
-            Thread.sleep(1000);
-
+            StringBuffer sb = new StringBuffer();
             long end = System.currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
             Metrics lastMetrics = new Metrics();
             Metrics metrics = new Metrics();
             while (System.currentTimeMillis() < end) {
+                Thread.sleep(1000);
+
                 long nowMs = System.currentTimeMillis();
                 long durationMs = nowMs - lastMs;
                 collect(metrics);
@@ -680,13 +696,8 @@ public class StorageBenchmark {
                 Metrics tmp = lastMetrics;
                 lastMetrics = metrics;
                 metrics = tmp;
-
-                Thread.sleep(1000);
                 lastMs = nowMs;
             }
-
-            stop = true;
-            System.out.println("Monitor ready");
         }
     }
 

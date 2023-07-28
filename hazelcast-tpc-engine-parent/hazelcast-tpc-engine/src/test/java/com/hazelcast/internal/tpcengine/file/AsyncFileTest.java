@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine.file;
 
+import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import org.junit.After;
@@ -260,11 +261,11 @@ public abstract class AsyncFileTest {
         File tmpFile = randomTmpFile();
         FileTestSupport.write(tmpFile, "1234");
 
-
         CompletableFuture future = new CompletableFuture();
         Runnable task = () -> {
-            IOBuffer buffer = reactor.eventloop().blockIOBufferAllocator().allocate(pageSize());
-            AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
+            Eventloop eventloop = reactor.eventloop();
+            IOBuffer buffer = eventloop.blockIOBufferAllocator().allocate(pageSize());
+            AsyncFile file = eventloop.newAsyncFile(tmpFile.getAbsolutePath());
 
             file.open(O_RDONLY, PERMISSIONS_ALL).then((result1, throwable1) -> {
                 if (throwable1 != null) {
@@ -286,6 +287,4 @@ public abstract class AsyncFileTest {
 
         assertSuccessEventually(future);
     }
-
-
 }

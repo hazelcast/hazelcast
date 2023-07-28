@@ -70,10 +70,10 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class EchoBenchmark {
     // Properties of the benchmark
     public int port = 5006;
-    public int runtimeSeconds = 60;
+    public int runtimeSeconds = 20;
     public int socketBufferSize = 256 * 1024;
     public boolean useDirectByteBuffers = true;
-    public int payloadSize = 100000;
+    public int payloadSize = 10_000;
     // the number of client/server pair sockets.
     public int concurrency = 100;
     public boolean tcpNoDelay = true;
@@ -83,6 +83,7 @@ public class EchoBenchmark {
     public String cpuAffinityClient = "1";
     public String cpuAffinityServer = "4";
     public int connections = 100;
+    public Integer reactorCount;
 
     // private to the benchmark
     private volatile boolean stop;
@@ -95,7 +96,9 @@ public class EchoBenchmark {
     }
 
     public void run() throws InterruptedException {
-        System.out.println("Reactor:" + reactorType);
+        printConfig();
+
+        // todo: this should be reactor based. Every reactor should have its own counter.
         echosArray = new PaddedAtomicLong[connections];
         for (int k = 0; k < echosArray.length; k++) {
             echosArray[k] = new PaddedAtomicLong();
@@ -137,23 +140,30 @@ public class EchoBenchmark {
             clientSockets[i].flush();
         }
 
-        Monitor monitor = new Monitor(runtimeSeconds);
+        MonitorThread monitor = new MonitorThread();
         monitor.start();
         monitor.join();
         completionLatch.await();
-
-        long count = sum(echosArray);
-
-        long duration = currentTimeMillis() - start;
-        System.out.println("Duration " + duration + " ms");
-        System.out.println("Throughput:" + (count * 1000f / duration) + " echo/second");
 
         clientReactor.shutdown();
         clientReactor.awaitTermination(5, SECONDS);
         serverReactor.shutdown();
         serverReactor.awaitTermination(5, SECONDS);
 
+        printResults(start);
+
         System.exit(0);
+    }
+
+    private void printResults(long startMillis) {
+        long count = sum(echosArray);
+        long duration = currentTimeMillis() - startMillis;
+        System.out.println("Duration " + duration + " ms");
+        System.out.println("Throughput:" + (count * 1000f / duration) + " echo/second");
+    }
+
+    private void printConfig() {
+        System.out.println("Reactor:" + reactorType);
     }
 
     private Reactor newServerReactor() {
@@ -348,13 +358,7 @@ public class EchoBenchmark {
         }
     }
 
-    private class Monitor extends Thread {
-        private final int durationSecond;
-
-        public Monitor(int durationSecond) {
-            this.durationSecond = durationSecond;
-        }
-
+    private class MonitorThread extends Thread {
         @Override
         public void run() {
             try {
@@ -362,10 +366,11 @@ public class EchoBenchmark {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            stop = true;
         }
 
         private void run0() throws InterruptedException {
-            long end = currentTimeMillis() + SECONDS.toMillis(durationSecond);
+            long end = currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
             Metrics lastMetrics = new Metrics();
             Metrics metrics = new Metrics();
             long lastMs = currentTimeMillis();
@@ -414,8 +419,6 @@ public class EchoBenchmark {
                 metrics = tmp;
                 lastMs = nowMs;
             }
-
-            stop = true;
         }
     }
 
