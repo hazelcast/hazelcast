@@ -34,6 +34,7 @@ import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.internal.tpcengine.TpcEngineBuilder;
 import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ssl.SSLEngineFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.TpcOperationScheduler;
@@ -197,7 +198,7 @@ public class TpcServerBootstrap {
         TpcSocketConfig clientSocketConfig = getClientSocketConfig();
         SSLConfig clientSslConfig = getClientEndpointTlsConfig();
         boolean sslEnabled = clientSslConfig != null && clientSslConfig.isEnabled();
-        Object sslEngineFactory = sslEnabled
+        SSLEngineFactory sslEngineFactory = sslEnabled
                 ? nodeEngine.getNode().getNodeExtension().createSslEngineFactory(clientSslConfig)
                 : null;
 

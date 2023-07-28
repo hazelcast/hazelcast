@@ -45,6 +45,7 @@ import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.ssl.SSLEngineFactory;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.version.Version;
@@ -316,7 +317,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public Object createSslEngineFactory(SSLConfig sslConfig) {
+    public SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig) {
         return nodeExtension.createSslEngineFactory(sslConfig);
     }
 }

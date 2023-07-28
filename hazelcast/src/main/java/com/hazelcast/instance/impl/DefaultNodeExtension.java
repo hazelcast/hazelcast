@@ -101,6 +101,7 @@ import com.hazelcast.jet.impl.JobEventService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.ssl.SSLEngineFactory;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -696,7 +697,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public Object createSslEngineFactory(SSLConfig sslConfig) {
+    public SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig) {
         throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
     }
 }

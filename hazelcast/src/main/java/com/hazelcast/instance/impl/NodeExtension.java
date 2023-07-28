@@ -42,6 +42,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.ssl.SSLEngineFactory;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.version.Version;
@@ -411,5 +412,5 @@ public interface NodeExtension {
      * @return an instance of {@link com.hazelcast.nio.ssl.SSLEngineFactory} when TLS is enabled, {@code null} otherwise
      * @throws java.lang.IllegalStateException if the method call is not allowed
      */
-    Object createSslEngineFactory(SSLConfig sslConfig);
+    SSLEngineFactory createSslEngineFactory(SSLConfig sslConfig);
 }
