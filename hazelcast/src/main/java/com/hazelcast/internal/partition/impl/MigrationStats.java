@@ -23,9 +23,8 @@ import com.hazelcast.internal.util.Timer;
 import com.hazelcast.partition.MigrationState;
 
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_COMPLETED_MIGRATIONS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION_METRIC_ELAPSED_DESTINATION_COMMIT_TIME;
@@ -42,45 +41,46 @@ import static com.hazelcast.internal.metrics.ProbeUnit.NS;
 
 /**
  * Collection of stats for partition migration tasks.
+ * <p>
+ * {@code volatile long} used in preference of {@link AtomicLong} for
+ * <a href="https://stackoverflow.com/a/12859121">performance reasons</a>
  */
 public class MigrationStats {
 
     @Probe(name = MIGRATION_METRIC_LAST_REPARTITION_TIME, unit = MS)
-    private final AtomicLong lastRepartitionTime = new AtomicLong();
+    private volatile long lastRepartitionTime;
 
     /**
      * Exists only as a monotonic reference for timing executions
      *
      * @see <a href="https://github.com/hazelcast/hazelcast/pull/25028#discussion_r1269604720">Discussion</a>
      */
-    private final AtomicLong lastRepartitionNanos = new AtomicLong();
+    private volatile long lastRepartitionNanos;
 
     @Probe(name = MIGRATION_METRIC_PLANNED_MIGRATIONS)
     private volatile int plannedMigrations;
 
     @Probe(name = MIGRATION_METRIC_COMPLETED_MIGRATIONS)
-    private final AtomicInteger completedMigrations = new AtomicInteger();
+    private final LongAdder completedMigrations = new LongAdder();
 
     @Probe(name = MIGRATION_METRIC_TOTAL_COMPLETED_MIGRATIONS)
-    private final AtomicInteger totalCompletedMigrations = new AtomicInteger();
+    private final LongAdder totalCompletedMigrations = new LongAdder();
 
-    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_OPERATION_TIME, unit = NS)
-    private final AtomicLong elapsedMigrationOperationTime = new AtomicLong();
+    /**
+     * elapsed time of migration &amp; replication operations' executions
+     */
+    private final MigrationTimer migrationOperationTime = new MigrationTimer();
 
-    @Probe(name = MIGRATION_METRIC_ELAPSED_DESTINATION_COMMIT_TIME, unit = NS)
-    private final AtomicLong elapsedDestinationCommitTime = new AtomicLong();
 
-    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_TIME, unit = NS)
-    private final AtomicLong elapsedMigrationTime = new AtomicLong();
+    /**
+     * elapsed time of commit operations' executions
+     */
+    private final MigrationTimer destinationCommitTime = new MigrationTimer();
 
-    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_OPERATION_TIME, unit = NS)
-    private final AtomicLong totalElapsedMigrationOperationTime = new AtomicLong();
-
-    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_DESTINATION_COMMIT_TIME, unit = NS)
-    private final AtomicLong totalElapsedDestinationCommitTime = new AtomicLong();
-
-    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME, unit = NS)
-    private final AtomicLong totalElapsedMigrationTime = new AtomicLong();
+    /**
+     * elapsed time from start of migration tasks to their completion
+     */
+    private final MigrationTimer migrationTime = new MigrationTimer();
 
     /**
      * Marks start of new repartitioning.
@@ -89,130 +89,184 @@ public class MigrationStats {
      * @param migrations number of planned migration tasks
      */
     void markNewRepartition(int migrations) {
-        lastRepartitionTime.set(Clock.currentTimeMillis());
-        lastRepartitionNanos.set(Timer.nanos());
+        lastRepartitionTime = Clock.currentTimeMillis();
+        lastRepartitionNanos = Timer.nanos();
         plannedMigrations = migrations;
-        elapsedMigrationOperationTime.set(0);
-        elapsedDestinationCommitTime.set(0);
-        elapsedMigrationTime.set(0);
-        completedMigrations.set(0);
+
+        migrationOperationTime.markNewRepartition();
+        destinationCommitTime.markNewRepartition();
+        migrationTime.markNewRepartition();
+
+        completedMigrations.reset();
     }
 
     void incrementCompletedMigrations() {
-        completedMigrations.incrementAndGet();
-        totalCompletedMigrations.incrementAndGet();
-    }
-
-    private void calculateElapsed(final AtomicLong elapsedTime, final AtomicLong totalElapsedTime) {
-        // This is called from each migration thread, so calculate the wall-clock time, rather than summing each
-        // individual threads execution time
-        final long newElapsed = Timer.nanosElapsed(lastRepartitionNanos.get());
-
-        final long oldElapsed = elapsedTime.getAndSet(newElapsed);
-
-        // To ensure the total is kept accurate, add the difference between the previous elapsedTime and this one for
-        // this execution
-        totalElapsedTime.addAndGet(newElapsed - oldElapsed);
-    }
-
-    void recordMigrationOperationTime() {
-        calculateElapsed(elapsedMigrationOperationTime, totalElapsedMigrationOperationTime);
-    }
-
-    void recordDestinationCommitTime() {
-        calculateElapsed(elapsedDestinationCommitTime, totalElapsedDestinationCommitTime);
-    }
-
-    void recordMigrationTaskTime() {
-        calculateElapsed(elapsedMigrationTime, totalElapsedMigrationTime);
+        completedMigrations.increment();
+        totalCompletedMigrations.increment();
     }
 
     /**
-     * Returns the last repartition time.
+     * @return the last repartition time.
      */
     public Date getLastRepartitionTime() {
-        return new Date(lastRepartitionTime.get());
+        return new Date(lastRepartitionTime);
     }
 
     /**
-     * Returns the number of planned migrations on the latest repartitioning round.
+     * @return the number of planned migrations on the latest repartitioning round.
      */
     public int getPlannedMigrations() {
         return plannedMigrations;
     }
 
     /**
-     * Returns the number of completed migrations on the latest repartitioning round.
+     * @return the number of completed migrations on the latest repartitioning round.
      */
     public int getCompletedMigrations() {
-        return completedMigrations.get();
+        return completedMigrations.intValue();
     }
 
     /**
-     * Returns the number of remaining migrations on the latest repartitioning round.
+     * @return the number of remaining migrations on the latest repartitioning round.
      */
     public int getRemainingMigrations() {
-        return plannedMigrations - completedMigrations.get();
+        return plannedMigrations - getCompletedMigrations();
     }
 
     /**
-     * Returns the total number of completed migrations since the beginning.
+     * @return the total number of completed migrations since the beginning.
      */
     public int getTotalCompletedMigrations() {
-        return totalCompletedMigrations.get();
+        return totalCompletedMigrations.intValue();
     }
 
     /**
-     * Returns the total elapsed time of migration &amp; replication operations' executions
-     * from source to destination endpoints, in milliseconds, on the latest repartitioning round.
+     * @see #migrationOperationTime
+     */
+    void recordMigrationOperationTime() {
+        migrationOperationTime.calculateElapsed(lastRepartitionNanos);
+    }
+
+    /**
+     * @see #migrationOperationTime
+     * @see MigrationTimer#getElapsedMilliseconds()
      */
     public long getElapsedMigrationOperationTime() {
-        return TimeUnit.NANOSECONDS.toMillis(elapsedMigrationOperationTime.get());
+        return migrationOperationTime.getElapsedMilliseconds();
     }
 
     /**
-     * Returns the total elapsed time of commit operations' executions to the destination endpoint,
-     * in milliseconds, on the latest repartitioning round.
+     * @see #migrationOperationTime
+     * @see MigrationTimer#getElapsedNanoseconds()
      */
-    public long getElapsedDestinationCommitTime() {
-        return TimeUnit.NANOSECONDS.toMillis(elapsedDestinationCommitTime.get());
+    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_OPERATION_TIME, unit = NS)
+    public long getElapsedMigrationOperationTimeNanoseconds() {
+        return migrationOperationTime.getElapsedNanoseconds();
     }
 
     /**
-     * Returns the total elapsed time from start of migration tasks to their completion,
-     * in milliseconds, on the latest repartitioning round.
-     */
-    public long getElapsedMigrationTime() {
-        return TimeUnit.NANOSECONDS.toMillis(elapsedMigrationTime.get());
-    }
-
-    /**
-     * Returns the total elapsed time of migration &amp; replication operations' executions
-     * from source to destination endpoints, in milliseconds, since the beginning.
+     * @see #migrationOperationTime
+     * @see MigrationTimer#getTotalElapsedMilliseconds()
      */
     public long getTotalElapsedMigrationOperationTime() {
-        return TimeUnit.NANOSECONDS.toMillis(totalElapsedMigrationOperationTime.get());
+        return migrationOperationTime.getTotalElapsedMilliseconds();
     }
 
     /**
-     * Returns the total elapsed time of commit operations' executions to the destination endpoint,
-     * in milliseconds, since the beginning.
+     * @see #migrationOperationTime
+     * @see MigrationTimer#getTotalElapsedNanoseconds()
+     */
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_OPERATION_TIME, unit = NS)
+    public long getTotalElapsedMigrationOperationTimeNanoseconds() {
+        return migrationOperationTime.getTotalElapsedNanoseconds();
+    }
+
+
+    /**
+     * @see #destinationCommitTime
+     */
+    void recordDestinationCommitTime() {
+        destinationCommitTime.calculateElapsed(lastRepartitionNanos);
+    }
+
+    /**
+     * @see #destinationCommitTime
+     * @see MigrationTimer#getElapsedMilliseconds()
+     */
+    public long getElapsedDestinationCommitTime() {
+        return destinationCommitTime.getElapsedMilliseconds();
+    }
+
+    /**
+     * @see #destinationCommitTime
+     * @see MigrationTimer#getElapsedNanoseconds()
+     */
+    @Probe(name = MIGRATION_METRIC_ELAPSED_DESTINATION_COMMIT_TIME, unit = NS)
+    public long getElapsedDestinationCommitTimeNanoseconds() {
+        return destinationCommitTime.getElapsedNanoseconds();
+    }
+
+    /**
+     * @see #destinationCommitTime
+     * @see MigrationTimer#getTotalElapsedMilliseconds()
      */
     public long getTotalElapsedDestinationCommitTime() {
-        return TimeUnit.NANOSECONDS.toMillis(totalElapsedDestinationCommitTime.get());
+        return destinationCommitTime.getTotalElapsedMilliseconds();
     }
 
     /**
-     * Returns the total elapsed time from start of migration tasks to their completion,
-     * in milliseconds, since the beginning.
+     * @see #destinationCommitTime
+     * @see MigrationTimer#getTotalElapsedNanoseconds()
+     */
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_DESTINATION_COMMIT_TIME, unit = NS)
+    public long getTotalElapsedDestinationCommitTimeNanoseconds() {
+        return destinationCommitTime.getTotalElapsedNanoseconds();
+    }
+
+    /**
+     * @see #migrationTime
+     */
+    void recordMigrationTaskTime() {
+        migrationTime.calculateElapsed(lastRepartitionNanos);
+    }
+
+    /**
+     * @see #migrationTime
+     * @see MigrationTimer#getElapsedMilliseconds()
+     */
+    public long getElapsedMigrationTime() {
+        return migrationTime.getElapsedMilliseconds();
+    }
+
+    /**
+     * @see #migrationTime
+     * @see MigrationTimer#getElapsedNanoseconds()
+     */
+    @Probe(name = MIGRATION_METRIC_ELAPSED_MIGRATION_TIME, unit = NS)
+    public long getElapsedMigrationTimeNanoseconds() {
+        return migrationTime.getElapsedNanoseconds();
+    }
+
+    /**
+     * @see #migrationTime
+     * @see MigrationTimer#getTotalElapsedMilliseconds()
      */
     public long getTotalElapsedMigrationTime() {
-        return TimeUnit.NANOSECONDS.toMillis(totalElapsedMigrationTime.get());
+        return migrationTime.getTotalElapsedMilliseconds();
+    }
+
+    /**
+     * @see #migrationTime
+     * @see MigrationTimer#getTotalElapsedNanoseconds()
+     */
+    @Probe(name = MIGRATION_METRIC_TOTAL_ELAPSED_MIGRATION_TIME, unit = NS)
+    public long getTotalElapsedMigrationTimeNanoseconds() {
+        return migrationTime.getTotalElapsedNanoseconds();
     }
 
     public MigrationState toMigrationState() {
-        return new MigrationStateImpl(lastRepartitionTime.get(), plannedMigrations,
-                completedMigrations.get(), getElapsedMigrationTime());
+        return new MigrationStateImpl(lastRepartitionTime, plannedMigrations,
+                completedMigrations.intValue(), getElapsedMigrationTime());
     }
 
     public String formatToString(boolean detailed) {
