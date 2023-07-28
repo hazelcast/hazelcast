@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
@@ -49,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ClusterViewListenerService {
@@ -186,7 +188,8 @@ public class ClusterViewListenerService {
         }
         Member member = nodeEngine.getClusterService().getMember(memberAddress);
         if (member != null) {
-            return member.getAddressMap().get(CLIENT);
+            Map<EndpointQualifier, Address> addressMap = member.getAddressMap();
+            return addressMap.getOrDefault(CLIENT, addressMap.get(MEMBER));
         } else {
             // partition table contains stale entries for members which are not in the member list
             return null;
