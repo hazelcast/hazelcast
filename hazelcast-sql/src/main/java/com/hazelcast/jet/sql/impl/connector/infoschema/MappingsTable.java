@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
 import com.hazelcast.jet.json.JsonUtil;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -24,8 +26,11 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -52,12 +57,14 @@ public class MappingsTable extends InfoSchemaTable {
     private final Collection<Mapping> mappings;
     private final Function<String, String> dataConnectionTypeResolver;
     private final boolean securityEnabled;
+    private final SqlConnectorCache sqlConnectorCache;
 
     public MappingsTable(
             String catalog,
             String schemaName,
             String mappingsSchema,
             Collection<Mapping> mappings,
+            SqlConnectorCache sqlConnectorCache,
             Function<String, String> dataConnectionTypeResolver,
             boolean securityEnabled
     ) {
@@ -71,6 +78,7 @@ public class MappingsTable extends InfoSchemaTable {
 
         this.mappingsSchema = mappingsSchema;
         this.mappings = mappings;
+        this.sqlConnectorCache = sqlConnectorCache;
         this.dataConnectionTypeResolver = dataConnectionTypeResolver;
         this.securityEnabled = securityEnabled;
     }
@@ -79,13 +87,27 @@ public class MappingsTable extends InfoSchemaTable {
     protected List<Object[]> rows() {
         List<Object[]> rows = new ArrayList<>(mappings.size());
         for (Mapping mapping : mappings) {
+            Map<String, String> opts = mapping.options();
+            if (securityEnabled) {
+                opts = new HashMap<>(opts);
+                SqlConnector sqlConnector = sqlConnectorCache.forType(mapping.connectorType());
+                Set<String> secureConnectorOptions = sqlConnector.secureConnectorOptions();
+                for (String key : mapping.options().keySet()) {
+                    if (!secureConnectorOptions.contains(key)) {
+                        opts.remove(key);
+                    }
+                }
+            }
+            final Map<String, String> optsToDisplay = opts;
             Object[] row = new Object[]{
                     catalog(),
                     mappingsSchema,
                     mapping.name(),
                     quoteCompoundIdentifier(mapping.externalName()),
-                    Optional.ofNullable(mapping.dataConnection()).map(dataConnectionTypeResolver).orElse(mapping.connectorType()),
-                    securityEnabled ? null : uncheckCall(() -> JsonUtil.toJson(mapping.options()))
+                    Optional.ofNullable(mapping.dataConnection())
+                            .map(dataConnectionTypeResolver)
+                            .orElse(mapping.connectorType()),
+                    uncheckCall(() -> JsonUtil.toJson(optsToDisplay))
             };
             rows.add(row);
         }

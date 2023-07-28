@@ -46,6 +46,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
@@ -55,6 +56,8 @@ import static java.util.stream.Stream.concat;
 public class KafkaSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "Kafka";
+    public static final String OPTION_BOOTSTRAP_SERVERS = "bootstrap.servers";
+    public static final String OPTION_OFFSET_RESET = "auto.offset.reset";
 
     private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
             new KvMetadataResolver[]{
@@ -212,5 +215,15 @@ public class KafkaSqlConnector implements SqlConnector {
 
         context.getDag().edge(between(vStart, vEnd));
         return vStart;
+    }
+
+    @Override
+    public Set<String> secureConnectorOptions() {
+        Set<String> set = SqlConnector.super.secureConnectorOptions();
+        set.addAll(Set.of(
+                OPTION_BOOTSTRAP_SERVERS,
+                OPTION_OFFSET_RESET
+        ));
+        return set;
     }
 }
