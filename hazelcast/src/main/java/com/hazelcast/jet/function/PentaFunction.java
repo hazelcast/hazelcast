@@ -21,8 +21,8 @@ import com.hazelcast.jet.impl.util.ExceptionUtil;
 import java.io.Serializable;
 
 /**
- * Represents a four-arity function that accepts four arguments and
- * produces a result.
+ * Represents a penta-arity function that accepts 
+ * five arguments and produces a result.
  *
  * @since Jet 3.0
  */
