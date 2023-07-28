@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfig
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddWanReplicationConfigCodec;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder;
@@ -102,8 +103,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -353,7 +356,23 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+        Data consumerConfig = serializationService.toData(wanReplicationConfig.getConsumerConfig());
+        List<Data> customPublisherConfigs =
+                wanReplicationConfig.getCustomPublisherConfigs()
+                                    .stream()
+                                    .filter(Objects::nonNull)
+                                    .map(customPublisherConfig -> (Data) serializationService.toData(customPublisherConfig))
+                                    .collect(Collectors.toList());
+        List<Data> batchPublisherConfigs =
+                wanReplicationConfig.getBatchPublisherConfigs()
+                                    .stream()
+                                    .filter(Objects::nonNull)
+                                    .map(batchPublisherConfig -> (Data) serializationService.toData(batchPublisherConfig))
+                                    .collect(Collectors.toList());
+        ClientMessage request = DynamicConfigAddWanReplicationConfigCodec.encodeRequest(
+                wanReplicationConfig.getName(), consumerConfig, customPublisherConfigs, batchPublisherConfigs);
+        invoke(request);
+        return this;
     }
 
     @Override

@@ -132,6 +132,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     @Test(expected = UnsupportedOperationException.class)
     public void testAddWanReplicationConfigIsNotSupported() {
         WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
+        wanReplicationConfig.setName(name);
         getDriver().getConfig().addWanReplicationConfig(wanReplicationConfig);
     }
 
