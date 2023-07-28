@@ -75,8 +75,8 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         createSchemaRegistry();
     }
 
-    private static KafkaMapping kafkaMapping(String name) {
-        return new KafkaMapping(name).options(
+    private static SqlMapping kafkaMapping(String name) {
+        return new SqlMapping(name, KafkaSqlConnector.TYPE_NAME).options(
                 OPTION_KEY_FORMAT, AVRO_FORMAT,
                 OPTION_VALUE_FORMAT, AVRO_FORMAT,
                 "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),

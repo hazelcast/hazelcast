@@ -28,16 +28,10 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class KafkaSqlTestSupport extends SqlTestSupport {
@@ -145,50 +139,5 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
     protected static String constructMappingOptions(String keyFormat, String valueFormat) {
         return "OPTIONS ('" + OPTION_KEY_FORMAT + "'='" + keyFormat + "'"
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + valueFormat + "')";
-    }
-
-    protected static class KafkaMapping {
-        protected final String name;
-        protected final List<String> fields = new ArrayList<>();
-        protected final Map<Object, Object> options = new HashMap<>();
-
-        public KafkaMapping(String name) {
-            this.name = name;
-        }
-
-        public KafkaMapping fields(String... fields) {
-            this.fields.addAll(asList(fields));
-            return this;
-        }
-
-        public KafkaMapping options(Object... options) {
-            for (int i = 0; i < options.length / 2; i++) {
-                this.options.put(options[2 * i], options[2 * i + 1]);
-            }
-            return this;
-        }
-
-        public KafkaMapping optionsIf(boolean condition, Object... options) {
-            return condition ? options(options) : this;
-        }
-
-        public void create() {
-            create(false);
-        }
-
-        public void createOrReplace() {
-            create(true);
-        }
-
-        protected void create(boolean replace) {
-            sqlService.execute("CREATE " + (replace ? "OR REPLACE " : "") + "MAPPING " + name + " ("
-                    + String.join(",", fields)
-                    + ")"
-                    + "TYPE " + KafkaSqlConnector.TYPE_NAME + " "
-                    + "OPTIONS (" + options.entrySet().stream()
-                            .map(e -> "'" + e.getKey() + "'='" + e.getValue() + "'").collect(joining(","))
-                    + ")"
-            );
-        }
     }
 }

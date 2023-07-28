@@ -102,6 +102,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         );
     }
 
+    // CREATE MAPPING <name> (<fields>) Type Kafka; INSERT INTO <name> ...
     private Schema schema(String recordName, List<TableField> fields) {
         QueryPath[] paths = paths(fields);
         QueryDataType[] types = types(fields);
