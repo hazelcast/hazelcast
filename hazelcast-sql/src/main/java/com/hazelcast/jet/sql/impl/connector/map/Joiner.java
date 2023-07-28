@@ -20,9 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.impl.execution.init.PartitionPruningLevel;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -39,20 +37,18 @@ final class Joiner {
     }
 
     static VertexWithInputConfig join(
-            SqlConnector.DagBuildContext context,
+            DAG dag,
             String mapName,
             String tableName,
             JetJoinInfo joinInfo,
             KvRowProjector.Supplier rightRowProjectorSupplier
     ) {
-        DAG dag = context.getDag();
         int leftEquiJoinPrimitiveKeyIndex = leftEquiJoinPrimitiveKeyIndex(joinInfo, rightRowProjectorSupplier.paths());
         if (leftEquiJoinPrimitiveKeyIndex > -1) {
             // This branch handles the case when there's an equi-join condition for the __key field.
             // For example: SELECT * FROM left [LEFT] JOIN right ON left.field1=right.__key
             // In this case we'll use map.get() for the right map to get the matching entry by key and evaluate the
             // remaining conditions on the returned row.
-            context.addPartitionPruningLevel(PartitionPruningLevel.ALL_PARTITIONS_REQUIRED);
             return new VertexWithInputConfig(
                     dag.newUniqueVertex(
                             "Join(Lookup-" + tableName + ")",

@@ -292,7 +292,7 @@ public class IMapSqlConnector implements SqlConnector {
                 context.convertProjection(projections)
         );
 
-        return Joiner.join(context, table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
+        return Joiner.join(context.getDag(), table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
     }
 
     @Nonnull

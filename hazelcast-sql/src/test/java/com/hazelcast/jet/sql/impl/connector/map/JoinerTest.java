@@ -22,7 +22,6 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
-import com.hazelcast.jet.sql.impl.opt.physical.DagBuildContextImpl;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -46,10 +45,7 @@ import static org.mockito.BDDMockito.given;
 public class JoinerTest {
 
     @Mock
-    DagBuildContextImpl dagBuildContext;
-
-    @Mock
-    DAG dag;
+    private DAG dag;
 
     @Mock
     private Vertex vertex;
@@ -72,12 +68,11 @@ public class JoinerTest {
     public void test_joinByPrimitiveKey(JoinRelType joinType) {
         // given
         given(rightRowProjectorSupplier.paths()).willReturn(new QueryPath[]{KEY_PATH});
-        given(dagBuildContext.getDag()).willReturn(dag);
-        given(dagBuildContext.getDag().newUniqueVertex(contains("Lookup"), isA(JoinByPrimitiveKeyProcessorSupplier.class))).willReturn(vertex);
+        given(dag.newUniqueVertex(contains("Lookup"), isA(JoinByPrimitiveKeyProcessorSupplier.class))).willReturn(vertex);
 
         // when
         VertexWithInputConfig vertexWithConfig = Joiner.join(
-                dagBuildContext,
+                dag,
                 "imap-name",
                 "table-name",
                 joinInfo(joinType, new int[]{0}, new int[]{0}),
@@ -94,12 +89,11 @@ public class JoinerTest {
     public void test_joinByPredicate(JoinRelType joinType) {
         // given
         given(rightRowProjectorSupplier.paths()).willReturn(new QueryPath[]{QueryPath.create("path")});
-        given(dagBuildContext.getDag()).willReturn(dag);
-        given(dagBuildContext.getDag().newUniqueVertex(contains("Predicate"), isA(ProcessorMetaSupplier.class))).willReturn(vertex);
+        given(dag.newUniqueVertex(contains("Predicate"), isA(ProcessorMetaSupplier.class))).willReturn(vertex);
 
         // when
         VertexWithInputConfig vertexWithConfig = Joiner.join(
-                dagBuildContext,
+                dag,
                 "imap-name",
                 "table-name",
                 joinInfo(joinType, new int[]{0}, new int[]{0}),
@@ -116,12 +110,11 @@ public class JoinerTest {
     public void test_joinByScan(JoinRelType joinType) {
         // given
         given(rightRowProjectorSupplier.paths()).willReturn(new QueryPath[]{VALUE_PATH});
-        given(dagBuildContext.getDag()).willReturn(dag);
-        given(dagBuildContext.getDag().newUniqueVertex(contains("Scan"), isA(JoinScanProcessorSupplier.class))).willReturn(vertex);
+        given(dag.newUniqueVertex(contains("Scan"), isA(JoinScanProcessorSupplier.class))).willReturn(vertex);
 
         // when
         VertexWithInputConfig vertexWithConfig = Joiner.join(
-                dagBuildContext,
+                dag,
                 "imap-name",
                 "table-name",
                 joinInfo(joinType, new int[0], new int[0]),

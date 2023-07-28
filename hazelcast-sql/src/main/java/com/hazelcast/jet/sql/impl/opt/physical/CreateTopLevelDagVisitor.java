@@ -112,6 +112,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     private final DagBuildContextImpl dagBuildContext;
 
+    private EnumSet<PartitionPruningLevel> partitionPruningLevel = EnumSet.noneOf(PartitionPruningLevel.class);
+
     public CreateTopLevelDagVisitor(
             NodeEngine nodeEngine,
             QueryParameterMetadata parameterMetadata,
@@ -317,7 +319,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 .distributeTo(localMemberAddress)
                 .allToOne("");
         dag.edge(edge);
-        dagBuildContext.addPartitionPruningLevel(COORDINATOR_REQUIRED);
+        this.partitionPruningLevel.add(COORDINATOR_REQUIRED);
 
         return combineVertex;
     }
@@ -335,7 +337,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         );
         connectInput(rel.getInput(), vertex, edge ->
                 edge.distributeTo(localMemberAddress).allToOne(""));
-        dagBuildContext.addPartitionPruningLevel(COORDINATOR_REQUIRED);
+        this.partitionPruningLevel.add(COORDINATOR_REQUIRED);
         return vertex;
     }
 
@@ -364,7 +366,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         );
         connectInput(rel.getInput(), vertex, edge ->
                 edge.distributeTo(localMemberAddress).allToOne(""));
-        dagBuildContext.addPartitionPruningLevel(COORDINATOR_REQUIRED);
+        this.partitionPruningLevel.add(COORDINATOR_REQUIRED);
         return vertex;
     }
 
@@ -378,7 +380,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 Processors.aggregateByKeyP(singletonList(groupKeyFn), aggregateOperation, (key, value) -> value)
         );
         connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(groupKeyFn));
-        dagBuildContext.addPartitionPruningLevel(ALL_PARTITIONS_REQUIRED);
+        this.partitionPruningLevel.add(ALL_PARTITIONS_REQUIRED);
         return vertex;
     }
 
@@ -404,7 +406,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 Processors.combineByKeyP(aggregateOperation, (key, value) -> value)
         );
         connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
-        dagBuildContext.addPartitionPruningLevel(ALL_PARTITIONS_REQUIRED);
+        this.partitionPruningLevel.add(ALL_PARTITIONS_REQUIRED);
         return vertex;
     }
 
@@ -464,7 +466,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             watermarkKey));
             connectInput(rel.getInput(), vertex, edge ->
                     edge.distributeTo(localMemberAddress).allToOne(""));
-            dagBuildContext.addPartitionPruningLevel(COORDINATOR_REQUIRED);
+            this.partitionPruningLevel.add(COORDINATOR_REQUIRED);
             return vertex;
         } else {
             assert rel.numStages() == 2;
@@ -489,7 +491,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
             connectInput(rel.getInput(), vertex1, edge -> edge.partitioned(groupKeyFn));
             dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));
-            dagBuildContext.addPartitionPruningLevel(ALL_PARTITIONS_REQUIRED);
+            this.partitionPruningLevel.add(ALL_PARTITIONS_REQUIRED);
             return vertex2;
         }
     }
@@ -650,7 +652,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // allToOne with any key, it goes to a single processor on a single member anyway.
         connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress)
                 .allToOne(""));
-        dagBuildContext.addPartitionPruningLevel(COORDINATOR_REQUIRED);
+        this.partitionPruningLevel.add(COORDINATOR_REQUIRED);
         return vertex;
     }
 
@@ -696,7 +698,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     }
 
     public EnumSet<PartitionPruningLevel> partitionPruningLevel() {
-        return dagBuildContext.getPartitionPruningLevels();
+        return partitionPruningLevel;
     }
 
     /**
@@ -738,7 +740,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         if (joinInfo.isEquiJoin()) {
             left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
             right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
-            dagBuildContext.addPartitionPruningLevel(ALL_PARTITIONS_REQUIRED);
+            this.partitionPruningLevel.add(ALL_PARTITIONS_REQUIRED);
         }
         dag.edge(left);
         dag.edge(right);
@@ -759,7 +761,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         if (joinInfo.isEquiJoin()) {
             left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
             right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
-            dagBuildContext.addPartitionPruningLevel(ALL_PARTITIONS_REQUIRED);
+            this.partitionPruningLevel.add(ALL_PARTITIONS_REQUIRED);
         } else if (joinInfo.isRightOuter()) {
             left = left.distributed().broadcast();
             right = right.unicast().local();
