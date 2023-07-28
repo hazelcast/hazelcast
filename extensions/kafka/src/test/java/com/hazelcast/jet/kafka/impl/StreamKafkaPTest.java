@@ -325,7 +325,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     ) {
         String sinkListName = randomName();
         for (int i = 0; i < messageCount; i++) {
-            kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
+                kafkaTestSupport.produceSync(topic1Name, i, String.valueOf(i));
         }
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.<Integer, String, String>kafka(kafkaProperties, ConsumerRecord::value, topicsConfig))
