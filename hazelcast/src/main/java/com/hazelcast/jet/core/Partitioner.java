@@ -90,6 +90,16 @@ public interface Partitioner<T> extends Serializable {
     int getPartition(@Nonnull T item, int partitionCount);
 
     /**
+     * @since 5.4
+     * @return constant partition key that is always used by {@link
+     *          #getPartition(Object, int)} or null if different partitions may be
+     *          returned
+     */
+    default T getConstantPartitioningKey() {
+        return null;
+    }
+
+    /**
      * Returns a partitioner which applies the default Hazelcast partitioning.
      * It will serialize the item using Hazelcast Serialization, then apply
      * Hazelcast's {@code MurmurHash}-based algorithm to retrieve the partition

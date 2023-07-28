@@ -21,7 +21,6 @@ import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.impl.execution.init.PartitionPruningLevel;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
@@ -49,7 +48,6 @@ import org.apache.calcite.rel.core.TableModify.Operation;
 
 import java.security.Permission;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -1060,7 +1058,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         // map of per-table partition pruning candidates, structured as
         // mapName -> { columnName -> RexLiteralOrDynamicParam }
         private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
-        private final EnumSet<PartitionPruningLevel> partitionPruningLevel;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         SelectPlan(
@@ -1073,8 +1070,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 SqlRowMetadata rowMetadata,
                 PlanExecutor planExecutor,
                 List<Permission> permissions,
-                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates,
-                EnumSet<PartitionPruningLevel> partitionPruningLevel) {
+                Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates) {
             super(planKey);
 
             this.objectKeys = objectKeys;
@@ -1086,7 +1082,6 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.planExecutor = planExecutor;
             this.permissions = permissions;
             this.partitionStrategyCandidates = partitionStrategyCandidates;
-            this.partitionPruningLevel = partitionPruningLevel;
         }
 
         QueryParameterMetadata getParameterMetadata() {
@@ -1132,10 +1127,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public boolean producesRows() {
             return true;
-        }
-
-        public EnumSet<PartitionPruningLevel> partitionPruningLevel() {
-            return partitionPruningLevel;
         }
 
         @Override

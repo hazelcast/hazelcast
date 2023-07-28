@@ -25,16 +25,9 @@ import java.util.EnumSet;
  */
 public enum PartitionPruningLevel {
     /**
-     * For this level, the coordinator must be present in the cluster
-     * after member pruning optimization technique was applied.
-     * It is applicable, if job should return a result to root consumer.
-     */
-    COORDINATOR_REQUIRED,
-
-    /**
      * For this level, all partitions must be assigned to all required members
      * were chosen to participate in job execution. It is applicable, if
-     * DAG contains at least one distributed-partitioned edge.
+     * DAG contains at least one partitioned edge with non-constant key.
      */
     ALL_PARTITIONS_REQUIRED;
 

@@ -94,7 +94,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         if (this.instance instanceof HazelcastInstanceProxy || this.instance instanceof HazelcastInstanceImpl) {
             NodeEngineImpl nodeEngine = Util.getNodeEngine(this.instance);
             this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
-                            Util.getMembersView(nodeEngine).getMembers(), null, EMPTY_PRUNING)
+                            Util.getMembersView(nodeEngine).getMembers(), EMPTY_PRUNING, null, null, null)
                     .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
         }
         return this;

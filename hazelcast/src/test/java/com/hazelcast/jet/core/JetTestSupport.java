@@ -40,7 +40,6 @@ import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
-import com.hazelcast.jet.impl.execution.init.PartitionPruningLevel;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.BatchSource;
@@ -65,7 +64,6 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,8 +79,6 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.ALL_PARTITIONS_REQUIRED;
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.COORDINATOR_REQUIRED;
 import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.EMPTY_PRUNING;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -111,9 +107,6 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     public static OverridePropertyRule enableJetRule = OverridePropertyRule.set("hz.jet.enabled", "true");
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(JetTestSupport.class);
-
-    protected static EnumSet<PartitionPruningLevel> ALL_LEVELS = EnumSet.of(
-            ALL_PARTITIONS_REQUIRED, COORDINATOR_REQUIRED);
 
     protected ILogger logger = Logger.getLogger(getClass());
     private TestHazelcastFactory instanceFactory;
@@ -363,7 +356,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         List<MemberInfo> members = membersView.getMembers().stream()
                 .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion) && !m.isLiteMember())
                 .collect(Collectors.toList());
-        return ExecutionPlanBuilder.getPartitionAssignment(nodeEngine, members, null, EMPTY_PRUNING)
+        return ExecutionPlanBuilder.getPartitionAssignment(nodeEngine, members, EMPTY_PRUNING, null, null, null)
                 .entrySet()
                 .stream()
                 .collect(toMap(en -> en.getKey().getAddress(), Map.Entry::getValue));

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.util;
+package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.Job;
@@ -30,9 +30,9 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.TestProcessors.CollectPerProcessorSink;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
-import com.hazelcast.jet.impl.execution.init.PartitionPruningLevel;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.jetbrains.annotations.NotNull;
@@ -43,8 +43,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.security.Permission;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -54,22 +54,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.config.JobConfigArguments.KEY_MEMBER_PRUNING_LEVEL;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelismOne;
 import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.ALL_PARTITIONS_REQUIRED;
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.COORDINATOR_REQUIRED;
 import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.EMPTY_PRUNING;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
-    static EnumSet<PartitionPruningLevel> ALL = EnumSet.of(ALL_PARTITIONS_REQUIRED, COORDINATOR_REQUIRED);
-
     private CollectPerProcessorSink consumerPms;
     private int localPartitionId;
     private int remotePartitionId;
@@ -85,7 +82,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         NodeEngineImpl localNodeEngineImpl = getNodeEngineImpl(instance());
         NodeEngineImpl remoteNodeEngineImpl = getNodeEngineImpl(instances()[1]);
         Map<Address, int[]> ptAssignment = ExecutionPlanBuilder.getPartitionAssignment(localNodeEngineImpl,
-                        Util.getMembersView(localNodeEngineImpl).getMembers(), null, EMPTY_PRUNING)
+                        Util.getMembersView(localNodeEngineImpl).getMembers(), EMPTY_PRUNING, null, null, null)
                 .entrySet()
                 .stream()
                 .collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
@@ -95,7 +92,7 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_simpleDag() {
+    public void test_simpleDag_onlyCoordinator() {
         // Given
         int expectedTotalParallelism = 2;
         ProcessorMetaSupplier pmsGen = new ValidatingMetaSupplier(
@@ -109,11 +106,15 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         Vertex generator = dag.newVertex("Generator", pmsGen);
         Vertex printer = dag.newVertex("Consumer", consumerPms);
-        dag.edge(between(generator, printer));
+        dag.edge(between(generator, printer).distributeTo(localMemberAddress()).allToOne(""));
+
+        var analysisResult = ExecutionPlanBuilder.analyzeDagForPartitionPruning(getNodeEngineImpl(instance()), dag);
+        assertThat(analysisResult.ppl).isEmpty();
+        assertThat(analysisResult.constantPartitionIds).containsExactly(allToOnePartitionId());
+        assertThat(analysisResult.requiredAddresses).containsExactly(localMemberAddress());
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
-        jobConfig.setArgument(KEY_MEMBER_PRUNING_LEVEL, EnumSet.of(COORDINATOR_REQUIRED));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -121,7 +122,8 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         // should print 0 and 1.
         assertJobStatusEventually(job, JobStatus.COMPLETED);
         List<List<Object>> lists = consumerPms.getLists();
-        assertContainsAll(lists.get(0), List.of(0, 1));
+        // one of the processors should get all data
+        assertThat(lists).contains(List.of(0, 1));
     }
 
     @Test
@@ -138,19 +140,18 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         Vertex generator = dag.newVertex("Generator", pmsGen);
         Vertex printer = dag.newVertex("Printer", consumerPms);
-        dag.edge(between(generator, printer));
+        dag.edge(between(generator, printer).distributeTo(localMemberAddress()).allToOne(""));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(remotePartitionId));
-        jobConfig.setArgument(KEY_MEMBER_PRUNING_LEVEL, EnumSet.of(COORDINATOR_REQUIRED));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
 
-        // should print 0 and 1.
         assertJobStatusEventually(job, JobStatus.COMPLETED);
         List<List<Object>> lists = consumerPms.getLists();
-        assertContainsAll(lists.get(0), List.of(0, 1));
+        // one of the processors should get all data
+        assertThat(lists).contains(List.of(0, 1, 0, 1));
     }
 
     @Test
@@ -181,9 +182,13 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         // aggregator -> printer
         dag.edge(between(aggregator, printer).isolated());
 
+        var analysisResult = ExecutionPlanBuilder.analyzeDagForPartitionPruning(getNodeEngineImpl(instance()), dag);
+        assertThat(analysisResult.ppl).containsExactly(ALL_PARTITIONS_REQUIRED);
+        assertThat(analysisResult.constantPartitionIds).isEmpty();
+        assertThat(analysisResult.requiredAddresses).containsExactly(addr);
+
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
-        jobConfig.setArgument(KEY_MEMBER_PRUNING_LEVEL, ALL);
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -215,9 +220,13 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         dag.edge(Edge.from(generatorLeft).to(consumer, 0).isolated());
         dag.edge(Edge.from(generatorRight).to(consumer, 1).distributed().broadcast());
 
+        var analysisResult = ExecutionPlanBuilder.analyzeDagForPartitionPruning(getNodeEngineImpl(instance()), dag);
+        assertThat(analysisResult.ppl).isEmpty();
+        assertThat(analysisResult.constantPartitionIds).isEmpty();
+        assertThat(analysisResult.requiredAddresses).isEmpty();
+
         JobConfig jobConfig = new JobConfig();
         jobConfig.setArgument(KEY_REQUIRED_PARTITIONS, singleton(localPartitionId));
-        jobConfig.setArgument(KEY_MEMBER_PRUNING_LEVEL, EnumSet.of(COORDINATOR_REQUIRED));
 
         Job job = instance().getJet().newJob(dag, jobConfig);
         job.join();
@@ -228,6 +237,15 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         containerList.addAll(lists.get(0));
         containerList.addAll(lists.get(1));
         assertEquals(containerList, Set.of(0, 1));
+    }
+
+    @Nonnull
+    private static Address localMemberAddress() {
+        return Accessors.getAddress(instance());
+    }
+
+    private static int allToOnePartitionId() {
+        return instance().getPartitionService().getPartition("").getPartitionId();
     }
 
     private static class ValidatingMetaSupplier implements ProcessorMetaSupplier {

@@ -28,8 +28,6 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.ALL_PARTITIONS_REQUIRED;
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.COORDINATOR_REQUIRED;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
@@ -38,7 +36,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class CreateDagVisitorPrunabilityLevelsTest extends OptimizerTestSupport {
     private static final String MAP_NAME = "m";
@@ -83,7 +80,6 @@ public class CreateDagVisitorPrunabilityLevelsTest extends OptimizerTestSupport 
                 singleton(table.getTarget().getObjectKey()));
 
         rootRel.accept(visitor);
-        assertThat(visitor.partitionPruningLevel()).containsOnly(COORDINATOR_REQUIRED);
     }
 
     @Test
@@ -105,7 +101,6 @@ public class CreateDagVisitorPrunabilityLevelsTest extends OptimizerTestSupport 
                 singleton(table.getTarget().getObjectKey()));
 
         rel.accept(visitor);
-        assertThat(visitor.partitionPruningLevel()).containsOnly(ALL_PARTITIONS_REQUIRED);
     }
 
     @Test
@@ -128,6 +123,5 @@ public class CreateDagVisitorPrunabilityLevelsTest extends OptimizerTestSupport 
                 singleton(table.getTarget().getObjectKey()));
 
         rootRel.accept(visitor);
-        assertThat(visitor.partitionPruningLevel()).containsExactly(COORDINATOR_REQUIRED, ALL_PARTITIONS_REQUIRED);
     }
 }

@@ -73,8 +73,8 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
         Map<MemberInfo, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(
                 nodeEngine,
                 members,
-                null,
-                EMPTY_PRUNING);
+                EMPTY_PRUNING, null, null, null
+        );
 
         List<Integer> actualAssignedPartitions = partitionAssignment
                 .values()
@@ -89,6 +89,7 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_requiresOneMemberAndCoordinatorOnly_then_returnsRequiredAssignment() {
+        int coordinatorPartition = nodeEngine.getPartitionService().getPartitionId("");
         int requiredNonCoordinatorOwnedPartition = -1;
         Address nonCoordinatorAddress = null;
         for (int i = 0; i < partitionCount; i++) {
@@ -105,8 +106,11 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
         Map<MemberInfo, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(
                 nodeEngine,
                 members,
+                EMPTY_PRUNING,
                 Collections.singleton(requiredNonCoordinatorOwnedPartition),
-                EnumSet.of(PartitionPruningLevel.COORDINATOR_REQUIRED));
+                Set.of(coordinatorPartition),
+                Collections.singleton(localMemberInfo.getAddress())
+        );
 
         List<Integer> actualAssignedPartitions = partitionAssignment
                 .values()
@@ -118,7 +122,6 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
         MemberInfo requiredMemberInfo = new MemberInfo(nodeEngine.getClusterService().getMember(nonCoordinatorAddress));
         assertThat(partitionAssignment.keySet()).contains(localMemberInfo, requiredMemberInfo);
 
-        int coordinatorPartition = nodeEngine.getPartitionService().getPartitionId("");
         assertThat(actualAssignedPartitions)
                 .containsExactly(requiredNonCoordinatorOwnedPartition, coordinatorPartition);
     }
@@ -139,8 +142,11 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
         Map<MemberInfo, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(
                 nodeEngine,
                 members,
+                EnumSet.of(PartitionPruningLevel.ALL_PARTITIONS_REQUIRED),
                 Collections.singleton(requiredCoordinatorOwnedPartition),
-                EnumSet.of(PartitionPruningLevel.ALL_PARTITIONS_REQUIRED));
+                Set.of(),
+                Set.of()
+        );
 
         List<Integer> actualAssignedPartitions = partitionAssignment
                 .values()
@@ -182,8 +188,11 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
         Map<MemberInfo, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(
                 nodeEngine,
                 members,
+                EnumSet.of(PartitionPruningLevel.ALL_PARTITIONS_REQUIRED),
                 Set.of(requiredNonCoordinatorOwnedPartition, requiredCoordinatorOwnedPartition),
-                ALL_LEVELS);
+                Set.of(),
+                Set.of(localMemberInfo.getAddress())
+        );
 
         List<Integer> actualAssignedPartitions = partitionAssignment
                 .values()

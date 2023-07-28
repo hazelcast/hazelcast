@@ -40,12 +40,6 @@ public final class JobConfigArguments {
      */
     public static final String KEY_REQUIRED_PARTITIONS = "__sql.requiredPartitions";
 
-    /**
-     * The key under which the SQL engine stores boolean flag
-     * if DAG contains distributed-partitioned vertex.
-     */
-    public static final String KEY_MEMBER_PRUNING_LEVEL = "__sql.memberPruningLevel";
-
     private JobConfigArguments() {
     }
 }

@@ -37,7 +37,6 @@ import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.impl.execution.init.PartitionPruningLevel;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
@@ -70,7 +69,6 @@ import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -89,8 +87,6 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.ALL_PARTITIONS_REQUIRED;
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.COORDINATOR_REQUIRED;
 import static com.hazelcast.jet.sql.impl.connector.HazelcastRexNode.wrap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
@@ -111,8 +107,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     private long watermarkThrottlingFrameSize = -1;
 
     private final DagBuildContextImpl dagBuildContext;
-
-    private EnumSet<PartitionPruningLevel> partitionPruningLevel = EnumSet.noneOf(PartitionPruningLevel.class);
 
     public CreateTopLevelDagVisitor(
             NodeEngine nodeEngine,
@@ -319,7 +313,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 .distributeTo(localMemberAddress)
                 .allToOne("");
         dag.edge(edge);
-        this.partitionPruningLevel.add(COORDINATOR_REQUIRED);
 
         return combineVertex;
     }
@@ -337,7 +330,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         );
         connectInput(rel.getInput(), vertex, edge ->
                 edge.distributeTo(localMemberAddress).allToOne(""));
-        this.partitionPruningLevel.add(COORDINATOR_REQUIRED);
         return vertex;
     }
 
@@ -366,7 +358,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         );
         connectInput(rel.getInput(), vertex, edge ->
                 edge.distributeTo(localMemberAddress).allToOne(""));
-        this.partitionPruningLevel.add(COORDINATOR_REQUIRED);
         return vertex;
     }
 
@@ -380,7 +371,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 Processors.aggregateByKeyP(singletonList(groupKeyFn), aggregateOperation, (key, value) -> value)
         );
         connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(groupKeyFn));
-        this.partitionPruningLevel.add(ALL_PARTITIONS_REQUIRED);
         return vertex;
     }
 
@@ -406,7 +396,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 Processors.combineByKeyP(aggregateOperation, (key, value) -> value)
         );
         connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
-        this.partitionPruningLevel.add(ALL_PARTITIONS_REQUIRED);
         return vertex;
     }
 
@@ -466,7 +455,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             watermarkKey));
             connectInput(rel.getInput(), vertex, edge ->
                     edge.distributeTo(localMemberAddress).allToOne(""));
-            this.partitionPruningLevel.add(COORDINATOR_REQUIRED);
             return vertex;
         } else {
             assert rel.numStages() == 2;
@@ -491,7 +479,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
             connectInput(rel.getInput(), vertex1, edge -> edge.partitioned(groupKeyFn));
             dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));
-            this.partitionPruningLevel.add(ALL_PARTITIONS_REQUIRED);
             return vertex2;
         }
     }
@@ -652,7 +639,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // allToOne with any key, it goes to a single processor on a single member anyway.
         connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress)
                 .allToOne(""));
-        this.partitionPruningLevel.add(COORDINATOR_REQUIRED);
         return vertex;
     }
 
@@ -697,10 +683,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         return objectKeys;
     }
 
-    public EnumSet<PartitionPruningLevel> partitionPruningLevel() {
-        return partitionPruningLevel;
-    }
-
     /**
      * Converts the {@code inputRel} into a {@code Vertex} by visiting it and
      * create an edge from the input vertex into {@code thisVertex}.
@@ -740,7 +722,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         if (joinInfo.isEquiJoin()) {
             left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
             right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
-            this.partitionPruningLevel.add(ALL_PARTITIONS_REQUIRED);
         }
         dag.edge(left);
         dag.edge(right);
@@ -761,7 +742,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         if (joinInfo.isEquiJoin()) {
             left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
             right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
-            this.partitionPruningLevel.add(ALL_PARTITIONS_REQUIRED);
         } else if (joinInfo.isRightOuter()) {
             left = left.distributed().broadcast();
             right = right.unicast().local();

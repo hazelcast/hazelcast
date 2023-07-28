@@ -20,8 +20,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.datamodel.Tuple3;
-import com.hazelcast.jet.impl.execution.init.PartitionPruningLevel;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -151,7 +150,6 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -161,7 +159,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.cluster.Versions.V5_3;
-import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataConnectionPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
@@ -650,7 +648,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof UpdatePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
-            Tuple3<DAG, Set<PlanObjectKey>, EnumSet<PartitionPruningLevel>> dagAndKeys = createDag(
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews());
@@ -680,7 +678,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            Tuple3<DAG, Set<PlanObjectKey>, EnumSet<PartitionPruningLevel>> dagAndKeys = createDag(
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews());
@@ -697,7 +695,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof DeletePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
-            Tuple3<DAG, Set<PlanObjectKey>, EnumSet<PartitionPruningLevel>> dagAndKeys = createDag(
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
                     physicalRel,
                     parameterMetadata,
                     context.getUsedViews());
@@ -713,7 +711,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            Tuple3<DAG, Set<PlanObjectKey>, EnumSet<PartitionPruningLevel>> dagAndKeys = createDag(
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
                     new RootRel(physicalRel),
                     parameterMetadata,
                     context.getUsedViews());
@@ -733,8 +731,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     rowMetadata,
                     planExecutor,
                     permissions,
-                    partitionStrategyCandidates(physicalRel, parameterMetadata),
-                    dagAndKeys.f2()
+                    partitionStrategyCandidates(physicalRel, parameterMetadata)
             );
         }
     }
@@ -901,7 +898,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new SqlRowMetadata(columns);
     }
 
-    private Tuple3<DAG, Set<PlanObjectKey>, EnumSet<PartitionPruningLevel>> createDag(
+    private Tuple2<DAG, Set<PlanObjectKey>> createDag(
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata,
             Set<PlanObjectKey> usedViews
@@ -918,7 +915,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         CreateTopLevelDagVisitor visitor = new CreateTopLevelDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
-        return tuple3(visitor.getDag(), visitor.getObjectKeys(), visitor.partitionPruningLevel());
+        return tuple2(visitor.getDag(), visitor.getObjectKeys());
     }
 
     private void checkDmlOperationWithView(PhysicalRel rel) {
