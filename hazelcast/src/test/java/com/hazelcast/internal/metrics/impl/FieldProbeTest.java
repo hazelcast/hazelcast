@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAccumulator;
+import java.util.concurrent.atomic.LongAdder;
 
 import static com.hazelcast.internal.metrics.impl.FieldProbe.createFieldProbe;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
@@ -66,6 +68,8 @@ public class FieldProbeTest extends HazelcastTestSupport {
         getLong("intField", 10);
         getLong("longField", 10);
         getLong("atomicLongField", 10);
+        getLong("longAccumulatorField", 10);
+        getLong("longAdderField", 10);
         getLong("atomicIntegerField", 10);
         getLong("counterField", 10);
         getLong("collectionField", 10);
@@ -78,6 +82,8 @@ public class FieldProbeTest extends HazelcastTestSupport {
         getLong("LongField", 10);
 
         getLong("nullAtomicLongField", 0);
+        getLong("nullLongAccumulatorField", 0);
+        getLong("nullLongAdderField", 0);
         getLong("nullAtomicIntegerField", 0);
         getLong("nullCounterField", 0);
         getLong("nullCollectionField", 0);
@@ -129,56 +135,64 @@ public class FieldProbeTest extends HazelcastTestSupport {
 
     private class SomeSource {
         @Probe(name = "byteField")
-        private byte byteField = 10;
+        private final byte byteField = 10;
         @Probe(name = "shortField")
-        private short shortField = 10;
+        private final short shortField = 10;
         @Probe(name = "intField")
-        private int intField = 10;
+        private final int intField = 10;
         @Probe(name = "longField")
-        private long longField = 10;
+        private final long longField = 10;
 
         @Probe(name = "floatField")
-        private float floatField = 10;
+        private final float floatField = 10;
         @Probe(name = "doubleField")
-        private double doubleField = 10;
+        private final double doubleField = 10;
 
         @Probe(name = "atomicLongField")
-        private AtomicLong atomicLongField = new AtomicLong(10);
+        private final AtomicLong atomicLongField = new AtomicLong(10);
         @Probe(name = "nullAtomicLongField")
         private AtomicLong nullAtomicLongField;
+        @Probe(name = "longAdderField")
+        private final LongAdder longAdderField = new LongAdder();
+        @Probe(name = "nullLongAdderField")
+        private LongAdder nullLongAdderField;
+        @Probe(name = "longAccumulatorField")
+        private final LongAccumulator longAccumulatorField = new LongAccumulator(Long::sum, 10);
+        @Probe(name = "nullLongAccumulatorField")
+        private LongAccumulator nullLongAccumulatorField;
         @Probe(name = "atomicIntegerField")
-        private AtomicInteger atomicIntegerField = new AtomicInteger(10);
+        private final AtomicInteger atomicIntegerField = new AtomicInteger(10);
         @Probe(name = "nullAtomicIntegerField")
         private AtomicInteger nullAtomicIntegerField;
         @Probe(name = "counterField")
-        private Counter counterField = newSwCounter(10);
+        private final Counter counterField = newSwCounter(10);
         @Probe(name = "nullCounterField")
         private Counter nullCounterField;
         @Probe(name = "collectionField")
-        private Collection collectionField = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        private final Collection collectionField = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         @Probe(name = "nullCollectionField")
         private Collection nullCollectionField;
         @Probe(name = "mapField")
-        private Map mapField = MetricsUtils.createMap(10);
+        private final Map mapField = MetricsUtils.createMap(10);
         @Probe(name = "nullMapField")
         private Map nullMapField;
         @Probe(name = "semaphoreField")
-        private Semaphore semaphoreField = new Semaphore(10);
+        private final Semaphore semaphoreField = new Semaphore(10);
         @Probe(name = "nullSemaphoreField")
         private Semaphore nullSemaphoreField;
 
         @Probe(name = "ByteField")
-        private Byte ByteField = (byte) 10;
+        private final Byte ByteField = (byte) 10;
         @Probe(name = "ShortField")
-        private Short ShortField = (short) 10;
+        private final Short ShortField = (short) 10;
         @Probe(name = "IntegerField")
-        private Integer IntegerField = 10;
+        private final Integer IntegerField = 10;
         @Probe(name = "LongField")
-        private Long LongField = (long) 10;
+        private final Long LongField = (long) 10;
         @Probe(name = "FloatField")
-        private Float FloatField = (float) 10;
+        private final Float FloatField = (float) 10;
         @Probe(name = "DoubleField")
-        private Double DoubleField = (double) 10;
+        private final Double DoubleField = (double) 10;
 
         @Probe(name = "nullByteField")
         private Byte nullByteField;
@@ -193,5 +207,8 @@ public class FieldProbeTest extends HazelcastTestSupport {
         @Probe(name = "nullDoubleField")
         private Double nullDoubleField;
 
+        private SomeSource() {
+            longAdderField.add(10);
+        }
     }
 }
