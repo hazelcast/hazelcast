@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.UtilSteps;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 
@@ -37,12 +39,22 @@ public class TriggerLoadIfNeededOperation extends MapOperation
 
     public TriggerLoadIfNeededOperation(String name) {
         super(name);
+        createRecordStoreOnDemand = false;
     }
 
     @Override
     protected void runInternal() {
+        if (recordStore == null) {
+            isLoaded = true;
+            return;
+        }
         isLoaded = recordStore.isKeyLoadFinished();
         recordStore.maybeDoInitialLoad();
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return UtilSteps.DIRECT_RUN_STEP;
     }
 
     @Override
