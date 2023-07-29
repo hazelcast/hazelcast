@@ -39,15 +39,10 @@ public class TriggerLoadIfNeededOperation extends MapOperation
 
     public TriggerLoadIfNeededOperation(String name) {
         super(name);
-        createRecordStoreOnDemand = false;
     }
 
     @Override
     protected void runInternal() {
-        if (recordStore == null) {
-            isLoaded = true;
-            return;
-        }
         isLoaded = recordStore.isKeyLoadFinished();
         recordStore.maybeDoInitialLoad();
     }

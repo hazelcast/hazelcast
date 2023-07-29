@@ -41,7 +41,6 @@ public class KeyLoadStatusOperation extends MapOperation
     public KeyLoadStatusOperation(String name, Throwable exception) {
         super(name);
         this.exception = exception;
-        createRecordStoreOnDemand = false;
     }
 
     @Override
@@ -51,9 +50,6 @@ public class KeyLoadStatusOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        if (recordStore == null) {
-            return;
-        }
         recordStore.updateLoadStatus(true, exception);
     }
 
