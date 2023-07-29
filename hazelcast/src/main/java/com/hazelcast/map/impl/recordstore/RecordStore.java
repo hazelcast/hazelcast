@@ -677,4 +677,6 @@ public interface RecordStore<R extends Record> {
     void decMapStoreOffloadedOperationsCount();
 
     long getMapStoreOffloadedOperationsCount();
+
+    boolean isTieredStorageEnabled();
 }

@@ -80,6 +80,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -477,7 +478,12 @@ class MapServiceContextImpl implements MapServiceContext {
         final List<LocalRetryableExecution> executions = new ArrayList<>();
 
         for (PartitionContainer container : partitionContainers) {
-            final MapPartitionDestroyOperation op = new MapPartitionDestroyOperation(container, mapContainer);
+            Operation op = new MapPartitionDestroyOperation(mapContainer.getName())
+                    .setPartitionId(container.getPartitionId())
+                    .setNodeEngine(nodeEngine)
+                    .setCallerUuid(nodeEngine.getLocalMember().getUuid())
+                    .setServiceName(SERVICE_NAME);
+
             executions.add(InvocationUtil.executeLocallyWithRetry(nodeEngine, op));
         }
 
