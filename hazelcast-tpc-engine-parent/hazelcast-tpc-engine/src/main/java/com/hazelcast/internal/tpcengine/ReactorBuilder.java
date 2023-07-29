@@ -53,7 +53,8 @@ public abstract class ReactorBuilder {
     public static final String NAME_CFS = "hazelcast.tpc.reactor.cfs";
     public static final String NAME_REACTOR_AFFINITY = "hazelcast.tpc.reactor.affinity";
 
-    private static final AtomicInteger ID_GENERATOR = new AtomicInteger();
+    private static final AtomicInteger THREAD_ID_GENERATOR = new AtomicInteger();
+    private static final AtomicInteger REACTOR_ID_GENERATOR = new AtomicInteger();
     private static final int DEFAULT_LOCAL_TASK_QUEUE_CAPACITY = 65536;
     private static final int DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY = 4096;
     private static final int DEFAULT_RUN_QUEUE_CAPACITY = 1024;
@@ -72,7 +73,7 @@ public abstract class ReactorBuilder {
 
     private static final ThreadFactory DEFAULT_THREAD_FACTORY = r -> {
         Thread thread = new Thread(r);
-        thread.setName("ReactorThread-" + ID_GENERATOR.getAndIncrement());
+        thread.setName("ReactorThread-" + THREAD_ID_GENERATOR.getAndIncrement());
         return thread;
     };
 
@@ -409,6 +410,11 @@ public abstract class ReactorBuilder {
      */
     public final Reactor build() {
         verifyNotBuilt();
+
+        if (reactorName == null) {
+            reactorName = "Reactor-" + REACTOR_ID_GENERATOR.getAndIncrement();
+        }
+
         built = true;
         return build0();
     }

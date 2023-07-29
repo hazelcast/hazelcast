@@ -42,8 +42,13 @@ public class EchoBenchmarkCli {
             .withRequiredArg().ofType(String.class)
             .defaultsTo("iouring");
 
-    private final OptionSpec<Integer> reactorsSpec = parser
-            .accepts("reactors", "The number of reactors")
+    private final OptionSpec<Integer> serverReactorsSpec = parser
+            .accepts("serverReactors", "The number of server reactors")
+            .withRequiredArg().ofType(Integer.class)
+            .defaultsTo(1);
+
+    private final OptionSpec<Integer> clientReactorsSpec = parser
+            .accepts("clientReactors", "The number of client reactors")
             .withRequiredArg().ofType(Integer.class)
             .defaultsTo(1);
 
@@ -76,7 +81,8 @@ public class EchoBenchmarkCli {
         benchmark.runtimeSeconds = Integer.parseInt(runtimeSec);
         benchmark.spin = false;
         benchmark.reactorType = ReactorType.fromString(options.valueOf(ioengineSpec));
-        benchmark.reactorCount = options.valueOf(reactorsSpec);
+        benchmark.serverReactorCount = options.valueOf(serverReactorsSpec);
+        benchmark.clientReactorCount = options.valueOf(clientReactorsSpec);
         benchmark.run();
         System.exit(0);
     }

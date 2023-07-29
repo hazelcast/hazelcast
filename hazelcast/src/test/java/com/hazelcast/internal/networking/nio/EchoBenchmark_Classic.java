@@ -19,17 +19,20 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelOption;
 import com.hazelcast.internal.networking.ChannelOptions;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.nio.PacketIOHelper;
+import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.jctools.util.PaddedAtomicLong;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -58,19 +61,22 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Echo benchmark for Hazelcast 'classic' networking.
  * <p>
  * Warning:
- * Hazelcast classic networking requires separate threads for input and for output. So if you would
- * compare classic networking with a single reactor, then it isn't an apples vs oranges comparison because
- * with a single reactor you have only 1 thread and with classic networking you get 2,
+ * Hazelcast classic networking requires separate threads for input and for output.
+ * So if you would compare classic networking with a 2 reactor approach, then it isn't
+ * an apples vs oranges comparison because with 2 reactors you have only 2 threads
+ * and with classic networking you get 4.
  */
 public class EchoBenchmark_Classic {
-    public int payloadSize = 10_000;
+    public int payloadSize = 10;
     public int socketBufferSize = 256 * 1024;
-    public int runtimeSeconds = 20;
-    public int port = 5000;
-    public int concurrency = 100;
-    public String cpuAffinityClient = "1";
-    public String cpuAffinityServer = "4";
-    public int connections = 10;
+    public int runtimeSeconds = 3000;
+    public int port = 8000;
+    // The number of concurrent packets on a single connection
+    public int concurrency = 2;
+    // the number of connections
+    public int connections = 1;
+    public String cpuAffinityClient = "1,2";
+    public String cpuAffinityServer = "5,6";
     public boolean tcpNoDelay = true;
 
     private volatile boolean stop;
@@ -91,15 +97,20 @@ public class EchoBenchmark_Classic {
             echoCounters[k] = new PaddedAtomicLong();
         }
 
-        NioThread serverOutThread = newNioThread();
-        NioThread serverInThread = newNioThread();
-        NioThread clientOutThread = newNioThread();
-        NioThread clientInThread = newNioThread();
+        ThreadAffinity serverAffinity = cpuAffinityServer == null ? null : new ThreadAffinity(cpuAffinityServer);
+        NioThread serverOutThread = newNioThread(serverAffinity);
+        NioThread serverInThread = newNioThread(serverAffinity);
 
-        InetSocketAddress address = new InetSocketAddress(5000);
+        ThreadAffinity clientAffinity = cpuAffinityClient == null ? null : new ThreadAffinity(cpuAffinityClient);
+        NioThread clientOutThread = newNioThread(clientAffinity);
+        NioThread clientInThread = newNioThread(clientAffinity);
+
+        InetSocketAddress address = new InetSocketAddress(port);
 
         Thread acceptThread = new AcceptThread(address, serverInThread, serverOutThread);
         acceptThread.start();
+
+        Thread.sleep(2000);
 
         for (int connection = 0; connection < connections; connection++) {
             channels.add(connect(clientInThread, clientOutThread, address));
@@ -134,7 +145,11 @@ public class EchoBenchmark_Classic {
 
     private NioChannel connect(NioThread inThread, NioThread outThread, SocketAddress address) throws IOException {
         SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.connect(address);
+        try {
+            socketChannel.connect(address);
+        } catch (ConnectException e) {
+            throw new RuntimeException("Failed to connect to " + address, e);
+        }
         return newNioChannel(inThread, outThread, true, socketChannel);
     }
 
@@ -145,6 +160,7 @@ public class EchoBenchmark_Classic {
         ChannelInitializer channelInitializer = channel -> {
             ChannelOptions options = channel.options();
             options.setOption(TCP_NODELAY, tcpNoDelay);
+            options.setOption(ChannelOption.DIRECT_BUF, false);
             options.setOption(SO_RCVBUF, socketBufferSize);
             options.setOption(SO_SNDBUF, socketBufferSize);
         };
@@ -185,8 +201,8 @@ public class EchoBenchmark_Classic {
         private final NioThread outThread;
 
         private AcceptThread(InetSocketAddress address,
-                            NioThread inThread,
-                            NioThread outThread) {
+                             NioThread inThread,
+                             NioThread outThread) {
             super("AcceptThread");
             this.address = address;
             this.inThread = inThread;
@@ -300,10 +316,13 @@ public class EchoBenchmark_Classic {
         }
     }
 
-    private NioThread newNioThread() {
+    private NioThread newNioThread(ThreadAffinity affinity) {
         ILogger logger = Logger.getLogger(NioThread.class);
         ChannelErrorHandler channelErrorHandler = new ChannelErrorHandlerImpl();
         NioThread thread = new NioThread("foo", logger, channelErrorHandler);
+        if (affinity != null) {
+            thread.setThreadAffinity(affinity);
+        }
         thread.start();
         return thread;
     }
