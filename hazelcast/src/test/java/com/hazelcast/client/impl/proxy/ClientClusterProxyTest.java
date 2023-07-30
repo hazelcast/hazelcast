@@ -63,6 +63,13 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
         return factory.newHazelcastClient(clientConfig);
     }
 
+    private HazelcastInstance notConnectedClient() {
+        factory = new TestHazelcastFactory();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        return factory.newHazelcastClient(clientConfig);
+    }
+
     @Test
     public void addMembershipListener() throws Exception {
         UUID regId = client().getCluster().addMembershipListener(new MembershipAdapter());
@@ -124,5 +131,10 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
     @Test
     public void isEnterprise() {
         assertFalse(client().getCluster().isEnterprise());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void isEnterpriseThrowsIfNotConnected() {
+        notConnectedClient().getCluster().isEnterprise();
     }
 }
