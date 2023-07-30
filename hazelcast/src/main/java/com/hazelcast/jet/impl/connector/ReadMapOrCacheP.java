@@ -32,6 +32,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.iteration.IterationPointer;
@@ -375,6 +376,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         static final long serialVersionUID = 1L;
 
         private final String clientXml;
+        private final String dataConnectionName;
         private final FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
 
         private transient HazelcastClientProxy client;
@@ -382,15 +384,31 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private transient int baseIndex;
 
         RemoteProcessorSupplier(
-                @Nonnull String clientXml,
+                String clientXml,
+                String dataConnectionName,
                 @Nonnull FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier) {
+            if (clientXml != null && dataConnectionName != null) {
+                throw new IllegalArgumentException("Only one of clientXml and dataConnectionName can be set");
+            }
+            this.dataConnectionName = dataConnectionName;
             this.clientXml = clientXml;
             this.readerSupplier = readerSupplier;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            client = (HazelcastClientProxy) newHazelcastClient(asClientConfig(clientXml));
+            if (dataConnectionName != null) {
+                HazelcastDataConnection dataConnection =
+                        context.dataConnectionService()
+                                .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
+                try {
+                    this.client = (HazelcastClientProxy) dataConnection.getClient();
+                } finally {
+                    dataConnection.release();
+                }
+            } else {
+                client = (HazelcastClientProxy) newHazelcastClient(asClientConfig(clientXml));
+            }
             totalParallelism = context.totalParallelism();
             baseIndex = context.memberIndex() * context.localParallelism();
         }

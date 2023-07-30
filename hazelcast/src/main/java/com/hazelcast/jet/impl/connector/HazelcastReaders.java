@@ -130,7 +130,7 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteCacheReaderFunction(cacheName));
+        return new RemoteProcessorSupplier<>(clientXml, null, new RemoteCacheReaderFunction(cacheName));
     }
 
     public static class RemoteCacheReaderFunction implements FunctionEx<HazelcastInstance,
@@ -298,7 +298,7 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteMapReaderFunction(mapName));
+        return new RemoteProcessorSupplier<>(clientXml, null, new RemoteMapReaderFunction(mapName));
     }
 
     @Nonnull
@@ -307,7 +307,15 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteMapKeysReaderFunction(mapName));
+        return new RemoteProcessorSupplier<>(clientXml, null, new RemoteMapKeysReaderFunction(mapName));
+    }
+
+    @Nonnull
+    public static ProcessorSupplier readRemoteMapKeysSupplier(
+            @Nonnull String mapName,
+            @Nonnull String dataConnectionName
+    ) {
+        return new RemoteProcessorSupplier<>(null, dataConnectionName, new RemoteMapKeysReaderFunction(mapName));
     }
 
     public static class RemoteMapReaderFunction implements FunctionEx<HazelcastInstance,
@@ -362,7 +370,8 @@ public final class HazelcastReaders {
         }
 
         @Override
-        public ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchKeysCodec.ResponseParameters, Data> applyEx(HazelcastInstance hzInstance) throws Exception {
+        public ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchKeysCodec.ResponseParameters, Data>
+        applyEx(HazelcastInstance hzInstance) throws Exception {
             return new ReadMapOrCacheP.RemoteMapKeysReader(hzInstance, mapName);
         }
 
@@ -398,7 +407,7 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteMapQueryReaderFunction<>(mapName, predicate,
+        return new RemoteProcessorSupplier<>(clientXml, null, new RemoteMapQueryReaderFunction<>(mapName, predicate,
                 projection));
     }
 
