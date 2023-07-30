@@ -99,7 +99,10 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public boolean isEnterprise() {
-        return this.getMemberList().size() > 0 && this.isFailoverSupported;
+        if (this.getMemberList().isEmpty()) {
+            throw new IllegalStateException("The client is not connected to a cluster yet!");
+        }
+        return this.isFailoverSupported;
     }
 
     @Override
