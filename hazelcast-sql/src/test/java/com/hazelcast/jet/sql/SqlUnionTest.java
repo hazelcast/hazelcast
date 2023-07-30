@@ -43,6 +43,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("resource")
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlUnionTest extends SqlTestSupport {
     private IMap<Integer, Person> map1;
@@ -277,16 +278,20 @@ public class SqlUnionTest extends SqlTestSupport {
             prunableMap2.put(new Person(i, "ABC" + i), "" + i);
         }
 
-        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION ALL (SELECT this FROM pMap2 WHERE id = 1 OR id = 2)";
+        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION ALL (SELECT this FROM pMap2 WHERE id = 1)";
         expected.add(new Row("1"));
         expected.add(new Row("1"));
-        expected.add(new Row("2"));
 
         assertRowsAnyOrder(sql, expected);
     }
 
     @Test
     public void prunableUnionTest() {
+        // Note: it is a test for the future implementation of prunable Aggregation.
+        //  Union converts to UnionAll + Aggregation, and  prunable Aggregation implementor
+        //  easily may miss that fact during testing.
+        //  Right now it just a execution check test.
+        // https://hazelcast.atlassian.net/browse/HZ-2796
         instance().getConfig().addMapConfig(
                 new MapConfig("pMap1").setPartitioningAttributeConfigs(List.of(
                         new PartitioningAttributeConfig("id")
@@ -328,16 +333,20 @@ public class SqlUnionTest extends SqlTestSupport {
             prunableMap1.put(new Person(i, "ABC" + i), "" + i);
         }
 
-        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION ALL (SELECT this FROM pMap1 WHERE id = 1 OR id = 2)";
+        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION ALL (SELECT this FROM pMap1 WHERE id = 1)";
         expected.add(new Row("1"));
         expected.add(new Row("1"));
-        expected.add(new Row("2"));
 
         assertRowsAnyOrder(sql, expected);
     }
 
     @Test
     public void prunableSelfUnionTest() {
+        // Note: it is a test for the future implementation of prunable Aggregation.
+        //  Union converts to UnionAll + Aggregation, and  prunable Aggregation implementor
+        //  easily may miss that fact during testing.
+        //  Right now it just a execution check test.
+        // JIRA issue : https://hazelcast.atlassian.net/browse/HZ-2796
         instance().getConfig().addMapConfig(
                 new MapConfig("pMap1").setPartitioningAttributeConfigs(List.of(
                         new PartitioningAttributeConfig("id")

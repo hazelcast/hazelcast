@@ -136,7 +136,6 @@ import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
@@ -233,28 +232,26 @@ import static java.util.stream.Collectors.toList;
 public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
-    private final SqlConnectorCache connectorCache;
 
     private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;
     private final PlanExecutor planExecutor;
     private final RelationsStorage relationsStorage;
-    private final DataConnectionStorage dataConnectionStorage;
 
     private final ILogger logger;
 
     public CalciteSqlOptimizer(NodeEngine nodeEngine, QueryResultRegistry resultRegistry) {
         this.nodeEngine = nodeEngine;
-        this.connectorCache = new SqlConnectorCache(nodeEngine);
+        SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
 
         this.iMapResolver = new MetadataResolver(nodeEngine);
         this.relationsStorage = new RelationsStorage(nodeEngine);
-        this.dataConnectionStorage = new DataConnectionStorage(nodeEngine);
+        DataConnectionStorage dataConnectionStorage = new DataConnectionStorage(nodeEngine);
 
-        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, this.connectorCache);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, connectorCache);
         DataConnectionResolver dataConnectionResolver = dataConnectionCatalog(
                 nodeEngine.getDataConnectionService(),
-                this.dataConnectionStorage,
+                dataConnectionStorage,
                 nodeEngine.getHazelcastInstance().getConfig().getSecurityConfig().isEnabled()
         );
         this.tableResolvers = Arrays.asList(tableResolverImpl, dataConnectionResolver);
@@ -931,7 +928,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
         final Map<String, List<Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
 
-        RexBuilder b = HazelcastRexBuilder.INSTANCE;
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
 
         final Map<String, Table> tableMap = tableResolvers().stream()
