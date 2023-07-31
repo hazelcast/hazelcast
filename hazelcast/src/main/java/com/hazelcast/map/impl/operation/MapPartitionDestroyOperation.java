@@ -18,8 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.operation.steps.UtilSteps;
-import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
@@ -46,11 +44,6 @@ public class MapPartitionDestroyOperation extends AbstractMapLocalOperation
         PartitionContainer partitionContainer = mapContainer.getMapServiceContext()
                 .getPartitionContainer(getPartitionId());
         partitionContainer.destroyMap(mapContainer);
-    }
-
-    @Override
-    public Step getStartingStep() {
-        return UtilSteps.DIRECT_RUN_STEP;
     }
 
     @Override
