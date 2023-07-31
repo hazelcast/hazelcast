@@ -942,13 +942,12 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_tryUpdatingLightJobConfig_then_fail() throws InterruptedException {
-        DAG dag = new DAG().vertex(new Vertex("test", () -> new NoOutputSourceP()));
+    public void test_tryUpdatingLightJobConfig_then_fail() {
+        DAG dag = new DAG().vertex(new Vertex("test", () -> new MockP().streaming()));
 
         Job job = instance.get().getJet().newLightJob(dag);
         assertThatThrownBy(() -> job.updateConfig(new DeltaJobConfig()))
                 .hasMessage("not supported for light jobs: updateConfig");
-        NoOutputSourceP.executionStarted.await();
         cancelAndJoin(job);
     }
 

@@ -249,12 +249,12 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     @Probe(name = EVENT_METRIC_EVENT_SERVICE_EVENT_QUEUE_SIZE, level = MANDATORY)
     @Override
     public int getEventQueueSize() {
-        return eventExecutor.getWorkQueueSize();
+        return eventExecutor.getQueueSize();
     }
 
     @Probe(name = EVENT_METRIC_EVENT_SERVICE_EVENTS_PROCESSED, level = MANDATORY)
     private long eventsProcessed() {
-        return eventExecutor.processedCount();
+        return eventExecutor.getCompletedTaskCount();
     }
 
     @Override

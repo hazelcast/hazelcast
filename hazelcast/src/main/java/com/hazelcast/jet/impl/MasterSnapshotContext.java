@@ -179,7 +179,7 @@ class MasterSnapshotContext {
     }
 
     void tryBeginSnapshot() {
-        mc.coordinationService().submitToCoordinatorThread(() -> {
+        mc.coordinationService().submitToCoordinatorThread(mc.jobId(), () -> {
             final SnapshotRequest requestedSnapshot;
             mc.lock();
             long localExecutionId;
@@ -248,7 +248,7 @@ class MasterSnapshotContext {
             long snapshotId,
             SnapshotRequest requestedSnapshot
     ) {
-        mc.coordinationService().submitToCoordinatorThread(() -> {
+        mc.coordinationService().submitToCoordinatorThread(mc.jobId(), () -> {
             SnapshotPhase1Result mergedResult = new SnapshotPhase1Result();
             List<CompletableFuture<Void>> missingResponses = new ArrayList<>();
             for (Map.Entry<MemberInfo, Object> entry : responses) {
@@ -293,7 +293,7 @@ class MasterSnapshotContext {
             SnapshotPhase1Result mergedResult,
             List<CompletableFuture<Void>> missingResponses
     ) {
-        mc.coordinationService().submitToCoordinatorThread(() -> {
+        mc.coordinationService().submitToCoordinatorThread(mc.jobId(), () -> {
             final boolean isSuccess;
             boolean skipPhase2 = false;
             SnapshotStats stats;
@@ -479,7 +479,7 @@ class MasterSnapshotContext {
             SnapshotRequest requestedSnapshot,
             long startTime
     ) {
-        mc.coordinationService().submitToCoordinatorThread(() -> {
+        mc.coordinationService().submitToCoordinatorThread(mc.jobId(), () -> {
             if (executionId != mc.executionId()) {
                 LoggingUtil.logFine(logger, "%s: ignoring responses for snapshot %s phase 2: " +
                                 "the responses are from a different execution: %s. Responses: %s",

@@ -239,7 +239,7 @@ public class MasterJobContext {
         MembersView membersView = Util.getMembersView(mc.nodeEngine());
 
         mc.coordinationService()
-          .submitToCoordinatorThread(() -> {
+          .submitToCoordinatorThread(mc.jobId(), () -> {
               try {
                   executionStartTime = System.currentTimeMillis();
                   JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
@@ -288,7 +288,7 @@ public class MasterJobContext {
 
                   createExecutionPlans(dag, membersView)
                           .thenCompose(plans -> coordinator.submitToCoordinatorThread(
-                                  () -> initExecution(membersView, plans)
+                                  mc.jobId(), () -> initExecution(membersView, plans)
                           ))
                           .whenComplete((r, e) -> {
                               if (e != null) {
@@ -544,7 +544,7 @@ public class MasterJobContext {
 
     // Called as callback when all InitOperation invocations are done
     private void onInitStepCompleted(Collection<Map.Entry<MemberInfo, Object>> responses) {
-        mc.coordinationService().submitToCoordinatorThread(() -> {
+        mc.coordinationService().submitToCoordinatorThread(mc.jobId(), () -> {
             Throwable error = getErrorFromResponses("Init", responses);
             JobStatus status = mc.jobStatus();
             if (error == null && status == STARTING) {
@@ -739,7 +739,7 @@ public class MasterJobContext {
     }
 
     void finalizeExecution(@Nullable Throwable failure) {
-        mc.coordinationService().submitToCoordinatorThread(() -> {
+        mc.coordinationService().submitToCoordinatorThread(mc.jobId(), () -> {
             mc.lock();
             JobStatus status = mc.jobStatus();
             if (status == COMPLETED || status == FAILED) {
@@ -748,7 +748,7 @@ public class MasterJobContext {
             mc.unlock();
           })
           .thenComposeAsync(r -> completeVertices(failure))
-          .thenCompose(ignored -> mc.coordinationService().submitToCoordinatorThread(() -> {
+          .thenCompose(ignored -> mc.coordinationService().submitToCoordinatorThread(mc.jobId(), () -> {
             final Runnable nonSynchronizedAction;
             try {
                 mc.lock();
@@ -958,7 +958,7 @@ public class MasterJobContext {
     @Nonnull
     CompletableFuture<Void> gracefullyTerminate() {
         CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
-                () -> requestTermination(RESTART_GRACEFUL, false, false).f0());
+                mc.jobId(), () -> requestTermination(RESTART_GRACEFUL, false, false).f0());
         return future.thenCompose(Function.identity());
     }
 

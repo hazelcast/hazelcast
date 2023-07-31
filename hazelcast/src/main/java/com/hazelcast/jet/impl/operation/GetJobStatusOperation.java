@@ -25,8 +25,6 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-import static java.util.concurrent.CompletableFuture.completedFuture;
-
 public class GetJobStatusOperation extends AsyncJobOperation implements AllowedDuringPassiveState {
     private boolean isLightJob;
 
@@ -41,7 +39,7 @@ public class GetJobStatusOperation extends AsyncJobOperation implements AllowedD
     @Override
     public CompletableFuture<JobStatus> doRun() {
         if (isLightJob) {
-            return completedFuture(getJobCoordinationService().getLightJobStatus(jobId()));
+            return getJobCoordinationService().getLightJobStatus(jobId());
         } else {
             return getJobCoordinationService().getJobStatus(jobId());
         }

@@ -24,8 +24,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-import static java.util.concurrent.CompletableFuture.completedFuture;
-
 /**
  * Operation sent from client to coordinator member to terminate particular
  * job. See also {@link TerminateExecutionOperation}, which is sent from
@@ -49,8 +47,7 @@ public class TerminateJobOperation extends AsyncJobOperation {
     @Override
     public CompletableFuture<Void> doRun() {
         if (isLightJob) {
-            getJobCoordinationService().terminateLightJob(jobId(), true);
-            return completedFuture(null);
+            return getJobCoordinationService().terminateLightJob(jobId(), true);
         } else {
             return getJobCoordinationService().terminateJob(jobId(), terminationMode, true);
         }

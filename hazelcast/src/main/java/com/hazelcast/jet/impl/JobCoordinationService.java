@@ -32,6 +32,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
+import com.hazelcast.internal.util.executor.StripedCallable;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.DeltaJobConfig;
@@ -106,7 +107,7 @@ import java.util.stream.StreamSupport;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
+import static com.hazelcast.internal.util.executor.ExecutorType.STRIPED;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
@@ -200,7 +201,7 @@ public class JobCoordinationService {
         this.jobRepository = jobRepository;
 
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.register(COORDINATOR_EXECUTOR_NAME, COORDINATOR_THREADS_POOL_SIZE, Integer.MAX_VALUE, CACHED);
+        executionService.register(COORDINATOR_EXECUTOR_NAME, COORDINATOR_THREADS_POOL_SIZE, Integer.MAX_VALUE, STRIPED);
 
         // register metrics
         MetricsRegistry registry = nodeEngine.getMetricsRegistry();
@@ -233,7 +234,7 @@ public class JobCoordinationService {
             Subject subject
     ) {
         CompletableFuture<Void> res = new CompletableFuture<>();
-        submitToCoordinatorThread(() -> {
+        submitToCoordinatorThread(jobId, () -> {
             MasterContext masterContext;
             try {
                 assertIsMaster("Cannot submit job " + idToString(jobId) + " to non-master node");
@@ -323,41 +324,43 @@ public class JobCoordinationService {
             JobConfig jobConfig,
             Subject subject
     ) {
-        if (deserializedJobDefinition == null) {
-            deserializedJobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
-        }
+        return submitToCoordinatorThread(jobId, () -> {
+            Object jobDefinition = deserializedJobDefinition != null
+                    ? deserializedJobDefinition
+                    : nodeEngine().getSerializationService().toObject(serializedJobDefinition);
 
-        DAG dag;
-        if (deserializedJobDefinition instanceof DAG) {
-            dag = (DAG) deserializedJobDefinition;
-        } else {
-            dag = ((PipelineImpl) deserializedJobDefinition).toDag(pipelineToDagContext);
-        }
+            DAG dag;
+            if (jobDefinition instanceof DAG) {
+                dag = (DAG) jobDefinition;
+            } else {
+                dag = ((PipelineImpl) jobDefinition).toDag(pipelineToDagContext);
+            }
 
-        // First insert just a marker into the map. This is to prevent initializing the light job if the jobId
-        // was submitted twice. This can happen e.g. if the client retries.
-        Object oldContext = lightMasterContexts.putIfAbsent(jobId, UNINITIALIZED_LIGHT_JOB_MARKER);
-        if (oldContext != null) {
-            throw new JetException("duplicate jobId " + idToString(jobId));
-        }
+            // First insert just a marker into the map. This is to prevent initializing the light job if the jobId
+            // was submitted twice. This can happen e.g. if the client retries.
+            Object oldContext = lightMasterContexts.putIfAbsent(jobId, UNINITIALIZED_LIGHT_JOB_MARKER);
+            if (oldContext != null) {
+                throw new JetException("duplicate jobId " + idToString(jobId));
+            }
 
-        checkPermissions(subject, dag);
+            checkPermissions(subject, dag);
 
-        // Initialize and start the job. We do this before adding the actual
-        // LightMasterContext to the map to avoid possible races of the job initialization and cancellation.
-        return LightMasterContext.createContext(nodeEngine, this, dag, jobId, jobConfig, subject)
-                .thenComposeAsync(mc -> {
-                    Object oldCtx = lightMasterContexts.put(jobId, mc);
-                    assert oldCtx == UNINITIALIZED_LIGHT_JOB_MARKER;
-                    scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
+            // Initialize and start the job. We do this before adding the actual
+            // LightMasterContext to the map to avoid possible races of the job initialization and cancellation.
+            return LightMasterContext.createContext(nodeEngine, this, dag, jobId, jobConfig, subject)
+                    .thenComposeAsync(mc -> {
+                        Object oldCtx = lightMasterContexts.put(jobId, mc);
+                        assert oldCtx == UNINITIALIZED_LIGHT_JOB_MARKER;
+                        scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
 
-                    return mc.getCompletionFuture()
-                      .whenComplete((r, t) -> {
-                          Object removed = lightMasterContexts.remove(jobId);
-                          assert removed instanceof LightMasterContext : "LMC not found: " + removed;
-                          unscheduleJobTimeout(jobId);
-                      });
-                }, coordinationExecutor());
+                        return mc.getCompletionFuture()
+                                .whenComplete((r, t) -> {
+                                    Object removed = lightMasterContexts.remove(jobId);
+                                    assert removed instanceof LightMasterContext : "LMC not found: " + removed;
+                                    unscheduleJobTimeout(jobId);
+                                });
+                    }, coordinationExecutor());
+        }).thenCompose(identity());
     }
 
     public long getJobSubmittedCount() {
@@ -479,7 +482,8 @@ public class JobCoordinationService {
     }
 
     public CompletableFuture<Void> joinLightJob(long jobId) {
-        return getLightJob(jobId).getCompletionFuture();
+        return callWithLightJob(jobId, LightMasterContext::getCompletionFuture)
+                .thenCompose(identity());
     }
 
     public CompletableFuture<Void> terminateJob(long jobId, TerminationMode terminationMode, boolean userInitiated) {
@@ -520,8 +524,8 @@ public class JobCoordinationService {
         );
     }
 
-    public void terminateLightJob(long jobId, boolean userInitiated) {
-        getLightJob(jobId).requestTermination(userInitiated);
+    public CompletableFuture<Void> terminateLightJob(long jobId, boolean userInitiated) {
+        return runWithLightJob(jobId, mc -> mc.requestTermination(userInitiated));
     }
 
     /**
@@ -600,10 +604,11 @@ public class JobCoordinationService {
         });
     }
 
-    public JobStatus getLightJobStatus(long jobId) {
-        LightMasterContext mc = getLightJob(jobId);
-        CompletableFuture<Void> f = mc.getCompletionFuture();
-        return !f.isDone() ? RUNNING : f.isCompletedExceptionally() ? FAILED : COMPLETED;
+    public CompletableFuture<JobStatus> getLightJobStatus(long jobId) {
+        return callWithLightJob(jobId, mc -> {
+            CompletableFuture<Void> f = mc.getCompletionFuture();
+            return !f.isDone() ? RUNNING : f.isCompletedExceptionally() ? FAILED : COMPLETED;
+        });
     }
 
     /**
@@ -853,7 +858,7 @@ public class JobCoordinationService {
      */
     public CompletableFuture<UUID> addJobStatusListener(long jobId, boolean isLightJob, Registration registration) {
         if (isLightJob) {
-            return completedFuture(getLightJob(jobId).addStatusListener(registration));
+            return callWithLightJob(jobId, mc -> mc.addStatusListener(registration));
         }
         return callWithJob(jobId,
                 masterContext -> masterContext.addStatusListener(registration),
@@ -978,6 +983,10 @@ public class JobCoordinationService {
         );
     }
 
+    private CompletableFuture<Void> runWithLightJob(long jobId, Consumer<LightMasterContext> handler) {
+        return callWithLightJob(jobId, toNullFunction(handler));
+    }
+
     /**
      * Returns a function that passes its argument to the given {@code
      * consumer} and returns {@code null}.
@@ -999,7 +1008,7 @@ public class JobCoordinationService {
     ) {
         assertIsMaster("Cannot do this task on non-master. jobId=" + idToString(jobId));
 
-        return submitToCoordinatorThread(() -> {
+        return submitToCoordinatorThread(jobId, () -> {
             // when job is finalized, actions happen in this order:
             // - JobResult and JobMetrics are created
             // - JobRecord and JobExecutionRecord are deleted (asynchronously and in parallel)
@@ -1051,6 +1060,10 @@ public class JobCoordinationService {
         });
     }
 
+    private <T> CompletableFuture<T> callWithLightJob(long jobId, Function<LightMasterContext, T> handler) {
+        return submitToCoordinatorThread(jobId, () -> handler.apply(getLightJob(jobId)));
+    }
+
     void onMemberAdded(MemberImpl addedMember) {
         // the member can re-join with the same UUID in certain scenarios
         removedMembers.remove(addedMember.getUuid());
@@ -1085,7 +1098,7 @@ public class JobCoordinationService {
     @CheckReturnValue
     protected CompletableFuture<Void> completeJob(MasterContext masterContext, Throwable error, long completionTime,
                                                   boolean userCancelled) {
-        return submitToCoordinatorThread(() -> {
+        return submitToCoordinatorThread(masterContext.jobId(), () -> {
             // the order of operations is important.
             List<RawJobMetrics> jobMetrics =
                     masterContext.jobConfig().isStoreMetricsAfterJobCompletion()
@@ -1446,14 +1459,23 @@ public class JobCoordinationService {
         return nodeEngine.getExecutionService().getExecutor(COORDINATOR_EXECUTOR_NAME);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     CompletableFuture<Void> submitToCoordinatorThread(Runnable action) {
-        return submitToCoordinatorThread(() -> {
+        return submitToCoordinatorThread(-1, action);
+    }
+
+    CompletableFuture<Void> submitToCoordinatorThread(long jobId, Runnable action) {
+        return submitToCoordinatorThread(jobId, () -> {
             action.run();
             return null;
         });
     }
 
     <T> CompletableFuture<T> submitToCoordinatorThread(Callable<T> action) {
+        return submitToCoordinatorThread(-1, action);
+    }
+
+    <T> CompletableFuture<T> submitToCoordinatorThread(long jobId, Callable<T> action) {
         // if we are on our thread already, execute directly in a blocking way
         if (IS_JOB_COORDINATOR_THREAD.get()) {
             try {
@@ -1465,17 +1487,25 @@ public class JobCoordinationService {
             }
         }
 
-        Future<T> future = nodeEngine.getExecutionService().submit(COORDINATOR_EXECUTOR_NAME, () -> {
-            assert !IS_JOB_COORDINATOR_THREAD.get() : "flag already raised";
-            IS_JOB_COORDINATOR_THREAD.set(true);
-            try {
-                return action.call();
-            } catch (Throwable e) {
-                // most callers ignore the failure on the returned future, let's log it at least
-                logger.warning(null, e);
-                throw e;
-            } finally {
-                IS_JOB_COORDINATOR_THREAD.set(false);
+        Future<T> future = nodeEngine.getExecutionService().submit(COORDINATOR_EXECUTOR_NAME, new StripedCallable<>() {
+            @Override
+            public int getKey() {
+                return action instanceof StripedCallable ? ((StripedCallable<T>) action).getKey() : (int) jobId;
+            }
+
+            @Override
+            public T call() throws Exception {
+                assert !IS_JOB_COORDINATOR_THREAD.get() : "flag already raised";
+                IS_JOB_COORDINATOR_THREAD.set(true);
+                try {
+                    return action.call();
+                } catch (Throwable e) {
+                    // most callers ignore the failure on the returned future, let's log it at least
+                    logger.warning(null, e);
+                    throw e;
+                } finally {
+                    IS_JOB_COORDINATOR_THREAD.set(false);
+                }
             }
         });
         return nodeEngine.getExecutionService().asCompletableFuture(future);

@@ -33,6 +33,7 @@ import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.internal.util.executor.NamedThreadPoolExecutor;
 import com.hazelcast.internal.util.executor.PoolExecutorThreadFactory;
 import com.hazelcast.internal.util.executor.SingleExecutorThreadFactory;
+import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -196,7 +197,10 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private ManagedExecutorService createExecutor(String name, int poolSize, int queueCapacity,
                                                   ExecutorType type, ThreadFactory threadFactory) {
         ManagedExecutorService executor;
-        if (type == ExecutorType.CACHED) {
+        if (type == ExecutorType.STRIPED) {
+            String threadNamePrefix = getThreadNamePrefix(name);
+            executor = new StripedExecutor(name, logger, threadNamePrefix, poolSize, queueCapacity, true);
+        } else if (type == ExecutorType.CACHED) {
             if (threadFactory != null) {
                 throw new IllegalArgumentException("Cached executor can not be used with external thread factory");
             }

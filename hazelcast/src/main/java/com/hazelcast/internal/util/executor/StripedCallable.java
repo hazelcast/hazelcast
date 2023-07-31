@@ -16,21 +16,14 @@
 
 package com.hazelcast.internal.util.executor;
 
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.Callable;
 
-public enum ExecutorType {
-    /**
-     * Executor will use a {@link StripedExecutor} with fixed pool size.
-     */
-    STRIPED,
+/**
+ * Striped callable is used in {@link StripedExecutor}.
+ * Callable will run on associated thread depending on
+ * its key returned by {@link #getKey()} method.
+ */
+public interface StripedCallable<T> extends Callable<T> {
 
-    /**
-     * Executor will use a {@link ThreadPoolExecutor} with unlimited pool size shared with other CACHED executors.
-     */
-    CACHED,
-
-    /**
-     * Executor will have its own {@link ThreadPoolExecutor}.
-     */
-    CONCRETE
+    int getKey();
 }

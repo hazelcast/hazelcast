@@ -153,12 +153,12 @@ public class ClientListenerServiceImpl
 
     @Probe(name = CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE, level = MANDATORY)
     private int eventQueueSize() {
-        return eventExecutor.getWorkQueueSize();
+        return eventExecutor.getQueueSize();
     }
 
     @Probe(name = CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED, level = MANDATORY)
     private long eventsProcessed() {
-        return eventExecutor.processedCount();
+        return eventExecutor.getCompletedTaskCount();
     }
 
     public void handleEventMessage(ClientMessage clientMessage) {
