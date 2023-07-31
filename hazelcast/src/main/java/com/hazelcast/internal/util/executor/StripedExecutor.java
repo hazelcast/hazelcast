@@ -39,17 +39,16 @@ import static java.lang.Math.ceil;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * The StripedExecutor internally uses a stripe of queues and each queue has its own private worker-thread.
- * When a task is 'executed' on the StripedExecutor, the task is checked if it is a StripedRunnable. If it
- * is, the right worker is looked up and the task put in the queue of that worker. If the task is not a
- * StripedRunnable, a random worker is looked up.
+ * The StripedExecutor internally uses a stripe of queues and each queue has its own private
+ * worker-thread. When a task is 'executed' on the StripedExecutor, the task is checked if it
+ * is a StripedRunnable. If it is, the right worker is looked up and the task put in the queue
+ * of that worker. If the task is not a StripedRunnable, a random worker is looked up.
  * <p>
- * If the queue is full and the runnable implements TimeoutRunnable, then a configurable amount of blocking is
- * done on the queue. If the runnable doesn't implement TimeoutRunnable or when the blocking times out,
- * then the task is rejected and a RejectedExecutionException is thrown.
+ * If the queue is full and the runnable implements TimeoutRunnable, then a configurable amount
+ * of blocking is done on the queue. If the runnable doesn't implement TimeoutRunnable or when
+ * the blocking times out, then the task is rejected and a RejectedExecutionException is thrown.
  */
 public final class StripedExecutor implements Executor {
-
     public static final AtomicLong THREAD_ID_GENERATOR = new AtomicLong();
 
     private final int size;
@@ -77,9 +76,9 @@ public final class StripedExecutor implements Executor {
         this.size = threadCount;
         this.workers = new Worker[threadCount];
 
-        // `queueCapacity` is the given max capacity for this executor. Each worker in this executor should consume
-        // only a portion of that capacity. Otherwise we will have `threadCount * queueCapacity` instead of
-        // `queueCapacity`.
+        // `queueCapacity` is the given max capacity for this executor. Each worker in this
+        // executor should consume only a portion of that capacity. Otherwise, we will have
+        // `threadCount * queueCapacity` instead of `queueCapacity`.
         int perThreadMaxQueueCapacity = (int) ceil(1D * queueCapacity / threadCount);
         for (int i = 0; i < threadCount; i++) {
             Worker worker = new Worker(threadNamePrefix, perThreadMaxQueueCapacity);
@@ -177,7 +176,6 @@ public final class StripedExecutor implements Executor {
     }
 
     final class Worker extends Thread {
-
         private final BlockingQueue<Runnable> taskQueue;
         private final SwCounter processed = SwCounter.newSwCounter();
         private final int queueCapacity;
@@ -212,7 +210,7 @@ public final class StripedExecutor implements Executor {
 
         private long timeoutNanos(Runnable task) {
             if (task instanceof TimeoutRunnable) {
-                TimeoutRunnable r = ((TimeoutRunnable) task);
+                TimeoutRunnable r = (TimeoutRunnable) task;
                 return r.getTimeUnit().toNanos(r.getTimeout());
             } else {
                 return 0;
@@ -227,14 +225,14 @@ public final class StripedExecutor implements Executor {
                         Runnable task = taskQueue.take();
                         process(task);
                     } catch (InterruptedException ignore) {
-                        // we can safely ignore this exception since we'll check if the
-                        // striped executor is still alive in the next iteration of the loop.
+                        // We can safely ignore this exception since we'll check if the
+                        // executor is still alive in the next iteration of the loop.
                         ignore(ignore);
                     }
                 }
             } catch (Throwable t) {
-                //This should not happen because the process method is protected against failure.
-                //So if this happens, something very seriously is going wrong.
+                // This should not happen because the process method is protected against
+                // failure. So if this happens, something very seriously is going wrong.
                 logger.severe(getName() + " caught an exception", t);
             }
         }

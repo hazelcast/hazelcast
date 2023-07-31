@@ -16,13 +16,16 @@
 
 package com.hazelcast.internal.util.executor;
 
+import java.util.concurrent.ThreadPoolExecutor;
+
 public enum ExecutorType {
     /**
-     * Executor will use a ThreadPoolExecutor with unlimited pool size shared with other CACHED executors.
+     * Executor will use a {@link ThreadPoolExecutor} with unlimited pool size shared with other CACHED executors.
      */
     CACHED,
+
     /**
-     * Executor will have its own ThreadPoolExecutor.
+     * Executor will have its own {@link ThreadPoolExecutor}.
      */
     CONCRETE
 }

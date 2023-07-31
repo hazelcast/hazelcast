@@ -17,9 +17,9 @@
 package com.hazelcast.internal.util.executor;
 
 /**
- * Striped Runnable is used in StripedExecutor.
- * Runnable will run on associated thread depending on its key
- * returned by getKey method.
+ * Striped runnable is used in {@link StripedExecutor}.
+ * Runnable will run on associated thread depending on
+ * its key returned by {@link #getKey()} method.
  */
 public interface StripedRunnable extends Runnable {
 

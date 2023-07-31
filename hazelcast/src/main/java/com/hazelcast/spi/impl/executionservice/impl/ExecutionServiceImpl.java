@@ -63,7 +63,6 @@ import static java.lang.Thread.currentThread;
 
 @SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class ExecutionServiceImpl implements ExecutionService {
-
     private static final int CORE_POOL_SIZE = 3;
     private static final long KEEP_ALIVE_TIME = 60L;
     private static final long INITIAL_DELAY = 1000;
@@ -211,7 +210,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 String threadNamePrefix = createThreadPoolName(hzName, internalName);
                 threadFactory = new PoolExecutorThreadFactory(threadNamePrefix, classLoader);
             }
-
             NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,
                     KEEP_ALIVE_TIME, TimeUnit.SECONDS, new LinkedBlockingQueue<>(queueCapacity), threadFactory);
             pool.allowCoreThreadTimeOut(true);
