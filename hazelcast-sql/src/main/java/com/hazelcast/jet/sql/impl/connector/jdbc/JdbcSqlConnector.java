@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -323,10 +324,12 @@ public class JdbcSqlConnector implements SqlConnector {
         ProcessorSupplier processorSupplier = jdbcJoiner.createProcessorSupplier();
 
         String namePrefix = "nestedLoopReader(" + jdbcTable.getExternalNameList() + ")";
-        return new VertexWithInputConfig(context.getDag().newUniqueVertex(
+        DAG dag = context.getDag();
+        Vertex vertex = dag.newUniqueVertex(
                 namePrefix,
                 processorSupplier
-        ).localParallelism(1));
+        );
+        return new VertexWithInputConfig(vertex.localParallelism(1));
     }
 
     @Nonnull

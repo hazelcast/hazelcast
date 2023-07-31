@@ -19,41 +19,35 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 
+import javax.annotation.Nonnull;
+
 public class JdbcJoiner {
 
-    NestedLoopReaderParams nestedLoopReaderParams;
+    private final NestedLoopReaderParams nestedLoopReaderParams;
 
-    public JdbcJoiner(NestedLoopReaderParams nestedLoopReaderParams) {
+    public JdbcJoiner(@Nonnull NestedLoopReaderParams nestedLoopReaderParams) {
         this.nestedLoopReaderParams = nestedLoopReaderParams;
     }
 
     public ProcessorSupplier createProcessorSupplier() {
         ProcessorSupplier processorSupplier = null;
         JetJoinInfo joinInfo = nestedLoopReaderParams.getJoinInfo();
-        if (joinInfo.isInner()) {
-            if (!joinInfo.isEquiJoin()) {
-                // Indices are not given
-                processorSupplier = createInnerJoinFullScanProcessorSupplier();
-            } else if (joinInfo.isEquiJoin()) {
-                // Indices are given
-                processorSupplier = createInnerJoinIndexScanProcessorSupplier();
-            }
+
+        if (!joinInfo.isEquiJoin()) {
+            // Indices are not given
+            processorSupplier = createFullScanProcessorSupplier();
         }
         return processorSupplier;
     }
 
-    ProcessorSupplier createInnerJoinFullScanProcessorSupplier() {
-        SelectQueryBuilder builder = new SelectQueryBuilder(
+    ProcessorSupplier createFullScanProcessorSupplier() {
+        SelectQueryBuilder selectQueryBuilder = new SelectQueryBuilder(
                 nestedLoopReaderParams.getJdbcTable(),
                 nestedLoopReaderParams.getSqlDialect(),
                 nestedLoopReaderParams.getRexPredicate(),
                 nestedLoopReaderParams.getRexProjection()
         );
-        String query = builder.query();
-        return new JdbcJoinScanProcessorSupplier(nestedLoopReaderParams, query);
-    }
-
-    ProcessorSupplier createInnerJoinIndexScanProcessorSupplier() {
-        return null;
+        String selectQuery = selectQueryBuilder.query();
+        return new JdbcJoinFullScanProcessorSupplier(nestedLoopReaderParams, selectQuery);
     }
 }

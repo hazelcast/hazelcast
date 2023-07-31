@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -57,15 +58,31 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
         );
     }
 
+    private static String getWorkerName(int index) {
+        return "myworker" + index;
+    }
+
+    private static int getSSN(int index) {
+        return 207 + index;
+    }
+
+    private static String getInsertSQL(String tableName, int index) {
+        return String.format("INSERT INTO %s VALUES(%d, '%s', %d)",
+                tableName,
+                index,
+                getWorkerName(index),
+                getSSN(index)
+        );
+    }
+
     @Test
-    public void test_stream2BatchJoinAsNestedLoopJoinIsNotSupported() throws Exception {
+    public void test_stream2BatchJoinAsNestedLoopInnerJoin() throws Exception {
         String tableName = randomTableName();
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
-        String sql = String.format("INSERT INTO %s VALUES(1, 'myworker1', 208)", tableName);
-        executeJdbc(sql);
-
-        sql = String.format("INSERT INTO %s VALUES(2, 'myworker2', 209)", tableName);
-        executeJdbc(sql);
+        for (int index = 1; index < 3; index++) {
+            String sql = getInsertSQL(tableName, index);
+            executeJdbc(sql);
+        }
 
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -78,19 +95,58 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
         SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
                                                  "TABLE(GENERATE_STREAM(2)) t " +
-                                                 "JOIN " + tableName + " n ON t.v = n.id LIMIT 1");
-
-//        SqlResult sqlResult = sqlService.execute("SELECT n.id FROM " +
-//                                                 tableName + " n " +
-//                                                 "JOIN " + tableName + " n1 ON n.id = n1.ssn");
+                                                 "JOIN " + tableName + " n ON t.v = n.id LIMIT 2");
 
         Iterator<SqlRow> iterator = sqlResult.iterator();
         List<SqlRow> actualList = new ArrayList<>();
         iterator.forEachRemaining(actualList::add);
-        assertThat(actualList)
-                .extracting(sqlRow -> sqlRow.getObject("ssn")
-                )
-                .contains(208);
+
+        List<Object> ssnList = actualList.stream()
+                .map(sqlRow -> sqlRow.getObject("ssn"))
+                .collect(Collectors.toList());
+
+        assertThat(ssnList)
+                .contains(208, 209);
+    }
+
+    @Test
+    public void test_stream2BatchJoinAsNestedLoopLeftOuterJoin() throws Exception {
+        String tableName = randomTableName();
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
+        for (int index = 1; index < 3; index++) {
+            String sql = getInsertSQL(tableName, index);
+            executeJdbc(sql);
+        }
+
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                + " id INT, "
+                + " name VARCHAR, "
+                + " ssn INT "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                                 "TABLE(GENERATE_STREAM(2)) t " +
+                                                 "LEFT OUTER JOIN " + tableName + " n ON t.v = n.id LIMIT 6");
+
+        Iterator<SqlRow> iterator = sqlResult.iterator();
+        List<SqlRow> actualList = new ArrayList<>();
+        iterator.forEachRemaining(actualList::add);
+
+        List<Object> ssnList = actualList.stream()
+                .map(sqlRow -> sqlRow.getObject("ssn"))
+                .collect(Collectors.toList());
+
+        // id 0 : null
+        // id 1 : 208 null
+        // id 2 : 209 null
+        assertThat(ssnList)
+                .contains(null, null,
+                        208, null,
+                        209, null
+                );
     }
 
     @Test
