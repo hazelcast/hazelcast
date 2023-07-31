@@ -22,6 +22,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
@@ -76,6 +77,13 @@ public class AwaitMapFlushOperation
     @Override
     protected void runInternal() {
         // NOP
+    }
+
+    @Override
+    public Step getStartingStep() {
+        // keep starting step as null to prevent
+        // this operation running with StepRunner
+        return null;
     }
 
     @Override
