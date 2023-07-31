@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -60,7 +61,6 @@ public final class StripedExecutor implements ManagedExecutorService {
     private final int size;
     private final ILogger logger;
     private final Worker[] workers;
-    private final ManagedExecutorService[] specificWorkers;
     private final Random rand = new Random();
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -92,7 +92,6 @@ public final class StripedExecutor implements ManagedExecutorService {
         this.logger = logger;
         size = threadCount;
         workers = new Worker[size];
-        specificWorkers = new SpecificWorker[size];
 
         // `queueCapacity` is the given max capacity for this executor. Each worker in this
         // executor should consume only a portion of that capacity. Otherwise, we will have
@@ -105,7 +104,6 @@ public final class StripedExecutor implements ManagedExecutorService {
                 worker.start();
             }
             workers[i] = worker;
-            specificWorkers[i] = new SpecificWorker(worker);
         }
     }
 
@@ -208,35 +206,24 @@ public final class StripedExecutor implements ManagedExecutorService {
     @Nonnull
     @Override
     public <T> Future<T> submit(@Nonnull Callable<T> task) {
-        RunnableFuture<T> rf = new CompletableFutureTask<>(task);
-        execute(rf);
-        return rf;
+        return getWorker(null).submit(task);
     }
 
     @Nonnull
     @Override
     public <T> Future<T> submit(@Nonnull Runnable task, T result) {
-        RunnableFuture<T> rf = new CompletableFutureTask<>(task, result);
-        execute(rf);
-        return rf;
+        return getWorker(task).submit(task, result);
     }
 
     @Nonnull
     @Override
     public Future<?> submit(@Nonnull Runnable task) {
-        return submit(task, null);
+        return getWorker(task).submit(task);
     }
 
     @Override
     public void execute(@Nonnull Runnable task) {
-        checkNotNull(task, "task can't be null");
-
-        if (shutdown.get()) {
-            throw new RejectedExecutionException("Executor is shut down!");
-        }
-
-        Worker worker = getWorker(task);
-        worker.schedule(task);
+        getWorker(task).execute(task);
     }
 
     private Worker getWorker(Runnable task) {
@@ -251,8 +238,8 @@ public final class StripedExecutor implements ManagedExecutorService {
         return workers[index];
     }
 
-    public ManagedExecutorService useSpecificWorker(int key) {
-        return specificWorkers[hashToIndex(key, size)];
+    public ExecutorService useSpecificWorker(int key) {
+        return workers[hashToIndex(key, size)];
     }
 
     @Override
@@ -284,7 +271,7 @@ public final class StripedExecutor implements ManagedExecutorService {
         throw new UnsupportedOperationException();
     }
 
-    final class Worker extends Thread {
+    final class Worker extends Thread implements ExecutorService {
         private final BlockingQueue<Runnable> taskQueue;
         private final SwCounter processed = SwCounter.newSwCounter();
         private final int queueCapacity;
@@ -358,14 +345,6 @@ public final class StripedExecutor implements ManagedExecutorService {
         int getQueueCapacity() {
             return queueCapacity;
         }
-    }
-
-    private class SpecificWorker implements ManagedExecutorService {
-        final Worker worker;
-
-        SpecificWorker(Worker worker) {
-            this.worker = worker;
-        }
 
         @Override
         public void execute(@Nonnull Runnable task) {
@@ -375,105 +354,79 @@ public final class StripedExecutor implements ManagedExecutorService {
                 throw new RejectedExecutionException("Executor is shut down!");
             }
 
-            worker.schedule(task);
-        }
-
-        @Override
-        public String getName() {
-            return StripedExecutor.this.name;
-        }
-
-        @Override
-        public int getPoolSize() {
-            return StripedExecutor.this.getPoolSize();
-        }
-
-        @Override
-        public int getMaximumPoolSize() {
-            return StripedExecutor.this.getMaximumPoolSize();
-        }
-
-        @Override
-        public long getCompletedTaskCount() {
-            return StripedExecutor.this.getCompletedTaskCount();
-        }
-
-        @Override
-        public int getQueueSize() {
-            return StripedExecutor.this.getQueueSize();
-        }
-
-        @Override
-        public int getRemainingQueueCapacity() {
-            return StripedExecutor.this.getRemainingQueueCapacity();
-        }
-
-        @Override
-        public void shutdown() {
-            StripedExecutor.this.shutdown();
-        }
-
-        @Nonnull
-        @Override
-        public List<Runnable> shutdownNow() {
-            return StripedExecutor.this.shutdownNow();
+            schedule(task);
         }
 
         @Override
         public boolean isShutdown() {
-            return StripedExecutor.this.isShutdown();
+            return shutdown.get();
         }
 
         @Override
         public boolean isTerminated() {
-            return StripedExecutor.this.isTerminated();
-        }
-
-        @Override
-        public boolean awaitTermination(long timeout, @Nonnull TimeUnit unit) {
-            return StripedExecutor.this.awaitTermination(timeout, unit);
+            return shutdown.get() && taskQueue.isEmpty();
         }
 
         @Nonnull
         @Override
         public <T> Future<T> submit(@Nonnull Callable<T> task) {
-            return StripedExecutor.this.submit(task);
+            RunnableFuture<T> rf = new CompletableFutureTask<>(task);
+            execute(rf);
+            return rf;
         }
 
         @Nonnull
         @Override
         public <T> Future<T> submit(@Nonnull Runnable task, T result) {
-            return StripedExecutor.this.submit(task, result);
+            RunnableFuture<T> rf = new CompletableFutureTask<>(task, result);
+            execute(rf);
+            return rf;
         }
 
         @Nonnull
         @Override
         public Future<?> submit(@Nonnull Runnable task) {
-            return StripedExecutor.this.submit(task);
+            return submit(task, null);
+        }
+
+        @Override
+        public void shutdown() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Nonnull
+        @Override
+        public List<Runnable> shutdownNow() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean awaitTermination(long timeout, @Nonnull TimeUnit unit) {
+            throw new UnsupportedOperationException();
         }
 
         @Nonnull
         @Override
         public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks) {
-            return StripedExecutor.this.invokeAll(tasks);
+            throw new UnsupportedOperationException();
         }
 
         @Nonnull
         @Override
         public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks, long timeout,
                                              @Nonnull TimeUnit unit) {
-            return StripedExecutor.this.invokeAll(tasks, timeout, unit);
+            throw new UnsupportedOperationException();
         }
 
         @Nonnull
         @Override
         public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks) {
-            return StripedExecutor.this.invokeAny(tasks);
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks, long timeout, @Nonnull TimeUnit unit) {
-            return StripedExecutor.this.invokeAny(tasks, timeout, unit);
+            throw new UnsupportedOperationException();
         }
     }
 }
