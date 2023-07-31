@@ -18,6 +18,7 @@ package com.hazelcast.internal.util.executor;
 
 import com.hazelcast.spi.impl.DeserializingCompletableFuture;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RunnableFuture;
@@ -35,12 +36,12 @@ public class CompletableFutureTask<V> extends DeserializingCompletableFuture<V>
 
     private volatile Thread runner;
 
-    CompletableFutureTask(Callable<V> callable) {
+    CompletableFutureTask(@Nonnull Callable<V> callable) {
         super();
         this.callable = callable;
     }
 
-    CompletableFutureTask(Runnable runnable, V result) {
+    CompletableFutureTask(@Nonnull Runnable runnable, V result) {
         super();
         this.callable = Executors.callable(runnable, result);
     }
@@ -57,16 +58,9 @@ public class CompletableFutureTask<V> extends DeserializingCompletableFuture<V>
         }
 
         try {
-            Callable c = callable;
-            if (c != null) {
-                Object result = null;
-                try {
-                    result = c.call();
-                    complete((V) result);
-                } catch (Throwable ex) {
-                    completeExceptionally(ex);
-                }
-            }
+            complete(callable.call());
+        } catch (Throwable ex) {
+            completeExceptionally(ex);
         } finally {
             // runner must be non-null until state is settled in setResult() to
             // prevent concurrent calls to run()

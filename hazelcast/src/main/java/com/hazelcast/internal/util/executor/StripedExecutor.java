@@ -31,7 +31,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -73,14 +72,14 @@ public final class StripedExecutor implements Executor {
         checkPositive("queueCapacity", queueCapacity);
 
         this.logger = logger;
-        this.size = threadCount;
-        this.workers = new Worker[threadCount];
+        size = threadCount;
+        workers = new Worker[size];
 
         // `queueCapacity` is the given max capacity for this executor. Each worker in this
         // executor should consume only a portion of that capacity. Otherwise, we will have
-        // `threadCount * queueCapacity` instead of `queueCapacity`.
-        int perThreadMaxQueueCapacity = (int) ceil(1D * queueCapacity / threadCount);
-        for (int i = 0; i < threadCount; i++) {
+        // `size * queueCapacity` instead of `queueCapacity`.
+        int perThreadMaxQueueCapacity = (int) ceil((double) queueCapacity / size);
+        for (int i = 0; i < size; i++) {
             Worker worker = new Worker(threadNamePrefix, perThreadMaxQueueCapacity);
             if (!lazyThreads) {
                 worker.started.set(true);
@@ -109,7 +108,7 @@ public final class StripedExecutor implements Executor {
     public long processedCount() {
         long size = 0;
         for (Worker worker : workers) {
-            size += worker.processed.inc();
+            size += worker.processed.get();
         }
         return size;
     }
@@ -163,7 +162,7 @@ public final class StripedExecutor implements Executor {
     }
 
     public List<BlockingQueue<Runnable>> getTaskQueues() {
-        List<BlockingQueue<Runnable>> taskQueues = new ArrayList<BlockingQueue<Runnable>>(workers.length);
+        List<BlockingQueue<Runnable>> taskQueues = new ArrayList<>(workers.length);
         for (Worker worker : workers) {
             taskQueues.add(worker.taskQueue);
         }
@@ -183,7 +182,7 @@ public final class StripedExecutor implements Executor {
 
         private Worker(String threadNamePrefix, int queueCapacity) {
             super(threadNamePrefix + "-" + THREAD_ID_GENERATOR.incrementAndGet());
-            this.taskQueue = new LinkedBlockingQueue<Runnable>(queueCapacity);
+            this.taskQueue = new LinkedBlockingQueue<>(queueCapacity);
             this.queueCapacity = queueCapacity;
         }
 
@@ -222,12 +221,10 @@ public final class StripedExecutor implements Executor {
             try {
                 while (live) {
                     try {
-                        Runnable task = taskQueue.take();
-                        process(task);
-                    } catch (InterruptedException ignore) {
+                        process(taskQueue.take());
+                    } catch (InterruptedException ignored) {
                         // We can safely ignore this exception since we'll check if the
                         // executor is still alive in the next iteration of the loop.
-                        ignore(ignore);
                     }
                 }
             } catch (Throwable t) {

@@ -67,7 +67,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private static final long KEEP_ALIVE_TIME = 60L;
     private static final long INITIAL_DELAY = 1000;
     private static final long PERIOD = 100;
-    private static final int BEGIN_INDEX = 3;
     private static final long AWAIT_TIME = 3;
     private static final int POOL_MULTIPLIER = 2;
     private static final int QUEUE_MULTIPLIER = 100000;
@@ -85,7 +84,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final ConcurrentMap<String, ManagedExecutorService> durableExecutors = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors = new ConcurrentHashMap<>();
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
-            new ConstructorFunction<String, ManagedExecutorService>() {
+            new ConstructorFunction<>() {
                 @Override
                 public ManagedExecutorService createNew(String name) {
                     ExecutorConfig config = nodeEngine.getConfig().findExecutorConfig(name);
@@ -94,7 +93,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 }
             };
     private final ConstructorFunction<String, ManagedExecutorService> durableConstructor =
-            new ConstructorFunction<String, ManagedExecutorService>() {
+            new ConstructorFunction<>() {
                 @Override
                 public ManagedExecutorService createNew(String name) {
                     DurableExecutorConfig cfg = nodeEngine.getConfig().findDurableExecutorConfig(name);
@@ -102,7 +101,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 }
             };
     private final ConstructorFunction<String, ManagedExecutorService> scheduledDurableConstructor =
-            new ConstructorFunction<String, ManagedExecutorService>() {
+            new ConstructorFunction<>() {
                 @Override
                 public ManagedExecutorService createNew(String name) {
                     ScheduledExecutorConfig cfg = nodeEngine.getConfig().findScheduledExecutorConfig(name);
@@ -205,9 +204,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         } else if (type == ExecutorType.CONCRETE) {
             if (threadFactory == null) {
                 ClassLoader classLoader = nodeEngine.getConfigClassLoader();
-                String hzName = nodeEngine.getHazelcastInstance().getName();
-                String internalName = name.startsWith("hz:") ? name.substring(BEGIN_INDEX) : name;
-                String threadNamePrefix = createThreadPoolName(hzName, internalName);
+                String threadNamePrefix = getThreadNamePrefix(name);
                 threadFactory = new PoolExecutorThreadFactory(threadNamePrefix, classLoader);
             }
             NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,
@@ -218,6 +215,12 @@ public final class ExecutionServiceImpl implements ExecutionService {
             throw new IllegalArgumentException("Unknown executor type: " + type);
         }
         return executor;
+    }
+
+    private String getThreadNamePrefix(String executorName) {
+        String hzName = nodeEngine.getHazelcastInstance().getName();
+        String internalName = executorName.replace("hz:", "");
+        return createThreadPoolName(hzName, internalName);
     }
 
     @Override
