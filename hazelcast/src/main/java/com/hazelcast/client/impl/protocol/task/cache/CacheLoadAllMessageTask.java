@@ -27,6 +27,7 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.SecurityInterceptorConstants;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import javax.cache.CacheException;
@@ -96,7 +97,7 @@ public class CacheLoadAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "loadAll";
+        return SecurityInterceptorConstants.LOAD_ALL;
     }
 
     @Override
