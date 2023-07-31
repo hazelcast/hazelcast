@@ -26,12 +26,14 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.ResultIterator.HasNextResult;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SuppressWarnings("resource")
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlUnionTest extends SqlTestSupport {
     private IMap<Integer, Person> map1;
@@ -258,27 +261,31 @@ public class SqlUnionTest extends SqlTestSupport {
 
     @Test
     public void prunableUnionAllTest() {
+        String map1Name = randomName();
+        String map2Name = randomName();
         instance().getConfig().addMapConfig(
-                new MapConfig("pMap1").setPartitioningAttributeConfigs(List.of(
+                new MapConfig(map1Name).setPartitioningAttributeConfigs(List.of(
                         new PartitioningAttributeConfig("id")
                 )));
         instance().getConfig().addMapConfig(
-                new MapConfig("pMap2").setPartitioningAttributeConfigs(List.of(
+                new MapConfig(map2Name).setPartitioningAttributeConfigs(List.of(
                         new PartitioningAttributeConfig("id")
                 )));
 
-        IMap<Person, String> prunableMap1 = instance().getMap("pMap1");
-        IMap<Person, String> prunableMap2 = instance().getMap("pMap2");
+        IMap<Person, String> prunableMap1 = instance().getMap(map1Name);
+        IMap<Person, String> prunableMap2 = instance().getMap(map2Name);
 
-        createMapping("pMap1", Person.class, String.class);
-        createMapping("pMap2", Person.class, String.class);
+        createMapping(map1Name, Person.class, String.class);
+        createMapping(map2Name, Person.class, String.class);
 
         for (int i = 0; i < 5; ++i) {
             prunableMap1.put(new Person(i, "ABC" + i), "" + i);
             prunableMap2.put(new Person(i, "ABC" + i), "" + i);
         }
 
-        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION ALL (SELECT this FROM pMap2 WHERE id = 1)";
+        String sql = "(SELECT this FROM " + map1Name + " WHERE id = 1) " +
+                "UNION ALL " +
+                "(SELECT this FROM " + map2Name + " WHERE id = 1)";
         expected.add(new Row("1"));
         expected.add(new Row("1"));
 
@@ -292,27 +299,32 @@ public class SqlUnionTest extends SqlTestSupport {
         //  easily may miss that fact during testing.
         //  Right now it just a execution check test.
         // https://hazelcast.atlassian.net/browse/HZ-2796
+        String map1Name = randomName();
+        String map2Name = randomName();
         instance().getConfig().addMapConfig(
-                new MapConfig("pMap1").setPartitioningAttributeConfigs(List.of(
+                new MapConfig(map1Name).setPartitioningAttributeConfigs(List.of(
                         new PartitioningAttributeConfig("id")
                 )));
         instance().getConfig().addMapConfig(
-                new MapConfig("pMap2").setPartitioningAttributeConfigs(List.of(
+                new MapConfig(map2Name).setPartitioningAttributeConfigs(List.of(
                         new PartitioningAttributeConfig("id")
                 )));
 
-        IMap<Person, String> prunableMap1 = instance().getMap("pMap1");
-        IMap<Person, String> prunableMap2 = instance().getMap("pMap2");
+        IMap<Person, String> prunableMap1 = instance().getMap(map1Name);
+        IMap<Person, String> prunableMap2 = instance().getMap(map2Name);
 
-        createMapping("pMap1", Person.class, String.class);
-        createMapping("pMap2", Person.class, String.class);
+        createMapping(map1Name, Person.class, String.class);
+        createMapping(map2Name, Person.class, String.class);
 
         for (int i = 0; i < 5; ++i) {
             prunableMap1.put(new Person(i, "ABC" + i), "" + i);
             prunableMap2.put(new Person(i, "ABC" + i), "" + i);
         }
 
-        String sql = "(SELECT this FROM pMap1 WHERE id = 1) UNION (SELECT this FROM pMap2 WHERE id = 1)";
+        String sql = "(SELECT this FROM " + map1Name + " WHERE id = 1) " +
+                "UNION " +
+                "(SELECT this FROM " + map2Name + " WHERE id = 1)";
+
         expected.add(new Row("1"));
 
         assertRowsAnyOrder(sql, expected);
