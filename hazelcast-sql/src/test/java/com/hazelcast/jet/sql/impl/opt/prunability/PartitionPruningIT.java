@@ -130,7 +130,7 @@ public class PartitionPruningIT extends SqlTestSupport {
     }
 
     @Test
-    public void test_partitionAwareKeyNonMappedShouldNotBePruned() {
+    public void test_partitionAwareKeyNonMappedShouldBePruned() {
         instance().getSql().execute("CREATE MAPPING test4 TYPE IMap OPTIONS ("
                 + "'valueFormat'='varchar', "
                 + "'keyFormat'='java', "

@@ -75,6 +75,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
@@ -555,6 +556,10 @@ public class PlanExecutor {
                     }
 
                     partitionKeyComponents[i] = perMapCandidate.get(attribute).eval(null, evalContext);
+                    // handling case of __key = ? where the parameter is an PartitionAware OBJECT.
+                    if (partitionKeyComponents[i] instanceof PartitionAware) {
+                        partitionKeyComponents[i] = ((PartitionAware<?>) partitionKeyComponents[i]).getPartitionKey();
+                    }
                 }
 
                 final Partition partition = hazelcastInstance.getPartitionService().getPartition(
