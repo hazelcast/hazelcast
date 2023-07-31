@@ -32,7 +32,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
-import com.hazelcast.internal.util.executor.StripedCallable;
+import com.hazelcast.internal.util.executor.StripedExecutor;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.DeltaJobConfig;
@@ -359,7 +359,7 @@ public class JobCoordinationService {
                                     assert removed instanceof LightMasterContext : "LMC not found: " + removed;
                                     unscheduleJobTimeout(jobId);
                                 });
-                    }, coordinationExecutor());
+                    }, coordinationExecutor(jobId));
         }).thenCompose(identity());
     }
 
@@ -1459,6 +1459,11 @@ public class JobCoordinationService {
         return nodeEngine.getExecutionService().getExecutor(COORDINATOR_EXECUTOR_NAME);
     }
 
+    ManagedExecutorService coordinationExecutor(long jobId) {
+        return ((StripedExecutor) nodeEngine.getExecutionService().getExecutor(COORDINATOR_EXECUTOR_NAME))
+                .useSpecificWorker((int) jobId);
+    }
+
     @SuppressWarnings("UnusedReturnValue")
     CompletableFuture<Void> submitToCoordinatorThread(Runnable action) {
         return submitToCoordinatorThread(-1, action);
@@ -1487,25 +1492,17 @@ public class JobCoordinationService {
             }
         }
 
-        Future<T> future = nodeEngine.getExecutionService().submit(COORDINATOR_EXECUTOR_NAME, new StripedCallable<>() {
-            @Override
-            public int getKey() {
-                return action instanceof StripedCallable ? ((StripedCallable<T>) action).getKey() : (int) jobId;
-            }
-
-            @Override
-            public T call() throws Exception {
-                assert !IS_JOB_COORDINATOR_THREAD.get() : "flag already raised";
-                IS_JOB_COORDINATOR_THREAD.set(true);
-                try {
-                    return action.call();
-                } catch (Throwable e) {
-                    // most callers ignore the failure on the returned future, let's log it at least
-                    logger.warning(null, e);
-                    throw e;
-                } finally {
-                    IS_JOB_COORDINATOR_THREAD.set(false);
-                }
+        Future<T> future = (jobId != -1 ? coordinationExecutor(jobId) : coordinationExecutor()).submit(() -> {
+            assert !IS_JOB_COORDINATOR_THREAD.get() : "flag already raised";
+            IS_JOB_COORDINATOR_THREAD.set(true);
+            try {
+                return action.call();
+            } catch (Throwable e) {
+                // most callers ignore the failure on the returned future, let's log it at least
+                logger.warning(null, e);
+                throw e;
+            } finally {
+                IS_JOB_COORDINATOR_THREAD.set(false);
             }
         });
         return nodeEngine.getExecutionService().asCompletableFuture(future);

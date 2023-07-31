@@ -60,6 +60,7 @@ public final class StripedExecutor implements ManagedExecutorService {
     private final int size;
     private final ILogger logger;
     private final Worker[] workers;
+    private final ManagedExecutorService[] specificWorkers;
     private final Random rand = new Random();
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -91,6 +92,7 @@ public final class StripedExecutor implements ManagedExecutorService {
         this.logger = logger;
         size = threadCount;
         workers = new Worker[size];
+        specificWorkers = new SpecificWorker[size];
 
         // `queueCapacity` is the given max capacity for this executor. Each worker in this
         // executor should consume only a portion of that capacity. Otherwise, we will have
@@ -103,6 +105,7 @@ public final class StripedExecutor implements ManagedExecutorService {
                 worker.start();
             }
             workers[i] = worker;
+            specificWorkers[i] = new SpecificWorker(worker);
         }
     }
 
@@ -237,16 +240,19 @@ public final class StripedExecutor implements ManagedExecutorService {
     }
 
     private Worker getWorker(Runnable task) {
-        int key = -1;
+        int key;
         if (task instanceof StripedRunnable) {
             key = ((StripedRunnable) task).getKey();
-        }
-        if (key == -1) {
+        } else {
             key = rand.nextInt();
         }
 
         int index = hashToIndex(key, size);
         return workers[index];
+    }
+
+    public ManagedExecutorService useSpecificWorker(int key) {
+        return specificWorkers[hashToIndex(key, size)];
     }
 
     @Override
@@ -351,6 +357,123 @@ public final class StripedExecutor implements ManagedExecutorService {
         // used in tests.
         int getQueueCapacity() {
             return queueCapacity;
+        }
+    }
+
+    private class SpecificWorker implements ManagedExecutorService {
+        final Worker worker;
+
+        SpecificWorker(Worker worker) {
+            this.worker = worker;
+        }
+
+        @Override
+        public void execute(@Nonnull Runnable task) {
+            checkNotNull(task, "task can't be null");
+
+            if (shutdown.get()) {
+                throw new RejectedExecutionException("Executor is shut down!");
+            }
+
+            worker.schedule(task);
+        }
+
+        @Override
+        public String getName() {
+            return StripedExecutor.this.name;
+        }
+
+        @Override
+        public int getPoolSize() {
+            return StripedExecutor.this.getPoolSize();
+        }
+
+        @Override
+        public int getMaximumPoolSize() {
+            return StripedExecutor.this.getMaximumPoolSize();
+        }
+
+        @Override
+        public long getCompletedTaskCount() {
+            return StripedExecutor.this.getCompletedTaskCount();
+        }
+
+        @Override
+        public int getQueueSize() {
+            return StripedExecutor.this.getQueueSize();
+        }
+
+        @Override
+        public int getRemainingQueueCapacity() {
+            return StripedExecutor.this.getRemainingQueueCapacity();
+        }
+
+        @Override
+        public void shutdown() {
+            StripedExecutor.this.shutdown();
+        }
+
+        @Nonnull
+        @Override
+        public List<Runnable> shutdownNow() {
+            return StripedExecutor.this.shutdownNow();
+        }
+
+        @Override
+        public boolean isShutdown() {
+            return StripedExecutor.this.isShutdown();
+        }
+
+        @Override
+        public boolean isTerminated() {
+            return StripedExecutor.this.isTerminated();
+        }
+
+        @Override
+        public boolean awaitTermination(long timeout, @Nonnull TimeUnit unit) {
+            return StripedExecutor.this.awaitTermination(timeout, unit);
+        }
+
+        @Nonnull
+        @Override
+        public <T> Future<T> submit(@Nonnull Callable<T> task) {
+            return StripedExecutor.this.submit(task);
+        }
+
+        @Nonnull
+        @Override
+        public <T> Future<T> submit(@Nonnull Runnable task, T result) {
+            return StripedExecutor.this.submit(task, result);
+        }
+
+        @Nonnull
+        @Override
+        public Future<?> submit(@Nonnull Runnable task) {
+            return StripedExecutor.this.submit(task);
+        }
+
+        @Nonnull
+        @Override
+        public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks) {
+            return StripedExecutor.this.invokeAll(tasks);
+        }
+
+        @Nonnull
+        @Override
+        public <T> List<Future<T>> invokeAll(@Nonnull Collection<? extends Callable<T>> tasks, long timeout,
+                                             @Nonnull TimeUnit unit) {
+            return StripedExecutor.this.invokeAll(tasks, timeout, unit);
+        }
+
+        @Nonnull
+        @Override
+        public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks) {
+            return StripedExecutor.this.invokeAny(tasks);
+        }
+
+        @Override
+        public <T> T invokeAny(@Nonnull Collection<? extends Callable<T>> tasks, long timeout, @Nonnull TimeUnit unit) {
+            return StripedExecutor.this.invokeAny(tasks, timeout, unit);
         }
     }
 }

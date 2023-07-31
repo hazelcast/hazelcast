@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
 public class CompletableFutureTask<V> extends DeserializingCompletableFuture<V>
-        implements RunnableFuture<V>, StripedRunnable {
+        implements RunnableFuture<V> {
 
     private static final AtomicReferenceFieldUpdater<CompletableFutureTask, Thread> RUNNER
             = newUpdater(CompletableFutureTask.class, Thread.class, "runner");
@@ -44,11 +44,6 @@ public class CompletableFutureTask<V> extends DeserializingCompletableFuture<V>
     CompletableFutureTask(@Nonnull Runnable runnable, V result) {
         super();
         this.callable = Executors.callable(runnable, result);
-    }
-
-    @Override
-    public int getKey() {
-        return callable instanceof StripedCallable ? ((StripedCallable<V>) callable).getKey() : -1;
     }
 
     @Override
