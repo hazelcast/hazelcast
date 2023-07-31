@@ -218,8 +218,8 @@ public class KafkaSqlConnector implements SqlConnector {
     }
 
     @Override
-    public Set<String> secureConnectorOptions() {
-        Set<String> set = SqlConnector.super.secureConnectorOptions();
+    public Set<String> nonSensitiveConnectorOptions() {
+        Set<String> set = SqlConnector.super.nonSensitiveConnectorOptions();
         set.addAll(Set.of(
                 OPTION_BOOTSTRAP_SERVERS,
                 OPTION_OFFSET_RESET

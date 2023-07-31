@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -89,12 +90,12 @@ public class MappingsTable extends InfoSchemaTable {
         for (Mapping mapping : mappings) {
             Map<String, String> opts = mapping.options();
             if (securityEnabled) {
-                opts = new HashMap<>(opts);
-                SqlConnector sqlConnector = sqlConnectorCache.forType(mapping.connectorType());
-                Set<String> secureConnectorOptions = sqlConnector.secureConnectorOptions();
-                for (String key : mapping.options().keySet()) {
-                    if (!secureConnectorOptions.contains(key)) {
-                        opts.remove(key);
+                opts = new HashMap<>();
+                final SqlConnector sqlConnector = sqlConnectorCache.forType(mapping.connectorType());
+                final Set<String> secureConnectorOptions = sqlConnector.nonSensitiveConnectorOptions();
+                for (Entry<String, String> e : mapping.options().entrySet()) {
+                    if (secureConnectorOptions.contains(e.getKey())) {
+                        opts.put(e.getKey(), e.getValue());
                     }
                 }
             }

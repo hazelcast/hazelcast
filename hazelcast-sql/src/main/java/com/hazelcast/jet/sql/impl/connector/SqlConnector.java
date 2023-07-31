@@ -39,6 +39,7 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -498,31 +499,32 @@ public interface SqlConnector {
     }
 
     /**
-     * @return
+     * Return the set of options that are not sensitive
+     * to be displayed by querying {@code information_schema}.
      */
-    default Set<String> secureConnectorOptions() {
-        return Set.of(
-                OPTION_FORMAT,
-                OPTION_KEY_FORMAT,
-                OPTION_VALUE_FORMAT,
-                OPTION_KEY_CLASS,
-                OPTION_VALUE_CLASS,
-                OPTION_KEY_FACTORY_ID,
-                OPTION_KEY_CLASS_ID,
-                OPTION_KEY_CLASS_VERSION,
-                OPTION_VALUE_FACTORY_ID,
-                OPTION_VALUE_CLASS_ID,
-                OPTION_VALUE_CLASS_VERSION,
-                OPTION_KEY_COMPACT_TYPE_NAME,
-                OPTION_VALUE_COMPACT_TYPE_NAME,
-                OPTION_KEY_AVRO_RECORD_NAME,
-                OPTION_VALUE_AVRO_RECORD_NAME,
-                OPTION_TYPE_JAVA_CLASS,
-                OPTION_TYPE_COMPACT_TYPE_NAME,
-                OPTION_TYPE_PORTABLE_FACTORY_ID,
-                OPTION_TYPE_PORTABLE_CLASS_ID,
-                OPTION_TYPE_PORTABLE_CLASS_VERSION
-        );
+    default Set<String> nonSensitiveConnectorOptions() {
+        Set<String> options = new HashSet<>();
+        options.add(OPTION_FORMAT);
+        options.add(OPTION_KEY_FORMAT);
+        options.add(OPTION_VALUE_FORMAT);
+        options.add(OPTION_KEY_CLASS);
+        options.add(OPTION_VALUE_CLASS);
+        options.add(OPTION_KEY_FACTORY_ID);
+        options.add(OPTION_KEY_CLASS_ID);
+        options.add(OPTION_KEY_CLASS_VERSION);
+        options.add(OPTION_VALUE_FACTORY_ID);
+        options.add(OPTION_VALUE_CLASS_ID);
+        options.add(OPTION_VALUE_CLASS_VERSION);
+        options.add(OPTION_KEY_COMPACT_TYPE_NAME);
+        options.add(OPTION_VALUE_COMPACT_TYPE_NAME);
+        options.add(OPTION_KEY_AVRO_RECORD_NAME);
+        options.add(OPTION_VALUE_AVRO_RECORD_NAME);
+        options.add(OPTION_TYPE_JAVA_CLASS);
+        options.add(OPTION_TYPE_COMPACT_TYPE_NAME);
+        options.add(OPTION_TYPE_PORTABLE_FACTORY_ID);
+        options.add(OPTION_TYPE_PORTABLE_CLASS_ID);
+        options.add(OPTION_TYPE_PORTABLE_CLASS_VERSION);
+        return options;
     }
 
     interface DagBuildContext {
