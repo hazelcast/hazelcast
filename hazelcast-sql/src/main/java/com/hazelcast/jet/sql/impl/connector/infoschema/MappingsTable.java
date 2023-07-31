@@ -26,12 +26,12 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -90,7 +90,7 @@ public class MappingsTable extends InfoSchemaTable {
         for (Mapping mapping : mappings) {
             Map<String, String> opts = mapping.options();
             if (securityEnabled) {
-                opts = new HashMap<>();
+                opts = new TreeMap<>();
                 final SqlConnector sqlConnector = sqlConnectorCache.forType(mapping.connectorType());
                 final Set<String> secureConnectorOptions = sqlConnector.nonSensitiveConnectorOptions();
                 for (Entry<String, String> e : mapping.options().entrySet()) {
