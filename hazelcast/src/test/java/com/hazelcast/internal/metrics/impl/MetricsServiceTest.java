@@ -31,6 +31,7 @@ import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
@@ -70,7 +71,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -98,9 +99,11 @@ public class MetricsServiceTest extends HazelcastTestSupport {
 
     private MetricsService metricsService;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void setUp() {
-        initMocks(this);
+        openMocks = openMocks(this);
 
         metricsRegistry = new MetricsRegistryImpl(loggerMock, ProbeLevel.INFO);
 
@@ -139,6 +142,8 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         if (executionService != null) {
             executionService.shutdown();
         }
+
+        MockUtil.closeMocks(openMocks);
     }
 
     @Test

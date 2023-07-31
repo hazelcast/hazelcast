@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 
 import java.util.Collection;
 import java.util.List;
@@ -59,12 +58,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SuppressWarnings("ConstantConditions")
 public class SecondsBasedEntryTaskSchedulerTest {
 
-    @Mock
-    private TaskScheduler taskScheduler = mock(TaskScheduler.class);
+    private final TaskScheduler taskScheduler = mock(TaskScheduler.class);
 
-    @Mock
     @SuppressWarnings("unchecked")
-    private ScheduledEntryProcessor<String, String> entryProcessor = mock(ScheduledEntryProcessor.class);
+    private final ScheduledEntryProcessor<String, String> entryProcessor = mock(ScheduledEntryProcessor.class);
 
     private SecondsBasedEntryTaskScheduler<String, String> scheduler;
 

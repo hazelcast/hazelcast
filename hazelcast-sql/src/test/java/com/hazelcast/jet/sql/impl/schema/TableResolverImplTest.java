@@ -21,6 +21,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.SqlExternalResource;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Mapping;
@@ -30,12 +31,12 @@ import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
@@ -53,6 +54,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -81,14 +83,21 @@ public class TableResolverImplTest {
     @Mock
     private LifecycleService lifecycleService;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void before() {
-        MockitoAnnotations.openMocks(this);
+        openMocks = openMocks(this);
 
         when(nodeEngine.getHazelcastInstance()).thenReturn(hazelcastInstance);
         when(hazelcastInstance.getLifecycleService()).thenReturn(lifecycleService);
         catalog = new TableResolverImpl(nodeEngine, relationsStorage, connectorCache);
         catalog.registerListener(listener);
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     // region mapping storage tests
