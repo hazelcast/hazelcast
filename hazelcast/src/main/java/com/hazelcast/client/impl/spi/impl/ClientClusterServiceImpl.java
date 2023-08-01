@@ -77,7 +77,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     private final ILogger logger;
     private final LifecycleService lifecycleService;
     private final UUID lifecycleListenerID;
-    private boolean clientConnected;
+    private volatile boolean clientConnected;
     private final Object clusterViewLock = new Object();
     //read and written under clusterViewLock
     private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
