@@ -248,9 +248,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                 .map(sqlRow -> sqlRow.getObject("ssn"))
                 .collect(Collectors.toList());
 
-        // id 0 : null
-        // id 1 : 208 null
-        // id 2 : 209 null
+        // All null because table is empty
         assertThat(ssnList)
                 .contains(null, null,
                         null, null,
