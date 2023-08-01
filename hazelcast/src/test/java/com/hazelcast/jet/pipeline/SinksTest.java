@@ -303,8 +303,7 @@ public class SinksTest extends PipelineTestSupport {
     public void remoteReplicatedMap_dataConnectionName() {
         // Given
         List<Integer> input = sequence(itemCount);
-        putToMap(remoteHz.getReplicatedMap(srcName), input);
-
+        BatchSource<Integer> source1 = TestSources.items(input);
         // When
         String dataConnectionName = "remoteHz";
         hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
@@ -312,11 +311,11 @@ public class SinksTest extends PipelineTestSupport {
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
         Sink<Entry<String, Integer>> sink = Sinks.remoteReplicatedMap(sinkName, dataConnectionName);
-
-        // Then
-        p.readFrom(Sources.<String, Integer>remoteReplicatedMap(srcName, dataConnectionName))
+        p.readFrom(source1)
+                .map(i -> entry(String.valueOf(i), i))
                 .writeTo(sink);
         execute();
+        // Then
         List<Entry<String, Integer>> expected = input.stream()
                 .map(i -> entry(String.valueOf(i), i))
                 .collect(toList());
