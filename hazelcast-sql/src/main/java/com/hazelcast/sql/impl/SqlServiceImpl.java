@@ -266,7 +266,7 @@ public class SqlServiceImpl implements InternalSqlService {
         return plan.execute(queryId, args0, timeout);
     }
 
-    private SqlPlan prepare(String schema, String sql, List<Object> arguments, SqlExpectedResultType expectedResultType) {
+    public SqlPlan prepare(String schema, String sql, List<Object> arguments, SqlExpectedResultType expectedResultType) {
         List<List<String>> searchPaths = prepareSearchPaths(schema);
         PlanKey planKey = new PlanKey(searchPaths, sql);
         SqlPlan plan = planCache.get(planKey);
