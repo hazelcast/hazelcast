@@ -651,29 +651,28 @@ public final class Sources {
     ) {
         String xmlConfig = ImdgUtil.asXmlString(clientConfig);
         return SourceBuilder.batch("replicatedMapSource(" + replicatedMapName + ')',
-                                    context -> new RMapReader<K, V>(
+                                    context -> new RemoteReplicatedMapReader<K, V>(
                                             replicatedMapName,
                                             dataConnectionName,
                                             xmlConfig,
                                             batchSize,
                                             context
                                     ))
-                            .<Entry<K, V>>fillBufferFn(RMapReader::fillBufferFn)
-                            .destroyFn(RMapReader::destroy)
+                            .<Entry<K, V>>fillBufferFn(RemoteReplicatedMapReader::fillBufferFn)
+                            .destroyFn(RemoteReplicatedMapReader::destroy)
                             .build();
     }
 
-    private static class RMapReader<K, V> {
+    private static class RemoteReplicatedMapReader<K, V> {
         private final String replicatedMapName;
         private final int batchSize;
 
         private HazelcastInstance client;
         private Iterator<Map.Entry<K, V>> iterator;
 
-        RMapReader(String replicatedMapName, String dataConnectionName, String clientXml,
-                   int batchSize, Context context) {
+        RemoteReplicatedMapReader(String replicatedMapName, String dataConnectionName, String clientXml,
+                                  int batchSize, Context context) {
             this.replicatedMapName = replicatedMapName;
-            this.batchSize = batchSize;
 
             if (dataConnectionName == null && clientXml == null) {
                 throw new IllegalArgumentException("Either dataConnectionName or clientConfig must be provided. "
@@ -692,6 +691,7 @@ public final class Sources {
             } else {
                 this.client = newHazelcastClient(asClientConfig(clientXml));
             }
+            this.batchSize = batchSize;
         }
 
         public void fillBufferFn(SourceBuffer<Entry<K, V>> buffer) {

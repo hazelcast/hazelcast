@@ -410,7 +410,10 @@ public final class Sinks {
         }
 
         public void destroy() {
-            client.shutdown();
+            if (client != null) {
+                client.shutdown();
+                client = null;
+            }
         }
     }
 

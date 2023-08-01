@@ -58,6 +58,7 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -262,7 +263,7 @@ public class SourcesTest extends PipelineTestSupport {
         List<Entry<String, Integer>> expected = input.stream()
                 .map(i -> entry(String.valueOf(i), i))
                 .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        assertThat(toBag(expected)).isEqualTo(sinkToBag());
     }
 
     @Test
@@ -285,7 +286,7 @@ public class SourcesTest extends PipelineTestSupport {
         List<Entry<String, Integer>> expected = input.stream()
                 .map(i -> entry(String.valueOf(i), i))
                 .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
+        assertThat(toBag(expected)).isEqualTo(sinkToBag());
     }
 
     @Test
