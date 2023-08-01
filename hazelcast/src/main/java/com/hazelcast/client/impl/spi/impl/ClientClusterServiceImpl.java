@@ -27,6 +27,8 @@ import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
@@ -73,6 +75,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             new AtomicReference<>(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION, new LinkedHashMap<>(), null));
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final ILogger logger;
+    private final LifecycleService lifecycleService;
+    private final UUID lifecycleListenerID;
+    private boolean clientConnected;
     private final Object clusterViewLock = new Object();
     //read and written under clusterViewLock
     private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
@@ -90,7 +95,15 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public ClientClusterServiceImpl(ILogger logger) {
+    public ClientClusterServiceImpl(LifecycleService lifecycleService, ILogger logger) {
+        this.lifecycleService = lifecycleService;
+        this.lifecycleListenerID = this.lifecycleService.addLifecycleListener(event -> {
+            if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_CONNECTED) {
+                clientConnected = true;
+            } else if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED) {
+                clientConnected = false;
+            }
+        });
         this.logger = logger;
     }
 
@@ -99,7 +112,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     public boolean isEnterprise() {
-        if (this.getMemberList().isEmpty()) {
+        if (this.clientConnected) {
             throw new IllegalStateException("The client is not connected to a cluster yet!");
         }
         return this.isFailoverSupported;
@@ -356,5 +369,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 }
             }
         }
+    }
+
+    public void shutdown() {
+        this.lifecycleService.removeLifecycleListener(lifecycleListenerID);
     }
 }

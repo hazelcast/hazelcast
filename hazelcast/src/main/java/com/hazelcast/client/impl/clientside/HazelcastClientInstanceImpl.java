@@ -257,7 +257,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this);
         partitionService = new ClientPartitionServiceImpl(this);
-        clusterService = new ClientClusterServiceImpl(loggingService.getLogger(ClientClusterService.class));
+        clusterService = new ClientClusterServiceImpl(lifecycleService, loggingService.getLogger(ClientClusterService.class));
         clusterDiscoveryService = initClusterDiscoveryService(externalAddressProvider);
         connectionManager = (TcpClientConnectionManager) clientConnectionManagerFactory.createConnectionManager(this);
         invocationService = new ClientInvocationServiceImpl(this);
@@ -819,6 +819,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         metricsRegistry.shutdown();
         diagnostics.shutdown();
         serializationService.dispose();
+        clusterService.shutdown();
     }
 
     private static void dispose(Queue<Disposable> queue) {
