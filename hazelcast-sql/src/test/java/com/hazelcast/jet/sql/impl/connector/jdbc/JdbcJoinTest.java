@@ -151,7 +151,6 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
     @Test
     public void joinWithOtherJdbc() throws SQLException {
-
         String otherTableName = randomTableName();
         createTable(otherTableName);
         insertItems(otherTableName, ITEM_COUNT);
@@ -180,8 +179,37 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void leftJoinWithOtherJdbc() throws SQLException {
+    public void joinWithOtherJdbcWhereClause() throws SQLException {
+        String otherTableName = randomTableName();
+        createTable(otherTableName);
+        insertItems(otherTableName, ITEM_COUNT);
 
+        execute(
+                "CREATE MAPPING " + otherTableName + " ("
+                + " id INT, "
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        // Join on two columns
+        assertRowsAnyOrder(
+                "SELECT t1.id, t2.name " +
+                "FROM " + tableName + " t1 " +
+                "JOIN " + otherTableName + " t2 " +
+                "   ON t1.id = t2.id AND t1.name = t2.name " +
+                "WHERE t1.id > 0",
+                newArrayList(
+                        new Row(1, "name-1"),
+                        new Row(2, "name-2"),
+                        new Row(3, "name-3"),
+                        new Row(4, "name-4")
+                )
+        );
+    }
+
+    @Test
+    public void leftJoinWithOtherJdbc() throws SQLException {
         String otherTableName = randomTableName();
         createTable(otherTableName);
         insertItems(otherTableName, 3);
@@ -211,7 +239,6 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
     @Test
     public void rightJoinWithOtherJdbc() throws SQLException {
-
         String otherTableName = randomTableName();
         createTable(otherTableName);
         insertItems(otherTableName, 7);
@@ -243,7 +270,6 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
 
     @Test
     public void joinWithIMap() {
-
         String mapName = "my_map";
         execute(
                 "CREATE MAPPING " + mapName + " ( " +
