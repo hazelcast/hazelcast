@@ -24,6 +24,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import static java.util.Objects.requireNonNull;
 
 abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSupplier {
@@ -50,6 +53,16 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
     public void close(@Nullable Throwable error) throws Exception {
         if (dataConnection != null) {
             dataConnection.release();
+        }
+    }
+
+    public static Object[] getValueArray(ResultSet resultSet) throws SQLException {
+        return new Object[resultSet.getMetaData().getColumnCount()];
+    }
+
+    public static void fillValueArray(ResultSet resultSet, Object[] values) throws SQLException {
+        for (int index = 0; index < values.length; index++) {
+            values[index] = resultSet.getObject(index + 1);
         }
     }
 }

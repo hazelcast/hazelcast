@@ -23,8 +23,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.connector.jdbc.util.PreparedStatementUtils;
-import com.hazelcast.jet.sql.impl.connector.jdbc.util.ResultSetUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -121,17 +119,17 @@ public class JdbcJoinIndexScanProcessorSupplier
         try (Connection connection = jdbcDataConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
-            PreparedStatementUtils.setObjects(preparedStatement, joinInfo, leftRow);
+            setObjects(preparedStatement, joinInfo, leftRow);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
 
-                Object[] values = ResultSetUtils.getValueArray(resultSet);
+                Object[] values = getValueArray(resultSet);
 
                 boolean emptyResultSet = true;
 
                 while (resultSet.next()) {
                     emptyResultSet = false;
-                    ResultSetUtils.fillValueArray(resultSet, values);
+                    fillValueArray(resultSet, values);
 
                     JetSqlRow jetSqlRow = new JetSqlRow(evalContext.getSerializationService(), values);
                     JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRow, joinInfo.nonEquiCondition(), evalContext);
@@ -151,6 +149,13 @@ public class JdbcJoinIndexScanProcessorSupplier
         return traverseIterable(jetSqlRows);
     }
 
+    private static void setObjects(PreparedStatement preparedStatement, JetJoinInfo joinInfo, JetSqlRow leftRow)
+            throws SQLException {
+        int[] rightEquiJoinIndices = joinInfo.rightEquiJoinIndices();
+        for (int index = 0; index < rightEquiJoinIndices.length; index++) {
+            preparedStatement.setObject(index + 1, leftRow.get(index));
+        }
+    }
     private static void createExtendedRowIfNecessary(JetSqlRow leftRow,
                                                      List<Expression<?>> projections,
                                                      JetJoinInfo joinInfo,

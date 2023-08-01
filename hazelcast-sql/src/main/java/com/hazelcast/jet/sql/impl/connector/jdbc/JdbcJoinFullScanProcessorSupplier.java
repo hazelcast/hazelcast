@@ -23,7 +23,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.connector.jdbc.util.ResultSetUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -121,10 +120,10 @@ public class JdbcJoinFullScanProcessorSupplier
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
 
-            Object[] values = ResultSetUtils.getValueArray(resultSet);
+            Object[] values = getValueArray(resultSet);
 
             while (resultSet.next()) {
-                ResultSetUtils.fillValueArray(resultSet, values);
+                fillValueArray(resultSet, values);
 
                 JetSqlRow jetSqlRow = new JetSqlRow(evalContext.getSerializationService(), values);
                 JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRow, joinInfo.nonEquiCondition(), evalContext);
