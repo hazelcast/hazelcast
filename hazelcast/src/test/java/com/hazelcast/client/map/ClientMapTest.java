@@ -411,7 +411,7 @@ public class ClientMapTest extends HazelcastTestSupport {
                 .withTtl(60_000)
                 .withMaxIdle(60_000);
 
-        CompletableFuture<Void> future = mapProxy.putAllWithMetadata(newArrayList(entryView));
+        CompletableFuture<Void> future = mapProxy.putAllWithMetadataAsync(newArrayList(entryView));
         assertEqualsEventually(() -> future.isDone(), true);
         EntryView<String, String> actual = map.getEntryView("key");
 
@@ -434,7 +434,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         IMap<String, String> map = client.getMap(mapName);
         ClientMapProxy<String, String> mapProxy = (ClientMapProxy<String, String>) map;
 
-        CompletableFuture<Void> future = mapProxy.putAllWithMetadata(emptyList());
+        CompletableFuture<Void> future = mapProxy.putAllWithMetadataAsync(emptyList());
         assertEqualsEventually(() -> future.isDone(), true);
 
         assertThat((Map<String, String>) map).isEmpty();

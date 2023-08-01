@@ -1695,7 +1695,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     }
 
-    public CompletableFuture<Void> putAllWithMetadata(@Nonnull Collection<? extends EntryView<K, V>> entries) {
+    public CompletableFuture<Void> putAllWithMetadataAsync(@Nonnull Collection<? extends EntryView<K, V>> entries) {
         ClientPartitionService partitionService = getContext().getPartitionService();
 
         Map<Integer, ? extends List<SimpleEntryView<Data, Data>>> entriesByPartition =
