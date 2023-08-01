@@ -76,7 +76,7 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
                 Object[] partitionKeyComponents = new Object[requiredPartitionsExpr.size()];
                 int i = 0;
                 for (Expression<?> expression : requiredPartitionsExpr) {
-                    partitionKeyComponents[i++] = expression.eval(null, eec);
+                    partitionKeyComponents[i++] = expression.evalTop(null, eec);
                 }
 
                 final Partition partition = hazelcastInstance.getPartitionService().getPartition(
@@ -85,7 +85,7 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
                 if (partition == null) {
                     // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
                     // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.
-                    break;
+                    return;
                 }
                 partitionsToScanList.add(partition.getPartitionId());
             }
