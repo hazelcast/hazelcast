@@ -19,9 +19,9 @@ package com.hazelcast.internal.tpcengine.iobuffer;
 /**
  * A {@link IOBufferAllocator} that doesn't do any pooling of IOBuffers.
  */
-public final class UnpooledIOBufferAllocator implements IOBufferAllocator {
+public final class NonPooledIOBufferAllocator implements IOBufferAllocator {
 
-    public UnpooledIOBufferAllocator() {
+    public NonPooledIOBufferAllocator() {
     }
 
     @SuppressWarnings("java:S112")

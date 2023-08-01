@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.file.AsyncFileMetrics;
-import com.hazelcast.internal.tpcengine.file.BlockDevice;
-import com.hazelcast.internal.tpcengine.file.BlockRequest;
-import com.hazelcast.internal.tpcengine.file.BlockRequestScheduler;
+import com.hazelcast.internal.tpcengine.file.AsyncFile;
+import com.hazelcast.internal.tpcengine.file.StorageDevice;
+import com.hazelcast.internal.tpcengine.file.StorageRequest;
+import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 import com.sun.nio.file.ExtendedOpenOption;
@@ -43,65 +43,66 @@ import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_RDWR;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_SYNC;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_TRUNC;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_WRONLY;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_CLOSE;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FALLOCATE;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FDATASYNC;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FSYNC;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_NOP;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_OPEN;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_READ;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_WRITE;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_CLOSE;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_FALLOCATE;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_FDATASYNC;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_FSYNC;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_NOP;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_OPEN;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_READ;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_WRITE;
 
 @SuppressWarnings({
         "checkstyle:CyclomaticComplexity",
         "checkstyle:VisibilityModifier",
         "checkstyle:MethodLength"})
-public class NioBlockRequestScheduler implements BlockRequestScheduler {
+public class NioStorageScheduler implements StorageScheduler {
+
     private static final Executor EXECUTOR = Executors.newCachedThreadPool((Runnable r) -> {
         Thread t = new Thread(r);
         t.setDaemon(true);
         return t;
     });
 
-    final MpscArrayQueue<NioBlockRequest> cq;
+    final MpscArrayQueue<NioStorageRequest> cq;
     private final NioReactor reactor;
     private final int concurrentLimit;
-    private final CircularQueue<NioBlockRequest> waitQueue;
+    private final CircularQueue<NioStorageRequest> waitQueue;
     private int concurrent;
-    private final SlabAllocator<NioBlockRequest> requestAllocator;
-    private final CompletionHandler<Integer, NioBlockRequest> rwCompletionHandler = new CompletionHandler<>() {
+    private final SlabAllocator<NioStorageRequest> requestAllocator;
+    private final CompletionHandler<Integer, NioStorageRequest> rwCompletionHandler = new CompletionHandler<>() {
         @Override
-        public void completed(Integer result, NioBlockRequest attachment) {
+        public void completed(Integer result, NioStorageRequest attachment) {
             attachment.result = result;
             cq.add(attachment);
             reactor.wakeup();
         }
 
         @Override
-        public void failed(Throwable exc, NioBlockRequest attachment) {
+        public void failed(Throwable exc, NioStorageRequest attachment) {
             attachment.exc = exc;
             cq.add(attachment);
             reactor.wakeup();
         }
     };
 
-    public NioBlockRequestScheduler(BlockDevice dev, NioEventloop nioEventloop) {
+    public NioStorageScheduler(StorageDevice dev, NioEventloop nioEventloop) {
         concurrentLimit = dev.concurrentLimit();
         // is npe possible down the line?
-        reactor = (NioReactor) nioEventloop.getReactor();
+        reactor = (NioReactor) nioEventloop.reactor();
         waitQueue = new CircularQueue<>(dev.maxWaiting() - concurrentLimit);
-        requestAllocator = new SlabAllocator<>(dev.maxWaiting(), NioBlockRequest::new);
+        requestAllocator = new SlabAllocator<>(dev.maxWaiting(), NioStorageRequest::new);
         cq = new MpscArrayQueue<>(dev.maxWaiting());
     }
 
     @Override
-    public BlockRequest reserve() {
+    public StorageRequest allocate() {
         return requestAllocator.allocate();
     }
 
     @Override
-    public void submit(BlockRequest req) {
-        NioBlockRequest nioBlockRequest = (NioBlockRequest) req;
+    public void submit(StorageRequest req) {
+        NioStorageRequest nioBlockRequest = (NioStorageRequest) req;
         if (concurrent < concurrentLimit) {
             submit0(nioBlockRequest);
             concurrent++;
@@ -110,22 +111,22 @@ public class NioBlockRequestScheduler implements BlockRequestScheduler {
         }
     }
 
-    private void submit0(NioBlockRequest req) {
+    private void submit0(NioStorageRequest req) {
         switch (req.opcode) {
-            case BLK_REQ_OP_NOP:
+            case STR_REQ_OP_NOP:
                 EXECUTOR.execute(() -> {
                     req.result = 0;
                     cq.add(req);
                     reactor.wakeup();
                 });
                 break;
-            case BLK_REQ_OP_READ:
+            case STR_REQ_OP_READ:
                 req.getFile().channel.read(req.buffer.byteBuffer(), req.offset, req, rwCompletionHandler);
                 break;
-            case BLK_REQ_OP_WRITE:
+            case STR_REQ_OP_WRITE:
                 req.getFile().channel.write(req.buffer.byteBuffer(), req.offset, req, rwCompletionHandler);
                 break;
-            case BLK_REQ_OP_FSYNC:
+            case STR_REQ_OP_FSYNC:
                 EXECUTOR.execute(() -> {
                     try {
                         req.getFile().channel.force(true);
@@ -138,7 +139,7 @@ public class NioBlockRequestScheduler implements BlockRequestScheduler {
                     reactor.wakeup();
                 });
                 break;
-            case BLK_REQ_OP_FDATASYNC:
+            case STR_REQ_OP_FDATASYNC:
                 EXECUTOR.execute(() -> {
                     try {
                         req.getFile().channel.force(false);
@@ -151,7 +152,7 @@ public class NioBlockRequestScheduler implements BlockRequestScheduler {
                     reactor.wakeup();
                 });
                 break;
-            case BLK_REQ_OP_OPEN:
+            case STR_REQ_OP_OPEN:
                 EXECUTOR.execute(() -> {
                     try {
                         req.channel = AsynchronousFileChannel.open(
@@ -166,7 +167,7 @@ public class NioBlockRequestScheduler implements BlockRequestScheduler {
                     reactor.wakeup();
                 });
                 break;
-            case BLK_REQ_OP_CLOSE:
+            case STR_REQ_OP_CLOSE:
                 EXECUTOR.execute(() -> {
                     try {
                         req.getFile().channel.close();
@@ -179,7 +180,7 @@ public class NioBlockRequestScheduler implements BlockRequestScheduler {
                     reactor.wakeup();
                 });
                 break;
-            case BLK_REQ_OP_FALLOCATE:
+            case STR_REQ_OP_FALLOCATE:
                 throw new RuntimeException("Not implemented yet.");
             default:
                 throw new IllegalStateException("Unknown request type: " + req.opcode);
@@ -222,11 +223,11 @@ public class NioBlockRequestScheduler implements BlockRequestScheduler {
         return opts.toArray(new OpenOption[0]);
     }
 
-    void complete(NioBlockRequest req) {
+    void complete(NioStorageRequest req) {
         if (req.exc != null) {
             req.promise.completeExceptionally(req.exc);
         } else {
-            if (req.opcode == BLK_REQ_OP_OPEN) {
+            if (req.opcode == STR_REQ_OP_OPEN) {
                 req.getFile().channel = req.channel;
             }
             req.promise.complete(req.result);
@@ -252,37 +253,37 @@ public class NioBlockRequestScheduler implements BlockRequestScheduler {
         }
     }
 
-    private void handleMetrics(NioBlockRequest nioBlockRequest) {
-        AsyncFileMetrics metrics = nioBlockRequest.file.metrics();
+    private void handleMetrics(NioStorageRequest nioBlockRequest) {
+        AsyncFile.Metrics metrics = nioBlockRequest.file.metrics();
         int res = nioBlockRequest.result;
         switch (nioBlockRequest.opcode) {
-            case BLK_REQ_OP_NOP:
+            case STR_REQ_OP_NOP:
                 metrics.incNops();
                 break;
-            case BLK_REQ_OP_READ:
+            case STR_REQ_OP_READ:
                 metrics.incReads();
                 metrics.incBytesRead(res);
                 break;
-            case BLK_REQ_OP_WRITE:
+            case STR_REQ_OP_WRITE:
                 metrics.incWrites();
                 metrics.incBytesWritten(res);
                 break;
-            case BLK_REQ_OP_FSYNC:
+            case STR_REQ_OP_FSYNC:
                 metrics.incFsyncs();
                 break;
-            case BLK_REQ_OP_FDATASYNC:
+            case STR_REQ_OP_FDATASYNC:
                 metrics.incFdatasyncs();
                 break;
-            case BLK_REQ_OP_OPEN:
-            case BLK_REQ_OP_CLOSE:
-            case BLK_REQ_OP_FALLOCATE:
+            case STR_REQ_OP_OPEN:
+            case STR_REQ_OP_CLOSE:
+            case STR_REQ_OP_FALLOCATE:
                 break;
             default:
                 throw new IllegalStateException("Unknown opcode: " + nioBlockRequest.opcode);
         }
     }
 
-    public static final class NioBlockRequest extends BlockRequest {
+    public static final class NioStorageRequest extends StorageRequest {
         // only modify these 3 fields in io threads
         // don't complete promise etc.
         public int result;

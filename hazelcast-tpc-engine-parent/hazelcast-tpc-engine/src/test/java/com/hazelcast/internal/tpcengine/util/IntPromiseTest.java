@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpcengine.util;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
+import com.hazelcast.internal.tpcengine.nio.NioReactor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +39,7 @@ public class IntPromiseTest {
 
     @Before
     public void before() {
-        reactor = new NioReactorBuilder().build().start();
+        reactor = new NioReactor.Builder().build().start();
 
         promiseAllocator = new IntPromiseAllocator(reactor.eventloop(), 1024);
     }

@@ -24,7 +24,7 @@ import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.client.impl.protocol.codec.ExperimentalTpcAuthenticationCodec;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.Protocols;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nullable;
@@ -36,10 +36,10 @@ import java.util.UUID;
 import static com.hazelcast.spi.properties.ClusterProperty.CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES;
 
 /**
- * A {@link AsyncSocketReader} that reads incoming traffic from clients. The main
+ * A {@link AsyncSocket.Reader} that reads incoming traffic from clients. The main
  * payloads being the {@link ClientMessage}.
  */
-public class ClientAsyncSocketReader extends AsyncSocketReader {
+public class ClientAsyncSocketReader extends AsyncSocket.Reader {
 
     private static final byte[] PROTOCOL_BYTES = Protocols.CLIENT_BINARY.getBytes(StandardCharsets.UTF_8);
 

@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
+import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorTest;
 
 public class IOUringReactorTest extends ReactorTest {
 
     @Override
-    public ReactorBuilder newReactorBuilder() {
-        return new IOUringReactorBuilder();
+    public Reactor.Builder newReactorBuilder() {
+        return new IOUringReactor.Builder();
     }
 }

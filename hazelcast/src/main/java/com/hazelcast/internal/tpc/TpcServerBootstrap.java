@@ -26,12 +26,10 @@ import com.hazelcast.config.tpc.TpcSocketConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.TaskQueueBuilder;
+import com.hazelcast.internal.tpcengine.TaskQueue;
 import com.hazelcast.internal.tpcengine.TpcEngine;
-import com.hazelcast.internal.tpcengine.TpcEngineBuilder;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
@@ -51,10 +49,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_KEEPALIVE;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_KEEPALIVE;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -88,7 +86,7 @@ public class TpcServerBootstrap {
     @SuppressWarnings("java:S1170")
     private final boolean tcpNoDelay = true;
     private final boolean enabled;
-    private final Map<Reactor, Supplier<? extends AsyncSocketReader>> readHandlerSuppliers = new HashMap<>();
+    private final Map<Reactor, Supplier<? extends AsyncSocket.Reader>> readHandlerSuppliers = new HashMap<>();
     private final List<AsyncServerSocket> serverSockets = new ArrayList<>();
     private final Config config;
     private volatile List<Integer> clientPorts;
@@ -147,37 +145,36 @@ public class TpcServerBootstrap {
 
         logger.info("Starting TpcServerBootstrap");
 
-        TpcEngineBuilder tpcEngineBuilder = new TpcEngineBuilder();
+        TpcEngine.Builder tpcEngineCtx = new TpcEngine.Builder();
         // The current approach for allowing the OperationThreads to become the reactor threads
         // is done to lower the risk to introduce TPC next to the classic design. But eventually
         // the system needs be be build around the TPC engine.
-        tpcEngineBuilder.setReactorBuilderConfigureFn(new Consumer<>() {
+        tpcEngineCtx.reactorConfigureFn = new Consumer<>() {
             private int threadIndex;
 
             @Override
-            public void accept(ReactorBuilder builder) {
+            public void accept(Reactor.Builder reactorCtx) {
                 OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
                         .getOperationService()
                         .getOperationExecutor();
                 TpcPartitionOperationThread operationThread = (TpcPartitionOperationThread) operationExecutor
                         .getPartitionThreads()[threadIndex];
 
-                builder.setThreadFactory(eventloopTask -> {
+                reactorCtx.threadFactory = eventloopTask -> {
                     operationThread.setEventloopTask(eventloopTask);
                     return operationThread;
-                });
+                };
 
-                builder.setDefaultTaskQueueBuilder(new TaskQueueBuilder()
-                        .setTaskProcessor(operationThread)
-                        .setGlobal(operationThread.getQueue().getNormalQueue())
-                        //ugly, but needed for now
-                        .setLocal(operationThread.getQueue().getNormalQueue())
-                );
+                TaskQueue.Builder defaultTaskQueueContext = new TaskQueue.Builder();
+                defaultTaskQueueContext.processor = operationThread;
+                defaultTaskQueueContext.outside = operationThread.getQueue().getNormalQueue();
+                //ugly, but needed for now
+                defaultTaskQueueContext.inside = operationThread.getQueue().getNormalQueue();
                 threadIndex++;
             }
-        });
-        tpcEngineBuilder.setReactorCount(loadEventloopCount());
-        tpcEngine = tpcEngineBuilder.build();
+        };
+        tpcEngineCtx.reactorCount = loadEventloopCount();
+        tpcEngine = tpcEngineCtx.build();
         // The TpcPartitionOperationThread are created with the right TpcOperationQueue, but
         // the reactor isn't set yet.
         // The tpcEngine (and hence reactor.start) will create the appropriate happens-before
@@ -210,23 +207,26 @@ public class TpcServerBootstrap {
         for (int k = 0; k < tpcEngine.reactorCount(); k++) {
             Reactor reactor = tpcEngine.reactor(k);
 
-            Supplier<AsyncSocketReader> readHandlerSupplier =
+            Supplier<AsyncSocket.Reader> readHandlerSupplier =
                     () -> new ClientAsyncSocketReader(nodeEngine.getNode().clientEngine, nodeEngine.getProperties());
             readHandlerSuppliers.put(reactor, readHandlerSupplier);
 
-            AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                    .set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
-                    .setAcceptFn(acceptRequest -> {
-                        reactor.newAsyncSocketBuilder(acceptRequest)
-                                .setReader(readHandlerSuppliers.get(reactor).get())
-                                .set(SO_SNDBUF, socketConfig.getSendBufferSizeKB() * KILO_BYTE)
-                                .set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE)
-                                .set(TCP_NODELAY, tcpNoDelay)
-                                .set(SO_KEEPALIVE, true)
-                                .build()
-                                .start();
-                    })
-                    .build();
+            AsyncServerSocket.Builder serverSocketCtx = reactor.newAsyncServerSocketBuilder();
+
+            // for window scaling to work, this property needs to be set
+            serverSocketCtx.options.set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE);
+
+            serverSocketCtx.acceptFn = acceptRequest -> {
+                AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
+                socketBuilder.reader = readHandlerSuppliers.get(reactor).get();
+                socketBuilder.options.set(SO_SNDBUF, socketConfig.getSendBufferSizeKB() * KILO_BYTE);
+                socketBuilder.options.set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE);
+                socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+                socketBuilder.options.set(SO_KEEPALIVE, true);
+                AsyncSocket socket = socketBuilder.build();
+                socket.start();
+            };
+            AsyncServerSocket serverSocket = serverSocketCtx.build();
             serverSockets.add(serverSocket);
             port = bind(serverSocket, port, limit);
             serverSocket.start();

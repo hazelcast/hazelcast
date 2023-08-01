@@ -17,21 +17,17 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
-import com.hazelcast.internal.tpcengine.TaskQueue;
+import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
-import org.jctools.queues.MpmcArrayQueue;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_RECV;
@@ -53,6 +49,7 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQ
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 // TODO: In the future add padding to get isolated state separated from state accessed by other threads.
 @SuppressWarnings({"checkstyle:TrailingComment",
@@ -64,57 +61,40 @@ import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
         "checkstyle:DeclarationOrder"})
 public final class IOUringAsyncSocket extends AsyncSocket {
 
+    // Ensure JNI is initialized as soon as this class is loaded
     static {
-        // Ensure JNI is initialized as soon as this class is loaded
         IOUringLibrary.ensureAvailable();
     }
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final IOUringEventloop eventloop;
-    private final Thread eventloopThread;
     private final SubmissionQueue sq;
 
-    private final Handler_OP_READ handler_OP_READ;
+    private final CompletionHandler_OP_READ handler_OP_READ;
     private final long userdata_OP_READ;
 
-    private final Handler_OP_WRITE handler_OP_WRITE;
+    private final CompletionHandler_OP_WRITE handler_OP_WRITE;
     private final long userdata_OP_WRITE;
 
-    private final Handler_OP_WRITEV handler_op_WRITEV;
+    private final CompletionHandler_OP_WRITEV handler_op_WRITEV;
     private final long userdata_OP_WRITEV;
 
     private final LinuxSocket linuxSocket;
-    private final TaskQueue localTaskQueue;
 
     // ======================================================
     // For the reading side of the socket
     // ======================================================
     private final ByteBuffer rcvBuff;
 
-    // ======================================================
-    // for the writing side of the socket.
-    // ======================================================
-    // concurrent state
-    public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public final MpmcArrayQueue<IOBuffer> unflushedBufs = new MpmcArrayQueue<>(4096);
+    private final IOVector ioVector;
+    final SubmissionHandler_WRITE submissionHandler_write = new SubmissionHandler_WRITE();
 
-    // isolated state.
-    private final IOVector ioVector = new IOVector(IOV_MAX);
-    private final EventloopTask eventloopTask = new EventloopTask();
-    private final IOUringAsyncSocketOptions options;
-    private final AsyncSocketReader reader;
+    private IOUringAsyncSocket(Builder builder) {
+        super(builder);
 
-    // only accessed from eventloop thread.
-    private boolean started;
-
-    IOUringAsyncSocket(IOUringAsyncSocketBuilder builder) {
-        super(builder.reactor, builder.clientSide);
-
-        assert Thread.currentThread() == builder.reactor.eventloopThread();
-
+        this.ioVector = builder.ioVector;
         this.linuxSocket = builder.nativeSocket;
-        this.options = builder.options;
         if (!clientSide) {
             this.localAddress = linuxSocket.getLocalAddress();
             this.remoteAddress = linuxSocket.getRemoteAddress();
@@ -122,36 +102,24 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
         this.eventloop = (IOUringEventloop) reactor.eventloop();
         this.sq = eventloop.sq;
-        this.localTaskQueue = eventloop.getTaskQueue(builder.taskGroupHandle);
-        this.eventloopThread = reactor.eventloopThread();
-        this.rcvBuff = ByteBuffer.allocateDirect(options.get(AsyncSocketOptions.SO_RCVBUF));
+        this.rcvBuff = ByteBuffer.allocateDirect(options.get(Options.SO_RCVBUF));
 
-        this.handler_OP_READ = new Handler_OP_READ();
+        this.handler_OP_READ = new CompletionHandler_OP_READ();
         this.userdata_OP_READ = eventloop.nextPermanentHandlerId();
         eventloop.handlers.put(userdata_OP_READ, handler_OP_READ);
 
-        this.handler_OP_WRITE = new Handler_OP_WRITE();
+        this.handler_OP_WRITE = new CompletionHandler_OP_WRITE();
         this.userdata_OP_WRITE = eventloop.nextPermanentHandlerId();
         eventloop.handlers.put(userdata_OP_WRITE, handler_OP_WRITE);
 
-        this.handler_op_WRITEV = new Handler_OP_WRITEV();
+        this.handler_op_WRITEV = new CompletionHandler_OP_WRITEV();
         this.userdata_OP_WRITEV = eventloop.nextPermanentHandlerId();
         eventloop.handlers.put(userdata_OP_WRITEV, handler_op_WRITEV);
 
-       // todo: on closing of the socket we need to deregister the event handlers.
+        // todo: on closing of the socket we need to deregister the event handlers.
 
-        this.reader = builder.reader;
         reader.init(this);
         reactor.sockets().add(this);
-    }
-
-    public LinuxSocket nativeSocket() {
-        return linuxSocket;
-    }
-
-    @Override
-    public AsyncSocketOptions options() {
-        return options;
     }
 
     @Override
@@ -164,115 +132,19 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
-    public void start() {
-        if (Thread.currentThread() == reactor.eventloopThread()) {
-            start0();
-        } else {
-            CompletableFuture future = new CompletableFuture();
-            reactor.execute(() -> {
-                try {
-                    start0();
-                    future.complete(null);
-                } catch (Throwable e) {
-                    future.completeExceptionally(e);
-                    throw sneakyThrow(e);
-                }
-            });
-            future.join();
-        }
+    @Override
+    protected boolean insideWrite(IOBuffer buf) {
+        // todo: optimize
+        return writeQueue.offer(buf);
     }
 
-    private void start0() {
-        if (started) {
-            throw new IllegalStateException(this + " is already started");
-        }
-        started = true;
-
+    @Override
+    protected void start0() {
         if (!clientSide) {
             sq_addRead();
         }
-    }
 
-    @Override
-    public void flush() {
-        Thread currentThread = Thread.currentThread();
-        if (flushThread.compareAndSet(null, currentThread)) {
-            if (currentThread == eventloopThread) {
-                localTaskQueue.offerLocal(eventloopTask);
-            } else {
-                reactor.offer(eventloopTask);
-            }
-        }
-    }
-
-    private void resetFlushed() {
-        if (!ioVector.isEmpty()) {
-            localTaskQueue.offerLocal(eventloopTask);
-            return;
-        }
-
-        flushThread.set(null);
-
-        if (!unflushedBufs.isEmpty()) {
-            if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                reactor.offer(eventloopTask);
-            }
-        }
-    }
-
-    @Override
-    public boolean write(IOBuffer buf) {
-        if (!buf.byteBuffer().isDirect()) {
-            throw new IllegalArgumentException();
-        }
-        return unflushedBufs.add(buf);
-    }
-
-    @Override
-    public boolean writeAll(Collection<IOBuffer> bufs) {
-        return unflushedBufs.addAll(bufs);
-    }
-
-    @Override
-    public boolean writeAndFlush(IOBuffer buf) {
-        if (!buf.byteBuffer().isDirect()) {
-            throw new IllegalArgumentException();
-        }
-        boolean result = unflushedBufs.add(buf);
-        flush();
-        return result;
-    }
-
-    @Override
-    public boolean unsafeWriteAndFlush(IOBuffer buf) {
-        Thread currentFlushThread = flushThread.get();
-        Thread currentThread = Thread.currentThread();
-
-        assert currentThread == eventloopThread;
-
-        boolean result;
-        if (currentFlushThread == null) {
-            if (flushThread.compareAndSet(null, currentThread)) {
-                localTaskQueue.offerLocal(eventloopTask);
-                if (ioVector.offer(buf)) {
-                    result = true;
-                } else {
-                    result = unflushedBufs.offer(buf);
-                }
-            } else {
-                result = unflushedBufs.offer(buf);
-            }
-        } else if (currentFlushThread == eventloopThread) {
-            if (ioVector.offer(buf)) {
-                result = true;
-            } else {
-                result = unflushedBufs.offer(buf);
-            }
-        } else {
-            result = unflushedBufs.offer(buf);
-            flush();
-        }
-        return result;
+        resetFlushed();
     }
 
     @Override
@@ -297,22 +169,22 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         }
 
         int index = sq.nextIndex();
-        if (index >= 0) {
-            long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
-            // IORING_OP_RECV provides better performance than IORING_OP_READ
-            // https://github.com/axboe/liburing/issues/536
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_RECV);
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, address);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, length);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_READ);
-        } else {
+        if (index < 0) {
             throw new RuntimeException("No space in submission queue");
         }
+
+        long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
+        // IORING_OP_RECV provides better performance than IORING_OP_READ
+        // https://github.com/axboe/liburing/issues/536
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_RECV);
+        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, address);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, length);
+        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
+        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_READ);
     }
 
     @Override
@@ -349,49 +221,49 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         return future;
     }
 
-    private class EventloopTask implements Runnable {
+    // todo: Doesn't need to be runnable any longer since not run on reactor.
+    class SubmissionHandler_WRITE implements Runnable {
 
         @Override
         public void run() {
             try {
                 if (flushThread.get() == null) {
-                    throw new RuntimeException("Channel should be in flushed state");
+                    throw new IllegalStateException("Channel should be in scheduled state");
                 }
 
                 int index = sq.nextIndex();
-                if (index >= 0) {
-                    long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
+                if (index < 0) {
+                    throw new IllegalStateException("No space in submission queue");
+                }
 
-                    ioVector.populate(unflushedBufs);
+                long sqeAddr = sq.sqesAddr + ((long) index * SIZEOF_SQE);
+                ioVector.populate(writeQueue);
 
-                    if (ioVector.cnt() == 1) {
-                        // There is just one item in the ioVecArray, so instead of doing a vectorized write,
-                        // we do a regular write.
-                        ByteBuffer buffer = ioVector.get(0).byteBuffer();
+                if (ioVector.cnt() == 1) {
+                    // There is just one item in the ioVecArray, so instead of doing a vectorized write,
+                    // we do a regular write.
+                    ByteBuffer buffer = ioVector.get(0).byteBuffer();
 
-                        // OP_SEND is faster than OP_WRITE.
-                        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_SEND);
-                        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-                        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
-                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
-                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, addressOf(buffer) + buffer.position());
-                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, buffer.remaining());
-                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_WRITE);
-                    } else {
-                        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_WRITEV);
-                        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-                        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
-                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
-                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, ioVector.addr());
-                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, ioVector.cnt());
-                        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-                        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_WRITEV);
-                    }
+                    // OP_SEND is faster than OP_WRITE.
+                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_SEND);
+                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+                    UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
+                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
+                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, addressOf(buffer) + buffer.position());
+                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, buffer.remaining());
+                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
+                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_WRITE);
                 } else {
-                    throw new RuntimeException("No space in submission queue");
+                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_WRITEV);
+                    UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+                    UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
+                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
+                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, ioVector.addr());
+                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, ioVector.cnt());
+                    UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
+                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_WRITEV);
                 }
             } catch (Exception e) {
                 close("Closing IOUringAsyncSocket due to exception", e);
@@ -399,68 +271,75 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         }
     }
 
-    private class Handler_OP_WRITEV implements CompletionHandler {
-//        private long handle;
-//        private long egain;
+    private class CompletionHandler_OP_WRITEV implements CompletionHandler {
 
         @Override
         public void handle(int res, int flags, long userdata) {
+            //System.out.println(IOUringAsyncSocket.this + " CompletionHandler_OP_WRITEV.handle");
             try {
-//                handle++;
-//
-//                if (handle % 10000 == 0) {
-//                    System.out.println(100f * egain / handle + " %");
-//                }
-
                 if (res >= 0) {
                     metrics.incBytesWritten(res);
                     metrics.incWrites();
                     //System.out.println(IOUringAsyncSocket.this + " written " + res);
                     ioVector.compact(res);
-                    resetFlushed();
-                } else if (res == -EAGAIN) {
-                    //System.out.println(ioVector.count());
 
-                    //egain++;
+                    if (ioVector.isEmpty() && writeQueue.isEmpty()) {
+                        resetFlushed();
+                    } else {
+                        // todo: we don't need to
+                        networkScheduler.schedule(IOUringAsyncSocket.this);
+                    }
+                } else if (res == -EAGAIN) {
+                    System.out.println("EAGAIN");
                     // TODO: Can this lead to spinning?
-                    //System.out.println("-----");
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
-                    //todo: return value
-                    localTaskQueue.offerLocal(eventloopTask);
+                    // todo: return value
+                    networkScheduler.schedule(IOUringAsyncSocket.this);
                 } else {
                     throw newCQEFailedException("Failed to write data to the socket.", "writev(3p)", IORING_OP_WRITEV, -res);
                 }
             } catch (Exception e) {
-                close("Closing IOUringAsyncSocket due to exception", e);
+                close("Closing due to socket write problem.", e);
             }
         }
     }
 
-    private class Handler_OP_WRITE implements CompletionHandler {
+    // todo: since this is copy of CompletionHandler_OP_WRITEV, do we need the first?
+    private class CompletionHandler_OP_WRITE implements CompletionHandler {
+
         @Override
         public void handle(int res, int flags, long userdata) {
+            //System.out.println(IOUringAsyncSocket.this + " CompletionHandler_OP_WRITE.handle");
             try {
                 if (res >= 0) {
                     metrics.incBytesWritten(res);
                     metrics.incWrites();
-                    //System.out.println(IOUringAsyncSocket.this + " written " + res);
+                    // System.out.println(IOUringAsyncSocket.this + " written " + res);
                     ioVector.compact(res);
-                    resetFlushed();
+
+                    if (writeQueue.isEmpty() && ioVector.isEmpty()) {
+                        resetFlushed();
+                    } else {
+                        networkScheduler.schedule(IOUringAsyncSocket.this);
+                    }
                 } else if (res == -EAGAIN) {
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
-                    localTaskQueue.offerLocal(eventloopTask);
+                    // todo: return value
+                    networkScheduler.schedule(IOUringAsyncSocket.this);
                 } else {
                     throw newCQEFailedException("Failed to write data to the socket.", "write(2)", IORING_OP_SEND, -res);
                 }
             } catch (Exception e) {
-                close("Closing IOUringAsyncSocket due to exception", e);
+                close("Closing due to socket write problem.", e);
             }
         }
     }
 
-    private class Handler_OP_READ implements CompletionHandler {
+    private class CompletionHandler_OP_READ implements CompletionHandler {
+
         @Override
         public void handle(int res, int flags, long userdata) {
+            // System.out.println(IOUringAsyncSocket.this + " CompletionHandler_OP_READ.handle");
             try {
                 if (res > 0) {
                     int bytesRead = res;
@@ -496,9 +375,160 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
                 // TODO: It could be that we run into an EAGAIN or EWOULDBLOCK.
 
-                //System.out.println("Bytes read:" + res);
+                //System.out.println(IOUringAsyncSocket.this + " bytes read:" + res);
             } catch (Exception e) {
                 close("Closing IOUringAsyncSocket due to exception", e);
+            }
+        }
+    }
+
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity",
+            "checkstyle:returncount",
+            "checkstyle:SimplifyBooleanReturn"})
+    public static class IOUringOptions implements Options {
+
+        private final LinuxSocket nativeSocket;
+
+        IOUringOptions(LinuxSocket nativeSocket) {
+            this.nativeSocket = nativeSocket;
+        }
+
+        @Override
+        public boolean isSupported(Option option) {
+            if (Options.TCP_NODELAY.equals(option)) {
+                return true;
+            } else if (Options.SO_RCVBUF.equals(option)) {
+                return true;
+            } else if (Options.SO_SNDBUF.equals(option)) {
+                return true;
+            } else if (Options.SO_KEEPALIVE.equals(option)) {
+                return true;
+            } else if (Options.SO_REUSEADDR.equals(option)) {
+                return true;
+            } else if (Options.TCP_KEEPCOUNT.equals(option)) {
+                return true;
+            } else if (Options.TCP_KEEPINTERVAL.equals(option)) {
+                return true;
+            } else if (Options.TCP_KEEPIDLE.equals(option)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public <T> T get(Option<T> option) {
+            checkNotNull(option, "option");
+
+            try {
+                if (Options.TCP_NODELAY.equals(option)) {
+                    return (T) (Boolean) nativeSocket.isTcpNoDelay();
+                } else if (Options.SO_RCVBUF.equals(option)) {
+                    return (T) (Integer) nativeSocket.getReceiveBufferSize();
+                } else if (Options.SO_SNDBUF.equals(option)) {
+                    return (T) (Integer) nativeSocket.getSendBufferSize();
+                } else if (Options.SO_KEEPALIVE.equals(option)) {
+                    return (T) (Boolean) nativeSocket.isKeepAlive();
+                } else if (Options.SO_REUSEADDR.equals(option)) {
+                    return (T) (Boolean) nativeSocket.isReuseAddress();
+                } else if (Options.TCP_KEEPCOUNT.equals(option)) {
+                    return (T) (Integer) nativeSocket.getTcpKeepaliveProbes();
+                } else if (Options.TCP_KEEPINTERVAL.equals(option)) {
+                    return (T) (Integer) nativeSocket.getTcpKeepaliveIntvl();
+                } else if (Options.TCP_KEEPIDLE.equals(option)) {
+                    return (T) (Integer) nativeSocket.getTcpKeepAliveTime();
+                } else {
+                    return null;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to getOption [" + option.name() + "]", e);
+            }
+        }
+
+        @SuppressWarnings("checkstyle:CyclomaticComplexity")
+        @Override
+        public <T> boolean set(Option<T> option, T value) {
+            checkNotNull(option, "option");
+            checkNotNull(value, "value");
+
+            try {
+                if (Options.TCP_NODELAY.equals(option)) {
+                    nativeSocket.setTcpNoDelay((Boolean) value);
+                    return true;
+                } else if (Options.SO_RCVBUF.equals(option)) {
+                    nativeSocket.setReceiveBufferSize((Integer) value);
+                    return true;
+                } else if (Options.SO_SNDBUF.equals(option)) {
+                    nativeSocket.setSendBufferSize((Integer) value);
+                    return true;
+                } else if (Options.SO_KEEPALIVE.equals(option)) {
+                    nativeSocket.setKeepAlive((Boolean) value);
+                    return true;
+                } else if (Options.SO_REUSEADDR.equals(option)) {
+                    nativeSocket.setReuseAddress((Boolean) value);
+                    return true;
+                } else if (Options.TCP_KEEPCOUNT.equals(option)) {
+                    nativeSocket.setTcpKeepAliveProbes((Integer) value);
+                    return true;
+                } else if (Options.TCP_KEEPIDLE.equals(option)) {
+                    nativeSocket.setTcpKeepAliveTime((Integer) value);
+                    return true;
+                } else if (Options.TCP_KEEPINTERVAL.equals(option)) {
+                    nativeSocket.setTcpKeepaliveIntvl((Integer) value);
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to setOption [" + option.name() + "] with value [" + value + "]", e);
+            }
+        }
+    }
+
+    public static class Builder extends AsyncSocket.Builder {
+
+        public LinuxSocket nativeSocket;
+        public IOVector ioVector;
+
+        Builder(IOUringAcceptRequest acceptRequest) {
+            if (acceptRequest == null) {
+                this.nativeSocket = LinuxSocket.openTcpIpv4Socket();
+                this.clientSide = true;
+            } else {
+                this.nativeSocket = acceptRequest.linuxSocket;
+                this.clientSide = false;
+            }
+            this.options = new IOUringOptions(nativeSocket);
+        }
+
+        @Override
+        protected void conclude() {
+            super.conclude();
+
+            checkNotNull(nativeSocket, "nativeSocket");
+
+            if (ioVector == null) {
+                ioVector = new IOVector(IOV_MAX);
+            }
+        }
+
+        @Override
+        protected AsyncSocket doBuild() {
+            if (Thread.currentThread() == reactor.eventloopThread()) {
+                return new IOUringAsyncSocket(this);
+            } else {
+                CompletableFuture<IOUringAsyncSocket> future = new CompletableFuture<>();
+                reactor.execute(() -> {
+                    try {
+                        IOUringAsyncSocket socket = new IOUringAsyncSocket(Builder.this);
+                        future.complete(socket);
+                    } catch (Throwable e) {
+                        future.completeExceptionally(e);
+                        throw sneakyThrow(e);
+                    }
+                });
+
+                return future.join();
             }
         }
     }

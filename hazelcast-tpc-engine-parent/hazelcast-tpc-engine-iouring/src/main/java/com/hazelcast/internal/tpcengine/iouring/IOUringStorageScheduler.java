@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.file.AsyncFileMetrics;
-import com.hazelcast.internal.tpcengine.file.BlockDevice;
-import com.hazelcast.internal.tpcengine.file.BlockRequest;
-import com.hazelcast.internal.tpcengine.file.BlockRequestScheduler;
+import com.hazelcast.internal.tpcengine.file.AsyncFile;
+import com.hazelcast.internal.tpcengine.file.StorageDevice;
+import com.hazelcast.internal.tpcengine.file.StorageRequest;
+import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
@@ -54,7 +54,7 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
  * Todo: The IOScheduler should be a scheduler for all storage devices. Currently it is only for a single device.
  */
 @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:MemberName", "checkstyle:LocalVariableName"})
-public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
+public class IOUringStorageScheduler implements StorageScheduler {
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
@@ -63,31 +63,31 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
     private final int concurrentLimit;
     private final LongObjectHashMap<CompletionHandler> handlers;
     private final SubmissionQueue sq;
-    private final BlockDevice dev;
+    private final StorageDevice dev;
     private int concurrent;
     // a queue of IoOps that could not be submitted to io_uring because either
     // io_uring was full or because the max number of concurrent IoOps for that
     // device was exceeded.
-    private final CircularQueue<IOUringBlockRequest> waitQueue;
-    private final SlabAllocator<IOUringBlockRequest> requestAllocator;
+    private final CircularQueue<IOUringStorageRequest> waitQueue;
+    private final SlabAllocator<IOUringStorageRequest> requestAllocator;
     private long count;
 
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final StringBuilder msgBuilder = new StringBuilder();
 
-    public IOUringBlockRequestScheduler(BlockDevice dev, IOUringEventloop eventloop) {
+    public IOUringStorageScheduler(StorageDevice dev, IOUringEventloop eventloop) {
         this.dev = dev;
         this.path = dev.path();
         this.concurrentLimit = dev.concurrentLimit();
         this.waitQueue = new CircularQueue<>(dev.maxWaiting());
-        this.requestAllocator = new SlabAllocator<>(dev.maxWaiting(), IOUringBlockRequest::new);
+        this.requestAllocator = new SlabAllocator<>(dev.maxWaiting(), IOUringStorageRequest::new);
         this.eventloop = eventloop;
         this.handlers = eventloop.handlers;
         this.sq = eventloop.sq;
     }
 
     @Override
-    public BlockRequest reserve() {
+    public StorageRequest allocate() {
         //todo: not the right condition
         if (concurrent >= concurrentLimit) {
             return null;
@@ -97,27 +97,27 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
     }
 
     @Override
-    public void submit(BlockRequest req) {
+    public void submit(StorageRequest req) {
         if (concurrent < concurrentLimit) {
             // The request should not immediately be offered to
             // io_uring; only when there is a scheduler tick, the
             // request should be flushed.
-            offer((IOUringBlockRequest) req);
-        } else if (!waitQueue.offer((IOUringBlockRequest) req)) {
-            throw new IllegalStateException("Too many concurrent IOs");
+            offer((IOUringStorageRequest) req);
+        } else if (!waitQueue.offer((IOUringStorageRequest) req)) {
+            throw new IllegalStateException("Too many concurrent requests");
         }
     }
 
     private void scheduleNext() {
         if (concurrent < concurrentLimit) {
-            IOUringBlockRequest req = waitQueue.poll();
+            IOUringStorageRequest req = waitQueue.poll();
             if (req != null) {
                 offer(req);
             }
         }
     }
 
-    private void offer(IOUringBlockRequest req) {
+    private void offer(IOUringStorageRequest req) {
         long userdata = eventloop.nextTmpHandlerId();
         handlers.put(userdata, req);
 
@@ -136,7 +136,7 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
     /**
      * Represents a single I/O req on a block device. For example a read or write to disk.
      */
-    final class IOUringBlockRequest extends BlockRequest implements CompletionHandler {
+    final class IOUringStorageRequest extends StorageRequest implements CompletionHandler {
 
         void writeSqe(int sqIndex, long userdata) {
             long sqeAddr = sq.sqesAddr + sqIndex * SIZEOF_SQE;
@@ -146,26 +146,26 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
             int sqe_rw_flags = 0;
             int sqe_len = 0;
             switch (opcode) {
-                case BLK_REQ_OP_NOP:
+                case STR_REQ_OP_NOP:
                     sqe_opcode = IORING_OP_NOP;
                     break;
-                case BLK_REQ_OP_READ:
+                case STR_REQ_OP_READ:
                     sqe_opcode = IORING_OP_READ;
                     sqe_fd = file.fd;
                     sqe_addr = buffer.address();
                     sqe_len = length;
                     break;
-                case BLK_REQ_OP_WRITE:
+                case STR_REQ_OP_WRITE:
                     sqe_opcode = IORING_OP_WRITE;
                     sqe_fd = file.fd;
                     sqe_addr = buffer.address();
                     sqe_len = length;
                     break;
-                case BLK_REQ_OP_FSYNC:
+                case STR_REQ_OP_FSYNC:
                     sqe_opcode = IORING_OP_FSYNC;
                     sqe_fd = file.fd;
                     break;
-                case BLK_REQ_OP_FDATASYNC:
+                case STR_REQ_OP_FDATASYNC:
                     sqe_opcode = IORING_OP_FSYNC;
                     sqe_fd = file.fd;
                     // todo: //            request.opcode = IORING_OP_FSYNC;
@@ -173,18 +173,18 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
                     ////            request.rwFlags = IORING_FSYNC_DATASYNC;
                     sqe_rw_flags = IORING_FSYNC_DATASYNC;
                     break;
-                case BLK_REQ_OP_OPEN:
+                case STR_REQ_OP_OPEN:
                     sqe_opcode = IORING_OP_OPENAT;
                     buffer = pathAsIOBuffer();
                     sqe_addr = buffer.address();
                     sqe_len = permissions;
                     sqe_rw_flags = flags;
                     break;
-                case BLK_REQ_OP_CLOSE:
+                case STR_REQ_OP_CLOSE:
                     sqe_opcode = IORING_OP_CLOSE;
                     sqe_fd = file.fd;
                     break;
-                case BLK_REQ_OP_FALLOCATE:
+                case STR_REQ_OP_FALLOCATE:
                     sqe_opcode = IORING_OP_FALLOCATE;
                     break;
                 default:
@@ -221,36 +221,36 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
         public void handle(int res, int flags, long userdata) {
             concurrent--;
             if (res >= 0) {
-                AsyncFileMetrics metrics = file.metrics();
+                AsyncFile.Metrics metrics = file.metrics();
                 switch (opcode) {
-                    case BLK_REQ_OP_NOP:
+                    case STR_REQ_OP_NOP:
                         metrics.incNops();
                         break;
-                    case BLK_REQ_OP_READ:
+                    case STR_REQ_OP_READ:
                         buffer.incPosition(res);
                         metrics.incReads();
                         metrics.incBytesRead(res);
                         break;
-                    case BLK_REQ_OP_WRITE:
+                    case STR_REQ_OP_WRITE:
                         buffer.incPosition(res);
                         metrics.incWrites();
                         metrics.incBytesWritten(res);
                         break;
-                    case BLK_REQ_OP_FSYNC:
+                    case STR_REQ_OP_FSYNC:
                         metrics.incFsyncs();
                         break;
-                    case BLK_REQ_OP_FDATASYNC:
+                    case STR_REQ_OP_FDATASYNC:
                         metrics.incFdatasyncs();
                         break;
-                    case BLK_REQ_OP_OPEN:
+                    case STR_REQ_OP_OPEN:
                         // this buffer is not passed from the outside, it is passed in the writeSqe function above.
                         buffer.release();
                         file.fd = res;
                         break;
-                    case BLK_REQ_OP_CLOSE:
+                    case STR_REQ_OP_CLOSE:
                         file.fd = -1;
                         break;
-                    case BLK_REQ_OP_FALLOCATE:
+                    case STR_REQ_OP_FALLOCATE:
                         break;
                     default:
                         throw new IllegalStateException("Unknown opcode: " + opcode);
@@ -278,35 +278,35 @@ public class IOUringBlockRequestScheduler implements BlockRequestScheduler {
             msgBuilder.setLength(0);
             String manUrl = null;
             switch (opcode) {
-                case BLK_REQ_OP_NOP:
+                case STR_REQ_OP_NOP:
                     msgBuilder.append("Failed to perform a nop on file ").append(file.path()).append(". ");
                     break;
-                case BLK_REQ_OP_READ:
+                case STR_REQ_OP_READ:
                     msgBuilder.append("Failed to a read from file ").append(file.path()).append(". ");
                     manUrl = "https://man7.org/linux/man-pages/man2/pwrite.2.html";
                     break;
-                case BLK_REQ_OP_WRITE:
+                case STR_REQ_OP_WRITE:
                     msgBuilder.append("Failed to a write to file ").append(file.path()).append(". ");
                     manUrl = "https://man7.org/linux/man-pages/man3/pwrite.3p.html";
                     break;
-                case BLK_REQ_OP_FSYNC:
+                case STR_REQ_OP_FSYNC:
                     msgBuilder.append("Failed to perform a fsync on file ").append(file.path()).append(". ");
                     manUrl = "https://man7.org/linux/man-pages/man2/fsync.2.html";
                     break;
-                case BLK_REQ_OP_FDATASYNC:
+                case STR_REQ_OP_FDATASYNC:
                     msgBuilder.append("Failed to perform a fdatasync on file ").append(file.path()).append(". ");
                     manUrl = "https://man7.org/linux/man-pages/man2/fsync.2.html";
                     break;
-                case BLK_REQ_OP_OPEN:
+                case STR_REQ_OP_OPEN:
                     buffer.release();
                     msgBuilder.append("Failed to open file ").append(file.path()).append(". ");
                     manUrl = "https://man7.org/linux/man-pages/man2/open.2.html";
                     break;
-                case BLK_REQ_OP_CLOSE:
+                case STR_REQ_OP_CLOSE:
                     msgBuilder.append("Failed to close file ").append(file.path()).append(". ");
                     manUrl = "https://man7.org/linux/man-pages/man2/close.2.html";
                     break;
-                case BLK_REQ_OP_FALLOCATE:
+                case STR_REQ_OP_FALLOCATE:
                     msgBuilder.append("Failed to fallocate on file ").append(file.path()).append(". ");
                     manUrl = "https://man7.org/linux/man-pages/man2/fallocate.2.html";
                     break;

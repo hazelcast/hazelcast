@@ -35,6 +35,16 @@ package com.hazelcast.internal.tpcengine;
 public interface TaskQueueScheduler {
 
     /**
+     * Returns the number of TaskQueues that are on the run-queue (including the active taskQueue).
+     * <p/>
+     * This method is purely for testing/debugging purposes.
+     *
+     * @return the number of TaskQueues on the run-queue.
+     */
+    int size();
+
+    int capacity();
+    /**
      * Returns the length of the time slice of the active TaskQueue. This is the total amount
      * of time that can be spend on the CPU before the task group should yield. Individual tasks
      * within a task group are bound by the the minimum granularity.
@@ -65,7 +75,7 @@ public interface TaskQueueScheduler {
      * then either {@link #yieldActive()} needs to be called to schedule the taskQueue again or
      * {@link #dequeueActive()} needs to be called to remove the taskQueue from the run queue.
      *
-     * @param cpuTimeNanos the amount of time the active taskQueue has been running.
+     * @param cpuTimeNanos the number of nanoseconds the active taskQueue has been running.
      */
     void updateActive(long cpuTimeNanos);
 
@@ -94,4 +104,5 @@ public interface TaskQueueScheduler {
      * @param taskQueue the taskQueue to enqueue.
      */
     void enqueue(TaskQueue taskQueue);
+
 }

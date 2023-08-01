@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpcengine.util.JVM;
 
 import java.util.Collection;
 import java.util.concurrent.Callable;
@@ -263,11 +262,4 @@ public class TpcTestSupport {
         return futureTask;
     }
 
-
-    public static void assumeNotIbmJDK8() {
-        String vendor = System.getProperty("java.vendor");
-        boolean isIbmJDK = vendor.toLowerCase().contains("ibm");
-        boolean isIbmJDK8 = isIbmJDK && (JVM.getMajorVersion() == 8);
-        assumeFalse(isIbmJDK8);
-    }
 }

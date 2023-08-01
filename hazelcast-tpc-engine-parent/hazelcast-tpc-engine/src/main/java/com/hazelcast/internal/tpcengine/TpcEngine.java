@@ -18,20 +18,25 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.TpcEngine.State.NEW;
 import static com.hazelcast.internal.tpcengine.TpcEngine.State.RUNNING;
 import static com.hazelcast.internal.tpcengine.TpcEngine.State.SHUTDOWN;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
  * The TpcEngine is effectively an array of reactors.
  * <p/>
- * The TpcEngine is not aware of any specific applications. E.g. it could execute operations,
- * but it can equally well run client requests or completely different applications.
+ * The TpcEngine is not aware of any specific applications. E.g. it could execute
+ * operations, but it can equally well run client requests or completely different
+ * applications.
  */
 public final class TpcEngine {
 
@@ -43,27 +48,20 @@ public final class TpcEngine {
     private final ReactorType reactorType;
 
     /**
-     * Creates an TpcEngine with the default {@link TpcEngineBuilder}.
-     */
-    public TpcEngine() {
-        this(new TpcEngineBuilder());
-    }
-
-    /**
-     * Creates an TpcEngine with the given TpcEngineBuilder.
+     * Creates an TpcEngine from the given Context.
      *
-     * @param tpcEngineBuilder the TpcEngineBuilder for the TpcEngine.
-     * @throws NullPointerException when tpcEngineBuilder is <code>null</code>.
+     * @param engineBuilder the context.
+     * @throws NullPointerException when engineBuilder is <code>null</code>.
      */
-    TpcEngine(TpcEngineBuilder tpcEngineBuilder) {
-        this.reactorCount = tpcEngineBuilder.reactorCount;
+    private TpcEngine(Builder engineBuilder) {
+        this.reactorCount = engineBuilder.reactorCount;
         this.reactors = new Reactor[reactorCount];
         this.terminationLatch = new CountDownLatch(reactorCount);
-        this.reactorType = tpcEngineBuilder.reactorType;
+        this.reactorType = engineBuilder.reactorType;
         for (int reactorIndex = 0; reactorIndex < reactorCount; reactorIndex++) {
-            ReactorBuilder reactorBuilder = ReactorBuilder.newReactorBuilder(reactorType);
+            Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(reactorType);
+            engineBuilder.reactorConfigureFn.accept(reactorBuilder);
             reactorBuilder.engine = this;
-            tpcEngineBuilder.reactorBuilderConfigureFn.accept(reactorBuilder);
             reactors[reactorIndex] = reactorBuilder.build();
         }
     }
@@ -142,7 +140,8 @@ public final class TpcEngine {
     }
 
     /**
-     * Shuts down the TpcEngine. If the TpcEngine is already shutdown or terminated, the call is ignored.
+     * Shuts down the TpcEngine. If the TpcEngine is already shutdown or terminated,
+     * the call is ignored.
      * <p/>
      * This method is thread-safe.
      */
@@ -198,5 +197,40 @@ public final class TpcEngine {
         RUNNING,
         SHUTDOWN,
         TERMINATED
+    }
+
+    /**
+     * The Builder for the the {@link TpcEngine}.
+     */
+    @SuppressWarnings({"checkstyle:VisibilityModifier"})
+    public static final class Builder extends AbstractBuilder<TpcEngine> {
+
+        public static final String NAME_REACTOR_COUNT = "hazelcast.tpc.reactor.count";
+        public static final String NAME_REACTOR_TYPE = "hazelcast.tpc.reactor.type";
+
+        public int reactorCount = Integer.getInteger(NAME_REACTOR_COUNT, Runtime.getRuntime().availableProcessors());
+        public Consumer<Reactor.Builder> reactorConfigureFn = builder -> {
+        };
+
+        public ReactorType reactorType = ReactorType.fromString(System.getProperty(NAME_REACTOR_TYPE, "nio"));
+
+        @Override
+        protected void conclude() {
+            super.conclude();
+
+            checkPositive(reactorCount, "reactorCount");
+            checkNotNull(reactorType, "reactorType");
+            checkNotNull(reactorConfigureFn, "reactorConfigureFn");
+        }
+
+        /**
+         * Builds a single TpcEngine instance.
+         *
+         * @return the created instance.
+         * @throws IllegalStateException if a TpcEngine already has already been built.
+         */
+        protected TpcEngine doBuild() {
+            return new TpcEngine(this);
+        }
     }
 }

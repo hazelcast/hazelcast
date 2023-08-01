@@ -14,24 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.nio;
-
-import com.hazelcast.internal.tpcengine.net.AcceptRequest;
-
-import java.nio.channels.SocketChannel;
-
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
-
-class NioAcceptRequest implements AcceptRequest {
-
-    final SocketChannel socketChannel;
-
-    NioAcceptRequest(SocketChannel socketChannel) {
-        this.socketChannel = checkNotNull(socketChannel, "socketChannel");
-    }
-
-    @Override
-    public void close() throws Exception {
-        socketChannel.close();
-    }
-}
+/**
+ * Should be moved to a commons module.
+ */
+package com.hazelcast.internal.util;

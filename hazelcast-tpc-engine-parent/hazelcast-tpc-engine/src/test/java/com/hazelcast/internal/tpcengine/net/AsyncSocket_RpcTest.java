@@ -16,15 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.util.PrintAtomicLongThread;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpcengine.util.PrintAtomicLongThread;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -37,40 +35,41 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertJoinable;
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
 
 /**
- * Mimics an RPC call. So there are worker threads that send request with a call id and a payload. This request is
- * 'processed' on the remote side and just returned.
+ * Mimics an RPC call. So there are worker threads that send request with a
+ * call id and a payload. This request is 'processed' on the remote side and
+ * just returned.
  * <p>
- * On the local side a future is registered on that call id and when the response returns the future is looked up
- * and notified. And then the worker thread will send another request.
+ * On the local side a future is registered on that call id and when the
+ * response returns the future is looked up and notified. And then the
+ * worker thread will send another request.
+ * <p>
  */
 public abstract class AsyncSocket_RpcTest {
-    // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
+    // use small buffers to cause a lot of network scheduling overhead
+    // (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
-    public int iterations = 200;
+
+    public long durationMillis = 500;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
-    private final AtomicLong iteration = new AtomicLong();
-    private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", iteration);
+    public boolean localWrite;
+
+    private final AtomicLong counter = new AtomicLong();
+    private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", counter);
 
     private final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
     private Reactor clientReactor;
     private Reactor serverReactor;
 
-    public abstract ReactorBuilder newReactorBuilder();
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
-    }
+    public abstract Reactor.Builder newReactorBuilder();
 
     @Before
     public void before() {
@@ -87,170 +86,174 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     @Test
-    public void test_concurrency_1_payload_0B() throws InterruptedException {
-        test(0, 1);
+    public void test_threads_1_payload_0B() throws InterruptedException {
+        test(1, 0);
     }
 
     @Test
-    public void test_concurrency_1_payload_1B() throws InterruptedException {
+    public void test_threads_1_payload_1B() throws InterruptedException {
         test(1, 1);
     }
 
     @Test
-    public void test_concurrency_1_payload_1KB() throws InterruptedException {
-        test(1024, 1);
+    public void test_threads_1_payload_1KB() throws InterruptedException {
+        test(1, 1024);
     }
 
     @Test
-    public void test_concurrency_1_payload_2KB() throws InterruptedException {
-        test(2 * 1024, 1);
+    public void test_threads_1_payload_2KB() throws InterruptedException {
+        test(1, 2 * 1024);
     }
 
     @Test
-    public void test_concurrency_1_payload_4KB() throws InterruptedException {
-        test(4 * 1024, 1);
+    public void test_threads_1_payload_4KB() throws InterruptedException {
+        test(1, 4 * 1024);
     }
 
     @Test
-    public void test_concurrency_1_payload_16KB() throws InterruptedException {
-        test(16 * 1024, 1);
+    public void test_threads_1_payload_16KB() throws InterruptedException {
+        test(1, 16 * 1024);
     }
 
     @Test
-    public void test_concurrency_1_payload_32KB() throws InterruptedException {
-        test(32 * 1024, 1);
+    public void test_threads_1_payload_32KB() throws InterruptedException {
+        test(1, 32 * 1024);
     }
 
     @Test
-    public void test_concurrency_1_payload_64KB() throws InterruptedException {
-        test(64 * 1024, 1);
+    public void test_threads_1_payload_64KB() throws InterruptedException {
+        test(1, 64 * 1024);
     }
 
     @Test
-    public void test_concurrency_1_payload_128KB() throws InterruptedException {
-        test(128 * 1024, 1);
+    public void test_threads_1_payload_128KB() throws InterruptedException {
+        test(1, 128 * 1024);
     }
 
     @Test
-    public void test_concurrency_1_payload_256KB() throws InterruptedException {
-        test(256 * 1024, 1);
+    public void test_threads_1_payload_256KB() throws InterruptedException {
+        test(1, 256 * 1024);
     }
 
     @Test
-    public void test_concurrency_1_payload_512KB() throws InterruptedException {
-        test(512 * 1024, 1);
+    public void test_threads_1_payload_512KB() throws InterruptedException {
+        test(1, 512 * 1024);
     }
 
     @Test
-    public void test_concurrency_1_payload_1MB() throws InterruptedException {
-        test(1024 * 1024, 1);
+    public void test_threads_1_payload_1MB() throws InterruptedException {
+        test(1, 1024 * 1024);
     }
 
     @Test
-    public void test_concurrency_10_payload_0B() throws InterruptedException {
-        test(0, 10);
+    public void test_threads_10_payload_0B() throws InterruptedException {
+        test(10, 0);
     }
 
     @Test
-    public void test_concurrency_10_payload_1B() throws InterruptedException {
-        test(1, 10);
+    public void test_threads_10_payload_1B() throws InterruptedException {
+        test(10, 1);
     }
 
     @Test
-    public void test_concurrency_10_payload_1KB() throws InterruptedException {
-        test(1024, 10);
+    public void test_threads_10_payload_1KB() throws InterruptedException {
+        test(10, 1024);
     }
 
     @Test
-    public void test_concurrency_10_payload_2KB() throws InterruptedException {
-        test(2 * 1024, 10);
+    public void test_threads_10_payload_2KB() throws InterruptedException {
+        test(10, 2 * 1024);
     }
 
     @Test
-    public void test_concurrency_10_payload_4KB() throws InterruptedException {
-        test(4 * 1024, 10);
+    public void test_threads_10_payload_4KB() throws InterruptedException {
+        test(10, 4 * 1024);
     }
 
     @Test
-    public void test_concurrency_10_payload_16KB() throws InterruptedException {
-        test(16 * 1024, 10);
+    public void test_threads_10_payload_16KB() throws InterruptedException {
+        test(10, 16 * 1024);
     }
 
     @Test
-    public void test_concurrency_10_payload_32KB() throws InterruptedException {
-        test(32 * 1024, 10);
+    public void test_threads_10_payload_32KB() throws InterruptedException {
+        test(10, 32 * 1024);
     }
 
     @Test
-    public void test_concurrency_10_payload_64KB() throws InterruptedException {
-        test(64 * 1024, 10);
+    public void test_threads_10_payload_64KB() throws InterruptedException {
+        test(10, 64 * 1024);
     }
 
     @Test
-    public void test_concurrency_10_payload_128KB() throws InterruptedException {
-        test(128 * 1024, 10);
+    public void test_threads_10_payload_128KB() throws InterruptedException {
+        test(10, 128 * 1024);
     }
 
     @Test
-    public void test_concurrency_10_payload_256KB() throws InterruptedException {
-        test(256 * 1024, 10);
+    public void test_threads_10_payload_256KB() throws InterruptedException {
+        test(10, 256 * 1024);
     }
 
     @Test
-    public void test_concurrency_10_payload_512KB() throws InterruptedException {
-        test(512 * 1024, 10);
+    public void test_threads_10_payload_512KB() throws InterruptedException {
+        test(10, 512 * 1024);
     }
 
     @Test
-    public void test_concurrency_10_payload_1MB() throws InterruptedException {
-        test(1024 * 1024, 10);
+    public void test_threads_10_payload_1MB() throws InterruptedException {
+        test(10, 1024 * 1024);
     }
 
     @Test
-    public void test_concurrency_100_payload_1KB() throws InterruptedException {
-        test(1024, 100);
+    public void test_threads_100_payload_0B() throws InterruptedException {
+        test(100, 0);
     }
 
     @Test
-    public void test_concurrency_100_payload_2KB() throws InterruptedException {
-        test(2 * 1024, 100);
+    public void test_threads_100_payload_1KB() throws InterruptedException {
+        test(100, 1024);
     }
 
     @Test
-    public void test_concurrency_100_payload_4KB() throws InterruptedException {
-        test(4 * 1024, 100);
+    public void test_threads_100_payload_2KB() throws InterruptedException {
+        test(100, 2 * 1024);
     }
 
     @Test
-    public void test_concurrency_100_payload_16KB() throws InterruptedException {
-        test(16 * 1024, 100);
+    public void test_threads_100_payload_4KB() throws InterruptedException {
+        test(100, 4 * 1024);
     }
 
     @Test
-    public void test_concurrency_100_payload_32KB() throws InterruptedException {
-        test(32 * 1024, 100);
+    public void test_threads_100_payload_16KB() throws InterruptedException {
+        test(100, 16 * 1024);
     }
 
     @Test
-    public void test_concurrency_100_payload_64KB() throws InterruptedException {
-        test(64 * 1024, 100);
+    public void test_threads_100_payload_32KB() throws InterruptedException {
+        test(100, 32 * 1024);
     }
 
     @Test
-    public void test_concurrency_100_payload_128KB() throws InterruptedException {
-        test(128 * 1024, 100);
+    public void test_threads_100_payload_64KB() throws InterruptedException {
+        test(100, 64 * 1024);
     }
 
-    public void test(int payloadSize, int concurrency) throws InterruptedException {
+    @Test
+    public void test_threads_100_payload_128KB() throws InterruptedException {
+        test(100, 128 * 1024);
+    }
+
+    public void test(int threadCount, int payloadSize) throws InterruptedException {
         AsyncServerSocket serverSocket = newServer();
 
         AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress());
 
         AtomicLong callIdGenerator = new AtomicLong();
-        LoadGeneratorThread[] threads = new LoadGeneratorThread[concurrency];
-        int requestPerThread = iterations / concurrency;
-        for (int k = 0; k < concurrency; k++) {
-            LoadGeneratorThread thread = new LoadGeneratorThread(requestPerThread, payloadSize, callIdGenerator, clientSocket);
+        LoadGeneratorThread[] threads = new LoadGeneratorThread[threadCount];
+        for (int k = 0; k < threadCount; k++) {
+            LoadGeneratorThread thread = new LoadGeneratorThread(payloadSize, callIdGenerator, clientSocket);
             threads[k] = thread;
             thread.start();
         }
@@ -258,13 +261,50 @@ public abstract class AsyncSocket_RpcTest {
         assertJoinable(testTimeoutMs, threads);
     }
 
+    private class LoadGeneratorThread extends Thread {
+        private final byte[] payload;
+        private final AtomicLong callIdGenerator;
+        private final AsyncSocket clientSocket;
+
+        private LoadGeneratorThread(int payloadSize,
+                                    AtomicLong callIdGenerator,
+                                    AsyncSocket clientSocket) {
+            this.payload = new byte[payloadSize];
+            this.callIdGenerator = callIdGenerator;
+            this.clientSocket = clientSocket;
+        }
+
+        @Override
+        public void run() {
+            long endMs = System.currentTimeMillis() + durationMillis;
+            while (System.currentTimeMillis() < endMs) {
+                IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
+
+                long callId = callIdGenerator.incrementAndGet();
+                CompletableFuture future = new CompletableFuture();
+                futures.putIfAbsent(callId, future);
+
+                buf.writeInt(payload.length);
+                buf.writeLong(callId);
+                buf.writeBytes(payload);
+                buf.flip();
+
+                if (!clientSocket.writeAndFlush(buf)) {
+                    throw new RuntimeException();
+                }
+
+                future.join();
+            }
+        }
+    }
+
     private AsyncSocket newClient(SocketAddress serverAddress) {
-        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
-                .set(TCP_NODELAY, true)
-                .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
-                .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setReader(new ClientAsyncSocketReader())
-                .build();
+        AsyncSocket.Builder clientSocketBuilder = clientReactor.newAsyncSocketBuilder();
+        clientSocketBuilder.options.set(TCP_NODELAY, true);
+        clientSocketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
+        clientSocketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+        clientSocketBuilder.reader = new ClientReader();
+        AsyncSocket clientSocket = clientSocketBuilder.build();
 
         clientSocket.start();
         clientSocket.connect(serverAddress).join();
@@ -272,25 +312,25 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     private AsyncServerSocket newServer() {
-        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
-                .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setAcceptFn(acceptRequest -> {
-                    serverReactor.newAsyncSocketBuilder(acceptRequest)
-                            .set(TCP_NODELAY, true)
-                            .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
-                            .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                            .setReader(new ServerAsyncSocketReader())
-                            .build()
-                            .start();
-                })
-                .build();
-
+        AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+            AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
+            socketBuilder.options.set(TCP_NODELAY, true);
+            socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
+            socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+            socketBuilder.reader = new ServerReader();
+            AsyncSocket socket = socketBuilder.build();
+            socket.start();
+        };
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
+        // bind on an arbitrary free port.
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
         return serverSocket;
     }
 
-    private static class ServerAsyncSocketReader extends AsyncSocketReader {
+    private class ServerReader extends AsyncSocket.Reader {
         private ByteBuffer payloadBuffer;
         private long callId;
         private int payloadSize = -1;
@@ -321,7 +361,11 @@ public abstract class AsyncSocket_RpcTest {
                 responseBuf.write(payloadBuffer);
                 responseBuf.flip();
 
-                if (!socket.unsafeWriteAndFlush(responseBuf)) {
+                boolean offered = localWrite
+                        ? socket.insideWriteAndFlush(responseBuf)
+                        : socket.writeAndFlush(responseBuf);
+
+                if (!offered) {
                     throw new RuntimeException("Socket has no space");
                 }
                 payloadSize = -1;
@@ -329,42 +373,7 @@ public abstract class AsyncSocket_RpcTest {
         }
     }
 
-    public class LoadGeneratorThread extends Thread {
-        private final int requests;
-        private final byte[] payload;
-        private final AtomicLong callIdGenerator;
-        private final AsyncSocket clientSocket;
-
-        public LoadGeneratorThread(int requests, int payloadSize, AtomicLong callIdGenerator, AsyncSocket clientSocket) {
-            this.requests = requests;
-            this.payload = new byte[payloadSize];
-            this.callIdGenerator = callIdGenerator;
-            this.clientSocket = clientSocket;
-        }
-
-        @Override
-        public void run() {
-            for (int k = 0; k < requests; k++) {
-                IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
-
-                long callId = callIdGenerator.incrementAndGet();
-                CompletableFuture future = new CompletableFuture();
-                futures.putIfAbsent(callId, future);
-
-                buf.writeInt(payload.length);
-                buf.writeLong(callId);
-                buf.writeBytes(payload);
-                buf.flip();
-                if (!clientSocket.writeAndFlush(buf)) {
-                    throw new RuntimeException();
-                }
-
-                future.join();
-            }
-        }
-    }
-
-    private class ClientAsyncSocketReader extends AsyncSocketReader {
+    private class ClientReader extends AsyncSocket.Reader {
         private ByteBuffer payloadBuffer;
         private long callId;
         private int payloadSize = -1;
@@ -390,14 +399,43 @@ public abstract class AsyncSocket_RpcTest {
                 }
                 payloadBuffer.flip();
 
-                iteration.incrementAndGet();
+                counter.incrementAndGet();
                 CompletableFuture future = futures.remove(callId);
                 if (future == null) {
-                    throw new RuntimeException();
+                    throw new IllegalStateException("Can't find future for callId:" + callId);
                 }
                 future.complete(null);
                 payloadSize = -1;
             }
         }
     }
+
+//    private class MonitorThread extends Thread {
+//        private volatile boolean stop;
+//
+//        public void run() {
+//            long lastCount = counter.get();
+//            try {
+//                while (!stop) {
+//                    Thread.sleep(500);
+//
+//                    long count = counter.get();
+//                    if (lastCount == count) {
+//                        Consumer<AsyncSocket> print = s -> {
+//                            System.out.println("socket wq.empty=" + s.writeQueue.isEmpty() + " flushed=" + (s.flushThread.get() != null));
+//                        };
+//                        clientReactor.sockets().foreach(print);
+//                        serverReactor.sockets().foreach(print);
+//                    }
+//                    lastCount = count;
+//                }
+//            } catch (InterruptedException e) {
+//            }
+//        }
+//
+//        public void shutdown() {
+//            stop = true;
+//            interrupt();
+//        }
+//    }
 }

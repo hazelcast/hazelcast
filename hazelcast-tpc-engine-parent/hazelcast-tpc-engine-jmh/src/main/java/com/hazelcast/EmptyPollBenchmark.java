@@ -16,7 +16,9 @@
 
 package com.hazelcast;
 
-import com.hazelcast.internal.tpcengine.util.EpochClock;
+import com.hazelcast.internal.tpcengine.util.CircularQueue;
+import org.jctools.queues.MpmcArrayQueue;
+import org.jctools.queues.MpscArrayQueue;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -29,21 +31,34 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Since we are doing lots of polling from queues and many of them can be
+ * empty, we need a benchmark to check how expensive these empty polls are.
+ */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)
 @Fork(value = 1)
 @Warmup(iterations = 1)
 @Threads(value = 1)
-public class NanoTimeBenchmark {
+public class EmptyPollBenchmark {
+
+    private final MpscArrayQueue mpscArrayQueue = new MpscArrayQueue(1024);
+    private final MpmcArrayQueue mpmcArrayQueue = new MpmcArrayQueue(1024);
+    private final CircularQueue circularQueue = new CircularQueue(1024);
 
     @Benchmark
-    public long nanoTime() {
-        return System.nanoTime();
+    public Object mpscArrayQueue() {
+        return mpscArrayQueue.poll();
     }
 
     @Benchmark
-    public long epochNanos() {
-        return EpochClock.epochNanos();
+    public Object mpmcArrayQueue() {
+        return mpmcArrayQueue.poll();
+    }
+
+    @Benchmark
+    public Object circularQueue() {
+        return circularQueue.poll();
     }
 }

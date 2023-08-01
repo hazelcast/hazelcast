@@ -18,6 +18,10 @@ package com.hazelcast.internal.tpcengine;
 
 /**
  * The Type of {@link Reactor}.
+ * <p/>
+ * Idea:
+ * Add an IN_MEMORY type that can only be used for in memory communication.
+ * The primary purpose would to speed up testing.
  */
 public enum ReactorType {
 

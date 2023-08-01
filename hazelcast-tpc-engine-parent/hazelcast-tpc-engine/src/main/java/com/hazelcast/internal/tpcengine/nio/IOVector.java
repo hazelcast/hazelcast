@@ -22,8 +22,8 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 
 /**
- * Contains logic to do vectorized I/O (so instead of passing a single buffer, an array
- * of buffer is passed to socket.write).
+ * Contains logic to do vectorized I/O (so instead of passing a single buffer,
+ * an array of buffer is passed to socket.write).
  */
 public final class IOVector {
 

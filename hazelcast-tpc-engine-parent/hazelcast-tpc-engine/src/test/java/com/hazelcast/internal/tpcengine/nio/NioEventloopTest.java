@@ -17,12 +17,12 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.EventloopTest;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
+import com.hazelcast.internal.tpcengine.Reactor;
 
 public class NioEventloopTest extends EventloopTest {
 
     @Override
-    public ReactorBuilder newReactorBuilder() {
-        return new NioReactorBuilder();
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
     }
 }

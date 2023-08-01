@@ -23,6 +23,6 @@ public class IOUringAsyncFileTest extends AsyncFileTest {
 
     @Override
     public Reactor newReactor() {
-        return new IOUringReactor();
+        return new IOUringReactor.Builder().build();
     }
 }

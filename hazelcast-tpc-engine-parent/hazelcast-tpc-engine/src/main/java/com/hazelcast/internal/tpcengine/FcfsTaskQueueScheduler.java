@@ -58,6 +58,16 @@ class FcfsTaskQueueScheduler implements TaskQueueScheduler {
     }
 
     @Override
+    public int capacity() {
+        return capacity;
+    }
+
+    @Override
+    public int size() {
+        return runQueue.size();
+    }
+
+    @Override
     public long timeSliceNanosActive() {
         assert active != null;
 

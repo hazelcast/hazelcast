@@ -17,12 +17,12 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.EventloopTest;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.nio.NioReactorBuilder;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.nio.NioReactor;
 
 public class IOUringEventloopTest extends EventloopTest {
     @Override
-    public ReactorBuilder newReactorBuilder() {
-        return new NioReactorBuilder();
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
     }
 }

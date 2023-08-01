@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.net.AcceptRequest;
+import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
 
-public class IOUringAcceptRequest implements AcceptRequest {
+public class IOUringAcceptRequest implements AbstractAsyncSocket.AcceptRequest {
 
     final LinuxSocket linuxSocket;
 

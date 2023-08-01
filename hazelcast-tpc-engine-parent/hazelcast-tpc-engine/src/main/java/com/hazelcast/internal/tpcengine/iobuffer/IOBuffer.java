@@ -30,39 +30,46 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 
 
 /**
- * The IOBuffer is used to read/write bytes from I/O devices like a socket or a file.
+ * The IOBuffer is used to read/write bytes from I/O devices like a socket
+ * or a file.
  * <p>
- * Currently, the IOBuffer has one ByteBuffer underneath. The problem is that if you have very large
- * payloads, a single chunk of memory is needed for those bytes. This can lead to allocation problems
- * due to fragmentation (perhaps it can't be allocated because of fragmentation), but it can also
+ * Currently, the IOBuffer has one ByteBuffer underneath. The problem is that
+ * if you have very large payloads, a single chunk of memory is needed for
+ * those bytes. This can lead to allocation problems due to fragmentation
+ * (perhaps it can't be allocated because of fragmentation), but it can also
  * lead to fragmentation because buffers can have different sizes.
  * <p>
- * So instead of having a single ByteBuffer underneath, allow for a list of ByteBuffer all with some
- * fixed size, e.g. up to 16 KB. So if a 1MB chunk of data is received, just 64 byte-arrays of 16KB.
- * This will prevent the above fragmentation problem although it could lead to some increased
- * internal fragmentation because more memory is allocated than used. I believe this isn't such a
- * big problem because IOBuffer are short lived.
+ * So instead of having a single ByteBuffer underneath, allow for a list of
+ * ByteBuffer all with some fixed size, e.g. up to 16 KB. So if a 1MB chunk
+ * of data is received, just 64 byte-arrays of 16KB. This will prevent the
+ * above fragmentation problem although it could lead to some increased internal
+ * fragmentation because more memory is allocated than used. I believe this isn't
+ * such a big problem because IOBuffer are short lived.
  * <p>
- * So if an IOBuffer should contain a list of ByteBuffers, then regular reading/writing to the IOBuffer
- * should be agnostic of the composition.
+ * So if an IOBuffer should contain a list of ByteBuffers, then regular
+ * reading/writing to the IOBuffer should be agnostic of the composition.
  * <p>
- * Another feature that is required is ability to block align the pointer. This is needed for O_DIRECT. Probably
- * this isn't needed when we can just pass any pointer. It should be the task of the pointer provider to block align.
+ * Another feature that is required is ability to block align the pointer.
+ * This is needed for O_DIRECT. Probably this isn't needed when we can just
+ * pass any pointer. It should be the task of the pointer provider to block align.
  * <p>
  * Also the ability to wrap any pointer. For more information see:
  * https://stackoverflow.com/questions/16465477/is-there-a-way-to-create-a-direct-bytebuffer-from-a-pointer-solely-in-java
- * E.g. in case of the buffer pool (application specific page cache) we just want to take a pointer to
- * some memory in the bufferpool and pass it to the IOBuffer for reading/writing that page to disk.
+ * E.g. in case of the buffer pool (application specific page cache)
+ * we just want to take a pointer to some memory in the bufferpool and pass
+ * it to the IOBuffer for reading/writing that page to disk.
  * <p>
- * Currently every IOBuffer is expandable. But this should not always be the case. Sometimes we just want to
- * allocate a chunk of memory and that is it.
+ * Currently every IOBuffer is expandable. But this should not always be
+ * the case. Sometimes we just want to allocate a chunk of memory and that is it.
  * <p>
- * Every IOBuffer should have the ability to 'transform' itself into a ByteBuffer (one or more) This is needed for Nio.
- * Very similar to that of Netty.
+ * Every IOBuffer should have the ability to 'transform' itself into a ByteBuffer
+ * (one or more) This is needed for Nio. Very similar to that of Netty.
  * <p>
- * There should be a read/write position instead of the buffer position which depending if a buffer is in reading/writing mode.
+ * There should be a read/write position instead of the buffer position which
+ * depending if a buffer is in reading/writing mode.
  * <p>
- * The IOBuffer should be the care taker of reading/writing to the underlying byte array or pointer.
+ * The IOBuffer should be the care taker of reading/writing to the underlying
+ * byte array or pointer.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MethodCount", "java:S1149", "java:S1135"})
 public class IOBuffer {

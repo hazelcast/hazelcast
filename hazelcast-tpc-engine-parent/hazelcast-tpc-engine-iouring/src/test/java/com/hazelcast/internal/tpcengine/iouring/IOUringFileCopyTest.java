@@ -20,8 +20,9 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.file.FileCopyTest;
 
 public class IOUringFileCopyTest extends FileCopyTest {
+
     @Override
     public Reactor newReactor() {
-        return new IOUringReactor();
+        return new IOUringReactor.Builder().build();
     }
 }

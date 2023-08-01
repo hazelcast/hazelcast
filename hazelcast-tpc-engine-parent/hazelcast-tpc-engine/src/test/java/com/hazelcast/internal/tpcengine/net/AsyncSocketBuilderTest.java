@@ -16,39 +16,26 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 public abstract class AsyncSocketBuilderTest {
-    private static final Option<String> UNKNOwN_OPTION = new Option<>("banana", String.class);
 
     private final List<Reactor> reactors = new ArrayList<>();
 
-    public abstract ReactorBuilder newReactorBuilder();
+    public abstract Reactor.Builder newReactorBuilder();
 
     public Reactor newReactor() {
-        ReactorBuilder builder = newReactorBuilder();
-        Reactor reactor = builder.build();
+        Reactor reactor = newReactorBuilder().build();
         reactors.add(reactor);
         return reactor.start();
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
     }
 
     @After
@@ -57,72 +44,27 @@ public abstract class AsyncSocketBuilderTest {
     }
 
     @Test
-    public void test_setIfSupported_whenNullOption() {
-        Reactor reactor = newReactor();
-        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setIfSupported(null, 1));
-    }
-
-    @Test
-    public void test_setIfSupported_whenNullValue() {
-        Reactor reactor = newReactor();
-        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setIfSupported(AsyncSocketOptions.SO_RCVBUF, null));
-    }
-
-    @Test
-    public void test_setIfSupported_whenNotSupported() {
-        Reactor reactor = newReactor();
-        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
-        assertFalse(builder.setIfSupported(UNKNOwN_OPTION, "banana"));
-    }
-
-    @Test
-    public void test_test_setIfSupported_whenSuccess() {
-        Reactor reactor = newReactor();
-        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
-        assertTrue(builder.setIfSupported(AsyncSocketOptions.SO_RCVBUF, 10));
-    }
-
-    @Test
-    public void test_set_whenNotSupported() {
-        Reactor reactor = newReactor();
-        AsyncServerSocketBuilder builder = reactor.newAsyncServerSocketBuilder();
-        assertThrows(UnsupportedOperationException.class, () -> builder.set(UNKNOwN_OPTION, "banana"));
-    }
-
-    @Test
     public void test_build_whenReadHandlerNotSet() {
         Reactor reactor = newReactor();
-        AsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        assertThrows(IllegalStateException.class, () -> builder.build());
+        AsyncSocket.Builder serverSocketBuilder = reactor.newAsyncSocketBuilder();
+        assertThrows(NullPointerException.class, () -> serverSocketBuilder.build());
     }
 
     @Test
-    public void test_setReadHandler_whenReadHandlerNull() {
+    public void test_writeQueueCapacity_whenNegative() {
         Reactor reactor = newReactor();
-        AsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setReader(null));
+        AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.writeQueueCapacity = -1;
+
+        assertThrows(IllegalArgumentException.class, () -> socketBuilder.conclude());
     }
 
     @Test
-    public void test_setReadHandler_whenAlreadyBuild() {
+    public void test_writeQueueCapacity_whenZero() {
         Reactor reactor = newReactor();
-        AsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        builder.setReader(new DevNullAsyncSocketReader());
-        builder.build();
+        AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.writeQueueCapacity = 0;
 
-        DevNullAsyncSocketReader readHandler = new DevNullAsyncSocketReader();
-        assertThrows(IllegalStateException.class, () -> builder.setReader(readHandler));
-    }
-
-    @Test
-    public void test_build_whenAlreadyBuild() {
-        Reactor reactor = newReactor();
-        AsyncSocketBuilder builder = reactor.newAsyncSocketBuilder();
-        builder.setReader(new DevNullAsyncSocketReader());
-        builder.build();
-
-        assertThrows(IllegalStateException.class, () -> builder.build());
+        assertThrows(IllegalArgumentException.class, () -> socketBuilder.conclude());
     }
 }

@@ -18,13 +18,12 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
+import com.hazelcast.internal.tpcengine.net.DevNullAsyncSocketReader;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -54,11 +53,11 @@ public abstract class ReactorTest {
 
     private final List<Reactor> reactors = new ArrayList<>();
 
-    public abstract ReactorBuilder newReactorBuilder();
+    public abstract Reactor.Builder newReactorBuilder();
 
     public Reactor newReactor() {
-        ReactorBuilder builder = newReactorBuilder();
-        Reactor reactor = builder.build();
+        Reactor.Builder reactorBuilder = newReactorBuilder();
+        Reactor reactor = reactorBuilder.build();
         reactors.add(reactor);
         return reactor;
     }
@@ -194,10 +193,10 @@ public abstract class ReactorTest {
     public void test_shutdown_thenAsyncServerSocketsClosed() {
         Reactor reactor = newReactor();
         reactor.start();
-        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptFn(acceptRequest -> {
-                })
-                .build();
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+        };
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
 
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
@@ -210,23 +209,19 @@ public abstract class ReactorTest {
     public void test_shutdown_thenAsyncSocketClosed() {
         Reactor serverReactor = newReactor();
         serverReactor.start();
-        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
-                .setAcceptFn(acceptRequest -> {
-                })
-                .build();
+        AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+        };
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
 
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
         Reactor clientReactor = newReactor();
         clientReactor.start();
-        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
-                .setReader(new AsyncSocketReader() {
-                    @Override
-                    public void onRead(ByteBuffer src) {
-                    }
-                })
-                .build();
+        AsyncSocket.Builder clientSocketBuilder = clientReactor.newAsyncSocketBuilder();
+        clientSocketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket clientSocket = clientSocketBuilder.build();
         clientSocket.start();
         clientSocket.connect(serverSocket.getLocalAddress());
 

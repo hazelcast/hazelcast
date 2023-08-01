@@ -27,23 +27,24 @@ import static java.lang.Math.round;
  * A {@link TaskQueue} scheduler that always schedules the task group with the
  * lowest vruntime first.
  * <p/>
- * The CFS scheduler is a fair scheduler. So if there are 2 tasks with equal weight,
- * they will both get half of the CPU time. If one of the tasks is blocked, the other
- * task will get all the CPU time.
+ * The CFS scheduler is a fair scheduler. So if there are 2 tasks with equal
+ * weight, they will both get half of the CPU time. If one of the tasks is
+ * blocked, the other task will get all the CPU time.
  * <p/>
  * Currently a min-heap is used to store the tasks based on the vruntime. On the
  * original CFS scheduler a red-black tree is used. The complexity of picking the
- * task with the lowest vruntime is O(1). The complexity for reinserting is O(log(n)).
- * The complexity of removing the task (when the tasks for example blocks) is O(log(n)).
+ * task with the lowest vruntime is O(1). The complexity for reinserting is
+ * O(log(n)). The complexity of removing the task (when the tasks for example
+ * blocks) is O(log(n)).
  * <p/>
- * The target latency is the total amount of latency proportionally divided over the
- * different TaskQueues. If there are e.g. 4 tasksQueues and the target latency is 1ms,
- * then each TaskQueue will get a time slice of 250us.
+ * The target latency is the total amount of latency proportionally divided
+ * over the different TaskQueues. If there are e.g. 4 tasksQueues and the
+ * target latency is 1ms, then each TaskQueue will get a time slice of 250us.
  * <p/>
- * To prevent running a task for a very short period of time, the min granularity is used
- * to set the lower bound of the time slice. So if there are e.g 100 runnable task queues,
- * then each task queue will get a timeslice of 10us. But if the min granularity is 50us,
- * then the time slice will be 50us.
+ * To prevent running a task for a very short period of time, the min
+ * granularity is used to set the lower bound of the time slice. So if there are
+ * e.g 100 runnable task queues, then each task queue will get a timeslice of
+ * 10us. But if the min granularity is 50us, then the time slice will be 50us.
  * <p>
  * https://docs.kernel.org/scheduler/sched-design-CFS.html
  * <p>
@@ -59,7 +60,8 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     final long minGranularityNanos;
     long min_virtualRuntimeNanos;
     int nrRunning;
-    // total weight of all the TaskGroups in this CfsScheduler (it is called loadWeight in the kernel)
+    // total weight of all the TaskGroups in this CfsScheduler (it is called
+    // loadWeight in the kernel)
     long totalWeight;
     TaskQueue active;
 
@@ -70,6 +72,16 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
         this.runQueue = new PriorityQueue<>(runQueueCapacity);
         this.targetLatencyNanos = checkPositive(targetLatencyNanos, "targetLatencyNanos");
         this.minGranularityNanos = checkPositive(minGranularityNanos, "minGranularityNanos");
+    }
+
+    @Override
+    public int capacity() {
+        return capacity;
+    }
+
+    @Override
+    public int size() {
+        return runQueue.size();
     }
 
     public static int niceToWeight(int nice) {
@@ -84,10 +96,12 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
 //        }
         assert active != null;
 
-        // every task gets a timeslice proportional to its weight compared the total weight.
+        // every task gets a timeslice proportional to its weight compared
+        // the total weight.
         long timesliceNanos = targetLatencyNanos * active.weight / totalWeight;
-        // If the timeslice is very small it will lead to excessive context switching So we
-        // take the max value of the minGranularity and the timeslice.
+        // If the timeslice is very small it will lead to excessive context
+        // switching So we take the max value of the minGranularity and the
+        // timeslice.
         return max(minGranularityNanos, timesliceNanos);
     }
 
@@ -140,8 +154,8 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
     }
 
     /**
-     * @inheritDoc yieldActive is needed so that the active taskQueue is properly inserted
-     * into the runQueue based on its updated vruntime.
+     * @inheritDoc yieldActive is needed so that the active taskQueue is
+     * properly inserted into the runQueue based on its updated vruntime.
      */
     @Override
     public void yieldActive() {

@@ -17,15 +17,16 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * When a task runs for a too long period on the reactor, it stalls the reactor and
- * then the {@link #onStall(Reactor, TaskQueue, Object, long, long)} is called. For the time
- * being it can primarily be used for logging purposes since the handler can't influence
- * the Eventloop.
+ * When a task runs for a too long period on the reactor, it stalls the reactor
+ * and then the {@link #onStall(Reactor, TaskQueue, Object, long, long)} is
+ * called. For the time being it can primarily be used for logging purposes
+ * since the handler can't influence the Eventloop.
  * <p/>
- * In the future we'll probably want a stall detector that periodically checks the eventloops
- * to see if there is a task that hasn't completed but has been running for too long. When
- * this is detected, stack traces for example can be dumped. This will help a lot with
- * tracking down performance problems. Similar to the slow operation detector.
+ * In the future we'll probably want a stall detector that periodically checks
+ * the eventloops to see if there is a task that hasn't completed but has been
+ * running for too long. When this is detected, stack traces for example can be
+ * dumped. This will help a lot with tracking down performance problems. Similar
+ * to the slow operation detector.
  */
 public interface StallHandler {
 

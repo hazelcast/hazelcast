@@ -24,10 +24,20 @@ import static com.hazelcast.internal.tpcengine.TaskProcessor.TASK_COMPLETED;
 import static com.hazelcast.internal.tpcengine.TaskProcessor.TASK_YIELD;
 
 /**
- * A Task that gets executed on the {@link Eventloop}. A task can be blocked, completed or yield.
+ * A Task that gets executed on the {@link Eventloop}. When a task runs, it can
+ * either:
+ * <ol>
+ *     <li>blocked: it is waiting for some kind of event to complete. It will
+ *     not be placed back on the task queue.</li>
+ *     <li>completed: the task is complete and will not be placed back on
+ *     the task queue.</li>
+ *     <li>yield: the task has more work to do, but it gives up its timeslice and
+ *     will be put back in the task queue so that it can run again</li>
+ * </ol>
  * <p/>
- * The reason that a Task is a runnable and the Eventloop doesn't directly execute the Task is that
- * we want to execute any Runnable on the Eventloop and we do not want to wrap runnables in Task objects.
+ * The reason that a Task is a runnable and the Eventloop doesn't directly execute
+ * the Task is that we want to execute any Runnable on the Eventloop and we do not
+ * want to wrap runnables in Task objects.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public abstract class Task implements Runnable {
@@ -44,16 +54,15 @@ public abstract class Task implements Runnable {
             int status = process();
             switch (status) {
                 case TASK_BLOCKED:
-                    // when the task unblocks, it will add itself to its taskqueue and get
-                    // the taskqueue scheduled.
+                    // when the task unblocks, it will add itself to its taskqueue
+                    // and get the taskqueue scheduled.
                     break;
                 case TASK_COMPLETED:
                     //task.release();
                     break;
                 case TASK_YIELD:
-                    // add it to the local
-                    // todo: we should check if there is a local.
-                    taskQueue.offerLocal(this);
+                    // todo: we should check if there is a inside.
+                    taskQueue.offerInside(this);
                     break;
                 default:
                     throw new IllegalStateException("Unsupported status: " + status);

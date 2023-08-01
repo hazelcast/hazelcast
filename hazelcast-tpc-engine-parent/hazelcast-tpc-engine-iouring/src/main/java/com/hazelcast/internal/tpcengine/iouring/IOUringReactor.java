@@ -19,15 +19,16 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.net.AcceptRequest;
-import com.hazelcast.internal.tpcengine.net.AsyncServerSocketBuilder;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
+import com.hazelcast.internal.tpcengine.ReactorType;
+import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkInstanceOf;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
- * io_uring implementation of the {@link Eventloop}.
+ * io_uring {@link Reactor} implementation.
  *
  * <p>
  * Good read:
@@ -39,45 +40,51 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkInstanceO
  * no syscalls:
  * https://wjwh.eu/posts/2021-10-01-no-syscall-server-iouring.html
  */
-public class IOUringReactor extends Reactor {
+public final class IOUringReactor extends Reactor {
 
     private final EventFd eventFd;
 
-    public IOUringReactor() {
-        this(new IOUringReactorBuilder());
-    }
-
-    public IOUringReactor(IOUringReactorBuilder builder) {
+    private IOUringReactor(Builder builder) {
         super(builder);
         this.eventFd = ((IOUringEventloop) eventloop()).eventfd;
     }
 
     @Override
-    protected Eventloop newEventloop(ReactorBuilder builder) {
-        return new IOUringEventloop(this, (IOUringReactorBuilder) builder);
+    protected Eventloop newEventloop(Reactor.Builder builder) {
+        IOUringEventloop.Builder eventloopBuilder = new IOUringEventloop.Builder();
+        eventloopBuilder.reactorBuilder = builder;
+        eventloopBuilder.reactor = this;
+        return eventloopBuilder.build();
     }
 
     @Override
-    public AsyncSocketBuilder newAsyncSocketBuilder() {
+    public AsyncSocket.Builder newAsyncSocketBuilder() {
         verifyRunning();
 
-        return new IOUringAsyncSocketBuilder(this, null);
+        IOUringAsyncSocket.Builder socketBuilder = new IOUringAsyncSocket.Builder(null);
+        socketBuilder.networkScheduler = eventloop.networkScheduler();
+        socketBuilder.reactor = this;
+        return socketBuilder;
     }
 
     @Override
-    public AsyncSocketBuilder newAsyncSocketBuilder(AcceptRequest acceptRequest) {
+    public AsyncSocket.Builder newAsyncSocketBuilder(AbstractAsyncSocket.AcceptRequest acceptRequest) {
         verifyRunning();
 
-        IOUringAcceptRequest ioUringAcceptRequest
-                = checkInstanceOf(IOUringAcceptRequest.class, acceptRequest, "acceptRequest");
-        return new IOUringAsyncSocketBuilder(this, ioUringAcceptRequest);
+        IOUringAsyncSocket.Builder socketBuilder = new IOUringAsyncSocket.Builder(
+                (IOUringAcceptRequest) acceptRequest);
+        socketBuilder.reactor = this;
+        socketBuilder.networkScheduler = eventloop.networkScheduler();
+        return socketBuilder;
     }
 
     @Override
-    public AsyncServerSocketBuilder newAsyncServerSocketBuilder() {
+    public AsyncServerSocket.Builder newAsyncServerSocketBuilder() {
         verifyRunning();
 
-        return new IOUringAsyncServerSocketBuilder(this);
+        IOUringAsyncServerSocket.Builder serverBuilder = new IOUringAsyncServerSocket.Builder();
+        serverBuilder.reactor = this;
+        return serverBuilder;
     }
 
     @Override
@@ -88,6 +95,60 @@ public class IOUringReactor extends Reactor {
 
         if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
             eventFd.write(1L);
+        }
+    }
+
+    /**
+     * The Builder for the {@link IOUringReactor}.
+     */
+    @SuppressWarnings({"checkstyle:VisibilityModifier"})
+    public static class Builder extends Reactor.Builder {
+
+        public static final int DEFAULT_ENTRIES = 8192;
+
+        /**
+         * Sets the setup flags for the io_uring instance. See the IoUring.IORING_SETUP
+         * constants.
+         */
+        public int setupFlags;
+
+        /**
+         * The number of entries for the io_uring instance.
+         * <p/>
+         * For more information see:
+         * https://man7.org/linux/man-pages//man2/io_uring_enter.2.html
+         */
+        public int entries = DEFAULT_ENTRIES;
+
+        /**
+         * Configures if the file descriptor of the io_uring instance should be
+         * registered. The purpose of registration it to speed up io_uring_enter.
+         * <p/>
+         * For more information see:
+         * https://man7.org/linux/man-pages/man3/io_uring_register_ring_fd.3.html
+         * <p/>
+         * This is an ultra power feature and should probably not be used by anyone.
+         * You can only have 16 io_uring instances with registered ring file
+         * descriptor. If you create more, you will run into a 'Device or resource busy'
+         * exception.
+         */
+        public boolean registerRing;
+
+        public Builder() {
+            super(ReactorType.IOURING);
+        }
+
+        @Override
+        protected Reactor doBuild() {
+            return new IOUringReactor(this);
+        }
+
+        @Override
+        protected void conclude() {
+            super.conclude();
+
+            checkNotNegative(setupFlags, "setupFlags");
+            checkPositive(entries, "entries");
         }
     }
 }

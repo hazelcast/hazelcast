@@ -16,11 +16,24 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
+import com.hazelcast.internal.tpcengine.Eventloop;
+import com.hazelcast.internal.tpcengine.Reactor;
+
 public final class Preconditions {
 
     public static final int MAX_PORT = 65335;
 
     private Preconditions() {
+    }
+
+    public static void checkOnEventloopThread(Reactor reactor) {
+        if (reactor.eventloopThread() != Thread.currentThread()) {
+            throw new IllegalStateException("Can only construct a socket from the eventloop thread");
+        }
+    }
+
+    public static void checkOnEventloopThread(Eventloop eventloop) {
+        checkOnEventloopThread(eventloop.reactor());
     }
 
     public static int checkValidPort(int port, String paramName) {

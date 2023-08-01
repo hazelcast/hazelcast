@@ -46,11 +46,11 @@ public class TpcEngineTest {
 
     @Test
     public void test() {
-        TpcEngineBuilder configuration = new TpcEngineBuilder();
         int reactorCount = 5;
-        configuration.setReactorCount(reactorCount);
 
-        engine = new TpcEngine(configuration);
+        TpcEngine.Builder builder = new TpcEngine.Builder();
+        builder.reactorCount = reactorCount;
+        engine = builder.build();
 
         assertEquals(5, engine.reactorCount());
         assertEquals(reactorCount, engine.reactorCount());
@@ -61,14 +61,14 @@ public class TpcEngineTest {
 
     @Test
     public void start_whenNew() {
-        engine = new TpcEngine();
+        engine = new TpcEngine.Builder().build();
         engine.start();
         assertEquals(TpcEngine.State.RUNNING, engine.state());
     }
 
     @Test(expected = IllegalStateException.class)
     public void start_whenRunning() {
-        engine = new TpcEngine();
+        engine = new TpcEngine.Builder().build();
         engine.start();
         engine.start();
     }
@@ -77,14 +77,14 @@ public class TpcEngineTest {
 
     @Test
     public void shutdown_whenNew() {
-        engine = new TpcEngine();
+        engine = new TpcEngine.Builder().build();
         engine.shutdown();
         assertTrueEventually(() -> assertEquals(TERMINATED, engine.state()));
     }
 
     @Test
     public void shutdown_whenRunning() throws InterruptedException {
-        engine = new TpcEngine();
+        engine = new TpcEngine.Builder().build();
         engine.start();
         engine.reactor(0).offer(() -> {
             sleepMillis(1000);
@@ -97,7 +97,7 @@ public class TpcEngineTest {
 
     @Test
     public void shutdown_whenShutdown() throws InterruptedException {
-        engine = new TpcEngine();
+        engine = new TpcEngine.Builder().build();
         engine.start();
         engine.reactor(0).offer(() -> {
             sleepMillis(1000);
@@ -112,7 +112,7 @@ public class TpcEngineTest {
 
     @Test
     public void shutdown_whenTerminated() {
-        engine = new TpcEngine();
+        engine = new TpcEngine.Builder().build();
         engine.shutdown();
 
         engine.shutdown();

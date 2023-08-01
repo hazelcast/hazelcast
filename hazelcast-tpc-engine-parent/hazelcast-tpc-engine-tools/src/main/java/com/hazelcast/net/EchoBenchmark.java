@@ -17,17 +17,14 @@
 package com.hazelcast.net;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpcengine.iobuffer.NonPooledIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
-import com.hazelcast.internal.tpcengine.nio.NioAsyncSocketBuilder;
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.jctools.util.PaddedAtomicLong;
 
@@ -40,13 +37,12 @@ import java.util.List;
 import static com.hazelcast.FormatUtil.humanReadableByteCountSI;
 import static com.hazelcast.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEPORT;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_REUSEPORT;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -68,16 +64,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * https://www.alibabacloud.com/blog/599544
  */
 public class EchoBenchmark {
+
     // Properties of the benchmark
-    public int port = 5006;
     public int runtimeSeconds = 2000;
-    public int socketBufferSize = 256 * 1024;
-    public boolean useDirectByteBuffers = true;
-    public int payloadSize = 10;
+    public int payloadSize = 0;
     // the number of concurrent request send over a single connection.
-    public int concurrency = 1;
+    public int concurrency = 1000;
     // the total number of connections.
-    public int connections = 2;
+    public int connections = 10;
+
     public boolean tcpNoDelay = true;
     public boolean spin = false;
     public boolean regularSchedule = true;
@@ -86,6 +81,13 @@ public class EchoBenchmark {
     public String cpuAffinityServer = "5,6";
     public int clientReactorCount = 2;
     public int serverReactorCount = 2;
+    public boolean responsePooling = true;
+    public int port = 5006;
+    public int socketBufferSize = 256 * 1024;
+    public boolean useDirectByteBuffers = true;
+    public Long ioIntervalNanos = null;//TimeUnit.MICROSECONDS.toNanos(2000);
+    public Long stallThresholdNanos = null;//TimeUnit.MICROSECONDS.toNanos(1);
+    public boolean unsafeWrite = true;
 
     // private to the benchmark
     private volatile boolean stop;
@@ -126,7 +128,6 @@ public class EchoBenchmark {
                 byte[] payload = new byte[payloadSize];
                 IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
                 buf.writeInt(payload.length);
-                buf.writeLong(Long.MAX_VALUE);
                 buf.writeBytes(payload);
                 buf.flip();
                 if (!clientSocket.write(buf)) {
@@ -174,17 +175,26 @@ public class EchoBenchmark {
         System.out.println("connections:" + connections);
         System.out.println("clientReactorCount:" + clientReactorCount);
         System.out.println("serverReactorCount:" + serverReactorCount);
+        System.out.println("responsePooling:" + responsePooling);
+        System.out.println("unsafeWrite:" + unsafeWrite);
     }
 
     private List<Reactor> newServerReactors() {
         List<Reactor> reactors = new ArrayList<>();
         ThreadAffinity affinity = cpuAffinityServer == null ? null : new ThreadAffinity(cpuAffinityServer);
         for (int k = 0; k < serverReactorCount; k++) {
-            ReactorBuilder builder = ReactorBuilder.newReactorBuilder(reactorType);
-            builder.setSpin(spin);
-            builder.setThreadName("ServerReactor-" + k);
-            builder.setThreadAffinity(affinity);
-            Reactor reactor = builder.build();
+            Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(reactorType);
+            reactorBuilder.spin = spin;
+            reactorBuilder.reactorName = "ServerReactor-" + k;
+            reactorBuilder.threadName = "ServerReactor-" + k;
+            reactorBuilder.threadAffinity = affinity;
+            if (stallThresholdNanos != null) {
+                reactorBuilder.stallThresholdNanos = stallThresholdNanos;
+            }
+            if (ioIntervalNanos != null) {
+                reactorBuilder.ioIntervalNanos = ioIntervalNanos;
+            }
+            Reactor reactor = reactorBuilder.build();
             reactors.add(reactor);
             reactor.start();
         }
@@ -195,11 +205,18 @@ public class EchoBenchmark {
         List<Reactor> reactors = new ArrayList<>();
         ThreadAffinity affinity = cpuAffinityClient == null ? null : new ThreadAffinity(cpuAffinityClient);
         for (int k = 0; k < clientReactorCount; k++) {
-            ReactorBuilder builder = ReactorBuilder.newReactorBuilder(reactorType);
-            builder.setSpin(spin);
-            builder.setThreadName("ClientReactor-" + k);
-            builder.setThreadAffinity(affinity);
-            Reactor reactor = builder.build();
+            Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(reactorType);
+            reactorBuilder.spin = spin;
+            reactorBuilder.reactorName = "ClientReactor-" + k;
+            reactorBuilder.threadName = "ClientReactor-" + k;
+            reactorBuilder.threadAffinity = affinity;
+            if (stallThresholdNanos != null) {
+                reactorBuilder.stallThresholdNanos = stallThresholdNanos;
+            }
+            if (ioIntervalNanos != null) {
+                reactorBuilder.ioIntervalNanos = ioIntervalNanos;
+            }
+            Reactor reactor = reactorBuilder.build();
             reactors.add(reactor);
             reactor.start();
         }
@@ -218,28 +235,19 @@ public class EchoBenchmark {
         List<AsyncSocket> sockets = new ArrayList<>();
         for (int k = 0; k < connections; k++) {
             Reactor clientReactor = clientReactors.get(k % clientReactorCount);
-            System.out.println("clientReactor:"+clientReactor);
 
             PaddedAtomicLong echoCounter = echoCounters[k % clientReactorCount];
             AsyncServerSocket serverSocket = serverSockets.get(k % serverReactorCount);
-            System.out.println("serverSocket:"+serverSocket);
 
-            AsyncSocketBuilder socketBuilder = clientReactor.newAsyncSocketBuilder()
-                    .set(TCP_NODELAY, tcpNoDelay)
-                    .set(SO_SNDBUF, socketBufferSize)
-                    .set(SO_RCVBUF, socketBufferSize)
-                    .setReader(new ClientAsyncSocketReader(echoCounter));
-
-            if (socketBuilder instanceof NioAsyncSocketBuilder) {
-                NioAsyncSocketBuilder nioSocketBuilder = (NioAsyncSocketBuilder) socketBuilder;
-                nioSocketBuilder.setReceiveBufferIsDirect(useDirectByteBuffers);
-                nioSocketBuilder.setRegularSchedule(regularSchedule);
-            }
-
-            AsyncSocket clientSocket = socketBuilder.build();
-            clientSocket.start();
-            clientSocket.connect(serverSocket.getLocalAddress()).join();
-            sockets.add(clientSocket);
+            AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
+            socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+            socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+            socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+            socketBuilder.reader = new EchoSocketReader(echoCounter);
+            AsyncSocket socket = socketBuilder.build();
+            socket.start();
+            socket.connect(serverSocket.getLocalAddress()).join();
+            sockets.add(socket);
         }
         return sockets;
     }
@@ -250,25 +258,20 @@ public class EchoBenchmark {
             Reactor serverReactor = serverReactors.get(k);
             SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", port + k);
 
-            AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
-                    .set(SO_RCVBUF, socketBufferSize)
-                    .set(SO_REUSEPORT, true)
-                    .setAcceptFn(acceptRequest -> {
-                        AsyncSocketBuilder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest)
-                                .set(TCP_NODELAY, tcpNoDelay)
-                                .set(SO_RCVBUF, socketBufferSize)
-                                .set(SO_SNDBUF, socketBufferSize)
-                                .setReader(new ServerAsyncSocketReader());
+            AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+            serverSocketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+            serverSocketBuilder.options.set(SO_REUSEPORT, true);
+            serverSocketBuilder.acceptFn = acceptRequest -> {
+                AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
+                socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+                socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+                socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+                socketBuilder.reader = new EchoSocketReader(null);
+                AsyncSocket socket = socketBuilder.build();
+                socket.start();
+            };
 
-                        if (socketBuilder instanceof NioAsyncSocketBuilder) {
-                            NioAsyncSocketBuilder nioSocketBuilder = (NioAsyncSocketBuilder) socketBuilder;
-                            nioSocketBuilder.setReceiveBufferIsDirect(useDirectByteBuffers);
-                            nioSocketBuilder.setRegularSchedule(regularSchedule);
-                        }
-                        AsyncSocket socket = socketBuilder.build();
-                        socket.start();
-                    }).build();
-
+            AsyncServerSocket serverSocket = serverSocketBuilder.build();
             serverSocket.bind(serverAddress);
             serverSocket.start();
             serverSockets.add(serverSocket);
@@ -276,115 +279,69 @@ public class EchoBenchmark {
         return serverSockets;
     }
 
-    // Future improvement; ideally the server would just take the read buffer and then
-    // write it. But currently this isn't possible you have no control on the buffer that
-    // is being used for reading.
-    private class ServerAsyncSocketReader extends AsyncSocketReader {
-        private ByteBuffer payloadBuffer;
-        private long round;
-        private int payloadSize = -1;
-        private final IOBufferAllocator responseAllocator
-                = new NonConcurrentIOBufferAllocator(8, useDirectByteBuffers);
+    // todo: add option to flatten
+    private class EchoSocketReader extends AsyncSocket.Reader {
+        private static final int SIZEOF_HEADER = SIZEOF_INT;
 
-        @Override
-        public void onRead(ByteBuffer src) {
-            for (; ; ) {
-                if (payloadSize == -1) {
-                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
-                        break;
-                    }
-                    payloadSize = src.getInt();
-                    round = src.getLong();
-                    if (round < 0) {
-                        throw new RuntimeException("round can't be smaller than 0, found:" + round);
-                    }
-                    if (payloadBuffer == null) {
-                        payloadBuffer = ByteBuffer.allocateDirect(payloadSize);
-                    } else {
-                        payloadBuffer.clear();
-                    }
-                }
-
-                put(payloadBuffer, src);
-                if (payloadBuffer.remaining() > 0) {
-                    // not all bytes have been received.
-                    break;
-                }
-
-                payloadBuffer.flip();
-                IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
-                responseBuf.writeInt(payloadSize);
-                responseBuf.writeLong(round - 1);
-                responseBuf.write(payloadBuffer);
-                responseBuf.flip();
-                if (!socket.unsafeWriteAndFlush(responseBuf)) {
-                    throw new RuntimeException("Socket has no space");
-                }
-                payloadSize = -1;
-            }
-        }
-    }
-
-
-    private class ClientAsyncSocketReader extends AsyncSocketReader {
         private final PaddedAtomicLong echoCounter;
-        private ByteBuffer payloadBuffer;
-        private long round;
+        private IOBuffer response;
         private int payloadSize;
         private final IOBufferAllocator responseAllocator;
 
-        public ClientAsyncSocketReader(PaddedAtomicLong echoCounter) {
+        public EchoSocketReader(PaddedAtomicLong echoCounter) {
             this.echoCounter = echoCounter;
             this.payloadSize = -1;
-            this.responseAllocator = new NonConcurrentIOBufferAllocator(8, useDirectByteBuffers);
+            this.responseAllocator = responsePooling
+                    ? new NonConcurrentIOBufferAllocator(SIZEOF_HEADER, useDirectByteBuffers)
+                    : new NonPooledIOBufferAllocator();
         }
 
         @Override
         public void onRead(ByteBuffer src) {
             if (stop) {
+                src.clear();
                 return;
             }
 
             for (; ; ) {
                 if (payloadSize == -1) {
-                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                    if (src.remaining() < SIZEOF_HEADER) {
                         break;
                     }
 
-                    payloadSize = src.getInt();
-                    round = src.getLong();
-                    if (round < 0) {
-                        throw new RuntimeException("round can't be smaller than 0, found:" + round);
+                    if (response != null) {
+                        throw new RuntimeException("Response must be null");
                     }
 
-                    // todo: it could be that the payloadBuffer isn't big enough (check server as well).
-                    if (payloadBuffer == null) {
-                        payloadBuffer = ByteBuffer.allocateDirect(payloadSize);
-                    } else {
-                        payloadBuffer.clear();
-                    }
+                    payloadSize = src.getInt();
+                    response = responseAllocator.allocate(SIZEOF_HEADER + payloadSize);
+
+                    response.byteBuffer().limit(SIZEOF_HEADER + payloadSize);
+                    response.byteBuffer().putInt(payloadSize);
                 }
 
-                put(payloadBuffer, src);
+                BufferUtil.put(response.byteBuffer(), src);
+                //response.write(src);
 
-                if (payloadBuffer.remaining() > 0) {
+                if (response.byteBuffer().remaining() > 0) {
                     // not all bytes have been received.
                     break;
                 }
-                payloadBuffer.flip();
+                response.byteBuffer().flip();
 
-                echoCounter.lazySet(echoCounter.get() + 1);
+                if (echoCounter != null) {
+                    echoCounter.lazySet(echoCounter.get() + 1);
+                }
 
-                IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
-                responseBuf.writeInt(payloadSize);
-                responseBuf.writeLong(round);
-                //todo: another copy is made.
-                responseBuf.write(payloadBuffer);
-                responseBuf.flip();
-                if (!socket.unsafeWriteAndFlush(responseBuf)) {
+                boolean offered = unsafeWrite
+                        ? socket.insideWriteAndFlush(response)
+                        : socket.writeAndFlush(response);
+
+                if (!offered) {
                     throw new RuntimeException("Socket has no space");
                 }
 
+                response = null;
                 payloadSize = -1;
             }
         }
@@ -461,7 +418,7 @@ public class EchoBenchmark {
 
         for (Reactor reactor : reactors) {
             reactor.sockets().foreach(s -> {
-                AsyncSocketMetrics metrics = s.metrics();
+                AsyncSocket.Metrics metrics = s.metrics();
                 target.reads += metrics.reads();
                 target.writes += metrics.writes();
                 target.bytesWritten += metrics.bytesWritten();

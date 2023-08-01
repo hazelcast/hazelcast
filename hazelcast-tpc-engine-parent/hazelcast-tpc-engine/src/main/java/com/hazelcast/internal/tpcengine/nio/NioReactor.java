@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
+import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.net.AcceptRequest;
+import com.hazelcast.internal.tpcengine.ReactorType;
+import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
+import com.hazelcast.internal.tpcengine.nio.NioAsyncServerSocket.AcceptRequest;
 
 import java.nio.channels.Selector;
-
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkInstanceOf;
 
 /**
  * Nio implementation of the {@link Reactor}.
@@ -31,48 +31,80 @@ public final class NioReactor extends Reactor {
 
     final Selector selector;
 
-    NioReactor(NioReactorBuilder builder) {
+    private NioReactor(Builder builder) {
         super(builder);
         this.selector = ((NioEventloop) eventloop()).selector;
     }
 
     @Override
-    public NioAsyncSocketBuilder newAsyncSocketBuilder() {
+    public NioAsyncSocket.Builder newAsyncSocketBuilder() {
         verifyRunning();
 
-        return new NioAsyncSocketBuilder(this, null);
+        NioAsyncSocket.Builder socketBuilder = new NioAsyncSocket.Builder(null);
+        socketBuilder.reactor = this;
+        socketBuilder.selector = selector;
+        socketBuilder.networkScheduler = eventloop.networkScheduler();
+        return socketBuilder;
     }
 
     @Override
-    public NioAsyncSocketBuilder newAsyncSocketBuilder(AcceptRequest acceptRequest) {
+    public NioAsyncSocket.Builder newAsyncSocketBuilder(
+            AbstractAsyncSocket.AcceptRequest acceptRequest) {
         verifyRunning();
 
-        NioAcceptRequest nioAcceptRequest = checkInstanceOf(NioAcceptRequest.class, acceptRequest, "acceptRequest");
-        return new NioAsyncSocketBuilder(this, nioAcceptRequest);
+        NioAsyncSocket.Builder socketBuilder
+                = new NioAsyncSocket.Builder((AcceptRequest) acceptRequest);
+        socketBuilder.reactor = this;
+        socketBuilder.selector = selector;
+        socketBuilder.networkScheduler = eventloop.networkScheduler();
+        return socketBuilder;
     }
 
     @Override
-    public NioAsyncServerSocketBuilder newAsyncServerSocketBuilder() {
+    public NioAsyncServerSocket.Builder newAsyncServerSocketBuilder() {
         verifyRunning();
 
-        return new NioAsyncServerSocketBuilder(this);
+        NioAsyncServerSocket.Builder serverSocketBuilder = new NioAsyncServerSocket.Builder();
+        serverSocketBuilder.reactor = this;
+        serverSocketBuilder.selector = selector;
+        return serverSocketBuilder;
     }
 
     @Override
-    protected NioEventloop newEventloop(ReactorBuilder builder) {
-        return new NioEventloop(this, (NioReactorBuilder) builder);
+    protected Eventloop newEventloop(Reactor.Builder builder) {
+        NioEventloop.Builder eventloopBuilder = new NioEventloop.Builder();
+        eventloopBuilder.reactor = this;
+        eventloopBuilder.reactorBuilder = builder;
+        return eventloopBuilder.build();
     }
 
     @Override
     public void wakeup() {
-        //System.out.println("wakeup called");
-
         if (spin || Thread.currentThread() == eventloopThread) {
             return;
         }
 
         if (wakeupNeeded.get() && wakeupNeeded.compareAndSet(true, false)) {
             selector.wakeup();
+        }
+    }
+
+    /**
+     * A {@link Reactor.Builder} that builds a {@link NioReactor}.
+     */
+    @SuppressWarnings({"checkstyle:VisibilityModifier"})
+    public static class Builder extends Reactor.Builder {
+
+        /**
+         * Creates a new Builder.
+         */
+        public Builder() {
+            super(ReactorType.NIO);
+        }
+
+        @Override
+        protected NioReactor doBuild() {
+            return new NioReactor(this);
         }
     }
 }

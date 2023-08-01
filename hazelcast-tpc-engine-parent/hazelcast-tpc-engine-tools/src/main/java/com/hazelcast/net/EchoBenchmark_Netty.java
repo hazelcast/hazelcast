@@ -47,6 +47,8 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
 
+import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
+import static java.lang.Math.min;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -57,80 +59,115 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * --add-opens java.base/sun.nio.ch=ALL-UNNAMED
  */
 public class EchoBenchmark_Netty {
-    public static final int runtimeSeconds = 600;
-    public static final int port = 5000;
-    public static final int concurrency = 1;
-    public static final Type type = Type.EPOLL;
-    public static final String cpuAffinityClient = "1";
-    public static final String cpuAffinityServer = "4";
-    public static final int connections = 100;
-    private static volatile boolean stop;
-
     public enum Type {
         NIO,
         EPOLL,
         IO_URING
     }
 
-    private static CountDownLatch countDownLatch = new CountDownLatch(connections);
+    public int runtimeSeconds = 600;
+    public int payloadSize = 0;
+    // the number of inflight packets per connection
+    public int concurrency = 10;
+    public int connections = 10;
+    public Type type = Type.NIO;
+    public String cpuAffinityClient = "1,2";
+    public String cpuAffinityServer = "5,6";
+    public int socketBufferSize = 256 * 1024;
+    public int clientThreadCount = 2;
+    public int serverThreadCount = 2;
+    public boolean tcpNoDelay = true;
+    public int port = 5000;
+
+    private volatile boolean stop;
+    private final CountDownLatch countDownLatch = new CountDownLatch(connections);
 
     public static void main(String[] args) throws InterruptedException {
+        EchoBenchmark_Netty benchmark = new EchoBenchmark_Netty();
+        benchmark.run();
+    }
+
+    private void run() throws InterruptedException {
         // needed so that Netty doesn't run into bad performance with a high number of connections
         System.setProperty("io.netty.iouring.iosqeAsyncThreshold", "16384");
+
+        printConfig();
 
         PaddedAtomicLong[] completedArray = new PaddedAtomicLong[connections];
         for (int k = 0; k < completedArray.length; k++) {
             completedArray[k] = new PaddedAtomicLong();
         }
 
-        EventLoopGroup bossGroup = newEventloopGroup(type, null);
-        EventLoopGroup serverWorkerGroup = newEventloopGroup(type, cpuAffinityServer);
+        EventLoopGroup bossGroup = newEventloopGroup(type, null, serverThreadCount);
+        EventLoopGroup serverWorkerGroup = newEventloopGroup(type, cpuAffinityServer, serverThreadCount);
 
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         ChannelFuture sf = serverBootstrap.group(bossGroup, serverWorkerGroup)
                 .channel(newServerChannel(type))
                 .childHandler(new EchoChannelInitializer(new EchoServerHandler()))
                 .option(ChannelOption.SO_BACKLOG, 128)
+                .option(ChannelOption.SO_RCVBUF, socketBufferSize)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childOption(ChannelOption.TCP_NODELAY, true)
-                .bind(port).sync();
+                .childOption(ChannelOption.TCP_NODELAY, tcpNoDelay)
+                .childOption(ChannelOption.SO_RCVBUF, socketBufferSize)
+                .childOption(ChannelOption.SO_SNDBUF, socketBufferSize)
+                .bind(port)
+                .sync();
         sf.await();
         sf.channel();
 
-        EventLoopGroup clientWorkerGroup = newEventloopGroup(type, cpuAffinityClient);
+        EventLoopGroup clientWorkerGroup = newEventloopGroup(type, cpuAffinityClient, clientThreadCount);
         Channel[] channels = new Channel[connections];
-        for (int k = 0; k < channels.length; k++) {
+        for (int channelIdx = 0; channelIdx < channels.length; channelIdx++) {
             Bootstrap clientBootstrap = new Bootstrap();
             ChannelFuture cf = clientBootstrap.group(clientWorkerGroup)
                     .channel(newSocketChannel(type))
-                    .option(ChannelOption.TCP_NODELAY, true)
+                    .option(ChannelOption.TCP_NODELAY, tcpNoDelay)
                     .option(ChannelOption.SO_KEEPALIVE, true)
-                    .handler(new EchoChannelInitializer(new EchoClientHandler(completedArray[k])))
+                    .handler(new EchoChannelInitializer(new EchoClientHandler(completedArray[channelIdx])))
                     .connect("127.0.0.1", port).sync();
             cf.await();
-            channels[k] = cf.channel();
+            channels[channelIdx] = cf.channel();
         }
 
+        byte[] bogusPayload = new byte[payloadSize];
         long start = currentTimeMillis();
         for (Channel channel : channels) {
             for (int k = 0; k < concurrency; k++) {
-                ByteBuffer byteBuffer = ByteBuffer.allocate(8);
-                byteBuffer.putLong(Long.MAX_VALUE);
+                ByteBuffer byteBuffer = ByteBuffer.allocate(SIZEOF_INT + payloadSize);
+                byteBuffer.putInt(payloadSize);
+                byteBuffer.put(bogusPayload);
                 byteBuffer.flip();
                 ByteBuf buf = Unpooled.wrappedBuffer(byteBuffer);
                 channel.write(buf);
             }
-        }
-        for (Channel channel : channels) {
+
             channel.flush();
         }
 
-        System.out.println("Starting with " + type);
-
-        Monitor monitor = new Monitor(completedArray);
+        MonitorThread monitor = new MonitorThread(completedArray);
         monitor.start();
 
         countDownLatch.await();
+        printResults(completedArray, start);
+    }
+
+    private void printConfig() {
+        System.out.println("runtimeSeconds:" + runtimeSeconds);
+        System.out.println("payloadSize:" + payloadSize);
+        System.out.println("concurrency:" + concurrency);
+        System.out.println("connections:" + connections);
+        System.out.println("type:" + type);
+        System.out.println("cpuAffinityClient:" + cpuAffinityClient);
+        System.out.println("cpuAffinityServer:" + cpuAffinityServer);
+        System.out.println("clientThreadCount:" + clientThreadCount);
+        System.out.println("serverThreadCount:" + serverThreadCount);
+        System.out.println("socketBufferSize:" + socketBufferSize);
+        System.out.println("tcpNoDelay:" + tcpNoDelay);
+        System.out.println("port:" + port);
+    }
+
+    private static void printResults(PaddedAtomicLong[] completedArray, long start) {
         long count = sum(completedArray);
         long duration = currentTimeMillis() - start;
         System.out.println("Duration " + duration + " ms");
@@ -164,14 +201,14 @@ public class EchoBenchmark_Netty {
         }
     }
 
-    private static EventLoopGroup newEventloopGroup(Type type, String affinity) {
+    private static EventLoopGroup newEventloopGroup(Type type, String affinity, int threadCount) {
         switch (type) {
             case NIO:
-                return new NioEventLoopGroup(1, new NettyThreadFactory(affinity));
+                return new NioEventLoopGroup(threadCount, new NettyThreadFactory(affinity));
             case IO_URING:
-                return new IOUringEventLoopGroup(1, new NettyThreadFactory(affinity));
+                return new IOUringEventLoopGroup(threadCount, new NettyThreadFactory(affinity));
             case EPOLL:
-                return new EpollEventLoopGroup(1, new NettyThreadFactory(affinity));
+                return new EpollEventLoopGroup(threadCount, new NettyThreadFactory(affinity));
             default:
                 throw new RuntimeException();
         }
@@ -179,16 +216,18 @@ public class EchoBenchmark_Netty {
 
     private static class NettyThreadFactory implements ThreadFactory {
         private final String affinity;
+        private final ThreadAffinity threadAffinity;
 
         public NettyThreadFactory(String affinity) {
             this.affinity = affinity;
+            this.threadAffinity = affinity == null ? null : new ThreadAffinity(affinity);
         }
 
         @Override
         public Thread newThread(Runnable r) {
             Runnable task = () -> {
-                ThreadAffinity threadAffinity = affinity == null ? null : new ThreadAffinity(affinity);
                 if (threadAffinity != null) {
+                    //todo: affinity needs work
                     System.out.println("Setting affinity " + affinity);
                     ThreadAffinityHelper.setAffinity(threadAffinity.nextAllowedCpus());
                 }
@@ -218,7 +257,10 @@ public class EchoBenchmark_Netty {
         }
     }
 
-    static class EchoClientHandler extends ChannelInboundHandlerAdapter {
+    class EchoClientHandler extends ChannelInboundHandlerAdapter {
+
+        private int payloadSize = -1;
+        private ByteBuf response;
 
         public EchoClientHandler(PaddedAtomicLong completed) {
             this.completed = completed;
@@ -234,14 +276,31 @@ public class EchoBenchmark_Netty {
             }
 
             ByteBuf receiveBuf = (ByteBuf) m;
-            long round = receiveBuf.readLong();
+            for (; ; ) {
+                if (payloadSize == -1) {
+                    if (receiveBuf.readableBytes() < SIZEOF_INT) {
+                        break;
+                    }
+
+                    payloadSize = receiveBuf.readInt();
+                    int responseBufSize = SIZEOF_INT + payloadSize;
+                    response = ctx.alloc().buffer(responseBufSize, responseBufSize);
+                    response.writeInt(payloadSize);
+                }
+
+                response.writeBytes(receiveBuf, min(response.writableBytes(), receiveBuf.readableBytes()));
+
+                if (response.writableBytes() > 0) {
+                    // not all bytes have been received.
+                    break;
+                }
+
+                completed.lazySet(completed.get() + 1);
+                ctx.write(response, ctx.voidPromise());
+                payloadSize = -1;
+                response = null;
+            }
             receiveBuf.release();
-
-            completed.lazySet(completed.get() + 1);
-
-            ByteBuf sendBuffer = ctx.alloc().buffer(8);
-            sendBuffer.writeLong(round - 1);
-            ctx.write(sendBuffer, ctx.voidPromise());
         }
 
         @Override
@@ -278,30 +337,36 @@ public class EchoBenchmark_Netty {
         return sum;
     }
 
-    private static class Monitor extends Thread {
+    private class MonitorThread extends Thread {
         private final PaddedAtomicLong[] completedArray;
         private long last = 0;
 
-        public Monitor(PaddedAtomicLong[] completedArray) {
+        public MonitorThread(PaddedAtomicLong[] completedArray) {
+            super("MonitorThread");
             this.completedArray = completedArray;
         }
 
         @Override
         public void run() {
-            long end = currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
-            while (currentTimeMillis() < end) {
-                try {
-                    Thread.sleep(SECONDS.toMillis(1));
-                } catch (InterruptedException e) {
-                }
+            try {
+                run0();
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+
+            stop = true;
+        }
+
+        private void run0() throws InterruptedException {
+            long endMs = currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
+            while (currentTimeMillis() < endMs) {
+                Thread.sleep(SECONDS.toMillis(1));
 
                 long total = sum(completedArray);
                 long diff = total - last;
                 last = total;
                 System.out.println("  thp " + diff + " echo/sec");
             }
-
-            stop = true;
         }
     }
 }
