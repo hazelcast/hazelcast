@@ -553,6 +553,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 return QueryDataType.TIMESTAMP;
 
             case "TIMESTAMP WITH TIME ZONE":
+            case "DATETIMEOFFSET":
                 return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
 
             default:

@@ -36,11 +36,11 @@ public class MSSQLAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcS
 
     @Before
     public void setUp() throws Exception {
-        assumeThat(type).describedAs("TIMESTAMP WITH TIME ZONE not supported on MSSQL")
-                .isNotEqualTo("TIMESTAMP WITH TIME ZONE");
-
-
         // MSSQL doesn't support BOOLEAN but BIT can be used instead and, uses FLOAT as 8-byte floating point type
+        // For Float in MSSQL see https://learn.microsoft.com/en-us/sql/t-sql/data-types/float-and-real-transact-sql?view=sql-server-ver16
+        // For BIT in MSSQL see https://learn.microsoft.com/en-us/sql/t-sql/data-types/bit-transact-sql?view=sql-server-ver16
+        // For TIMESTAMP in MSSQL see https://learn.microsoft.com/en-us/previous-versions/sql/sql-server-2005/ms182776(v=sql.90)?redirectedfrom=MSDN
+        // For DATETIMEOFFSET in MSSQL see https://learn.microsoft.com/en-us/sql/t-sql/data-types/datetimeoffset-transact-sql?view=sql-server-ver16
         if (type.equals("BOOLEAN")) {
             type = "BIT";
         }
@@ -49,6 +49,9 @@ public class MSSQLAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcS
         }
         if (type.equals("TIMESTAMP")) {
             type = "DATETIME";
+        }
+        if (type.equals("TIMESTAMP WITH TIME ZONE")) {
+            type = "DATETIMEOFFSET";
         }
     }
 
