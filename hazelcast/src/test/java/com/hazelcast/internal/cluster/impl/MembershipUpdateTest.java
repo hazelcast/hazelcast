@@ -839,15 +839,16 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         for (int k = 0; k < 10; k++) {
             membersList.add("127.0.0.1:" + (5701 + k));
         }
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
+        config.getNetworkConfig().setPort(5701);
         config.setClusterName("myCluster").getNetworkConfig().getJoin().getTcpIpConfig().setMembers(membersList);
 
+        HazelcastInstance[] members = new HazelcastInstance[10];
         // Start our master instance
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        members[0] = Hazelcast.newHazelcastInstance(config);
         // Start 9 members simultaneously (so their join request is batched)
-        HazelcastInstance[] members = new HazelcastInstance[9];
         ExecutorService pool = Executors.newFixedThreadPool(9);
-        for (int k = 0; k < 9; k++) {
+        for (int k = 1; k < 10; k++) {
             int finalK = k;
             pool.execute(() -> members[finalK] = Hazelcast.newHazelcastInstance(config));
         }
@@ -855,6 +856,9 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         // Wait for all member instances to be created
         pool.shutdown();
         pool.awaitTermination(30, TimeUnit.SECONDS);
+
+        // Ensure cluster size is 10
+        assertClusterSizeEventually(10, members);
 
         // Create a client and connect to the cluster
         ClientConfig clientConfig = new ClientConfig();
@@ -891,7 +895,6 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         } finally {
             // Terminate client & members
             client.getLifecycleService().terminate();
-            hz1.getLifecycleService().terminate();
             for (HazelcastInstance member : members) {
                 member.getLifecycleService().terminate();
             }
