@@ -563,6 +563,9 @@ public final class Sources {
      * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
      * <p>
      * The default local parallelism for this processor is 1.
+     *
+     * @param replicatedMapName name of the replicated map in the remote cluster
+     * @param clientConfig      client configuration to connect to the remote cluster
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
@@ -575,6 +578,10 @@ public final class Sources {
     /**
      * This method does the same thing as {@link #remoteReplicatedMap(String, ClientConfig)} with a different batch
      * size provided rather than the default batch size.
+     *
+     * @param replicatedMapName name of the replicated map in the remote cluster
+     * @param clientConfig      client configuration to connect to the remote cluster
+     * @param batchSize         batch size to use
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
@@ -606,6 +613,9 @@ public final class Sources {
      * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
      * <p>
      * The default local parallelism for this processor is 1.
+     *
+     * @param replicatedMapName  name of the replicated map in the remote cluster
+     * @param dataConnectionName data connection name to use to connect to the remote cluster
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
@@ -618,6 +628,10 @@ public final class Sources {
     /**
      * This method does the same thing as {@link #remoteReplicatedMap(String, String)} with a different batch
      * size provided rather than the default batch size.
+     *
+     * @param replicatedMapName  name of the replicated map in the remote cluster
+     * @param dataConnectionName data connection name to use to connect to the remote cluster
+     * @param batchSize          batch size to use
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
