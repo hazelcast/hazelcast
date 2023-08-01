@@ -16,12 +16,16 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ServiceConfig;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.instance.impl.Node;
@@ -57,11 +61,15 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
@@ -817,6 +825,79 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         //Let post join continue only after put happened
         latch.countDown();
         assertOpenEventually(entryAddedLatch);
+    }
+
+    @Test
+    public void testDistributedObjectsAccurateAfterBatchedJoinHandling() throws InterruptedException {
+        // Prepare config
+        List<String> membersList = new ArrayList<>(10);
+        for (int k = 0; k < 10; k++) {
+            membersList.add("127.0.0.1:" + (5701 + k));
+        }
+        Config config = smallInstanceConfig();
+        config.setClusterName("myCluster").getNetworkConfig().getJoin().getTcpIpConfig().setMembers(membersList);
+
+        // Start our master instance
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        // Start 9 members simultaneously (so their join request is batched)
+        HazelcastInstance[] members = new HazelcastInstance[9];
+        ExecutorService pool = Executors.newFixedThreadPool(9);
+        for (int k = 0; k < 9; k++) {
+            int finalK = k;
+            pool.execute(() -> members[finalK] = Hazelcast.newHazelcastInstance(config));
+        }
+
+        // Wait for all member instances to be created
+        pool.shutdown();
+        pool.awaitTermination(30, TimeUnit.SECONDS);
+
+        // Create a client and connect to the cluster
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName("myCluster").getNetworkConfig().setAddresses(membersList);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        try {
+            // Create 5 maps and populate them with some data
+            for (int i = 0; i < 5; i++) {
+                createAndPopulateMap(client, "map-" + i);
+            }
+
+            // Fetch distributed objects list and assert its size
+            Collection<DistributedObject> distributedObjects = client.getDistributedObjects();
+            assertEquals(5, distributedObjects.size());
+
+            // Delete 3 maps
+            for (int i = 0; i < 3; i++) {
+                client.getMap("map-" + i).destroy();
+            }
+
+            // Assert distributed objects size
+            distributedObjects = client.getDistributedObjects();
+            assertEquals(2, distributedObjects.size());
+
+            // Re-create 3 maps
+            for (int i = 0; i < 3; i++) {
+                createAndPopulateMap(client, "map-" + i);
+            }
+
+            // Assert distributed objects size
+            distributedObjects = client.getDistributedObjects();
+            assertEquals(5, distributedObjects.size());
+        } finally {
+            // Terminate client & members
+            client.getLifecycleService().terminate();
+            hz1.getLifecycleService().terminate();
+            for (HazelcastInstance member : members) {
+                member.getLifecycleService().terminate();
+            }
+        }
+    }
+
+    private void createAndPopulateMap(HazelcastInstance client, String mapName) {
+        IMap<Integer, String> map = client.getMap(mapName);
+        for (int j = 0; j < 10; j++) {
+            map.put(j, "test" + j);
+        }
     }
 
     @Test
