@@ -802,6 +802,13 @@ public class ClusterJoinManager {
 
                 OnJoinOp preJoinOp = preparePreJoinOps();
 
+                // Run all joining members' provided pre join operations now
+                for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
+                    if (tuple.element2() != null) {
+                        nodeEngine.getOperationService().run(tuple.element2());
+                    }
+                }
+
                 // post join operations must be lock free, that means no locks at all:
                 // no partition locks, no key-based locks, no service level locks!
                 OnJoinOp postJoinOp = preparePostJoinOp();
@@ -811,10 +818,6 @@ public class ClusterJoinManager {
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
                     MemberInfo member = tuple.element1();
-                    // Run all joining members' pre join operations
-                    if (tuple.element2() != null) {
-                        nodeEngine.getOperationService().run(tuple.element2());
-                    }
                     if (isMemberRestartingWithPersistence(member.getAttributes())
                         && isMemberRejoining(memberMap, member.getAddress(), member.getUuid())) {
                         logger.info(member + " is rejoining the cluster");
