@@ -1675,29 +1675,30 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         Map<Integer, ? extends List<SimpleEntryView<Data, Data>>> entriesByPartition =
                 entries.stream()
-                        .map(e -> {
-                            Data keyData = toData(e.getKey());
-                            if (e instanceof SimpleEntryView && e.getKey() instanceof Data && e.getValue() instanceof Data) {
-                                return (SimpleEntryView<Data, Data>) e;
-                            } else {
-                                return new SimpleEntryView<>(keyData, toData(e.getValue()))
-                                        .withCost(e.getCost())
-                                        .withCreationTime(e.getCreationTime())
-                                        .withExpirationTime(e.getExpirationTime())
-                                        .withHits(e.getHits())
-                                        .withLastAccessTime(e.getLastAccessTime())
-                                        .withLastStoredTime(e.getLastStoredTime())
-                                        .withLastUpdateTime(e.getLastUpdateTime())
-                                        .withVersion(e.getVersion())
-                                        .withTtl(e.getTtl())
-                                        .withMaxIdle(e.getMaxIdle());
-
-                            }
-                        })
-                       .collect(groupingBy((SimpleEntryView<Data, Data> e) -> {
-                           int partitionId = partitionService.getPartitionId(e.getKey());
-                           return partitionId;
-                       }));
+                       .map(e -> {
+                           Data keyData = toData(e.getKey());
+                           if (e instanceof SimpleEntryView
+                                   && e.getKey() instanceof Data
+                                   && e.getValue() instanceof Data
+                           ) {
+                               return (SimpleEntryView<Data, Data>) e;
+                           } else {
+                               return new SimpleEntryView<>(keyData, toData(e.getValue()))
+                                       .withCost(e.getCost())
+                                       .withCreationTime(e.getCreationTime())
+                                       .withExpirationTime(e.getExpirationTime())
+                                       .withHits(e.getHits())
+                                       .withLastAccessTime(e.getLastAccessTime())
+                                       .withLastStoredTime(e.getLastStoredTime())
+                                       .withLastUpdateTime(e.getLastUpdateTime())
+                                       .withVersion(e.getVersion())
+                                       .withTtl(e.getTtl())
+                                       .withMaxIdle(e.getMaxIdle());
+                           }
+                       })
+                       .collect(groupingBy(
+                               (SimpleEntryView<Data, Data> e) -> partitionService.getPartitionId(e.getKey())
+                       ));
 
         List<CompletableFuture<Void>> futures = new ArrayList<>(entriesByPartition.size());
         for (Entry<Integer, ? extends List<SimpleEntryView<Data, Data>>> entry : entriesByPartition.entrySet()) {
