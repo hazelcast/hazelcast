@@ -322,6 +322,49 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertCollection(asList(new Row(2), new Row(3)), collectResult(result));
     }
 
+    @Test
+    public void when_unionAllTwoMapsAndOneMapIsNotPrunable_then_nonPrunable() {
+        final String secondMapName = randomName();
+        final String query = "(SELECT f2 FROM " + mapName + " WHERE f0 = 2 AND f1 = 2)"
+                + " UNION ALL "
+                + "(SELECT f2 FROM " + secondMapName + " WHERE f0 = 3 AND f1 = 3)";
+
+        instance().getConfig().addMapConfig(
+                new MapConfig(mapName).setPartitioningAttributeConfigs(List.of(
+                        new PartitioningAttributeConfig("f0"),
+                        new PartitioningAttributeConfig("f1")
+                )));
+
+        IMap<Pojo, String> map1 = instance().getMap(mapName);
+        IMap<Pojo, String> map2 = instance().getMap(secondMapName);
+
+        createMapping(mapName, Pojo.class, String.class);
+        createMapping(secondMapName, Pojo.class, String.class);
+
+        map1.put(new Pojo(2, 2, 2), "2");
+        map2.put(new Pojo(3, 3, 3), "3");
+
+        SqlStatement sql = new SqlStatement(query);
+        SqlPlan plan = sqlService.prepare(
+                sql.getSchema(),
+                query,
+                sql.getParameters(),
+                SqlExpectedResultType.ROWS
+        );
+
+        assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
+        SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
+
+        var optResult = planExecutor.tryUsePrunability(selectPlan, EEC);
+        assertNotNull(optResult.f0());
+        assertEquals(0, optResult.f0().size());
+
+        QueryId queryId = QueryId.create(UUID.randomUUID());
+        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
+
+        assertCollection(asList(new Row(2), new Row(3)), collectResult(result));
+    }
+
     @Ignore("https://hazelcast.atlassian.net/browse/HZ-2796")
     @Test
     public void when_unionForWithSimplePruningKey_then_non_prunable() {
