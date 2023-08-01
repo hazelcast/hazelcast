@@ -931,4 +931,8 @@ public class ReferenceObjects {
     public static List<PartitioningAttributeConfig> aListOfPartitioningAttributeConfigs = Collections.singletonList(
             new PartitioningAttributeConfig(aString)
     );
+
+    public static List<SimpleEntryView<Data, Data>> aListOfSimpleEntryViews = Collections.singletonList(
+            aSimpleEntryView
+    );
 }
