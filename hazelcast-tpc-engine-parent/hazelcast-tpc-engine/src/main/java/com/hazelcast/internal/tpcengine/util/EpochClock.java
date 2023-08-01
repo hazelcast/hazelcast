@@ -21,7 +21,7 @@ package com.hazelcast.internal.tpcengine.util;
  * <p>
  * This class is thread-safe.
  */
-public class EpochClock implements Clock {
+public final class EpochClock implements Clock {
 
     public static final EpochClock INSTANCE = new EpochClock();
 

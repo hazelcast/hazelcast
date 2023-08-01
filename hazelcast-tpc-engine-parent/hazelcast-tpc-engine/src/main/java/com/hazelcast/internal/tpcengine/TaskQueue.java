@@ -115,6 +115,10 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         return (local != null && local.isEmpty()) && (global != null && global.isEmpty());
     }
 
+    int size() {
+        return (local == null ? 0 : local.size()) + (global == null ? 0 : global.size());
+    }
+
     /**
      * Selects the next task from the queues.
      *

@@ -118,7 +118,6 @@ public abstract class Eventloop {
         this.defaultTaskQueueHandle = defaultTaskQueueBuilder.build();
     }
 
-
     /**
      * Returns the Reactor this Eventloop belongs to.
      *
@@ -182,7 +181,7 @@ public abstract class Eventloop {
         return handle.queue.offerLocal(task);
     }
 
-    protected final void checkEventloopThread() {
+    protected final void ensureEventloopThread() {
         if (Thread.currentThread() != reactor.eventloopThread) {
             throw new IllegalStateException();
         }
@@ -195,7 +194,7 @@ public abstract class Eventloop {
      * @return the TaskQueue that belongs to this handle.
      */
     public final TaskQueue getTaskQueue(TaskQueueHandle handle) {
-        checkEventloopThread();
+        ensureEventloopThread();
         return handle.queue;
     }
 
@@ -206,7 +205,7 @@ public abstract class Eventloop {
      * @throws IllegalStateException if current thread is not the Eventloop thread.
      */
     public final TaskQueueBuilder newTaskQueueBuilder() {
-        checkEventloopThread();
+        ensureEventloopThread();
         TaskQueueBuilder taskQueueBuilder = new TaskQueueBuilder();
         taskQueueBuilder.eventloop = this;
         return taskQueueBuilder;
@@ -266,7 +265,6 @@ public abstract class Eventloop {
      * <p>
      * Is called from the reactor thread.
      */
-    @SuppressWarnings("java:S112")
     protected void destroy() throws Exception {
         reactor.files().foreach(AsyncFile::close);
         reactor.sockets().foreach(socket -> socket.close("Reactor is shutting down", null));
@@ -339,6 +337,10 @@ public abstract class Eventloop {
         this.taskStartNanos = epochClock.nanoTime();
     }
 
+    private long tasks;
+    private long ioTicks;
+    private long parks;
+
     /**
      * Runs the actual eventloop.
      * <p/>
@@ -368,6 +370,7 @@ public abstract class Eventloop {
 
             TaskQueue taskQueue = taskQueueScheduler.pickNext();
             if (taskQueue == null) {
+                parks++;
                 // There is no work and therefor we need to park.
 
                 long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
@@ -377,16 +380,16 @@ public abstract class Eventloop {
 
                 park(timeoutNanos);
 
-                // todo: we should only need to update the clock if real parking happened and not when work was detected
+                // todo: we should only need to update the clock if real parking happened
+                // and not when work was detected
                 nowNanos = epochClock.nanoTime();
                 ioDeadlineNanos = nowNanos + ioIntervalNanos;
                 continue;
             }
 
-            //System.out.println("processing");
-
             final long taskQueueDeadlineNanos = nowNanos + taskQueueScheduler.timeSliceNanosActive();
-            long taskGroupExecNanos = 0;
+            // The time the taskGroup has spend on the CPU.
+            long taskGroupCpuTimeNanos = 0;
             int taskCount = 0;
             boolean taskQueueEmpty = false;
             // This forces immediate time measurement of the first task.
@@ -398,6 +401,19 @@ public abstract class Eventloop {
                     // queue is empty, we are done.
                     break;
                 }
+
+//                tasks++;
+//                if (tasks % 100000 == 0) {
+//                    System.out.println(reactor.name + "tasks:" + tasks
+//                            + " parks:" + parks
+//                            + " ioticks:" + ioTicks
+//                            + " tqs.count:" + taskQueueScheduler.size()
+//                            + " taskQueue.length:" + taskQueue.size());
+//                }
+//
+//                if (tasks % 100000 == 0 && reactor.name.startsWith("ClientReactor")) {
+//                    System.out.println("            " + taskQueue.task.toString());
+//                }
 
                 taskStartNanos = nowNanos;
                 taskDeadlineNanos = nowNanos + minGranularityNanos;
@@ -414,14 +430,18 @@ public abstract class Eventloop {
 
                 long taskEndNanos = nowNanos;
                 // make sure that a task always progresses the time.
-                long taskExecNanos = Math.max(taskStartNanos - taskEndNanos, 1);
-                taskGroupExecNanos += taskExecNanos;
+                long taskCpuTimeNanos = Math.max(taskStartNanos - taskEndNanos, 1);
+                taskGroupCpuTimeNanos += taskCpuTimeNanos;
 
-                if (taskExecNanos > stallThresholdNanos) {
-                    stallHandler.onStall(reactor, taskQueue, taskQueue.task, taskStartNanos, taskExecNanos);
+                if (taskCpuTimeNanos > stallThresholdNanos) {
+                    stallHandler.onStall(reactor, taskQueue, taskQueue.task, taskStartNanos, taskCpuTimeNanos);
                 }
 
+                // what if this is the last task of the last task queue; then first we are going to do an
+                // ioSchedulerTick and then we are going to do a park.
                 if (nowNanos >= ioDeadlineNanos) {
+                    ioTicks++;
+                    // todo: return value isn't used.
                     ioSchedulerTick();
                     nowNanos = epochClock.nanoTime();
                     ioDeadlineNanos = nowNanos + ioIntervalNanos;
@@ -430,9 +450,9 @@ public abstract class Eventloop {
                 taskQueue.task = null;
             }
 
-            taskQueueScheduler.updateActive(taskGroupExecNanos);
+            taskQueueScheduler.updateActive(taskGroupCpuTimeNanos);
             metrics.incTasksProcessedCount(taskCount);
-            metrics.incCpuTimeNanos(taskGroupExecNanos);
+            metrics.incCpuTimeNanos(taskGroupCpuTimeNanos);
             metrics.incContextSwitchCount();
 
             if (taskQueueEmpty || taskQueue.isEmpty()) {
@@ -457,11 +477,14 @@ public abstract class Eventloop {
     protected abstract boolean ioSchedulerTick() throws IOException;
 
     /**
-     * Parks the eventloop thread.
+     * Parks the eventloop thread until there is work. So either there are
+     * I/O events or some tasks that require processing.
+     * <p>
+     * todo: rename park to 'select' and ioScheduler tick to 'selectNow'?
      *
      * @param timeoutNanos the timeout in nanos. 0 means no timeout.
      *                     Long.MAX_VALUE means wait forever. a timeout
-     *                     smaller than 0 will not be used.
+     *                     smaller than 0 should not be used.
      * @throws IOException
      */
     protected abstract void park(long timeoutNanos) throws IOException;

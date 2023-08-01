@@ -67,14 +67,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * and with classic networking you get 4.
  */
 public class EchoBenchmark_Classic {
-    public int payloadSize = 10;
-    public int socketBufferSize = 256 * 1024;
     public int runtimeSeconds = 3000;
+    public int payloadSize = 0;
+    public int concurrency = 100;
+    public int connections = 100;
+
+    public int socketBufferSize = 256 * 1024;
     public int port = 8000;
     // The number of concurrent packets on a single connection
-    public int concurrency = 2;
     // the number of connections
-    public int connections = 1;
     public String cpuAffinityClient = "1,2";
     public String cpuAffinityServer = "5,6";
     public boolean tcpNoDelay = true;
@@ -91,8 +92,10 @@ public class EchoBenchmark_Classic {
     }
 
     private void run() throws Exception {
-        // we need to check the echo benchmark if
-        echoCounters = new PaddedAtomicLong[connections];
+        printConfig();
+
+        // We only need to check on 1 thread; the clientInThread.
+        echoCounters = new PaddedAtomicLong[1];
         for (int k = 0; k < echoCounters.length; k++) {
             echoCounters[k] = new PaddedAtomicLong();
         }
@@ -118,15 +121,16 @@ public class EchoBenchmark_Classic {
 
         long startMs = System.currentTimeMillis();
 
+        MonitorThread monitorThread = new MonitorThread();
+        monitorThread.start();
+
         for (NioChannel channel : channels) {
             for (int k = 0; k < concurrency; k++) {
                 channel.write(new Packet(new byte[payloadSize]));
             }
         }
 
-        MonitorThread monitor = new MonitorThread();
-        monitor.start();
-        monitor.join();
+        monitorThread.join();
 
         for (NioChannel channel : channels) {
             channel.close();
@@ -134,6 +138,18 @@ public class EchoBenchmark_Classic {
 
         countDownLatch.await();
         printResults(startMs);
+    }
+
+    private void printConfig() {
+        System.out.println("runtimeSeconds:" + runtimeSeconds);
+        System.out.println("payloadSize:" + payloadSize);
+        System.out.println("concurrency:" + concurrency);
+        System.out.println("connections:" + connections);
+        System.out.println("port:" + port);
+        System.out.println("cpuAffinityClient:" + cpuAffinityClient);
+        System.out.println("cpuAffinityServer:" + cpuAffinityServer);
+        System.out.println("socketBufferSize:" + socketBufferSize);
+        System.out.println("tcpNoDelay:" + tcpNoDelay);
     }
 
     private void printResults(long start) {

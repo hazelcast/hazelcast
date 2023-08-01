@@ -49,6 +49,14 @@ public abstract class AsyncSocketReader {
 
     /**
      * Process the received data on the socket.
+     * <p/>
+     * Idea:
+     * Currently we are forced to consume the bytes from the src buffer; so we need to copy them into
+     * a different structure (e.g. an IOBuffer) because the src buffer will be used for the next
+     * read from the socket. This can be solved by letting this method return the next 'src' buffer;
+     * so the buffer where the data from the socket is going to end up in. This way the current 'src'
+     * buffer can be used for processing, while the returned src buffer can be used to read the new data
+     * from the socket from.
      *
      * @param src the ByteBuffer containing the received data.
      */

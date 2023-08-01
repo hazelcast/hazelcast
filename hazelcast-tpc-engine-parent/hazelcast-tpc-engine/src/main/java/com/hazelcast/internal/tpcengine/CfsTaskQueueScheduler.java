@@ -72,6 +72,11 @@ class CfsTaskQueueScheduler implements TaskQueueScheduler {
         this.minGranularityNanos = checkPositive(minGranularityNanos, "minGranularityNanos");
     }
 
+    @Override
+    public int size() {
+        return runQueue.size();
+    }
+
     public static int niceToWeight(int nice) {
         return (int) round(NICE_0_LOAD / pow(1.25, nice));
     }

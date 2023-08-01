@@ -23,6 +23,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
 import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.EOFException;
@@ -326,6 +327,8 @@ public final class NioAsyncSocket extends AsyncSocket {
             if (flushThread.compareAndSet(null, currentThread)) {
                 // todo: return value
                 localTaskQueue.offerLocal(handler);
+
+                // todo: we can end up with ordering problem
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {
@@ -335,6 +338,7 @@ public final class NioAsyncSocket extends AsyncSocket {
                 result = writeQueue.offer(buf);
             }
         } else if (currentFlushThread == eventloopThread) {
+            // todo: we can end up with ordering problem
             if (ioVector.offer(buf)) {
                 result = true;
             } else {
@@ -358,6 +362,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     @SuppressWarnings("java:S125")
     private final class Handler implements NioHandler, Runnable {
         private final ByteBuffer rcvBuffer;
+        private final ByteBuffer sndBuffer;
         private final AsyncSocketMetrics metrics = NioAsyncSocket.this.metrics;
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
@@ -365,6 +370,14 @@ public final class NioAsyncSocket extends AsyncSocket {
             this.rcvBuffer = builder.receiveBufferIsDirect
                     ? ByteBuffer.allocateDirect(rcvBufferSize)
                     : ByteBuffer.allocate(rcvBufferSize);
+
+            int sndBufferSize = builder.socketChannel.socket().getSendBufferSize();
+            this.sndBuffer = builder.receiveBufferIsDirect
+                    ? ByteBuffer.allocateDirect(sndBufferSize)
+                    : ByteBuffer.allocate(sndBufferSize);
+            //this.sndBuffer = ByteBuffer.allocateDirect(sndBufferSize);
+
+  //          this.sndBuffer = null;
         }
 
         @Override
@@ -442,10 +455,24 @@ public final class NioAsyncSocket extends AsyncSocket {
             ioVector.populate(writeQueue);
 
             ByteBuffer[] srcs = ioVector.array();
-            int length = ioVector.length();
-            long written = length == 1
-                    ? socketChannel.write(srcs[0])
-                    : socketChannel.write(srcs, 0, length);
+            long written;
+            if (sndBuffer != null) {
+                for (int k = 0; k < ioVector.length(); k++) {
+                    ByteBuffer src = srcs[k];
+                    BufferUtil.put(sndBuffer, src);
+                    if (src.hasRemaining()) {
+                        break;
+                    }
+                }
+                sndBuffer.flip();
+                written = socketChannel.write(sndBuffer);
+                compactOrClear(sndBuffer);
+            } else {
+                int length = ioVector.length();
+                written = length == 1
+                        ? socketChannel.write(srcs[0])
+                        : socketChannel.write(srcs, 0, length);
+            }
 
             ioVector.compact(written);
 

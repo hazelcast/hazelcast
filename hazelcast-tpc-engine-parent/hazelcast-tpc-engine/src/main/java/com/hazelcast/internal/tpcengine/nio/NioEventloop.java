@@ -23,7 +23,6 @@ import com.hazelcast.internal.tpcengine.file.BlockRequestScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.nio.NioBlockRequestScheduler.NioBlockRequest;
-import com.hazelcast.internal.tpcengine.util.Preconditions;
 import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
@@ -35,6 +34,7 @@ import java.util.function.Consumer;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -67,7 +67,7 @@ final class NioEventloop extends Eventloop {
 
     @Override
     public AsyncFile newAsyncFile(String path) {
-        Preconditions.checkNotNull(path, "path");
+        checkNotNull(path, "path");
 
         BlockDevice dev = blockDeviceRegistry.findBlockDevice(path);
         if (dev == null) {
@@ -109,11 +109,15 @@ final class NioEventloop extends Eventloop {
         worked |= runDeviceSchedulerCompletions();
 
         return worked;
+
+        //return false;
+        //return false;
     }
 
     @Override
     protected void park(long timeoutNanos) throws IOException {
-        boolean worked = runDeviceSchedulerCompletions();
+        boolean worked = false;
+        //runDeviceSchedulerCompletions();
         int keyCount;
         long timeoutMs = timeoutNanos / NANOS_PER_MILLI;
         if (spin || timeoutMs == 0 || worked) {
@@ -147,12 +151,15 @@ final class NioEventloop extends Eventloop {
             }
         }
 
-        runDeviceSchedulerCompletions();
+        // todo: 2x
+        //runDeviceSchedulerCompletions();
     }
 
     private boolean runDeviceSchedulerCompletions() {
         // similar to cq completions in io_uring
         boolean worked = false;
+
+        // todo: litter
         for (BlockRequestScheduler blockRequestScheduler : deviceSchedulers.values()) {
             NioBlockRequestScheduler scheduler = (NioBlockRequestScheduler) blockRequestScheduler;
             MpscArrayQueue<NioBlockRequest> cq = scheduler.cq;
