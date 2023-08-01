@@ -39,9 +39,11 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static java.util.Collections.emptyMap;
@@ -384,26 +386,26 @@ public interface SqlConnector {
      * The processor is expected to work in a different mode, depending on the
      * `hasInput` argument:<ol>
      *
-     *     <li><b>hasInput == false:</b> There will be no input to the
-     *     processor. The processor is supposed to update all rows matching the
-     *     given `predicate`. If the `predicate` is null, it's supposed to
-     *     update all rows. The `expressions` have no input references.
+     * <li><b>hasInput == false:</b> There will be no input to the
+     * processor. The processor is supposed to update all rows matching the
+     * given `predicate`. If the `predicate` is null, it's supposed to
+     * update all rows. The `expressions` have no input references.
      *
-     *     <li><b>hasInput == true:</b> The processor is supposed to update all
-     *     rows with primary keys it receives on the input. In this mode the
-     *     `predicate` is always null. The primary key fields are specified by
-     *     the {@link #getPrimaryKey(Table)} method. If {@link
-     *     #dmlSupportsPredicates()} returned false, or if {@link
-     *     #supportsExpression} always returns false, `hasInput` is always true.
-     *     The `expressions` might contain input references. The input's first
-     *     columns are the primary key values, the rest are values that might be
-     *     referenced by expressions.
+     * <li><b>hasInput == true:</b> The processor is supposed to update all
+     * rows with primary keys it receives on the input. In this mode the
+     * `predicate` is always null. The primary key fields are specified by
+     * the {@link #getPrimaryKey(Table)} method. If {@link
+     * #dmlSupportsPredicates()} returned false, or if {@link
+     * #supportsExpression} always returns false, `hasInput` is always true.
+     * The `expressions` might contain input references. The input's first
+     * columns are the primary key values, the rest are values that might be
+     * referenced by expressions.
      *
      * </ol>
      *
-     * @param fieldNames The names of fields to update
+     * @param fieldNames  The names of fields to update
      * @param expressions The expressions to assign to each field. Has the same
-     *     length as {@code fieldNames}.
+     *                    length as {@code fieldNames}.
      */
     @Nonnull
     default Vertex updateProcessor(
@@ -423,17 +425,17 @@ public interface SqlConnector {
      * The processor is expected to work in a different mode, depending on the
      * `hasInput` argument:<ol>
      *
-     *     <li><b>hasInput == false:</b> There will be no input to the
-     *     processor. The processor is supposed to update all rows matching the
-     *     given `predicate`. If the `predicate` is null, it's supposed to
-     *     update all rows.
+     * <li><b>hasInput == false:</b> There will be no input to the
+     * processor. The processor is supposed to update all rows matching the
+     * given `predicate`. If the `predicate` is null, it's supposed to
+     * update all rows.
      *
-     *     <li><b>hasInput == true:</b> The processor is supposed to delete all
-     *     rows with primary keys it receives on the input. In this mode the
-     *     `predicate` is always null. The primary key fields are specified by
-     *     the {@link #getPrimaryKey(Table)} method. If {@link
-     *     #dmlSupportsPredicates()} returned false, or if {@link
-     *     #supportsExpression} always returns false, `hasInput` is always true.
+     * <li><b>hasInput == true:</b> The processor is supposed to delete all
+     * rows with primary keys it receives on the input. In this mode the
+     * `predicate` is always null. The primary key fields are specified by
+     * the {@link #getPrimaryKey(Table)} method. If {@link
+     * #dmlSupportsPredicates()} returned false, or if {@link
+     * #supportsExpression} always returns false, `hasInput` is always true.
      *
      * </ol>
      */
@@ -472,7 +474,7 @@ public interface SqlConnector {
      * The default implementation returns true for {@link RexDynamicParam}.
      *
      * @param expression expression to be analysed. Entire expression must be
-     *     checked, not only the root node.
+     *                   checked, not only the root node.
      * @return true, iff the given expression can be evaluated remotely
      */
     default boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
@@ -494,6 +496,35 @@ public interface SqlConnector {
     @Nonnull
     default List<String> getPrimaryKey(Table table) {
         throw new UnsupportedOperationException("PRIMARY KEY not supported by connector: " + typeName());
+    }
+
+    /**
+     * Return the set of options that are not sensitive
+     * to be displayed by querying {@code information_schema}.
+     */
+    default Set<String> nonSensitiveConnectorOptions() {
+        Set<String> options = new HashSet<>();
+        options.add(OPTION_FORMAT);
+        options.add(OPTION_KEY_FORMAT);
+        options.add(OPTION_VALUE_FORMAT);
+        options.add(OPTION_KEY_CLASS);
+        options.add(OPTION_VALUE_CLASS);
+        options.add(OPTION_KEY_FACTORY_ID);
+        options.add(OPTION_KEY_CLASS_ID);
+        options.add(OPTION_KEY_CLASS_VERSION);
+        options.add(OPTION_VALUE_FACTORY_ID);
+        options.add(OPTION_VALUE_CLASS_ID);
+        options.add(OPTION_VALUE_CLASS_VERSION);
+        options.add(OPTION_KEY_COMPACT_TYPE_NAME);
+        options.add(OPTION_VALUE_COMPACT_TYPE_NAME);
+        options.add(OPTION_KEY_AVRO_RECORD_NAME);
+        options.add(OPTION_VALUE_AVRO_RECORD_NAME);
+        options.add(OPTION_TYPE_JAVA_CLASS);
+        options.add(OPTION_TYPE_COMPACT_TYPE_NAME);
+        options.add(OPTION_TYPE_PORTABLE_FACTORY_ID);
+        options.add(OPTION_TYPE_PORTABLE_CLASS_ID);
+        options.add(OPTION_TYPE_PORTABLE_CLASS_VERSION);
+        return options;
     }
 
     interface DagBuildContext {

@@ -33,6 +33,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.jet.core.Edge.between;
 
@@ -158,5 +159,14 @@ public class FileSqlConnector implements SqlConnector {
     @Override
     public boolean supportsExpression(@Nonnull HazelcastRexNode expression) {
         return true;
+    }
+
+    @Override
+    public Set<String> nonSensitiveConnectorOptions() {
+        Set<String> set = SqlConnector.super.nonSensitiveConnectorOptions();
+        // Note: OPTION_PATH and OPTION_GLOB are considered sensitive and won't be returned.
+        set.add(OPTION_SHARED_FILE_SYSTEM);
+        set.add(OPTION_IGNORE_FILE_NOT_FOUND);
+        return set;
     }
 }
