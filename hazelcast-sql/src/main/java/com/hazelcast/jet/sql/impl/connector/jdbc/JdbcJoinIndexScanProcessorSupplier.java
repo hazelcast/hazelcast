@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.connector.jdbc.util.PreparedStatementUtils;
 import com.hazelcast.jet.sql.impl.connector.jdbc.util.ResultSetUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -38,9 +39,9 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -51,7 +52,7 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
-public class JdbcJoinFullScanProcessorSupplier
+public class JdbcJoinIndexScanProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements DataSerializable, SecuredFunction {
 
@@ -69,11 +70,11 @@ public class JdbcJoinFullScanProcessorSupplier
 
 
     // Classes conforming to DataSerializable should provide a no-arguments constructor.
-    public JdbcJoinFullScanProcessorSupplier() {
+    public JdbcJoinIndexScanProcessorSupplier() {
     }
 
-    public JdbcJoinFullScanProcessorSupplier(@Nonnull NestedLoopReaderParams nestedLoopReaderParams,
-                                             @Nonnull String selectQuery) {
+    public JdbcJoinIndexScanProcessorSupplier(@Nonnull NestedLoopReaderParams nestedLoopReaderParams,
+                                              @Nonnull String selectQuery) {
         super(nestedLoopReaderParams.getJdbcTable().getDataConnectionName());
         this.selectQuery = selectQuery;
         this.joinInfo = nestedLoopReaderParams.getJoinInfo();
@@ -118,30 +119,47 @@ public class JdbcJoinFullScanProcessorSupplier
         List<JetSqlRow> jetSqlRows = new ArrayList<>();
 
         try (Connection connection = jdbcDataConnection.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
-            Object[] values = ResultSetUtils.getValueArray(resultSet);
+            PreparedStatementUtils.setObjects(preparedStatement, joinInfo, leftRow);
 
-            while (resultSet.next()) {
-                ResultSetUtils.fillValueArray(resultSet, values);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
 
-                JetSqlRow jetSqlRow = new JetSqlRow(evalContext.getSerializationService(), values);
-                JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRow, joinInfo.nonEquiCondition(), evalContext);
-                if (joinedRow != null) {
-                    // The DB row evaluated as true
-                    jetSqlRows.add(joinedRow);
-                } else {
-                    // The DB row evaluated as false
-                    if (!joinInfo.isInner()) {
-                        // This is not an inner join, so return a null padded JetSqlRow
-                        JetSqlRow extendedRow = leftRow.extendedRow(projections.size());
-                        jetSqlRows.add(extendedRow);
+                Object[] values = ResultSetUtils.getValueArray(resultSet);
+
+                boolean emptyResultSet = true;
+
+                while (resultSet.next()) {
+                    emptyResultSet = false;
+                    ResultSetUtils.fillValueArray(resultSet, values);
+
+                    JetSqlRow jetSqlRow = new JetSqlRow(evalContext.getSerializationService(), values);
+                    JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRow, joinInfo.nonEquiCondition(), evalContext);
+                    if (joinedRow != null) {
+                        // The DB row evaluated as true
+                        jetSqlRows.add(joinedRow);
+                    } else {
+                        // The DB row evaluated as false
+                        createExtendedRowIfNecessary(leftRow, projections, joinInfo, jetSqlRows);
                     }
+                }
+                if (emptyResultSet) {
+                    createExtendedRowIfNecessary(leftRow, projections, joinInfo, jetSqlRows);
                 }
             }
         }
         return traverseIterable(jetSqlRows);
+    }
+
+    private static void createExtendedRowIfNecessary(JetSqlRow leftRow,
+                                                     List<Expression<?>> projections,
+                                                     JetJoinInfo joinInfo,
+                                                     List<JetSqlRow> jetSqlRows) {
+        if (!joinInfo.isInner()) {
+            // This is not an inner join, so return a null padded JetSqlRow
+            JetSqlRow extendedRow = leftRow.extendedRow(projections.size());
+            jetSqlRows.add(extendedRow);
+        }
     }
 
     @Nullable

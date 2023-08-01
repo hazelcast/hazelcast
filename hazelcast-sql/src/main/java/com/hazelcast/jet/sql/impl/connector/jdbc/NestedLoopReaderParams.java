@@ -30,6 +30,8 @@ public class NestedLoopReaderParams {
 
     private SqlConnector.DagBuildContext context;
     private HazelcastRexNode predicate;
+
+    // Columns of table as HazelcastRexNode
     private List<HazelcastRexNode> projection;
     private JetJoinInfo joinInfo;
 
@@ -38,6 +40,8 @@ public class NestedLoopReaderParams {
     private JdbcTable jdbcTable;
 
     private RexNode rexPredicate;
+
+    // Columns of table as RexNode
     private List<RexNode> rexProjection;
 
     private List<Expression<?>> projections;

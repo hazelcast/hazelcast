@@ -36,6 +36,8 @@ public class JdbcJoiner {
         if (!joinInfo.isEquiJoin()) {
             // Indices are not given
             processorSupplier = createFullScanProcessorSupplier();
+        } else {
+            processorSupplier = createIndexScanProcessorSupplier(joinInfo);
         }
         return processorSupplier;
     }
@@ -49,5 +51,17 @@ public class JdbcJoiner {
         );
         String selectQuery = selectQueryBuilder.query();
         return new JdbcJoinFullScanProcessorSupplier(nestedLoopReaderParams, selectQuery);
+    }
+
+    ProcessorSupplier createIndexScanProcessorSupplier(JetJoinInfo joinInfo) {
+        NestedLoopSelectQueryBuilder selectQueryBuilder = new NestedLoopSelectQueryBuilder(
+                nestedLoopReaderParams.getJdbcTable(),
+                nestedLoopReaderParams.getSqlDialect(),
+                nestedLoopReaderParams.getRexPredicate(),
+                nestedLoopReaderParams.getRexProjection(),
+                joinInfo.rightEquiJoinIndices()
+        );
+        String selectQuery = selectQueryBuilder.query();
+        return new JdbcJoinIndexScanProcessorSupplier(nestedLoopReaderParams, selectQuery);
     }
 }

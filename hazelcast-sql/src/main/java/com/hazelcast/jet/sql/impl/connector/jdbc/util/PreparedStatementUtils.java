@@ -16,21 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.util;
 
-import java.sql.ResultSet;
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.sql.impl.row.JetSqlRow;
+
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public final class ResultSetUtils {
+public final class PreparedStatementUtils {
 
-    private ResultSetUtils() {
+    private PreparedStatementUtils() {
     }
 
-    public static Object[] getValueArray(ResultSet resultSet) throws SQLException {
-        return new Object[resultSet.getMetaData().getColumnCount()];
-    }
-
-    public static void fillValueArray(ResultSet resultSet, Object[] values) throws SQLException {
-        for (int index = 0; index < values.length; index++) {
-            values[index] = resultSet.getObject(index + 1);
+    public static void setObjects(PreparedStatement preparedStatement, JetJoinInfo joinInfo, JetSqlRow leftRow)
+            throws SQLException {
+        int[] rightEquiJoinIndices = joinInfo.rightEquiJoinIndices();
+        for (int index = 0; index < rightEquiJoinIndices.length; index++) {
+            preparedStatement.setObject(index + 1, leftRow.get(index));
         }
     }
 }
