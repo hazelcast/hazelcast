@@ -296,7 +296,7 @@ public class SinksTest extends PipelineTestSupport {
                 .collect(toList());
         Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getReplicatedMap(sinkName).entrySet();
         assertEquals(expected.size(), actual.size());
-        expected.forEach(entry -> assertTrue(actual.contains(entry)));
+        assertThat(expected).allSatisfy(entry -> assertTrue(actual.contains(entry)));
     }
 
     @Test
@@ -322,7 +322,7 @@ public class SinksTest extends PipelineTestSupport {
 
         Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getReplicatedMap(sinkName).entrySet();
         assertEquals(expected.size(), actual.size());
-        expected.forEach(entry -> assertTrue(actual.contains(entry)));
+        assertThat(expected).allSatisfy(entry -> assertTrue(actual.contains(entry)));
     }
 
     @Test
