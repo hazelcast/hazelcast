@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
@@ -25,6 +25,7 @@ import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.instance.impl.Node;
@@ -46,10 +47,10 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -105,18 +106,18 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
 public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Rule
     public final OverridePropertyRule ruleStaleJoinPreventionDuration = clear(STALE_JOIN_PREVENTION_DURATION_PROP);
 
-    private TestHazelcastFactory factory;
+    private TestHazelcastInstanceFactory factory;
 
     @Before
     public void init() {
-        factory = new TestHazelcastFactory();
+        factory = createHazelcastInstanceFactory();
     }
 
     @After
@@ -842,11 +843,13 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         config.setClusterName("myCluster").getNetworkConfig().getJoin().getTcpIpConfig().setMembers(membersList);
 
         // Start our master instance
-        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
         // Start 9 members simultaneously (so their join request is batched)
+        HazelcastInstance[] members = new HazelcastInstance[9];
         ExecutorService pool = Executors.newFixedThreadPool(9);
         for (int k = 0; k < 9; k++) {
-            pool.execute(() -> factory.newHazelcastInstance(config));
+            int finalK = k;
+            pool.execute(() -> members[finalK] = Hazelcast.newHazelcastInstance(config));
         }
 
         // Wait for all member instances to be created
@@ -856,34 +859,43 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         // Create a client and connect to the cluster
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName("myCluster").getNetworkConfig().setAddresses(membersList);
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        // Create 5 maps and populate them with some data
-        for (int i = 0; i < 5; i++) {
-            createAndPopulateMap(client, "map-" + i);
+        try {
+            // Create 5 maps and populate them with some data
+            for (int i = 0; i < 5; i++) {
+                createAndPopulateMap(client, "map-" + i);
+            }
+
+            // Fetch distributed objects list and assert its size
+            Collection<DistributedObject> distributedObjects = client.getDistributedObjects();
+            assertEquals(5, distributedObjects.size());
+
+            // Delete 3 maps
+            for (int i = 0; i < 3; i++) {
+                client.getMap("map-" + i).destroy();
+            }
+
+            // Assert distributed objects size
+            distributedObjects = client.getDistributedObjects();
+            assertEquals(2, distributedObjects.size());
+
+            // Re-create 3 maps
+            for (int i = 0; i < 3; i++) {
+                createAndPopulateMap(client, "map-" + i);
+            }
+
+            // Assert distributed objects size
+            distributedObjects = client.getDistributedObjects();
+            assertEquals(5, distributedObjects.size());
+        } finally {
+            // Terminate client & members
+            client.getLifecycleService().terminate();
+            hz1.getLifecycleService().terminate();
+            for (HazelcastInstance member : members) {
+                member.getLifecycleService().terminate();
+            }
         }
-
-        // Fetch distributed objects list and assert its size
-        Collection<DistributedObject> distributedObjects = client.getDistributedObjects();
-        assertEquals(5, distributedObjects.size());
-
-        // Delete 3 maps
-        for (int i = 0; i < 3; i++) {
-            client.getMap("map-" + i).destroy();
-        }
-
-        // Assert distributed objects size
-        distributedObjects = client.getDistributedObjects();
-        assertEquals(2, distributedObjects.size());
-
-        // Re-create 3 maps
-        for (int i = 0; i < 3; i++) {
-            createAndPopulateMap(client, "map-" + i);
-        }
-
-        // Assert distributed objects size
-        distributedObjects = client.getDistributedObjects();
-        assertEquals(5, distributedObjects.size());
     }
 
     private void createAndPopulateMap(HazelcastInstance client, String mapName) {
