@@ -50,9 +50,6 @@ import java.util.List;
 import java.util.Map.Entry;
 
 public final class QueryUtil {
-    public static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
-    public static final String DEFAULT_UNIQUE_KEY = "__key";
-
     private QueryUtil() {
     }
 

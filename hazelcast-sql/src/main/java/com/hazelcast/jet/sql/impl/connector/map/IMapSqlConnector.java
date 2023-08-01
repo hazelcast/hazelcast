@@ -77,9 +77,9 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
-import static com.hazelcast.jet.sql.impl.connector.map.QueryUtil.DEFAULT_UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
 import static com.hazelcast.jet.sql.impl.connector.map.SpecificPartitionsImapReaderPms.mapReader;
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.sql.impl.QueryUtils.getMapContainer;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
@@ -453,7 +453,7 @@ public class IMapSqlConnector implements SqlConnector {
             final var attributeStrategy = (AttributePartitioningStrategy) strategy;
             orderedKeyAttributes.addAll(asList(attributeStrategy.getPartitioningAttributes()));
         } else {
-            orderedKeyAttributes.add(DEFAULT_UNIQUE_KEY);
+            orderedKeyAttributes.add(KEY_ATTRIBUTE_NAME.value());
         }
 
         for (final Map<String, Expression<?>> perMapCandidate : candidates) {
