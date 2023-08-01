@@ -425,6 +425,8 @@ public class ClientMapTest extends HazelcastTestSupport {
         sa.assertThat(actual.getMaxIdle()).describedAs("maxIdle").isEqualTo(entryView.getMaxIdle());
 
         sa.assertAll();
+
+        assertThat((Map) map).hasSize(1);
     }
 
     @Test
