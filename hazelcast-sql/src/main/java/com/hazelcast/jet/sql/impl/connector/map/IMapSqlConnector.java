@@ -30,6 +30,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
@@ -40,6 +41,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.opt.physical.DagBuildContextImpl;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -206,6 +208,21 @@ public class IMapSqlConnector implements SqlConnector {
         }
 
         PartitionedMapTable table = context.getTable();
+
+        if (partitionPruningCandidates == null && !table.partitioningAttributes().isEmpty()) {
+            // We have an IMap but the query cannot use member pruning.
+            // Maybe we still can use scan partition pruning.
+            // TODO: this would be better done if we could reuse results of the analysis
+            //  done for member pruning, eg. if it was available in each RelNode
+
+            // We need some low-level data which are not passed to SqlConnector, this code should be refactored.
+            DagBuildContextImpl contextImpl = (DagBuildContextImpl) context;
+            var relPrunability = CalciteSqlOptimizer.partitionStrategyCandidates(contextImpl.getRel(),
+                    contextImpl.getParameterMetadata(),
+                    // expect only single map in the rel
+                    Map.of(table.getSqlName(), table));
+            partitionPruningCandidates = relPrunability.get(table.getSqlName());
+        }
 
         Vertex vStart = context.getDag().newUniqueVertex(
                 toString(table),

@@ -145,6 +145,7 @@ import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.apache.calcite.sql.util.SqlString;
 import org.apache.calcite.tools.RuleSets;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -935,19 +936,25 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
+    @Nonnull
     private Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates(
             PhysicalRel root, QueryParameterMetadata parameterMetadata) {
+        Map<String, Table> tableMap = tableResolvers().stream()
+                .map(TableResolver::getTables)
+                .flatMap(Collection::stream)
+                .filter(table -> table.getSchemaName().equals(QueryUtils.SCHEMA_NAME_PUBLIC))
+                .collect(Collectors.toMap(Table::getSqlName, Function.identity()));
+        return partitionStrategyCandidates(root, parameterMetadata, tableMap);
+    }
+
+    @Nonnull
+    public static Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates(
+            PhysicalRel root, QueryParameterMetadata parameterMetadata, Map<String, Table> tableMap) {
         HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
         final Map<String, List<Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
 
         RexBuilder b = HazelcastRexBuilder.INSTANCE;
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
-
-        final Map<String, Table> tableMap = tableResolvers().stream()
-                .map(TableResolver::getTables)
-                .flatMap(Collection::stream)
-                .filter(table -> table.getSchemaName().equals(QueryUtils.SCHEMA_NAME_PUBLIC))
-                .collect(Collectors.toMap(Table::getSqlName, Function.identity()));
 
         final Map<String, List<Map<String, Expression<?>>>> result = new HashMap<>();
         for (final String tableName : prunabilityMap.keySet()) {

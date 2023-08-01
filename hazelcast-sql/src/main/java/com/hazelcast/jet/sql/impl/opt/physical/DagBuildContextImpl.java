@@ -69,6 +69,10 @@ public class DagBuildContextImpl implements DagBuildContext {
         return table;
     }
 
+    public PhysicalRel getRel() {
+        return rel;
+    }
+
     public void setRel(@Nullable PhysicalRel rel) {
         this.rel = rel;
     }
