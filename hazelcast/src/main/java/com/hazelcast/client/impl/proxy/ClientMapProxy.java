@@ -61,6 +61,7 @@ import com.hazelcast.client.impl.protocol.codec.MapLockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapProjectCodec;
 import com.hazelcast.client.impl.protocol.codec.MapProjectWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutAllWithMetadataCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentWithMaxIdleCodec;
@@ -160,6 +161,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -185,6 +187,7 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
 import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Proxy implementation of {@link IMap}.
@@ -1665,6 +1668,48 @@ public class ClientMapProxy<K, V> extends ClientProxy
                 throw rethrow(e);
             }
         }
+    }
+
+    public CompletableFuture<Void> putAllWithMetadataAsync(@Nonnull Collection<? extends EntryView<K, V>> entries) {
+        ClientPartitionService partitionService = getContext().getPartitionService();
+
+        Map<Integer, ? extends List<SimpleEntryView<Data, Data>>> entriesByPartition =
+                entries.stream()
+                       .map(e -> {
+                           Data keyData = toData(e.getKey());
+                           if (e instanceof SimpleEntryView
+                                   && e.getKey() instanceof Data
+                                   && e.getValue() instanceof Data
+                           ) {
+                               return (SimpleEntryView<Data, Data>) e;
+                           } else {
+                               return new SimpleEntryView<>(keyData, toData(e.getValue()))
+                                       .withCost(e.getCost())
+                                       .withCreationTime(e.getCreationTime())
+                                       .withExpirationTime(e.getExpirationTime())
+                                       .withHits(e.getHits())
+                                       .withLastAccessTime(e.getLastAccessTime())
+                                       .withLastStoredTime(e.getLastStoredTime())
+                                       .withLastUpdateTime(e.getLastUpdateTime())
+                                       .withVersion(e.getVersion())
+                                       .withTtl(e.getTtl())
+                                       .withMaxIdle(e.getMaxIdle());
+                           }
+                       })
+                       .collect(groupingBy(
+                               (SimpleEntryView<Data, Data> e) -> partitionService.getPartitionId(e.getKey())
+                       ));
+
+        List<CompletableFuture<Void>> futures = new ArrayList<>(entriesByPartition.size());
+        for (Entry<Integer, ? extends List<SimpleEntryView<Data, Data>>> entry : entriesByPartition.entrySet()) {
+            Integer partitionId = entry.getKey();
+            ClientMessage request = MapPutAllWithMetadataCodec.encodeRequest(name, entry.getValue());
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName(), partitionId)
+                    .invoke();
+            futures.add(new ClientDelegatingFuture<>(future, getSerializationService(), clientMessage -> null));
+        }
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
     protected void finalizePutAll(Map<? extends K, ? extends V> map, Map<Integer, List<Entry<Data, Data>>> entryMap) {
