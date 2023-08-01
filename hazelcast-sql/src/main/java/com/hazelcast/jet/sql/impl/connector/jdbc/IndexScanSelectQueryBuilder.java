@@ -24,12 +24,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class NestedLoopSelectQueryBuilder extends SelectQueryBuilder {
+class IndexScanSelectQueryBuilder extends SelectQueryBuilder {
 
-    NestedLoopSelectQueryBuilder(JdbcTable table,
-                                 SqlDialect dialect,
-                                 List<RexNode> projection,
-                                 int[] rightEquiJoinIndices) {
+    IndexScanSelectQueryBuilder(JdbcTable table,
+                                SqlDialect dialect,
+                                List<RexNode> projection,
+                                int[] rightEquiJoinIndices) {
         super(table, dialect, null, projection);
 
         // Create the where clause from indices

@@ -20,7 +20,7 @@ import com.hazelcast.dataconnection.impl.JdbcDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.impl.processor.TransformP;
+import com.hazelcast.jet.impl.processor.TransformBatchedP;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.nio.ObjectDataInput;
@@ -54,16 +54,10 @@ public class JdbcJoinIndexScanProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements DataSerializable, SecuredFunction {
 
-    private String selectQuery;
-
-    private JetJoinInfo joinInfo;
-
-    private List<Expression<?>> projections;
+    private JdbcJoinParameters jdbcJoinParameters;
 
     // Transient members are received when ProcessorSupplier is initialized.
     // No need to serialize them
-
-
     private transient ExpressionEvalContext expressionEvalContext;
 
 
@@ -74,9 +68,7 @@ public class JdbcJoinIndexScanProcessorSupplier
     public JdbcJoinIndexScanProcessorSupplier(@Nonnull NestedLoopReaderParams nestedLoopReaderParams,
                                               @Nonnull String selectQuery) {
         super(nestedLoopReaderParams.getJdbcTable().getDataConnectionName());
-        this.selectQuery = selectQuery;
-        this.joinInfo = nestedLoopReaderParams.getJoinInfo();
-        this.projections = nestedLoopReaderParams.getProjections();
+        this.jdbcJoinParameters = new JdbcJoinParameters(selectQuery, nestedLoopReaderParams);
     }
 
     @Override
@@ -88,38 +80,51 @@ public class JdbcJoinIndexScanProcessorSupplier
     @Nonnull
     @Override
     public Collection<? extends Processor> get(int count) {
-        FunctionEx<JetSqlRow, Traverser<JetSqlRow>> joinFunction = createJoinFunction(
+        FunctionEx<Iterable<JetSqlRow>, Traverser<JetSqlRow>> joinFunction = createJoinFunction(
                 dataConnection,
-                selectQuery,
-                joinInfo,
-                expressionEvalContext,
-                projections);
+                jdbcJoinParameters,
+                expressionEvalContext
+        );
+
+        // Return count number of Processors
         return IntStream.range(0, count)
-                .mapToObj(i -> new TransformP<>(joinFunction)).
+                .mapToObj(i -> new TransformBatchedP<>(joinFunction)).
                 collect(toList());
     }
 
-    private static FunctionEx<JetSqlRow, Traverser<JetSqlRow>> createJoinFunction(JdbcDataConnection jdbcDataConnection,
-                                                                                  String query,
-                                                                                  JetJoinInfo joinInfo,
-                                                                                  ExpressionEvalContext evalContext,
-                                                                                  List<Expression<?>> projections) {
-        return leftRow -> fullScanJoin(leftRow, jdbcDataConnection, query, projections, joinInfo, evalContext);
+    private static FunctionEx<Iterable<JetSqlRow>, Traverser<JetSqlRow>> createJoinFunction(JdbcDataConnection jdbcDataConnection,
+                                                                                            JdbcJoinParameters jdbcJoinParameters,
+                                                                                            ExpressionEvalContext evalContext) {
+        return leftRows -> joinRows(leftRows, jdbcDataConnection, jdbcJoinParameters, evalContext);
     }
 
-    private static Traverser<JetSqlRow> fullScanJoin(JetSqlRow leftRow,
-                                                     JdbcDataConnection jdbcDataConnection,
-                                                     String query,
-                                                     List<Expression<?>> projections,
-                                                     JetJoinInfo joinInfo,
-                                                     ExpressionEvalContext evalContext) throws SQLException {
+    private static Traverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows,
+                                                 JdbcDataConnection jdbcDataConnection,
+                                                 JdbcJoinParameters jdbcJoinParameters,
+                                                 ExpressionEvalContext evalContext) throws SQLException {
 
-        List<JetSqlRow> jetSqlRows = new ArrayList<>();
+        List<JetSqlRow> resultRows = new ArrayList<>();
 
+        for (JetSqlRow leftRow : leftRows) {
+            joinRow(leftRow, jdbcDataConnection, jdbcJoinParameters, evalContext, resultRows);
+        }
+        return traverseIterable(resultRows);
+    }
+
+    private static void joinRow(JetSqlRow leftRow,
+                                JdbcDataConnection jdbcDataConnection,
+                                JdbcJoinParameters jdbcJoinParameters,
+                                ExpressionEvalContext evalContext,
+                                List<JetSqlRow> resultRows) throws SQLException {
+        String query = jdbcJoinParameters.getSelectQuery();
+        JetJoinInfo joinInfo = jdbcJoinParameters.getJoinInfo();
+        List<Expression<?>> projections = jdbcJoinParameters.getProjections();
+
+        // Index scan : Set the parameters to PreparedStatement and iterate over the ResulSet
         try (Connection connection = jdbcDataConnection.getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 
-            setObjects(preparedStatement, joinInfo, leftRow);
+            setObjectsToPreparedStatement(preparedStatement, joinInfo, leftRow);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -131,31 +136,35 @@ public class JdbcJoinIndexScanProcessorSupplier
                     emptyResultSet = false;
                     fillValueArray(resultSet, values);
 
-                    JetSqlRow jetSqlRow = new JetSqlRow(evalContext.getSerializationService(), values);
-                    JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRow, joinInfo.nonEquiCondition(), evalContext);
+                    JetSqlRow jetSqlRowFromDB = new JetSqlRow(evalContext.getSerializationService(), values);
+                    // Join the leftRow with the row from DB
+                    JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRowFromDB, joinInfo.nonEquiCondition(), evalContext);
                     if (joinedRow != null) {
                         // The DB row evaluated as true
-                        jetSqlRows.add(joinedRow);
+                        resultRows.add(joinedRow);
                     } else {
                         // The DB row evaluated as false
-                        createExtendedRowIfNecessary(leftRow, projections, joinInfo, jetSqlRows);
+                        createExtendedRowIfNecessary(leftRow, projections, joinInfo, resultRows);
                     }
                 }
                 if (emptyResultSet) {
-                    createExtendedRowIfNecessary(leftRow, projections, joinInfo, jetSqlRows);
+                    createExtendedRowIfNecessary(leftRow, projections, joinInfo, resultRows);
                 }
             }
         }
-        return traverseIterable(jetSqlRows);
     }
 
-    private static void setObjects(PreparedStatement preparedStatement, JetJoinInfo joinInfo, JetSqlRow leftRow)
+    private static void setObjectsToPreparedStatement(PreparedStatement preparedStatement,
+                                                      JetJoinInfo joinInfo,
+                                                      JetSqlRow leftRow)
             throws SQLException {
         int[] rightEquiJoinIndices = joinInfo.rightEquiJoinIndices();
         for (int index = 0; index < rightEquiJoinIndices.length; index++) {
+            // PreparedStatement parameter index starts from 1
             preparedStatement.setObject(index + 1, leftRow.get(index));
         }
     }
+
     private static void createExtendedRowIfNecessary(JetSqlRow leftRow,
                                                      List<Expression<?>> projections,
                                                      JetJoinInfo joinInfo,
@@ -176,16 +185,12 @@ public class JdbcJoinIndexScanProcessorSupplier
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(dataConnectionName);
-        out.writeString(selectQuery);
-        out.writeObject(joinInfo);
-        out.writeObject(projections);
+        out.writeObject(jdbcJoinParameters);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         dataConnectionName = in.readString();
-        selectQuery = in.readString();
-        joinInfo = in.readObject();
-        projections = in.readObject();
+        jdbcJoinParameters = in.readObject();
     }
 }

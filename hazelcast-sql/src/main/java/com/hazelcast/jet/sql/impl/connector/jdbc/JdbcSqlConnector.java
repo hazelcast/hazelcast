@@ -308,11 +308,7 @@ public class JdbcSqlConnector implements SqlConnector {
                                                   @Nonnull List<HazelcastRexNode> projection,
                                                   @Nonnull JetJoinInfo joinInfo) {
 
-        NestedLoopReaderParams nestedLoopReaderParams = new NestedLoopReaderParams();
-        nestedLoopReaderParams.setContext(context);
-        nestedLoopReaderParams.setPredicate(predicate);
-        nestedLoopReaderParams.setProjection(projection);
-        nestedLoopReaderParams.setJoinInfo(joinInfo);
+        NestedLoopReaderParams nestedLoopReaderParams = new NestedLoopReaderParams(context, predicate, projection, joinInfo);
 
         JdbcTable jdbcTable = context.getTable();
         nestedLoopReaderParams.setDerivedParameters();

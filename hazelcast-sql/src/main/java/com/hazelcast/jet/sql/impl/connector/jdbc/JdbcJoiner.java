@@ -37,30 +37,31 @@ public class JdbcJoiner {
             // Indices are not given
             processorSupplier = createFullScanProcessorSupplier();
         } else {
+            // Indices are given
             processorSupplier = createIndexScanProcessorSupplier(joinInfo);
         }
         return processorSupplier;
     }
 
     ProcessorSupplier createFullScanProcessorSupplier() {
-        SelectQueryBuilder selectQueryBuilder = new SelectQueryBuilder(
+        SelectQueryBuilder queryBuilder = new SelectQueryBuilder(
                 nestedLoopReaderParams.getJdbcTable(),
                 nestedLoopReaderParams.getSqlDialect(),
                 nestedLoopReaderParams.getRexPredicate(),
                 nestedLoopReaderParams.getRexProjection()
         );
-        String selectQuery = selectQueryBuilder.query();
+        String selectQuery = queryBuilder.query();
         return new JdbcJoinFullScanProcessorSupplier(nestedLoopReaderParams, selectQuery);
     }
 
     ProcessorSupplier createIndexScanProcessorSupplier(JetJoinInfo joinInfo) {
-        NestedLoopSelectQueryBuilder selectQueryBuilder = new NestedLoopSelectQueryBuilder(
+        IndexScanSelectQueryBuilder queryBuilder = new IndexScanSelectQueryBuilder(
                 nestedLoopReaderParams.getJdbcTable(),
                 nestedLoopReaderParams.getSqlDialect(),
                 nestedLoopReaderParams.getRexProjection(),
                 joinInfo.rightEquiJoinIndices()
         );
-        String selectQuery = selectQueryBuilder.query();
+        String selectQuery = queryBuilder.query();
         return new JdbcJoinIndexScanProcessorSupplier(nestedLoopReaderParams, selectQuery);
     }
 }

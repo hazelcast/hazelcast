@@ -75,8 +75,9 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
         );
     }
 
+    // Left side is stream : joinInfo indices are not used
     @Test
-    public void test_stream2BatchJoinAsNestedLoopInnerJoin() throws Exception {
+    public void test_stream2BatchJoin() throws Exception {
         String tableName = randomTableName();
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
         for (int index = 1; index < 3; index++) {
@@ -109,8 +110,79 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                 .contains(208, 209);
     }
 
+    // Left side is batch : joinInfo indices are used
     @Test
-    public void test_stream2BatchJoinAsNestedLoopLeftOuterJoin() throws Exception {
+    public void test_TableValuedFunction2BatchJoinJoinOnNonPrimaryKey() throws Exception {
+        String tableName = randomTableName();
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
+        for (int index = 1; index < 3; index++) {
+            String sql = getInsertSQL(tableName, index);
+            executeJdbc(sql);
+        }
+
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                + " id INT, "
+                + " name VARCHAR, "
+                + " ssn INT "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                                 "TABLE(generate_series(207,210)) t " +
+                                                 "JOIN " + tableName + " n ON t.v = n.ssn LIMIT 2");
+
+        Iterator<SqlRow> iterator = sqlResult.iterator();
+        List<SqlRow> actualList = new ArrayList<>();
+        iterator.forEachRemaining(actualList::add);
+
+        List<Object> ssnList = actualList.stream()
+                .map(sqlRow -> sqlRow.getObject("ssn"))
+                .collect(Collectors.toList());
+
+        assertThat(ssnList)
+                .contains(208, 209);
+    }
+
+    // Left side is stream : joinInfo indices are not used
+    @Test
+    public void test_stream2JoinJoinOnNonPrimaryKey() throws Exception {
+        String tableName = randomTableName();
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
+        for (int index = 1; index < 3; index++) {
+            String sql = getInsertSQL(tableName, index);
+            executeJdbc(sql);
+        }
+
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                + " id INT, "
+                + " name VARCHAR, "
+                + " ssn INT "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                                 "TABLE(generate_stream(300)) t " +
+                                                 "JOIN " + tableName + " n ON t.v = n.ssn LIMIT 2");
+
+        Iterator<SqlRow> iterator = sqlResult.iterator();
+        List<SqlRow> actualList = new ArrayList<>();
+        iterator.forEachRemaining(actualList::add);
+
+        List<Object> ssnList = actualList.stream()
+                .map(sqlRow -> sqlRow.getObject("ssn"))
+                .collect(Collectors.toList());
+
+        assertThat(ssnList)
+                .contains(208, 209);
+    }
+
+    // Left side is stream : joinInfo indices are not used
+    @Test
+    public void test_stream2BatchLeftOuterJoin() throws Exception {
         String tableName = randomTableName();
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
         for (int index = 1; index < 3; index++) {
@@ -149,6 +221,44 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
                 );
     }
 
+    // Left side is stream : joinInfo indices are not used
+    @Test
+    public void test_stream2BatchLeftOuterJoinWithEmptyTable() throws Exception {
+        String tableName = randomTableName();
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "ssn INT DEFAULT 1");
+
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                + " id INT, "
+                + " name VARCHAR, "
+                + " ssn INT "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        SqlResult sqlResult = sqlService.execute("SELECT n.id, n.name, n.ssn , t.v FROM " +
+                                                 "TABLE(GENERATE_STREAM(2)) t " +
+                                                 "LEFT OUTER JOIN " + tableName + " n ON t.v = n.id LIMIT 3");
+
+        Iterator<SqlRow> iterator = sqlResult.iterator();
+        List<SqlRow> actualList = new ArrayList<>();
+        iterator.forEachRemaining(actualList::add);
+
+        List<Object> ssnList = actualList.stream()
+                .map(sqlRow -> sqlRow.getObject("ssn"))
+                .collect(Collectors.toList());
+
+        // id 0 : null
+        // id 1 : 208 null
+        // id 2 : 209 null
+        assertThat(ssnList)
+                .contains(null, null,
+                        null, null,
+                        null, null
+                );
+    }
+
+    // Left side is batch : joinInfo indices are used
     @Test
     public void joinWithOtherJdbc() throws SQLException {
         String otherTableName = randomTableName();
@@ -178,6 +288,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
         );
     }
 
+    // Left side is batch : joinInfo indices are used
     @Test
     public void joinWithOtherJdbcWhereClause() throws SQLException {
         String otherTableName = randomTableName();
@@ -208,6 +319,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
         );
     }
 
+    // Left side is batch : joinInfo indices are used
     @Test
     public void leftJoinWithOtherJdbc() throws SQLException {
         String otherTableName = randomTableName();
@@ -237,6 +349,7 @@ public class JdbcJoinTest extends JdbcSqlTestSupport {
         );
     }
 
+    // Left side is batch : joinInfo indices are used
     @Test
     public void rightJoinWithOtherJdbc() throws SQLException {
         String otherTableName = randomTableName();

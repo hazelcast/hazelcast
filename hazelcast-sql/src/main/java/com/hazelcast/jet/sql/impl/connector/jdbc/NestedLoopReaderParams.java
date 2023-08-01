@@ -28,13 +28,14 @@ import java.util.List;
 
 public class NestedLoopReaderParams {
 
-    private SqlConnector.DagBuildContext context;
-    private HazelcastRexNode predicate;
+    private final SqlConnector.DagBuildContext context;
+    private final HazelcastRexNode predicate;
 
     // Columns of table as HazelcastRexNode
-    private List<HazelcastRexNode> projection;
-    private JetJoinInfo joinInfo;
+    private final List<HazelcastRexNode> projection;
+    private final JetJoinInfo joinInfo;
 
+    // The derived parameters to help with coding are below
     private SqlDialect sqlDialect;
 
     private JdbcTable jdbcTable;
@@ -46,36 +47,18 @@ public class NestedLoopReaderParams {
 
     private List<Expression<?>> projections;
 
-    public SqlConnector.DagBuildContext getContext() {
-        return context;
-    }
-
-    public void setContext(SqlConnector.DagBuildContext context) {
+    public NestedLoopReaderParams(SqlConnector.DagBuildContext context,
+                                  HazelcastRexNode predicate,
+                                  List<HazelcastRexNode> projection,
+                                  JetJoinInfo joinInfo) {
         this.context = context;
-    }
-
-    public HazelcastRexNode getPredicate() {
-        return predicate;
-    }
-
-    public void setPredicate(HazelcastRexNode predicate) {
         this.predicate = predicate;
-    }
-
-    public List<HazelcastRexNode> getProjection() {
-        return projection;
-    }
-
-    public void setProjection(List<HazelcastRexNode> projection) {
         this.projection = projection;
+        this.joinInfo = joinInfo;
     }
 
     public JetJoinInfo getJoinInfo() {
         return joinInfo;
-    }
-
-    public void setJoinInfo(JetJoinInfo joinInfo) {
-        this.joinInfo = joinInfo;
     }
 
     public SqlDialect getSqlDialect() {
