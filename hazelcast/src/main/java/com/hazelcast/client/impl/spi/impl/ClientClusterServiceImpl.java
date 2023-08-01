@@ -100,7 +100,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         this.lifecycleListenerID = this.lifecycleService.addLifecycleListener(event -> {
             if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_CONNECTED) {
                 clientConnected = true;
-            } else if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED) {
+            } else if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED
+                    || event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN
+                    || event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
                 clientConnected = false;
             }
         });

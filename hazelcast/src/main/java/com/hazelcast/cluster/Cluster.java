@@ -370,7 +370,7 @@ public interface Cluster {
 
     /**
      *
-     * @throws IllegalStateException If called from a Hazelcast client, and it is not in a cluster.
+     * @throws IllegalStateException If called from a Hazelcast client, and the client is not connect to a cluster.
      * @return true if the local Hazelcast Instance is connected to an enterprise cluster. For a Hazelcast Client,
      * it means the client is connected to an EE cluster. For members, it means the local member is using
      * the enterprise build.
