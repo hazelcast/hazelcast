@@ -102,7 +102,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @since Jet 3.0
  */
 public final class Sources {
-    private static final int RMAP_DEFAULT_READ_BATCH_SIZE = 1_000_000;
+    private static final int RMAP_DEFAULT_READ_BATCH_SIZE = 1_000;
 
     private Sources() {
     }
