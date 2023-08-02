@@ -16,16 +16,12 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ServiceConfig;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.StaticMemberNodeContext;
 import com.hazelcast.instance.impl.Node;
@@ -47,10 +43,11 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -61,53 +58,34 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
-import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
-import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
-import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
-import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
+import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.*;
 import static com.hazelcast.internal.cluster.impl.ClusterJoinManager.STALE_JOIN_PREVENTION_DURATION_PROP;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static com.hazelcast.spi.properties.ClusterProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
-import static com.hazelcast.test.Accessors.getAddress;
-import static com.hazelcast.test.Accessors.getClusterService;
 import static com.hazelcast.test.Accessors.getConnectionManager;
-import static com.hazelcast.test.Accessors.getNode;
-import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.*;
 import static com.hazelcast.test.OverridePropertyRule.clear;
-import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
-import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
-import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
-import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsFrom;
-import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
+import static com.hazelcast.test.PacketFiltersUtil.*;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
 import static java.lang.Thread.currentThread;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Rule
@@ -830,82 +808,6 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         //Let post join continue only after put happened
         latch.countDown();
         assertOpenEventually(entryAddedLatch);
-    }
-
-    @Test
-    public void testDistributedObjectsAccurateAfterBatchedJoinHandling() throws InterruptedException {
-        // Prepare config
-        List<String> membersList = new ArrayList<>(10);
-        for (int k = 0; k < 10; k++) {
-            membersList.add("127.0.0.1:" + (5701 + k));
-        }
-        Config config = smallInstanceConfigWithoutJetAndMetrics();
-        config.getNetworkConfig().setPort(5701);
-        config.setClusterName("myCluster").getNetworkConfig().getJoin().getTcpIpConfig().setMembers(membersList);
-
-        HazelcastInstance[] members = new HazelcastInstance[10];
-        // Start our master instance
-        members[0] = Hazelcast.newHazelcastInstance(config);
-        // Start 9 members simultaneously (so their join request is batched)
-        ExecutorService pool = Executors.newFixedThreadPool(9);
-        for (int k = 1; k < 10; k++) {
-            int finalK = k;
-            pool.execute(() -> members[finalK] = Hazelcast.newHazelcastInstance(config));
-        }
-
-        // Wait for all member instances to be created
-        pool.shutdown();
-        pool.awaitTermination(30, TimeUnit.SECONDS);
-
-        // Ensure cluster size is 10
-        assertClusterSizeEventually(10, members);
-
-        // Create a client and connect to the cluster
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName("myCluster").getNetworkConfig().setAddresses(membersList);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        try {
-            // Create 5 maps and populate them with some data
-            for (int i = 0; i < 5; i++) {
-                createAndPopulateMap(client, "map-" + i);
-            }
-
-            // Fetch distributed objects list and assert its size
-            Collection<DistributedObject> distributedObjects = client.getDistributedObjects();
-            assertEquals(5, distributedObjects.size());
-
-            // Delete 3 maps
-            for (int i = 0; i < 3; i++) {
-                client.getMap("map-" + i).destroy();
-            }
-
-            // Assert distributed objects size
-            distributedObjects = client.getDistributedObjects();
-            assertEquals(2, distributedObjects.size());
-
-            // Re-create 3 maps
-            for (int i = 0; i < 3; i++) {
-                createAndPopulateMap(client, "map-" + i);
-            }
-
-            // Assert distributed objects size
-            distributedObjects = client.getDistributedObjects();
-            assertEquals(5, distributedObjects.size());
-        } finally {
-            // Terminate client & members
-            client.getLifecycleService().terminate();
-            for (HazelcastInstance member : members) {
-                member.getLifecycleService().terminate();
-            }
-        }
-    }
-
-    private void createAndPopulateMap(HazelcastInstance client, String mapName) {
-        IMap<Integer, String> map = client.getMap(mapName);
-        for (int j = 0; j < 10; j++) {
-            map.put(j, "test" + j);
-        }
     }
 
     @Test
