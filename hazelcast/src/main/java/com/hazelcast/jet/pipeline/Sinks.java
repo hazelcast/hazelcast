@@ -265,7 +265,8 @@ public final class Sinks {
      * 1 million entries. Use {@link #remoteReplicatedMap(String, String, int)} to change
      * the batch size.
      * <p>
-     * The default local parallelism for this sink is 1.
+     * {@link SinkBuilder#sinkBuilder(String, FunctionEx)} is used to create the sink and the preferred local
+     * parallelism is 1.
      *
      * @param replicatedMapName  name of the replicated map in the remote cluster
      * @param dataConnectionName name of the data connection to connect to the remote cluster
@@ -313,7 +314,8 @@ public final class Sinks {
      * 1 million entries. Use {@link #remoteReplicatedMap(String, ClientConfig, int)} to change
      * the batch size.
      * <p>
-     * The default local parallelism for this sink is 1.
+     * {@link SinkBuilder#sinkBuilder(String, FunctionEx)} is used to create the sink and the preferred local
+     * parallelism is 1.
      *
      * @param replicatedMapName name of the replicated map in the remote cluster
      * @param clientConfig      configuration of the client to connect to the remote cluster

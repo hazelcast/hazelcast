@@ -567,7 +567,7 @@ public final class Sources {
      * This method reads entries in batches of 1 million by default. To change
      * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
      * <p>
-     * The default local parallelism for this processor is 1.
+     * The total parallelism for this processor is 1.
      *
      * @param replicatedMapName name of the replicated map in the remote cluster
      * @param clientConfig      client configuration to connect to the remote cluster
@@ -622,7 +622,7 @@ public final class Sources {
      * This method reads entries in batches of 1 million by default. To change
      * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
      * <p>
-     * The default local parallelism for this processor is 1.
+     * The total parallelism for this processor is 1.
      *
      * @param replicatedMapName  name of the replicated map in the remote cluster
      * @param dataConnectionName data connection name to use to connect to the remote cluster
