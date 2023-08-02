@@ -23,7 +23,6 @@ import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.SqlWriter.Frame;
 import org.apache.calcite.sql.SqlWriter.FrameTypeEnum;
 import org.apache.calcite.sql.dialect.MssqlSqlDialect;
-import org.apache.calcite.sql.dialect.MysqlSqlDialect;
 
 /**
  * Custom dialect for MSSQL which allows correct unparsing of MSSQL specific operators, like CONCAT
@@ -31,7 +30,7 @@ import org.apache.calcite.sql.dialect.MysqlSqlDialect;
 public class HazelcastMSSQLDialect extends MssqlSqlDialect {
 
     /**
-     * Creates a HazelcastMySqlDialect.
+     * Creates a HazelcastMSSQLDialect.
      */
     public HazelcastMSSQLDialect(Context context) {
         super(context);
