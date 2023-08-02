@@ -549,6 +549,11 @@ public final class Sources {
      * with the specified name in a remote cluster identified by the supplied
      * {@code ClientConfig} and emits them as {@code Map.Entry}.
      * <p>
+     * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
+     * config to create two different clients, they will share the same name and it will cause an error to be thrown
+     * since the instance name have to be unique among clients. If you don't provide any name, Hazelcast automatically
+     * makes them unique.
+     * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
@@ -578,6 +583,11 @@ public final class Sources {
     /**
      * This method does the same thing as {@link #remoteReplicatedMap(String, ClientConfig)} with a different batch
      * size provided rather than the default batch size.
+     * <p>
+     * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
+     * config to create two different clients, they will share the same name and it will cause an error to be thrown
+     * since the instance name have to be unique among clients. If you don't provide any name, Hazelcast automatically
+     * makes them unique.
      *
      * @param replicatedMapName name of the replicated map in the remote cluster
      * @param clientConfig      client configuration to connect to the remote cluster

@@ -299,6 +299,11 @@ public final class Sinks {
      * {@code ReplicatedMap} with the specified name in a remote cluster identified by
      * the supplied {@code ClientConfig}.
      * <p>
+     * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
+     * config to create two different clients, they will share the same name and it will cause an error to be thrown
+     * since the instance name have to be unique among clients. If you don't provide any name, Hazelcast automatically
+     * makes them unique.
+     * <p>
      * This sink provides the exactly-once guarantee thanks to <i>idempotent
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
@@ -322,6 +327,11 @@ public final class Sinks {
     /**
      * This method does the same thing as {@link #remoteReplicatedMap(String, ClientConfig)} with a different batch
      * size provided rather than the default batch size.
+     * <p>
+     * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
+     * config to create two different clients, they will share the same name and it will cause an error to be thrown
+     * since the instance name have to be unique among clients. If you don't provide any name, Hazelcast automatically
+     * makes them unique.
      *
      * @param replicatedMapName name of the replicated map in the remote cluster
      * @param clientConfig      configuration of the client to connect to the remote cluster
