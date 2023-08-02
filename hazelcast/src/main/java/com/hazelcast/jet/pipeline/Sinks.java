@@ -302,10 +302,6 @@ public final class Sinks {
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      * <p>
-     * The instance name of the provided configuration is modified by this method
-     * not to cause conflicts with other instances. The name format is
-     * {@code "client-for-remote-replicated-map-" + replicatedMapName + "-" + UUID.randomUUID();}
-     * <p>
      * This method uses batching while writing to the replicated map. The default batch size is
      * 1 million entries. Use {@link #remoteReplicatedMap(String, ClientConfig, int)} to change
      * the batch size.
@@ -386,10 +382,7 @@ public final class Sinks {
                     dataConnection.release();
                 }
             } else {
-                ClientConfig clientConfig = asClientConfig(clientXml);
-                clientConfig.setInstanceName("client-for-remote-replicated-map-" + replicatedMapName + '-'
-                        + UUID.randomUUID());
-                this.client = newHazelcastClient(clientConfig);
+                this.client = newHazelcastClient(asClientConfig(clientXml));
             }
             this.replicatedMap = client.getReplicatedMap(replicatedMapName);
             this.batchSize = batchSize;
