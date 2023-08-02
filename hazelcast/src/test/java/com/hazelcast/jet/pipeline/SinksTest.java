@@ -388,7 +388,7 @@ public class SinksTest extends PipelineTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName("neverland");
         clientConfig.getNetworkConfig().addAddress("localhost:911");
-        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(10000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(3000);
         hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
                 .setType("Hz")
                 .setShared(false)
