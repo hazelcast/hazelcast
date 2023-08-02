@@ -27,6 +27,8 @@ import com.hazelcast.cluster.MemberSelector;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MemberSelectingCollection;
@@ -73,9 +75,13 @@ public class ClientClusterServiceImpl implements ClientClusterService {
             new AtomicReference<>(new MemberListSnapshot(INITIAL_MEMBER_LIST_VERSION, new LinkedHashMap<>(), null));
     private final ConcurrentMap<UUID, MembershipListener> listeners = new ConcurrentHashMap<>();
     private final ILogger logger;
+    private final LifecycleService lifecycleService;
+    private final UUID lifecycleListenerID;
+    private volatile boolean clientConnected;
     private final Object clusterViewLock = new Object();
     //read and written under clusterViewLock
     private CountDownLatch initialListFetchedLatch = new CountDownLatch(1);
+    private boolean isFailoverSupported;
 
     private static final class MemberListSnapshot {
         private final int version;
@@ -89,12 +95,31 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public ClientClusterServiceImpl(ILogger logger) {
+    public ClientClusterServiceImpl(LifecycleService lifecycleService, ILogger logger) {
+        this.lifecycleService = lifecycleService;
+        this.lifecycleListenerID = this.lifecycleService.addLifecycleListener(event -> {
+            if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_CONNECTED) {
+                clientConnected = true;
+            } else if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED
+                    || event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN
+                    || event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
+                clientConnected = false;
+            }
+        });
         this.logger = logger;
     }
 
     public Cluster getCluster() {
         return new ClientClusterProxy(this);
+    }
+
+    public boolean isEnterprise() {
+        if (!this.clientConnected) {
+            throw new IllegalStateException("The client is not connected to a cluster yet!");
+        }
+        synchronized (clusterViewLock) {
+            return this.isFailoverSupported;
+        }
     }
 
     @Override
@@ -174,7 +199,14 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public void onClusterConnect() {
+    public void onClusterConnect(boolean isFailoverSupported) {
+        synchronized (clusterViewLock) {
+            this.isFailoverSupported = isFailoverSupported;
+            this.resetMemberSnapshot();
+        }
+    }
+
+    public void resetMemberSnapshot() {
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the member list version ");
@@ -341,5 +373,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 }
             }
         }
+    }
+
+    public void shutdown() {
+        this.lifecycleService.removeLifecycleListener(lifecycleListenerID);
     }
 }

@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -59,6 +60,13 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClusterName(config.getClusterName());
+        return factory.newHazelcastClient(clientConfig);
+    }
+
+    private HazelcastInstance notConnectedClient() {
+        factory = new TestHazelcastFactory();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
         return factory.newHazelcastClient(clientConfig);
     }
 
@@ -118,5 +126,15 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
     @Test(expected = UnsupportedOperationException.class)
     public void shutdownWithOptions() throws Exception {
         client().getCluster().shutdown(new TransactionOptions());
+    }
+
+    @Test
+    public void isEnterprise() {
+        assertFalse(client().getCluster().isEnterprise());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void isEnterpriseThrowsIfNotConnected() {
+        notConnectedClient().getCluster().isEnterprise();
     }
 }

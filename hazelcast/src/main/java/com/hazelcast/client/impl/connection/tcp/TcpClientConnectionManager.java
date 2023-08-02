@@ -1010,6 +1010,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             }
 
             UUID newClusterId = response.getClusterId();
+            boolean isFailoverSupported = response.isFailoverSupported();
             if (logger.isFineEnabled()) {
                 logger.fine("Checking the cluster: " + newClusterId + ", current cluster: " + this.clusterId);
             }
@@ -1022,7 +1023,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onConnectionToNewCluster();
+                client.onConnectionToNewCluster(isFailoverSupported);
             }
             checkClientState(connection, switchingToNextCluster);
 

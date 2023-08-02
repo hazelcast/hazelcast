@@ -37,6 +37,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -128,5 +129,21 @@ public class ClusterInfoTest extends HazelcastTestSupport {
         assertEquals(node1ClusterId, node2.getClusterService().getClusterId());
         assertEquals(node1ClusterId, node3.getClusterService().getClusterId());
         assertEquals(node1ClusterId, node4.getClusterService().getClusterId());
+    }
+
+    @Test
+    public void isEnterprise_returns_false_for_os_cluster() {
+        HazelcastInstance h1 = factory.newHazelcastInstance();
+        HazelcastInstance h2 = factory.newHazelcastInstance();
+
+        assertClusterSizeEventually(2, h1, h2);
+
+        Node node1 = getNode(h1);
+        final ClusterServiceImpl clusterService = node1.getClusterService();
+        assertFalse(clusterService.isEnterprise());
+
+        Node node2 = getNode(h2);
+        final ClusterServiceImpl clusterService2 = node2.getClusterService();
+        assertFalse(clusterService2.isEnterprise());
     }
 }

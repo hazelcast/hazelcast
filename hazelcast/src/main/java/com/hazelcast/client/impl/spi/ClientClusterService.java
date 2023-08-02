@@ -74,4 +74,12 @@ public interface ClientClusterService {
      * @return true if successfully removed, false otherwise.
      */
     boolean removeMembershipListener(@Nonnull UUID registrationId);
+
+    /**
+     * @return true if the local HazelcastInstance is connected to an enterprise cluster. For a Hazelcast client,
+     * it means the client is connected to an EE cluster. For members, it means the local member is using
+     * the enterprise build.
+     * @throws IllegalStateException If called from a Hazelcast client, and it is not in a cluster.
+     */
+    boolean isEnterprise();
 }

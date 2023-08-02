@@ -128,6 +128,11 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
+    public boolean isEnterprise() {
+        return this.clusterService.isEnterprise();
+    }
+
+    @Override
     public void promoteLocalLiteMember() {
         throw new UnsupportedOperationException();
     }
