@@ -16,23 +16,34 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
+import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.Map;
 
+import static com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector.OPTION_BOOTSTRAP_SERVERS;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DataConnectionsTableTest {
+public class DataConnectionsTableTest extends SimpleTestInClusterSupport {
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        initialize(1, null);
+    }
+
+    private final SqlConnectorCache connectorCache = new SqlConnectorCache(getNodeEngineImpl(instance()));
 
     @Test
     public void test_rows() {
@@ -49,6 +60,7 @@ public class DataConnectionsTableTest {
                 "public",
                 "dc-schema",
                 singletonList(dc),
+                connectorCache,
                 false);
 
         // when
@@ -71,9 +83,9 @@ public class DataConnectionsTableTest {
         // given
         DataConnectionCatalogEntry dc = new DataConnectionCatalogEntry(
                 "dc-name",
-                "dc-type",
+                "Kafka",
                 false,
-                singletonMap("key", "value")
+                Map.of(OPTION_BOOTSTRAP_SERVERS, "value", "password", "secret")
         );
 
         DataConnectionsTable dcTable = new DataConnectionsTable(
@@ -81,6 +93,7 @@ public class DataConnectionsTableTest {
                 "public",
                 "dc-schema",
                 singletonList(dc),
+                connectorCache,
                 true);
 
         // when
@@ -91,9 +104,9 @@ public class DataConnectionsTableTest {
                 "catalog"
                 , "dc-schema"
                 , "dc-name"
-                , "dc-type"
+                , "Kafka"
                 , false
-                , null
+                , "{\"" + OPTION_BOOTSTRAP_SERVERS + "\":\"value\"}"
                 , "SQL"
         });
     }

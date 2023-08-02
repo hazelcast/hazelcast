@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.mock.MockUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
@@ -44,6 +45,9 @@ public class DataConnectionResolverTest {
     private DataConnectionResolver dataConnectionResolver;
 
     @Mock
+    SqlConnectorCache connectorCache;
+
+    @Mock
     DataConnectionServiceImpl dataConnectionService;
 
     @Mock
@@ -54,7 +58,7 @@ public class DataConnectionResolverTest {
     @Before
     public void before() {
         openMocks = openMocks(this);
-        dataConnectionResolver = new DataConnectionResolver(dataConnectionService, relationsStorage, false);
+        dataConnectionResolver = new DataConnectionResolver(dataConnectionService, connectorCache, relationsStorage, false);
     }
 
     @After

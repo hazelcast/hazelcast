@@ -251,6 +251,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, connectorCache);
         DataConnectionResolver dataConnectionResolver = dataConnectionCatalog(
                 nodeEngine.getDataConnectionService(),
+                connectorCache,
                 dataConnectionStorage,
                 nodeEngine.getHazelcastInstance().getConfig().getSecurityConfig().isEnabled()
         );
@@ -274,10 +275,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private static DataConnectionResolver dataConnectionCatalog(
             InternalDataConnectionService dataConnectionService,
+            SqlConnectorCache connectorCache,
             DataConnectionStorage storage,
             boolean isSecurityEnabled
     ) {
-        return new DataConnectionResolver(dataConnectionService, storage, isSecurityEnabled);
+        return new DataConnectionResolver(dataConnectionService, connectorCache, storage, isSecurityEnabled);
     }
 
     @Nullable
@@ -950,11 +952,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     final String fieldName = columnName.equals(QueryPath.KEY)
                             ? QueryPath.KEY
                             : table.keyFields()
-                                    .filter(f -> f.getName().equals(columnName))
-                                    .findFirst()
-                                    .map(mapTableField -> mapTableField.getPath().getPath())
-                                    .orElseThrow(() -> QueryException.error(format("Can not find column %s in table %s",
-                                            tableName, columnName)));
+                            .filter(f -> f.getName().equals(columnName))
+                            .findFirst()
+                            .map(mapTableField -> mapTableField.getPath().getPath())
+                            .orElseThrow(() -> QueryException.error(format("Can not find column %s in table %s",
+                                    tableName, columnName)));
 
                     final RexNode rexNode = variant.get(columnName);
                     if (rexNode instanceof RexDynamicParam) {

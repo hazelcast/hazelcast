@@ -88,18 +88,19 @@ public class MappingsTable extends InfoSchemaTable {
     protected List<Object[]> rows() {
         List<Object[]> rows = new ArrayList<>(mappings.size());
         for (Mapping mapping : mappings) {
-            Map<String, String> opts = mapping.options();
-            if (securityEnabled) {
-                opts = new TreeMap<>();
+            Map<String, String> options;
+            if (!securityEnabled) {
+                options = mapping.options();
+            } else {
+                options = new TreeMap<>();
                 final SqlConnector sqlConnector = sqlConnectorCache.forType(mapping.connectorType());
                 final Set<String> secureConnectorOptions = sqlConnector.nonSensitiveConnectorOptions();
                 for (Entry<String, String> e : mapping.options().entrySet()) {
                     if (secureConnectorOptions.contains(e.getKey())) {
-                        opts.put(e.getKey(), e.getValue());
+                        options.put(e.getKey(), e.getValue());
                     }
                 }
             }
-            final Map<String, String> optsToDisplay = opts;
             Object[] row = new Object[]{
                     catalog(),
                     mappingsSchema,
@@ -108,7 +109,7 @@ public class MappingsTable extends InfoSchemaTable {
                     Optional.ofNullable(mapping.dataConnection())
                             .map(dataConnectionTypeResolver)
                             .orElse(mapping.connectorType()),
-                    uncheckCall(() -> JsonUtil.toJson(optsToDisplay))
+                    uncheckCall(() -> JsonUtil.toJson(options))
             };
             rows.add(row);
         }
