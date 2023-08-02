@@ -54,7 +54,6 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Map.Entry;
@@ -75,8 +74,7 @@ public final class HazelcastReaders {
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
         return new LocalProcessorMetaSupplier<
                 InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
-                new LocalCacheReaderFunction(cacheName),
-                null
+                new LocalCacheReaderFunction(cacheName)
         ) {
             @Override
             public Permission getRequiredPermission() {
@@ -174,11 +172,8 @@ public final class HazelcastReaders {
     }
 
     @Nonnull
-    public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName, @Nullable int[] partitions) {
-        return new LocalProcessorMetaSupplier<>(
-                new LocalMapReaderFunction(mapName),
-                partitions
-        ) {
+    public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
+        return new LocalProcessorMetaSupplier<>(new LocalMapReaderFunction(mapName)) {
             @Override
             public Permission getRequiredPermission() {
                 return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
@@ -235,8 +230,7 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
         return new LocalProcessorMetaSupplier<InternalCompletableFuture<ResultSegment>, ResultSegment, QueryResultRow>(
-                new LocalMapQueryReaderFunction<>(mapName, predicate, projection),
-                null
+                new LocalMapQueryReaderFunction<>(mapName, predicate, projection)
         ) {
             @Override
             public Permission getRequiredPermission() {

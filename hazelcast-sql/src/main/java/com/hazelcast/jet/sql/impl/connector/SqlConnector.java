@@ -285,9 +285,11 @@ public interface SqlConnector {
      * {@code eventTimePolicyProvider} is not null. Streaming sources should
      * support it, batch sources don't have to.
      *
-     * @param predicate               SQL expression to filter the rows
-     * @param projection              the list of field names to return
-     * @param eventTimePolicyProvider {@link EventTimePolicy}
+     * @param predicate                SQL expression to filter the rows
+     * @param projection               the list of field names to return
+     * @param requiredPartitionsToScan the set of partitions to scan,
+     *                                 if partitioning strategy is used
+     * @param eventTimePolicyProvider  {@link EventTimePolicy}
      * @return The DAG Vertex handling the reading
      */
     @Nonnull
@@ -295,6 +297,7 @@ public interface SqlConnector {
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode predicate,
             @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());

@@ -27,6 +27,7 @@ import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.RestartableException;
@@ -78,7 +79,6 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
-import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
@@ -140,6 +140,7 @@ import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataConnectionPlan;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.JSON;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
@@ -151,7 +152,6 @@ import static java.util.Comparator.comparing;
 
 public class PlanExecutor {
     private static final String LE = System.lineSeparator();
-    private static final String DEFAULT_UNIQUE_KEY = "__key";
     private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
 
     private final TableResolverImpl catalog;
@@ -251,7 +251,7 @@ public class PlanExecutor {
 
             String uniqueKey = options.get(UNIQUE_KEY);
             if (uniqueKey == null) {
-                uniqueKey = DEFAULT_UNIQUE_KEY;
+                uniqueKey = KEY_ATTRIBUTE_NAME.value();
             }
 
             String uniqueKeyTransform = options.get(UNIQUE_KEY_TRANSFORMATION);
@@ -540,7 +540,7 @@ public class PlanExecutor {
                 final var attributeStrategy = (AttributePartitioningStrategy) strategy;
                 orderedKeyAttributes.addAll(asList(attributeStrategy.getPartitioningAttributes()));
             } else {
-                orderedKeyAttributes.add(DEFAULT_UNIQUE_KEY);
+                orderedKeyAttributes.add(KEY_ATTRIBUTE_NAME.value());
             }
 
             for (final Map<String, Expression<?>> perMapCandidate : perMapCandidates) {

@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.PartitioningAttributeConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -28,8 +29,8 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.HazelcastRexNode;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
@@ -40,13 +41,18 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.opt.physical.DagBuildContextImpl;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.partition.PartitioningStrategy;
+import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
+import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -60,7 +66,9 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
@@ -70,6 +78,9 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
+import static com.hazelcast.jet.sql.impl.connector.map.SpecificPartitionsImapReaderPms.mapReader;
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
+import static com.hazelcast.sql.impl.QueryUtils.getMapContainer;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static java.util.Arrays.asList;
@@ -189,6 +200,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull DagBuildContext context,
             @Nullable HazelcastRexNode filter,
             @Nonnull List<HazelcastRexNode> projection,
+            @Nullable List<Map<String, Expression<?>>> partitionPruningCandidates,
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         if (eventTimePolicyProvider != null) {
@@ -197,9 +209,26 @@ public class IMapSqlConnector implements SqlConnector {
 
         PartitionedMapTable table = context.getTable();
 
+        if (partitionPruningCandidates == null && !table.partitioningAttributes().isEmpty()) {
+            // We have an IMap but the query cannot use member pruning.
+            // Maybe we still can use scan partition pruning.
+            // TODO: this would be better done if we could reuse results of the analysis
+            //  done for member pruning, eg. if it was available in each RelNode
+
+            // We need some low-level data which are not passed to SqlConnector, this code should be refactored.
+            DagBuildContextImpl contextImpl = (DagBuildContextImpl) context;
+            var relPrunability = CalciteSqlOptimizer.partitionStrategyCandidates(contextImpl.getRel(),
+                    contextImpl.getParameterMetadata(),
+                    // expect only single map in the rel
+                    Map.of(table.getSqlName(), table));
+            partitionPruningCandidates = relPrunability.get(table.getSqlName());
+        }
+
         Vertex vStart = context.getDag().newUniqueVertex(
                 toString(table),
-                SourceProcessors.readMapP(table.getMapName())
+                mapReader(table.getMapName(), computeRequiredPartitionsToScan(
+                        context.getNodeEngine(), partitionPruningCandidates, table.getMapName())
+                )
         );
 
         Vertex vEnd = context.getDag().newUniqueVertex(
@@ -393,6 +422,54 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public List<String> getPrimaryKey(Table table0) {
         return PRIMARY_KEY_LIST;
+    }
+
+    private List<List<Expression<?>>> computeRequiredPartitionsToScan(
+            NodeEngine nodeEngine,
+            List<Map<String, Expression<?>>> candidates,
+            String mapName
+    ) {
+        if (candidates == null) {
+            return emptyList();
+        }
+
+        List<List<Expression<?>>> partitionsExpressions = new ArrayList<>();
+
+        final var container = getMapContainer(nodeEngine.getHazelcastInstance().getMap(mapName));
+        final PartitioningStrategy<?> strategy = container.getPartitioningStrategy();
+
+        // We only support Default and Attribute strategies, even if one of the maps uses non-Default/Attribute
+        // strategy, we should abort the process and clear list of already populated partitions so that partition
+        // pruning doesn't get activated at all for this query.
+        if (strategy != null
+                && !(strategy instanceof DefaultPartitioningStrategy)
+                && !(strategy instanceof AttributePartitioningStrategy)) {
+            return emptyList();
+        }
+
+        // ordering of attributes matters for partitioning (1,2) produces different partition than (2,1).
+        final List<String> orderedKeyAttributes = new ArrayList<>();
+        if (strategy instanceof AttributePartitioningStrategy) {
+            final var attributeStrategy = (AttributePartitioningStrategy) strategy;
+            orderedKeyAttributes.addAll(asList(attributeStrategy.getPartitioningAttributes()));
+        } else {
+            orderedKeyAttributes.add(KEY_ATTRIBUTE_NAME.value());
+        }
+
+        for (final Map<String, Expression<?>> perMapCandidate : candidates) {
+            List<Expression<?>> expressions = new ArrayList<>();
+            for (final String attribute : orderedKeyAttributes) {
+                if (!perMapCandidate.containsKey(attribute)) {
+                    // Shouldn't happen, defensive check in case Opt logic breaks and produces variants
+                    // that do not contain all the required partitioning attributes.
+                    throw new HazelcastException("Partition Pruning candidate"
+                            + " does not contain mandatory attribute: " + attribute);
+                }
+                expressions.add(perMapCandidate.get(attribute));
+            }
+            partitionsExpressions.add(expressions);
+        }
+        return partitionsExpressions;
     }
 
     private static String toString(PartitionedMapTable table) {
