@@ -260,10 +260,12 @@ public class SourcesTest extends PipelineTestSupport {
         // Then
         p.readFrom(source).writeTo(sink);
         execute();
+
         List<Entry<String, Integer>> expected = input.stream()
                 .map(i -> entry(String.valueOf(i), i))
                 .collect(toList());
-        assertThat(toBag(expected)).isEqualTo(sinkToBag());
+
+        assertThat(sinkList).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test
@@ -284,9 +286,10 @@ public class SourcesTest extends PipelineTestSupport {
         p.readFrom(source).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                .map(i -> entry(String.valueOf(i), i))
-                .collect(toList());
-        assertThat(toBag(expected)).isEqualTo(sinkToBag());
+                                                     .map(i -> entry(String.valueOf(i), i))
+                                                     .collect(toList());
+
+        assertThat(sinkList).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test

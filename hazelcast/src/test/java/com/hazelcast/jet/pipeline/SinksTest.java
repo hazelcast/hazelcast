@@ -291,12 +291,11 @@ public class SinksTest extends PipelineTestSupport {
                 .writeTo(sink);
         execute();
         // Then
-        List<Entry<String, Integer>> expected = input.stream()
-                .map(i -> entry(String.valueOf(i), i))
-                .collect(toList());
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getReplicatedMap(sinkName).entrySet();
-        assertEquals(expected.size(), actual.size());
-        assertThat(expected).allSatisfy(entry -> assertTrue(actual.contains(entry)));
+        Map<String, Integer> expected = sequence(itemCount).stream()
+                .collect(toMap(String::valueOf, i -> i));
+
+        Map<String, Integer> actual = remoteHz.getReplicatedMap(sinkName);
+        assertThat(actual).containsExactlyInAnyOrderEntriesOf(expected);
     }
 
     @Test
@@ -316,13 +315,11 @@ public class SinksTest extends PipelineTestSupport {
                 .writeTo(sink);
         execute();
         // Then
-        List<Entry<String, Integer>> expected = input.stream()
-                .map(i -> entry(String.valueOf(i), i))
-                .collect(toList());
+        Map<String, Integer> expected = sequence(itemCount).stream()
+                                                           .collect(toMap(String::valueOf, i -> i));
 
-        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getReplicatedMap(sinkName).entrySet();
-        assertEquals(expected.size(), actual.size());
-        assertThat(expected).allSatisfy(entry -> assertTrue(actual.contains(entry)));
+        Map<String, Integer> actual = remoteHz.getReplicatedMap(sinkName);
+        assertThat(actual).containsExactlyInAnyOrderEntriesOf(expected);
     }
 
     @Test
