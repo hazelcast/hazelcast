@@ -46,6 +46,9 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletionException;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
@@ -59,6 +62,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -250,46 +254,144 @@ public class SourcesTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap() {
+        remoteReplicatedMap(() -> Sources.remoteReplicatedMap(srcName, clientConfig));
+    }
+
+    @Test
+    public void remoteReplicatedMap_customBatchSize() {
+        remoteReplicatedMap(() -> Sources.remoteReplicatedMap(srcName, clientConfig, 100));
+    }
+
+    private void remoteReplicatedMap(Supplier<BatchSource<Entry<Object, Object>>> sourceSupplier) {
         // Given
         List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getReplicatedMap(srcName), input);
 
         // When
-        BatchSource<Entry<Object, Object>> source = Sources.remoteReplicatedMap(srcName, clientConfig);
+        BatchSource<Entry<Object, Object>> source = sourceSupplier.get();
 
         // Then
         p.readFrom(source).writeTo(sink);
         execute();
-
         List<Entry<String, Integer>> expected = input.stream()
                 .map(i -> entry(String.valueOf(i), i))
                 .collect(toList());
-
         assertThat(sinkList).containsExactlyInAnyOrderElementsOf(expected);
     }
 
     @Test
     public void remoteReplicatedMap_dataConnectionName() {
+        remoteReplicatedMap_dataConnectionName((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName));
+    }
+
+    private void remoteReplicatedMap_dataConnectionName(Function<String, BatchSource<Entry<Object, Object>>> sourceFn) {
         // Given
         List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getReplicatedMap(srcName), input);
 
         // When
-        String dataConnectionName = "remoteHz";
+        String dataConnectionName = randomString();
         hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
                 .setType("Hz")
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
-        BatchSource<Entry<Object, Object>> source = Sources.remoteReplicatedMap(srcName, dataConnectionName);
+        BatchSource<Entry<Object, Object>> source = sourceFn.apply(dataConnectionName);
 
         // Then
         p.readFrom(source).writeTo(sink);
         execute();
         List<Entry<String, Integer>> expected = input.stream()
-                                                     .map(i -> entry(String.valueOf(i), i))
-                                                     .collect(toList());
-
+                .map(i -> entry(String.valueOf(i), i))
+                .collect(toList());
         assertThat(sinkList).containsExactlyInAnyOrderElementsOf(expected);
+    }
+
+    @Test
+    public void remoteReplicatedMap_dataConnectionName_customBatchSize() {
+        remoteReplicatedMap_dataConnectionName((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
+    }
+
+    @Test
+    public void remoteReplicatedMap_emptySourceMap() {
+        remoteReplicatedMap_emptySourceMap((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName));
+    }
+
+    @Test
+    public void remoteReplicatedMap_emptySourceMap_customBatchSize() {
+        remoteReplicatedMap_emptySourceMap((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
+    }
+
+    private void remoteReplicatedMap_emptySourceMap(Function<String, BatchSource<Entry<Object, Object>>> sourceFn) {
+        // Given empty map
+        // When
+        String dataConnectionName = randomString();
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        BatchSource<Entry<Object, Object>> source = sourceFn.apply(dataConnectionName);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        execute();
+        assertThat(sinkList).isEmpty();
+    }
+
+    @Test
+    public void remoteReplicatedMap_dataConnectionMissing() {
+        remoteReplicatedMap_dataConnectionMissing((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName));
+    }
+
+    @Test
+    public void remoteReplicatedMap_dataConnectionMissing_customBatchSize() {
+        remoteReplicatedMap_dataConnectionMissing((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
+    }
+
+    private void remoteReplicatedMap_dataConnectionMissing(Function<String, BatchSource<Entry<Object, Object>>> sourceFn) {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getReplicatedMap(srcName), input);
+
+        // When
+        String dataConnectionName = randomString();
+        BatchSource<Entry<Object, Object>> source = sourceFn.apply(dataConnectionName);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        assertThatThrownBy(this::execute).isInstanceOf(CompletionException.class)
+                .hasStackTraceContaining("Data connection '" + dataConnectionName + "' not found");
+    }
+
+    @Test
+    public void remoteReplicatedMap_dataConnectionToNonExistentCluster() {
+        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName));
+    }
+
+    @Test
+    public void remoteReplicatedMap_dataConnectionToNonExistentCluster_customBatchSize() {
+        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
+    }
+
+    private void remoteReplicatedMap_dataConnectionToNonExistentCluster(Function<String, BatchSource<Entry<Object, Object>>> sourceFn) {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getReplicatedMap(srcName), input);
+
+        // When
+        String dataConnectionName = randomString();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().addAddress("localhost:911");
+        clientConfig.setClusterName("neverland");
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(3000);
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        BatchSource<Entry<Object, Object>> source = sourceFn.apply(dataConnectionName);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        assertThatThrownBy(this::execute).isInstanceOf(CompletionException.class).hasStackTraceContaining("Unable to connect to any cluster");
     }
 
     @Test
