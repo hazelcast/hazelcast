@@ -12,10 +12,13 @@ List of third-party dependencies grouped by their license type:
 
 <#list licenseMap as e>
 <#if e.getValue()?size != 0>
+<#-- some dependencies are dual licensed. hazelcast does not support GPL licenses-->
+<#if e.getKey() != "LGPL-2.1-or-later" && e.getKey() != "GPL2 w/ CPE" && e.getKey() != "GNU General Public License, version 2 (GPL2), with the classpath exception">
 ${e.getKey()}
 <#list e.getValue() as a>
   ${a.name + ":" + a.version?trim}
 </#list>
+</#if>
 </#if>
 </#list>
 
