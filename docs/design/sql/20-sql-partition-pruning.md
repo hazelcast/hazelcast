@@ -52,7 +52,7 @@ Set of partitioning keys is defined as a set containing:
 _Clarification:_
 For IMap, partitioning columns may be attributes of IMap key.
 If IMap uses `AttributePartitioningStrategy`, partitioning columns are functionally dependent on entire `__key`.
-However for the sake of simplicity in the SQL optimizer we currently do not track functional dependencies
+However, for the sake of simplicity in the SQL optimizer we currently do not track functional dependencies
 and assume that both `__key` and `AttributePartitioningStrategy` define a partitioning key.
 Partition id calculation will take that into account and use a correct strategy for given IMap.
 
@@ -137,7 +137,55 @@ For some/all RelNodes we will be using information about how its input(s) are pa
   Note that the expression may reference query parameters (`RexDynamicParam`),
   use special operators (`SEARCH` and `Sarg`).
 
-This information may be calculated eagerly when RelNode is created or on-demand (TBD).
+##### RelNode Prunability Rules
+
+RelNodes can be categorized as single and multi-table (input) ones. 
+
+For the purposes of this optimization, single input nodes include: 
+
+- FullScanPhysicalRel
+- IndexScanMapPhysicalRel (future use)
+
+Multi-table: 
+
+- JoinPhysicalRel
+- UnionPhysicalRel
+
+Wrappers and Support rels: 
+
+- CalcPhysicalRel
+- AggregatePhysicalRel
+
+General rules:
+
+- Analysis is done from top to down and only whole query can be marked as Member Prunable or not. 
+- Additional optimizations making parts of produced DAG as executed on parts of the cluster only can most likely be introduced
+  at later date after changes to Jet core functionality.
+- Lowest level point of analysis is a Scan relation, its prunability is determined based on its Filter and what table it has
+  as its input. More detail description of rules that are applied to filter analysis is available in the Filter Analysis
+  section. In general a Scan rel is considered prunable when its filter limits the scan to finite number of rows, that
+  can be calculated during Optimization. 
+- Aggregate queries prunability is based off their Scan inputs prunability because filters in these Scans are applied 
+  before the execution of the aggregation, therefore any aggregation is executed on top of already Filtered Scans. 
+  If the input Scan of the Aggregation Rel is prunable, then the Aggregation is considered prunable as well. 
+- Join Relations are considered prunable only when BOTH input Scans (or nested JOINs or other rels) are Prunable.
+  If only one input is prunable, but other is not, then the whole query is considered non-prunable. 
+- Union Relations are similar to Joins - ALL of their inputs have to be prunable for the query to be considered Prunable
+- Calc relations and other support relations are treated as a single FullScan wrapper and therefore its prunability is 
+  determined based off Scan prunability. 
+
+Rels Prunability summarized:
+
+| Rel                  | Prunability                                                                                   |
+|----------------------|-----------------------------------------------------------------------------------------------|
+| FullScanPhysicalRel  | Prunable based on its filter (see Filter Analysis section)                                    |
+| IndexScanPhysicalRel | Not currently supported, planned in the future with similiar semantics to FullScanPhysicalRel |
+| JoinPhysicalRel      | Prunable if both inputs are Prunable                                                          |
+| UnionPhysicalRel     | Prunable if all inputs are Prunable                                                           |
+| CalcPhysicalRel      | Prunable if the Scan input is Prunable                                                        |
+| AggregatePhysicalRel | Prunable if the Scan input is Prunable                                                        |
+
+Prunability of the single input rels is based off their Filter (described below in the Filter Analysis section in detail).
 
 #### Partition information in EXPLAIN PLAN
 
@@ -197,22 +245,20 @@ full implementation of the Filter Analysis, however.
   to determine whether a filter is bounded partitions-wise we must analyze it for the number
   of discrete keys it will pass (filter in).
 
-##### Goals and non-goals of Filter Analysis and Transformation
+##### General Design of Filter Analysis and Transformation
 
-**Goals**
-Transform input filter into partition-complete filter pairs
+Main objective is to transform input filter into partition-complete filter pairs.
 First step is to normalize into a series of disjunctions/conjunctions around key components (either __key or components
 extracted from attribute strategy config). (a BETWEEN 1 AND 2 AND b BETWEEN 3 AND 4 should become a cartesian product
 of inputs e.g. (A=1,B=1), (A=1,B=2), (A=2,B=1), (A=2,B=2) - note that A and B are positional in the produced tuples,
 based off what’s specified in the strategy. Alternative approach might be choosing Number ranges as the basis and
 therefore using BETWEEN as the basis operator instead of EQUALS.
 
-**Non-goals:**
-
-- "Unwrap" function calls. Functions like floor, to_lower, ceiling have open-ended input-sets that are hard to determine
-  or impractical to iterate over e.g. floor(__key) = 1.0 has virtually infinite number of possible concrete __key values.
-- Reduce overlapping/negating expressions e.g. a IN (1,2,3,4,5) AND a > 2 should automatically eliminate 1 as possible
-  variant of a.
+In addition to this base functionality, we could consider function unwrapping in the future, however functions like 
+floor, to_lower, ceiling have open-ended input-sets that are hard to determine or impractical to iterate over 
+e.g. floor(__key) = 1.0 has virtually infinite number of possible concrete __key values.
+Additional step might be to reduce overlapping/negating expressions e.g. a IN (1,2,3,4,5) AND a > 2 should automatically
+eliminate 1 as possible variant of a.
 
 ##### Role of Data Types in Filter Analysis
 
