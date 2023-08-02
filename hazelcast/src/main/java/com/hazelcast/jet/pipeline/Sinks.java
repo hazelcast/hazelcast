@@ -53,6 +53,7 @@ import java.sql.SQLNonTransientException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.function.Functions.entryKey;
@@ -89,7 +90,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @since Jet 3.0
  */
 public final class Sinks {
-    private static final int RMAP_DEFAULT_WRITE_BATCH_SIZE = 1_000_000;
+    private static final int RMAP_DEFAULT_WRITE_BATCH_SIZE = 1_000;
 
     private Sinks() {
     }
@@ -253,22 +254,23 @@ public final class Sinks {
      * {@code ReplicatedMap} with the specified name in a remote cluster connected via the data connection
      * identified by the supplied data connection name. You can add a data connection config by
      * {@link com.hazelcast.config.DataConnectionConfig}. If the data connection is not found, this method
-     * will throw a {@link com.hazelcast.core.HazelcastException}.
+     * will throw a {@link com.hazelcast.jet.JetException}.
      * <p>
      * This sink provides the exactly-once guarantee thanks to <i>idempotent
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      * <p>
-     * The instance name of the provided configuration is modified by this method
-     * not to cause conflicts with other instances. The name format is
-     * {@code "client-for-remote-replicated-map-" + replicatedMapName + UUID.randomUUID();}
-     * <p>
      * This method uses batching while writing to the replicated map. The default batch size is
      * 1 million entries. Use {@link #remoteReplicatedMap(String, String, int)} to change
      * the batch size.
      * <p>
-     * The default local parallelism for this sink is 1.
+     * {@link SinkBuilder#sinkBuilder(String, FunctionEx)} is used to create the sink and the preferred local
+     * parallelism is 1.
+     *
+     * @param replicatedMapName  name of the replicated map in the remote cluster
+     * @param dataConnectionName name of the data connection to connect to the remote cluster
+     * @throws com.hazelcast.jet.JetException if the data connection is not found
      */
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
@@ -280,6 +282,11 @@ public final class Sinks {
     /**
      * This method does the same thing as {@link #remoteReplicatedMap(String, String)} with a different batch
      * size provided rather than the default batch size.
+     *
+     * @param replicatedMapName  name of the replicated map in the remote cluster
+     * @param dataConnectionName name of the data connection to connect to the remote cluster
+     * @param batchSize          batch size to use
+     * @throws com.hazelcast.jet.JetException if the data connection is not found
      */
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
@@ -293,20 +300,25 @@ public final class Sinks {
      * {@code ReplicatedMap} with the specified name in a remote cluster identified by
      * the supplied {@code ClientConfig}.
      * <p>
+     * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
+     * config to create two different clients, they will share the same name and it will cause an error to be thrown
+     * since the instance name have to be unique among clients. If you don't provide any name, Hazelcast automatically
+     * makes them unique.
+     * <p>
      * This sink provides the exactly-once guarantee thanks to <i>idempotent
      * updates</i>. It means that the value with the same key is not appended,
      * but overwritten. After the job is restarted from snapshot, duplicate
      * items will not change the state in the target map.
      * <p>
-     * The instance name of the provided configuration is modified by this method
-     * not to cause conflicts with other instances. The name format is
-     * {@code "client-for-remote-replicated-map-" + replicatedMapName + UUID.randomUUID();}
-     * <p>
      * This method uses batching while writing to the replicated map. The default batch size is
      * 1 million entries. Use {@link #remoteReplicatedMap(String, ClientConfig, int)} to change
      * the batch size.
      * <p>
-     * The default local parallelism for this sink is 1.
+     * {@link SinkBuilder#sinkBuilder(String, FunctionEx)} is used to create the sink and the preferred local
+     * parallelism is 1.
+     *
+     * @param replicatedMapName name of the replicated map in the remote cluster
+     * @param clientConfig      configuration of the client to connect to the remote cluster
      */
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
@@ -317,6 +329,15 @@ public final class Sinks {
     /**
      * This method does the same thing as {@link #remoteReplicatedMap(String, ClientConfig)} with a different batch
      * size provided rather than the default batch size.
+     * <p>
+     * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
+     * config to create two different clients, they will share the same name and it will cause an error to be thrown
+     * since the instance name have to be unique among clients. If you don't provide any name, Hazelcast automatically
+     * makes them unique.
+     *
+     * @param replicatedMapName name of the replicated map in the remote cluster
+     * @param clientConfig      configuration of the client to connect to the remote cluster
+     * @param batchSize         batch size to use
      */
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
@@ -384,8 +405,7 @@ public final class Sinks {
         public void write(Map.Entry<K, V> entry) {
             batch.put(entry.getKey(), entry.getValue());
             if (batch.size() >= batchSize) {
-                replicatedMap.putAll(batch);
-                batch.clear();
+                this.flush();
             }
         }
 
@@ -397,7 +417,10 @@ public final class Sinks {
         }
 
         public void destroy() {
-            client.shutdown();
+            if (client != null) {
+                client.shutdown();
+                client = null;
+            }
         }
     }
 

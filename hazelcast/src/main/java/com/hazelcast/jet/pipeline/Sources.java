@@ -103,7 +103,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @since Jet 3.0
  */
 public final class Sources {
-    private static final int RMAP_DEFAULT_READ_BATCH_SIZE = 1_000_000;
+    private static final int RMAP_DEFAULT_READ_BATCH_SIZE = 1_000;
 
     private Sources() {
     }
@@ -550,6 +550,11 @@ public final class Sources {
      * with the specified name in a remote cluster identified by the supplied
      * {@code ClientConfig} and emits them as {@code Map.Entry}.
      * <p>
+     * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
+     * config to create two different clients, they will share the same name and it will cause an error to be thrown
+     * since the instance name have to be unique among clients. If you don't provide any name, Hazelcast automatically
+     * makes them unique.
+     * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
@@ -563,7 +568,10 @@ public final class Sources {
      * This method reads entries in batches of 1 million by default. To change
      * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
      * <p>
-     * The default local parallelism for this processor is 1.
+     * The total parallelism for this processor is 1.
+     *
+     * @param replicatedMapName name of the replicated map in the remote cluster
+     * @param clientConfig      client configuration to connect to the remote cluster
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
@@ -576,6 +584,15 @@ public final class Sources {
     /**
      * This method does the same thing as {@link #remoteReplicatedMap(String, ClientConfig)} with a different batch
      * size provided rather than the default batch size.
+     * <p>
+     * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
+     * config to create two different clients, they will share the same name and it will cause an error to be thrown
+     * since the instance name have to be unique among clients. If you don't provide any name, Hazelcast automatically
+     * makes them unique.
+     *
+     * @param replicatedMapName name of the replicated map in the remote cluster
+     * @param clientConfig      client configuration to connect to the remote cluster
+     * @param batchSize         batch size to use
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
@@ -606,7 +623,10 @@ public final class Sources {
      * This method reads entries in batches of 1 million by default. To change
      * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
      * <p>
-     * The default local parallelism for this processor is 1.
+     * The total parallelism for this processor is 1.
+     *
+     * @param replicatedMapName  name of the replicated map in the remote cluster
+     * @param dataConnectionName data connection name to use to connect to the remote cluster
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
@@ -619,6 +639,10 @@ public final class Sources {
     /**
      * This method does the same thing as {@link #remoteReplicatedMap(String, String)} with a different batch
      * size provided rather than the default batch size.
+     *
+     * @param replicatedMapName  name of the replicated map in the remote cluster
+     * @param dataConnectionName data connection name to use to connect to the remote cluster
+     * @param batchSize          batch size to use
      */
     @Nonnull
     public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
@@ -638,29 +662,28 @@ public final class Sources {
     ) {
         String xmlConfig = ImdgUtil.asXmlString(clientConfig);
         return SourceBuilder.batch("replicatedMapSource(" + replicatedMapName + ')',
-                                    context -> new RMapReader<K, V>(
+                                    context -> new RemoteReplicatedMapReader<K, V>(
                                             replicatedMapName,
                                             dataConnectionName,
                                             xmlConfig,
                                             batchSize,
                                             context
                                     ))
-                            .<Entry<K, V>>fillBufferFn(RMapReader::fillBufferFn)
-                            .destroyFn(RMapReader::destroy)
+                            .<Entry<K, V>>fillBufferFn(RemoteReplicatedMapReader::fillBufferFn)
+                            .destroyFn(RemoteReplicatedMapReader::destroy)
                             .build();
     }
 
-    private static class RMapReader<K, V> {
+    private static class RemoteReplicatedMapReader<K, V> {
         private final String replicatedMapName;
         private final int batchSize;
 
         private HazelcastInstance client;
         private Iterator<Map.Entry<K, V>> iterator;
 
-        RMapReader(String replicatedMapName, String dataConnectionName, String clientXml,
-                   int batchSize, Context context) {
+        RemoteReplicatedMapReader(String replicatedMapName, String dataConnectionName, String clientXml,
+                                  int batchSize, Context context) {
             this.replicatedMapName = replicatedMapName;
-            this.batchSize = batchSize;
 
             if (dataConnectionName == null && clientXml == null) {
                 throw new IllegalArgumentException("Either dataConnectionName or clientConfig must be provided. "
@@ -679,6 +702,7 @@ public final class Sources {
             } else {
                 this.client = newHazelcastClient(asClientConfig(clientXml));
             }
+            this.batchSize = batchSize;
         }
 
         public void fillBufferFn(SourceBuffer<Entry<K, V>> buffer) {
