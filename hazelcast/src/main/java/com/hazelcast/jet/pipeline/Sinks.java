@@ -254,7 +254,7 @@ public final class Sinks {
      * {@code ReplicatedMap} with the specified name in a remote cluster connected via the data connection
      * identified by the supplied data connection name. You can add a data connection config by
      * {@link com.hazelcast.config.DataConnectionConfig}. If the data connection is not found, this method
-     * will throw a {@link com.hazelcast.core.HazelcastException}.
+     * will throw a {@link com.hazelcast.jet.JetException}.
      * <p>
      * This sink provides the exactly-once guarantee thanks to <i>idempotent
      * updates</i>. It means that the value with the same key is not appended,
@@ -269,6 +269,7 @@ public final class Sinks {
      *
      * @param replicatedMapName  name of the replicated map in the remote cluster
      * @param dataConnectionName name of the data connection to connect to the remote cluster
+     * @throws com.hazelcast.jet.JetException if the data connection is not found
      */
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,
@@ -284,6 +285,7 @@ public final class Sinks {
      * @param replicatedMapName  name of the replicated map in the remote cluster
      * @param dataConnectionName name of the data connection to connect to the remote cluster
      * @param batchSize          batch size to use
+     * @throws com.hazelcast.jet.JetException if the data connection is not found
      */
     @Nonnull
     public static <K, V> Sink<Entry<K, V>> remoteReplicatedMap(@Nonnull String replicatedMapName,

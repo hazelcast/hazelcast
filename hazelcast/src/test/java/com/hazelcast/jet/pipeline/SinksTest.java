@@ -31,6 +31,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -64,7 +65,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
@@ -74,6 +77,7 @@ import static com.hazelcast.jet.json.JsonUtil.hazelcastJsonValue;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -281,11 +285,20 @@ public class SinksTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap() {
+        remoteReplicatedMap(() -> Sinks.remoteReplicatedMap(sinkName, clientConfig));
+    }
+
+    @Test
+    public void remoteReplicatedMap_customBatchSize() {
+        remoteReplicatedMap(() -> Sinks.remoteReplicatedMap(sinkName, clientConfig, 100));
+    }
+
+    private void remoteReplicatedMap(Supplier<Sink<Entry<String, Integer>>> sinkSupplier) {
         // Given
         List<Integer> input = sequence(itemCount);
         BatchSource<Integer> source1 = TestSources.items(input);
         // When
-        Sink<Entry<String, Integer>> sink = Sinks.remoteReplicatedMap(sinkName, clientConfig);
+        Sink<Entry<String, Integer>> sink = sinkSupplier.get();
         p.readFrom(source1)
                 .map(i -> entry(String.valueOf(i), i))
                 .writeTo(sink);
@@ -301,16 +314,25 @@ public class SinksTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_dataConnectionName() {
+        remoteReplicatedMap_dataConnectionName((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName));
+    }
+
+    @Test
+    public void remoteReplicatedMap_dataConnectionName_customBatchSize() {
+        remoteReplicatedMap_dataConnectionName((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName, 100));
+    }
+
+    private void remoteReplicatedMap_dataConnectionName(Function<String, Sink<Entry<String, Integer>>> sinkFn) {
         // Given
         List<Integer> input = sequence(itemCount);
         BatchSource<Integer> source1 = TestSources.items(input);
         // When
-        String dataConnectionName = "remoteHz";
+        String dataConnectionName = randomString();
         hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
                 .setType("Hz")
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
-        Sink<Entry<String, Integer>> sink = Sinks.remoteReplicatedMap(sinkName, dataConnectionName);
+        Sink<Entry<String, Integer>> sink = sinkFn.apply(dataConnectionName);
         p.readFrom(source1)
                 .map(i -> entry(String.valueOf(i), i))
                 .writeTo(sink);
@@ -323,6 +345,92 @@ public class SinksTest extends PipelineTestSupport {
         Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getReplicatedMap(sinkName).entrySet();
         assertEquals(expected.size(), actual.size());
         assertThat(expected).allSatisfy(entry -> assertTrue(actual.contains(entry)));
+    }
+
+    @Test
+    public void remoteReplicatedMap_nonExistentDataConnection() {
+        remoteReplicatedMap_nonExistentDataConnection((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName));
+    }
+
+    @Test
+    public void remoteReplicatedMap_nonExistentDataConnection_customBatchSize() {
+        remoteReplicatedMap_nonExistentDataConnection((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName, 100));
+    }
+
+    private void remoteReplicatedMap_nonExistentDataConnection(Function<String, Sink<Entry<String, Integer>>> sinkFn) {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        BatchSource<Integer> source1 = TestSources.items(input);
+        String dataConnectionName = randomString();
+        // When
+        Sink<Entry<String, Integer>> sink = sinkFn.apply(dataConnectionName);
+        p.readFrom(source1)
+                .map(i -> entry(String.valueOf(i), i))
+                .writeTo(sink);
+        // Then
+        Job job = hz().getJet().newJob(p, new JobConfig());
+        assertThatThrownBy(job::join).isInstanceOf(CompletionException.class).hasStackTraceContaining("Data connection '" + dataConnectionName + "' not found");
+    }
+
+    @Test
+    public void remoteReplicatedMap_dataConnectionToNonExistentCluster() {
+        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName));
+    }
+
+    @Test
+    public void remoteReplicatedMap_dataConnectionToNonExistentCluster_customBatchSize() {
+        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName, 100));
+    }
+
+    private void remoteReplicatedMap_dataConnectionToNonExistentCluster(Function<String, Sink<Entry<String, Integer>>> sinkFn) {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        BatchSource<Integer> source1 = TestSources.items(input);
+        // When
+        String dataConnectionName = randomString();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName("neverland");
+        clientConfig.getNetworkConfig().addAddress("localhost:911");
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(10000);
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        Sink<Entry<String, Integer>> sink = sinkFn.apply(dataConnectionName);
+        p.readFrom(source1)
+                .map(i -> entry(String.valueOf(i), i))
+                .writeTo(sink);
+        Job job = hz().getJet().newJob(p, new JobConfig());
+        assertThatThrownBy(job::join).isInstanceOf(CompletionException.class).hasStackTraceContaining("Unable to connect");
+    }
+
+    @Test
+    public void remoteReplicatedMap_noItemsInSource() {
+        remoteReplicatedMap_noItemsInSource((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName));
+    }
+
+    @Test
+    public void remoteReplicatedMap_noItemsInSource_customBatchSize() {
+        remoteReplicatedMap_noItemsInSource((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName, 100));
+    }
+
+    private void remoteReplicatedMap_noItemsInSource(Function<String, Sink<Entry<String, Integer>>> sinkFn) {
+        // Given
+        BatchSource<Integer> source1 = TestSources.items();
+        // When
+        String dataConnectionName = randomString();
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        Sink<Entry<String, Integer>> sink = sinkFn.apply(dataConnectionName);
+        p.readFrom(source1)
+                .map(i -> entry(String.valueOf(i), i))
+                .writeTo(sink);
+        execute();
+        // Then
+        Set<Entry<String, Integer>> actual = remoteHz.<String, Integer>getReplicatedMap(sinkName).entrySet();
+        assertEquals(0, actual.size());
     }
 
     @Test
