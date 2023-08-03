@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheEntriesWithCursor;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFetchKeysCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFetchWithQueryCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.HazelcastInstance;
@@ -129,7 +130,7 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteCacheReaderFunction(cacheName));
+        return new RemoteProcessorSupplier<>(clientXml, null, new RemoteCacheReaderFunction(cacheName));
     }
 
     public static class RemoteCacheReaderFunction implements FunctionEx<HazelcastInstance,
@@ -297,7 +298,24 @@ public final class HazelcastReaders {
             @Nonnull ClientConfig clientConfig
     ) {
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteMapReaderFunction(mapName));
+        return new RemoteProcessorSupplier<>(clientXml, null, new RemoteMapReaderFunction(mapName));
+    }
+
+    @Nonnull
+    public static ProcessorSupplier readRemoteMapKeysSupplier(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig
+    ) {
+        String clientXml = ImdgUtil.asXmlString(clientConfig);
+        return new RemoteProcessorSupplier<>(clientXml, null, new RemoteMapKeysReaderFunction(mapName));
+    }
+
+    @Nonnull
+    public static ProcessorSupplier readRemoteMapKeysSupplier(
+            @Nonnull String mapName,
+            @Nonnull String dataConnectionName
+    ) {
+        return new RemoteProcessorSupplier<>(null, dataConnectionName, new RemoteMapKeysReaderFunction(mapName));
     }
 
     public static class RemoteMapReaderFunction implements FunctionEx<HazelcastInstance,
@@ -339,6 +357,45 @@ public final class HazelcastReaders {
         }
     }
 
+    public static class RemoteMapKeysReaderFunction implements FunctionEx<HazelcastInstance,
+            ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchKeysCodec.ResponseParameters, Data>>,
+            IdentifiedDataSerializable {
+        private String mapName;
+
+        public RemoteMapKeysReaderFunction() {
+        }
+
+        public RemoteMapKeysReaderFunction(String mapName) {
+            this.mapName = mapName;
+        }
+
+        @Override
+        public ReadMapOrCacheP.Reader<ClientInvocationFuture, MapFetchKeysCodec.ResponseParameters, Data>
+        applyEx(HazelcastInstance hzInstance) throws Exception {
+            return new ReadMapOrCacheP.RemoteMapKeysReader(hzInstance, mapName);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeString(mapName);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            mapName = in.readString();
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetDataSerializerHook.FACTORY_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetDataSerializerHook.REMOTE_MAP_KEYS_READER_FUNCTION;
+        }
+    }
+
     @Nonnull
     public static <K, V, T> ProcessorSupplier readRemoteMapSupplier(
             @Nonnull String mapName,
@@ -350,7 +407,7 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
         String clientXml = ImdgUtil.asXmlString(clientConfig);
-        return new RemoteProcessorSupplier<>(clientXml, new RemoteMapQueryReaderFunction<>(mapName, predicate,
+        return new RemoteProcessorSupplier<>(clientXml, null, new RemoteMapQueryReaderFunction<>(mapName, predicate,
                 projection));
     }
 

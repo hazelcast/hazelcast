@@ -25,12 +25,14 @@ import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFetchKeysCodec;
 import com.hazelcast.client.impl.protocol.codec.MapFetchWithQueryCodec;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.iteration.IterationPointer;
@@ -374,6 +376,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         static final long serialVersionUID = 1L;
 
         private final String clientXml;
+        private final String dataConnectionName;
         private final FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier;
 
         private transient HazelcastClientProxy client;
@@ -381,15 +384,31 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private transient int baseIndex;
 
         RemoteProcessorSupplier(
-                @Nonnull String clientXml,
+                String clientXml,
+                String dataConnectionName,
                 @Nonnull FunctionEx<HazelcastInstance, Reader<F, B, R>> readerSupplier) {
+            if (clientXml != null && dataConnectionName != null) {
+                throw new IllegalArgumentException("Only one of clientXml and dataConnectionName can be set");
+            }
+            this.dataConnectionName = dataConnectionName;
             this.clientXml = clientXml;
             this.readerSupplier = readerSupplier;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            client = (HazelcastClientProxy) newHazelcastClient(asClientConfig(clientXml));
+            if (dataConnectionName != null) {
+                HazelcastDataConnection dataConnection =
+                        context.dataConnectionService()
+                                .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
+                try {
+                    this.client = (HazelcastClientProxy) dataConnection.getClient();
+                } finally {
+                    dataConnection.release();
+                }
+            } else {
+                client = (HazelcastClientProxy) newHazelcastClient(asClientConfig(clientXml));
+            }
             totalParallelism = context.totalParallelism();
             baseIndex = context.memberIndex() * context.localParallelism();
         }
@@ -635,6 +654,45 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Nullable @Override
         public Entry<Data, Data> toObject(@Nonnull Entry<Data, Data> entry) {
             return new LazyMapEntry<>(entry.getKey(), entry.getValue(), serializationService);
+        }
+    }
+
+    static class RemoteMapKeysReader
+            extends Reader<ClientInvocationFuture, MapFetchKeysCodec.ResponseParameters, Data> {
+
+        private final ClientMapProxy clientMapProxy;
+
+        RemoteMapKeysReader(@Nonnull HazelcastInstance hzInstance,
+                        @Nonnull String mapName) {
+            super(mapName, parameters -> decodePointers(parameters.iterationPointers), parameters -> parameters.keys);
+
+            this.clientMapProxy = (ClientMapProxy) hzInstance.getMap(mapName);
+            this.serializationService = clientMapProxy.getContext().getSerializationService();
+        }
+
+        @Nonnull @Override
+        public ClientInvocationFuture readBatch(int partitionId, IterationPointer[] pointers) {
+            ClientMessage request = MapFetchKeysCodec.encodeRequest(
+                    objectName, encodePointers(pointers), MAX_FETCH_SIZE
+            );
+            ClientInvocation clientInvocation = new ClientInvocation(
+                    (HazelcastClientInstanceImpl) clientMapProxy.getContext().getHazelcastInstance(),
+                    request,
+                    objectName,
+                    partitionId
+            );
+            return clientInvocation.invoke();
+        }
+
+        @Nonnull @Override
+        public MapFetchKeysCodec.ResponseParameters toBatchResult(@Nonnull ClientInvocationFuture future)
+                throws ExecutionException, InterruptedException {
+            return MapFetchKeysCodec.decodeResponse(future.get());
+        }
+
+        @Nullable @Override
+        public Object toObject(@Nonnull Data keyData) {
+            return serializationService.toObject(keyData);
         }
     }
 

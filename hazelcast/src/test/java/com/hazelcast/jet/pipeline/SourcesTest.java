@@ -235,6 +235,47 @@ public class SourcesTest extends PipelineTestSupport {
     }
 
     @Test
+    public void remoteMapKeys() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getMap(srcName), input);
+
+        // When
+        BatchSource<Object> source = Sources.remoteMapKeys(srcName, clientConfig);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        execute();
+        List<String> expected = input.stream()
+                .map(String::valueOf)
+                .collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void remoteMapKeys_dataConnectionName() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToMap(remoteHz.getMap(srcName), input);
+
+        // When
+        String dataConnectionName = "remoteHz";
+        hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
+                .setType("Hz")
+                .setShared(false)
+                .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
+        BatchSource<Object> source = Sources.remoteMapKeys(srcName, dataConnectionName);
+
+        // Then
+        p.readFrom(source).writeTo(sink);
+        execute();
+        List<String> expected = input.stream()
+                .map(String::valueOf)
+                .collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
     public void remoteMap() {
         // Given
         List<Integer> input = sequence(itemCount);

@@ -76,6 +76,7 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteListP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteMapKeysP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
@@ -790,6 +791,60 @@ public final class Sources {
     ) {
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
                 ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig, predicate, projection)));
+    }
+
+    /**
+     * Returns a source that fetches keys from the Hazelcast {@code IMap}
+     * with the specified name in a remote cluster identified by the supplied
+     * {@code ClientConfig} and emits them.
+     * <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all keys.
+     * <p>
+     * If the {@code IMap} is modified while being read, or if there is a
+     * cluster topology change (triggering data migration), the source may miss
+     * and/or duplicate some keys. If we detect a topology change, the job
+     * will fail, but the detection is only on a best-effort basis - we might
+     * still give incorrect results without reporting a failure. Concurrent
+     * mutation is not detected at all.
+     * <p>
+     * The default local parallelism for this processor is 1.
+     */
+    @Nonnull
+    public static <K> BatchSource<K> remoteMapKeys(
+            @Nonnull String mapName,
+            @Nonnull ClientConfig clientConfig
+    ) {
+        return batchFromProcessor("remoteMapKeysSource(" + mapName + ')',
+                ProcessorMetaSupplier.of(readRemoteMapKeysP(mapName, clientConfig)));
+    }
+
+    /**
+     * Returns a source that fetches keys from the Hazelcast {@code IMap}
+     * with the specified name in a remote cluster connected via the data connection identified by the supplied
+     * data connection name and emits them as keys. You can add a data connection config by
+     * {@link com.hazelcast.config.DataConnectionConfig}. If the data connection is not found, this method
+     * will throw a {@link com.hazelcast.core.HazelcastException}.
+     * <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all entries.
+     * <p>
+     * If the {@code IMap} is modified while being read, or if there is a
+     * cluster topology change (triggering data migration), the source may miss
+     * and/or duplicate some entries. If we detect a topology change, the job
+     * will fail, but the detection is only on a best-effort basis - we might
+     * still give incorrect results without reporting a failure. Concurrent
+     * mutation is not detected at all.
+     * <p>
+     * The default local parallelism for this processor is 1.
+     */
+    @Nonnull
+    public static <K> BatchSource<K> remoteMapKeys(
+            @Nonnull String mapName,
+            @Nonnull String dataConnectionName
+    ) {
+        return batchFromProcessor("remoteMapKeysSource(" + mapName + ')',
+                ProcessorMetaSupplier.of(readRemoteMapKeysP(mapName, dataConnectionName)));
     }
 
     /**
