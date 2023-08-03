@@ -759,6 +759,7 @@ public class PlanExecutor {
 
     // package-private for test purposes
     @Nonnull
+    @SuppressWarnings("java:S3776")
     Set<Integer> tryUsePrunability(SelectPlan plan, ExpressionEvalContext evalContext) {
         Set<Integer> partitions = new HashSet<>();
         boolean allVariantsValid = true;
