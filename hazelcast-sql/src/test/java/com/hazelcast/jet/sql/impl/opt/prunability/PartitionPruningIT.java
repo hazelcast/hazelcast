@@ -163,7 +163,7 @@ public class PartitionPruningIT extends SqlTestSupport {
         instance().getConfig().addMapConfig(new MapConfig(mapName).setPartitioningAttributeConfigs(Arrays.asList(
                 new PartitioningAttributeConfig("nestedKey")
         )));
-        var paKey = new PAKey(1L,"one");
+        var paKey = new PAKey(1L, "one");
         IMap<KeyWithPAField, String> map = instance().getMap(mapName);
         map.put(new KeyWithPAField(paKey), "oneValue");
 
@@ -179,7 +179,7 @@ public class PartitionPruningIT extends SqlTestSupport {
         instance().getConfig().addMapConfig(new MapConfig(mapName).setPartitioningAttributeConfigs(Arrays.asList(
                 new PartitioningAttributeConfig("nestedKey")
         )));
-        var paKey = new PAKey(1L,"one");
+        var paKey = new PAKey(1L, "one");
         IMap<PAKeyWithPAField, String> map = instance().getMap(mapName);
         map.put(new PAKeyWithPAField(paKey), "oneValue");
 
@@ -192,7 +192,7 @@ public class PartitionPruningIT extends SqlTestSupport {
     @Test
     public void test_partitionAwarePartitionAwareKeyShouldBePruned() {
         String mapName = randomName();
-        var paKey = new PAKey(1L,"one");
+        var paKey = new PAKey(1L, "one");
         IMap<PAKeyWithPAField, String> map = instance().getMap(mapName);
         map.put(new PAKeyWithPAField(paKey), "oneValue");
 
