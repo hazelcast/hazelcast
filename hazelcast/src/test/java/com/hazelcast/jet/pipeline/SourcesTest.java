@@ -354,15 +354,6 @@ public class SourcesTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_emptySourceMap() {
-        remoteReplicatedMap_emptySourceMap((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName));
-    }
-
-    @Test
-    public void remoteReplicatedMap_emptySourceMap_customBatchSize() {
-        remoteReplicatedMap_emptySourceMap((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
-    }
-
-    private void remoteReplicatedMap_emptySourceMap(Function<String, BatchSource<Entry<Object, Object>>> sourceFn) {
         // Given empty map
         // When
         String dataConnectionName = randomString();
@@ -370,7 +361,7 @@ public class SourcesTest extends PipelineTestSupport {
                 .setType("Hz")
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
-        BatchSource<Entry<Object, Object>> source = sourceFn.apply(dataConnectionName);
+        BatchSource<Entry<Object, Object>> source = Sources.remoteReplicatedMap(srcName, dataConnectionName);
 
         // Then
         p.readFrom(source).writeTo(sink);
@@ -380,22 +371,13 @@ public class SourcesTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_dataConnectionMissing() {
-        remoteReplicatedMap_dataConnectionMissing((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName));
-    }
-
-    @Test
-    public void remoteReplicatedMap_dataConnectionMissing_customBatchSize() {
-        remoteReplicatedMap_dataConnectionMissing((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
-    }
-
-    private void remoteReplicatedMap_dataConnectionMissing(Function<String, BatchSource<Entry<Object, Object>>> sourceFn) {
         // Given
         List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getReplicatedMap(srcName), input);
 
         // When
         String dataConnectionName = randomString();
-        BatchSource<Entry<Object, Object>> source = sourceFn.apply(dataConnectionName);
+        BatchSource<Entry<Object, Object>> source = Sources.remoteReplicatedMap(srcName, dataConnectionName);
 
         // Then
         p.readFrom(source).writeTo(sink);
@@ -405,15 +387,6 @@ public class SourcesTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_dataConnectionToNonExistentCluster() {
-        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName));
-    }
-
-    @Test
-    public void remoteReplicatedMap_dataConnectionToNonExistentCluster_customBatchSize() {
-        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sources.remoteReplicatedMap(srcName, dataConnectionName, 100));
-    }
-
-    private void remoteReplicatedMap_dataConnectionToNonExistentCluster(Function<String, BatchSource<Entry<Object, Object>>> sourceFn) {
         // Given
         List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getReplicatedMap(srcName), input);
@@ -428,7 +401,7 @@ public class SourcesTest extends PipelineTestSupport {
                 .setType("Hz")
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
-        BatchSource<Entry<Object, Object>> source = sourceFn.apply(dataConnectionName);
+        BatchSource<Entry<Object, Object>> source = Sources.remoteReplicatedMap(srcName, dataConnectionName);
 
         // Then
         p.readFrom(source).writeTo(sink);

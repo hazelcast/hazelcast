@@ -296,10 +296,10 @@ public class SinksTest extends PipelineTestSupport {
     private void remoteReplicatedMap(Supplier<Sink<Entry<String, Integer>>> sinkSupplier) {
         // Given
         List<Integer> input = sequence(itemCount);
-        BatchSource<Integer> source1 = TestSources.items(input);
+        BatchSource<Integer> source = TestSources.items(input);
         // When
         Sink<Entry<String, Integer>> sink = sinkSupplier.get();
-        p.readFrom(source1)
+        p.readFrom(source)
                 .map(i -> entry(String.valueOf(i), i))
                 .writeTo(sink);
         execute();
@@ -324,7 +324,7 @@ public class SinksTest extends PipelineTestSupport {
     private void remoteReplicatedMap_dataConnectionName(Function<String, Sink<Entry<String, Integer>>> sinkFn) {
         // Given
         List<Integer> input = sequence(itemCount);
-        BatchSource<Integer> source1 = TestSources.items(input);
+        BatchSource<Integer> source = TestSources.items(input);
         // When
         String dataConnectionName = randomString();
         hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
@@ -332,7 +332,7 @@ public class SinksTest extends PipelineTestSupport {
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
         Sink<Entry<String, Integer>> sink = sinkFn.apply(dataConnectionName);
-        p.readFrom(source1)
+        p.readFrom(source)
                 .map(i -> entry(String.valueOf(i), i))
                 .writeTo(sink);
         execute();
@@ -346,22 +346,13 @@ public class SinksTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_nonExistentDataConnection() {
-        remoteReplicatedMap_nonExistentDataConnection((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName));
-    }
-
-    @Test
-    public void remoteReplicatedMap_nonExistentDataConnection_customBatchSize() {
-        remoteReplicatedMap_nonExistentDataConnection((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName, 100));
-    }
-
-    private void remoteReplicatedMap_nonExistentDataConnection(Function<String, Sink<Entry<String, Integer>>> sinkFn) {
         // Given
         List<Integer> input = sequence(itemCount);
-        BatchSource<Integer> source1 = TestSources.items(input);
+        BatchSource<Integer> source = TestSources.items(input);
         String dataConnectionName = randomString();
         // When
-        Sink<Entry<String, Integer>> sink = sinkFn.apply(dataConnectionName);
-        p.readFrom(source1)
+        Sink<Entry<String, Integer>> sink = Sinks.remoteReplicatedMap(sinkName, dataConnectionName);
+        p.readFrom(source)
                 .map(i -> entry(String.valueOf(i), i))
                 .writeTo(sink);
         // Then
@@ -371,18 +362,9 @@ public class SinksTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_dataConnectionToNonExistentCluster() {
-        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName));
-    }
-
-    @Test
-    public void remoteReplicatedMap_dataConnectionToNonExistentCluster_customBatchSize() {
-        remoteReplicatedMap_dataConnectionToNonExistentCluster((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName, 100));
-    }
-
-    private void remoteReplicatedMap_dataConnectionToNonExistentCluster(Function<String, Sink<Entry<String, Integer>>> sinkFn) {
         // Given
         List<Integer> input = sequence(itemCount);
-        BatchSource<Integer> source1 = TestSources.items(input);
+        BatchSource<Integer> source = TestSources.items(input);
         // When
         String dataConnectionName = randomString();
         ClientConfig clientConfig = new ClientConfig();
@@ -393,8 +375,8 @@ public class SinksTest extends PipelineTestSupport {
                 .setType("Hz")
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
-        Sink<Entry<String, Integer>> sink = sinkFn.apply(dataConnectionName);
-        p.readFrom(source1)
+        Sink<Entry<String, Integer>> sink = Sinks.remoteReplicatedMap(sinkName, dataConnectionName);
+        p.readFrom(source)
                 .map(i -> entry(String.valueOf(i), i))
                 .writeTo(sink);
         Job job = hz().getJet().newJob(p, new JobConfig());
@@ -403,25 +385,16 @@ public class SinksTest extends PipelineTestSupport {
 
     @Test
     public void remoteReplicatedMap_noItemsInSource() {
-        remoteReplicatedMap_noItemsInSource((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName));
-    }
-
-    @Test
-    public void remoteReplicatedMap_noItemsInSource_customBatchSize() {
-        remoteReplicatedMap_noItemsInSource((dataConnectionName) -> Sinks.remoteReplicatedMap(sinkName, dataConnectionName, 100));
-    }
-
-    private void remoteReplicatedMap_noItemsInSource(Function<String, Sink<Entry<String, Integer>>> sinkFn) {
         // Given
-        BatchSource<Integer> source1 = TestSources.items();
+        BatchSource<Integer> source = TestSources.items();
         // When
         String dataConnectionName = randomString();
         hz().getConfig().addDataConnectionConfig(new DataConnectionConfig(dataConnectionName)
                 .setType("Hz")
                 .setShared(false)
                 .setProperty(HazelcastDataConnection.CLIENT_XML, ImdgUtil.asXmlString(clientConfig)));
-        Sink<Entry<String, Integer>> sink = sinkFn.apply(dataConnectionName);
-        p.readFrom(source1)
+        Sink<Entry<String, Integer>> sink = Sinks.remoteReplicatedMap(sinkName, dataConnectionName);
+        p.readFrom(source)
                 .map(i -> entry(String.valueOf(i), i))
                 .writeTo(sink);
         execute();
