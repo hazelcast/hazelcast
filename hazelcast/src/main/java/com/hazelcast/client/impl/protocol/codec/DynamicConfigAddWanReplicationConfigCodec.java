@@ -54,7 +54,7 @@ public final class DynamicConfigAddWanReplicationConfigCodec {
         /**
          * WAN replication configuration name.
          */
-        public String name;
+        public java.lang.String name;
 
         /**
          * A serialized {@link com.hazelcast.config.WanConsumerConfig} instance.
@@ -72,12 +72,12 @@ public final class DynamicConfigAddWanReplicationConfigCodec {
         public java.util.List<com.hazelcast.internal.serialization.Data> batchPublisherConfigs;
     }
 
-    public static ClientMessage encodeRequest(String name, @Nullable com.hazelcast.internal.serialization.Data consumerConfig, java.util.Collection<com.hazelcast.internal.serialization.Data> customPublisherConfigs, java.util.Collection<com.hazelcast.internal.serialization.Data> batchPublisherConfigs) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable com.hazelcast.internal.serialization.Data consumerConfig, java.util.Collection<com.hazelcast.internal.serialization.Data> customPublisherConfigs, java.util.Collection<com.hazelcast.internal.serialization.Data> batchPublisherConfigs) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddWanReplicationConfig");
-        Frame initialFrame = new Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
@@ -88,8 +88,8 @@ public final class DynamicConfigAddWanReplicationConfigCodec {
         return clientMessage;
     }
 
-    public static RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ForwardFrameIterator iterator = clientMessage.frameIterator();
+    public static DynamicConfigAddWanReplicationConfigCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         //empty initial frame
         iterator.next();
@@ -102,7 +102,7 @@ public final class DynamicConfigAddWanReplicationConfigCodec {
 
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        Frame initialFrame = new Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
