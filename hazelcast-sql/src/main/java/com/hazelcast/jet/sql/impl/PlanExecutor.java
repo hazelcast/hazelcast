@@ -116,7 +116,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
@@ -147,6 +146,7 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.QueryUtils.quoteCompoundIdentifier;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyIterator;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 
@@ -160,6 +160,7 @@ public class PlanExecutor {
     private final HazelcastInstance hazelcastInstance;
     private final NodeEngine nodeEngine;
     private final QueryResultRegistry resultRegistry;
+    private final List<PreJobInvocationObserver> preJobInvocationObservers = new ArrayList<>();
 
     private final ILogger logger;
 
@@ -519,11 +520,8 @@ public class PlanExecutor {
                 .setTimeoutMillis(timeout);
 
         if (!plan.getPartitionStrategyCandidates().isEmpty()) {
-            var optResult = tryUsePrunability(plan, evalContext);
-            final Set<Integer> partitions = Objects.requireNonNull(optResult.f0());
-            final boolean allVariantsValid = Boolean.TRUE.equals(optResult.f1());
-
-            if (!partitions.isEmpty() && allVariantsValid) {
+            final Set<Integer> partitions = tryUsePrunability(plan, evalContext);
+            if (!partitions.isEmpty()) {
                 if (plan.requiredRootPartitionId() != null) {
                     partitions.add(plan.requiredRootPartitionId());
                 }
@@ -537,6 +535,7 @@ public class PlanExecutor {
         Object oldValue = resultRegistry.store(jobId, queryResultProducer);
         assert oldValue == null : oldValue;
         try {
+            preJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
             Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
             job.getFuture().whenComplete((r, t) -> {
                 // make sure the queryResultProducer is cleaned up after the job completes. This normally
@@ -758,8 +757,9 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
+    // package-private for test purposes
     @Nonnull
-    Tuple2<Set<Integer>, Boolean> tryUsePrunability(SelectPlan plan, ExpressionEvalContext evalContext) {
+    Set<Integer> tryUsePrunability(SelectPlan plan, ExpressionEvalContext evalContext) {
         Set<Integer> partitions = new HashSet<>();
         boolean allVariantsValid = true;
         for (final String mapName : plan.getPartitionStrategyCandidates().keySet()) {
@@ -811,7 +811,12 @@ public class PlanExecutor {
                 partitions.add(partition.getPartitionId());
             }
         }
-        return Tuple2.tuple2(partitions, allVariantsValid);
+        return allVariantsValid && partitions.size() > 0 ? partitions : emptySet();
+    }
+
+    // package-private for test purposes
+    void registerJobInvocationObserver(PreJobInvocationObserver jobInvocationObserver) {
+        preJobInvocationObservers.add(jobInvocationObserver);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

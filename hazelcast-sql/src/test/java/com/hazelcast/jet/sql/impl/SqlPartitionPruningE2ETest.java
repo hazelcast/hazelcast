@@ -18,6 +18,8 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.misc.Pojo;
@@ -43,16 +45,18 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -62,6 +66,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
     private SqlServiceImpl sqlService;
     private PlanExecutor planExecutor;
     private String mapName;
+    private PreJobInvocationObserverImpl jobInvocationObserver;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -76,6 +81,9 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
     public void before() throws Exception {
         sqlService = (SqlServiceImpl) instance().getSql();
         planExecutor = sqlService.getOptimizer().getPlanExecutor();
+
+        jobInvocationObserver = new PreJobInvocationObserverImpl();
+        planExecutor.registerJobInvocationObserver(jobInvocationObserver);
         mapName = randomName();
     }
 
@@ -103,16 +111,13 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
         SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
 
-        var optResult = planExecutor.tryUsePrunability(selectPlan, EEC);
-        assertNotNull(optResult.f0());
-        assertNotNull(optResult.f1());
+        assertQueryResult(selectPlan, singletonList(new Row(2, 2, 2, "2")));
 
-        assertTrue(optResult.f1());
-        assertEquals(1, optResult.f0().size());
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
+        Set<Integer> expectedPartitionsToUse = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
-        QueryId queryId = QueryId.create(UUID.randomUUID());
-        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
-        assertEquals(singletonList(new Row(2, 2, 2, "2")), collectResult(result));
+        assertEquals(1, partitionsToUse.size());
+        assertRequiredPartitions(expectedPartitionsToUse, partitionsToUse);
     }
 
     @Test
@@ -135,13 +140,10 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
         SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
 
-        var optResult = planExecutor.tryUsePrunability(selectPlan, EEC);
-        assertNotNull(optResult.f0());
-        assertEquals(0, optResult.f0().size());
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
 
-        QueryId queryId = QueryId.create(UUID.randomUUID());
-        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
-        assertEquals(singletonList(new Row(2, 2, 2, "2")), collectResult(result));
+        assertEquals(0, partitionsToUse.size());
+        assertQueryResult(selectPlan, singletonList(new Row(2, 2, 2, "2")));
     }
 
     @Test
@@ -169,17 +171,13 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
         SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
 
-        var optResult = planExecutor.tryUsePrunability(selectPlan, EEC);
-        assertNotNull(optResult.f0());
-        assertNotNull(optResult.f1());
+        assertQueryResult(selectPlan, singletonList(new Row(2, 2, 2, "2")));
 
-        assertTrue(optResult.f1());
-        assertEquals(1, optResult.f0().size());
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
+        Set<Integer> expectedPartitionsToUse = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
-        QueryId queryId = QueryId.create(UUID.randomUUID());
-        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
-
-        assertEquals(singletonList(new Row(2, 2, 2, "2")), collectResult(result));
+        assertEquals(1, partitionsToUse.size());
+        assertRequiredPartitions(expectedPartitionsToUse, partitionsToUse);
     }
 
     @Test
@@ -210,21 +208,13 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
         SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
 
+        assertQueryResult(selectPlan, asList(new Row(2, 2, 2, "2"), new Row(3, 3, 3, "3")));
 
-        var optResult = planExecutor.tryUsePrunability(selectPlan, EEC);
-        assertNotNull(optResult.f0());
-        assertNotNull(optResult.f1());
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
+        Set<Integer> expectedPartitionsToUse = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
-        assertTrue(optResult.f1());
-        assertEquals(2, optResult.f0().size());
-
-        QueryId queryId = QueryId.create(UUID.randomUUID());
-        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
-
-        assertCollection(
-                asList(new Row(2, 2, 2, "2"), new Row(3, 3, 3, "3")),
-                collectResult(result)
-        );
+        assertEquals(2, partitionsToUse.size());
+        assertRequiredPartitions(expectedPartitionsToUse, partitionsToUse);
     }
 
     @Test
@@ -255,20 +245,13 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
         SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
 
-        var optResult = planExecutor.tryUsePrunability(selectPlan, EEC);
-        assertNotNull(optResult.f0());
-        assertNotNull(optResult.f1());
+        assertQueryResult(selectPlan, asList(new Row(2, 2, 2, "2"), new Row(3, 3, 3, "3")));
 
-        assertTrue(optResult.f1());
-        assertEquals(2, optResult.f0().size());
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
+        Set<Integer> expectedPartitionsToUse = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
-        QueryId queryId = QueryId.create(UUID.randomUUID());
-        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
-
-        assertCollection(
-                asList(new Row(2, 2, 2, "2"), new Row(3, 3, 3, "3")),
-                collectResult(result)
-        );
+        assertEquals(2, partitionsToUse.size());
+        assertRequiredPartitions(expectedPartitionsToUse, partitionsToUse);
     }
 
     @Test
@@ -309,17 +292,13 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
         SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
 
-        var optResult = planExecutor.tryUsePrunability(selectPlan, EEC);
-        assertNotNull(optResult.f0());
-        assertNotNull(optResult.f1());
+        assertQueryResult(selectPlan, asList(new Row(2), new Row(3)));
 
-        assertTrue(optResult.f1());
-        assertEquals(2, optResult.f0().size());
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
+        Set<Integer> expectedPartitionsToUse = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
-        QueryId queryId = QueryId.create(UUID.randomUUID());
-        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
-
-        assertCollection(asList(new Row(2), new Row(3)), collectResult(result));
+        assertEquals(2, partitionsToUse.size());
+        assertRequiredPartitions(expectedPartitionsToUse, partitionsToUse);
     }
 
     @Test
@@ -355,14 +334,8 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
         SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
 
-        var optResult = planExecutor.tryUsePrunability(selectPlan, EEC);
-        assertNotNull(optResult.f0());
-        assertEquals(0, optResult.f0().size());
-
-        QueryId queryId = QueryId.create(UUID.randomUUID());
-        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
-
-        assertCollection(asList(new Row(2), new Row(3)), collectResult(result));
+        assertQueryResult(selectPlan, asList(new Row(2), new Row(3)));
+        assertEquals(0, planExecutor.tryUsePrunability(selectPlan, EEC).size());
     }
 
     @Ignore("https://hazelcast.atlassian.net/browse/HZ-2796")
@@ -397,15 +370,8 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
         SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
 
-        var optResult = planExecutor.tryUsePrunability(selectPlan, EEC);
-        assertNotNull(optResult.f0());
-        assertNotNull(optResult.f1());
-        assertEquals(0, optResult.f0().size());
-
-        QueryId queryId = QueryId.create(UUID.randomUUID());
-        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
-
-        assertEquals(singletonList(new Row(2, 2, 2, "2")), collectResult(result));
+        assertQueryResult(selectPlan, singletonList(new Row(2, 2, 2, "2")));
+        assertEquals(0, planExecutor.tryUsePrunability(selectPlan, EEC));
     }
 
     @Nonnull
@@ -415,5 +381,28 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
             actualRows.add(new Row(r));
         }
         return actualRows;
+    }
+
+    static void assertRequiredPartitions(Set<Integer> expectedPartitions, Set<Integer> actualPartitions) {
+        assertNotNull(expectedPartitions);
+        assertNotNull(actualPartitions);
+        assertContainsAll(expectedPartitions, actualPartitions);
+    }
+
+    void assertQueryResult(SqlPlanImpl.SelectPlan selectPlan, Collection<Row> expectedResults) {
+        QueryId queryId = QueryId.create(UUID.randomUUID());
+        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
+        assertCollection(expectedResults, collectResult(result));
+    }
+
+    static class PreJobInvocationObserverImpl implements PreJobInvocationObserver {
+        public DAG dag;
+        public JobConfig jobConfig;
+
+        @Override
+        public void onJobInvocation(DAG dag, JobConfig config) {
+            this.dag = dag;
+            this.jobConfig = config;
+        }
     }
 }
