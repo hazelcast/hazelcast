@@ -91,7 +91,7 @@ public class LeadershipTransferTask implements Runnable {
             logger.info("Transferring leadership to " + leadershipTransferState.endpoint());
         }
 
-        leaderState.getFollowerState(targetEndpoint).appendRequestAckReceived();
+        leaderState.getFollowerState(targetEndpoint).resetRequestBackoff();
         raftNode.sendAppendRequest(targetEndpoint);
 
         LogEntry entry = state.log().lastLogOrSnapshotEntry();

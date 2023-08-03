@@ -642,8 +642,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         Lets you add listeners (listener classes) for the queue items. You can also set the attribute
-                        include-value to true if you want the item event to contain the item values, and you can set
-                        local to true if you want to listen to the items on the local node.
+                        include-value to true if the updated item should be passed to the item listener. Its default value is true.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>
@@ -734,8 +733,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         Lets you add listeners (listener classes) for the list items. You can also set the attribute
-                        include-value to true if you want the item event to contain the item values, and you can set
-                        local to true if you want to listen to the items on the local node.
+                        include-value to true if the updated item should be passed to the item listener. Its default value is true.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>
@@ -804,8 +802,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         Lets you add listeners (listener classes) for the set items. You can also set the attribute
-                        include-value to true if you want the item event to contain the item values, and you can set
-                        local to true if you want to listen to the items on the local node.
+                        include-value to true if the updated item should be passed to the item listener. Its default value is true.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>

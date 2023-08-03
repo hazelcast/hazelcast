@@ -16,21 +16,22 @@
 
 package com.hazelcast.dataconnection.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.DataConnection;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.DataConnectionConsistencyChecker;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,15 +39,17 @@ import org.junit.runner.RunWith;
 import java.util.Collections;
 import java.util.Map;
 
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class DataConnectionConsistencyCheckerTest extends SimpleTestInClusterSupport {
+public class DataConnectionConsistencyCheckerTest extends HazelcastTestSupport {
 
     private DataConnectionServiceImpl linkService;
     private IMap<Object, Object> sqlCatalog;
@@ -55,17 +58,19 @@ public class DataConnectionConsistencyCheckerTest extends SimpleTestInClusterSup
     private String name;
     private final String type = "dummy";
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        initialize(3, null);
-    }
+    private HazelcastInstance[] instances;
 
     @Before
     public void setUp() throws Exception {
+        instances = createHazelcastInstances(3);
         name = randomName();
         linkService = (DataConnectionServiceImpl) getNodeEngineImpl(instance()).getDataConnectionService();
-        sqlCatalog = instance().getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         dataConnectionConsistencyChecker = new DataConnectionConsistencyChecker(instance(), Util.getNodeEngine(instance()));
+        if (getTestMethodName().contains("NoPartitionAssignment")) {
+            // do not proceed with actions that may trigger initial parttion assignment
+            return;
+        }
+        sqlCatalog = instance().getMap(JetServiceBackend.SQL_CATALOG_MAP_NAME);
         dataConnectionConsistencyChecker.init();
     }
 
@@ -148,5 +153,24 @@ public class DataConnectionConsistencyCheckerTest extends SimpleTestInClusterSup
         // then-2 - dynamic config has higher priority, and __sql.catalog should NOT contain old version
         assertFalse(linkService.existsSqlDataConnection(name));
         assertFalse(sqlCatalog.containsKey(QueryUtils.wrapDataConnectionKey(name)));
+    }
+
+    /**
+     * When partition assignment is not yet done, then the data connection
+     * consistency check should not fail with an exception.
+     */
+    @Test
+    public void test_dataConnectionCheckDoesNotThrow_whenNoPartitionAssignment() {
+        // ensure test setup is correct
+        assertFalse(getNodeEngineImpl(instance()).getPartitionService().isPartitionAssignmentDone());
+        // switch to FROZEN state so partition assignments cannot be done
+        instance().getCluster().changeClusterState(ClusterState.FROZEN);
+        dataConnectionConsistencyChecker.init();
+        // the check should not fail with exception
+        dataConnectionConsistencyChecker.check();
+    }
+
+    private HazelcastInstance instance() {
+        return instances[0];
     }
 }

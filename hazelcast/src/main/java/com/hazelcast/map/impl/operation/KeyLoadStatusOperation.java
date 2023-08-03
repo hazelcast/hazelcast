@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.UtilSteps;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
@@ -28,7 +30,8 @@ import java.io.IOException;
  * Notifies record store about completion of key loading. The operation should be invoked
  * on a partition thread.
  */
-public class KeyLoadStatusOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
+public class KeyLoadStatusOperation extends MapOperation
+        implements PartitionAwareOperation, MutatingOperation {
 
     private Throwable exception;
 
@@ -38,6 +41,11 @@ public class KeyLoadStatusOperation extends MapOperation implements PartitionAwa
     public KeyLoadStatusOperation(String name, Throwable exception) {
         super(name);
         this.exception = exception;
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return UtilSteps.DIRECT_RUN_STEP;
     }
 
     @Override
