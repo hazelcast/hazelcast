@@ -353,7 +353,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         private Handler(NioAsyncSocketBuilder builder) throws SocketException {
             int receiveBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
-            this.rcvBuffer = builder.receiveBufferIsDirect
+            this.rcvBuffer = builder.directBuffers
                     ? ByteBuffer.allocateDirect(receiveBufferSize)
                     : ByteBuffer.allocate(receiveBufferSize);
         }
