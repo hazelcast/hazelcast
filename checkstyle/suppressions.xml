@@ -213,6 +213,7 @@
 
     <!-- Jet -->
     <suppress checks="FileLength" files="[\\/]src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/]Sources.java"/>
+    <suppress checks="FileLength" files="[\\/]src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]pipeline[\\/]Sinks.java"/>
 
     <!-- Security -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]security[\\/]"/>

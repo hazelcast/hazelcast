@@ -24,7 +24,6 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
