@@ -65,7 +65,7 @@ public class ClusterBatchedJoinTest extends HazelcastTestSupport {
         // Create a cluster that goes through a batched join, starting with a master instance (always index 0)
         batchedMembers[0] = Hazelcast.newHazelcastInstance(config);
         // Start 9 members simultaneously (so their join request is batched)
-        List<Future<?>> futures = new ArrayList<>();
+        List<Future<?>> futures = new ArrayList<>(10);
         for (int k = 1; k < 10; k++) {
             int finalK = k;
             futures.add(spawn(() -> batchedMembers[finalK] = Hazelcast.newHazelcastInstance(config)));
