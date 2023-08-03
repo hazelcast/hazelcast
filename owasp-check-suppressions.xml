@@ -127,21 +127,21 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        FP per issue https://github.com/jeremylong/DependencyCheck/issues/5843
+        False positive - CVE-2023-37475 affects Avro Go lib but is falsely linked to Maven lib
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro@.*$</packageUrl>
         <cpe>cpe:/a:avro_project:avro</cpe>
     </suppress>
     <suppress>
         <notes><![CDATA[
-        FP per issue https://github.com/jeremylong/DependencyCheck/issues/5843
+        False positive - CVE-2023-37475 affects Avro Go lib but is falsely linked to Maven lib
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.parquet/parquet\-avro@.*$</packageUrl>
         <cve>CVE-2023-37475</cve>
     </suppress>
     <suppress>
         <notes><![CDATA[
-        FP per issue https://github.com/jeremylong/DependencyCheck/issues/5843
+        False positive - CVE-2023-37475 affects Avro Go lib but is falsely linked to Maven lib
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.apache\.avro/avro\-mapred@.*$</packageUrl>
         <cve>CVE-2023-37475</cve>
