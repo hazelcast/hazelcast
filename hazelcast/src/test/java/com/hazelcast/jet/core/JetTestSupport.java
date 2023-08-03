@@ -74,6 +74,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.test.Accessors.getHazelcastInstanceImpl;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -138,8 +139,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 for (Job job : jobs) {
                     ditchJob(job, instances.toArray(new HazelcastInstance[0]));
                 }
-
-                JobClassLoaderService jobClassLoaderService = ((HazelcastInstanceImpl) instance).node
+                JobClassLoaderService jobClassLoaderService = getHazelcastInstanceImpl(instance).node
                         .getNodeEngine()
                         .<JetServiceBackend>getService(SERVICE_NAME)
                         .getJobClassLoaderService();
