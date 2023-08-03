@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
 
 /**
  * In the future this test will perform full cycle of testing, verifying that only desired nodes are participating in
@@ -160,20 +159,47 @@ public class PartitionPruningIT extends SqlTestSupport {
 
     @Test
     public void test_keyWithNestedPartitionAwareKeyShouldBePruned() {
-        String mapName = "testKeyWithPAField";
+        String mapName = randomName();
         instance().getConfig().addMapConfig(new MapConfig(mapName).setPartitioningAttributeConfigs(Arrays.asList(
                 new PartitioningAttributeConfig("nestedKey")
         )));
         var paKey = new PAKey(1L,"one");
         IMap<KeyWithPAField, String> map = instance().getMap(mapName);
         map.put(new KeyWithPAField(paKey), "oneValue");
-        // sanity check
-        assertEquals("oneValue", map.get(new KeyWithPAField(paKey)));
 
         createMapping(mapName, KeyWithPAField.class, String.class);
 
         // it can happen by accident that the test passes if partition id happens correct, but usually it wil fail
         assertRowsAnyOrder("SELECT this FROM " + mapName + " WHERE nestedKey = ?", List.of(paKey), rows(1, "oneValue"));
+    }
+
+    @Test
+    public void test_partitionAwareKeyWithNestedPartitionAwareKeyShouldBePruned() {
+        String mapName = randomName();
+        instance().getConfig().addMapConfig(new MapConfig(mapName).setPartitioningAttributeConfigs(Arrays.asList(
+                new PartitioningAttributeConfig("nestedKey")
+        )));
+        var paKey = new PAKey(1L,"one");
+        IMap<PAKeyWithPAField, String> map = instance().getMap(mapName);
+        map.put(new PAKeyWithPAField(paKey), "oneValue");
+
+        createMapping(mapName, PAKeyWithPAField.class, String.class);
+
+        // it can happen by accident that the test passes if partition id happens correct, but usually it wil fail
+        assertRowsAnyOrder("SELECT this FROM " + mapName + " WHERE nestedKey = ?", List.of(paKey), rows(1, "oneValue"));
+    }
+
+    @Test
+    public void test_partitionAwarePartitionAwareKeyShouldBePruned() {
+        String mapName = randomName();
+        var paKey = new PAKey(1L,"one");
+        IMap<PAKeyWithPAField, String> map = instance().getMap(mapName);
+        map.put(new PAKeyWithPAField(paKey), "oneValue");
+
+        createMapping(mapName, PAKeyWithPAField.class, String.class);
+
+        // it can happen by accident that the test passes if partition id happens correct, but usually it wil fail
+        assertRowsAnyOrder("SELECT this FROM " + mapName + " WHERE __key = ? and this = 'oneValue'", List.of(new PAKeyWithPAField(paKey)), rows(1, "oneValue"));
     }
 
     public static class PAKey implements Serializable, PartitionAware<String>, Comparable<PAKey> {
@@ -248,6 +274,53 @@ public class PartitionPruningIT extends SqlTestSupport {
         @Override
         public int hashCode() {
             return Objects.hash(nestedKey);
+        }
+    }
+
+    public static class PAKeyWithPAField implements Serializable, PartitionAware<PAKey>, Comparable<PAKeyWithPAField> {
+        private PAKey nestedKey;
+
+        public PAKeyWithPAField() {
+        }
+
+        public PAKeyWithPAField(PAKey nestedKey) {
+            this.nestedKey = nestedKey;
+        }
+
+        @Override
+        public PAKey getPartitionKey() {
+            // this is a very special border case but theoretically valid
+            return nestedKey;
+        }
+
+        public PAKey getNestedKey() {
+            return nestedKey;
+        }
+
+        public void setNestedKey(PAKey nestedKey) {
+            this.nestedKey = nestedKey;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            KeyWithPAField that = (KeyWithPAField) o;
+            return Objects.equals(nestedKey, that.nestedKey);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(nestedKey);
+        }
+
+        @Override
+        public int compareTo(PAKeyWithPAField o) {
+            return nestedKey.compareTo(o.nestedKey);
         }
     }
 
