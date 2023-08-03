@@ -45,6 +45,7 @@ import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELA
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Mimics an RPC call. So there are worker threads that send request with a call id and a payload. This request is
@@ -66,6 +67,9 @@ public abstract class AsyncSocket_RpcTest {
     private Reactor serverReactor;
 
     public abstract ReactorBuilder newReactorBuilder();
+
+    protected void customizeSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    }
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -147,6 +151,16 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     @Test
+    public void test_concurrency_1_payload_2MB() throws InterruptedException {
+        test(2 * 1024 * 1024, 1);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_16MB() throws InterruptedException {
+        test(16 * 1024 * 1024, 1);
+    }
+
+    @Test
     public void test_concurrency_10_payload_0B() throws InterruptedException {
         test(0, 10);
     }
@@ -207,6 +221,11 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     @Test
+    public void test_concurrency_10_payload_2MB() throws InterruptedException {
+        test(2 * 1024 * 1024, 10);
+    }
+
+    @Test
     public void test_concurrency_100_payload_1KB() throws InterruptedException {
         test(1024, 100);
     }
@@ -241,6 +260,11 @@ public abstract class AsyncSocket_RpcTest {
         test(128 * 1024, 100);
     }
 
+    @Test
+    public void test_concurrency_100_payload_1MB() throws InterruptedException {
+        test(1024 * 1024, 100);
+    }
+
     public void test(int payloadSize, int concurrency) throws InterruptedException {
         AsyncServerSocket serverSocket = newServer();
 
@@ -259,12 +283,13 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress) {
-        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
+        AsyncSocketBuilder clientSocketBuilder = clientReactor.newAsyncSocketBuilder()
                 .set(TCP_NODELAY, true)
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setReader(new ClientAsyncSocketReader())
-                .build();
+                .setReader(new ClientAsyncSocketReader());
+        customizeSocketBuilder(clientSocketBuilder);
+        AsyncSocket clientSocket = clientSocketBuilder.build();
 
         clientSocket.start();
         clientSocket.connect(serverAddress).join();
@@ -275,12 +300,13 @@ public abstract class AsyncSocket_RpcTest {
         AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setAcceptConsumer(acceptRequest -> {
-                    serverReactor.newAsyncSocketBuilder(acceptRequest)
+                    AsyncSocketBuilder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest)
                             .set(TCP_NODELAY, true)
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                            .setReader(new ServerAsyncSocketReader())
-                            .build()
+                            .setReader(new ServerAsyncSocketReader());
+                    customizeSocketBuilder(socketBuilder);
+                    socketBuilder.build()
                             .start();
                 })
                 .build();
@@ -295,9 +321,15 @@ public abstract class AsyncSocket_RpcTest {
         private long callId;
         private int payloadSize = -1;
         private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+        private long nextPrintMs = System.currentTimeMillis() + SECONDS.toMillis(1);
+        private long round;
 
         @Override
         public void onRead(ByteBuffer src) {
+            if (nextPrintMs < System.currentTimeMillis()) {
+                nextPrintMs += SECONDS.toMillis(1);
+                System.out.println(socket + " round " + round);
+            }
             for (; ; ) {
                 if (payloadSize == -1) {
                     if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
@@ -305,14 +337,19 @@ public abstract class AsyncSocket_RpcTest {
                     }
                     payloadSize = src.getInt();
                     callId = src.getLong();
+                    // todo:can be pooled
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
                 put(payloadBuffer, src);
                 if (payloadBuffer.remaining() > 0) {
+                    // System.out.println(socket + " not all bytes received");
                     // not all bytes have been received.
                     break;
                 }
+
+                round++;
+                // System.out.println(socket + "  all bytes received");
 
                 payloadBuffer.flip();
                 IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
@@ -368,9 +405,16 @@ public abstract class AsyncSocket_RpcTest {
         private ByteBuffer payloadBuffer;
         private long callId;
         private int payloadSize = -1;
+        private long nextPrintMs = System.currentTimeMillis() + SECONDS.toMillis(1);
+        private long round;
 
         @Override
         public void onRead(ByteBuffer src) {
+            if (nextPrintMs < System.currentTimeMillis()) {
+                nextPrintMs += SECONDS.toMillis(1);
+                System.out.println(socket + " round " + round);
+            }
+
             for (; ; ) {
                 if (payloadSize == -1) {
                     if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
@@ -379,15 +423,21 @@ public abstract class AsyncSocket_RpcTest {
 
                     payloadSize = src.getInt();
                     callId = src.getLong();
+                    //todo: can be pooled
                     payloadBuffer = ByteBuffer.allocate(payloadSize);
                 }
 
                 put(payloadBuffer, src);
 
                 if (payloadBuffer.remaining() > 0) {
+                    //System.out.println(socket + " not all bytes received");
                     // not all bytes have been received.
                     break;
                 }
+
+                round++;
+
+                //System.out.println(socket + " all bytes received");
                 payloadBuffer.flip();
 
                 iteration.incrementAndGet();
