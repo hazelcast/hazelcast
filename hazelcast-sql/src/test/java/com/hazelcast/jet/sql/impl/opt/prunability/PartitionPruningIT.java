@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.prunability;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
 
 /**
  * In the future this test will perform full cycle of testing, verifying that only desired nodes are participating in
@@ -156,6 +158,24 @@ public class PartitionPruningIT extends SqlTestSupport {
         assertRowsAnyOrder("SELECT this FROM test5 WHERE id = 1 AND name = '1' AND this = 'v1'", rows(1, "v1"));
     }
 
+    @Test
+    public void test_keyWithNestedPartitionAwareKeyShouldBePruned() {
+        String mapName = "testKeyWithPAField";
+        instance().getConfig().addMapConfig(new MapConfig(mapName).setPartitioningAttributeConfigs(Arrays.asList(
+                new PartitioningAttributeConfig("nestedKey")
+        )));
+        var paKey = new PAKey(1L,"one");
+        IMap<KeyWithPAField, String> map = instance().getMap(mapName);
+        map.put(new KeyWithPAField(paKey), "oneValue");
+        // sanity check
+        assertEquals("oneValue", map.get(new KeyWithPAField(paKey)));
+
+        createMapping(mapName, KeyWithPAField.class, String.class);
+
+        // it can happen by accident that the test passes if partition id happens correct, but usually it wil fail
+        assertRowsAnyOrder("SELECT this FROM " + mapName + " WHERE nestedKey = ?", List.of(paKey), rows(1, "oneValue"));
+    }
+
     public static class PAKey implements Serializable, PartitionAware<String>, Comparable<PAKey> {
         public Long id;
         public String name;
@@ -192,6 +212,42 @@ public class PartitionPruningIT extends SqlTestSupport {
         @Override
         public int hashCode() {
             return Objects.hash(id, name);
+        }
+    }
+
+    public static class KeyWithPAField implements Serializable {
+        private PAKey nestedKey;
+
+        public KeyWithPAField() {
+        }
+
+        public KeyWithPAField(PAKey nestedKey) {
+            this.nestedKey = nestedKey;
+        }
+
+        public PAKey getNestedKey() {
+            return nestedKey;
+        }
+
+        public void setNestedKey(PAKey nestedKey) {
+            this.nestedKey = nestedKey;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            KeyWithPAField that = (KeyWithPAField) o;
+            return Objects.equals(nestedKey, that.nestedKey);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(nestedKey);
         }
     }
 
