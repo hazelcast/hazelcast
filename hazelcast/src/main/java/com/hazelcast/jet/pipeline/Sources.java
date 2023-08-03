@@ -22,6 +22,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.HazelcastDataConnection;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
@@ -32,13 +33,16 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.json.JsonUtil;
+import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.projection.Projection;
@@ -46,19 +50,23 @@ import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.jms.ConnectionFactory;
 import javax.jms.Message;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
@@ -73,6 +81,7 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamSocketP;
 import static com.hazelcast.jet.impl.connector.StreamEventJournalP.streamRemoteCacheSupplier;
+import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -93,6 +102,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @since Jet 3.0
  */
 public final class Sources {
+    private static final int RMAP_DEFAULT_READ_BATCH_SIZE = 1_000;
 
     private Sources() {
     }
@@ -370,15 +380,15 @@ public final class Sources {
      * @param mapName      the name of the map
      * @param initialPos   describes which event to start receiving from
      * @param projectionFn the projection to map the events. If the projection returns a {@code
-*                     null} for an item, that item will be filtered out. You may use {@link
-*                     Util#mapEventToEntry()} to extract just the key and
-*                     the new value. It must be stateless and {@linkplain
-*                     Processor#isCooperative() cooperative}.
+     *                     null} for an item, that item will be filtered out. You may use {@link
+     *                     Util#mapEventToEntry()} to extract just the key and
+     *                     the new value. It must be stateless and {@linkplain
+     *                     Processor#isCooperative() cooperative}.
      * @param predicateFn  the predicate to filter the events. If you want to specify just the
-*                     projection, use {@link Util#mapPutEvents} to pass
-*                     only {@link EntryEventType#ADDED ADDED} and
-*                     {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
-*                     {@linkplain Processor#isCooperative() cooperative}.
+     *                     projection, use {@link Util#mapPutEvents} to pass
+     *                     only {@link EntryEventType#ADDED ADDED} and
+     *                     {@link EntryEventType#UPDATED UPDATED} events. It must be stateless and
+     *                     {@linkplain Processor#isCooperative() cooperative}.
      */
     @Nonnull
     public static <T, K, V> StreamSource<T> mapJournal(
@@ -531,6 +541,190 @@ public final class Sources {
     ) {
         return batchFromProcessor("remoteMapSource(" + mapName + ')',
                 ProcessorMetaSupplier.of(readRemoteMapP(mapName, clientConfig)));
+    }
+
+
+    /**
+     * Returns a source that fetches entries from the Hazelcast {@code ReplicatedMap}
+     * with the specified name in a remote cluster identified by the supplied
+     * {@code ClientConfig} and emits them as {@code Map.Entry}.
+     * <p>
+     * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
+     * config to create two different clients, they will share the same name and it will cause an error to be thrown
+     * since the instance name have to be unique among clients. If you don't provide any name, Hazelcast automatically
+     * makes them unique.
+     * <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all entries.
+     * <p>
+     * If the {@code ReplicatedMap} is modified while being read, or if there is a
+     * cluster topology change (triggering data migration), the source may miss
+     * and/or duplicate some entries. If we detect a topology change, the job
+     * will fail, but the detection is only on a best-effort basis - we might
+     * still give incorrect results without reporting a failure. Concurrent
+     * mutation is not detected at all.
+     * <p>
+     * This method reads entries in batches of 1 million by default. To change
+     * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
+     * <p>
+     * The total parallelism for this processor is 1.
+     *
+     * @param replicatedMapName name of the replicated map in the remote cluster
+     * @param clientConfig      client configuration to connect to the remote cluster
+     */
+    @Nonnull
+    public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+            @Nonnull String replicatedMapName,
+            @Nonnull ClientConfig clientConfig
+    ) {
+        return remoteReplicatedMap(replicatedMapName, clientConfig, RMAP_DEFAULT_READ_BATCH_SIZE);
+    }
+
+    /**
+     * This method does the same thing as {@link #remoteReplicatedMap(String, ClientConfig)} with a different batch
+     * size provided rather than the default batch size.
+     * <p>
+     * You should not set the instance name in the client configuration. If the same Hazelcast instance uses such a
+     * config to create two different clients, they will share the same name and it will cause an error to be thrown
+     * since the instance name have to be unique among clients. If you don't provide any name, Hazelcast automatically
+     * makes them unique.
+     *
+     * @param replicatedMapName name of the replicated map in the remote cluster
+     * @param clientConfig      client configuration to connect to the remote cluster
+     * @param batchSize         batch size to use
+     */
+    @Nonnull
+    public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+            @Nonnull String replicatedMapName,
+            @Nonnull ClientConfig clientConfig,
+            int batchSize
+    ) {
+        return remoteReplicatedMapInternal(replicatedMapName, null, clientConfig, batchSize);
+    }
+
+    /**
+     * Returns a source that fetches entries from the Hazelcast {@code ReplicatedMap}
+     * with the specified name in a remote cluster connected via the data connection identified by the supplied
+     * data connection name and emits them as {@code Map.Entry}. You can add a data connection config by
+     * {@link com.hazelcast.config.DataConnectionConfig}. If the data connection is not found, this method
+     * will throw a {@link com.hazelcast.core.HazelcastException}.
+     * <p>
+     * The source does not save any state to snapshot. If the job is restarted,
+     * it will re-emit all entries.
+     * <p>
+     * If the {@code ReplicatedMap} is modified while being read, or if there is a
+     * cluster topology change (triggering data migration), the source may miss
+     * and/or duplicate some entries. If we detect a topology change, the job
+     * will fail, but the detection is only on a best-effort basis - we might
+     * still give incorrect results without reporting a failure. Concurrent
+     * mutation is not detected at all.
+     * <p>
+     * This method reads entries in batches of 1 million by default. To change
+     * the batch size, use {@link #remoteReplicatedMap(String, ClientConfig, int)}.
+     * <p>
+     * The total parallelism for this processor is 1.
+     *
+     * @param replicatedMapName  name of the replicated map in the remote cluster
+     * @param dataConnectionName data connection name to use to connect to the remote cluster
+     */
+    @Nonnull
+    public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+            @Nonnull String replicatedMapName,
+            @Nonnull String dataConnectionName
+    ) {
+        return remoteReplicatedMap(replicatedMapName, dataConnectionName, RMAP_DEFAULT_READ_BATCH_SIZE);
+    }
+
+    /**
+     * This method does the same thing as {@link #remoteReplicatedMap(String, String)} with a different batch
+     * size provided rather than the default batch size.
+     *
+     * @param replicatedMapName  name of the replicated map in the remote cluster
+     * @param dataConnectionName data connection name to use to connect to the remote cluster
+     * @param batchSize          batch size to use
+     */
+    @Nonnull
+    public static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMap(
+            @Nonnull String replicatedMapName,
+            @Nonnull String dataConnectionName,
+            int batchSize
+    ) {
+        return remoteReplicatedMapInternal(replicatedMapName, dataConnectionName, null, batchSize);
+    }
+
+    @Nonnull
+    static <K, V> BatchSource<Entry<K, V>> remoteReplicatedMapInternal(
+            @Nonnull String replicatedMapName,
+            @Nullable String dataConnectionName,
+            @Nullable ClientConfig clientConfig,
+            int batchSize
+    ) {
+        String xmlConfig = ImdgUtil.asXmlString(clientConfig);
+        return SourceBuilder.batch("replicatedMapSource(" + replicatedMapName + ')',
+                                    context -> new RemoteReplicatedMapReader<K, V>(
+                                            replicatedMapName,
+                                            dataConnectionName,
+                                            xmlConfig,
+                                            batchSize,
+                                            context
+                                    ))
+                            .<Entry<K, V>>fillBufferFn(RemoteReplicatedMapReader::fillBufferFn)
+                            .destroyFn(RemoteReplicatedMapReader::destroy)
+                            .build();
+    }
+
+    private static class RemoteReplicatedMapReader<K, V> {
+        private final String replicatedMapName;
+        private final int batchSize;
+
+        private HazelcastInstance client;
+        private Iterator<Map.Entry<K, V>> iterator;
+
+        RemoteReplicatedMapReader(String replicatedMapName, String dataConnectionName, String clientXml,
+                                  int batchSize, Context context) {
+            this.replicatedMapName = replicatedMapName;
+
+            if (dataConnectionName == null && clientXml == null) {
+                throw new IllegalArgumentException("Either dataConnectionName or clientConfig must be provided. "
+                        + "Both are null");
+            }
+
+            if (dataConnectionName != null) {
+                HazelcastDataConnection dataConnection =
+                        context.dataConnectionService()
+                               .getAndRetainDataConnection(dataConnectionName, HazelcastDataConnection.class);
+                try {
+                    this.client = dataConnection.getClient();
+                } finally {
+                    dataConnection.release();
+                }
+            } else {
+                this.client = newHazelcastClient(asClientConfig(clientXml));
+            }
+            this.batchSize = batchSize;
+        }
+
+        public void fillBufferFn(SourceBuffer<Entry<K, V>> buffer) {
+            if (iterator == null) {
+                ReplicatedMap<K, V> rMap = client.getReplicatedMap(replicatedMapName);
+                iterator = rMap.entrySet().iterator();
+            }
+            int counter = 0;
+            while (iterator.hasNext() && counter < batchSize) {
+                buffer.add(iterator.next());
+                counter++;
+            }
+            if (!iterator.hasNext()) {
+                buffer.close();
+            }
+        }
+
+        public void destroy() {
+            if (client != null) {
+                client.shutdown();
+                client = null;
+            }
+        }
     }
 
     /**
