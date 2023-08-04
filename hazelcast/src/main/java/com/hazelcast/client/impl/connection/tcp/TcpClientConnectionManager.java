@@ -1023,9 +1023,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onConnectionToNewCluster();
+                client.onConnectionToNewCluster(isFailoverSupported);
             }
-            client.onAuthenticated(isFailoverSupported);
             checkClientState(connection, switchingToNextCluster);
 
             List<Integer> tpcPorts = response.getTpcPorts();
@@ -1054,6 +1053,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     // state to the cluster after the first cluster connection,
                     // regardless the cluster id is changed or not.
                     clientState = ClientState.CONNECTED_TO_CLUSTER;
+                    client.onInitialClusterConnection(isFailoverSupported);
                     executor.execute(() -> {
                         initializeClientOnCluster(newClusterId);
                         /*
