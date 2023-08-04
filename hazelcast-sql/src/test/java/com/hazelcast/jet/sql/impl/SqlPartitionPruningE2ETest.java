@@ -97,20 +97,9 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
                 )));
         IMap<Pojo, String> map = instance().getMap(mapName);
         createMapping(mapName, Pojo.class, String.class);
-
         map.put(new Pojo(2, 2, 2), "2");
 
-        SqlStatement sql = new SqlStatement(query);
-        SqlPlan plan = sqlService.prepare(
-                sql.getSchema(),
-                query,
-                sql.getParameters(),
-                SqlExpectedResultType.ROWS
-        );
-
-        assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
-        SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
-
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
         assertQueryResult(selectPlan, singletonList(new Row(2, 2, 2, "2")));
 
         var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
@@ -129,16 +118,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
 
         map.put(new Pojo(2, 2, 2), "2");
 
-        SqlStatement sql = new SqlStatement(query);
-        SqlPlan plan = sqlService.prepare(
-                sql.getSchema(),
-                query,
-                sql.getParameters(),
-                SqlExpectedResultType.ROWS
-        );
-
-        assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
-        SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
 
         var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
 
@@ -160,16 +140,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
 
         map.put(new Pojo(2, 2, 2), "2");
 
-        SqlStatement sql = new SqlStatement(query);
-        SqlPlan plan = sqlService.prepare(
-                sql.getSchema(),
-                query,
-                sql.getParameters(),
-                SqlExpectedResultType.ROWS
-        );
-
-        assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
-        SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
 
         assertQueryResult(selectPlan, singletonList(new Row(2, 2, 2, "2")));
 
@@ -197,16 +168,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         map.put(new Pojo(2, 2, 2), "2");
         map.put(new Pojo(3, 3, 3), "3");
 
-        SqlStatement sql = new SqlStatement(query);
-        SqlPlan plan = sqlService.prepare(
-                sql.getSchema(),
-                query,
-                sql.getParameters(),
-                SqlExpectedResultType.ROWS
-        );
-
-        assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
-        SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
 
         assertQueryResult(selectPlan, asList(new Row(2, 2, 2, "2"), new Row(3, 3, 3, "3")));
 
@@ -234,16 +196,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         map.put(new Pojo(2, 2, 2), "2");
         map.put(new Pojo(3, 3, 3), "3");
 
-        SqlStatement sql = new SqlStatement(query);
-        SqlPlan plan = sqlService.prepare(
-                sql.getSchema(),
-                query,
-                sql.getParameters(),
-                SqlExpectedResultType.ROWS
-        );
-
-        assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
-        SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
 
         assertQueryResult(selectPlan, asList(new Row(2, 2, 2, "2"), new Row(3, 3, 3, "3")));
 
@@ -281,16 +234,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         map1.put(new Pojo(2, 2, 2), "2");
         map2.put(new Pojo(3, 3, 3), "3");
 
-        SqlStatement sql = new SqlStatement(query);
-        SqlPlan plan = sqlService.prepare(
-                sql.getSchema(),
-                query,
-                sql.getParameters(),
-                SqlExpectedResultType.ROWS
-        );
-
-        assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
-        SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
 
         assertQueryResult(selectPlan, asList(new Row(2), new Row(3)));
 
@@ -323,16 +267,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         map1.put(new Pojo(2, 2, 2), "2");
         map2.put(new Pojo(3, 3, 3), "3");
 
-        SqlStatement sql = new SqlStatement(query);
-        SqlPlan plan = sqlService.prepare(
-                sql.getSchema(),
-                query,
-                sql.getParameters(),
-                SqlExpectedResultType.ROWS
-        );
-
-        assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
-        SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
 
         assertQueryResult(selectPlan, asList(new Row(2), new Row(3)));
         assertEquals(0, planExecutor.tryUsePrunability(selectPlan, EEC).size());
@@ -359,16 +294,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
 
         map.put(new Pojo(2, 2, 2), "2");
 
-        SqlStatement sql = new SqlStatement(query);
-        SqlPlan plan = sqlService.prepare(
-                sql.getSchema(),
-                query,
-                sql.getParameters(),
-                SqlExpectedResultType.ROWS
-        );
-
-        assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
-        SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
 
         assertQueryResult(selectPlan, singletonList(new Row(2, 2, 2, "2")));
         assertEquals(0, planExecutor.tryUsePrunability(selectPlan, EEC).size());
@@ -393,6 +319,19 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         QueryId queryId = QueryId.create(UUID.randomUUID());
         SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
         assertCollection(expectedResults, collectResult(result));
+    }
+
+    SqlPlanImpl.SelectPlan assertQueryPlan(String query) {
+        SqlStatement sql = new SqlStatement(query);
+        SqlPlan plan = sqlService.prepare(
+                sql.getSchema(),
+                query,
+                sql.getParameters(),
+                SqlExpectedResultType.ROWS
+        );
+
+        assertInstanceOf(SqlPlanImpl.SelectPlan.class, plan);
+        return (SqlPlanImpl.SelectPlan) plan;
     }
 
     static class PreJobInvocationObserverImpl implements PreJobInvocationObserver {
