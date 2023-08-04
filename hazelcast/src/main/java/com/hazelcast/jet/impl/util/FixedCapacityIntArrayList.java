@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.util;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 /**
  * Simple list of integers that stores its content in a non-resizeable array.
@@ -39,5 +40,9 @@ public class FixedCapacityIntArrayList {
         int[] result = size == elements.length ? elements : Arrays.copyOfRange(elements, 0, size);
         elements = null;
         return result;
+    }
+
+    public IntStream stream() {
+        return Arrays.stream(elements, 0, size);
     }
 }

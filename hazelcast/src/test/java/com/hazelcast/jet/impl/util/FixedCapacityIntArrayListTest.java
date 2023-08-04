@@ -53,4 +53,19 @@ public class FixedCapacityIntArrayListTest {
             }
         }
     }
+
+    @Test
+    public void when_elementsAdded_then_properElementsInStream() {
+        for (int i = 0; i < TEST_ARRAY_SIZE; i++) {
+            FixedCapacityIntArrayList fixedCapacityIntArrayList = new FixedCapacityIntArrayList(TEST_ARRAY_SIZE);
+            for (int j = 0; j < i; j++) {
+                fixedCapacityIntArrayList.add(j);
+            }
+
+            int[] filledElements = fixedCapacityIntArrayList.stream().toArray();
+            for (int j = 0; j < i; j++) {
+                assertEquals(j, filledElements[j]);
+            }
+        }
+    }
 }

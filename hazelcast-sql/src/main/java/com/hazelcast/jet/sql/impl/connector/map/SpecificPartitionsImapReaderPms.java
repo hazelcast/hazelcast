@@ -94,8 +94,10 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
                         : "Partition calculated for PMS not present in the job";
                 partitionsToScanList.add(partition.getPartitionId());
             }
-            partitionsToScan = partitionsToScanList.asArray();
-            Arrays.sort(partitionsToScan);
+
+            // requiredPartitionsExprs may produce the same partition multiple times
+            // partitionsToScan is required to be unique and sorted
+            partitionsToScan = partitionsToScanList.stream().sorted().distinct().toArray();
             partitionAssignment = context.partitionAssignment();
         }
     }
