@@ -111,9 +111,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     // want to make this configurable
     private static final int SNAPSHOT_QUEUE_SIZE = DEFAULT_QUEUE_SIZE;
 
-    /**
-     * Snapshot of partition table used to route items on partitioned edges
-     */
+    /** Snapshot of partition table used to route items on partitioned edges */
     private Map<Address, int[]> partitionAssignment;
 
     private JobConfig jobConfig;
@@ -131,14 +129,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     private final transient Map<Address, Connection> memberConnections = new HashMap<>();
 
-    /**
-     * dest vertex id --> dest ordinal --> sender addr -> receiver tasklet
-     */
+    /** dest vertex id --> dest ordinal --> sender addr -> receiver tasklet */
     private final transient Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> receiverMap = new HashMap<>();
 
-    /**
-     * dest vertex id --> dest ordinal --> dest addr --> sender tasklet
-     */
+    /** dest vertex id --> dest ordinal --> dest addr --> sender tasklet */
     private final transient Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = new HashMap<>();
 
     private final transient Map<String, ConcurrentConveyor<Object>[]> localConveyorMap = new HashMap<>();
@@ -301,34 +295,34 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * depends on the localParallelism of the vertex. When one instance of the {@link ProcessorTasklet} wants to send data
      * over the V1 -> V2 edge:
      * - If {@link ProcessorTasklet} for V1 and {@link ProcessorTasklet} for V2 are on current member, the communication
-     * is done through the local conveyors.
+     *   is done through the local conveyors.
      * - If {@link ProcessorTasklet} for V1 is on remote member, on current member we have to create {@link ReceiverTasklet}
-     * that will receive the data from V1 and pass it to V2. The communication between {@link ReceiverTasklet} and V2
-     * {@link ProcessorTasklet} is done through the local conveyors.
+     *   that will receive the data from V1 and pass it to V2. The communication between {@link ReceiverTasklet} and V2
+     *   {@link ProcessorTasklet} is done through the local conveyors.
      * - If {@link ProcessorTasklet} for V2 is on remote member, on current member we have to create {@link SenderTasklet}
-     * that will send the data from V1 to V2. The communication between V1 {@link ProcessorTasklet} and {@link SenderTasklet}
-     * is done through the concurrent conveyors.
+     *   that will send the data from V1 to V2. The communication between V1 {@link ProcessorTasklet} and {@link SenderTasklet}
+     *   is done through the concurrent conveyors.
      * To make it even more clear that's what are our possibilities (<a href="http://viz-js.com/">http://viz-js.com</a>):
-     * <p>
+     *
      * digraph Local {
-     * subgraph cluster_0 {
-     * "V1 ProcessorTasklet" -> "V2 ProcessorTasklet" [label="local conveyor"]
-     * label = "member #1";
+     *     subgraph cluster_0 {
+     *         "V1 ProcessorTasklet" -> "V2 ProcessorTasklet" [label="local conveyor"]
+     *         label = "member #1";
+     *     }
      * }
-     * }
-     * <p>
+     *
      * digraph Remote {
-     * subgraph cluster_0 {
-     * "V1 ProcessorTasklet" -> "V1 SenderTasklet" [label="concurrent conveyor"]
-     * label = "member #1";
-     * }
-     * <p>
-     * subgraph cluster_1 {
-     * "V2 ReceiverTasklet" -> "V2 ProcessorTasklet" [label="local conveyor"]
-     * label = "member #2";
-     * }
-     * <p>
-     * "V1 SenderTasklet" -> "V2 ReceiverTasklet" [label="network"]
+     *     subgraph cluster_0 {
+     *         "V1 ProcessorTasklet" -> "V1 SenderTasklet" [label="concurrent conveyor"]
+     *         label = "member #1";
+     *     }
+     *
+     *     subgraph cluster_1 {
+     *         "V2 ReceiverTasklet" -> "V2 ProcessorTasklet" [label="local conveyor"]
+     *         label = "member #2";
+     *     }
+     *
+     *     "V1 SenderTasklet" -> "V2 ReceiverTasklet" [label="network"]
      * }
      */
     private void createLocalConveyorsAndSenderReceiverTasklets(long jobId, InternalSerializationService jobSerializationService) {
