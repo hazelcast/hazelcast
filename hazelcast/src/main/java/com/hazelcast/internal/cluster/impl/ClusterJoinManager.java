@@ -475,9 +475,14 @@ public class ClusterJoinManager {
                     + ". Previous UUID was " + existing.element1().getUuid());
         }
 
-        if (now >= timeToStartJoin) {
+        if (!isBatchingJoins(now)) {
             startJoin();
         }
+    }
+
+    // Accessible for testing
+    public boolean isBatchingJoins(long now) {
+        return now < timeToStartJoin;
     }
 
     /**
@@ -801,7 +806,8 @@ public class ClusterJoinManager {
                 }
 
                 // Run all joining members' provided pre join operations now, but only
-                //  execute them locally (do not broadcast to other members)
+                //  execute them locally and on existing members of this cluster (do
+                //  not broadcast to other members joining within this batch)
                 runProvidedPostJoinOpsWithoutBroadcast();
 
                 // Prepare our normal pre-join operations, which will be broadcast remotely;
@@ -861,7 +867,7 @@ public class ClusterJoinManager {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-                onJoinOp.runWithoutBroadcast();
+                onJoinOp.runWithoutBroadcastTo(joiningMembers.keySet());
             }
         }
     }
