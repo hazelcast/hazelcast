@@ -42,6 +42,6 @@ public interface IMapStepAwareOperation extends StepAwareOperation<State> {
             return UtilSteps.DIRECT_RUN_STEP;
         }
 
-        return StepAwareOperation.super.getStartingStep();
+        return UtilSteps.DIRECT_RUN_STEP;
     }
 }

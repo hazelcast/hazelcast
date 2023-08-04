@@ -43,6 +43,7 @@ import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -105,6 +106,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
     private final Address localMemberAddress;
     private final WatermarkKeysAssigner watermarkKeysAssigner;
     private long watermarkThrottlingFrameSize = -1;
+    private final Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates;
 
     private final DagBuildContextImpl dagBuildContext;
 
@@ -115,13 +117,15 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
             NodeEngine nodeEngine,
             QueryParameterMetadata parameterMetadata,
             @Nullable WatermarkKeysAssigner watermarkKeysAssigner,
-            Set<PlanObjectKey> usedViews
+            Set<PlanObjectKey> usedViews,
+            @Nullable Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates
     ) {
         super(new DAG());
         this.nodeEngine = nodeEngine;
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.watermarkKeysAssigner = watermarkKeysAssigner;
         this.objectKeys.addAll(usedViews);
+        this.partitionStrategyCandidates = partitionStrategyCandidates;
 
         dagBuildContext = new DagBuildContextImpl(nodeEngine, getDag(), parameterMetadata);
         findLocalPartitioningKey();
@@ -236,14 +240,21 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
-        return getJetSqlConnector(table).fullScanReader(
+
+        List<Map<String, Expression<?>>> partitionStrategyCandidate = null;
+        if (partitionStrategyCandidates != null) {
+            partitionStrategyCandidate = partitionStrategyCandidates.get(table.getSqlName());
+        }
+
+        SqlConnector sqlConnector = getJetSqlConnector(table);
+        return sqlConnector.fullScanReader(
                 dagBuildContext,
                 wrap(rel.filter()),
                 wrap(rel.projection()),
+                partitionStrategyCandidate,
                 policyProvider != null
                         ? context -> policyProvider.apply(context, wmKey)
-                        : null
-        );
+                        : null);
     }
 
     @Override

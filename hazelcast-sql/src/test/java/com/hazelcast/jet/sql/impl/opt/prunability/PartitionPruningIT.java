@@ -160,6 +160,18 @@ public class PartitionPruningIT extends SqlTestSupport {
         assertRowsAnyOrder("SELECT this FROM test5 WHERE id = 1 AND name = '1' AND this = 'v1'", rows(1, "v1"));
     }
 
+    @Test
+    public void test_scanPruningWithoutMemberPruning() {
+        // complicated query that should not be eligible for member pruning
+        // but at least one side of the join should execute full scan that is eligible for scan partition pruning
+        // - it does not matter if nested loops or hash join is used.
+        assertRowsAnyOrder("SELECT max(b.this), b.comp2 " +
+                "FROM test2 a join test2 b on a.comp2 = b.comp2 " +
+                "WHERE a.comp1 = 1 AND a.comp2 = ? and b.comp1 = 1 AND b.comp2 = ? " +
+                "GROUP BY b.comp2 ORDER BY b.comp2", List.of(1, 1), rows(2, "v1", 1L));
+    }
+
+
     public static class PAKey implements Serializable, PartitionAware<String>, Comparable<PAKey> {
         public Long id;
         public String name;

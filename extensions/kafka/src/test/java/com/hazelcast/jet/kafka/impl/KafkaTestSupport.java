@@ -163,6 +163,14 @@ public abstract class KafkaTestSupport {
                 .send(new ProducerRecord<>(topic, key, value));
     }
 
+    public RecordMetadata produceSync(String topic, Object key, Object value) {
+        try {
+            return produce(topic, key, value).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Future<RecordMetadata> produce(String topic, int partition, Long timestamp, Object key, Object value) {
         return producers.computeIfAbsent(topic, t -> getProducer(topic, key, value))
                 .send(new ProducerRecord<>(topic, partition, timestamp, key, value));
