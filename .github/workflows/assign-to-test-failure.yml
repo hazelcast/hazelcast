@@ -93,12 +93,21 @@ jobs:
         continue-on-error: true
         run: |
           FILENAME=${{steps.find-affected-test.outputs.result}}
-          TEST_FILE=$(find . -wholename "*$FILENAME*" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
-          LAST_COMMIT=$(git log --pretty=format:"%h" -n1 $TEST_FILE)
-          echo "Found last commit: $LAST_COMMIT for $TEST_FILE file"
-          echo "TEST_FILE=$TEST_FILE" >> "$GITHUB_OUTPUT"
+          FOUND_FILE=""
+          LAST_COMMIT_DATE=""
+          FILES=$(find . -wholename "*$FILENAME*" -type f)
+          for FILE in $FILES; do
+            COMMIT_DATE=$(git log -1 --pretty=format:"%ad" --date=iso -- "$FILE")
+            if [[ "$COMMIT_DATE" > "$LAST_COMMIT_DATE" ]]; then
+              LAST_COMMIT_DATE=$COMMIT_DATE
+              FOUND_FILE=$FILE
+            fi
+          done
+          LAST_COMMIT=$(git log -1 --pretty=format:"%h" -- "$FOUND_FILE")
+          echo "Found last commit: $LAST_COMMIT for $FOUND_FILE file"
+          echo "FOUND_FILE=$FOUND_FILE" >> "$GITHUB_OUTPUT"
           echo "LAST_COMMIT=$LAST_COMMIT" >> "$GITHUB_OUTPUT"
-          
+                    
       - name: Find author of the commit 
         if: steps.find-affected-test.outputs.result != ''
         uses: actions/github-script@v6
@@ -172,7 +181,7 @@ jobs:
                 checkoutRef : "${{ steps.find-failure-commit-reference.outputs.result }}",
                 test : {
                     initialPath : "${{ steps.find-affected-test.outputs.result }}",
-                    foundFile   : "${{ steps.find-last-commit.outputs.TEST_FILE }}",
+                    foundFile   : "${{ steps.find-last-commit.outputs.FOUND_FILE }}",
                     lastCommit : {
                         sha    :  "${{ steps.find-last-commit.outputs.LAST_COMMIT }}",
                         author : {
