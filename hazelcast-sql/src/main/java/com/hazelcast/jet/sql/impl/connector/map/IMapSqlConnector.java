@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -79,6 +80,8 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
@@ -107,6 +110,8 @@ public class IMapSqlConnector implements SqlConnector {
             MetadataCompactResolver.INSTANCE,
             MetadataJsonResolver.INSTANCE
     );
+
+    private static final Tuple2<PartitioningStrategy<?>, List<List<Expression<?>>>> NO_PARTITION_PRUNING = tuple2(null, null);
 
     @Override
     public String typeName() {
@@ -256,11 +261,15 @@ public class IMapSqlConnector implements SqlConnector {
             partitionPruningCandidates = relPrunability.get(table.getSqlName());
         }
 
+        Tuple2<PartitioningStrategy<?>, List<List<Expression<?>>>> requiredPartitionsExprs =
+                computeRequiredPartitionsToScan(context.getNodeEngine(), partitionPruningCandidates, table.getMapName());
         Vertex vStart = context.getDag().newUniqueVertex(
                 toString(table),
-                mapReader(table.getMapName(), computeRequiredPartitionsToScan(
-                        context.getNodeEngine(), partitionPruningCandidates, table.getMapName())
-                )
+                requiredPartitionsExprs.f1() != null
+                        // pruned
+                    ? mapReader(table.getMapName(), requiredPartitionsExprs.f0(), requiredPartitionsExprs.f1())
+                        // not pruned
+                    : readMapP(table.getMapName())
         );
 
         Vertex vEnd = context.getDag().newUniqueVertex(
@@ -457,13 +466,13 @@ public class IMapSqlConnector implements SqlConnector {
     }
 
     @Nullable
-    private List<List<Expression<?>>> computeRequiredPartitionsToScan(
+    private Tuple2<PartitioningStrategy<?>, List<List<Expression<?>>>> computeRequiredPartitionsToScan(
             NodeEngine nodeEngine,
             List<Map<String, Expression<?>>> candidates,
             String mapName
     ) {
         if (candidates == null) {
-            return null;
+            return NO_PARTITION_PRUNING;
         }
 
         List<List<Expression<?>>> partitionsExpressions = new ArrayList<>();
@@ -477,7 +486,7 @@ public class IMapSqlConnector implements SqlConnector {
         if (strategy != null
                 && !(strategy instanceof DefaultPartitioningStrategy)
                 && !(strategy instanceof AttributePartitioningStrategy)) {
-            return emptyList();
+            return NO_PARTITION_PRUNING;
         }
 
         // ordering of attributes matters for partitioning (1,2) produces different partition than (2,1).
@@ -502,7 +511,7 @@ public class IMapSqlConnector implements SqlConnector {
             }
             partitionsExpressions.add(expressions);
         }
-        return partitionsExpressions;
+        return tuple2(strategy, partitionsExpressions);
     }
 
     private static String toString(PartitionedMapTable table) {

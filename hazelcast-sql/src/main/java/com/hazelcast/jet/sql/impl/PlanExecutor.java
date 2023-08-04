@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.dataconnection.DataConnection;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.PartitioningStrategyUtil;
 import com.hazelcast.jet.Job;
@@ -77,7 +76,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
@@ -155,11 +153,6 @@ import static java.util.Comparator.comparing;
 public class PlanExecutor {
     private static final String LE = System.lineSeparator();
     private static final String DEFAULT_UNIQUE_KEY_TRANSFORMATION = "OBJECT";
-
-    /**
-     * Partitioning strategy that ignores {@link PartitionAware} for keys.
-     */
-    private static final PartitioningStrategy IDENTITY_PARTITIONING_STRATEGY = v -> v;
 
     private final TableResolverImpl catalog;
     private final DataConnectionResolver dataConnectionCatalog;
@@ -564,32 +557,8 @@ public class PlanExecutor {
                     partitionKeyComponents[i] = perMapCandidate.get(attribute).eval(null, evalContext);
                 }
 
-                // constructAttributeBasedKey gives needed result also for __key = ?
-                Object finalKey = PartitioningStrategyUtil.constructAttributeBasedKey(partitionKeyComponents);
-                if (finalKey == null) {
-                    // __key = ? condition with null parameter. The result of comparison will be always NULL.
-                    // Similar situation is possible for AttributePartitioningStrategy with single attribute
-                    // - single attribute is not wrapped in an array.
-                    // We cannot assign meaningful partition, so just disable pruning in this case.
-                    // It might be possible to use any partition id to speed up execution
-                    // but this should be a rare case in practice.
-                    allVariantsValid = false;
-                    break;
-                }
+                final Partition partition = PartitioningStrategyUtil.getPartitionFromKeyComponents(hazelcastInstance, strategy, partitionKeyComponents);
 
-                // Mimic calculation performed for IMap put/get operations
-                // in AbstractSerializationService.calculatePartitionHash.
-                // IMap partitioning strategy is passed there.
-                //
-                // We cannot pass AttributePartitioningStrategy because we do not full key object, but
-                // IDENTITY_PARTITIONING_STRATEGY on partitionKeyComponents will give the same result
-                // as AttributePartitioningStrategy would on a full key.
-                // For other IMap strategies we use IMap strategy (only Default is supported)
-                // or null which will use global strategy.
-                Data keyData = serializationService.toData(
-                        finalKey,
-                        strategy instanceof AttributePartitioningStrategy ? IDENTITY_PARTITIONING_STRATEGY : strategy);
-                final Partition partition = hazelcastInstance.getPartitionService().getPartition(keyData);
                 if (partition == null) {
                     // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
                     // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.

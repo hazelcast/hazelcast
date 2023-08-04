@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorSupplier;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.Reader;
 import com.hazelcast.jet.impl.util.FixedCapacityIntArrayList;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -54,12 +55,15 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
         extends LocalProcessorMetaSupplier<F, B, R> {
     transient int[] partitionsToScan;
     private final List<List<Expression<?>>> requiredPartitionsExprs;
+    private final PartitioningStrategy<?> partitioningStrategy;
     private transient Map<Address, int[]> partitionAssignment;
 
     private SpecificPartitionsImapReaderPms(
             final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
+            @Nullable PartitioningStrategy<?> partitioningStrategy,
             @Nullable final List<List<Expression<?>>> requiredPartitionsExprs) {
         super(readerSupplier);
+        this.partitioningStrategy = partitioningStrategy;
         this.requiredPartitionsExprs = requiredPartitionsExprs;
     }
 
@@ -78,9 +82,8 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
                     partitionKeyComponents[i++] = expression.evalTop(null, eec);
                 }
 
-                final Partition partition = hazelcastInstance.getPartitionService().getPartition(
-                        PartitioningStrategyUtil.constructAttributeBasedKey(partitionKeyComponents)
-                );
+                final Partition partition = PartitioningStrategyUtil.getPartitionFromKeyComponents(
+                        hazelcastInstance, partitioningStrategy, partitionKeyComponents);
                 if (partition == null) {
                     // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
                     // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.
@@ -132,8 +135,11 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
     }
 
     // TODO: name it properly.
-    public static ProcessorMetaSupplier mapReader(String mapName, @Nullable List<List<Expression<?>>> requiredPartitionsExprs) {
-        return new SpecificPartitionsImapReaderPms<>(new LocalMapReaderFunction(mapName), requiredPartitionsExprs) {
+    public static ProcessorMetaSupplier mapReader(String mapName,
+                                                  @Nullable PartitioningStrategy<?> partitioningStrategy,
+                                                  @Nullable List<List<Expression<?>>> requiredPartitionsExprs) {
+        return new SpecificPartitionsImapReaderPms<>(new LocalMapReaderFunction(mapName),
+                partitioningStrategy, requiredPartitionsExprs) {
             @Override
             public Permission getRequiredPermission() {
                 return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);

@@ -22,12 +22,10 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.SlowTest;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -42,7 +40,6 @@ import static java.util.Collections.singletonList;
  * the job execution.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({SlowTest.class})
 public class PartitionPruningIT extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
