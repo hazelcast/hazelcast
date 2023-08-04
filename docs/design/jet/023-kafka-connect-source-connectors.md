@@ -3,25 +3,25 @@
 ### Table of Contents
 
 * [Background](#background)
-    * [Description](#description)
-        * [Why](#why)
-        * [How (short plan)](#how--short-plan-)
-        * [Goals](#goals)
-        * [Non-goals](#non-goals)
-    * [What is the expected outcome?](#what-is-the-expected-outcome)
-    * [Terminology](#terminology)
+  * [Description](#description)
+    * [Why](#why)
+    * [How (short plan)](#how--short-plan-)
+    * [Goals](#goals)
+    * [Non-goals](#non-goals)
+  * [What is the expected outcome?](#what-is-the-expected-outcome)
+  * [Terminology](#terminology)
 * [Functional Design](#functional-design)
-    * [Summary of Functionality](#summary-of-functionality)
+  * [Summary of Functionality](#summary-of-functionality)
 * [User Interaction](#user-interaction)
-    * [API design and/or Prototypes](#api-design-andor-prototypes)
-    * [Client Related Changes](#client-related-changes)
+  * [API design and/or Prototypes](#api-design-andor-prototypes)
+  * [Client Related Changes](#client-related-changes)
 * [Technical Design](#technical-design)
-    * [Fault-Tolerance](#fault-tolerance)
-    * [Questions about the change](#questions-about-the-change)
-    * [Questions about performance](#questions-about-performance)
-    * [Stability questions](#stability-questions)
-    * [Security questions](#security-questions)
-    * [Observability and usage questions](#observability-and-usage-questions)
+  * [Fault-Tolerance](#fault-tolerance)
+  * [Questions about the change](#questions-about-the-change)
+  * [Questions about performance](#questions-about-performance)
+  * [Stability questions](#stability-questions)
+  * [Security questions](#security-questions)
+  * [Observability and usage questions](#observability-and-usage-questions)
 * [Testing Criteria](#testing-criteria)
 
 |                                |                                                           |
@@ -125,35 +125,35 @@ Only `name` and `connector.class` properties are mandatory.
 Example pipeline using Kafka-based `RandomSourceConnector` to generate random numbers
 
 ```java
-        Properties randomProperties=new Properties();
+        Properties randomProperties = new Properties();
         //mandatory properties
-        randomProperties.setProperty("name","random-source-connector");
-        randomProperties.setProperty("connector.class","sasakitoa.kafka.connect.random.RandomSourceConnector");
-
+        randomProperties.setProperty("name", "random-source-connector");
+        randomProperties.setProperty("connector.class", "sasakitoa.kafka.connect.random.RandomSourceConnector");
+        
         //common properties
-        randomProperties.setProperty("tasks.max","1");
-
+        randomProperties.setProperty("tasks.max", "1");
+        
         //connector-specific properties
-        randomProperties.setProperty("generator.class","sasakitoa.kafka.connect.random.generator.RandomInt");
-        randomProperties.setProperty("messages.per.second","1000");
-        randomProperties.setProperty("topic","test");
-        randomProperties.setProperty("task.summary.enable","true");
+        randomProperties.setProperty("generator.class", "sasakitoa.kafka.connect.random.generator.RandomInt");
+        randomProperties.setProperty("messages.per.second", "1000");
+        randomProperties.setProperty("topic", "test");
+        randomProperties.setProperty("task.summary.enable", "true");
 
-        Pipeline pipeline=Pipeline.create();
+        Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(KafkaConnectSources.connect(randomProperties))
-        .withoutTimestamps()
-        .map(record->Values.convertToString(record.valueSchema(),record.value()))
-        .writeTo(AssertionSinks.assertCollectedEventually(60,
-        list->assertEquals(ITEM_COUNT,list.size())));
+                .withoutTimestamps()
+                .map(record -> Values.convertToString(record.valueSchema(), record.value()))
+                .writeTo(AssertionSinks.assertCollectedEventually(60,
+                        list -> assertEquals(ITEM_COUNT, list.size())));
 
-        JobConfig jobConfig=new JobConfig();
+        JobConfig jobConfig = new JobConfig();
         jobConfig.addJar(Objects.requireNonNull(this.getClass()
-        .getClassLoader()
-        .getResource("random-connector-1.0-SNAPSHOT.jar"))
+                .getClassLoader()
+                .getResource("random-connector-1.0-SNAPSHOT.jar"))
         .getPath()
         );
 
-        Job job=createHazelcastInstance().getJet().newJob(pipeline,jobConfig);
+        Job job = createHazelcastInstance().getJet().newJob(pipeline, jobConfig);
 ```
 
 #### Client Related Changes
@@ -200,127 +200,123 @@ connector of your choice for detailed information.
 #### Questions about the change
 
 - What components in Hazelcast need to change? How do they change?
-    * N/A
+  * N/A
 
 - How does this work in an on-prem deployment?
-    * N/A
+  * N/A
 
 - How about on AWS and Kubernetes, platform operator?
-    * As long as necessary jars are on the classpath it doesn't have deployment requirements.
+  * As long as necessary jars are on the classpath it doesn't have deployment requirements.
 
 - How does this work in Cloud Viridan clusters?
-    * Same as above, it's code-configured.
+  * Same as above, it's code-configured.
 
 - How does the change behave in mixed-version deployments? During a version upgrade? Which migrations are needed?
-    * It's a new type of the Jet sources, no backward compatibility to handle.
+  * It's a new type of the Jet sources, no backward compatibility to handle.
 
 - What are the possible interactions with other features or sub-systems inside Hazelcast? How does the behavior of other
   code change implicitly as a result of the changes outlined in the design document?
-    * N/A
+  * N/A
 
 - What are the edge cases? What are example uses or inputs that we think are uncommon but are still possible and thus
   need to be handled? How are these edge cases handled?
-    * There could be some incompatibilities with more advanced Kafka Source connectors, but first we need to test some
-      of
-      them to discover the problems
+  * There could be some incompatibilities with more advanced Kafka Source connectors, but first we need to test some of
+    them to discover the problems
 
 - What are the effect of possible mistakes by other Hazelcast team members trying to use the feature in their own code?
   How does the change impact how they will troubleshoot things?
-    * It won't be reusable in other context. Troubleshooting will be the same as any other source/sink/connector for
-      Jet.
+  * It won't be reusable in other context. Troubleshooting will be the same as any other source/sink/connector for Jet.
 
 - Mention alternatives, risks and assumptions. Why is this design the best in the space of possible designs? What other
   designs have been considered and what is the rationale for not choosing them?
 
-    * Other alternatives:
-        - leave implementation to users (bad: requires code duplication, no official support is also not good)
-        - keep connector in `hazelcast-jet-contrib` repository - but it's not as well tested as main repo and less
-          visible
-        - Use Kafka Infrastructure and Hazelcast Kafka Connector, although it requires more infrastructure effort.
-          See https://docs.hazelcast.com/hazelcast/latest/integrate/kafka-connector
+  * Other alternatives:
+    - leave implementation to users (bad: requires code duplication, no official support is also not good)
+    - keep connector in `hazelcast-jet-contrib` repository - but it's not as well tested as main repo and less visible
+    - Use Kafka Infrastructure and Hazelcast Kafka Connector, although it requires more infrastructure effort.
+      See https://docs.hazelcast.com/hazelcast/latest/integrate/kafka-connector
 
 - The most common mistakes by other Hazelcast users I can think of are:
-    - property misconfiguration
-    - fail or forget to upload the connector jar
+  - property misconfiguration
+  - fail or forget to upload the connector jar
 
 #### Questions about performance
 
 - Does the change impact performance? How?
-    * Won't affect performance of other subsystems
+  * Won't affect performance of other subsystems
 
 - How is resource usage affected for “large” loads? For example, what do we expect to happen when there are 100000
   items/entries? 100000 data structures? 1000000 concurrent operations?
-    * It depends on Kafka source connector implementation
+  * It depends on Kafka source connector implementation
 
 #### Stability questions
 
 - Can this new functionality affect the stability of a node or the entire cluster? How does the behavior of a node
   or a cluster degrade if there is an error in the implementation?
-    * The same as any other jet job can affect the cluster, most probably it can affect stability if too much data is
-      ingested and there's not enough memory.
+  * The same as any other jet job can affect the cluster, most probably it can affect stability if too much data is
+    ingested and there's not enough memory.
 - Can the new functionality affect clusters which are not explicitly using it?
-    * No
+  * No
 
 #### Security questions
 
 - Does the change concern authentication or authorization logic? If so, mention this explicitly tag the relevant
   security-minded reviewer as reviewer to the design document.
-    * N/A
+  * N/A
 - Does the change create a new way to communicate data over the network? What rules are in place to ensure that this
   cannot be used by a malicious user to extract confidential data? -
-    * Depends on the used Kafka source connector which can connect to external systems.
+  * Depends on the used Kafka source connector which can connect to external systems.
 - Is there telemetry or crash reporting? What mechanisms are used to ensure no sensitive data is accidentally exposed?
-    * Same as any Jet source.
+  * Same as any Jet source.
 
 #### Observability and usage questions
 
 - Is the change affecting asynchronous / background subsystems?
-    * No
+  * No
 
 - If so, how can users and our team observe the run-time state via tracing? - _TBD_
 
-    - Is usage of the new feature observable in telemetry? If so, mention where in the code telemetry counters or
-      metrics would be added. - _TBD_
+  - Is usage of the new feature observable in telemetry? If so, mention where in the code telemetry counters or
+    metrics would be added. - _TBD_
 
-    - What might be the valuable metrics that could be shown for this feature in Management Center and/or Viridan
-      Control Plane? - number of events, check metrics infrastructure, check kafka connect metrics and monitoring that
-      we
-      are missing
-    - Should this feature be configured, enabled/disabled or managed from the Management Center? How do you think your
-      change affects Management Center? - N/A
-    - Does the feature require or allow runtime changes to the member configuration (XML/YAML/programmatic)? N/A
+  - What might be the valuable metrics that could be shown for this feature in Management Center and/or Viridan
+    Control Plane? - number of events, check metrics infrastructure, check kafka connect metrics and monitoring that we
+    are missing
+  - Should this feature be configured, enabled/disabled or managed from the Management Center? How do you think your
+    change affects Management Center? - N/A
+  - Does the feature require or allow runtime changes to the member configuration (XML/YAML/programmatic)? N/A
 
 - Which other inspection APIs exist?
-    * Standard Jet job status APIs.
+  * Standard Jet job status APIs.
 
 - Are there new APIs, or API changes (either internal or external)?
-    * Yes, new Source
+  * Yes, new Source
 - How would you document the new APIs? Include example usage.
-    * Documentation in Javadocs
-    * How-to guide in documentation.
+  * Documentation in Javadocs
+  * How-to guide in documentation.
 - Which principles did you apply to ensure the APIs are consistent with other related features / APIs? (Cross-reference
   other APIs that are similar or related, for comparison.)
-    * Processors will be done in similar manner to other sources.
+  * Processors will be done in similar manner to other sources.
 
 - Is the change visible to users of Hazelcast or operators who run Hazelcast clusters?
-    * No
+  * No
 - Are there any user experience (UX) changes needed as a result of this change?
-    * No
+  * No
 - Are the UX changes necessary or clearly beneficial? (Cross-reference the motivation section.)
-    * No
+  * No
 - Which principles did you apply to ensure the user experience (UX) is consistent with other related features? (
   Cross-reference other features that have related UX, for comparison.)
-    * Use same structure as other connectors.
+  * Use same structure as other connectors.
 - Is usage of the new feature observable in telemetry? If so, mention where in the code telemetry counters or metrics
   would be added.
-    * TBD - maybe number of events/source records and other based on existing Kafka Connect metrics.
+  * TBD - maybe number of events/source records and other based on existing Kafka Connect metrics.
 - Should this feature be configured, enabled/disabled or managed from the Management Center? How do you think your
   change affects Management Center?
-    * No, it's code-only feature.
+  * No, it's code-only feature.
 - Does the feature require or allow runtime changes to the member configuration (XML/YAML/programmatic)?
-    * No
+  * No
 - Are usage statistics for this feature reported in Phone Home? If not, why?
-    * TBD
+  * TBD
 
 ### Testing Criteria
 

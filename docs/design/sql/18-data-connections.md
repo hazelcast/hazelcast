@@ -27,8 +27,8 @@ have (similarly to how “mapping” is confused with “imap”). The term “l
 doesn't have as much content. Oracle also uses “database link” in a similar
 manner.
 
-"DATA LINK" was rejected by PMs, because it is not as commonly used as
-connection. Engineering raised concerns that "data connection" doesn't
+"DATA LINK" was rejected by PMs, because it is not as commonly used as 
+connection. Engineering raised concerns that "data connection" doesn't 
 differentiate from connection (rejected above) enough.  
 It is however used in some enterprise products with the same meaning.
 
@@ -58,11 +58,11 @@ This can then be used when creating a Java pipeline JDBC source:
 
 ```java
 @Beta
-public static<T> BatchSource<T> jdbc(
-@Nonnull ExternalDataStoreRef externalDataStoreRef,
-@Nonnull ToResultSetFunction resultSetFn,
-@Nonnull FunctionEx<? super ResultSet,?extends T>createOutputFn
-        )
+public static <T> BatchSource<T> jdbc(
+    @Nonnull ExternalDataStoreRef externalDataStoreRef,
+    @Nonnull ToResultSetFunction resultSetFn,
+    @Nonnull FunctionEx<? super ResultSet,?extends T>createOutputFn
+)
 ```
 
 Or in a mapping:
@@ -125,14 +125,13 @@ Particular Jet source/sink then uses the `ExternalDataStoreRef` to look the
 factory up:
 
 ```java
-ExternalDataStoreFactory<?> dataStoreFactory=nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
-        if(!(dataStoreFactory instanceof JdbcDataStoreFactory)){
-        String className=JdbcDataStoreFactory.class.getSimpleName();
-        throw new HazelcastException("Data store factory '"+name+"' must be an instance of "+className);
-        }
-        return(JdbcDataStoreFactory)dataStoreFactory;
+ExternalDataStoreFactory<?> dataStoreFactory = nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
+if (!(dataStoreFactory instanceof JdbcDataStoreFactory)) {
+   String className = JdbcDataStoreFactory.class.getSimpleName();
+   throw new HazelcastException("Data store factory '" + name + "' must be an instance of " + className);
+}
+return (JdbcDataStoreFactory) dataStoreFactory;
 ```
-
 We considered 2 use cases of a data source - shared and non-shared:
 
 * Shared - an instance is created at startup - e.g. a single instance of the
@@ -425,7 +424,7 @@ interface JetConnector {
 
     // the implementation might decide to throw UnsupOpExc
     DataConnection createDataConnection(String name,
-                                        Map<String, String> options);
+                            Map<String, String> options);
 }
 
 interface DataConnection {
