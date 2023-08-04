@@ -322,6 +322,7 @@ public final class ExecutionPlanBuilder {
      * @param routingPartitions            set of transitive partitions must be included to the job (allToOne targets)
      * @param extraRequiredMemberAddresses member addresses are targeted by {@link Edge#distributeTo} in job's DAG.
      */
+    @SuppressWarnings("DataFlowIssue")
     public static Map<MemberInfo, int[]> getPartitionAssignment(
             NodeEngine nodeEngine,
             List<MemberInfo> memberList,
@@ -361,8 +362,8 @@ public final class ExecutionPlanBuilder {
         }
 
         if (dataPartitions != null) {
-            checkNotNull(extraRequiredMemberAddresses);
-            checkNotNull(routingPartitions);
+            extraRequiredMemberAddresses = checkNotNull(extraRequiredMemberAddresses);
+            routingPartitions = checkNotNull(routingPartitions);
 
             // Overall algorithm for partition assignment in case of partition pruning is as follows:
             // 1. Find all members that are owners of partitions with data required for the job (`dataPartitions`) - above.
