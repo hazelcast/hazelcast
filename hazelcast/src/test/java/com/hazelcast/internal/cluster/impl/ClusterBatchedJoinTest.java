@@ -19,16 +19,17 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,11 +43,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.OverridePropertyRule.set;
+import static com.hazelcast.test.TestEnvironment.HAZELCAST_TEST_USE_NETWORK;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class ClusterBatchedJoinTest extends HazelcastTestSupport {
+
+    @Rule
+    public final OverridePropertyRule overridePropertyRule = set(HAZELCAST_TEST_USE_NETWORK, "true");
 
     private final HazelcastInstance[] batchedMembers = new HazelcastInstance[10];
 
@@ -62,13 +68,15 @@ public class ClusterBatchedJoinTest extends HazelcastTestSupport {
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getTcpIpConfig().setEnabled(true).setMembers(membersList);
 
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+
         // Create a cluster that goes through a batched join, starting with a master instance (always index 0)
-        batchedMembers[0] = Hazelcast.newHazelcastInstance(config);
+        batchedMembers[0] = factory.newHazelcastInstance(config);
         // Start 9 members simultaneously (so their join request is batched)
         List<Future<?>> futures = new ArrayList<>(10);
         for (int k = 1; k < 10; k++) {
             int finalK = k;
-            futures.add(spawn(() -> batchedMembers[finalK] = Hazelcast.newHazelcastInstance(config)));
+            futures.add(spawn(() -> batchedMembers[finalK] = factory.newHazelcastInstance(config)));
         }
 
         // Wait for all member instances to be created
@@ -76,14 +84,6 @@ public class ClusterBatchedJoinTest extends HazelcastTestSupport {
 
         // Ensure cluster size is 10
         assertClusterSizeEventually(10, batchedMembers);
-    }
-
-    @After
-    public void cleanUp() {
-        // Terminate cluster members
-        for (HazelcastInstance member : batchedMembers) {
-            member.getLifecycleService().terminate();
-        }
     }
 
     /**

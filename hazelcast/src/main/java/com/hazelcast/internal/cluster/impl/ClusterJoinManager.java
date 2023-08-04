@@ -804,7 +804,9 @@ public class ClusterJoinManager {
                 //  execute them locally (do not broadcast to other members)
                 runProvidedPostJoinOpsWithoutBroadcast();
 
-                // Prepare our normal pre-join operations, which will be broadcast remotely
+                // Prepare our normal pre-join operations, which will be broadcast remotely;
+                //  this must be done AFTER pre-join ops from all joining members are applied
+                //  to master, via #runProvidedPostJoinOpsWithoutBroadcast() above
                 OnJoinOp preJoinOp = preparePreJoinOps();
 
                 // post join operations must be lock free, that means no locks at all:
