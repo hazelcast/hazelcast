@@ -73,7 +73,7 @@ public interface NearCacheStats extends LocalInstanceStats {
     /**
      * @return number of requested invalidations of Near Cache entries owned by this member.
      * <p>
-     * One  request may cover multiple keys (e.g. {@code clear}), includes failed invalidations (e.g. where they key isn't contained in the Near Cache). 
+     * One  request may cover multiple keys (e.g. {@code clear}), includes failed invalidations (e.g. where they key isn't contained in the Near Cache).
      */
     long getInvalidationRequests();
 
