@@ -49,7 +49,6 @@ import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -111,11 +110,6 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     @Before
     public void init() {
         factory = createHazelcastInstanceFactory();
-    }
-
-    @After
-    public void cleanUp() {
-        factory.shutdownAll();
     }
 
     @Test
