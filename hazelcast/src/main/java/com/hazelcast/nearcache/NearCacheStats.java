@@ -69,7 +69,7 @@ public interface NearCacheStats extends LocalInstanceStats {
      * @return number of invalidations of Near Cache entries owned by this member
      */
     long getInvalidations();
-    
+
     long getInvalidationRequests();
 
 
