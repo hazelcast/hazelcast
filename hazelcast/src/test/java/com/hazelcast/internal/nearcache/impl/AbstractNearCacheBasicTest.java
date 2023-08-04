@@ -1422,7 +1422,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         populateNearCache(context);
 
         assertTrueEventually(() -> {
-            NearCacheStatsImpl stats = context.stats;
+            NearCacheStats stats = context.stats;
 
             // make assertions over near cache's backing map size.
             long nearCacheSize = context.nearCache.size();
