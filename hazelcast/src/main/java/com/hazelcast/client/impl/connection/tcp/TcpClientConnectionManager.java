@@ -1039,6 +1039,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 // The first connection that opens a connection to the new cluster should set `clusterId`.
                 // This one will initiate `initializeClientOnCluster` if necessary.
                 clusterId = newClusterId;
+                client.getClientClusterService().setFailoverSupported(isFailoverSupported);
                 if (establishedInitialClusterConnection) {
                     // In split brain, the client might connect to the one half
                     // of the cluster, and then later might reconnect to the
@@ -1053,7 +1054,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     // state to the cluster after the first cluster connection,
                     // regardless the cluster id is changed or not.
                     clientState = ClientState.CONNECTED_TO_CLUSTER;
-                    client.onInitialClusterConnection(isFailoverSupported);
                     executor.execute(() -> {
                         initializeClientOnCluster(newClusterId);
                         /*

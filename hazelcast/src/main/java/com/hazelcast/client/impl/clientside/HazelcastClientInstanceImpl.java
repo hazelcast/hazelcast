@@ -893,10 +893,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clusterService.onClusterConnect(isFailoverSupported);
     }
 
-    public void onInitialClusterConnection(boolean isFailoverSupported) {
-        clusterService.setFailoverSupported(isFailoverSupported);
-    }
-
     public void collectAndSendStatsNow() {
         clientStatisticsService.collectAndSendStatsNow();
     }
