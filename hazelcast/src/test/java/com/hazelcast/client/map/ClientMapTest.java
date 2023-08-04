@@ -63,9 +63,11 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -78,6 +80,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.util.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -427,6 +430,27 @@ public class ClientMapTest extends HazelcastTestSupport {
         sa.assertAll();
 
         assertThat((Map) map).hasSize(1);
+    }
+
+    @Test
+    public void testWithMetadataMultipleEntries() {
+        String mapName = randomMapName();
+        client.getConfig().addMapConfig(new MapConfig(mapName).setPerEntryStatsEnabled(true));
+        IMap<String, String> map = client.getMap(mapName);
+        ClientMapProxy<String, String> mapProxy = (ClientMapProxy<String, String>) map;
+
+        List<EntryView<String, String>> entries = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            entries.add(new SimpleEntryView<>("key-" + i, "value-" + i));
+        }
+
+        CompletableFuture<Void> future = mapProxy.putAllWithMetadataAsync(entries);
+        assertEqualsEventually(() -> future.isDone(), true);
+
+        assertThat((Map<String, String>) map).hasSize(1000);
+        for (int i = 0; i < 1000; i++) {
+            assertThat((Map<String, String>) map).contains(entry("key-" + i, "value-" + i));
+        }
     }
 
     @Test
