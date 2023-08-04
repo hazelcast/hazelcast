@@ -21,6 +21,7 @@ import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperation;
 import com.hazelcast.cluster.Address;
@@ -81,6 +82,18 @@ public class OnJoinOp
 
     @Override
     public void run() throws Exception {
+        run(true);
+    }
+
+    /**
+     * Used in {@link ClusterJoinManager#startJoin()} to prevent
+     * quadratic complexity during batched cluster joining
+     */
+    public void runWithoutBroadcast() {
+        run(false);
+    }
+
+    private void run(boolean broadcast) {
         if (!operations.isEmpty()) {
             SecurityConfig securityConfig = getNodeEngine().getConfig().getSecurityConfig();
             boolean runPermissionUpdates = securityConfig.getOnJoinPermissionOperation() == OnJoinPermissionOperationName.RECEIVE;
@@ -96,14 +109,16 @@ public class OnJoinOp
                 }
             }
 
-            final ClusterService clusterService = getService();
-            // if executed on master, broadcast to all other members except sender (joining member)
-            if (clusterService.isMaster()) {
-                final OperationService operationService = getNodeEngine().getOperationService();
-                for (Member member : clusterService.getMembers()) {
-                    if (!member.localMember() && !member.getUuid().equals(getCallerUuid())) {
-                        OnJoinOp operation = new OnJoinOp(operations);
-                        operationService.invokeOnTarget(getServiceName(), operation, member.getAddress());
+            if (broadcast) {
+                final ClusterService clusterService = getService();
+                // if executed on master, broadcast to all other members except sender (joining member)
+                if (clusterService.isMaster()) {
+                    final OperationService operationService = getNodeEngine().getOperationService();
+                    for (Member member : clusterService.getMembers()) {
+                        if (!member.localMember() && !member.getUuid().equals(getCallerUuid())) {
+                            OnJoinOp operation = new OnJoinOp(operations);
+                            operationService.invokeOnTarget(getServiceName(), operation, member.getAddress());
+                        }
                     }
                 }
             }

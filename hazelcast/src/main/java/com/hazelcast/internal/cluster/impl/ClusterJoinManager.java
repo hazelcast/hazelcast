@@ -800,14 +800,22 @@ public class ClusterJoinManager {
                     return;
                 }
 
-                OnJoinOp preJoinOp = preparePreJoinOps();
-
-                // Run all joining members' provided pre join operations now
+                // Run all joining members' provided pre join operations now, but only
+                //  execute them locally (do not broadcast to other members)
                 for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
                     if (tuple.element2() != null) {
-                        nodeEngine.getOperationService().run(tuple.element2());
+                        OnJoinOp onJoinOp = tuple.element2();
+                        try {
+                            onJoinOp.beforeRun();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                        onJoinOp.runWithoutBroadcast();
                     }
                 }
+
+                // Prepare our normal pre-join operations, which will be broadcast remotely
+                OnJoinOp preJoinOp = preparePreJoinOps();
 
                 // post join operations must be lock free, that means no locks at all:
                 // no partition locks, no key-based locks, no service level locks!
