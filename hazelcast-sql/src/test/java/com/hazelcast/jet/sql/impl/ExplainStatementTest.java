@@ -358,7 +358,7 @@ public class ExplainStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_scanPruningWithoutMemberPruning() {
+    public void test_scanPruningWithoutMemberPruningSimpleQuery() {
         instance().getConfig().addMapConfig(new MapConfig("testMap").setPartitioningAttributeConfigs(Arrays.asList(
                 new PartitioningAttributeConfig("comp1"),
                 new PartitioningAttributeConfig("comp2")
@@ -368,6 +368,40 @@ public class ExplainStatementTest extends SqlTestSupport {
                 + "c1 BIGINT EXTERNAL NAME \"__key.comp3\","
                 + "c2 BIGINT EXTERNAL NAME \"__key.comp2\","
                 + "c3 BIGINT EXTERNAL NAME \"__key.comp1\","
+                + "this VARCHAR"
+                + ") TYPE IMap OPTIONS ("
+                + "'valueFormat'='varchar', "
+                + "'keyFormat'='java', "
+                + "'keyJavaClass'='" + PartitionPruningIT.KeyObj.class.getName() + "')");
+
+        // simple query for which member pruning is not possible
+        assertRowsAnyOrder("EXPLAIN PLAN FOR SELECT this FROM test WHERE c3 = 1 AND c2 = ?" +
+                " UNION ALL SELECT this FROM test", rows(1,
+                // order of children is not important
+                "UnionPhysicalRel(all=[true])",
+                // pruned scan
+                "  FullScanPhysicalRel(table=[[hazelcast, public, "
+                        + "test[projects=[$4], "
+                        + "filter=AND(=($2, 1), =($1, ?0))]]], "
+                        + "discriminator=[0], "
+                        + "partitioningKey=[$1, $2], "
+                        + "partitioningKeyValues=[(?0, 1:BIGINT(63))])",
+                // not pruned scan
+                "  FullScanPhysicalRel(table=[[hazelcast, public, test[projects=[$4]]]], discriminator=[0])"
+        ));
+    }
+
+    @Test
+    public void test_scanPruningWithoutMemberPruning() {
+        instance().getConfig().addMapConfig(new MapConfig("testMap").setPartitioningAttributeConfigs(Arrays.asList(
+                new PartitioningAttributeConfig("comp1"),
+                new PartitioningAttributeConfig("comp2")
+        )));
+
+        instance().getSql().execute("CREATE MAPPING test EXTERNAL NAME \"testMap\" ("
+                + "c1 BIGINT EXTERNAL NAME \"__key.comp1\","
+                + "c2 BIGINT EXTERNAL NAME \"__key.comp2\","
+                + "c3 BIGINT EXTERNAL NAME \"__key.comp3\","
                 + "this VARCHAR"
                 + ") TYPE IMap OPTIONS ("
                 + "'valueFormat'='varchar', "
@@ -387,7 +421,7 @@ public class ExplainStatementTest extends SqlTestSupport {
                 .anySatisfy(row ->
                         assertThat(row)
                                 .startsWith("FullScanPhysicalRel(table=[[hazelcast, public, test[")
-                                .contains("partitioningKey=[$1, $2]")
+                                .contains("partitioningKey=[$0, $1]")
                                 .contains("partitioningKeyValues=["));
     }
 }
