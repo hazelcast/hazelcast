@@ -322,7 +322,6 @@ public final class ExecutionPlanBuilder {
      * @param routingPartitions            set of transitive partitions must be included to the job (allToOne targets)
      * @param extraRequiredMemberAddresses member addresses are targeted by {@link Edge#distributeTo} in job's DAG.
      */
-    @SuppressWarnings("java:S2259") // extraRequiredMemberAddresses already null-checked.
     public static Map<MemberInfo, int[]> getPartitionAssignment(
             NodeEngine nodeEngine,
             List<MemberInfo> memberList,
@@ -374,7 +373,7 @@ public final class ExecutionPlanBuilder {
 
             // Interactive prunable queries may require coordinator to be present
             // If coordinator still not captured to participate in the job -- do it.
-            extraRequiredMemberAddresses.forEach(requiredMemberAddr -> {
+            extraRequiredMemberAddresses.forEach(requiredMemberAddr -> { // NOSONAR : already null-checked.
                 MemberInfo requiredMemberInfo = membersByAddress.get(requiredMemberAddr);
                 if (requiredMemberInfo == null) {
                     // Should not happen for local member, may happen if outdated DAG is used
