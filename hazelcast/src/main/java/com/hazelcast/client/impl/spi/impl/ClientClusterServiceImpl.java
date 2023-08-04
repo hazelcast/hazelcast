@@ -199,7 +199,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public void onClusterConnect(boolean isFailoverSupported) {
+    public void onClusterConnect() {
         synchronized (clusterViewLock) {
             this.setFailoverSupported(isFailoverSupported);
             this.resetMemberSnapshot();

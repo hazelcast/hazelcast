@@ -1023,7 +1023,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onConnectionToNewCluster(isFailoverSupported);
+                client.onConnectionToNewCluster();
+                client.getClientClusterService().setFailoverSupported(isFailoverSupported);
             }
             checkClientState(connection, switchingToNextCluster);
 
