@@ -104,10 +104,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
         creationTime = stats.getCreationTime();
         ownedEntryCount = stats.getOwnedEntryCount();
         ownedEntryMemoryCost = stats.getOwnedEntryMemoryCost();
-
         setHits(stats.getHits());
         setMisses(stats.getMisses());
-
         evictions = stats.getEvictions();
         expirations = stats.getExpirations();
         invalidations = stats.getInvalidations();
