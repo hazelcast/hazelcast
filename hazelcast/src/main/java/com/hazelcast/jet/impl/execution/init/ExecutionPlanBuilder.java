@@ -373,7 +373,7 @@ public final class ExecutionPlanBuilder {
 
             // Interactive prunable queries may require coordinator to be present
             // If coordinator still not captured to participate in the job -- do it.
-            extraRequiredMemberAddresses.forEach(requiredMemberAddr -> { // NOSONAR : already null-checked.
+            extraRequiredMemberAddresses.forEach(requiredMemberAddr -> {
                 MemberInfo requiredMemberInfo = membersByAddress.get(requiredMemberAddr);
                 if (requiredMemberInfo == null) {
                     // Should not happen for local member, may happen if outdated DAG is used
