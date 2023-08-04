@@ -16,23 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.mssql;
 
-import com.hazelcast.jet.sql.impl.connector.jdbc.AllTypesInsertJdbcSqlConnectorTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.AllTypesSelectJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-import static org.assertj.core.api.Assumptions.assumeThat;
 
 @Category(NightlyTest.class)
-public class MSSQLAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcSqlConnectorTest {
+public class MSSQLAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbcSqlConnectorTest {
+
 
     @BeforeClass
     public static void beforeClass() {
         initialize(new MSSQLDatabaseProvider());
     }
-
 
     @Before
     public void setUp() throws Exception {
@@ -41,18 +40,19 @@ public class MSSQLAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcS
         // For BIT in MSSQL see https://learn.microsoft.com/en-us/sql/t-sql/data-types/bit-transact-sql?view=sql-server-ver16
         // For TIMESTAMP in MSSQL see https://learn.microsoft.com/en-us/previous-versions/sql/sql-server-2005/ms182776(v=sql.90)?redirectedfrom=MSDN
         // For DATETIMEOFFSET in MSSQL see https://learn.microsoft.com/en-us/sql/t-sql/data-types/datetimeoffset-transact-sql?view=sql-server-ver16
+
         if (type.equals("BOOLEAN")) {
             type = "BIT";
+            value = "1"; //BIT cannot be true
         }
-        else if (type.equals("DOUBLE")) {
+        if (type.equals("DOUBLE")) {
             type = "FLOAT";
         }
-        else if (type.equals("TIMESTAMP")) {
+        if (type.equals("TIMESTAMP")) {
             type = "DATETIME";
         }
-        else if (type.equals("TIMESTAMP WITH TIME ZONE")) {
+        if (type.equals("TIMESTAMP WITH TIME ZONE")) {
             type = "DATETIMEOFFSET";
         }
     }
-
 }

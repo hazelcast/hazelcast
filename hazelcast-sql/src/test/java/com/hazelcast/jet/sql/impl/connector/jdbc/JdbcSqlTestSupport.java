@@ -198,6 +198,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     protected static List<Row> jdbcRowsTable(String tableName) {
         return jdbcRows("SELECT * FROM " + tableName);
     }
+
     protected static List<Row> jdbcRowsTable(String tableName, List<Class<?>> columnType) {
         return jdbcRows("SELECT * FROM " + tableName, columnType);
     }
@@ -230,6 +231,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
             throw new RuntimeException(e);
         }
     }
+
     public static List<Row> jdbcRows(String query, String connectionUrl, List<Class<?>> columnType) {
         List<Row> rows = new ArrayList<>();
         try (Connection conn = DriverManager.getConnection(connectionUrl);

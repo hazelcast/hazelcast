@@ -561,7 +561,7 @@ public class GenericMapLoaderTest extends JdbcSqlTestSupport {
     }
 
     private static void createSchema(String schemaName) throws SQLException {
-        executeJdbc(JdbcSqlTestSupport.databaseProvider.createSchemaQuery(schemaName));
+        executeJdbc(databaseProvider.createSchemaQuery(schemaName));
     }
 
     private <K> GenericMapLoader<K> createMapLoader() {

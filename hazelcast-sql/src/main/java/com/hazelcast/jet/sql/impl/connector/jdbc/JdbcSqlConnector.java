@@ -326,7 +326,8 @@ public class JdbcSqlConnector implements SqlConnector {
                         new SelectProcessorSupplier(
                                 table.getDataConnectionName(),
                                 builder.query(),
-                                builder.parameterPositions()
+                                builder.parameterPositions(),
+                                dialect
                         ))
         );
     }

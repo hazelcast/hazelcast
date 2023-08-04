@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
+import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -65,7 +66,8 @@ public class CreateDataConnectionJdbcSqlConnectorTest extends JdbcSqlTestSupport
     @Test
     public void createDataConnectionWithPasswordInProperties() {
         assumeThat(databaseProvider).isNotInstanceOfAny(
-                H2DatabaseProvider.class // H2 doesn't allow passing user and password in properties
+                H2DatabaseProvider.class,// H2 doesn't allow passing user and password in properties
+                MSSQLDatabaseProvider.class
         );
 
         String connectionName = randomName();
