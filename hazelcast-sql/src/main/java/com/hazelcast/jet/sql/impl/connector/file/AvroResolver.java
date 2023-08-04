@@ -27,37 +27,42 @@ import java.util.Map;
 
 import static org.apache.avro.Schema.Type.NULL;
 
-final class AvroResolver {
+public final class AvroResolver {
 
-    private AvroResolver() {
-    }
+    private AvroResolver() { }
 
     // CREATE MAPPING <name> TYPE File OPTIONS ('format'='avro', ...)
     // TABLE(AVRO_FILE(...))
     static List<MappingField> resolveFields(Schema schema) {
         Map<String, MappingField> fields = new LinkedHashMap<>();
-        for (Schema.Field avroField : schema.getFields()) {
-            String name = avroField.name();
-            Schema fieldSchema = avroField.schema();
-
-            // Unwrap nullable types ([aType, "null"]) since SQL types are
-            // nullable by default and NOT NULL is currently unsupported.
-            if (fieldSchema.isUnion()) {
-                List<Schema> unionSchemas = fieldSchema.getTypes();
-                if (unionSchemas.size() == 2) {
-                    if (unionSchemas.get(0).getType() == NULL) {
-                        fieldSchema = unionSchemas.get(1);
-                    } else if (unionSchemas.get(1).getType() == NULL) {
-                        fieldSchema = unionSchemas.get(0);
-                    }
-                }
-            }
-            QueryDataType type = resolveType(fieldSchema.getType());
+        for (Schema.Field schemaField : schema.getFields()) {
+            String name = schemaField.name();
+            // SQL types are nullable by default and NOT NULL is currently unsupported.
+            Schema.Type schemaFieldType = unwrapNullableType(schemaField.schema()).getType();
+            QueryDataType type = resolveType(schemaFieldType);
 
             MappingField field = new MappingField(name, type);
             fields.putIfAbsent(field.name(), field);
         }
         return new ArrayList<>(fields.values());
+    }
+
+    /**
+     * For nullable types, i.e. {@code [aType, null]}, returns {@code aType}.
+     * Otherwise, returns the specified type as-is.
+     */
+    public static Schema unwrapNullableType(Schema schema) {
+        if (schema.isUnion()) {
+            List<Schema> unionSchemas = schema.getTypes();
+            if (unionSchemas.size() == 2) {
+                if (unionSchemas.get(0).getType() == NULL) {
+                    return unionSchemas.get(1);
+                } else if (unionSchemas.get(1).getType() == NULL) {
+                    return unionSchemas.get(0);
+                }
+            }
+        }
+        return schema;
     }
 
     private static QueryDataType resolveType(Schema.Type type) {

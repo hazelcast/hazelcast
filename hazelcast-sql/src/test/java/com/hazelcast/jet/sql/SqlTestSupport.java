@@ -833,10 +833,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static class SqlMapping {
-        protected final String name;
-        protected final String type;
-        protected final List<String> fields = new ArrayList<>();
-        protected final Map<Object, Object> options = new HashMap<>();
+        public final String name;
+        public final String type;
+        public final List<String> fields = new ArrayList<>();
+        public final Map<Object, Object> options = new HashMap<>();
 
         public SqlMapping(String name, String type) {
             this.name = name;

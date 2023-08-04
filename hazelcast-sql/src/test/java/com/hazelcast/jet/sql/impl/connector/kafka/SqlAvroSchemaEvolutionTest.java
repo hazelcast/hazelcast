@@ -47,15 +47,15 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
-    private static final Schema NAME_SSN_SCHEMA = SchemaBuilder.record("jet.sql")
+    static final Schema NAME_SSN_SCHEMA = SchemaBuilder.record("jet.sql")
             .fields()
-            .name("name").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-            .name("ssn").type().unionOf().nullType().and().longType().endUnion().nullDefault()
+            .optionalString("name")
+            .optionalLong("ssn")
             .endRecord();
-    private static final Schema NAME_SSN_SCHEMA2 = SchemaBuilder.record("jet.sql2")
+    static final Schema NAME_SSN_SCHEMA2 = SchemaBuilder.record("jet.sql2")
             .fields()
-            .name("name").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-            .name("ssn").type().unionOf().nullType().and().longType().endUnion().nullDefault()
+            .optionalString("name")
+            .optionalLong("ssn")
             .endRecord();
 
     @Parameters(name = "{0}, updateMapping=[{1}]")
