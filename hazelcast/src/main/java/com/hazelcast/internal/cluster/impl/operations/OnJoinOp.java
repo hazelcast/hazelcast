@@ -21,6 +21,7 @@ import com.hazelcast.config.OnJoinPermissionOperationName;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.management.operation.UpdatePermissionConfigOperation;
 import com.hazelcast.cluster.Address;
@@ -36,6 +37,7 @@ import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Set;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
@@ -81,6 +83,21 @@ public class OnJoinOp
 
     @Override
     public void run() throws Exception {
+        run(null);
+    }
+
+    /**
+     * Used in {@link ClusterJoinManager#startJoin()} to prevent
+     * quadratic complexity during batched cluster joining
+     *
+     * @param skippedForBroadcast Set of {@link Address} to skip broadcasting
+     *                            to if we are master of a cluster
+     */
+    public void runWithoutBroadcastTo(Set<Address> skippedForBroadcast) {
+        run(skippedForBroadcast);
+    }
+
+    private void run(Set<Address> skippedForBroadcast) {
         if (!operations.isEmpty()) {
             SecurityConfig securityConfig = getNodeEngine().getConfig().getSecurityConfig();
             boolean runPermissionUpdates = securityConfig.getOnJoinPermissionOperation() == OnJoinPermissionOperationName.RECEIVE;
@@ -101,6 +118,9 @@ public class OnJoinOp
             if (clusterService.isMaster()) {
                 final OperationService operationService = getNodeEngine().getOperationService();
                 for (Member member : clusterService.getMembers()) {
+                    if (skippedForBroadcast != null && skippedForBroadcast.contains(member.getAddress())) {
+                        continue;
+                    }
                     if (!member.localMember() && !member.getUuid().equals(getCallerUuid())) {
                         OnJoinOp operation = new OnJoinOp(operations);
                         operationService.invokeOnTarget(getServiceName(), operation, member.getAddress());
