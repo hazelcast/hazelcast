@@ -800,19 +800,10 @@ public class ClusterJoinManager {
                     return;
                 }
 
+
                 // Run all joining members' provided pre join operations now, but only
                 //  execute them locally (do not broadcast to other members)
-                for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
-                    if (tuple.element2() != null) {
-                        OnJoinOp onJoinOp = tuple.element2();
-                        try {
-                            onJoinOp.beforeRun();
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                        onJoinOp.runWithoutBroadcast();
-                    }
-                }
+                runProvidedPostJoinOpsWithoutBroadcast();
 
                 // Prepare our normal pre-join operations, which will be broadcast remotely
                 OnJoinOp preJoinOp = preparePreJoinOps();
@@ -857,6 +848,20 @@ public class ClusterJoinManager {
             }
         } finally {
             clusterServiceLock.unlock();
+        }
+    }
+
+    private void runProvidedPostJoinOpsWithoutBroadcast() {
+        for (BiTuple<MemberInfo, OnJoinOp> tuple : joiningMembers.values()) {
+            if (tuple.element2() != null) {
+                OnJoinOp onJoinOp = tuple.element2();
+                try {
+                    onJoinOp.beforeRun();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                onJoinOp.runWithoutBroadcast();
+            }
         }
     }
 

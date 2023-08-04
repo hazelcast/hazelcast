@@ -109,16 +109,17 @@ public class OnJoinOp
                 }
             }
 
-            if (broadcast) {
-                final ClusterService clusterService = getService();
-                // if executed on master, broadcast to all other members except sender (joining member)
-                if (clusterService.isMaster()) {
-                    final OperationService operationService = getNodeEngine().getOperationService();
-                    for (Member member : clusterService.getMembers()) {
-                        if (!member.localMember() && !member.getUuid().equals(getCallerUuid())) {
-                            OnJoinOp operation = new OnJoinOp(operations);
-                            operationService.invokeOnTarget(getServiceName(), operation, member.getAddress());
-                        }
+            if (!broadcast) {
+                return;
+            }
+            final ClusterService clusterService = getService();
+            // if executed on master, broadcast to all other members except sender (joining member)
+            if (clusterService.isMaster()) {
+                final OperationService operationService = getNodeEngine().getOperationService();
+                for (Member member : clusterService.getMembers()) {
+                    if (!member.localMember() && !member.getUuid().equals(getCallerUuid())) {
+                        OnJoinOp operation = new OnJoinOp(operations);
+                        operationService.invokeOnTarget(getServiceName(), operation, member.getAddress());
                     }
                 }
             }
