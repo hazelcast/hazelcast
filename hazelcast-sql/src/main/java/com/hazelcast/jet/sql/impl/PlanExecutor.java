@@ -557,7 +557,8 @@ public class PlanExecutor {
                     partitionKeyComponents[i] = perMapCandidate.get(attribute).eval(null, evalContext);
                 }
 
-                final Partition partition = PartitioningStrategyUtil.getPartitionFromKeyComponents(hazelcastInstance, strategy, partitionKeyComponents);
+                final Partition partition = PartitioningStrategyUtil.getPartitionFromKeyComponents(
+                        hazelcastInstance, strategy, partitionKeyComponents);
 
                 if (partition == null) {
                     // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
