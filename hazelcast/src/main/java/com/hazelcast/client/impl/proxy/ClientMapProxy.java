@@ -1670,12 +1670,19 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     }
 
+    protected void finalizePutAll(Map<? extends K, ? extends V> map, Map<Integer, List<Entry<Data, Data>>> entryMap) {
+    }
+
     public CompletableFuture<Void> putAllWithMetadataAsync(@Nonnull Collection<? extends EntryView<K, V>> entries) {
+        checkNotNull(entries, "Null argument entries is not allowed");
         ClientPartitionService partitionService = getContext().getPartitionService();
 
-        Map<Integer, ? extends List<SimpleEntryView<Data, Data>>> entriesByPartition =
+        Map<Integer, List<SimpleEntryView<Data, Data>>> entriesByPartition =
                 entries.stream()
                        .map(e -> {
+                           checkNotNull(e.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+                           checkNotNull(e.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+
                            Data keyData = toData(e.getKey());
                            if (e instanceof SimpleEntryView
                                    && e.getKey() instanceof Data
@@ -1700,19 +1707,31 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                (SimpleEntryView<Data, Data> e) -> partitionService.getPartitionId(e.getKey())
                        ));
 
+        AtomicInteger counter = new AtomicInteger(entriesByPartition.size());
         List<CompletableFuture<Void>> futures = new ArrayList<>(entriesByPartition.size());
         for (Entry<Integer, ? extends List<SimpleEntryView<Data, Data>>> entry : entriesByPartition.entrySet()) {
             Integer partitionId = entry.getKey();
             ClientMessage request = MapPutAllWithMetadataCodec.encodeRequest(name, entry.getValue());
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, getName(), partitionId)
                     .invoke();
+
+            future.whenCompleteAsync((clientMessage, throwable) -> {
+                        if (counter.decrementAndGet() == 0) {
+                            finalizePutAll(
+                                    entries,
+                                    entriesByPartition
+                            );
+                        }
+                    });
             futures.add(new ClientDelegatingFuture<>(future, getSerializationService(), clientMessage -> null));
         }
 
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
-    protected void finalizePutAll(Map<? extends K, ? extends V> map, Map<Integer, List<Entry<Data, Data>>> entryMap) {
+    protected void finalizePutAll(
+            Collection<? extends EntryView<K, V>> entries, Map<Integer,
+            List<SimpleEntryView<Data, Data>>> entryMap) {
     }
 
     @Override
