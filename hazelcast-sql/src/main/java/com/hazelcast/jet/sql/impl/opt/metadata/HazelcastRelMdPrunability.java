@@ -168,12 +168,14 @@ public final class HazelcastRelMdPrunability
         return prunability;
     }
 
+    @SuppressWarnings("unused")
     public Map<String, List<Map<String, RexNode>>> extractPrunability(Sort rel, RelMetadataQuery mq) {
         // Sort is prunable and forwards prunability.
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         return query.extractPrunability(rel.getInput());
     }
 
+    @SuppressWarnings("unused")
     public Map<String, List<Map<String, RexNode>>> extractPrunability(RelNode rel, RelMetadataQuery mq) {
         // For any non-mentioned rels, we assume they are not prunable and breaks prunability.
         return emptyMap();

@@ -49,13 +49,13 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OnJoinCacheOperationTest {
 
-    private static MockedStatic mockedStatic;
+    private static MockedStatic<JCacheDetector> mockedStatic;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private NodeEngine nodeEngine = mock(NodeEngine.class);
-    private ILogger logger = mock(ILogger.class);
+    private final NodeEngine nodeEngine = mock(NodeEngine.class);
+    private final ILogger logger = mock(ILogger.class);
 
     @BeforeClass
     public static void beforeClass() throws Exception {

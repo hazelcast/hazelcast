@@ -17,23 +17,26 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImpl;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.dataconnection.DataConnectionCatalogEntry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -42,15 +45,25 @@ public class DataConnectionResolverTest {
     private DataConnectionResolver dataConnectionResolver;
 
     @Mock
+    SqlConnectorCache connectorCache;
+
+    @Mock
     DataConnectionServiceImpl dataConnectionService;
 
     @Mock
     private DataConnectionStorage relationsStorage;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void before() {
-        MockitoAnnotations.openMocks(this);
-        dataConnectionResolver = new DataConnectionResolver(dataConnectionService, relationsStorage, false);
+        openMocks = openMocks(this);
+        dataConnectionResolver = new DataConnectionResolver(dataConnectionService, connectorCache, relationsStorage, false);
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     // region dataConnection storage tests

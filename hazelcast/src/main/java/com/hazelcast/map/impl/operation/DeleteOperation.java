@@ -57,6 +57,11 @@ public class DeleteOperation extends BaseRemoveOperation {
     }
 
     @Override
+    public Step getStartingStep() {
+        return DeleteOpSteps.READ;
+    }
+
+    @Override
     public Object getResponse() {
         return success;
     }
@@ -66,11 +71,6 @@ public class DeleteOperation extends BaseRemoveOperation {
         if (success) {
             super.afterRunInternal();
         }
-    }
-
-    @Override
-    public Step getStartingStep() {
-        return DeleteOpSteps.READ;
     }
 
     @Override
