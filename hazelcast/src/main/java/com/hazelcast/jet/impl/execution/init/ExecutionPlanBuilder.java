@@ -322,6 +322,7 @@ public final class ExecutionPlanBuilder {
      * @param routingPartitions            set of transitive partitions must be included to the job (allToOne targets)
      * @param extraRequiredMemberAddresses member addresses are targeted by {@link Edge#distributeTo} in job's DAG.
      */
+    @SuppressWarnings("java:S2259") // extraRequiredMemberAddresses already null-checked.
     public static Map<MemberInfo, int[]> getPartitionAssignment(
             NodeEngine nodeEngine,
             List<MemberInfo> memberList,
