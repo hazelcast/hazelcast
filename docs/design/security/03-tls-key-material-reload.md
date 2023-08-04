@@ -25,7 +25,7 @@ We want to enable key material (keyStores and trustStores) rotation without
 needing a Hazelcast instance restart.
 
 The current process required for the key material update is described in the
-[Updating Certificates in the Running Cluster](https://docs.hazelcast.com/hazelcast/5.2/security/tls-configuration#updating-certificates-in-the-running-cluster)
+[Updating Certificates in the Running Cluster](https://docs.hazelcast.com/hazelcast/latest/security/tls-configuration#updating-certificates-in-the-running-cluster)
 section of the official documentation. It includes:
 
 * stopping each member;
@@ -49,15 +49,25 @@ The `keyMaterialDuration` property value is a string such as `PnDTnHnMn.nS`.
 
 The `Duration.parse()` JavaDoc describes the format as:
 
-> The string starts with an optional sign, denoted by the ASCII negative or positive symbol. If negative, the whole period is negated. The ASCII letter "P" is next in upper or lower case. There are then four sections, each consisting of a number and a suffix. The sections have suffixes in ASCII of "D", "H", "M" and "S" for days, hours, minutes and seconds, accepted in upper or lower case. The suffixes must occur in order. The ASCII letter "T" must occur before the first occurrence, if any, of an hour, minute or second section. At least one of the four sections must be present, and if "T" is present there must be at least one section after the "T". The number part of each section must consist of one or more ASCII digits. The number may be prefixed by the ASCII negative or positive symbol. The number of days, hours and minutes must parse to an long. The number of seconds must parse to an long with optional fraction. The decimal point may be either a dot or a comma. The fractional part may have from zero to 9 digits.
+> The string starts with an optional sign, denoted by the ASCII negative or positive symbol. If negative, the whole
+> period is negated. The ASCII letter "P" is next in upper or lower case. There are then four sections, each consisting of
+> a number and a suffix. The sections have suffixes in ASCII of "D", "H", "M" and "S" for days, hours, minutes and
+> seconds, accepted in upper or lower case. The suffixes must occur in order. The ASCII letter "T" must occur before the
+> first occurrence, if any, of an hour, minute or second section. At least one of the four sections must be present, and
+> if "T" is present there must be at least one section after the "T". The number part of each section must consist of one
+> or more ASCII digits. The number may be prefixed by the ASCII negative or positive symbol. The number of days, hours and
+> minutes must parse to an long. The number of seconds must parse to an long with optional fraction. The decimal point may
+> be either a dot or a comma. The fractional part may have from zero to 9 digits.
 >
 > The leading plus/minus sign, and negative values for other units are not part of the ISO-8601 standard.
 
-A positive `keyMaterialDuration` value (e.g. `PT1H`) says for how long should be the key material cached before it's newly loaded.
+A positive `keyMaterialDuration` value (e.g. `PT1H`) says for how long should be the key material cached before it's
+newly loaded.
 
 A negative `keyMaterialDuration` value (e.g. `PT-1s`) means the key material will be cached indefinitely.
 
-A zero-value duration expression (e.g. `PT0s`) means the key material will not be cached and will always be newly loaded for each TLS-protected connection.
+A zero-value duration expression (e.g. `PT0s`) means the key material will not be cached and will always be newly loaded
+for each TLS-protected connection.
 
 The key material is cached indefinitely if the new property is not specified (default value).
 We keep the behavior backward-compatible.
@@ -74,6 +84,7 @@ The following configuration example will cache the key material for 10 minutes
 before the new reload.
 
 ```xml
+
 <network>
     <ssl enabled="true">
         <properties>
@@ -127,8 +138,10 @@ with old certificates (used for mutual authentication) won't be allowed.
 
 ### Considered alternative approach
 
-Another approach to deal with reloads would be reloading the material for every connection or introducing only the `true`/`false` flag
-to enable/disable a non-expiring cache altogether. As these approaches could impact performance, we won't implement these alternatives.
+Another approach to deal with reloads would be reloading the material for every connection or introducing only
+the `true`/`false` flag
+to enable/disable a non-expiring cache altogether. As these approaches could impact performance, we won't implement
+these alternatives.
 
 ## Technical design
 
