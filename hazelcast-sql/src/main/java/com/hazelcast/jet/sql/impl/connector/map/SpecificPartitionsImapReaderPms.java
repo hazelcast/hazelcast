@@ -27,6 +27,7 @@ import com.hazelcast.jet.impl.connector.HazelcastReaders.LocalMapReaderFunction;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorSupplier;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.Reader;
+import com.hazelcast.jet.impl.util.FixedCapacityIntArrayList;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -66,9 +67,7 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
     public void init(@Nonnull Context context) throws Exception {
         super.init(context);
         if (requiredPartitionsExprs != null) {
-            List<Integer> partitionsToScanList = new ArrayList<>();
-            partitionsToScan = new int[requiredPartitionsExprs.size()];
-            int j = 0;
+            FixedCapacityIntArrayList partitionsToScanList = new FixedCapacityIntArrayList(requiredPartitionsExprs.size());
 
             HazelcastInstance hazelcastInstance = context.hazelcastInstance();
             ExpressionEvalContext eec = ExpressionEvalContext.from(context);
@@ -87,9 +86,13 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
                     // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.
                     return;
                 }
+                assert context.partitionAssignment().values().stream()
+                        .anyMatch(pa -> Arrays.binarySearch(pa, partition.getPartitionId()) >= 0)
+                        : "Partition calculated for PMS not present in the job";
                 partitionsToScanList.add(partition.getPartitionId());
             }
-            partitionsToScan = partitionsToScanList.stream().sorted().mapToInt(i -> i).toArray();
+            partitionsToScan = partitionsToScanList.asArray();
+            Arrays.sort(partitionsToScan);
             partitionAssignment = context.partitionAssignment();
         }
     }

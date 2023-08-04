@@ -317,7 +317,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         private transient HazelcastInstance hzInstance;
         private transient InternalSerializationService serializationService;
-        private transient int[] partitionsToScan;
+        private int[] partitionsToScan;
 
         public LocalProcessorSupplier() {
         }
@@ -361,11 +361,13 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(readerSupplier);
+            out.writeIntArray(partitionsToScan);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             readerSupplier = in.readObject();
+            partitionsToScan = in.readIntArray();
         }
 
         @Override

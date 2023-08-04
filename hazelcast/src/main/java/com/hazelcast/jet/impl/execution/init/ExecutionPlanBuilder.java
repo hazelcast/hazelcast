@@ -30,6 +30,7 @@ import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
+import com.hazelcast.jet.impl.util.FixedCapacityIntArrayList;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -38,7 +39,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -286,22 +286,4 @@ public final class ExecutionPlanBuilder {
         return partitionAssignment;
     }
 
-    static class FixedCapacityIntArrayList {
-        private int[] elements;
-        private int size;
-
-        FixedCapacityIntArrayList(int capacity) {
-            elements = new int[capacity];
-        }
-
-        void add(int element) {
-            elements[size++] = element;
-        }
-
-        int[] asArray() {
-            int[] result = size == elements.length ? elements : Arrays.copyOfRange(elements, 0, size);
-            elements = null;
-            return result;
-        }
-    }
 }

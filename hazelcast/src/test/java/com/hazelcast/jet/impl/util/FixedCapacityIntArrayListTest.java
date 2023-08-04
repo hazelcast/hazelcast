@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.impl.execution.init;
+package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.FixedCapacityIntArrayList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

@@ -456,13 +456,14 @@ public class IMapSqlConnector implements SqlConnector {
         return PRIMARY_KEY_LIST;
     }
 
+    @Nullable
     private List<List<Expression<?>>> computeRequiredPartitionsToScan(
             NodeEngine nodeEngine,
             List<Map<String, Expression<?>>> candidates,
             String mapName
     ) {
         if (candidates == null) {
-            return emptyList();
+            return null;
         }
 
         List<List<Expression<?>>> partitionsExpressions = new ArrayList<>();
