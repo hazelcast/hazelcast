@@ -35,9 +35,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
@@ -353,5 +355,39 @@ public class ExplainStatementTest extends SqlTestSupport {
                         + "partitioningKey=[$1, $2], "
                         + "partitioningKeyValues=[(?0, 1:BIGINT(63))])"
         ));
+    }
+
+    @Test
+    public void test_scanPruningWithoutMemberPruning() {
+        instance().getConfig().addMapConfig(new MapConfig("testMap").setPartitioningAttributeConfigs(Arrays.asList(
+                new PartitioningAttributeConfig("comp1"),
+                new PartitioningAttributeConfig("comp2")
+        )));
+
+        instance().getSql().execute("CREATE MAPPING test EXTERNAL NAME \"testMap\" ("
+                + "c1 BIGINT EXTERNAL NAME \"__key.comp3\","
+                + "c2 BIGINT EXTERNAL NAME \"__key.comp2\","
+                + "c3 BIGINT EXTERNAL NAME \"__key.comp1\","
+                + "this VARCHAR"
+                + ") TYPE IMap OPTIONS ("
+                + "'valueFormat'='varchar', "
+                + "'keyFormat'='java', "
+                + "'keyJavaClass'='" + PartitionPruningIT.KeyObj.class.getName() + "')");
+
+        // complicated query that should not be eligible for member pruning
+        // but at least one side of the join should execute full scan that is eligible for scan partition pruning
+        // - it does not matter if nested loops or hash join is used.
+        var plan = allRows("EXPLAIN SELECT max(b.this), b.c2 " +
+                "FROM test a join test b on a.c1 = b.c2 " +
+                "WHERE a.c1 = 1 AND a.c2 = ? and b.c1 = 1 AND b.c2 = ? " +
+                "GROUP BY b.c2 ORDER BY b.c2", instance().getSql())
+                .stream().map(row -> ((String) row.getValues()[0]).trim())
+                .collect(Collectors.toUnmodifiableList());
+        assertThat(plan).as("At least one of the IMap scans should be pruned")
+                .anySatisfy(row ->
+                        assertThat(row)
+                                .startsWith("FullScanPhysicalRel(table=[[hazelcast, public, test[")
+                                .contains("partitioningKey=[$1, $2]")
+                                .contains("partitioningKeyValues=["));
     }
 }
