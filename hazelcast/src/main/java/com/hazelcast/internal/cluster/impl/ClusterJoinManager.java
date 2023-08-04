@@ -800,7 +800,6 @@ public class ClusterJoinManager {
                     return;
                 }
 
-
                 // Run all joining members' provided pre join operations now, but only
                 //  execute them locally (do not broadcast to other members)
                 runProvidedPostJoinOpsWithoutBroadcast();
