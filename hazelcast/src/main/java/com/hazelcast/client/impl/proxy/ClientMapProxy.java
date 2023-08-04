@@ -1722,7 +1722,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                     entriesByPartition
                             );
                         }
-                    });
+                    }, ConcurrencyUtil.getDefaultAsyncExecutor());
             futures.add(new ClientDelegatingFuture<>(future, getSerializationService(), clientMessage -> null));
         }
 
