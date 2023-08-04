@@ -564,6 +564,19 @@ public class PlanExecutor {
                     partitionKeyComponents[i] = perMapCandidate.get(attribute).eval(null, evalContext);
                 }
 
+                // constructAttributeBasedKey gives needed result also for __key = ?
+                Object finalKey = PartitioningStrategyUtil.constructAttributeBasedKey(partitionKeyComponents);
+                if (finalKey == null) {
+                    // __key = ? condition with null parameter. The result of comparison will be always NULL.
+                    // Similar situation is possible for AttributePartitioningStrategy with single attribute
+                    // - single attribute is not wrapped in an array.
+                    // We cannot assign meaningful partition, so just disable pruning in this case.
+                    // It might be possible to use any partition id to speed up execution
+                    // but this should be a rare case in practice.
+                    allVariantsValid = false;
+                    break;
+                }
+
                 // Mimic calculation performed for IMap put/get operations
                 // in AbstractSerializationService.calculatePartitionHash.
                 // IMap partitioning strategy is passed there.
@@ -574,8 +587,7 @@ public class PlanExecutor {
                 // For other IMap strategies we use IMap strategy (only Default is supported)
                 // or null which will use global strategy.
                 Data keyData = serializationService.toData(
-                        // constructAttributeBasedKey gives needed result also for __key = ?
-                        PartitioningStrategyUtil.constructAttributeBasedKey(partitionKeyComponents),
+                        finalKey,
                         strategy instanceof AttributePartitioningStrategy ? IDENTITY_PARTITIONING_STRATEGY : strategy);
                 final Partition partition = hazelcastInstance.getPartitionService().getPartition(keyData);
                 if (partition == null) {

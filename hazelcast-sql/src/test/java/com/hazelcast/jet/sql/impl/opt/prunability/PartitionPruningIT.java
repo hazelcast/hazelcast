@@ -106,6 +106,11 @@ public class PartitionPruningIT extends SqlTestSupport {
     }
 
     @Test
+    public void test_simpleKeyNullNotPruned() {
+        assertRowsAnyOrder("SELECT this FROM test1 WHERE __key = ? AND this = 'v1'", Arrays.asList(new Object[1]), rows(1));
+    }
+
+    @Test
     public void test_simpleKeyPrunedOrderBy() {
         assertRowsAnyOrder("SELECT this FROM test2 WHERE comp1 = 1 AND comp2 = ? ORDER BY comp2", List.of(1), rows(1, "v1"));
     }
@@ -113,6 +118,13 @@ public class PartitionPruningIT extends SqlTestSupport {
     @Test
     public void test_compoundKeyPruned() {
         assertRowsAnyOrder("SELECT this FROM test2 WHERE comp1 = 1 AND comp2 = 1 AND comp3 = 100", rows(1, "v1"));
+    }
+
+    @Test
+    public void test_compoundKeyWithNullAttribute() {
+        // currently this query is pruned but null attribute value for AttributePartitionStrategy generally is not allowed
+        assertRowsAnyOrder("SELECT this FROM test2 WHERE comp1 = ? AND comp2 = 1 AND comp3 = 100",
+                Arrays.asList(new Object[1]), rows(1));
     }
 
     @Test
@@ -155,6 +167,21 @@ public class PartitionPruningIT extends SqlTestSupport {
         instance().getMap("test5").put(new PAKey(1L, "1"), "v1");
 
         assertRowsAnyOrder("SELECT this FROM test5 WHERE id = 1 AND name = '1' AND this = 'v1'", rows(1, "v1"));
+    }
+
+    @Test
+    public void test_compundSingleFieldNullKeyShouldNotBePruned() {
+        String mapName = randomName();
+        instance().getConfig().addMapConfig(new MapConfig(mapName).setPartitioningAttributeConfigs(Arrays.asList(
+                new PartitioningAttributeConfig("nestedKey")
+        )));
+        var paKey = new PAKey(1L, "one");
+        IMap<KeyWithPAField, String> map = instance().getMap(mapName);
+        map.put(new KeyWithPAField(paKey), "oneValue");
+
+        createMapping(mapName, KeyWithPAField.class, String.class);
+
+        assertRowsAnyOrder("SELECT this FROM " + mapName + " WHERE nestedKey = ?", Arrays.asList(new Object[1]), rows(1));
     }
 
     @Test
