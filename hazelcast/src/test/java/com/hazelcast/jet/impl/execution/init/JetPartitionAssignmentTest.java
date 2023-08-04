@@ -31,13 +31,11 @@ import org.junit.experimental.categories.Category;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.EMPTY_PRUNING;
 import static com.hazelcast.jet.impl.util.Util.range;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -73,7 +71,7 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
         Map<MemberInfo, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(
                 nodeEngine,
                 members,
-                EMPTY_PRUNING, null, null, null
+                false, null, null, null
         );
 
         List<Integer> actualAssignedPartitions = partitionAssignment
@@ -106,7 +104,7 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
         Map<MemberInfo, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(
                 nodeEngine,
                 members,
-                EMPTY_PRUNING,
+                false,
                 Collections.singleton(requiredNonCoordinatorOwnedPartition),
                 Set.of(coordinatorPartition),
                 Collections.singleton(localMemberInfo.getAddress())
@@ -142,7 +140,7 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
         Map<MemberInfo, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(
                 nodeEngine,
                 members,
-                EnumSet.of(PartitionPruningLevel.ALL_PARTITIONS_REQUIRED),
+                true,
                 Collections.singleton(requiredCoordinatorOwnedPartition),
                 Set.of(),
                 Set.of()
@@ -188,7 +186,7 @@ public class JetPartitionAssignmentTest extends SimpleTestInClusterSupport {
         Map<MemberInfo, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(
                 nodeEngine,
                 members,
-                EnumSet.of(PartitionPruningLevel.ALL_PARTITIONS_REQUIRED),
+                true,
                 Set.of(requiredNonCoordinatorOwnedPartition, requiredCoordinatorOwnedPartition),
                 Set.of(),
                 Set.of(localMemberInfo.getAddress())

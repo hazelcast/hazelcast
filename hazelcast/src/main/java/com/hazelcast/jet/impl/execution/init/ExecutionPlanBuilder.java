@@ -315,6 +315,9 @@ public final class ExecutionPlanBuilder {
      * the {@code memberList}, are assigned to one of the members in a round-robin way.
      * Additional parameters are required if partition pruning is used : (dataPartitions != null).
      *
+     * @param allPartitionsRequired        if true, all partitions must be assigned to all required members
+     *                                     were chosen to participate in job execution. It is applicable, if
+     *                                     DAG contains at least one partitioned edge with non-constant key.
      * @param dataPartitions               set of all required data partitions must be processed by the job
      * @param routingPartitions            set of transitive partitions must be included to the job (allToOne targets)
      * @param extraRequiredMemberAddresses member addresses are targeted by {@link Edge#distributeTo} in job's DAG.
@@ -389,7 +392,7 @@ public final class ExecutionPlanBuilder {
             // we still want to apply member pruning, but we must redirect partitioned items to limited cluster subset.
             // To do that, we assign all unassigned (also they are a non-required) partitions to all required members
             // which are already was filtered by main assignment loop above.
-            if (!allPartitionsRequired || !routingPartitions.isEmpty()) {
+            if (allPartitionsRequired || !routingPartitions.isEmpty()) {
                 Set<Integer> partitionsToAssign = allPartitionsRequired
                         ? new HashSet<>(range(0, partitionCount))
                         : new HashSet<>(routingPartitions);

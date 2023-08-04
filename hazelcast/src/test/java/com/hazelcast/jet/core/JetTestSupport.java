@@ -79,7 +79,6 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.EMPTY_PRUNING;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
@@ -356,7 +355,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         List<MemberInfo> members = membersView.getMembers().stream()
                 .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion) && !m.isLiteMember())
                 .collect(Collectors.toList());
-        return ExecutionPlanBuilder.getPartitionAssignment(nodeEngine, members, EMPTY_PRUNING, null, null, null)
+        return ExecutionPlanBuilder.getPartitionAssignment(nodeEngine, members, false, null, null, null)
                 .entrySet()
                 .stream()
                 .collect(toMap(en -> en.getKey().getAddress(), Map.Entry::getValue));
