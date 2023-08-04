@@ -314,6 +314,7 @@ public final class ExecutionPlanBuilder {
      * Assign the partitions to their owners. Partitions whose owner isn't in
      * the {@code memberList}, are assigned to one of the members in a round-robin way.
      * Additional parameters are required if partition pruning is used : (dataPartitions != null).
+     * Each mapped partitions id array must be sorted.
      *
      * @param allPartitionsRequired        if true, all partitions must be assigned to all required members
      *                                     were chosen to participate in job execution. It is applicable, if
@@ -420,7 +421,6 @@ public final class ExecutionPlanBuilder {
         for (Entry<MemberInfo, FixedCapacityIntArrayList> memberWithPartitions : partitionsForMember.entrySet()) {
             int[] p = memberWithPartitions.getValue().asArray();
             if (dataPartitions != null) {
-                // TODO: is the list of partitions expected to be sorted?
                 Arrays.sort(p);
             }
             partitionAssignment.put(memberWithPartitions.getKey(), p);
