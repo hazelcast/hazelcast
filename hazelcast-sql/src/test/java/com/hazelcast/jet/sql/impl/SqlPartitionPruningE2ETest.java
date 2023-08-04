@@ -371,7 +371,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         SqlPlanImpl.SelectPlan selectPlan = (SqlPlanImpl.SelectPlan) plan;
 
         assertQueryResult(selectPlan, singletonList(new Row(2, 2, 2, "2")));
-        assertEquals(0, planExecutor.tryUsePrunability(selectPlan, EEC));
+        assertEquals(0, planExecutor.tryUsePrunability(selectPlan, EEC).size());
     }
 
     @Nonnull
