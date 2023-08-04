@@ -41,7 +41,6 @@ import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -58,7 +57,6 @@ import java.util.function.Function;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_REQUIRED_PARTITIONS;
-import static com.hazelcast.jet.impl.execution.init.PartitionPruningLevel.ALL_PARTITIONS_REQUIRED;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
@@ -93,14 +91,20 @@ public final class ExecutionPlanBuilder {
         final Set<Integer> requiredPartitions = jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
         if (requiredPartitions != null) {
-            PartitionPruningAnalysisResult result = analyzeDagForPartitionPruning(nodeEngine, dag);
+            PartitionPruningAnalysisResult analysisResult = analyzeDagForPartitionPruning(nodeEngine, dag);
             partitionsByMember = getPartitionAssignment(
                     nodeEngine, memberInfos,
-                    result.ppl, requiredPartitions, result.constantPartitionIds, result.requiredAddresses);
+                    analysisResult.allPartitionsRequired,
+                    requiredPartitions,
+                    analysisResult.constantPartitionIds,
+                    analysisResult.requiredAddresses);
         } else {
             partitionsByMember = getPartitionAssignment(
                     nodeEngine, memberInfos,
-                    PartitionPruningLevel.EMPTY_PRUNING, null, null, null);
+                    false,
+                    null,
+                    null,
+                    null);
         }
 
         final Map<Address, int[]> partitionsByAddress = partitionsByMember
@@ -190,7 +194,7 @@ public final class ExecutionPlanBuilder {
         // we expect only local member to be explicitly required
         Set<Address> requiredAddresses = new HashSet<>(1);
         IntHashSet constantPartitionIds = new IntHashSet(partitionCount, -1);
-        EnumSet<PartitionPruningLevel> ppl = EnumSet.noneOf(PartitionPruningLevel.class);
+        boolean allPartitionsRequired = false;
         for (Iterator<Edge> it = dag.edgeIterator(); it.hasNext(); ) {
             Edge edge = it.next();
             if (edge.getDistributedTo() != null && !edge.isDistributed()) {
@@ -200,6 +204,7 @@ public final class ExecutionPlanBuilder {
                 requiredAddresses.add(edge.getDistributedTo());
             }
             if (edge.getRoutingPolicy() == Edge.RoutingPolicy.PARTITIONED) {
+                assert edge.getPartitioner() != null : "PARTITIONED policy was used without partitioner";
                 // note that partitioned edge can be either distributed or local.
                 var maybeConstantPartition = edge.getPartitioner().getConstantPartitioningKey();
                 if (maybeConstantPartition != null) {
@@ -208,27 +213,27 @@ public final class ExecutionPlanBuilder {
                 } else {
                     // partitioned edge with arbitrary partitioning function.
                     // unable to determine what partition ids will we used.
-                    ppl.add(ALL_PARTITIONS_REQUIRED);
+                    allPartitionsRequired = true;
                 }
             }
         }
         // After the analysis we can have both ALL_PARTITIONS_REQUIRED and non-empty constantPartitionIds.
         // This is not a problem, ALL_PARTITIONS_REQUIRED will be more important.
-        return new PartitionPruningAnalysisResult(requiredAddresses, constantPartitionIds, ppl);
+        return new PartitionPruningAnalysisResult(requiredAddresses, constantPartitionIds, allPartitionsRequired);
     }
 
     // visible for testing
     static class PartitionPruningAnalysisResult {
         final Set<Address> requiredAddresses;
         final Set<Integer> constantPartitionIds;
-        final Set<PartitionPruningLevel> ppl;
+        final boolean allPartitionsRequired;
 
         PartitionPruningAnalysisResult(Set<Address> requiredAddresses,
-                                              Set<Integer> constantPartitionIds,
-                                              Set<PartitionPruningLevel> ppl) {
+                                       Set<Integer> constantPartitionIds,
+                                       boolean allPartitionsRequired) {
             this.requiredAddresses = requiredAddresses;
             this.constantPartitionIds = constantPartitionIds;
-            this.ppl = ppl;
+            this.allPartitionsRequired = allPartitionsRequired;
         }
     }
 
@@ -308,19 +313,21 @@ public final class ExecutionPlanBuilder {
     /**
      * Assign the partitions to their owners. Partitions whose owner isn't in
      * the {@code memberList}, are assigned to one of the members in a round-robin way.
-     * Additional parameters are required if partition pruning is used
-     * (dataPartitions != null).
+     * Additional parameters are required if partition pruning is used : (dataPartitions != null).
+     *
+     * @param dataPartitions               set of all required data partitions must be processed by the job
+     * @param routingPartitions            set of transitive partitions must be included to the job (allToOne targets)
+     * @param extraRequiredMemberAddresses member addresses are targeted by {@link Edge#distributeTo} in job's DAG.
      */
-    @SuppressWarnings("DataFlowIssue")
     public static Map<MemberInfo, int[]> getPartitionAssignment(
             NodeEngine nodeEngine,
             List<MemberInfo> memberList,
-            @Nonnull Set<PartitionPruningLevel> pruningLevels,
+            boolean allPartitionsRequired,
             @Nullable Set<Integer> dataPartitions,
             @Nullable Set<Integer> routingPartitions,
             @Nullable Set<Address> extraRequiredMemberAddresses) {
 
-        if (!pruningLevels.isEmpty()) {
+        if (allPartitionsRequired) {
             checkNotNull(dataPartitions);
         }
 
@@ -363,16 +370,16 @@ public final class ExecutionPlanBuilder {
 
             // Interactive prunable queries may require coordinator to be present
             // If coordinator still not captured to participate in the job -- do it.
-            extraRequiredMemberAddresses.forEach(requiredMemberAddress -> {
-                MemberInfo requiredMemberInfo = membersByAddress.get(requiredMemberAddress);
+            extraRequiredMemberAddresses.forEach(requiredMemberAddr -> {
+                MemberInfo requiredMemberInfo = membersByAddress.get(requiredMemberAddr);
                 if (requiredMemberInfo == null) {
                     // Should not happen for local member, may happen if outdated DAG is used
                     // which refers to no longer present member.
-                    throw new JetException("Member with address " + requiredMemberAddress + " not present in the cluster");
+                    throw new JetException("Member with address " + requiredMemberAddr + " not present in the cluster");
                 }
                 partitionsForMember.computeIfAbsent(requiredMemberInfo, (i) -> {
-                    nodeEngine.getLogger(ExecutionPlanBuilder.class).fine("Adding required member " + requiredMemberAddress +
-                            " to partition-pruned job members");
+                    nodeEngine.getLogger(ExecutionPlanBuilder.class)
+                            .fine("Adding required member " + requiredMemberAddr + " to partition-pruned job members");
                     // Extra members may get some partitions assigned later, especially for ALL_PARTITIONS_REQUIRED
                     return new FixedCapacityIntArrayList(partitionCount);
                 });
@@ -382,8 +389,8 @@ public final class ExecutionPlanBuilder {
             // we still want to apply member pruning, but we must redirect partitioned items to limited cluster subset.
             // To do that, we assign all unassigned (also they are a non-required) partitions to all required members
             // which are already was filtered by main assignment loop above.
-            if (pruningLevels.contains(ALL_PARTITIONS_REQUIRED) || !routingPartitions.isEmpty()) {
-                Set<Integer> partitionsToAssign = pruningLevels.contains(ALL_PARTITIONS_REQUIRED)
+            if (!allPartitionsRequired || !routingPartitions.isEmpty()) {
+                Set<Integer> partitionsToAssign = allPartitionsRequired
                         ? new HashSet<>(range(0, partitionCount))
                         : new HashSet<>(routingPartitions);
                 // do not assign duplicates, possible in both above cases
@@ -396,7 +403,7 @@ public final class ExecutionPlanBuilder {
                     //
                     // The partition assignment is not balanced here, so not all members have the same number of partitions
                     // especially for ALL_PARTITIONS_REQUIRED. This is not very important when there are only a few partitions
-                    // in dataPartitions, but can make some difference if there are many (eg. half of them).
+                    // in dataPartitions, but can make some difference if there are many (e.g. half of them).
                     // This is not obvious where extra partitions should be assigned - maybe we should prefer members
                     // that do not store the data for the job because they will be less loaded?
                     var member = requiredMembers.get(memberIndex++ % requiredMembers.size());
