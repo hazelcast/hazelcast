@@ -776,6 +776,7 @@ hazelcast:
         property: value
     client-permissions:
       on-join-operation: SEND
+      priority-grant: true
       all:
         principal: admin
         endpoints:
@@ -809,6 +810,7 @@ hazelcast:
             - all
       transaction:
         principal: deployer
+        deny: true
       pn-counter:
         - name: "*"
           actions:

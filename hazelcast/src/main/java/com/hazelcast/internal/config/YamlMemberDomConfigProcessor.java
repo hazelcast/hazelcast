@@ -140,10 +140,11 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                     .valueOf(upperCaseInternal(onJoinOp));
             config.getSecurityConfig().setOnJoinPermissionOperation(onJoinPermissionOperation);
         }
+        config.getSecurityConfig().setPermissionPriorityGrant(getBooleanValue(getAttribute(node, "priority-grant")));
         Iterable<Node> nodes = childElements(node);
         for (Node child : nodes) {
             String nodeName = cleanNodeName(child);
-            if (matches("on-join-operation", nodeName)) {
+            if (matches("on-join-operation", nodeName) || matches("priority-grant", nodeName)) {
                 continue;
             }
             nodeName = matches("all", nodeName) ? nodeName + "-permissions" : nodeName + "-permission";

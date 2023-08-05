@@ -598,6 +598,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         SecurityConfig expectedConfig = new SecurityConfig();
         expectedConfig.setEnabled(true)
                 .setOnJoinPermissionOperation(OnJoinPermissionOperationName.NONE)
+                .setPermissionPriorityGrant(true)
                 .setClientBlockUnmappedActions(false)
                 .setClientRealmConfig("cr", new RealmConfig().setJaasAuthenticationConfig(new JaasAuthenticationConfig().setLoginModuleConfigs(
                                 Arrays.asList(
@@ -621,6 +622,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                                 .setPrincipal("devos"),
                         new PermissionConfig()
                                 .setType(PermissionConfig.PermissionType.MANAGEMENT)
+                                .setDeny(true)
                                 .setPrincipal("mcadmin"),
                         new PermissionConfig()
                                 .setType(PermissionConfig.PermissionType.CONFIG),

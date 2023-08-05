@@ -3752,23 +3752,25 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         PermissionConfig expected = new PermissionConfig(CACHE, "/hz/cachemanager1/cache1", "dev");
         expected.addAction("create").addAction("destroy").addAction("add").addAction("remove");
         assertPermissionConfig(expected, config);
+        assertFalse(config.getSecurityConfig().isPermissionPriorityGrant());
     }
 
     @Override
     @Test
     public void testConfigPermission() {
         String xml = HAZELCAST_START_TAG + SECURITY_START_TAG
-                + "  <client-permissions>"
-                + "    <config-permission principal=\"dev\">"
+                + "  <client-permissions priority-grant='true'>"
+                + "    <config-permission principal=\"dev\" deny='true'>"
                 + "       <endpoints><endpoint>127.0.0.1</endpoint></endpoints>"
                 + "    </config-permission>\n"
                 + "  </client-permissions>"
                 + SECURITY_END_TAG + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
-        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev");
+        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev").setDeny(true);
         expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
+        assertTrue(config.getSecurityConfig().isPermissionPriorityGrant());
     }
 
     @Override

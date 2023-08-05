@@ -3724,15 +3724,18 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  security:\n"
                 + "    enabled: true\n"
                 + "    client-permissions:\n"
+                + "      priority-grant: true\n"
                 + "      config:\n"
+                + "        deny: true\n"
                 + "        principal: dev\n"
                 + "        endpoints:\n"
                 + "          - 127.0.0.1";
 
         Config config = buildConfig(yaml);
-        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev");
+        PermissionConfig expected = new PermissionConfig(CONFIG, null, "dev").setDeny(true);
         expected.getEndpoints().add("127.0.0.1");
         assertPermissionConfig(expected, config);
+        assertTrue(config.getSecurityConfig().isPermissionPriorityGrant());
     }
 
     @Override
