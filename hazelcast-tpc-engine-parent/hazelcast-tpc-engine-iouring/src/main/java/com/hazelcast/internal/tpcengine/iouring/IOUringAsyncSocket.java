@@ -359,7 +359,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     throw new IllegalStateException("No space in submission queue");
                 }
 
-                long sqeAddr = sq.sqesAddr + ((long)index * SIZEOF_SQE);
+                long sqeAddr = sq.sqesAddr + ((long) index * SIZEOF_SQE);
                 ioVector.populate(unflushedBufs);
 
                 if (ioVector.cnt() == 1) {
