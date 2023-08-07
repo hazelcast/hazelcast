@@ -111,9 +111,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 
-import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
-import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
-import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.LENGTH;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.*;
 
 /**
  * Utility methods for REX to Hazelcast expression conversion.
@@ -423,7 +421,7 @@ public final class RexToExpression {
 
                 // Strings.
 
-                if (function == CHAR_LENGTH || function == CHARACTER_LENGTH || function == LENGTH) {
+                if (function == CHAR_LENGTH || function == CHARACTER_LENGTH || function == LENGTH || function == LEN) {
                     return CharLengthFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.UPPER) {
                     return UpperFunction.create(operands[0]);
