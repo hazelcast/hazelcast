@@ -100,7 +100,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
 
         DAG dag = new DAG();
         ProcessorMetaSupplier readPms = mapReader(mapName, new DefaultPartitioningStrategy(), List.of(
-                List.of(ConstantExpression.create(pKey, QueryDataType.INT))));
+                List.of(ConstantExpression.create(0, QueryDataType.INT))));
         Vertex source = dag.newVertex("source", readPms);
         Vertex sink = dag.newVertex("sink", writeMapP(sinkName));
 
