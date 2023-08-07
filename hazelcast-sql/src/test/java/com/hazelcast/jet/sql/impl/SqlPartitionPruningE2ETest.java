@@ -16,10 +16,17 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
+import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.jet.JobInvocationObserver;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.misc.Pojo;
@@ -47,7 +54,11 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
@@ -57,6 +68,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -66,7 +78,9 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
     private SqlServiceImpl sqlService;
     private PlanExecutor planExecutor;
     private String mapName;
-    private PreJobInvocationObserverImpl jobInvocationObserver;
+
+    private PreJobInvocationObserverImpl preJobInvocationObserver;
+    private JobInvocationObserverImpl jobInvocationObserver;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -82,8 +96,16 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         sqlService = (SqlServiceImpl) instance().getSql();
         planExecutor = sqlService.getOptimizer().getPlanExecutor();
 
-        jobInvocationObserver = new PreJobInvocationObserverImpl();
-        planExecutor.registerJobInvocationObserver(jobInvocationObserver);
+        preJobInvocationObserver = new PreJobInvocationObserverImpl();
+        jobInvocationObserver = new JobInvocationObserverImpl();
+
+        planExecutor.registerJobInvocationObserver(preJobInvocationObserver);
+
+        JobCoordinationService jobCoordinationService = ((JetServiceBackend) getNodeEngineImpl(instance())
+                .getService(JetServiceBackend.SERVICE_NAME))
+                .getJobCoordinationService();
+        jobCoordinationService.registerInvocationObserver(jobInvocationObserver);
+
         mapName = randomName();
     }
 
@@ -103,7 +125,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertQueryResult(selectPlan, singletonList(new Row(2, 2, 2, "2")));
 
         var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
-        Set<Integer> expectedPartitionsToUse = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        Set<Integer> expectedPartitionsToUse = preJobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
         assertEquals(1, partitionsToUse.size());
         assertRequiredPartitions(expectedPartitionsToUse, partitionsToUse);
@@ -145,7 +167,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertQueryResult(selectPlan, singletonList(new Row(2, 2, 2, "2")));
 
         var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
-        Set<Integer> expectedPartitionsToUse = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        Set<Integer> expectedPartitionsToUse = preJobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
         assertEquals(1, partitionsToUse.size());
         assertRequiredPartitions(expectedPartitionsToUse, partitionsToUse);
@@ -173,7 +195,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertQueryResult(selectPlan, asList(new Row(2, 2, 2, "2"), new Row(3, 3, 3, "3")));
 
         var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
-        Set<Integer> expectedPartitionsToUse = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        Set<Integer> expectedPartitionsToUse = preJobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
         assertEquals(2, partitionsToUse.size());
         assertRequiredPartitions(expectedPartitionsToUse, partitionsToUse);
@@ -201,7 +223,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertQueryResult(selectPlan, asList(new Row(2, 2, 2, "2"), new Row(3, 3, 3, "3")));
 
         var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
-        Set<Integer> expectedPartitionsToUse = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        Set<Integer> expectedPartitionsToUse = preJobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
         assertEquals(2, partitionsToUse.size());
         assertRequiredPartitions(expectedPartitionsToUse, partitionsToUse);
@@ -239,7 +261,7 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         assertQueryResult(selectPlan, asList(new Row(2), new Row(3)));
 
         var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, EEC);
-        Set<Integer> expectedPartitionsToUse = jobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
+        Set<Integer> expectedPartitionsToUse = preJobInvocationObserver.jobConfig.getArgument(KEY_REQUIRED_PARTITIONS);
 
         assertEquals(2, partitionsToUse.size());
         assertRequiredPartitions(expectedPartitionsToUse, partitionsToUse);
@@ -334,6 +356,34 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         return (SqlPlanImpl.SelectPlan) plan;
     }
 
+    Tuple2<Set<Address>, Set<Integer>> calculateExpectedPartitions(
+            boolean shouldUseCoordinator, int... equalityConstantsInPredicate) {
+        IPartitionService partitionService = getNodeEngineImpl(instance()).getPartitionService();
+        Map<Address, int[]> partitionAssignment = getPartitionAssignment(instance());
+        Map<Integer, Address> reversedPartitionAssignment = new HashMap<>();
+        for (Entry<Address, int[]> entry : partitionAssignment.entrySet()) {
+            for (int partitionId : entry.getValue()) {
+                reversedPartitionAssignment.put(partitionId, entry.getKey());
+            }
+        }
+
+        Set<Integer> expectedPartitionsToParticipate = new HashSet<>();
+        Set<Address> expectedMembersToParticipate = new HashSet<>();
+        for (int equalityConstant : equalityConstantsInPredicate) {
+            int partitionId = partitionService.getPartitionId(equalityConstant);
+            assertTrue(reversedPartitionAssignment.containsKey(partitionId));
+            expectedPartitionsToParticipate.add(partitionId);
+            expectedMembersToParticipate.add(reversedPartitionAssignment.get(partitionId));
+        }
+
+        if (shouldUseCoordinator) {
+            expectedMembersToParticipate.add(instance().getCluster().getLocalMember().getAddress());
+            expectedPartitionsToParticipate.add(partitionService.getPartitionId(""));
+        }
+
+        return Tuple2.tuple2(expectedMembersToParticipate, expectedPartitionsToParticipate);
+    }
+
     static class PreJobInvocationObserverImpl implements PreJobInvocationObserver {
         public DAG dag;
         public JobConfig jobConfig;
@@ -342,6 +392,21 @@ public class SqlPartitionPruningE2ETest extends SqlTestSupport {
         public void onJobInvocation(DAG dag, JobConfig config) {
             this.dag = dag;
             this.jobConfig = config;
+        }
+    }
+
+    static class JobInvocationObserverImpl implements JobInvocationObserver {
+        public long jobId;
+        public List<MemberInfo> members;
+        public DAG dag;
+        public JobConfig jobConfig;
+
+        @Override
+        public void onJobInvocation(long jobId, List<MemberInfo> members, DAG dag, JobConfig jobConfig) {
+            this.jobId = jobId;
+            this.members = members;
+            this.dag = dag;
+            this.jobConfig = jobConfig;
         }
     }
 }

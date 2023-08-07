@@ -34,6 +34,7 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.JobInvocationObserver;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -155,6 +156,8 @@ public class JobCoordinationService {
      * When reading, it's treated as if the job doesn't exist.
      */
     private static final Object UNINITIALIZED_LIGHT_JOB_MARKER = new Object();
+
+    final List<JobInvocationObserver> jobInvocationObservers = new ArrayList<>();
 
     private final NodeEngineImpl nodeEngine;
     private final JetServiceBackend jetServiceBackend;
@@ -912,6 +915,10 @@ public class JobCoordinationService {
     // only for testing
     public MasterContext getMasterContext(long jobId) {
         return masterContexts.get(jobId);
+    }
+
+    public void registerInvocationObserver(JobInvocationObserver observer) {
+        this.jobInvocationObservers.add(observer);
     }
 
     JetServiceBackend getJetServiceBackend() {
