@@ -543,7 +543,7 @@ public final class ClusterProperty {
      * This parameter defines time that the master node will wait since the last
      * received join request (a pre-join window) before it starts processing the
      * join requests and forming a cluster.
-     * Alternatively, if the pre-join phase has laster for over
+     * Alternatively, if the pre-join phase has lasted for over
      * {@link #MAX_WAIT_SECONDS_BEFORE_JOIN} seconds, the master node will proceed
      * with processing the join requests and forming the cluster, regardless of the
      * time elapsed since the last join request.
