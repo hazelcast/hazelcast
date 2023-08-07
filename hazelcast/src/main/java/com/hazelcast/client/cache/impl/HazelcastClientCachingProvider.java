@@ -22,7 +22,6 @@ import com.hazelcast.cache.impl.AbstractHazelcastCachingProvider;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.config.YamlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 
 import javax.annotation.Nonnull;
@@ -125,23 +124,9 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
         }
     }
 
-    private ClientConfig getClientConfig(URL configURL, ClassLoader classLoader) throws IOException {
-        String path = configURL.getPath();
-        ClientConfig clientConfig;
-        if (path.endsWith(".xml")) {
-            clientConfig = new XmlClientConfigBuilder(configURL).build().setClassLoader(classLoader);
-        } else if (path.endsWith(".yaml")) {
-            clientConfig = new YamlClientConfigBuilder(configURL).build().setClassLoader(classLoader);
-        } else {
-            String message = String.format("Unsupported configuration extension: %s; Supported extensions: %s",
-                    configURL.getPath(), ".xml, .yaml");
-            throw new IllegalArgumentException(message);
-        }
-        return clientConfig;
-    }
-
     private ClientConfig getConfig(URL configURL, ClassLoader theClassLoader, String instanceName) throws IOException {
-        ClientConfig config = getClientConfig(configURL, theClassLoader);
+        ClientConfig config = new XmlClientConfigBuilder(configURL).build()
+                .setClassLoader(theClassLoader);
         if (instanceName != null) {
             // if the instance name is specified via properties use it,
             // even though instance name is specified in the config
