@@ -123,14 +123,29 @@ try to choose only the required members.
 
 ### Scan partition pruning
 
-Partition pruning for IMap scan is a pretty simple optimization: we will extract the partition key 
-condition during SQL opt phase, pass it to a specialized processor supplier which will spawn 
+Key principle of scan partition pruning is that specialized processor meta supplier which will spawn scan processors
+should be able to self-sufficiently calculate exact set of partitions to scan. To achieve it, we designed a convenient
+API on a SQL side to be able to pass a minimum required information to PMS constructor.
+
+#### IMap-specific prunable scan processor meta supplier design and implementation details
+
+`SpecificPartitionsImapReaderPms` is a new meta supplier to perform IMap scans. It was designed with ability
+to self-sufficiently calculate exact set of partitions to scan and have a possibility not to do any partitions'
+calculation, if partitioning strategy is not available for the given IMap.
+
+In case of partition prunability: when partition assignment is available, PMS should calculate an available
+partition set by evaluating accepted filtering expressions. During `ProcessorSupplier` spawn process PMS computes
+precise partitions subset per member (stored in `ProcessorSupplier`), and then each `ProcessorSupplier` spawns
 `ReadMapOrCacheP` with only required partitions to scan.
+
+Scan partition pruning will work in cases when member pruning is not possible. E.g, we have UNION for two tables,
+and only one scan is prunable. Member pruning is not applicable here, but we can apply scan partition pruning
+locally for prunable scan.
 
 ### `lazyForceTotalParallelismOne`
 
 To complement the existing `forceTotalParallelismOne` with PMS with partition pruning support we decided
-to add a new partition-aware `lazyForceTotalParallelismOne` PMS builder which is dynamically calculating 
+to add a new partition-aware `lazyForceTotalParallelismOne` PMS builder which is dynamically calculating
 members to reduce total parallelism to one, using provided partition key expressions. Also, it does not cache
 calculated member address to prevent the wrong usage of cached plan.
 
