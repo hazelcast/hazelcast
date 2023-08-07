@@ -54,6 +54,8 @@ public final class PartitioningStrategyUtil {
      * Gets partition for given key specified as key components. Supports
      * {@link AttributePartitioningStrategy} and {@link
      * DefaultPartitioningStrategy}.
+     * @return Partition to which the key belongs or null if the partition
+     *         cannot be determined.
      */
     @Nullable
     public static Partition getPartitionFromKeyComponents(@Nonnull HazelcastInstance hazelcastInstance,
@@ -76,18 +78,22 @@ public final class PartitioningStrategyUtil {
             return null;
         }
 
-        // Mimic calculation performed for IMap put/get operations
-        // in AbstractSerializationService.calculatePartitionHash.
-        // IMap partitioning strategy is passed there.
-        //
-        // We cannot pass AttributePartitioningStrategy because we do not have full key object, but
-        // IDENTITY_PARTITIONING_STRATEGY on partitionKeyComponents will give the same result
-        // as AttributePartitioningStrategy would on a full key.
-        // For other IMap strategies we use IMap strategy (only Default is supported)
-        // or null which will use global strategy.
-        Data keyData = Util.getSerializationService(hazelcastInstance).toData(
-                finalKey,
-                strategy instanceof AttributePartitioningStrategy ? IDENTITY_PARTITIONING_STRATEGY : strategy);
-        return hazelcastInstance.getPartitionService().getPartition(keyData);
+        if (strategy instanceof AttributePartitioningStrategy) {
+            // Mimic calculation performed for IMap put/get operations
+            // in AbstractSerializationService.calculatePartitionHash.
+            // IMap partitioning strategy is passed there.
+            //
+            // We cannot pass AttributePartitioningStrategy because we do not have full key object, but
+            // IDENTITY_PARTITIONING_STRATEGY on partitionKeyComponents will give the same result
+            // as AttributePartitioningStrategy would on a full key.
+            // We also cannot use the default calculation because finalKey might be PartitionAware, which
+            // we must ignore to be in line with partition calculation for IMap.
+            Data keyData = Util.getSerializationService(hazelcastInstance)
+                    .toData(finalKey, IDENTITY_PARTITIONING_STRATEGY);
+            return hazelcastInstance.getPartitionService().getPartition(keyData);
+        } else {
+            // For other IMap strategies we use default calculation
+            return hazelcastInstance.getPartitionService().getPartition(finalKey);
+        }
     }
 }
