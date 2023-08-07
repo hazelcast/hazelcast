@@ -28,7 +28,7 @@ import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorMetaSuppli
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalProcessorSupplier;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.Reader;
 import com.hazelcast.jet.impl.util.FixedCapacityIntArrayList;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -82,17 +82,17 @@ public abstract class SpecificPartitionsImapReaderPms<F extends CompletableFutur
                     partitionKeyComponents[i++] = expression.evalTop(null, eec);
                 }
 
-                final Partition partition = PartitioningStrategyUtil.getPartitionFromKeyComponents(
-                        hazelcastInstance, partitioningStrategy, partitionKeyComponents);
-                if (partition == null) {
-                    // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
-                    // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.
+                final Integer partitionId = PartitioningStrategyUtil.getPartitionIdFromKeyComponents(
+                        Util.getNodeEngine(hazelcastInstance), partitioningStrategy, partitionKeyComponents);
+                if (partitionId == null) {
+                    // The produced partitioning key is somehow invalid, most likely null.
+                    // In this case we revert to non-pruning logic.
                     return;
                 }
                 assert context.partitionAssignment().values().stream()
-                        .anyMatch(pa -> Arrays.binarySearch(pa, partition.getPartitionId()) >= 0)
-                        : "Partition calculated for PMS not present in the job";
-                partitionsToScanList.add(partition.getPartitionId());
+                        .anyMatch(pa -> Arrays.binarySearch(pa, partitionId) >= 0)
+                        : "Partition calculated for PMS is not present in the job";
+                partitionsToScanList.add(partitionId);
             }
 
             // requiredPartitionsExprs may produce the same partition multiple times

@@ -16,14 +16,12 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionAware;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -54,11 +52,11 @@ public final class PartitioningStrategyUtil {
      * Gets partition for given key specified as key components. Supports
      * {@link AttributePartitioningStrategy} and {@link
      * DefaultPartitioningStrategy}.
-     * @return Partition to which the key belongs or null if the partition
+     * @return Partition id to which the key belongs or null if the partition
      *         cannot be determined.
      */
     @Nullable
-    public static Partition getPartitionFromKeyComponents(@Nonnull HazelcastInstance hazelcastInstance,
+    public static Integer getPartitionIdFromKeyComponents(@Nonnull NodeEngine nodeEngine,
                                                           @Nullable PartitioningStrategy<?> strategy,
                                                           @Nonnull Object[] partitionKeyComponents) {
         assert strategy == null
@@ -88,12 +86,12 @@ public final class PartitioningStrategyUtil {
             // as AttributePartitioningStrategy would on a full key.
             // We also cannot use the default calculation because finalKey might be PartitionAware, which
             // we must ignore to be in line with partition calculation for IMap.
-            Data keyData = Util.getSerializationService(hazelcastInstance)
+            Data keyData = nodeEngine.getSerializationService()
                     .toData(finalKey, IDENTITY_PARTITIONING_STRATEGY);
-            return hazelcastInstance.getPartitionService().getPartition(keyData);
+            return nodeEngine.getPartitionService().getPartitionId(keyData);
         } else {
             // For other IMap strategies we use default calculation
-            return hazelcastInstance.getPartitionService().getPartition(finalKey);
+            return nodeEngine.getPartitionService().getPartitionId(finalKey);
         }
     }
 }

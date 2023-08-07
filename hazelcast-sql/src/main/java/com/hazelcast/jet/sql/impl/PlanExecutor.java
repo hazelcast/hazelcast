@@ -75,7 +75,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
@@ -557,16 +556,16 @@ public class PlanExecutor {
                     partitionKeyComponents[i] = perMapCandidate.get(attribute).eval(null, evalContext);
                 }
 
-                final Partition partition = PartitioningStrategyUtil.getPartitionFromKeyComponents(
-                        hazelcastInstance, strategy, partitionKeyComponents);
+                final Integer partitionId = PartitioningStrategyUtil.getPartitionIdFromKeyComponents(
+                        nodeEngine, strategy, partitionKeyComponents);
 
-                if (partition == null) {
-                    // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
-                    // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.
+                if (partitionId == null) {
+                    // The produced partitioning key is somehow invalid, most likely null.
+                    // In this case we revert to non-pruning logic.
                     allVariantsValid = false;
                     break;
                 }
-                partitions.add(partition.getPartitionId());
+                partitions.add(partitionId);
             }
         }
 
