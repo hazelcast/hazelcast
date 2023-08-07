@@ -111,7 +111,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 
-import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.*;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.LENGTH;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.LEN;
 
 /**
  * Utility methods for REX to Hazelcast expression conversion.

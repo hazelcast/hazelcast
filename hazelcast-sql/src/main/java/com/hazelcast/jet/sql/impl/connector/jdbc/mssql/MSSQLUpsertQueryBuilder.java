@@ -21,10 +21,10 @@ import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
 import org.apache.calcite.sql.SqlDialect;
 
 import java.util.Iterator;
+import java.util.List;
 
 /**
- * Builder for upsert statement
- * in progress.
+ * Builder for upsert statement in Microsoft SQL Server syntax.
  */
 public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
 
@@ -45,9 +45,7 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
     void appendIFClause(StringBuilder sb) {
         sb.append("IF NOT EXISTS (SELECT 1 FROM ");
         dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
-        sb.append(" WHERE ");
-        appendFieldNames(sb, jdbcTable.getPrimaryKeyList());
-        sb.append(" = ?");
+        appendPrimaryKeys(sb);
         sb.append(") BEGIN INSERT INTO ");
         dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
         sb.append(' ');
@@ -60,7 +58,7 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
         sb.append(" END");
     }
 
-    void appendElseClause(StringBuilder sb){
+    void appendElseClause(StringBuilder sb) {
         sb.append("ELSE BEGIN UPDATE ");
         dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
         sb.append(" SET ");
@@ -68,35 +66,25 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
         while (it.hasNext()) {
             String dbFieldName = it.next();
             dialect.quoteIdentifier(sb, dbFieldName);
-            sb.append(" = VALUES(");
-            dialect.quoteIdentifier(sb, dbFieldName);
-            sb.append(')');
+            sb.append(" = ? ");
             if (it.hasNext()) {
                 sb.append(',');
             }
         }
-        sb.append(" WHERE ");
-        appendFieldNames(sb, jdbcTable.getPrimaryKeyList());
-        sb.append(" = ?");
+        appendPrimaryKeys(sb);
         sb.append(" END");
-        /*
-        An example:
-        IF NOT EXISTS (SELECT 1 FROM Employee WHERE EmployeeID = @EmployeeID)
-        BEGIN
-            INSERT INTO Employee (EmployeeID, FirstName, LastName)
-            VALUES (@EmployeeID, @FirstName, @LastName)
-        END
-        ELSE
-        BEGIN
-            UPDATE Employee
-            SET FirstName = @FirstName,
-                LastName = @LastName
-            WHERE EmployeeID = @EmployeeID
-        END
+    }
 
-
-        IF NOT EXISTS (SELECT 1 FROM [table1] WHERE (pk1) = ? ) BEGIN INSERT INTO [table1] ([field1],[field2]) VALUES (?,?)
-        END ELSE BEGIN UPDATE [table1] SET [field1] = VALUES([field1]),[field2] = VALUES([field2]) WHERE (pk1) = ? END
-         */
+    void appendPrimaryKeys(StringBuilder sb) {
+        sb.append(" WHERE ");
+        List<String> pkFields = jdbcTable.getPrimaryKeyList();
+        for (int i = 0; i < pkFields.size(); i++) {
+            String field = pkFields.get(i);
+            sb.append(dialect.quoteIdentifier(field))
+                    .append("=?");
+            if (i < pkFields.size() - 1) {
+                sb.append(" AND ");
+            }
+        }
     }
 }

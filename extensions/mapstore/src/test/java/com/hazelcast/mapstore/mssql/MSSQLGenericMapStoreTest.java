@@ -17,20 +17,11 @@
 package com.hazelcast.mapstore.mssql;
 
 import com.hazelcast.mapstore.GenericMapStoreTest;
-import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
-import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.Properties;
-
-import static com.hazelcast.mapstore.GenericMapLoader.DATA_CONNECTION_REF_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapLoader.EXTERNAL_NAME_PROPERTY;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assume.assumeFalse;
 
 @Category(NightlyTest.class)
 public class MSSQLGenericMapStoreTest extends GenericMapStoreTest {

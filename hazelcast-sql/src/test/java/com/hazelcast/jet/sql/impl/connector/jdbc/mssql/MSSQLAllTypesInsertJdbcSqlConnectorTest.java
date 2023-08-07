@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-import static org.assertj.core.api.Assumptions.assumeThat;
 
 @Category(NightlyTest.class)
 public class MSSQLAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcSqlConnectorTest {
@@ -43,14 +42,11 @@ public class MSSQLAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcS
         // For DATETIMEOFFSET in MSSQL see https://learn.microsoft.com/en-us/sql/t-sql/data-types/datetimeoffset-transact-sql?view=sql-server-ver16
         if (type.equals("BOOLEAN")) {
             type = "BIT";
-        }
-        else if (type.equals("DOUBLE")) {
+        } else if (type.equals("DOUBLE")) {
             type = "FLOAT";
-        }
-        else if (type.equals("TIMESTAMP")) {
+        } else if (type.equals("TIMESTAMP")) {
             type = "DATETIME";
-        }
-        else if (type.equals("TIMESTAMP WITH TIME ZONE")) {
+        } else if (type.equals("TIMESTAMP WITH TIME ZONE")) {
             type = "DATETIMEOFFSET";
         }
     }

@@ -34,7 +34,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
-import java.sql.*;
+import java.sql.ResultSet;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.ResultSetMetaData;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -155,7 +158,7 @@ public class SelectProcessorSupplier
         parameterPositions = in.readIntArray();
     }
 
-    private void initializeGETTERS(SqlDialect sqldialect){
+    private void initializeGETTERS(SqlDialect sqldialect) {
         GETTERS.put("BOOLEAN", ResultSet::getBoolean);
         GETTERS.put("BOOL", ResultSet::getBoolean);
         GETTERS.put("BIT", ResultSet::getBoolean);
@@ -187,11 +190,11 @@ public class SelectProcessorSupplier
         GETTERS.put("DATE", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDate.class));
         GETTERS.put("TIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalTime.class));
 
-        if(sqldialect instanceof MssqlSqlDialect){
+        if (sqldialect instanceof MssqlSqlDialect) {
             GETTERS.put("FLOAT", ResultSet::getDouble);
             GETTERS.put("DATETIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
             GETTERS.put("DATETIMEOFFSET", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
-        }else{
+        } else {
             GETTERS.put("FLOAT", ResultSet::getFloat);
             GETTERS.put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
             GETTERS.put("TIMESTAMP_WITH_TIMEZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));

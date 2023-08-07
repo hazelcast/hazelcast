@@ -66,7 +66,7 @@ public class CreateDataConnectionJdbcSqlConnectorTest extends JdbcSqlTestSupport
     @Test
     public void createDataConnectionWithPasswordInProperties() {
         assumeThat(databaseProvider).isNotInstanceOfAny(
-                H2DatabaseProvider.class,// H2 doesn't allow passing user and password in properties
+                H2DatabaseProvider.class, // H2 doesn't allow passing user and password in properties
                 MSSQLDatabaseProvider.class
         );
 

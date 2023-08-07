@@ -29,7 +29,7 @@ import java.util.Arrays;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-// Work in progress
+
 public class MSSQLUpsertQueryBuilderTest {
 
     @Mock
@@ -44,7 +44,7 @@ public class MSSQLUpsertQueryBuilderTest {
         when(jdbcTable.getExternalName()).thenReturn(new String[]{"table1"});
         when(jdbcTable.getExternalNameList()).thenReturn(singletonList("table1"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
-        when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1"));
+        when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
     }
 
     @Test
@@ -52,9 +52,8 @@ public class MSSQLUpsertQueryBuilderTest {
         MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
         StringBuilder sb = new StringBuilder();
         builder.appendIFClause(sb);
-        //TODO provide proper assertion.
         String insertClause = sb.toString();
-        assertThat(insertClause).isEqualTo("INSERT INTO `table1` (`field1`,`field2`)");
+        assertThat(insertClause).isEqualTo("IF NOT EXISTS (SELECT 1 FROM [table1] WHERE [pk1]=? AND [pk2]=?) BEGIN INSERT INTO [table1] ([field1],[field2])");
     }
 
     @Test
@@ -64,7 +63,7 @@ public class MSSQLUpsertQueryBuilderTest {
         builder.appendValuesClause(sb);
 
         String valuesClause = sb.toString();
-        assertThat(valuesClause).isEqualTo("VALUES (?,?)");
+        assertThat(valuesClause).isEqualTo("VALUES (?,?) END");
     }
 
     @Test
@@ -75,9 +74,8 @@ public class MSSQLUpsertQueryBuilderTest {
 
         String valuesClause = sb.toString();
         assertThat(valuesClause).isEqualTo(
-                "ON DUPLICATE KEY UPDATE " +
-                        "`field1` = VALUES(`field1`)," +
-                        "`field2` = VALUES(`field2`)");
+                "ELSE BEGIN UPDATE [table1] SET [field1] = ? ,[field2] = ?"
+                        + "  WHERE [pk1]=? AND [pk2]=? END");
     }
 
     @Test
@@ -85,8 +83,8 @@ public class MSSQLUpsertQueryBuilderTest {
         MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
         String result = builder.query();
         assertThat(result).isEqualTo(
-                "INSERT INTO `table1` (`field1`,`field2`) VALUES (?,?)" +
-                        " ON DUPLICATE KEY UPDATE `field1` = VALUES(`field1`),`field2` = VALUES(`field2`)"
+                "IF NOT EXISTS (SELECT 1 FROM [table1] WHERE [pk1]=? AND [pk2]=?) BEGIN INSERT INTO [table1] ([field1],[field2])"
+                        + " VALUES (?,?) END ELSE BEGIN UPDATE [table1] SET [field1] = ? ,[field2] = ?  WHERE [pk1]=? AND [pk2]=? END"
         );
     }
 }
