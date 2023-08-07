@@ -43,7 +43,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
@@ -92,53 +95,104 @@ public class JdbcJoinIndexScanProcessorSupplier
                 collect(toList());
     }
 
-    private static FunctionEx<Iterable<JetSqlRow>, Traverser<JetSqlRow>> createJoinFunction(JdbcDataConnection jdbcDataConnection,
-                                                                                            JdbcJoinParameters jdbcJoinParameters,
-                                                                                            ExpressionEvalContext evalContext) {
-        return leftRows -> joinRows(leftRows, jdbcDataConnection, jdbcJoinParameters, evalContext);
+    private static FunctionEx<Iterable<JetSqlRow>, Traverser<JetSqlRow>> createJoinFunction(
+            JdbcDataConnection jdbcDataConnection,
+            JdbcJoinParameters jdbcJoinParameters,
+            ExpressionEvalContext expressionEvalContext) {
+        return leftRows -> joinRows(leftRows, jdbcDataConnection, jdbcJoinParameters, expressionEvalContext);
     }
 
     private static Traverser<JetSqlRow> joinRows(Iterable<JetSqlRow> leftRows,
                                                  JdbcDataConnection jdbcDataConnection,
                                                  JdbcJoinParameters jdbcJoinParameters,
-                                                 ExpressionEvalContext evalContext) throws SQLException {
+                                                 ExpressionEvalContext expressionEvalContext) throws SQLException {
 
-        List<JetSqlRow> resultRows = new ArrayList<>();
+        ArrayList<JetSqlRow> leftRowsList = convertIterableToArrayList(leftRows);
+        String unionAllSql = generateSql(jdbcJoinParameters, leftRowsList);
 
-        for (JetSqlRow leftRow : leftRows) {
-            joinRow(leftRow, jdbcDataConnection, jdbcJoinParameters, evalContext, resultRows);
-        }
+        List<JetSqlRow> resultRows = joinUnionAll(leftRowsList, unionAllSql, jdbcDataConnection, jdbcJoinParameters,
+                expressionEvalContext);
+
         return traverseIterable(resultRows);
     }
 
-    private static void joinRow(JetSqlRow leftRow,
-                                JdbcDataConnection jdbcDataConnection,
-                                JdbcJoinParameters jdbcJoinParameters,
-                                ExpressionEvalContext evalContext,
-                                List<JetSqlRow> resultRows) throws SQLException {
-        String query = jdbcJoinParameters.getSelectQuery();
+    private static String generateSql(JdbcJoinParameters jdbcJoinParameters, ArrayList<JetSqlRow> leftRowsList) {
+        String delimiter = "UNION ALL ";
+        return IntStream.range(0, leftRowsList.size())
+                .mapToObj(i -> {
+                    String selectQuery = jdbcJoinParameters.getSelectQuery();
+                    return selectQuery.replaceFirst(IndexScanSelectQueryBuilder.ROW_NUMBER_LITERAL, String.valueOf(i));
+                })
+                .collect(Collectors.joining(delimiter));
+    }
+
+    private static <T> ArrayList<T> convertIterableToArrayList(Iterable<T> iterable) {
+        Stream<T> stream = StreamSupport.stream(iterable.spliterator(), false);
+        return stream.collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private static List<JetSqlRow> joinUnionAll(List<JetSqlRow> leftRowsList,
+                                                String unionAllSql,
+                                                JdbcDataConnection jdbcDataConnection,
+                                                JdbcJoinParameters jdbcJoinParameters,
+                                                ExpressionEvalContext expressionEvalContext) throws SQLException {
+
+        List<JetSqlRow> resultRows = new ArrayList<>();
+
         JetJoinInfo joinInfo = jdbcJoinParameters.getJoinInfo();
-        List<Expression<?>> projections = jdbcJoinParameters.getProjections();
 
         // Index scan : Set the parameters to PreparedStatement and iterate over the ResulSet
         try (Connection connection = jdbcDataConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+             PreparedStatement preparedStatement = connection.prepareStatement(unionAllSql)) {
 
-            setObjectsToPreparedStatement(preparedStatement, joinInfo, leftRow);
+            setObjectsToPreparedStatement(preparedStatement, joinInfo, leftRowsList);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
 
-                Object[] values = getValueArray(resultSet);
+                Object[] values = createValueArrayExcludingQueryNumber(resultSet);
+                int queryNumberColumnIndex = getQueryNumberColumnIndex(resultSet);
 
-                boolean emptyResultSet = true;
+                iterateLeftRows(leftRowsList, expressionEvalContext, resultRows, jdbcJoinParameters,
+                        resultSet, values, queryNumberColumnIndex);
+            }
+        }
+        return resultRows;
+    }
 
-                while (resultSet.next()) {
-                    emptyResultSet = false;
-                    fillValueArray(resultSet, values);
+    private static void iterateLeftRows(List<JetSqlRow> leftRowsList,
+                                        ExpressionEvalContext expressionEvalContext,
+                                        List<JetSqlRow> resultRows,
+                                        JdbcJoinParameters jdbcJoinParameters,
+                                        ResultSet resultSet,
+                                        Object[] values,
+                                        int queryNumberColumnIndex) throws SQLException {
 
-                    JetSqlRow jetSqlRowFromDB = new JetSqlRow(evalContext.getSerializationService(), values);
+        JetJoinInfo joinInfo = jdbcJoinParameters.getJoinInfo();
+        List<Expression<?>> projections = jdbcJoinParameters.getProjections();
+
+        boolean moveResultSetForward = true;
+        boolean hasNext = false;
+        for (int leftRowIndex = 0; leftRowIndex < leftRowsList.size(); leftRowIndex++) {
+            JetSqlRow leftRow = leftRowsList.get(leftRowIndex);
+            if (moveResultSetForward) {
+                hasNext = resultSet.next();
+            }
+            if (!hasNext) {
+                createExtendedRowIfNecessary(leftRow, projections, joinInfo, resultRows);
+                moveResultSetForward = false;
+            } else {
+                fillValueArray(resultSet, values);
+                int queryNumberFromResultSet = resultSet.getInt(queryNumberColumnIndex);
+                // We have arrived to new query result
+                if (leftRowIndex != queryNumberFromResultSet) {
+                    // No need to move the ResultSet forward because we could not process it yet
+                    moveResultSetForward = false;
+                    createExtendedRowIfNecessary(leftRow, projections, joinInfo, resultRows);
+                } else {
                     // Join the leftRow with the row from DB
-                    JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRowFromDB, joinInfo.nonEquiCondition(), evalContext);
+                    JetSqlRow jetSqlRowFromDB = new JetSqlRow(expressionEvalContext.getSerializationService(), values);
+                    JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRowFromDB, joinInfo.nonEquiCondition(),
+                            expressionEvalContext);
                     if (joinedRow != null) {
                         // The DB row evaluated as true
                         resultRows.add(joinedRow);
@@ -146,9 +200,7 @@ public class JdbcJoinIndexScanProcessorSupplier
                         // The DB row evaluated as false
                         createExtendedRowIfNecessary(leftRow, projections, joinInfo, resultRows);
                     }
-                }
-                if (emptyResultSet) {
-                    createExtendedRowIfNecessary(leftRow, projections, joinInfo, resultRows);
+                    moveResultSetForward = true;
                 }
             }
         }
@@ -156,12 +208,17 @@ public class JdbcJoinIndexScanProcessorSupplier
 
     private static void setObjectsToPreparedStatement(PreparedStatement preparedStatement,
                                                       JetJoinInfo joinInfo,
-                                                      JetSqlRow leftRow)
+                                                      List<JetSqlRow> leftRowsList)
             throws SQLException {
         int[] rightEquiJoinIndices = joinInfo.rightEquiJoinIndices();
-        for (int index = 0; index < rightEquiJoinIndices.length; index++) {
-            // PreparedStatement parameter index starts from 1
-            preparedStatement.setObject(index + 1, leftRow.get(index));
+
+        // PreparedStatement parameter index starts from 1
+        int objectIndex = 1;
+
+        for (JetSqlRow leftRow : leftRowsList) {
+            for (int index = 0; index < rightEquiJoinIndices.length; index++) {
+                preparedStatement.setObject(objectIndex++, leftRow.get(index));
+            }
         }
     }
 

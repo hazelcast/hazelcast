@@ -25,6 +25,7 @@ import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import static java.util.Objects.requireNonNull;
@@ -43,6 +44,7 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
         this.dataConnectionName = requireNonNull(dataConnectionName, "dataConnectionName must not be null");
     }
 
+    @Override
     public void init(@Nonnull Context context) throws Exception {
         dataConnection = context.dataConnectionService()
                                 .getAndRetainDataConnection(dataConnectionName, JdbcDataConnection.class);
@@ -56,8 +58,21 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
         }
     }
 
-    public static Object[] getValueArray(ResultSet resultSet) throws SQLException {
-        return new Object[resultSet.getMetaData().getColumnCount()];
+    public static Object[] createValueArray(ResultSet resultSet) throws SQLException {
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int columnCount = metaData.getColumnCount();
+        return new Object[columnCount];
+    }
+
+    public static Object[] createValueArrayExcludingQueryNumber(ResultSet resultSet) throws SQLException {
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int columnCount = metaData.getColumnCount();
+        return new Object[columnCount - 1];
+    }
+
+    public static int getQueryNumberColumnIndex(ResultSet resultSet) throws SQLException {
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        return metaData.getColumnCount();
     }
 
     public static void fillValueArray(ResultSet resultSet, Object[] values) throws SQLException {

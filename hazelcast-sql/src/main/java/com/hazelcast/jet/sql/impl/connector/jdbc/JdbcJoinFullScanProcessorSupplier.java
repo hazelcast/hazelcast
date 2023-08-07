@@ -123,7 +123,7 @@ public class JdbcJoinFullScanProcessorSupplier
              Statement statement = connection.createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
 
-            Object[] values = getValueArray(resultSet);
+            Object[] values = createValueArray(resultSet);
 
             boolean emptyResultSet = true;
 

@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.google.common.primitives.Ints;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.util.SqlString;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -51,7 +53,9 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
         Iterator<RexNode> it = projection.iterator();
         while (it.hasNext()) {
             RexNode node = it.next();
-            sb.append(context.toSql(null, node).toSqlString(dialect).toString());
+            SqlNode sqlNode = context.toSql(null, node);
+            SqlString sqlString = sqlNode.toSqlString(dialect);
+            sb.append(sqlString.toString());
             if (it.hasNext()) {
                 sb.append(',');
             }
