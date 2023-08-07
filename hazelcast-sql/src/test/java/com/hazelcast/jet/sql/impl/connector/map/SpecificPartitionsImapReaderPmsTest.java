@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.map.IMap;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -92,7 +91,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         map.put(0, 0);
 
         DAG dag = new DAG();
-        ProcessorMetaSupplier readPms = mapReader(mapName, new DefaultPartitioningStrategy(), List.of(
+        ProcessorMetaSupplier readPms = mapReader(mapName, null, List.of(
                 List.of(ConstantExpression.create(0, QueryDataType.INT))));
         Vertex source = dag.newVertex("source", readPms);
         Vertex sink = dag.newVertex("sink", writeMapP(sinkName));
@@ -111,7 +110,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         map.put(pKey, pKey);
 
         // Given
-        ProcessorMetaSupplier pms = mapReader(mapName, new DefaultPartitioningStrategy(), List.of(
+        ProcessorMetaSupplier pms = mapReader(mapName, null, List.of(
                 List.of(ConstantExpression.create(pKey, QueryDataType.INT))
         ));
 
