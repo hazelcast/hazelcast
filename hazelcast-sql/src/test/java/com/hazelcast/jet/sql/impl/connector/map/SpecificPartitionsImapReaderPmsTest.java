@@ -23,10 +23,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.test.TestSupport;
-import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.map.IMap;
-import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -51,7 +48,6 @@ import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.impl.JetServiceBackend.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.jet.sql.impl.connector.map.SpecificPartitionsImapReaderPms.mapReader;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -76,10 +72,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
 
         jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList());
 
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance());
-        Map<Address, int[]> partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
-                        Util.getMembersView(nodeEngine).getMembers(), null)
-                .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Map.Entry::getValue));
+        Map<Address, int[]> partitionAssignment = getPartitionAssignment(instance());
         Address ownderAddress = instance().getCluster().getLocalMember().getAddress();
         for (int i = 1; i < ITERATIONS; ++i) {
             int pIdCandidate = instance().getPartitionService().getPartition(i).getPartitionId();

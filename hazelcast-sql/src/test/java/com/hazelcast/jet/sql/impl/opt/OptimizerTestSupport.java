@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamSqlConnector;
+import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
@@ -34,6 +35,7 @@ import com.hazelcast.jet.sql.impl.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
@@ -167,10 +169,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 name,
                 fields,
                 new ConstantTableStatistics(rowCount),
-                null,
-                null,
-                null,
-                null,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                PrimitiveUpsertTargetDescriptor.INSTANCE,
+                PrimitiveUpsertTargetDescriptor.INSTANCE,
                 indexes,
                 false,
                 partitioningAttributes,
