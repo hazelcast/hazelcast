@@ -123,7 +123,7 @@ public PermissionConfig setDeny(boolean deny);
 
 ==== Permission Priority flag
 
-The deny flag is configured on a security configuration level by attribute named `permissionPriorityGrant` in the `SecurityConfig`.
+The permission priority flag is configured on a security configuration level by attribute named `permissionPriorityGrant` in the `SecurityConfig`.
 
 [source,java]
 ----
