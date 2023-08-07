@@ -2093,6 +2093,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             Set<BeanDefinition> permissions = new ManagedSet<>();
             NamedNodeMap attributes = node.getAttributes();
             Node onJoinOpAttribute = attributes.getNamedItem("on-join-operation");
+            securityConfigBuilder.addPropertyValue("permissionPriorityGrant",
+                    getBooleanValue(getAttribute(node, "priority-grant")));
             if (onJoinOpAttribute != null) {
                 String onJoinOp = getTextContent(onJoinOpAttribute);
                 OnJoinPermissionOperationName onJoinPermissionOperation = OnJoinPermissionOperationName
@@ -2119,6 +2121,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             Node nameNode = attributes.getNamedItem("name");
             String name = nameNode != null ? getTextContent(nameNode) : null;
             permissionConfigBuilder.addPropertyValue("name", name);
+            permissionConfigBuilder.addPropertyValue("deny", getBooleanValue(getAttribute(node, "deny")));
             Node principalNode = attributes.getNamedItem("principal");
             String principal = principalNode != null ? getTextContent(principalNode) : null;
             permissionConfigBuilder.addPropertyValue("principal", principal);

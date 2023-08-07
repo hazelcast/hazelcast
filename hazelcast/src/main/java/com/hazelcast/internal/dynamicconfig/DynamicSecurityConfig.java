@@ -198,6 +198,17 @@ public class DynamicSecurityConfig extends SecurityConfig {
         return staticSecurityConfig.isRealm(name);
     }
 
+
+    @Override
+    public boolean isPermissionPriorityGrant() {
+        return staticSecurityConfig.isPermissionPriorityGrant();
+    }
+
+    @Override
+    public SecurityConfig setPermissionPriorityGrant(boolean permissionPriorityGrant) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

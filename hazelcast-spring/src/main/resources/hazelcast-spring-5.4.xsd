@@ -3028,6 +3028,16 @@
                                     maxOccurs="unbounded"/>
                     </xs:choice>
                     <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>
+                    <xs:attribute name="priority-grant" type="xs:boolean" default="false">
+                        <xs:annotation>
+                            <xs:documentation>
+                                When true, the grant permissions take priority
+                                over deny ones. When the value is true and neither grant nor
+                                deny implies explicitly the checked permission, the permission
+                                is implied implicitly.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
                 </xs:complexType>
             </xs:element>
             <xs:element name="security-interceptors" type="interceptors" minOccurs="0"/>
@@ -3101,6 +3111,13 @@
             <xs:annotation>
                 <xs:documentation>
                     Name of the principal. Wildcards(*) can be used.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="deny" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    When true, subtract/deny the permission instead of granting.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

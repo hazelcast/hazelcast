@@ -649,6 +649,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testSecurity() {
         SecurityConfig securityConfig = config.getSecurityConfig();
         assertEquals(OnJoinPermissionOperationName.SEND, securityConfig.getOnJoinPermissionOperation());
+        assertTrue(securityConfig.isPermissionPriorityGrant());
         final Set<PermissionConfig> clientPermissionConfigs = securityConfig.getClientPermissionConfigs();
         assertFalse(securityConfig.getClientBlockUnmappedActions());
         assertTrue(isNotEmpty(clientPermissionConfigs));
@@ -657,12 +658,18 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
                 .addAction("create")
                 .setEndpoints(Collections.emptySet());
         assertContains(clientPermissionConfigs, pnCounterPermission);
+
+        PermissionConfig queueuPermission = new PermissionConfig(PermissionType.QUEUE, "*", "*")
+                .addAction("all");
+        assertNotContains(clientPermissionConfigs, queueuPermission);
+        queueuPermission.setDeny(true);
+        assertContains(clientPermissionConfigs, queueuPermission);
+
         Set<PermissionType> permTypes = new HashSet<>(Arrays.asList(PermissionType.values()));
         for (PermissionConfig pc : clientPermissionConfigs) {
             permTypes.remove(pc.getType());
         }
         assertTrue("All permission types should be listed in fullConfig. Not found ones: " + permTypes, permTypes.isEmpty());
-
         RealmConfig kerberosRealm = securityConfig.getRealmConfig("kerberosRealm");
         assertNotNull(kerberosRealm);
         KerberosAuthenticationConfig kerbAuthentication = kerberosRealm.getKerberosAuthenticationConfig();
