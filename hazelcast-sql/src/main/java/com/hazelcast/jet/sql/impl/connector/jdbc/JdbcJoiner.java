@@ -30,7 +30,7 @@ public class JdbcJoiner {
     }
 
     public ProcessorSupplier createProcessorSupplier() {
-        ProcessorSupplier processorSupplier = null;
+        ProcessorSupplier processorSupplier;
         JetJoinInfo joinInfo = nestedLoopReaderParams.getJoinInfo();
 
         if (!joinInfo.isEquiJoin()) {
