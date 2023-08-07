@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.mssql;
 
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastStringFunction;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlWriter;
@@ -49,6 +50,14 @@ public class HazelcastMSSQLDialect extends MssqlSqlDialect {
                     break;
                 }
 
+            case OTHER_FUNCTION:
+                if (isLengthFunction(call)) {
+                    unparseLength(writer, call);
+                    break;
+                } else {
+                    super.unparseCall(writer, call, leftPrec, rightPrec);
+                    break;
+                }
             default:
                 super.unparseCall(writer, call, leftPrec, rightPrec);
         }
@@ -56,6 +65,21 @@ public class HazelcastMSSQLDialect extends MssqlSqlDialect {
 
     private void unparseConcat(SqlWriter writer, SqlCall call) {
         writer.print("CONCAT");
+        Frame frame = writer.startList(FrameTypeEnum.PARENTHESES, "(", ")");
+        for (SqlNode operand : call.getOperandList()) {
+            writer.sep(",");
+            operand.unparse(writer, 0, 0);
+        }
+        writer.endList(frame);
+    }
+
+    private static boolean isLengthFunction(SqlCall basicCall) {
+        return basicCall.getOperator() instanceof HazelcastStringFunction
+                && basicCall.getOperator().getName().equals("LENGTH");
+    }
+
+    private void unparseLength(SqlWriter writer, SqlCall call) {
+        writer.print("LEN");
         Frame frame = writer.startList(FrameTypeEnum.PARENTHESES, "(", ")");
         for (SqlNode operand : call.getOperandList()) {
             writer.sep(",");

@@ -424,7 +424,7 @@ public final class RexToExpression {
 
                 // Strings.
 
-                if (function == CHAR_LENGTH || function == CHARACTER_LENGTH || function == LENGTH || function == LEN) {
+                if (function == CHAR_LENGTH || function == CHARACTER_LENGTH || function == LENGTH) {
                     return CharLengthFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.UPPER) {
                     return UpperFunction.create(operands[0]);

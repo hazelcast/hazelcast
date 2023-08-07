@@ -38,7 +38,6 @@ public final class HazelcastStringFunction extends HazelcastFunction {
     public static final SqlFunction CHAR_LENGTH = HazelcastStringFunction.withIntegerReturn("CHAR_LENGTH");
     public static final SqlFunction CHARACTER_LENGTH = HazelcastStringFunction.withIntegerReturn("CHARACTER_LENGTH");
     public static final SqlFunction LENGTH = HazelcastStringFunction.withIntegerReturn("LENGTH");
-    public static final SqlFunction LEN = HazelcastStringFunction.withIntegerReturn("LEN");
 
     public static final SqlFunction LOWER = HazelcastStringFunction.withStringReturn("LOWER");
     public static final SqlFunction UPPER = HazelcastStringFunction.withStringReturn("UPPER");

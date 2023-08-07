@@ -235,7 +235,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction CHAR_LENGTH = HazelcastStringFunction.CHAR_LENGTH;
     public static final SqlFunction CHARACTER_LENGTH = HazelcastStringFunction.CHARACTER_LENGTH;
     public static final SqlFunction LENGTH = HazelcastStringFunction.LENGTH;
-    public static final SqlFunction LEN = HazelcastStringFunction.LEN;
 
     public static final SqlFunction LOWER = HazelcastStringFunction.LOWER;
     public static final SqlFunction UPPER = HazelcastStringFunction.UPPER;

@@ -34,6 +34,7 @@ public class SupportsRexVisitor extends RexVisitorImpl<Boolean> {
             "||",
             "NOT LIKE",
             "LENGTH",
+            "LEN",
             "LOWER",
             "UPPER"
     );
