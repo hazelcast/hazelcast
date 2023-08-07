@@ -20,9 +20,9 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 
-import java.util.List;
+import java.util.Set;
 
 public interface JobInvocationObserver {
 
-    void onJobInvocation(long jobId, List<MemberInfo> members, DAG dag, JobConfig jobConfig);
+    void onJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig);
 }
