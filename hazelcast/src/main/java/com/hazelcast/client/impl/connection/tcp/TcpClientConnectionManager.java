@@ -1023,7 +1023,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onConnectionToNewCluster(isFailoverSupported);
+                client.onConnectionToNewCluster();
+                client.getClientClusterService().setFailoverSupported(isFailoverSupported);
             }
             checkClientState(connection, switchingToNextCluster);
 
@@ -1039,6 +1040,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 // The first connection that opens a connection to the new cluster should set `clusterId`.
                 // This one will initiate `initializeClientOnCluster` if necessary.
                 clusterId = newClusterId;
+                client.getClientClusterService().setFailoverSupported(isFailoverSupported);
                 if (establishedInitialClusterConnection) {
                     // In split brain, the client might connect to the one half
                     // of the cluster, and then later might reconnect to the

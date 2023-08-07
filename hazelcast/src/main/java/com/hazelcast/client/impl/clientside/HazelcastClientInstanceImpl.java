@@ -885,12 +885,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         connectionManager.reset();
     }
 
-    public void onConnectionToNewCluster(boolean isFailoverSupported) {
+    public void onConnectionToNewCluster() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
-        clusterService.onClusterConnect(isFailoverSupported);
+        clusterService.onClusterConnect();
     }
 
     public void collectAndSendStatsNow() {

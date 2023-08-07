@@ -82,4 +82,10 @@ public interface ClientClusterService {
      * @throws IllegalStateException If called from a Hazelcast client, and it is not in a cluster.
      */
     boolean isEnterprise();
+
+    /**
+     * Sets the failover supported flag. This is used to determine if the client is connected to a EE
+     * cluster or not. See {@link #isEnterprise()}.
+     */
+    void setFailoverSupported(boolean failoverSupported);
 }
