@@ -20,7 +20,7 @@ import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.dataconnection.impl.InternalDataConnectionService;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -144,6 +144,7 @@ import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.apache.calcite.sql.util.SqlString;
 import org.apache.calcite.tools.RuleSets;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -158,7 +159,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.cluster.Versions.V5_3;
-import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateDataConnectionPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
@@ -251,6 +252,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.relationsStorage, connectorCache);
         DataConnectionResolver dataConnectionResolver = dataConnectionCatalog(
                 nodeEngine.getDataConnectionService(),
+                connectorCache,
                 dataConnectionStorage,
                 nodeEngine.getHazelcastInstance().getConfig().getSecurityConfig().isEnabled()
         );
@@ -274,10 +276,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private static DataConnectionResolver dataConnectionCatalog(
             InternalDataConnectionService dataConnectionService,
+            SqlConnectorCache connectorCache,
             DataConnectionStorage storage,
             boolean isSecurityEnabled
     ) {
-        return new DataConnectionResolver(dataConnectionService, storage, isSecurityEnabled);
+        return new DataConnectionResolver(dataConnectionService, connectorCache, storage, isSecurityEnabled);
     }
 
     @Nullable
@@ -645,10 +648,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof UpdatePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
-            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
                     physicalRel,
                     parameterMetadata,
-                    context.getUsedViews());
+                    context.getUsedViews(),
+                    null);
             return new DmlPlan(
                     Operation.UPDATE,
                     planKey,
@@ -675,10 +679,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
                     physicalRel,
                     parameterMetadata,
-                    context.getUsedViews());
+                    context.getUsedViews(),
+                    null);
             return new DmlPlan(
                     operation,
                     planKey,
@@ -692,10 +697,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             );
         } else if (physicalRel instanceof DeletePhysicalRel) {
             checkDmlOperationWithView(physicalRel);
-            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
                     physicalRel,
                     parameterMetadata,
-                    context.getUsedViews());
+                    context.getUsedViews(),
+                    null);
             return new DmlPlan(
                     Operation.DELETE,
                     planKey,
@@ -708,10 +714,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            Tuple3<DAG, Set<PlanObjectKey>, Integer> dagAndKeys = createDag(
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(
                     new RootRel(physicalRel),
                     parameterMetadata,
-                    context.getUsedViews());
+                    context.getUsedViews(),
+                    partitionStrategyCandidates(physicalRel, parameterMetadata));
 
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
@@ -728,8 +735,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     rowMetadata,
                     planExecutor,
                     permissions,
-                    partitionStrategyCandidates(physicalRel, parameterMetadata),
-                    dagAndKeys.f2()
+                    partitionStrategyCandidates(physicalRel, parameterMetadata)
             );
         }
     }
@@ -896,11 +902,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new SqlRowMetadata(columns);
     }
 
-    private Tuple3<DAG, Set<PlanObjectKey>, Integer> createDag(
+    private Tuple2<DAG, Set<PlanObjectKey>> createDag(
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata,
-            Set<PlanObjectKey> usedViews
-    ) {
+            Set<PlanObjectKey> usedViews,
+            @Nullable Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates) {
         String exceptionMessage = new ExecutionStopperFinder(physicalRel).find();
         if (exceptionMessage != null) {
             throw QueryException.error(exceptionMessage);
@@ -910,10 +916,15 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         wmKeysAssigner.assignWatermarkKeys();
         logger.finest("Watermark keys assigned");
 
-        CreateTopLevelDagVisitor visitor = new CreateTopLevelDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
+        CreateTopLevelDagVisitor visitor = new CreateTopLevelDagVisitor(
+                nodeEngine,
+                parameterMetadata,
+                wmKeysAssigner,
+                usedViews,
+                partitionStrategyCandidates);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
-        return tuple3(visitor.getDag(), visitor.getObjectKeys(), visitor.requiredRootPartitionId());
+        return tuple2(visitor.getDag(), visitor.getObjectKeys());
     }
 
     private void checkDmlOperationWithView(PhysicalRel rel) {
@@ -923,18 +934,24 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
     }
 
+    @Nonnull
     private Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates(
             PhysicalRel root, QueryParameterMetadata parameterMetadata) {
-        HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
-        final Map<String, List<Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
-
-        RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
-
-        final Map<String, Table> tableMap = tableResolvers().stream()
+        Map<String, Table> tableMap = tableResolvers().stream()
                 .map(TableResolver::getTables)
                 .flatMap(Collection::stream)
                 .filter(table -> table.getSchemaName().equals(QueryUtils.SCHEMA_NAME_PUBLIC))
                 .collect(Collectors.toMap(Table::getSqlName, Function.identity()));
+        return partitionStrategyCandidates(root, parameterMetadata, tableMap);
+    }
+
+    @Nonnull
+    public static Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates(
+            PhysicalRel root, QueryParameterMetadata parameterMetadata, Map<String, Table> tableMap) {
+        HazelcastRelMetadataQuery query = OptUtils.metadataQuery(root);
+        final Map<String, List<Map<String, RexNode>>> prunabilityMap = query.extractPrunability(root);
+
+        RexToExpressionVisitor visitor = new RexToExpressionVisitor(schema(root.getRowType()), parameterMetadata);
 
         final Map<String, List<Map<String, Expression<?>>>> result = new HashMap<>();
         for (final String tableName : prunabilityMap.keySet()) {
@@ -950,11 +967,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     final String fieldName = columnName.equals(QueryPath.KEY)
                             ? QueryPath.KEY
                             : table.keyFields()
-                                    .filter(f -> f.getName().equals(columnName))
-                                    .findFirst()
-                                    .map(mapTableField -> mapTableField.getPath().getPath())
-                                    .orElseThrow(() -> QueryException.error(format("Can not find column %s in table %s",
-                                            tableName, columnName)));
+                            .filter(f -> f.getName().equals(columnName))
+                            .findFirst()
+                            .map(mapTableField -> mapTableField.getPath().getPath())
+                            .orElseThrow(() -> QueryException.error(format("Can not find column %s in table %s",
+                                    tableName, columnName)));
 
                     final RexNode rexNode = variant.get(columnName);
                     if (rexNode instanceof RexDynamicParam) {
