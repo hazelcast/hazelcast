@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -44,22 +45,25 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientClusterProxyTest extends HazelcastTestSupport {
 
-    private TestHazelcastFactory factory;
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final String clusterName = "HZ:CLUSTER";
+    private HazelcastInstance instance;
 
     @After
     public void tearDown() {
         factory.shutdownAll();
     }
 
-    private HazelcastInstance client() {
-        factory = new TestHazelcastFactory();
+    private HazelcastInstance createInstance() {
         Config config = new Config();
-        String clusterAName = "HZ:CLUSTER";
-        config.setClusterName(clusterAName);
-        factory.newHazelcastInstance(config);
+        config.setClusterName(clusterName);
+        return factory.newHazelcastInstance(config);
+    }
+    private HazelcastInstance client() {
+        instance = createInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName(config.getClusterName());
+        clientConfig.setClusterName(clusterName);
         return factory.newHazelcastClient(clientConfig);
     }
 
@@ -131,6 +135,30 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
     @Test
     public void isEnterprise() {
         assertFalse(client().getCluster().isEnterprise());
+    }
+
+    @Test
+    public void isEnterpriseReconnectionToCluster() {
+        HazelcastInstance client = client();
+        assertFalse(client.getCluster().isEnterprise());
+        instance.shutdown();
+        // isEnterprise should throw IllegalStateException when disconnected
+        assertThatThrownBy(client.getCluster()::isEnterprise)
+                .isInstanceOf(IllegalStateException.class)
+                .hasStackTraceContaining("The client is not connected");
+        // Reconnect and isEnterprise should be true eventually
+        createInstance();
+        assertTrueEventually(() -> {
+            try {
+                assertFalse(client.getCluster().isEnterprise());
+            } catch (IllegalStateException e) {
+                if (e.getMessage().contains("The client is not connected")) {
+                    throw new AssertionError("Not connected yet");
+                } else {
+                    throw e;
+                }
+            }
+        });
     }
 
     @Test(expected = IllegalStateException.class)
