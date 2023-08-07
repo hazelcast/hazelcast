@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
@@ -29,24 +31,31 @@ class IndexScanSelectQueryBuilder extends SelectQueryBuilder {
     IndexScanSelectQueryBuilder(JdbcTable table,
                                 SqlDialect dialect,
                                 List<RexNode> projection,
-                                int[] rightEquiJoinIndices) {
+                                JetJoinInfo joinInfo) {
         super(table, dialect, null, projection);
 
         // Create the where clause from indices
         StringBuilder stringBuilder = new StringBuilder(this.query);
-        appendIndices(stringBuilder, rightEquiJoinIndices);
+        appendIndices(stringBuilder, joinInfo);
         query = stringBuilder.toString();
     }
 
-    private void appendIndices(StringBuilder stringBuilder, int[] rightEquiJoinIndices) {
+    private void appendIndices(StringBuilder stringBuilder, JetJoinInfo joinInfo) {
         stringBuilder.append(" WHERE ");
 
+        // Join On Multiple Conditions usually use AND predicate
+        // e.g.  "JOIN table2 ON table1.column = table2.column AND table1.column1 = table2.column1"
+        String delimiter = "AND ";
+        if (joinInfo.condition() instanceof OrPredicate) {
+            delimiter = "OR ";
+        }
+        int[] rightEquiJoinIndices = joinInfo.rightEquiJoinIndices();
         String whereClause = Arrays.stream(rightEquiJoinIndices)
                 .mapToObj(index -> {
                     TableField tableField = jdbcTable.getField(index);
                     return tableField.getName() + " = ? ";
                 })
-                .collect(Collectors.joining("AND "));
+                .collect(Collectors.joining(delimiter));
         stringBuilder.append(whereClause);
     }
 }

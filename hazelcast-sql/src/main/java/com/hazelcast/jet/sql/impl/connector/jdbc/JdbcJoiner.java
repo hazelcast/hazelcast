@@ -59,7 +59,7 @@ public class JdbcJoiner {
                 nestedLoopReaderParams.getJdbcTable(),
                 nestedLoopReaderParams.getSqlDialect(),
                 nestedLoopReaderParams.getRexProjection(),
-                joinInfo.rightEquiJoinIndices()
+                joinInfo
         );
         String selectQuery = queryBuilder.query();
         return new JdbcJoinIndexScanProcessorSupplier(nestedLoopReaderParams, selectQuery);
