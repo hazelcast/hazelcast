@@ -49,7 +49,7 @@ public class NioNetworkScheduler implements NetworkScheduler<NioAsyncSocket> {
     }
 
     @Override
-    public boolean isDirty() {
+    public boolean hasPending() {
         return !dirtyQueue.isEmpty();
     }
 }

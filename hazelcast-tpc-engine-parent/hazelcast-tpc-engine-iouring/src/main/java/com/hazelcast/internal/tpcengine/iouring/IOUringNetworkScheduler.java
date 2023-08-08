@@ -45,7 +45,7 @@ public class IOUringNetworkScheduler implements NetworkScheduler<IOUringAsyncSoc
     }
 
     @Override
-    public boolean isDirty() {
+    public boolean hasPending() {
         return !dirtyQueue.isEmpty();
     }
 }

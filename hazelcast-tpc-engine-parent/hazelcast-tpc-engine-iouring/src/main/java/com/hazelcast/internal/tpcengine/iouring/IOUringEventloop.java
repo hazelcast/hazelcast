@@ -110,13 +110,13 @@ public final class IOUringEventloop extends Eventloop {
             throw newUncheckedIOException("Could not find storage device for [" + path + "]");
         }
 
-        StorageScheduler blockRequestScheduler = storageSchedulers.get(dev);
-        if (blockRequestScheduler == null) {
-            blockRequestScheduler = new IOUringStorageScheduler(dev, this);
-            storageSchedulers.put(dev, blockRequestScheduler);
+        StorageScheduler storageScheduler = storageSchedulers.get(dev);
+        if (storageScheduler == null) {
+            storageScheduler = new IOUringStorageScheduler(dev, this);
+            storageSchedulers.put(dev, storageScheduler);
         }
 
-        return new IOUringAsyncFile(path, this, blockRequestScheduler);
+        return new IOUringAsyncFile(path, this, storageScheduler);
     }
 
     @Override
@@ -129,10 +129,6 @@ public final class IOUringEventloop extends Eventloop {
     protected void park(long timeoutNanos) throws IOException {
         ioUringNetworkScheduler.tick();
 
-        // todo: what if a dirty socket got added at this point.
-        // it will not wakeup the eventloop because the wakeup needed
-        // flag isn't set.
-
         boolean completions = false;
         if (cq.hasCompletions()) {
             completions = true;
@@ -140,12 +136,10 @@ public final class IOUringEventloop extends Eventloop {
         }
 
         if (spin || timeoutNanos == 0 || completions) {
-            //System.out.println("submit1");
             sq.submit();
         } else {
             wakeupNeeded.set(true);
-            if (scheduleBlockedOutside() || ioUringNetworkScheduler.isDirty()) {
-                //System.out.println("submit2");
+            if (hasPendingOutsideTaskQueue() || ioUringNetworkScheduler.hasPending()) {
                 sq.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {

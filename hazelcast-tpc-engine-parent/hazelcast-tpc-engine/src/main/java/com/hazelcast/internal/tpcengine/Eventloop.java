@@ -290,6 +290,19 @@ public abstract class Eventloop {
         return scheduled;
     }
 
+    protected final boolean hasPendingOutsideTaskQueue() {
+        TaskQueue queue = sharedFirst;
+
+        while (queue != null) {
+            if (!queue.outside.isEmpty()) {
+                return true;
+            }
+            queue = queue.next;
+        }
+
+        return false;
+    }
+
     final void removeBlockedOutside(TaskQueue taskQueue) {
         assert taskQueue.outside != null;
         assert taskQueue.runState == RUN_STATE_BLOCKED;

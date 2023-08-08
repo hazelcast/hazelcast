@@ -42,5 +42,5 @@ public interface NetworkScheduler<S extends AsyncSocket> {
         return schedule(socket);
     }
 
-    boolean isDirty();
+    boolean hasPending();
 }
