@@ -55,12 +55,10 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final SocketChannel socketChannel;
     private final SelectionKey key;
     private final IOVector ioVector = new IOVector();
-
-    // only accessed from eventloop thread
     private boolean connecting;
     private volatile CompletableFuture<Void> connectFuture;
 
-    NioAsyncSocket(Builder builder) {
+    private NioAsyncSocket(Builder builder) {
         super(builder);
 
         try {
@@ -71,7 +69,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             }
             this.handler = new Handler(builder);
             this.key = socketChannel.register(builder.selector, 0, handler);
-            reader.init(this);
+            reactor.sockets().add(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

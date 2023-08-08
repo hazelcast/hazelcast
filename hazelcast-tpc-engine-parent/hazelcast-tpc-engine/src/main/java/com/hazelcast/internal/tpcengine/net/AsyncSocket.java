@@ -84,7 +84,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         this.writeQueue = builder.writeQueue;
         this.reader = builder.reader;
         this.options = builder.options;
-        reactor.sockets().add(this);
+        reader.init(this);
     }
 
     /**

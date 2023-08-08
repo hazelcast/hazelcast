@@ -68,7 +68,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
-    private final IOUringEventloop eventloop;
+    private final IOUringEventloop ioUringEventloop;
     private final SubmissionQueue sq;
 
     private final CompletionHandler_OP_READ handler_OP_READ;
@@ -100,25 +100,22 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             this.remoteAddress = linuxSocket.getRemoteAddress();
         }
 
-        this.eventloop = (IOUringEventloop) reactor.eventloop();
-        this.sq = eventloop.sq;
+        this.ioUringEventloop = (IOUringEventloop) reactor.eventloop();
+        this.sq = ioUringEventloop.sq;
         this.rcvBuff = ByteBuffer.allocateDirect(options.get(Options.SO_RCVBUF));
 
         this.handler_OP_READ = new CompletionHandler_OP_READ();
-        this.userdata_OP_READ = eventloop.nextPermanentHandlerId();
-        eventloop.handlers.put(userdata_OP_READ, handler_OP_READ);
+        this.userdata_OP_READ = ioUringEventloop.nextPermanentHandlerId();
+        ioUringEventloop.handlers.put(userdata_OP_READ, handler_OP_READ);
 
         this.handler_OP_WRITE = new CompletionHandler_OP_WRITE();
-        this.userdata_OP_WRITE = eventloop.nextPermanentHandlerId();
-        eventloop.handlers.put(userdata_OP_WRITE, handler_OP_WRITE);
+        this.userdata_OP_WRITE = ioUringEventloop.nextPermanentHandlerId();
+        ioUringEventloop.handlers.put(userdata_OP_WRITE, handler_OP_WRITE);
 
         this.handler_op_WRITEV = new CompletionHandler_OP_WRITEV();
-        this.userdata_OP_WRITEV = eventloop.nextPermanentHandlerId();
-        eventloop.handlers.put(userdata_OP_WRITEV, handler_op_WRITEV);
+        this.userdata_OP_WRITEV = ioUringEventloop.nextPermanentHandlerId();
+        ioUringEventloop.handlers.put(userdata_OP_WRITEV, handler_op_WRITEV);
 
-        // todo: on closing of the socket we need to deregister the event handlers.
-
-        reader.init(this);
         reactor.sockets().add(this);
     }
 
@@ -343,7 +340,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             try {
                 if (res > 0) {
                     int bytesRead = res;
-                    LAST_READ_TIME_NANOS.setOpaque(IOUringAsyncSocket.this, eventloop.taskStartNanos());
+                    LAST_READ_TIME_NANOS.setOpaque(IOUringAsyncSocket.this, ioUringEventloop.taskStartNanos());
                     metrics.incReads();
                     metrics.incBytesRead(bytesRead);
 
