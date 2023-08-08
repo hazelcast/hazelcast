@@ -110,13 +110,10 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     private final DagBuildContextImpl dagBuildContext;
 
-    private Integer requiredRootPartitionId;
-    private Object coordinatorPartitioningKey;
-
     public CreateTopLevelDagVisitor(
             NodeEngine nodeEngine,
             QueryParameterMetadata parameterMetadata,
-            @Nullable WatermarkKeysAssigner watermarkKeysAssigner,
+            WatermarkKeysAssigner watermarkKeysAssigner,
             Set<PlanObjectKey> usedViews,
             @Nullable Map<String, List<Map<String, Expression<?>>>> partitionStrategyCandidates
     ) {
@@ -128,7 +125,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         this.partitionStrategyCandidates = partitionStrategyCandidates;
 
         dagBuildContext = new DagBuildContextImpl(nodeEngine, getDag(), parameterMetadata);
-        findLocalPartitioningKey();
     }
 
     @Override
@@ -326,7 +322,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Edge edge = between(sortVertex, combineVertex)
                 .ordered(comparator)
                 .distributeTo(localMemberAddress)
-                .allToOne(coordinatorPartitioningKey);
+                .allToOne("");
         dag.edge(edge);
 
         return combineVertex;
@@ -344,7 +340,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 )
         );
         connectInput(rel.getInput(), vertex, edge ->
-                edge.distributeTo(localMemberAddress).allToOne(coordinatorPartitioningKey));
+                edge.distributeTo(localMemberAddress).allToOne(""));
         return vertex;
     }
 
@@ -372,7 +368,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 )
         );
         connectInput(rel.getInput(), vertex, edge ->
-                edge.distributeTo(localMemberAddress).allToOne(coordinatorPartitioningKey));
+                edge.distributeTo(localMemberAddress).allToOne(""));
         return vertex;
     }
 
@@ -469,7 +465,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             resultMapping,
                             watermarkKey));
             connectInput(rel.getInput(), vertex, edge ->
-                    edge.distributeTo(localMemberAddress).allToOne(coordinatorPartitioningKey));
+                    edge.distributeTo(localMemberAddress).allToOne(""));
             return vertex;
         } else {
             assert rel.numStages() == 2;
@@ -653,7 +649,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
         // allToOne with any key, it goes to a single processor on a single member anyway.
         connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress)
-                .allToOne(coordinatorPartitioningKey));
+                .allToOne(""));
         return vertex;
     }
 
@@ -696,11 +692,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     public Set<PlanObjectKey> getObjectKeys() {
         return objectKeys;
-    }
-
-    @Nullable
-    public Integer requiredRootPartitionId() {
-        return requiredRootPartitionId;
     }
 
     /**
@@ -803,19 +794,5 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
-    }
-
-    private void findLocalPartitioningKey() {
-        final int limit = 1000;
-        for (int i = 0; i < limit; ++i) {
-            Object key = i;
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            if (nodeEngine.getPartitionService().getPartition(partitionId).isLocal()) {
-                this.coordinatorPartitioningKey = key;
-                this.requiredRootPartitionId = partitionId;
-                return;
-            }
-        }
-        assert false : "Could not find a local partitioning key in " + limit + " tries";
     }
 }
