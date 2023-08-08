@@ -46,11 +46,18 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Get Secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            DEVOPS_GITHUB_TOKEN,CN/DEVOPS_GITHUB_TOKEN
+            GCP_SA_KEY,CN/GKE_SA_KEY
+
       - name: Checkout Auto Discovery Test Suite
         uses: actions/checkout@v3
         with:
           repository: hazelcast/auto-discovery-test-suite
-          token: ${{ secrets.DEVOPS_GITHUB_TOKEN }}
+          token: ${{ env.DEVOPS_GITHUB_TOKEN }}
           path: aws-discovery-suite
 
       - name: Decide which ref to checkout
@@ -129,7 +136,7 @@ jobs:
         with:
           registry: us-east1-docker.pkg.dev
           username: _json_key
-          password: ${{ secrets.GCP_SA_KEY }}
+          password: ${{ env.GCP_SA_KEY }}
 
       - name: Build Hazelcast Image
         id: get-hz-image-tag
@@ -164,11 +171,17 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Get Secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            DEVOPS_GITHUB_TOKEN,CN/DEVOPS_GITHUB_TOKEN
+
       - name: Checkout Auto Discovery Test Suite
         uses: actions/checkout@v3
         with:
           repository: hazelcast/auto-discovery-test-suite
-          token: ${{ secrets.DEVOPS_GITHUB_TOKEN }}
+          token: ${{ env.DEVOPS_GITHUB_TOKEN }}
           path: aws-discovery-suite
 
       - name: Download hazelcast.jar
