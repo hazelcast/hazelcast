@@ -40,7 +40,7 @@ import static java.util.Collections.singletonList;
  * the job execution.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-public class PartitionPruningIT extends SqlTestSupport {
+public class PartitionPruningIntegrationTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
         initialize(6, null);
