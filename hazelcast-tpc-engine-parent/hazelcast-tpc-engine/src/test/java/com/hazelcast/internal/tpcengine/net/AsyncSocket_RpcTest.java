@@ -18,8 +18,7 @@ package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
-import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import com.hazelcast.internal.tpcengine.util.PrintAtomicLongThread;
 import org.junit.After;
 import org.junit.Before;
@@ -41,7 +40,6 @@ import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
 
 /**
  * Mimics an RPC call. So there are worker threads that send request with a
@@ -56,8 +54,9 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
 public abstract class AsyncSocket_RpcTest {
     // use small buffers to cause a lot of network scheduling overhead
     // (and shake down problems)
-    public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
+    private static final int SIZEOF_HEADER = SIZEOF_INT + SIZEOF_LONG;
 
+    public int socketBufferSize = 16 * 1024;
     public long durationMillis = 500;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     public boolean localWrite;
@@ -65,7 +64,7 @@ public abstract class AsyncSocket_RpcTest {
     private final AtomicLong counter = new AtomicLong();
     private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", counter);
 
-    private final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, CompletableFuture<IOBuffer>> futures = new ConcurrentHashMap<>();
     private Reactor clientReactor;
     private Reactor serverReactor;
 
@@ -301,9 +300,9 @@ public abstract class AsyncSocket_RpcTest {
     private AsyncSocket newClient(SocketAddress serverAddress) {
         AsyncSocket.Builder clientSocketBuilder = clientReactor.newAsyncSocketBuilder();
         clientSocketBuilder.options.set(TCP_NODELAY, true);
-        clientSocketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
-        clientSocketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
-        clientSocketBuilder.reader = new ClientReader();
+        clientSocketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+        clientSocketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+        clientSocketBuilder.reader = new RpcReader(true);
         AsyncSocket clientSocket = clientSocketBuilder.build();
 
         clientSocket.start();
@@ -313,13 +312,13 @@ public abstract class AsyncSocket_RpcTest {
 
     private AsyncServerSocket newServer() {
         AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
-        serverSocketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+        serverSocketBuilder.options.set(SO_RCVBUF, socketBufferSize);
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.options.set(TCP_NODELAY, true);
-            socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
-            socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
-            socketBuilder.reader = new ServerReader();
+            socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+            socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+            socketBuilder.reader = new RpcReader(false);
             AsyncSocket socket = socketBuilder.build();
             socket.start();
         };
@@ -330,85 +329,61 @@ public abstract class AsyncSocket_RpcTest {
         return serverSocket;
     }
 
-    private class ServerReader extends AsyncSocket.Reader {
-        private ByteBuffer payloadBuffer;
+    private class RpcReader extends AsyncSocket.Reader {
+        private IOBuffer response;
+        private final boolean clientSide;
         private long callId;
-        private int payloadSize = -1;
-        private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+
+        private RpcReader(boolean clientSide) {
+            this.clientSide = clientSide;
+        }
 
         @Override
         public void onRead(ByteBuffer src) {
             for (; ; ) {
-                if (payloadSize == -1) {
-                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                if (response == null) {
+                    if (src.remaining() < SIZEOF_HEADER) {
                         break;
                     }
-                    payloadSize = src.getInt();
+                    int payloadSize = src.getInt();
                     callId = src.getLong();
-                    payloadBuffer = ByteBuffer.allocate(payloadSize);
+
+                    response = new IOBuffer(SIZEOF_HEADER + payloadSize, true);
+                    response.byteBuffer().limit(SIZEOF_HEADER + payloadSize);
+                    response.writeInt(payloadSize);
+                    response.writeLong(callId);
                 }
 
-                put(payloadBuffer, src);
-                if (payloadBuffer.remaining() > 0) {
+                BufferUtil.put(response.byteBuffer(), src);
+                //response.write(src);
+
+                if (response.remaining() > 0) {
                     // not all bytes have been received.
                     break;
                 }
+                response.flip();
 
-                payloadBuffer.flip();
-                IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
-                responseBuf.writeInt(payloadSize);
-                responseBuf.writeLong(callId);
-                responseBuf.write(payloadBuffer);
-                responseBuf.flip();
+                if (clientSide) {
+                    counter.incrementAndGet();
+                    CompletableFuture<IOBuffer> future = futures.remove(callId);
+                    if (future == null) {
+                        throw new IllegalStateException("Can't find future for callId:" + callId);
+                    }
+                    future.complete(response);
+                } else {
+                    boolean offered = localWrite
+                            ? socket.insideWriteAndFlush(response)
+                            : socket.writeAndFlush(response);
 
-                boolean offered = localWrite
-                        ? socket.insideWriteAndFlush(responseBuf)
-                        : socket.writeAndFlush(responseBuf);
-
-                if (!offered) {
-                    throw new RuntimeException("Socket has no space");
+                    if (!offered) {
+                        throw new RuntimeException("Socket has no space");
+                    }
                 }
-                payloadSize = -1;
+                response = null;
             }
         }
     }
 
-    private class ClientReader extends AsyncSocket.Reader {
-        private ByteBuffer payloadBuffer;
-        private long callId;
-        private int payloadSize = -1;
-
-        @Override
-        public void onRead(ByteBuffer src) {
-            for (; ; ) {
-                if (payloadSize == -1) {
-                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
-                        break;
-                    }
-
-                    payloadSize = src.getInt();
-                    callId = src.getLong();
-                    payloadBuffer = ByteBuffer.allocate(payloadSize);
-                }
-
-                put(payloadBuffer, src);
-
-                if (payloadBuffer.remaining() > 0) {
-                    // not all bytes have been received.
-                    break;
-                }
-                payloadBuffer.flip();
-
-                counter.incrementAndGet();
-                CompletableFuture future = futures.remove(callId);
-                if (future == null) {
-                    throw new IllegalStateException("Can't find future for callId:" + callId);
-                }
-                future.complete(null);
-                payloadSize = -1;
-            }
-        }
-    }
 
 //    private class MonitorThread extends Thread {
 //        private volatile boolean stop;
