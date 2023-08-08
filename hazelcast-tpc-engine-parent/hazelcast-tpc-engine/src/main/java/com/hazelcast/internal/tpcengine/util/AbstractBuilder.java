@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpcengine.util;
 
 /**
- *
  * <p/>
  * A builder contains the parameters injected into some object. Using the
  * builder the object can be configured. Effectively it a fancy constructor.
@@ -48,48 +47,49 @@ package com.hazelcast.internal.tpcengine.util;
  *          Makes it easy for all 'dependency' fields of the object to be final.
  *      </li>>
  * </ol>
+ * <p/>
+ * The AbstractBuilder isn't threadsafe.
  */
 public abstract class AbstractBuilder<E> {
 
-    private boolean concluded;
     private boolean built;
 
     /**
-     * Finalizes the context configuration.
+     * Finalizes the builder configuration.
      * <p/>
      * The conclude method is responsible for validating the parameters and
-     * initializing
+     * initializing fields where needed.
+     * <p/>
+     * This method will called exactly once per builder instance.
      */
     protected void conclude() {
     }
 
     /**
-     * Builds the actual object.
+     * Constructs the actual object.
+     * <p/>
+     * The {@link #conclude()} is guaranteed to have run before this method is
+     * called.
      *
      * @return the created object.
      */
-    protected abstract E doBuild();
-
-    protected void prebuild() {
-    }
+    protected abstract E construct();
 
     /**
      * Creates the object.
+     * <p/>
+     * Should only be called once.
      *
-     * @param <E> the type of the object created.
      * @return the created object.
+     * @throws IllegalStateException if the build method has been called before
+     *                               or if there are other validation problems.
      */
     public final E build() {
-        if (concluded) {
-            throw new IllegalStateException(this + " is already concluded.");
-        }
-        concluded = true;
-        conclude();
         if (built) {
             throw new IllegalStateException(this + " is already built.");
         }
         built = true;
-        prebuild();
-        return doBuild();
+        conclude();
+        return construct();
     }
 }

@@ -229,7 +229,7 @@ public final class TpcEngine {
          * @return the created instance.
          * @throws IllegalStateException if a TpcEngine already has already been built.
          */
-        protected TpcEngine doBuild() {
+        protected TpcEngine construct() {
             return new TpcEngine(this);
         }
     }

@@ -139,7 +139,7 @@ public final class IOUringReactor extends Reactor {
         }
 
         @Override
-        protected Reactor doBuild() {
+        protected Reactor construct() {
             return new IOUringReactor(this);
         }
 

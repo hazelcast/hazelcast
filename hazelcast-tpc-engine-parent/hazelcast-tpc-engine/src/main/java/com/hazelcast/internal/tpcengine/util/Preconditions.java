@@ -27,8 +27,11 @@ public final class Preconditions {
     }
 
     public static void checkOnEventloopThread(Reactor reactor) {
-        if (reactor.eventloopThread() != Thread.currentThread()) {
-            throw new IllegalStateException("Can only be called from the eventloop thread");
+        Thread eventloopThread = reactor.eventloopThread();
+        Thread currentThread = Thread.currentThread();
+        if (eventloopThread != currentThread) {
+            throw new IllegalStateException("Can only be called from the eventloop thread "
+                    + "[" + eventloopThread + "], found [" + currentThread + "]");
         }
     }
 

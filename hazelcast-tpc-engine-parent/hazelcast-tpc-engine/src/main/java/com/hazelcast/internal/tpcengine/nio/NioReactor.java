@@ -103,7 +103,7 @@ public final class NioReactor extends Reactor {
         }
 
         @Override
-        protected NioReactor doBuild() {
+        protected NioReactor construct() {
             return new NioReactor(this);
         }
     }

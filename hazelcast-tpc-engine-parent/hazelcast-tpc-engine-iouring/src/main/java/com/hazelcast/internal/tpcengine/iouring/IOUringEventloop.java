@@ -283,7 +283,7 @@ public final class IOUringEventloop extends Eventloop {
         }
 
         @Override
-        protected IOUringEventloop doBuild() {
+        protected IOUringEventloop construct() {
             return new IOUringEventloop(this);
         }
     }

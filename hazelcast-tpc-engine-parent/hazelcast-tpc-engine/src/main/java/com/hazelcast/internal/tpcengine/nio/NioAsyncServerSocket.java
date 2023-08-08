@@ -232,7 +232,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
 
         @Override
-        public AsyncServerSocket doBuild() {
+        public AsyncServerSocket construct() {
             if (Thread.currentThread() == reactor.eventloopThread()) {
                 return new NioAsyncServerSocket(this);
             } else {

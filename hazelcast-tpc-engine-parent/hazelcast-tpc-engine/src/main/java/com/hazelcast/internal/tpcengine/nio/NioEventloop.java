@@ -227,7 +227,7 @@ final class NioEventloop extends Eventloop {
         }
 
         @Override
-        protected NioEventloop doBuild() {
+        protected NioEventloop construct() {
             return new NioEventloop(this);
         }
     }

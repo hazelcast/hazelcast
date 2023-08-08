@@ -529,7 +529,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         @SuppressWarnings("java:S1181")
         @Override
-        protected AsyncSocket doBuild() {
+        protected AsyncSocket construct() {
             if (currentThread() == reactor.eventloopThread()) {
                 return new NioAsyncSocket(Builder.this);
             } else {

@@ -513,7 +513,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         }
 
         @Override
-        protected AsyncSocket doBuild() {
+        protected AsyncSocket construct() {
             if (Thread.currentThread() == reactor.eventloopThread()) {
                 return new IOUringAsyncSocket(this);
             } else {

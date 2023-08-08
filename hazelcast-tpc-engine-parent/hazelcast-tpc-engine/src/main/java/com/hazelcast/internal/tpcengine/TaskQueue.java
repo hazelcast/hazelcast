@@ -433,6 +433,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
             checkNotNull(eventloop, "eventloop");
             checkOnEventloopThread(eventloop);
+
             //checkNotNull(processor, "processor");
 
             if (nice < MIN_NICE) {
@@ -459,13 +460,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         }
 
         @Override
-        protected void prebuild() {
-            super.prebuild();
-            checkOnEventloopThread(eventloop);
-        }
-
-        @Override
-        protected Handle doBuild() {
+        protected Handle construct() {
             TaskQueue taskQueue = new TaskQueue();
             taskQueue.startNanos = epochNanos();
             taskQueue.inside = inside;
