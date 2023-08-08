@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - "CN-930*"
+      - "1CN-930*"
   pull_request_target:
     types:
       - labeled
