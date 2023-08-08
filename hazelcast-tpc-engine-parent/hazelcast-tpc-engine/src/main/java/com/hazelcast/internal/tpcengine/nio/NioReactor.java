@@ -38,7 +38,7 @@ public final class NioReactor extends Reactor {
 
     @Override
     public NioAsyncSocket.Builder newAsyncSocketBuilder() {
-        verifyRunning();
+        checkRunning();
 
         NioAsyncSocket.Builder socketBuilder = new NioAsyncSocket.Builder(null);
         socketBuilder.reactor = this;
@@ -50,7 +50,7 @@ public final class NioReactor extends Reactor {
     @Override
     public NioAsyncSocket.Builder newAsyncSocketBuilder(
             AbstractAsyncSocket.AcceptRequest acceptRequest) {
-        verifyRunning();
+        checkRunning();
 
         NioAsyncSocket.Builder socketBuilder
                 = new NioAsyncSocket.Builder((AcceptRequest) acceptRequest);
@@ -62,7 +62,7 @@ public final class NioReactor extends Reactor {
 
     @Override
     public NioAsyncServerSocket.Builder newAsyncServerSocketBuilder() {
-        verifyRunning();
+        checkRunning();
 
         NioAsyncServerSocket.Builder serverSocketBuilder = new NioAsyncServerSocket.Builder();
         serverSocketBuilder.reactor = this;

@@ -59,7 +59,7 @@ public final class IOUringReactor extends Reactor {
 
     @Override
     public AsyncSocket.Builder newAsyncSocketBuilder() {
-        verifyRunning();
+        checkRunning();
 
         IOUringAsyncSocket.Builder socketBuilder = new IOUringAsyncSocket.Builder(null);
         socketBuilder.networkScheduler = eventloop.networkScheduler();
@@ -69,7 +69,7 @@ public final class IOUringReactor extends Reactor {
 
     @Override
     public AsyncSocket.Builder newAsyncSocketBuilder(AbstractAsyncSocket.AcceptRequest acceptRequest) {
-        verifyRunning();
+        checkRunning();
 
         IOUringAsyncSocket.Builder socketBuilder = new IOUringAsyncSocket.Builder(
                 (IOUringAcceptRequest) acceptRequest);
@@ -80,7 +80,7 @@ public final class IOUringReactor extends Reactor {
 
     @Override
     public AsyncServerSocket.Builder newAsyncServerSocketBuilder() {
-        verifyRunning();
+        checkRunning();
 
         IOUringAsyncServerSocket.Builder serverBuilder = new IOUringAsyncServerSocket.Builder();
         serverBuilder.reactor = this;

@@ -298,7 +298,7 @@ public abstract class Reactor implements Executor {
      */
     public abstract AsyncServerSocket.Builder newAsyncServerSocketBuilder();
 
-    protected void verifyRunning() {
+    protected void checkRunning() {
         State state0 = state;
         if (RUNNING != state0) {
             throw new IllegalStateException("Reactor not in RUNNING state, but " + state0);
