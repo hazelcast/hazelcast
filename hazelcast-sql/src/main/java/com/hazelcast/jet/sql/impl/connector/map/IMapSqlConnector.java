@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.IndexType;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.function.ComparatorEx;
@@ -26,8 +25,6 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
@@ -72,7 +69,6 @@ import java.util.Map;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
@@ -281,24 +277,6 @@ public class IMapSqlConnector implements SqlConnector {
         // LP must be 1 - one local index contains all local partitions, if there are 2 local processors,
         // the index will be scanned twice and each time half of the partitions will be thrown out.
         scanner.localParallelism(1);
-
-        if (tableIndex.getType() == IndexType.SORTED) {
-            Vertex sorter = context.getDag().newUniqueVertex(
-                    "SortCombine",
-                    ProcessorMetaSupplier.forceTotalParallelismOne(
-                            ProcessorSupplier.of(mapP(FunctionEx.identity())),
-                            localMemberAddress
-                    )
-            );
-
-            assert comparator != null;
-            context.getDag().edge(between(scanner, sorter)
-                    .ordered(comparator)
-                    .distributeTo(localMemberAddress)
-                    .allToOne("")
-            );
-            return sorter;
-        }
         return scanner;
     }
 
