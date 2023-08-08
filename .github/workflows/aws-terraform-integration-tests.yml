@@ -6,7 +6,7 @@ on:
     types:
       - labeled
     branches:
-      - "CN-930-*"
+      - "master"
 
 env:
   GAR_PROJECT_ID: hazelcast-33
