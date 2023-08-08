@@ -48,7 +48,6 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 /**
  * Nio implementation of the {@link AsyncSocket}.
  */
-@SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityOrder", "checkstyle:MethodCount", "java:S1181"})
 public final class NioAsyncSocket extends AsyncSocket {
 
     final Handler handler;
@@ -57,6 +56,35 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final IOVector ioVector = new IOVector();
     private boolean connecting;
     private volatile CompletableFuture<Void> connectFuture;
+    /**
+     * This flag only has meaning within the eventloop thread.
+     * <p>
+     * When the eventloop thread writes a packet using the unsafe write, we want
+     * to prevent writing that packet to the expensive writeQueue. We want to
+     * write the packet to the IOVector instead if there is space. The problem
+     * is that without additional care it can lead to reordering of packets.
+     * <p>
+     * So imagine the IOVector was full and as a consequence packet P1 is written to the
+     * writeQueue. And write to the socket completes and some space is freed up in the
+     * IOVector. If there would be write of packet P2, it can be placed in the
+     * IOVector, since there is space. But now we have an ordering problem because P2
+     * overtakes P1.
+     * <p>
+     * This flag will prevent that. So as long as no packets have been written to the
+     * writeQueue, you can keep writing to the IOVector directly. But once a write
+     * has been made to the writeQueue, ioVectorWriteAllowed is to to false and
+     * all further writes need to be done to the writeQueue until the writeQueue has
+     * been fully drained. Once it is drained, the ioVectorWriteAllowed is set to true
+     * again and packets can be written directly to the IOVector.
+     * <p>
+     * For any packet send by a thread different than the eventloop thread, the writeQueue
+     * needs to be used. Ordering of packets send by other threads and the eventloop thread
+     * isn't an issue since they are concurrent and any order goes.
+     * <p>
+     * What might be an issue is starvation when the eventloop thread keeps filling up the
+     * IOVector and the writeQueue filled by other threads isn't drained.
+     */
+    private boolean ioVectorWriteAllowed = true;
 
     private NioAsyncSocket(Builder builder) {
         super(builder);
@@ -197,35 +225,6 @@ public final class NioAsyncSocket extends AsyncSocket {
         resetFlushed();
     }
 
-    /**
-     * This flag only has meaning within the eventloop thread.
-     * <p>
-     * When the eventloop thread writes a packet using the unsafe write, we want
-     * to prevent writing that packet to the expensive writeQueue. We want to
-     * write the packet to the IOVector instead if there is space. The problem
-     * is that without additional care it can lead to reordering of packets.
-     * <p>
-     * So imagine the IOVector was full and as a consequence packet P1 is written to the
-     * writeQueue. And write to the socket completes and some space is freed up in the
-     * IOVector. If there would be write of packet P2, it can be placed in the
-     * IOVector, since there is space. But now we have an ordering problem because P2
-     * overtakes P1.
-     * <p>
-     * This flag will prevent that. So as long as no packets have been written to the
-     * writeQueue, you can keep writing to the IOVector directly. But once a write
-     * has been made to the writeQueue, ioVectorWriteAllowed is to to false and
-     * all further writes need to be done to the writeQueue until the writeQueue has
-     * been fully drained. Once it is drained, the ioVectorWriteAllowed is set to true
-     * again and packets can be written directly to the IOVector.
-     * <p>
-     * For any packet send by a thread different than the eventloop thread, the writeQueue
-     * needs to be used. Ordering of packets send by other threads and the eventloop thread
-     * isn't an issue since they are concurrent and any order goes.
-     * <p>
-     * What might be an issue is starvation when the eventloop thread keeps filling up the
-     * IOVector and the writeQueue filled by other threads isn't drained.
-     */
-    private boolean ioVectorWriteAllowed = true;
 
     @Override
     protected boolean insideWrite(IOBuffer buf) {
