@@ -18,6 +18,8 @@ package com.hazelcast.internal.tpcengine.util;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.logging.TpcLogger;
+import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
@@ -38,6 +40,8 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  */
 @SuppressWarnings("checkstyle:VisibilityModifier")
 public class Promise<E> {
+    private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(IntPromise.class);
+
     private static final Object EMPTY = new Object();
 
     PromiseAllocator allocator;
@@ -99,7 +103,7 @@ public class Promise<E> {
             try {
                 consumer.accept(null, value);
             } catch (Exception e) {
-                eventloop.logger().warning(e);
+                LOGGER.warning(e);
             }
         }
 
@@ -129,7 +133,7 @@ public class Promise<E> {
             try {
                 consumer.accept(value, null);
             } catch (Exception e) {
-                eventloop.logger().warning(e);
+                LOGGER.warning(e);
             }
         }
 

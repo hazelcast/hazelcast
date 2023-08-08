@@ -200,15 +200,6 @@ public abstract class Eventloop {
     }
 
     /**
-     * Returns the TpcLogger for this Eventloop.
-     *
-     * @return the TpcLogger.
-     */
-    public final TpcLogger logger() {
-        return logger;
-    }
-
-    /**
      * Returns the IntPromiseAllocator for this Eventloop.
      *
      * @return the IntPromiseAllocator for this Eventloop.

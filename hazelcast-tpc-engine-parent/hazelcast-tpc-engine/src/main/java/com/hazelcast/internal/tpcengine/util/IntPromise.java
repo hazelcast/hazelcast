@@ -17,6 +17,8 @@
 package com.hazelcast.internal.tpcengine.util;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
+import com.hazelcast.internal.tpcengine.logging.TpcLogger;
+import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 import java.util.ArrayList;
 
@@ -29,6 +31,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  */
 @SuppressWarnings("checkstyle:VisibilityModifier")
 public class IntPromise {
+    private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(IntPromise.class);
 
     private static final int STATE_PENDING = 0;
     private static final int STATE_COMPLETED_NORMALLY = 1;
@@ -102,7 +105,7 @@ public class IntPromise {
             try {
                 consumer.accept(0, throwable);
             } catch (Exception e) {
-                eventloop.logger().warning(e);
+                LOGGER.warning(e);
             }
         }
 
@@ -133,7 +136,7 @@ public class IntPromise {
             try {
                 consumer.accept(value, null);
             } catch (Exception e) {
-                eventloop.logger().warning(e);
+                LOGGER.warning(e);
             }
         }
 
