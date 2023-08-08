@@ -28,7 +28,7 @@ public final class Preconditions {
 
     public static void checkOnEventloopThread(Reactor reactor) {
         if (reactor.eventloopThread() != Thread.currentThread()) {
-            throw new IllegalStateException("Can only construct a socket from the eventloop thread");
+            throw new IllegalStateException("Can only be called from the eventloop thread");
         }
     }
 
