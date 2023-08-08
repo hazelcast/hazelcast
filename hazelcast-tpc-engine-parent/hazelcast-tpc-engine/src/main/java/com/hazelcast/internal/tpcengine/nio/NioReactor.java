@@ -71,10 +71,10 @@ public final class NioReactor extends Reactor {
     }
 
     @Override
-    protected Eventloop newEventloop(Reactor.Builder builder) {
+    protected Eventloop newEventloop(Reactor.Builder reactorBuilder) {
         NioEventloop.Builder eventloopBuilder = new NioEventloop.Builder();
         eventloopBuilder.reactor = this;
-        eventloopBuilder.reactorBuilder = builder;
+        eventloopBuilder.reactorBuilder = reactorBuilder;
         return eventloopBuilder.build();
     }
 
@@ -90,7 +90,7 @@ public final class NioReactor extends Reactor {
     }
 
     /**
-     * A {@link Reactor.Builder} that builds a {@link NioReactor}.
+     * A {@link NioReactor} builder.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends Reactor.Builder {

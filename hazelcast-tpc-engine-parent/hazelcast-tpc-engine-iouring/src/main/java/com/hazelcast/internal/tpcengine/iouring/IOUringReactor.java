@@ -50,9 +50,9 @@ public final class IOUringReactor extends Reactor {
     }
 
     @Override
-    protected Eventloop newEventloop(Reactor.Builder builder) {
+    protected Eventloop newEventloop(Reactor.Builder reactorBuilder) {
         IOUringEventloop.Builder eventloopBuilder = new IOUringEventloop.Builder();
-        eventloopBuilder.reactorBuilder = builder;
+        eventloopBuilder.reactorBuilder = reactorBuilder;
         eventloopBuilder.reactor = this;
         return eventloopBuilder.build();
     }
@@ -99,7 +99,7 @@ public final class IOUringReactor extends Reactor {
     }
 
     /**
-     * The Builder for the {@link IOUringReactor}.
+     * An {@link IOUringReactor} builder.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends Reactor.Builder {

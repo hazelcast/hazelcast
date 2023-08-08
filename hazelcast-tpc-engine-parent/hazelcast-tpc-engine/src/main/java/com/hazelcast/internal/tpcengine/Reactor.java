@@ -673,7 +673,7 @@ public abstract class Reactor implements Executor {
     }
 
     /**
-     * A Builder for {@link Reactor} instances.
+     * A {@link Reactor} builder.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public abstract static class Builder extends AbstractBuilder<Reactor> {
