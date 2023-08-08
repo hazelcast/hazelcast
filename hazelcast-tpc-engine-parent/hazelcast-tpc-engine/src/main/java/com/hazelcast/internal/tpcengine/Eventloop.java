@@ -33,9 +33,7 @@ import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -77,14 +75,9 @@ public abstract class Eventloop {
     protected long taskStartNanos;
     private final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
-    protected TaskQueue sharedFirst;
-    protected TaskQueue sharedLast;
-    // todo: should be resources?
-    // contains all the task-queues. The scheduler only contains the runnable ones.
-    protected final Set<TaskQueue> taskQueues = new HashSet<>();
     // protected final int runQueueCapacity;
     private final long stallThresholdNanos;
-    final TaskQueueScheduler taskQueueScheduler;
+    protected final TaskQueueScheduler taskQueueScheduler;
     private final StallHandler stallHandler;
     private long taskDeadlineNanos;
     protected final StorageDeviceRegistry storageDeviceRegistry;
@@ -270,76 +263,6 @@ public abstract class Eventloop {
         reactor.serverSockets().foreach(serverSocket -> serverSocket.close("Reactor is shutting down", null));
     }
 
-    protected final boolean scheduleBlockedOutside() {
-        boolean scheduled = false;
-        TaskQueue queue = sharedFirst;
-
-        while (queue != null) {
-            assert queue.runState == RUN_STATE_BLOCKED : "taskQueue.state" + queue.runState;
-            TaskQueue next = queue.next;
-
-            if (!queue.outside.isEmpty()) {
-                removeBlockedOutside(queue);
-                scheduled = true;
-                taskQueueScheduler.enqueue(queue);
-            }
-
-            queue = next;
-        }
-
-        return scheduled;
-    }
-
-    protected final boolean hasPendingOutsideTaskQueue() {
-        TaskQueue queue = sharedFirst;
-
-        while (queue != null) {
-            if (!queue.outside.isEmpty()) {
-                return true;
-            }
-            queue = queue.next;
-        }
-
-        return false;
-    }
-
-    final void removeBlockedOutside(TaskQueue taskQueue) {
-        assert taskQueue.outside != null;
-        assert taskQueue.runState == RUN_STATE_BLOCKED;
-
-        TaskQueue next = taskQueue.next;
-        TaskQueue prev = taskQueue.prev;
-
-        if (prev == null) {
-            sharedFirst = next;
-        } else {
-            prev.next = next;
-            taskQueue.prev = null;
-        }
-
-        if (next == null) {
-            sharedLast = prev;
-        } else {
-            next.prev = prev;
-            taskQueue.next = null;
-        }
-    }
-
-    final void addBlockedOutside(TaskQueue taskQueue) {
-        assert taskQueue.outside != null;
-        assert taskQueue.runState == RUN_STATE_BLOCKED;
-        assert taskQueue.prev == null;
-        assert taskQueue.next == null;
-
-        TaskQueue l = sharedLast;
-        taskQueue.prev = l;
-        sharedLast = taskQueue;
-        if (l == null) {
-            sharedFirst = taskQueue;
-        } else {
-            l.next = taskQueue;
-        }
-    }
 
     /**
      * Override this method to execute some logic before the {@link #run()} method is called.
@@ -374,7 +297,7 @@ public abstract class Eventloop {
         while (!stop) {
             deadlineScheduler.tick(nowNanos);
 
-            scheduleBlockedOutside();
+            taskQueueScheduler.scheduleOutsideBlocked();
 
             TaskQueue taskQueue = taskQueueScheduler.pickNext();
             if (taskQueue == null) {
@@ -458,7 +381,7 @@ public abstract class Eventloop {
                 if (taskQueue.outside != null) {
                     // we also need to add it to the shared taskQueues so the eventloop will
                     // see any items that are written to outside queues.
-                    addBlockedOutside(taskQueue);
+                    taskQueueScheduler.addOutsideBlocked(taskQueue);
                 }
             } else {
                 // Task queue wasn't fully drained.

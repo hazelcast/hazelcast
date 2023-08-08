@@ -129,7 +129,7 @@ final class NioEventloop extends Eventloop {
             // check for any 'outside' work that has been offered. Otherwise the
             // thread goes to sleep even though there is work that it should have
             // processed and this can lead to stalled behavior like stalled socket
-            if (hasPendingOutsideTaskQueue() || nioNetworkScheduler.hasPending()) {
+            if (taskQueueScheduler.hasOutsidePending() || nioNetworkScheduler.hasPending()) {
                 keyCount = selector.selectNow();
             } else {
                 keyCount = timeoutNanos == Long.MAX_VALUE

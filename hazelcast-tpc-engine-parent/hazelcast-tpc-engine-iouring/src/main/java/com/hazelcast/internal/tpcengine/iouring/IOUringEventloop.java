@@ -137,7 +137,7 @@ public final class IOUringEventloop extends Eventloop {
             sq.submit();
         } else {
             wakeupNeeded.set(true);
-            if (hasPendingOutsideTaskQueue() || ioUringNetworkScheduler.hasPending()) {
+            if (taskQueueScheduler.hasOutsidePending() || ioUringNetworkScheduler.hasPending()) {
                 sq.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {

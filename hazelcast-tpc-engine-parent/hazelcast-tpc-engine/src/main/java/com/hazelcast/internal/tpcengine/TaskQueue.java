@@ -234,7 +234,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             // If there is an outside queue, we don't need to notified
             // of any events because the queue will register itself
             // if it blocks.
-            eventloop.removeBlockedOutside(this);
+            scheduler.removeOutsideBlocked(this);
         }
 
         scheduler.enqueue(this);
@@ -450,7 +450,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 throw new IllegalStateException("The inside and outside queue can't both be null.");
             }
 
-            if (eventloop.taskQueues.size() == eventloop.taskQueueScheduler.capacity()) {
+            if (eventloop.taskQueueScheduler.taskQueues.size() == eventloop.taskQueueScheduler.capacity()) {
                 throw new IllegalStateException("Too many taskgroups.");
             }
 
@@ -481,10 +481,10 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             taskQueue.weight = niceToWeight(nice);
 
             if (taskQueue.outside != null) {
-                eventloop.addBlockedOutside(taskQueue);
+                eventloop.taskQueueScheduler.addOutsideBlocked(taskQueue);
             }
 
-            eventloop.taskQueues.add(taskQueue);
+            eventloop.taskQueueScheduler.taskQueues.add(taskQueue);
             return new Handle(taskQueue, taskQueue.metrics);
         }
     }

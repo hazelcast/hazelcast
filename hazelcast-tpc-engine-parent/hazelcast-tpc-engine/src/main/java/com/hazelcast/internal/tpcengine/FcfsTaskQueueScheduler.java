@@ -39,7 +39,7 @@ import static java.lang.Math.max;
  *     we can have a baseline to compare against.</li>
  * </ol>
  */
-class FcfsTaskQueueScheduler implements TaskQueueScheduler {
+class FcfsTaskQueueScheduler extends TaskQueueScheduler {
 
     final CircularQueue<TaskQueue> runQueue;
     final int capacity;
