@@ -24,8 +24,6 @@ import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
-import java.io.IOException;
-
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMESPEC;
@@ -126,7 +124,7 @@ public final class IOUringEventloop extends Eventloop {
     }
 
     @Override
-    protected void park(long timeoutNanos) throws IOException {
+    protected void park(long timeoutNanos) {
         ioUringNetworkScheduler.tick();
 
         boolean completions = false;
