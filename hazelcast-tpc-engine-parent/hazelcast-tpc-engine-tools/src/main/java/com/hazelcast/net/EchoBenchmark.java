@@ -128,7 +128,6 @@ public class EchoBenchmark {
                 byte[] payload = new byte[payloadSize];
                 IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
                 buf.writeInt(payload.length);
-                buf.writeLong(Long.MAX_VALUE);
                 buf.writeBytes(payload);
                 buf.flip();
                 if (!clientSocket.write(buf)) {
@@ -280,7 +279,7 @@ public class EchoBenchmark {
         return serverSockets;
     }
 
-    // todo: add option to flatten
+    // todo: add option to flatten like netty (so replacing the buffer)
     private class EchoSocketReader extends AsyncSocket.Reader {
         private static final int SIZEOF_HEADER = SIZEOF_INT;
 
@@ -315,20 +314,20 @@ public class EchoBenchmark {
                     }
 
                     payloadSize = src.getInt();
-                    response = responseAllocator.allocate(SIZEOF_HEADER + payloadSize);
 
+                    response = responseAllocator.allocate(SIZEOF_HEADER + payloadSize);
                     response.byteBuffer().limit(SIZEOF_HEADER + payloadSize);
-                    response.byteBuffer().putInt(payloadSize);
+                    response.writeInt(payloadSize);
                 }
 
                 BufferUtil.put(response.byteBuffer(), src);
                 //response.write(src);
 
-                if (response.byteBuffer().remaining() > 0) {
+                if (response.remaining() > 0) {
                     // not all bytes have been received.
                     break;
                 }
-                response.byteBuffer().flip();
+                response.flip();
 
                 if (echoCounter != null) {
                     echoCounter.lazySet(echoCounter.get() + 1);
