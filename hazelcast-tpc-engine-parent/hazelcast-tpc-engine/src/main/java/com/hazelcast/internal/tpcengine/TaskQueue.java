@@ -68,7 +68,9 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkOnEventlo
  * The TaskQueue is inspired by the <a href="https://github.com/DataDog/glommio">Glommio</>
  * TaskQueue.
  * <p>
- * The TaskQueue isn't threadsafe and should only be used from the eventloop thread. It
+ * The TaskQueue isn't threadsafe and should only be used from the eventloop thread.
+ * The only method which is threadsafe is the {@link #offerOutside(Object)} since
+ * jobs can be offered outside of the eventloop.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public final class TaskQueue implements Comparable<TaskQueue> {
@@ -134,10 +136,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
     int size() {
         return (inside == null ? 0 : inside.size()) + (outside == null ? 0 : outside.size());
-    }
-
-    int size() {
-        return (local == null ? 0 : local.size()) + (global == null ? 0 : global.size());
     }
 
     /**
@@ -238,6 +236,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
     /**
      * Offers a task to the outside queue.
+     *
+     * This method is threadsafe since it can be called outside of the eventloop.
      *
      * @param task the task to offer.
      * @return true if task was successfully offered, false if the task was
