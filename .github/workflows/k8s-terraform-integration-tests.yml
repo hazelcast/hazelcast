@@ -69,6 +69,9 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build hazelcast jar
+        run: ls -la
+
+      - name: Build hazelcast jar
         run: |
           ls
           echo ${GITHUB_WORKSPACE}
