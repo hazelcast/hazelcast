@@ -48,7 +48,6 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQ
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
-import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 // TODO: In the future add padding to get isolated state separated from state accessed by other threads.
@@ -56,7 +55,6 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
         "checkstyle:MemberName",
         "checkstyle:TypeName",
         "checkstyle:MethodName",
-        "checkstyle:VisibilityModifier",
         "checkstyle:ExecutableStatementCount",
         "checkstyle:DeclarationOrder"})
 public final class IOUringAsyncSocket extends AsyncSocket {
@@ -482,6 +480,10 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         }
     }
 
+    /**
+     * A {@link IOUringAsyncSocket} builder.
+     */
+    @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends AsyncSocket.Builder {
 
         public LinuxSocket nativeSocket;
@@ -514,18 +516,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             if (Thread.currentThread() == reactor.eventloopThread()) {
                 return new IOUringAsyncSocket(this);
             } else {
-                CompletableFuture<IOUringAsyncSocket> future = new CompletableFuture<>();
-                reactor.execute(() -> {
-                    try {
-                        IOUringAsyncSocket socket = new IOUringAsyncSocket(Builder.this);
-                        future.complete(socket);
-                    } catch (Throwable e) {
-                        future.completeExceptionally(e);
-                        throw sneakyThrow(e);
-                    }
-                });
-
-                return future.join();
+                return reactor.submit(() -> new IOUringAsyncSocket(Builder.this)).join();
             }
         }
     }

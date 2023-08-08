@@ -493,7 +493,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     /**
-     * A {@link Builder} that creates a {@link NioAsyncSocket} instance.
+     * A {@link NioAsyncSocket} builder.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends AsyncSocket.Builder {
@@ -531,17 +531,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             if (currentThread() == reactor.eventloopThread()) {
                 return new NioAsyncSocket(Builder.this);
             } else {
-                CompletableFuture<NioAsyncSocket> future = new CompletableFuture<>();
-                reactor.execute(() -> {
-                    try {
-                        future.complete(new NioAsyncSocket(Builder.this));
-                    } catch (Throwable e) {
-                        future.completeExceptionally(e);
-                        throw sneakyThrow(e);
-                    }
-                });
-
-                return future.join();
+                return reactor.submit(() -> new NioAsyncSocket(Builder.this)).join();
             }
         }
     }

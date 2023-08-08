@@ -33,7 +33,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
-import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
@@ -204,7 +203,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     /**
-     * An {@link AsyncServerSocket} builder.
+     * An {@link NioAsyncServerSocket} builder.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends AsyncServerSocket.Builder {
@@ -213,7 +212,6 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         public Selector selector;
 
         Builder() {
-            // todo: should move into conclude0
             try {
                 this.serverSocketChannel = ServerSocketChannel.open();
                 serverSocketChannel.configureBlocking(false);
@@ -236,9 +234,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             if (Thread.currentThread() == reactor.eventloopThread()) {
                 return new NioAsyncServerSocket(this);
             } else {
-                CompletableFuture<NioAsyncServerSocket> future = reactor.submit(
-                        () -> new NioAsyncServerSocket(Builder.this));
-                return future.join();
+                return reactor.submit(() -> new NioAsyncServerSocket(Builder.this)).join();
             }
         }
     }

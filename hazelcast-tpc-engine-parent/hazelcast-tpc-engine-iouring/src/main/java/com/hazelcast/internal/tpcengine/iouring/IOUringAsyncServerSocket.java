@@ -252,6 +252,9 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
+    /**
+     * An {@link IOUringAsyncServerSocket} builder.
+     */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends AsyncServerSocket.Builder {
 
