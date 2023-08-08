@@ -20,7 +20,7 @@ env:
 
 defaults:
   run:
-    working-directory: aws-discovery-suite/terraform/test
+    working-directory: auto-discovery-suite/terraform/test
 
 jobs:
   build:
@@ -36,7 +36,7 @@ jobs:
         with:
           repository: hazelcast/auto-discovery-test-suite
           token: ${{ secrets.DEVOPS_GITHUB_TOKEN }}
-          path: aws-discovery-suite
+          path: auto-discovery-suite
 
       - name: Decide which ref to checkout
         id: decide-ref
@@ -70,9 +70,6 @@ jobs:
 
       - name: Build hazelcast jar
         working-directory: ./
-        run: ls -la
-
-      - name: Build hazelcast jar
         run: |
           ls
           echo ${GITHUB_WORKSPACE}
@@ -92,10 +89,10 @@ jobs:
            -Dattribution.skip \
            -Danimal.sniffer.skip=true \
            -Dmaven.source.skip=true
-            cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ${GITHUB_WORKSPACE}/aws-discovery-suite/terraform/tools/hazelcast.jar
+            cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ${GITHUB_WORKSPACE}/auto-discovery-suite/terraform/tools/hazelcast.jar
 
       - name: Build client jar
-        working-directory: aws-discovery-suite/terraform/tools/client
+        working-directory: auto-discovery-suite/terraform/tools/client
         run: |
           mvn versions:set-property -Dproperty=hazelcast.version -DnewVersion=$HAZELCAST_VERSION
           mvn clean package
@@ -105,13 +102,13 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: hazelcast.jar
-          path: aws-discovery-suite/terraform/tools/hazelcast.jar
+          path: auto-discovery-suite/terraform/tools/hazelcast.jar
 
       - name: Upload aws-discovery-client.jar
         uses: actions/upload-artifact@v3
         with:
           name: aws-discovery-client.jar
-          path: aws-discovery-suite/terraform/tools/client/aws-discovery-client.jar
+          path: auto-discovery-suite/terraform/tools/client/aws-discovery-client.jar
 
       - name: Authenticate to GAR
         uses: docker/login-action@v2
@@ -122,7 +119,7 @@ jobs:
 
       - name: Build Hazelcast Image
         id: get-hz-image-tag
-        working-directory: aws-discovery-suite/terraform/tools
+        working-directory: auto-discovery-suite/terraform/tools
         run: |
           HZ_IMG="${{ env.GAR_REGION }}-docker.pkg.dev/${{ env.GAR_PROJECT_ID }}/${{ env.GAR_REPO }}/$(uuidgen):3d"
           echo "HZ_IMG=${HZ_IMG}" >> $GITHUB_OUTPUT
@@ -131,7 +128,7 @@ jobs:
 
       - name: Build Client Image
         id: get-cl-image-tag
-        working-directory: aws-discovery-suite/terraform/tools/client
+        working-directory: auto-discovery-suite/terraform/tools/client
         run: |
           CL_IMG="${{ env.GAR_REGION }}-docker.pkg.dev/${{ env.GAR_PROJECT_ID }}/${{ env.GAR_REPO }}/$(uuidgen):3d"
           echo "CL_IMG=${CL_IMG}" >> $GITHUB_OUTPUT
@@ -153,7 +150,7 @@ jobs:
         with:
           repository: hazelcast/auto-discovery-test-suite
           token: ${{ secrets.DEVOPS_GITHUB_TOKEN }}
-          path: aws-discovery-suite
+          path: auto-discovery-suite
 
       - name : Set-up Terraform
         uses: hashicorp/setup-terraform@v2.0.3
