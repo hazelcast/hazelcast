@@ -16,41 +16,95 @@
 
 package com.hazelcast.test.starter;
 
+import static com.hazelcast.internal.util.OsHelper.isWindows;
+import static com.hazelcast.internal.util.Preconditions.checkState;
+import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
+import static java.lang.String.format;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.version.Version;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.internal.util.OsHelper.isWindows;
-import static com.hazelcast.internal.util.Preconditions.checkState;
-import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
-import static java.io.File.separator;
-import static java.lang.String.format;
-
 public class HazelcastVersionLocator {
-
     public enum Artifact {
-        OS_JAR("/com/hazelcast/hazelcast/%1$s/hazelcast-%1$s.jar", false, false, "hazelcast"),
-        OS_TEST_JAR("/com/hazelcast/hazelcast/%1$s/hazelcast-%1$s-tests.jar", false, true, "hazelcast"),
-        SQL_JAR("/com/hazelcast/hazelcast-sql/%1$s/hazelcast-sql-%1$s.jar", false, false, "hazelcast-sql"),
-        EE_JAR("/com/hazelcast/hazelcast-enterprise/%1$s/hazelcast-enterprise-%1$s.jar", true, false, "hazelcast-enterprise"),
-        ;
-        private final String path;
+        OS_JAR(false, false, "hazelcast"),
+        OS_TEST_JAR(false, true, "hazelcast"),
+        SQL_JAR(false, false, "hazelcast-sql"),
+        EE_JAR(true, false, "hazelcast-enterprise");
+
         private final boolean enterprise;
         private final boolean test;
-        private final String mavenProject;
+        private final String artifactId;
 
-        Artifact(String path, boolean enterprise, boolean test, String mavenName) {
-            this.path = path;
+        Artifact(final boolean enterprise, final boolean test, final String artifactId) {
             this.enterprise = enterprise;
             this.test = test;
-            this.mavenProject = mavenName;
+            this.artifactId = artifactId;
+        }
+
+        /** @return a path to the artifact in the local Maven repository, downloading if required */
+        private File locateArtifact(final String version) {
+            final String path = format("/com/hazelcast/%1$s/%2$s/%1$s-%2$s%3$s.jar", artifactId, version,
+                    (test ? "-tests" : ""));
+            final File localCopy = new File(LOCAL_M2_REPOSITORY_PREFIX + path);
+            if (!localCopy.exists()) {
+                downloadArtifact(version);
+            }
+            return localCopy;
+        }
+
+        private void downloadArtifact(final String version) {
+            logWarningForArtifactDownload(version);
+            final ProcessBuilder builder = new ProcessBuilder(buildMavenCommand(version).toArray(String[]::new)).inheritIO();
+            try {
+                final Process process = builder.start();
+                final boolean successful = process.waitFor(2, TimeUnit.MINUTES);
+                checkState(successful, "Maven dependency:get timed out");
+                checkState(process.exitValue() == 0, "Maven dependency:get failed");
+            } catch (InterruptedException | IOException e) {
+                throw new RuntimeException("Problem in invoking Maven dependency:get " + toString() + ":" + version, e);
+            }
+        }
+
+        private void logWarningForArtifactDownload(final String version) {
+            if (isOnJenkins()) {
+                return;
+            }
+            LOGGER.warning("Hazelcast binaries for version " + version + (enterprise ? " EE " : " ")
+                    + "will be downloaded from a remote repository. You can speed up the compatibility tests by "
+                    + "installing the missing artifacts in your local maven repository so they don't have to be "
+                    + "downloaded each time:\n $ " + buildMavenCommand(version).collect(Collectors.joining(" ")));
+        }
+
+        private String getArtifactArgument(final String version) {
+            return "com.hazelcast:" + artifactId + ":" + version + (test ? ":jar:tests" : "");
+        }
+
+        private Stream<String> buildMavenCommand(final String version) {
+            final Stream.Builder<String> builder = Stream.builder();
+
+            builder.add(getMvn());
+
+            builder.add("dependency:get");
+            builder.add("-D" + getArtifactArgument(version));
+
+            if (enterprise) {
+                builder.add("-DremoteRepositories=https://repository.hazelcast.com/release");
+            }
+
+            return builder.build();
         }
     }
 
@@ -59,62 +113,33 @@ public class HazelcastVersionLocator {
     private static final String LOCAL_M2_REPOSITORY_PREFIX;
 
     static {
-        LOCAL_M2_REPOSITORY_PREFIX = System.getProperty("user.home") + separator + ".m2" + separator + "repository";
+        try {
+            // https://stackoverflow.com/a/16218772
+            final Process process = new ProcessBuilder(getMvn(), "help:evaluate",
+                    "-Dexpression=settings.localRepository", "-q", "-DforceStdout").start();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                LOCAL_M2_REPOSITORY_PREFIX = reader.readLine();
+            }
+        } catch (final IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    public static Map<Artifact, File> locateVersion(String version, boolean enterprise) {
-        Map<Artifact, File> files = new HashMap<>();
-        files.put(Artifact.OS_JAR, locateArtifact(Artifact.OS_JAR, version));
-        files.put(Artifact.OS_TEST_JAR, locateArtifact(Artifact.OS_TEST_JAR, version));
+    private static String getMvn() {
+        return isWindows() ? "mvn.cmd" : "mvn";
+    }
+
+    public static Map<Artifact, File> locateVersion(final String version, final boolean enterprise) {
+        final Stream.Builder<Artifact> files = Stream.builder();
+        files.add(Artifact.OS_JAR);
+        files.add(Artifact.OS_TEST_JAR);
         if (Version.of(version).isGreaterOrEqual(Versions.V5_0)) {
-            files.put(Artifact.SQL_JAR, locateArtifact(Artifact.SQL_JAR, version));
+            files.add(Artifact.SQL_JAR);
         }
         if (enterprise) {
-            files.put(Artifact.EE_JAR, locateArtifact(Artifact.EE_JAR, version));
+            files.add(Artifact.EE_JAR);
         }
-        return files;
-    }
-
-    private static File locateArtifact(Artifact artifact, String version) {
-        String path = format(artifact.path, version);
-        File localCopy = new File(LOCAL_M2_REPOSITORY_PREFIX + path);
-        if (!localCopy.exists()) {
-            downloadArtifact(artifact, version);
-        }
-        return localCopy;
-    }
-
-    private static void downloadArtifact(Artifact artifact, String version) {
-        logWarningForArtifactDownload(artifact, version);
-        ProcessBuilder builder = new ProcessBuilder(buildMavenCommand(artifact, version).split(" "))
-                .inheritIO();
-        try {
-            Process process = builder.start();
-            boolean successful = process.waitFor(120, TimeUnit.SECONDS);
-            checkState(successful, "Maven dependency:get timed out");
-            checkState(process.exitValue() == 0, "Maven dependency:get failed");
-        } catch (InterruptedException | IOException e) {
-            throw new RuntimeException("Problem in invoking Maven dependency:get " + artifact + ":" + version , e);
-        }
-    }
-
-    private static void logWarningForArtifactDownload(Artifact artifact, String version) {
-        if (isOnJenkins()) {
-            return;
-        }
-        LOGGER.warning("Hazelcast binaries for version " + version
-                + (artifact.enterprise ? " EE " : " ")
-                + "will be downloaded from a remote repository. You can speed up the compatibility tests by "
-                + "installing the missing artifacts in your local maven repository so they don't have to be "
-                + "downloaded each time:\n $ " + buildMavenCommand(artifact, version));
-    }
-
-    private static String buildMavenCommand(Artifact artifact, String version) {
-        String mvn = isWindows() ? "mvn.cmd" : "mvn";
-        return mvn + " dependency:get -Dartifact=com.hazelcast:"
-                + artifact.mavenProject + ":" + version
-                + (artifact.test ? ":jar:tests" : "")
-                + (artifact.enterprise ? " -DremoteRepositories=https://repository.hazelcast.com/release" : "");
+        return files.build().collect(Collectors.toMap(Function.identity(), artifact -> artifact.locateArtifact(version)));
     }
 }
-
