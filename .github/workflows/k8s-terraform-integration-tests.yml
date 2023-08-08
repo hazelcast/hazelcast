@@ -70,6 +70,7 @@ jobs:
 
       - name: Build hazelcast jar
         run: |
+          ls
           echo ${GITHUB_WORKSPACE}
           HAZELCAST_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "HAZELCAST_VERSION=${HAZELCAST_VERSION}" >> $GITHUB_ENV
