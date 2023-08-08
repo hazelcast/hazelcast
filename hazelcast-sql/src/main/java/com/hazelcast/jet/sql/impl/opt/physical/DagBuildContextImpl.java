@@ -32,6 +32,7 @@ import org.apache.calcite.rex.RexVisitor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -41,11 +42,13 @@ public class DagBuildContextImpl implements DagBuildContext {
     private final QueryParameterMetadata parameterMetadata;
     private Table table;
     private PhysicalRel rel;
+    private boolean mayNeedSorting;
 
     public DagBuildContextImpl(NodeEngine nodeEngine, DAG dag, QueryParameterMetadata parameterMetadata) {
         this.nodeEngine = requireNonNull(nodeEngine);
         this.dag = requireNonNull(dag);
         this.parameterMetadata = parameterMetadata;
+        this.mayNeedSorting = true;
     }
 
     @Nonnull
@@ -69,6 +72,11 @@ public class DagBuildContextImpl implements DagBuildContext {
         return table;
     }
 
+    @Override
+    public boolean mayNeedSorting() {
+        return mayNeedSorting;
+    }
+
     public PhysicalRel getRel() {
         return rel;
     }
@@ -79,6 +87,30 @@ public class DagBuildContextImpl implements DagBuildContext {
 
     public void setTable(Table table) {
         this.table = table;
+    }
+
+    /**
+     * Changes sorting context for execution of given operation and restores it afterward.
+     */
+    public <T> T withSorting(boolean mayNeedSorting, Supplier<T> operation) {
+        final boolean prevSorting = this.mayNeedSorting;
+        this.mayNeedSorting = mayNeedSorting;
+        try {
+            return operation.get();
+        } finally {
+            this.mayNeedSorting = prevSorting;
+        }
+
+    }
+
+    /**
+     * Changes sorting context for execution of given operation and restores it afterward.
+     */
+    public void withSorting(boolean mayNeedSorting, Runnable operation) {
+        withSorting(mayNeedSorting, () -> {
+            operation.run();
+            return null;
+        });
     }
 
     @Nullable

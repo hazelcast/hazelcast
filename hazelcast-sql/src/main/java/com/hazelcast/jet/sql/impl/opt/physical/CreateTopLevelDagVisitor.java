@@ -78,6 +78,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
@@ -159,7 +160,10 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setRel(rel);
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(table).insertProcessor(dagBuildContext);
         Vertex vertex = vertexWithConfig.vertex();
-        connectInput(rel.getInput(), vertex, vertexWithConfig.configureEdgeFn());
+        // no currently existing connectors expect sorted input for insert
+        orderIrrelevant(() ->
+                connectInput(rel.getInput(), vertex, vertexWithConfig.configureEdgeFn()));
+
         return vertex;
     }
 
@@ -174,7 +178,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         dagBuildContext.setTable(table);
         dagBuildContext.setRel(rel);
         Vertex vertex = getJetSqlConnector(table).sinkProcessor(dagBuildContext);
-        connectInput(rel.getInput(), vertex, null);
+        // no currently existing connectors expect sorted input for sink
+        orderIrrelevant(() ->
+            connectInput(rel.getInput(), vertex, null));
         return vertex;
     }
 
@@ -191,7 +197,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 dagBuildContext, rel.getUpdateColumnList(), wrap(rel.getSourceExpressionList()),
                 wrap(rel.getPredicate()), rel.getInput() != null);
         if (rel.getInput() != null) {
-            connectInput(rel.getInput(), vertex, null);
+            // no currently existing connectors expect sorted input for update
+            orderIrrelevant(() ->
+                    connectInput(rel.getInput(), vertex, null));
         }
         return vertex;
     }
@@ -208,7 +216,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Vertex vertex = getJetSqlConnector(table).deleteProcessor(dagBuildContext,
                 wrap(rel.getPredicate()), rel.getInput() != null);
         if (rel.getInput() != null) {
-            connectInput(rel.getInput(), vertex, null);
+            // no currently existing connectors expect sorted input for delete
+            orderIrrelevant(() ->
+                connectInput(rel.getInput(), vertex, null));
         }
         return vertex;
     }
@@ -298,6 +308,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                     (Function<JetSqlRow, JetSqlRow> projectionFn, JetSqlRow row) -> projectionFn.apply(row)
             ));
         }
+        // calc does not change ordering of rows
         connectInputPreserveCollation(rel, vertex);
         return vertex;
     }
@@ -310,7 +321,11 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // First, construct processors for local sorting
         Vertex sortVertex = dag.newUniqueVertex("Sort",
                 ProcessorMetaSupplier.of(sortP(comparator)));
-        connectInput(rel.getInput(), sortVertex, null);
+
+        // input to sort vertex does not have to be sorted because it will be sorted by it
+        orderIrrelevant(() ->
+            connectInput(rel.getInput(), sortVertex, null));
+
 
         // Then, combine the locally sorted inputs while preserving the ordering
         Vertex combineVertex = dag.newUniqueVertex("SortCombine",
@@ -339,8 +354,13 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         localMemberAddress
                 )
         );
-        connectInput(rel.getInput(), vertex, edge ->
-                edge.distributeTo(localMemberAddress).allToOne(""));
+
+        // Aggregate works without any specific order of input.
+        // There might be cases where order could be used, eg. for MIN or MAX of indexed column
+        // but that should have a different plan and is not handled in optimized way now.
+        orderIrrelevant(() ->
+            connectInput(rel.getInput(), vertex, edge ->
+                    edge.distributeTo(localMemberAddress).allToOne("")));
         return vertex;
     }
 
@@ -352,7 +372,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 "Accumulate",
                 Processors.accumulateP(aggregateOperation)
         );
-        connectInput(rel.getInput(), vertex, null);
+        // see comment in onAggregate
+        orderIrrelevant(() ->
+            connectInput(rel.getInput(), vertex, null));
         return vertex;
     }
 
@@ -367,8 +389,10 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         localMemberAddress
                 )
         );
-        connectInput(rel.getInput(), vertex, edge ->
-                edge.distributeTo(localMemberAddress).allToOne(""));
+        // see comment in onAggregate
+        orderIrrelevant(() ->
+            connectInput(rel.getInput(), vertex, edge ->
+                    edge.distributeTo(localMemberAddress).allToOne("")));
         return vertex;
     }
 
@@ -381,7 +405,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 "AggregateByKey",
                 Processors.aggregateByKeyP(singletonList(groupKeyFn), aggregateOperation, (key, value) -> value)
         );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(groupKeyFn));
+        // see comment in onAggregate
+        orderIrrelevant(() ->
+            connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(groupKeyFn)));
         return vertex;
     }
 
@@ -394,7 +420,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 "AccumulateByKey",
                 Processors.accumulateByKeyP(singletonList(groupKeyFn), aggregateOperation)
         );
-        connectInput(rel.getInput(), vertex, edge -> edge.partitioned(groupKeyFn));
+        // see comment in onAggregate
+        orderIrrelevant(() ->
+            connectInput(rel.getInput(), vertex, edge -> edge.partitioned(groupKeyFn)));
         return vertex;
     }
 
@@ -406,7 +434,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 "CombineByKey",
                 Processors.combineByKeyP(aggregateOperation, (key, value) -> value)
         );
-        connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey()));
+        // see comment in onAggregate
+        orderIrrelevant(() ->
+            connectInput(rel.getInput(), vertex, edge -> edge.distributed().partitioned(entryKey())));
         return vertex;
     }
 
@@ -426,6 +456,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         (BiFunctionEx<Function<JetSqlRow, Traverser<JetSqlRow>>, JetSqlRow, Traverser<JetSqlRow>>) Function::apply
                 )
         );
+        // do not change sorting context, input is streaming, so it cannot be ORDERed BY anyway
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -464,6 +495,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             aggregateOperation,
                             resultMapping,
                             watermarkKey));
+            // do not change sorting context, input is streaming, so it cannot be ORDERed BY anyway
             connectInput(rel.getInput(), vertex, edge ->
                     edge.distributeTo(localMemberAddress).allToOne(""));
             return vertex;
@@ -488,6 +520,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                             resultMapping,
                             watermarkKey));
 
+            // do not change sorting context, input is streaming, so it cannot be ORDERed BY anyway
             connectInput(rel.getInput(), vertex1, edge -> edge.partitioned(groupKeyFn));
             dag.edge(between(vertex1, vertex2).distributed().partitioned(entryKey()));
             return vertex2;
@@ -501,6 +534,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(key, timestampExpression);
         Vertex vertex = dag.newUniqueVertex("Drop-Late-Items", lateItemsDropPSupplier);
 
+        // do not change sorting context, input is streaming, so it cannot be ORDERed BY anyway
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -520,6 +554,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                 rel.joinInfo(dagBuildContext.getParameterMetadata())
         );
         Vertex vertex = vertexWithConfig.vertex();
+        // nested loops join keeps ordering of left rel
         connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
         return vertex;
     }
@@ -535,6 +570,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         rel.getRight().getRowType().getFieldCount()
                 )
         );
+        // hash join keeps ordering of left rel
         connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
         return joinVertex;
     }
@@ -586,6 +622,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         rel.getLeft().getRowType().getFieldCount(),
                         rel.getRight().getRowType().getFieldCount()));
 
+        // do not change sorting context, input is streaming, so it cannot be ORDERed BY anyway
         connectStreamToStreamJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
 
         return joinVertex;
@@ -606,7 +643,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         int ordinal = 0;
         for (RelNode input : rel.getInputs()) {
-            Vertex inputVertex = ((PhysicalRel) input).accept(this);
+            // UNION ALL does not provide any guarantee for the order of rows, even if the inputs were sorted
+            Vertex inputVertex = orderIrrelevant(() ->
+                    ((PhysicalRel) input).accept(this));
             Edge edge = Edge.from(inputVertex).to(merger, ordinal++);
             dag.edge(edge);
         }
@@ -648,6 +687,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         // We use distribute-to-one edge to send all the items to the initiator member.
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
         // allToOne with any key, it goes to a single processor on a single member anyway.
+        //
+        // We do not change sorting context on root level, requirement of sorted result
+        // may be implicitly encoded in the execution plan.
         connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress)
                 .allToOne(""));
         return vertex;
@@ -692,6 +734,10 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     public Set<PlanObjectKey> getObjectKeys() {
         return objectKeys;
+    }
+
+    private <T> T orderIrrelevant(Supplier<T> operation) {
+        return dagBuildContext.withSorting(false, operation);
     }
 
     /**

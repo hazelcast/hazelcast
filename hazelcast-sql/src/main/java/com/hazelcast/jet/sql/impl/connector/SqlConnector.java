@@ -554,6 +554,39 @@ public interface SqlConnector {
         <T extends Table> T getTable();
 
         /**
+         * Informs if in current context RelNode capable of producing sorted result
+         * is required to produce it.
+         * <p>
+         * This enables some optimisations for scatter-gather operations that produce
+         * sorted result (eg. sorted index scan). They must merge all result streams
+         * to keep the order guarantee and this creates a bottleneck. In some cases however
+         * ordering is just a by-product and is not needed for correctness.
+         * <p>
+         * This assumption is fail-safe, if there is a slight possibility that order
+         * might be required, mayNeedSorting will return false.
+         * <p>
+         * This does not affect processors that do not produce sorted result by definition.
+         * They do not need to insert any additional sorting steps.
+         * <p>
+         * Note that in general the requirement to produce sorted result may change in both directions.
+         * If there is a subtree that requires sorted data (eg. for optimized* MAX calculation)
+         * but it is also a part of larger tree that produces unsorted result, then values can be interleaved.
+         * For example for query like {@code SELECT MAX(val) FROM table UNION ALL SELECT MIN(val) from table}
+         * with sorted index on {@code val} execution p
+         * then it would like that:
+         * <ol>
+         *     <li>root node requires sorting by default (we do not get this information from optimizer as for now)</li>
+         *     <li>UNION ALL inputs do not require sorting</li>
+         *     <li>optimized MIN/MAX input requires sorting*</li>
+         *     <li>we do limited index scan which has to produce ordered result*</li>
+         * </ol>
+         * * - these are currently not implemented, but are a simple example.
+         *
+         * @return if result should be sorted if possible
+         */
+        boolean mayNeedSorting();
+
+        /**
          * Converts a boolean {@link HazelcastRexNode}. When evaluating a {@link RexInputRef},
          * this context is assumed:<ul>
          * <li>If a table is set (see {@link #getTable()}), then it's assumed that it's that table's fields
