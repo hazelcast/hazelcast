@@ -318,6 +318,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         private void handleRead() throws IOException {
             metrics.incReads();
 
+            // todo: Need to revise.
             LAST_READ_TIME_NANOS.setOpaque(NioAsyncSocket.this, eventloop.taskStartNanos());
 
             int read = socketChannel.read(rcvBuffer);
