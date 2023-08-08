@@ -46,7 +46,9 @@ import org.jctools.util.PaddedAtomicLong;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static java.lang.Math.min;
 import static java.lang.System.currentTimeMillis;
@@ -339,7 +341,6 @@ public class EchoBenchmark_Netty {
 
     private class MonitorThread extends Thread {
         private final PaddedAtomicLong[] completedArray;
-        private long last = 0;
 
         public MonitorThread(PaddedAtomicLong[] completedArray) {
             super("MonitorThread");
@@ -358,14 +359,39 @@ public class EchoBenchmark_Netty {
         }
 
         private void run0() throws InterruptedException {
-            long endMs = currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
+            long runtimeMs = SECONDS.toMillis(runtimeSeconds);
+            long startMs = currentTimeMillis();
+            long endMs = startMs + runtimeMs;
+            long lastMs = startMs;
+            StringBuffer sb = new StringBuffer();
+            long last = 0;
             while (currentTimeMillis() < endMs) {
                 Thread.sleep(SECONDS.toMillis(1));
+                long nowMs = System.currentTimeMillis();
+
+                double completed = (100f * (nowMs - startMs)) / runtimeMs;
+                sb.append("  [");
+                sb.append(String.format("%,.3f", completed));
+                sb.append("%]");
+
+                long eta = TimeUnit.MILLISECONDS.toSeconds(endMs - nowMs);
+                long etaMinutes = eta / 60;
+                long etaSeconds = eta % 60;
+                sb.append("[eta ");
+                sb.append(etaMinutes);
+                sb.append("m:");
+                sb.append(etaSeconds);
+                sb.append("s]");
 
                 long total = sum(completedArray);
                 long diff = total - last;
                 last = total;
-                System.out.println("  thp " + diff + " echo/sec");
+                sb.append("[thp=");
+                sb.append(humanReadableCountSI(diff));
+                sb.append("/s]");
+
+                System.out.println(sb);
+                sb.setLength(0);
             }
         }
     }

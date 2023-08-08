@@ -45,6 +45,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
@@ -364,47 +365,63 @@ public class EchoBenchmark_Classic {
         }
 
         private void run0() throws InterruptedException {
-            long end = currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
+            long runtimeMs = SECONDS.toMillis(runtimeSeconds);
+            long startMs = currentTimeMillis();
+            long endMs = startMs + runtimeMs;
+            long lastMs = startMs;
             Metrics lastMetrics = new Metrics();
             Metrics metrics = new Metrics();
-            long lastMs = currentTimeMillis();
             StringBuffer sb = new StringBuffer();
-            while (currentTimeMillis() < end) {
+            while (currentTimeMillis() < endMs) {
                 Thread.sleep(SECONDS.toMillis(1));
                 long nowMs = currentTimeMillis();
 
                 collect(metrics);
 
+                double completed = (100f * (nowMs - startMs)) / runtimeMs;
+                sb.append("  [");
+                sb.append(String.format("%,.3f", completed));
+                sb.append("%]");
+
+                long eta = TimeUnit.MILLISECONDS.toSeconds(endMs - nowMs);
+                long etaMinutes = eta / 60;
+                long etaSeconds = eta % 60;
+                sb.append("[eta ");
+                sb.append(etaMinutes);
+                sb.append("m:");
+                sb.append(etaSeconds);
+                sb.append("s]");
+
                 long diff = metrics.echos - lastMetrics.echos;
                 long durationMs = nowMs - lastMs;
                 double echoThp = ((diff) * 1000d) / durationMs;
-                sb.append("   echo=");
+                sb.append("[echo=");
                 sb.append(humanReadableCountSI(echoThp));
-                sb.append("/s");
+                sb.append("/s]");
 
                 long reads = metrics.reads;
                 double readsThp = ((reads - lastMetrics.reads) * 1000d) / durationMs;
-                sb.append(" reads=");
+                sb.append("[reads=");
                 sb.append(humanReadableCountSI(readsThp));
-                sb.append("/s");
+                sb.append("/s]");
 
                 long bytesRead = metrics.bytesRead;
                 double bytesReadThp = ((bytesRead - lastMetrics.bytesRead) * 1000d) / durationMs;
-                sb.append(" read-bytes=");
+                sb.append("[read-bytes=");
                 sb.append(humanReadableByteCountSI(bytesReadThp));
-                sb.append("/s");
+                sb.append("/s]");
 
                 long writes = metrics.writes;
                 double writesThp = ((writes - lastMetrics.writes) * 1000d) / durationMs;
-                sb.append(" writes=");
+                sb.append("[writes=");
                 sb.append(humanReadableCountSI(writesThp));
-                sb.append("/s");
+                sb.append("/s]");
 
                 long bytesWritten = metrics.bytesWritten;
                 double bytesWrittehThp = ((bytesWritten - lastMetrics.bytesWritten) * 1000d) / durationMs;
-                sb.append(" write-bytes=");
+                sb.append("[write-bytes=");
                 sb.append(humanReadableByteCountSI(bytesWrittehThp));
-                sb.append("/s");
+                sb.append("/s]");
                 System.out.println(sb);
                 sb.setLength(0);
 

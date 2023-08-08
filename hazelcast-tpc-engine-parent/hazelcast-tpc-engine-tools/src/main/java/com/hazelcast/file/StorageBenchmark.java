@@ -36,6 +36,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.FormatUtil.humanReadableByteCountSI;
@@ -46,6 +47,7 @@ import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_NOATIME;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_RDWR;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.PERMISSIONS_ALL;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
+import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -623,68 +625,85 @@ public class StorageBenchmark {
         }
 
         private void run0() throws Exception {
-            long lastMs = System.currentTimeMillis();
+            long runtimeMs = SECONDS.toMillis(runtimeSeconds);
+            long startMs = currentTimeMillis();
+            long endMs = startMs + runtimeMs;
+            long lastMs = startMs;
+
             StringBuffer sb = new StringBuffer();
-            long end = System.currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
             Metrics lastMetrics = new Metrics();
             Metrics metrics = new Metrics();
-            while (System.currentTimeMillis() < end) {
+            while (System.currentTimeMillis() < endMs) {
                 Thread.sleep(1000);
 
                 long nowMs = System.currentTimeMillis();
                 long durationMs = nowMs - lastMs;
                 collect(metrics);
 
+                double completed = (100f * (nowMs - startMs)) / runtimeMs;
+                sb.append("  [");
+                sb.append(String.format("%,.3f", completed));
+                sb.append("%]");
+
+                long eta = TimeUnit.MILLISECONDS.toSeconds(endMs - nowMs);
+                long etaMinutes = eta / 60;
+                long etaSeconds = eta % 60;
+                sb.append("[eta ");
+                sb.append(etaMinutes);
+                sb.append("m:");
+                sb.append(etaSeconds);
+                sb.append("s]");
+
                 long reads = metrics.reads;
                 if (reads > 0) {
                     double readsThp = ((reads - lastMetrics.reads) * 1000d) / durationMs;
-                    sb.append(" reads=");
+                    sb.append("[reads=");
                     sb.append(FormatUtil.humanReadableCountSI(readsThp));
-                    sb.append("/s");
+                    sb.append("/s]");
                 }
 
                 long bytesRead = metrics.bytesRead;
                 if (bytesRead > 0) {
                     double bytesThp = ((bytesRead - lastMetrics.bytesRead) * 1000d) / durationMs;
-                    sb.append(" read-bytes=");
+                    sb.append("[read-bytes=");
                     sb.append(humanReadableByteCountSI(bytesThp));
-                    sb.append("/s");
+                    sb.append("/s]");
                 }
                 long writes = metrics.writes;
                 if (writes > 0) {
                     double writeThp = ((writes - lastMetrics.writes) * 1000d) / durationMs;
-                    sb.append(" writes=");
+                    sb.append("[writes=");
                     sb.append(FormatUtil.humanReadableCountSI(writeThp));
-                    sb.append("/s");
+                    sb.append("/s]");
                 }
                 long bytesWritten = metrics.bytesWritten;
                 if (bytesWritten > 0) {
                     double bytesThp = ((bytesWritten - lastMetrics.bytesWritten) * 1000d) / durationMs;
-                    sb.append(" write-bytes=");
+                    sb.append("[write-bytes=");
                     sb.append(humanReadableByteCountSI(bytesThp));
-                    sb.append("/s");
+                    sb.append("/s]");
                 }
                 long fsyncs = metrics.fsyncs;
                 if (fsyncs > 0) {
                     double fsyncsThp = ((fsyncs - lastMetrics.fsyncs) * 1000d) / durationMs;
-                    sb.append(" fsyncs=");
+                    sb.append("[fsyncs=");
                     sb.append(FormatUtil.humanReadableCountSI(fsyncsThp));
-                    sb.append("/s");
+                    sb.append("/s]");
                 }
                 long fdatasyncs = metrics.fdatasyncs;
                 if (fdatasyncs > 0) {
                     double fdataSyncsThp = ((fdatasyncs - lastMetrics.fdatasyncs) * 1000d) / durationMs;
-                    sb.append(" fdatasyncs=");
+                    sb.append("[fdatasyncs=");
                     sb.append(FormatUtil.humanReadableCountSI(fdataSyncsThp));
-                    sb.append("/s");
+                    sb.append("/s]");
                 }
 
                 long nops = metrics.nops;
                 if (nops > 0) {
                     double nopsThp = ((nops - lastMetrics.nops) * 1000d) / durationMs;
-                    sb.append(" nops=");
+                    sb.append("[nops=");
                     sb.append(FormatUtil.humanReadableCountSI(nopsThp));
-                    sb.append("/s");
+                    sb.append("/s]");
                 }
 
                 System.out.println(sb);

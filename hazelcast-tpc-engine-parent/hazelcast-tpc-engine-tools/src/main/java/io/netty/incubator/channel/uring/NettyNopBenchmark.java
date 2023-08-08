@@ -52,7 +52,7 @@ public class NettyNopBenchmark {
                     }
                     cq.process(handler);
                 }
-            }catch (Throwable t){
+            } catch (Throwable t) {
                 t.printStackTrace();
             }
         }

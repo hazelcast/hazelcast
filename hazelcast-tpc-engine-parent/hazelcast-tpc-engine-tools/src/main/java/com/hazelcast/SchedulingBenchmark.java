@@ -33,6 +33,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static com.hazelcast.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.TaskQueue.Builder.MAX_NICE;
 import static com.hazelcast.internal.tpcengine.TaskQueue.Builder.MIN_NICE;
 import static java.lang.System.currentTimeMillis;
@@ -256,14 +257,38 @@ public class SchedulingBenchmark {
         }
 
         private void run0() throws Exception {
-            long end = currentTimeMillis() + SECONDS.toMillis(runtimeSeconds);
-            while (currentTimeMillis() < end) {
+            long runtimeMs = SECONDS.toMillis(runtimeSeconds);
+            long startMs = currentTimeMillis();
+            long endMs = startMs + runtimeMs;
+            StringBuffer sb = new StringBuffer();
+            long last = 0;
+            while (currentTimeMillis() < endMs) {
                 Thread.sleep(SECONDS.toMillis(1));
+                long nowMs = System.currentTimeMillis();
+                double completed = (100f * (nowMs - startMs)) / runtimeMs;
+                sb.append("  [");
+                sb.append(String.format("%,.3f", completed));
+                sb.append("%]");
+
+                long eta = TimeUnit.MILLISECONDS.toSeconds(endMs - nowMs);
+                long etaMinutes = eta / 60;
+                long etaSeconds = eta % 60;
+                sb.append("[eta ");
+                sb.append(etaMinutes);
+                sb.append("m:");
+                sb.append(etaSeconds);
+                sb.append("s]");
 
                 long total = sum(csCounters);
                 long diff = total - last;
                 last = total;
-                System.out.println("  thp " + diff + " tasks/sec");
+
+                sb.append("[thp=");
+                sb.append(humanReadableCountSI(diff));
+                sb.append("/s]");
+
+                System.out.println(sb);
+                sb.setLength(0);
             }
         }
     }
