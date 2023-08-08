@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
+import com.hazelcast.jet.sql.impl.parse.SqlAnalyzeStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateDataConnection;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot;
@@ -253,6 +254,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_TYPES);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_DATA_CONNECTIONS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_RESOURCES);
+        SUPPORTED_OPERATORS.add(SqlAnalyzeStatement.OPERATOR);
 
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_SERIES);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_STREAM);

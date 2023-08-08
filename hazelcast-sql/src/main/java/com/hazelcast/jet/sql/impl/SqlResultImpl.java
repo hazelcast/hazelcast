@@ -39,6 +39,7 @@ class SqlResultImpl extends AbstractSqlResult {
     private final SqlRowMetadata rowMetadata;
     private final boolean isInfiniteRows;
     private final int partitionArgumentIndex;
+    private long jobId = -1;
 
     private ResultIterator<SqlRow> iterator;
 
@@ -48,11 +49,7 @@ class SqlResultImpl extends AbstractSqlResult {
             SqlRowMetadata rowMetadata,
             boolean isInfiniteRows
     ) {
-        this.queryId = queryId;
-        this.rootResultConsumer = rootResultConsumer;
-        this.rowMetadata = rowMetadata;
-        this.isInfiniteRows = isInfiniteRows;
-        this.partitionArgumentIndex = -1;
+        this(queryId, rootResultConsumer, rowMetadata, isInfiniteRows, -1, -1L);
     }
 
     SqlResultImpl(
@@ -62,11 +59,23 @@ class SqlResultImpl extends AbstractSqlResult {
             boolean isInfiniteRows,
             int partitionArgumentIndex
     ) {
+        this(queryId, rootResultConsumer, rowMetadata, isInfiniteRows, partitionArgumentIndex, -1L);
+    }
+
+    SqlResultImpl(
+            QueryId queryId,
+            QueryResultProducer rootResultConsumer,
+            SqlRowMetadata rowMetadata,
+            boolean isInfiniteRows,
+            int partitionArgumentIndex,
+            long jobId
+    ) {
         this.queryId = queryId;
         this.rootResultConsumer = rootResultConsumer;
         this.rowMetadata = rowMetadata;
         this.isInfiniteRows = isInfiniteRows;
         this.partitionArgumentIndex = partitionArgumentIndex;
+        this.jobId = jobId;
     }
 
     @Override
@@ -111,6 +120,10 @@ class SqlResultImpl extends AbstractSqlResult {
             exception = QueryException.cancelledByUser();
         }
         rootResultConsumer.onError(exception);
+    }
+
+    public long jobId() {
+        return jobId;
     }
 
     private final class RowToSqlRowIterator implements ResultIterator<SqlRow> {

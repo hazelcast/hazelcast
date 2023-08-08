@@ -817,6 +817,17 @@ SqlNode SqlExplainStatement() :
     }
 }
 
+SqlNode SqlAnalyzeStatement() :
+{
+    SqlNode stmt;
+}
+{
+    <ANALYZE>
+    stmt = ExtendedSqlQueryOrDml() {
+        return new SqlAnalyzeStatement(getPos(), stmt);
+    }
+}
+
 /**
  * Parses INSERT/SINK INTO statement.
  */
