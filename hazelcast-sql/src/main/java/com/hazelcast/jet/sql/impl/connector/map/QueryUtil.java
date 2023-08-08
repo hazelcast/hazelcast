@@ -49,8 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
-final class QueryUtil {
-
+public final class QueryUtil {
     private QueryUtil() {
     }
 

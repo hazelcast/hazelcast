@@ -92,7 +92,9 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -828,6 +830,52 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     protected static Object[] row(Object... values) {
         return values;
+    }
+
+    public static class SqlMapping {
+        protected final String name;
+        protected final String type;
+        protected final List<String> fields = new ArrayList<>();
+        protected final Map<Object, Object> options = new HashMap<>();
+
+        public SqlMapping(String name, String type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public SqlMapping fields(String... fields) {
+            this.fields.addAll(asList(fields));
+            return this;
+        }
+
+        public SqlMapping options(Object... options) {
+            for (int i = 0; i < options.length / 2; i++) {
+                this.options.put(options[2 * i], options[2 * i + 1]);
+            }
+            return this;
+        }
+
+        public SqlMapping optionsIf(boolean condition, Object... options) {
+            return condition ? options(options) : this;
+        }
+
+        public void create() {
+            create(instance(), false);
+        }
+
+        public void createOrReplace() {
+            create(instance(), true);
+        }
+
+        protected void create(HazelcastInstance instance, boolean replace) {
+            instance.getSql().execute("CREATE " + (replace ? "OR REPLACE " : "") + "MAPPING " + name
+                    + (fields.isEmpty() ? " " : "(" + String.join(",", fields) + ") ")
+                    + "TYPE " + type + " "
+                    + "OPTIONS (" + options.entrySet().stream()
+                            .map(e -> "'" + e.getKey() + "'='" + e.getValue() + "'").collect(joining(","))
+                    + ")"
+            );
+        }
     }
 
     /**

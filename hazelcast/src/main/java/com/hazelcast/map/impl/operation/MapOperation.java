@@ -67,6 +67,7 @@ import static com.hazelcast.map.impl.operation.steps.engine.StepRunner.isStepRun
 import static com.hazelcast.spi.impl.operationservice.CallStatus.RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.VOID;
 import static com.hazelcast.spi.impl.operationservice.CallStatus.WAIT;
+import static java.lang.String.format;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class MapOperation extends AbstractNamedOperation
@@ -106,10 +107,10 @@ public abstract class MapOperation extends AbstractNamedOperation
 
         try {
             recordStore = getRecordStoreOrNull();
-            if (recordStore == null) {
-                mapContainer = mapServiceContext.getMapContainer(name);
-            } else {
-                mapContainer = recordStore.getMapContainer();
+            mapContainer = getMapContainerOrNull();
+            if (mapContainer == null) {
+                logNoSuchMapExists();
+                return;
             }
         } catch (Throwable t) {
             disposeDeferredBlocks();
@@ -121,14 +122,10 @@ public abstract class MapOperation extends AbstractNamedOperation
         MapConfig mapConfig = mapContainer.getMapConfig();
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
 
-        boolean hasUserConfiguredOffload = mapServiceContext.isForceOffloadEnabled()
-                || (mapStoreConfig.isOffload()
-                && recordStore != null
-                && recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE);
-
         // check if mapStoreOffloadEnabled is true for this operation
         mapStoreOffloadEnabled = recordStore != null
-                && hasUserConfiguredOffload
+                && (mapServiceContext.isForceOffloadEnabled()
+                || (mapStoreConfig.isOffload() && hasMapStoreImplementation()))
                 && getStartingStep() != null;
 
         // check if tieredStoreOffloadEnabled for this operation
@@ -139,6 +136,28 @@ public abstract class MapOperation extends AbstractNamedOperation
         assertNativeMapOnPartitionThread();
 
         innerBeforeRun();
+    }
+
+    private void logNoSuchMapExists() {
+        ILogger logger = logger();
+        if (logger.isFinestEnabled()) {
+            logger.finest(format("No such map exists [mapName=%s, operation=%s]",
+                    name, getClass().getName()));
+        }
+    }
+
+    private MapContainer getMapContainerOrNull() {
+        if (recordStore == null) {
+            return createRecordStoreOnDemand
+                    ? mapServiceContext.getMapContainer(name)
+                    : mapServiceContext.getExistingMapContainer(name);
+        }
+
+        return recordStore.getMapContainer();
+    }
+
+    private boolean hasMapStoreImplementation() {
+        return recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE;
     }
 
     public boolean isTieredStoreAndPartitionCompactorEnabled() {
@@ -385,7 +404,6 @@ public abstract class MapOperation extends AbstractNamedOperation
      */
     protected final void invalidateAllKeysInNearCaches() {
         if (mapContainer.hasInvalidationListener()) {
-
             int partitionId = getPartitionId();
             Invalidator invalidator = getNearCacheInvalidator();
 
@@ -419,8 +437,7 @@ public abstract class MapOperation extends AbstractNamedOperation
     public ObjectNamespace getServiceNamespace() {
         MapContainer container = mapContainer;
         if (container == null) {
-            MapService service = getService();
-            container = service.getMapServiceContext().getMapContainer(name);
+            return MapService.getObjectNamespace(name);
         }
         return container.getObjectNamespace();
     }

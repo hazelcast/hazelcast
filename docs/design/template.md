@@ -134,9 +134,16 @@ Some of these prompts may not be relevant to your design document; in which case
   - Can the new functionality affect clusters which are not explicitly using it?
   - What testing and safe guards are being put in place to protect against unexpected problems?
 
-- Security questions:
-  - Does the change concern authentication or authorization logic? If so, mention this explicitly tag the relevant security-minded reviewer as reviewer to the design document.
-  - Does the change create a new way to communicate data over the network?  What rules are in place to ensure that this cannot be used by a malicious user to extract confidential data?
+- Security questions (also go through [OWASP TOP 10](https://owasp.org/Top10/) and [CWE Top 25](https://cwe.mitre.org/top25/) lists):
+  - Is the functionality accessible through the client protocol (including SQL commands)? What permissions (types/names/actions) will be used to protect the access?
+  - Is the input validation/cleanup in place? Proper character-escaping used? Protection against SQL injection? 
+  - Does the new functionality communicate over the network? Will it support TLS? If not, why?
+  - Does it write to a filesystem? Are the data written protected by encryption? If not, why?
+  - Does it introduce a new deserialization method? Is there a protection against resource exhaustion (OOM, handling cycles in object graphs, ...)?
+  - Which event types will be added to the auditlog?
+  - Does it read/write from/to a filesystem or an external system? Is the access guarded by additional permission checks?
+  - Does the change concern authentication or authorization logic? If so, mention this explicitly and tag the relevant security-minded reviewer as a reviewer of the design document.
+  - Does the change create a new way to communicate data over the network? What rules are in place to ensure that this cannot be used by a malicious user to extract confidential data?
   - Is there telemetry or crash reporting? What mechanisms are used to ensure no sensitive data is accidentally exposed?
 
 - Observability and usage questions:

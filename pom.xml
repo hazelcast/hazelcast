@@ -91,13 +91,13 @@
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
-        <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.515</aws.sdk.version>
+        <avro.version>1.11.2</avro.version>
+        <aws.sdk.version>1.12.521</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
         <classgraph.version>4.8.161</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
-        <guava.version>32.1.1-jre</guava.version>
+        <guava.version>32.1.2-jre</guava.version>
         <hadoop.version>3.3.6</hadoop.version>
         <h2.version>2.2.220</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
@@ -114,7 +114,7 @@
         <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
         <mysql.connector.version>8.1.0</mysql.connector.version>
-        <netty.version>4.1.94.Final</netty.version>
+        <netty.version>4.1.96.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.13.1</parquet.version>
@@ -159,7 +159,7 @@
         <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.0.1</archunit.version>
-        <errorprone.version>2.20.0</errorprone.version>
+        <errorprone.version>2.21.0</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
         <kubernetes-server-mock.version>6.8.0</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
@@ -1850,7 +1850,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.36.0</version>
+                <version>3.37.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>

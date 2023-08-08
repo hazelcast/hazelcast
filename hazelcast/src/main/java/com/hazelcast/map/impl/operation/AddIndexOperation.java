@@ -21,8 +21,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.steps.UtilSteps;
-import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -56,11 +54,6 @@ public class AddIndexOperation extends MapOperation
         super(name);
 
         this.config = IndexUtils.validateAndNormalize(name, config);
-    }
-
-    @Override
-    public Step getStartingStep() {
-        return UtilSteps.DIRECT_RUN_STEP;
     }
 
     @Override
