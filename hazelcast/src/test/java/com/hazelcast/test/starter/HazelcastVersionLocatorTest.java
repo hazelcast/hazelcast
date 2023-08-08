@@ -16,7 +16,6 @@
 
 package com.hazelcast.test.starter;
 
-import static java.io.File.separator;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -42,13 +41,20 @@ public class HazelcastVersionLocatorTest extends HazelcastTestSupport {
 
         assertNotNull(map);
 
-        final File jar = map.get(Artifact.OS_JAR);
+        File jar = map.get(Artifact.OS_JAR);
 
         assertNotNull(jar);
 
-        assertEquals(
-                System.getProperty("user.home") + separator + ".m2" + separator + "repository" + separator + "com" + separator
-                        + "hazelcast" + separator + "hazelcast" + separator + "5.0" + separator + "hazelcast-5.0.jar",
-                jar.toString());
+        final String repoDirectory = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository"
+                + File.separator + "com" + File.separator + "hazelcast" + File.separator + "hazelcast" + File.separator + "5.0"
+                + File.separator;
+
+        assertEquals(repoDirectory + "hazelcast-5.0.jar", jar.toString());
+
+        jar = map.get(Artifact.OS_TEST_JAR);
+
+        assertNotNull(jar);
+
+        assertEquals(repoDirectory + "hazelcast-5.0-tests.jar", jar.toString());
     }
 }
