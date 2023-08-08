@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.internal.tpcengine.CfsTaskQueueScheduler.niceToWeight;
 import static com.hazelcast.internal.tpcengine.util.EpochClock.epochNanos;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkOnEventloopThread;
 
 /**
  * A TaskQueue is the unit of scheduling within the eventloop. Each eventloop
@@ -103,7 +102,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // The eventloop this TaskQueue belongs to.
     Eventloop eventloop;
     // The TaskQueueScheduler that processed the TaskQueue.
-    TaskQueueScheduler scheduler;
+    TaskQueueScheduler taskQueueScheduler;
     // The accumulated amount of time this task has spend on the CPU. If there
     // are other threads running on the same processor, sumExecRuntimeNanos can
     // be distorted because these threads can contribute to the runtime of this
@@ -125,7 +124,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     long startNanos;
 
     // The TakGroup is an intrusive double-linked-list-node. This is used to keep track
-    // of blocked shared tasksGroups.
+    // of blocked outside tasksGroups in the TaskQueueScheduler
     TaskQueue prev;
     TaskQueue next;
 
@@ -234,16 +233,16 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             // If there is an outside queue, we don't need to notified
             // of any events because the queue will register itself
             // if it blocks.
-            scheduler.removeOutsideBlocked(this);
+            taskQueueScheduler.removeOutsideBlocked(this);
         }
 
-        scheduler.enqueue(this);
+        taskQueueScheduler.enqueue(this);
         return true;
     }
 
     /**
      * Offers a task to the outside queue.
-     *
+     * <p>
      * This method is threadsafe since it can be called outside of the eventloop.
      *
      * @param task the task to offer.
@@ -432,7 +431,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             super.conclude();
 
             checkNotNull(eventloop, "eventloop");
-            checkOnEventloopThread(eventloop);
+
+            eventloop.ensureEventloopThread();
 
             //checkNotNull(processor, "processor");
 
@@ -442,15 +442,12 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 throw new IllegalArgumentException("nice can't be larger than " + MAX_NICE);
             }
 
-            if (Thread.currentThread() != eventloop.reactor.eventloopThread()) {
-                throw new IllegalStateException("Can only call from eventloop thread");
-            }
 
             if (inside == null && outside == null) {
                 throw new IllegalStateException("The inside and outside queue can't both be null.");
             }
 
-            if (eventloop.taskQueueScheduler.taskQueues.size() == eventloop.taskQueueScheduler.capacity()) {
+            if (eventloop.taskQueueScheduler.taskQueues.size() == eventloop.taskQueueScheduler.runQueueCapacity()) {
                 throw new IllegalStateException("Too many taskgroups.");
             }
 
@@ -476,7 +473,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             taskQueue.processor = processor;
             taskQueue.name = name;
             taskQueue.eventloop = eventloop;
-            taskQueue.scheduler = eventloop.taskQueueScheduler;
+            taskQueue.taskQueueScheduler = eventloop.taskQueueScheduler;
             taskQueue.runState = RUN_STATE_BLOCKED;
             taskQueue.weight = niceToWeight(nice);
 

@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 
+import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_RUNNING;
 import static java.lang.Math.max;
 
 /**
@@ -42,36 +43,36 @@ import static java.lang.Math.max;
 class FcfsTaskQueueScheduler extends TaskQueueScheduler {
 
     final CircularQueue<TaskQueue> runQueue;
-    final int capacity;
+    final int runQueueCapacity;
+    int runQueueSize;
     final long targetLatencyNanos;
     final long minGranularityNanos;
-    int nrRunning;
     TaskQueue active;
 
     FcfsTaskQueueScheduler(int runQueueCapacity,
                            long targetLatencyNanos,
                            long minGranularityNanos) {
         this.runQueue = new CircularQueue<>(runQueueCapacity);
-        this.capacity = runQueueCapacity;
+        this.runQueueCapacity = runQueueCapacity;
         this.targetLatencyNanos = targetLatencyNanos;
         this.minGranularityNanos = minGranularityNanos;
     }
 
     @Override
-    public int capacity() {
-        return capacity;
+    public int runQueueCapacity() {
+        return runQueueCapacity;
     }
 
     @Override
-    public int size() {
-        return runQueue.size();
+    public int runQueueSize() {
+        return runQueueSize;
     }
 
     @Override
     public long timeSliceNanosActive() {
         assert active != null;
 
-        long timeslice = targetLatencyNanos / nrRunning;
+        long timeslice = targetLatencyNanos / runQueueSize;
         return max(minGranularityNanos, timeslice);
     }
 
@@ -93,7 +94,7 @@ class FcfsTaskQueueScheduler extends TaskQueueScheduler {
         assert active != null;
 
         runQueue.poll();
-        nrRunning--;
+        runQueueSize--;
         active = null;
     }
 
@@ -101,7 +102,7 @@ class FcfsTaskQueueScheduler extends TaskQueueScheduler {
     public void yieldActive() {
         assert active != null;
 
-        if (nrRunning > 1) {
+        if (runQueueSize > 1) {
             // if there is only one taskQueue in the runQueue, then there
             // is no need to remove and then add the item
             runQueue.poll();
@@ -114,10 +115,10 @@ class FcfsTaskQueueScheduler extends TaskQueueScheduler {
     @Override
     public void enqueue(TaskQueue taskQueue) {
         // the eventloop should control the number of created taskQueues
-        assert nrRunning <= capacity;
+        assert runQueueSize <= runQueueCapacity;
 
-        nrRunning++;
-        taskQueue.runState = TaskQueue.RUN_STATE_RUNNING;
+        taskQueue.runState = RUN_STATE_RUNNING;
         runQueue.add(taskQueue);
+        runQueueSize++;
     }
 }

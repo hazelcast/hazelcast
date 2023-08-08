@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine;
 
 import java.util.PriorityQueue;
 
+import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_RUNNING;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Math.max;
 import static java.lang.Math.pow;
@@ -75,12 +76,12 @@ class CfsTaskQueueScheduler extends TaskQueueScheduler {
     }
 
     @Override
-    public int capacity() {
+    public int runQueueCapacity() {
         return capacity;
     }
 
     @Override
-    public int size() {
+    public int runQueueSize() {
         return runQueue.size();
     }
 
@@ -90,10 +91,6 @@ class CfsTaskQueueScheduler extends TaskQueueScheduler {
 
     @Override
     public long timeSliceNanosActive() {
-//        // temporary hack to maximize the number of context switches.
-//        if (true) {
-//            return 1;
-//        }
         assert active != null;
 
         // every task gets a timeslice proportional to its weight compared
@@ -185,7 +182,7 @@ class CfsTaskQueueScheduler extends TaskQueueScheduler {
 
         totalWeight += taskQueue.weight;
         nrRunning++;
-        taskQueue.runState = TaskQueue.RUN_STATE_RUNNING;
+        taskQueue.runState = RUN_STATE_RUNNING;
         taskQueue.virtualRuntimeNanos = max(taskQueue.virtualRuntimeNanos, min_virtualRuntimeNanos);
         runQueue.add(taskQueue);
     }

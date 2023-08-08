@@ -62,7 +62,6 @@ public abstract class Eventloop {
     protected final Reactor reactor;
     protected final boolean spin;
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    // todo:padding to prevent false sharing
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
@@ -75,7 +74,6 @@ public abstract class Eventloop {
     protected long taskStartNanos;
     private final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
-    // protected final int runQueueCapacity;
     private final long stallThresholdNanos;
     protected final TaskQueueScheduler taskQueueScheduler;
     private final StallHandler stallHandler;

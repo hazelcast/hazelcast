@@ -46,12 +46,12 @@ public abstract class TaskQueueScheduler {
 
     // A double linked list of TaskQueues that have an outside queue and are
     // currently blocked (so waiting for some external event).
-    private TaskQueue outsideFirst;
-    private TaskQueue outsideLast;
+    private TaskQueue blockedOutsideFirst;
+    private TaskQueue blockedOutsideLast;
 
     public final boolean scheduleOutsideBlocked() {
         boolean scheduled = false;
-        TaskQueue queue = outsideFirst;
+        TaskQueue queue = blockedOutsideFirst;
 
         while (queue != null) {
             assert queue.runState == RUN_STATE_BLOCKED : "taskQueue.state" + queue.runState;
@@ -75,7 +75,7 @@ public abstract class TaskQueueScheduler {
      * @return true if there are outside task queue, false otherwise.
      */
     public final boolean hasOutsidePending() {
-        TaskQueue queue = outsideFirst;
+        TaskQueue queue = blockedOutsideFirst;
 
         while (queue != null) {
             if (!queue.outside.isEmpty()) {
@@ -95,14 +95,14 @@ public abstract class TaskQueueScheduler {
         TaskQueue prev = taskQueue.prev;
 
         if (prev == null) {
-            outsideFirst = next;
+            blockedOutsideFirst = next;
         } else {
             prev.next = next;
             taskQueue.prev = null;
         }
 
         if (next == null) {
-            outsideLast = prev;
+            blockedOutsideLast = prev;
         } else {
             next.prev = prev;
             taskQueue.next = null;
@@ -115,11 +115,11 @@ public abstract class TaskQueueScheduler {
         assert taskQueue.prev == null;
         assert taskQueue.next == null;
 
-        TaskQueue l = outsideLast;
+        TaskQueue l = blockedOutsideLast;
         taskQueue.prev = l;
-        outsideLast = taskQueue;
+        blockedOutsideLast = taskQueue;
         if (l == null) {
-            outsideFirst = taskQueue;
+            blockedOutsideFirst = taskQueue;
         } else {
             l.next = taskQueue;
         }
@@ -133,14 +133,14 @@ public abstract class TaskQueueScheduler {
      *
      * @return the number of TaskQueues on the run-queue.
      */
-    public abstract int size();
+    public abstract int runQueueSize();
 
     /**
      * Returns the capacity (so the number of TaskQueues) of this TaskQueueScheduler.
      *
      * @return the capacity.
      */
-    public abstract int capacity();
+    public abstract int runQueueCapacity();
 
     /**
      * Returns the length of the time slice of the active TaskQueue. This is

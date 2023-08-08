@@ -95,17 +95,17 @@ public class FcfsTaskQueueSchedulerTest {
         assertEquals(q1, scheduler.pickNext());
         scheduler.updateActive(100000);
         scheduler.yieldActive();
-        assertEquals(3, scheduler.nrRunning);
+        assertEquals(3, scheduler.runQueueSize);
 
         assertEquals(q2, scheduler.pickNext());
         scheduler.updateActive(10);
         scheduler.yieldActive();
-        assertEquals(3, scheduler.nrRunning);
+        assertEquals(3, scheduler.runQueueSize);
 
         assertEquals(q3, scheduler.pickNext());
         scheduler.updateActive(100000000);
         scheduler.yieldActive();
-        assertEquals(3, scheduler.nrRunning);
+        assertEquals(3, scheduler.runQueueSize);
 
         assertEquals(q1, scheduler.pickNext());
     }
@@ -126,15 +126,15 @@ public class FcfsTaskQueueSchedulerTest {
 
         assertEquals(q1, scheduler.pickNext());
         scheduler.dequeueActive();
-        assertEquals(2, scheduler.nrRunning);
+        assertEquals(2, scheduler.runQueueSize);
 
         assertEquals(q2, scheduler.pickNext());
         scheduler.dequeueActive();
-        assertEquals(1, scheduler.nrRunning);
+        assertEquals(1, scheduler.runQueueSize);
 
         assertEquals(q3, scheduler.pickNext());
         scheduler.dequeueActive();
-        assertEquals(0, scheduler.nrRunning);
+        assertEquals(0, scheduler.runQueueSize);
     }
 
     @Test
@@ -146,10 +146,10 @@ public class FcfsTaskQueueSchedulerTest {
         q2.weight = 2;
 
         scheduler.enqueue(q1);
-        assertEquals(1, scheduler.nrRunning);
+        assertEquals(1, scheduler.runQueueSize);
 
         scheduler.enqueue(q2);
-        assertEquals(2, scheduler.nrRunning);
+        assertEquals(2, scheduler.runQueueSize);
     }
 
 

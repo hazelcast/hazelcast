@@ -36,8 +36,8 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  */
 public final class DeadlineScheduler {
 
-    private int nrScheduled;
-    private final int capacity;
+    private int runQueueSize;
+    private final int runQueueCapacity;
     // -1 indicates that there is no task in the deadline scheduler.
     private long earliestDeadlineNanos = -1;
 
@@ -51,7 +51,7 @@ public final class DeadlineScheduler {
      * @throws IllegalArgumentException when the capacity is smaller than 1.
      */
     public DeadlineScheduler(int runQueueCapacity) {
-        this.capacity = checkPositive(runQueueCapacity, "runQueueCapacity");
+        this.runQueueCapacity = checkPositive(runQueueCapacity, "runQueueCapacity");
         this.runQueue = new PriorityQueue<>(runQueueCapacity);
     }
 
@@ -75,12 +75,11 @@ public final class DeadlineScheduler {
     public boolean offer(DeadlineTask task) {
         assert task.deadlineNanos >= 0;
 
-        if (nrScheduled == capacity) {
+        if (!runQueue.offer(task)) {
             return false;
         }
 
-        nrScheduled++;
-        runQueue.offer(task);
+        runQueueSize++;
 
         if (task.deadlineNanos < earliestDeadlineNanos) {
             earliestDeadlineNanos = task.deadlineNanos;
@@ -119,7 +118,7 @@ public final class DeadlineScheduler {
 
             // the task first needs to be removed from the run queue since we peeked it.
             runQueue.poll();
-            nrScheduled--;
+            runQueueSize--;
 
             // offer the task to its task group.
             // this will trigger the taskQueue to schedule itself if needed.
