@@ -227,6 +227,9 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         }
 
         if (outside != null) {
+            // If there is an outside queue, we don't need to notified
+            // of any events because the queue will register itself
+            // if it blocks.
             eventloop.removeBlockedOutside(this);
         }
 
