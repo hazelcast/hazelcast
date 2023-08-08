@@ -43,7 +43,6 @@ import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -88,7 +87,7 @@ public class EchoBenchmark {
     public boolean useDirectByteBuffers = true;
     public Long ioIntervalNanos = null;//TimeUnit.MICROSECONDS.toNanos(2000);
     public Long stallThresholdNanos = null;//TimeUnit.MICROSECONDS.toNanos(1);
-    public boolean unsafeWrite = true;
+    public boolean insideWrite = true;
 
     // private to the benchmark
     private volatile boolean stop;
@@ -178,7 +177,7 @@ public class EchoBenchmark {
         System.out.println("clientReactorCount:" + clientReactorCount);
         System.out.println("serverReactorCount:" + serverReactorCount);
         System.out.println("responsePooling:" + responsePooling);
-        System.out.println("unsafeWrite:" + unsafeWrite);
+        System.out.println("insideWrite:" + insideWrite);
     }
 
     private List<Reactor> newServerReactors() {
@@ -335,7 +334,7 @@ public class EchoBenchmark {
                     echoCounter.lazySet(echoCounter.get() + 1);
                 }
 
-                boolean offered = unsafeWrite
+                boolean offered = insideWrite
                         ? socket.insideWriteAndFlush(response)
                         : socket.writeAndFlush(response);
 
