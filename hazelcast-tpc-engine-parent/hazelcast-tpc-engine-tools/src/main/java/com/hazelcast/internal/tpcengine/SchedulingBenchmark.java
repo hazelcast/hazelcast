@@ -24,13 +24,13 @@ import org.jctools.util.PaddedAtomicLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.TaskQueue.Builder.MAX_NICE;
 import static com.hazelcast.internal.tpcengine.TaskQueue.Builder.MIN_NICE;
 import static java.lang.System.currentTimeMillis;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -127,7 +127,7 @@ public class SchedulingBenchmark {
         System.out.println("Duration " + durationMs + " ms");
         System.out.println("Context switches:" + csCount);
         System.out.println("Throughput:" + (csCount * 1000f / durationMs) + " tasks/second");
-        System.out.println("Avg context switch latency:" + (TimeUnit.MILLISECONDS.toNanos(durationMs) / (csCount / reactorCount)) + " ns");
+        System.out.println("Avg context switch latency:" + (MILLISECONDS.toNanos(durationMs) / (csCount / reactorCount)) + " ns");
     }
 
     private void printConfig() {
@@ -234,8 +234,6 @@ public class SchedulingBenchmark {
     }
 
     private class MonitorThread extends Thread {
-        private long last = 0;
-
         public MonitorThread() {
             super("MonitorThread");
         }
@@ -264,7 +262,7 @@ public class SchedulingBenchmark {
                 sb.append(String.format("%,.3f", completed));
                 sb.append("%]");
 
-                long eta = TimeUnit.MILLISECONDS.toSeconds(endMs - nowMs);
+                long eta = MILLISECONDS.toSeconds(endMs - nowMs);
                 long etaMinutes = eta / 60;
                 long etaSeconds = eta % 60;
                 sb.append("[eta ");
