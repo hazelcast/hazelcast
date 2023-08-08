@@ -76,7 +76,7 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build hazelcast jar
-        working-directory: master
+        working-directory: main
         run: |
           echo ${GITHUB_WORKSPACE}
           HAZELCAST_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
