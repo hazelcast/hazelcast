@@ -51,7 +51,7 @@ public class PredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
      */
     @Parameterized.Parameters(name = "query:{0}")
     public static Object[] parameters() {
-        return new Object[]{/*
+        return new Object[]{
                 // Logical operators
                 "SELECT name FROM people WHERE name = 'John Doe'",
                 "SELECT name FROM people WHERE a AND b",
@@ -107,12 +107,11 @@ public class PredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "SELECT name FROM people WHERE LENGTH(data) = 12",
                 "SELECT name FROM people WHERE LOWER(name) = 'john doe'",
                 "SELECT name FROM people WHERE UPPER(name) = 'JOHN DOE'",
-                  */
+
                 // https://docs.hazelcast.com/hazelcast/5.2/sql/functions-and-operators#hide-nav
                 // Mathematical Functions
                 // String Functions
                 // Trigonometric Functions
-                "SELECT name FROM people WHERE LENGTH(data) = 12"
         };
     }
 

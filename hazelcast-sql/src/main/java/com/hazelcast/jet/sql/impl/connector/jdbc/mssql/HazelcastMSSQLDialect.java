@@ -39,7 +39,6 @@ public class HazelcastMSSQLDialect extends MssqlSqlDialect {
 
     @Override
     public void unparseCall(SqlWriter writer, SqlCall call, int leftPrec, int rightPrec) {
-        String debugStr = call.getOperator().toString();
         switch (call.getKind()) {
             case OTHER:
                 if (call.getOperator() instanceof HazelcastConcatOperator) {

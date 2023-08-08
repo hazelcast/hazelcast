@@ -50,8 +50,6 @@ public class MSSQLPredicatePushDownJdbcSqlConnectorTest extends PredicatePushDow
             query = "SELECT name FROM people WHERE c != '1'";
         } else if (query.equals("SELECT name FROM people WHERE a IS NOT FALSE")) {
             query = "SELECT name FROM people WHERE a != '0'";
-        } else if (query.equals("SELECT name FROM people WHERE LENGTH(data) = 12")) {
-            query = "SELECT name FROM people WHERE LEN(data) = 12";
         }
     }
 
