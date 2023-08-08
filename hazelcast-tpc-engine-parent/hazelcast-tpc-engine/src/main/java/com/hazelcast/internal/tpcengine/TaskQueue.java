@@ -90,7 +90,9 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     int clockSampleInterval;
     int runState = RUN_STATE_BLOCKED;
     String name;
+    // the queue for tasks offered within the eventloop
     Queue<Object> inside;
+    // the queue for tasks offered outside of the eventloop
     Queue<Object> outside;
 
     // any runnable on the queue will be processed as is.
@@ -98,7 +100,9 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // of the task. anything else is offered to the taskFactory to be wrapped
     // inside a task.
     TaskProcessor processor;
+    // The eventloop this TaskQueue belongs to.
     Eventloop eventloop;
+    // The TaskQueueScheduler that processed the TaskQueue.
     TaskQueueScheduler scheduler;
     // The accumulated amount of time this task has spend on the CPU. If there
     // are other threads running on the same processor, sumExecRuntimeNanos can
