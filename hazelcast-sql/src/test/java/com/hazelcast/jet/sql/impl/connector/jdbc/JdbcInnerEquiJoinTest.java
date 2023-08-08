@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
-public class JdbcInnerJoinTest extends JdbcSqlTestSupport {
+public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
 
     private static final int ITEM_COUNT = 5;
 
@@ -72,6 +72,14 @@ public class JdbcInnerJoinTest extends JdbcSqlTestSupport {
                 index,
                 getWorkerName(index),
                 getSSN(index)
+        );
+    }
+
+    private static String getInsertSQL(String tableName, int id, String workerName) {
+        return String.format("INSERT INTO %s VALUES(%d, '%s')",
+                tableName,
+                id,
+                workerName
         );
     }
 
@@ -173,13 +181,19 @@ public class JdbcInnerJoinTest extends JdbcSqlTestSupport {
         );
     }
 
+
     // Left side is batch : joinInfo indices are used
     @Test
     public void joinWithOtherJdbc_right_Side_Has_Less_Rows() throws SQLException {
         String otherTableName = randomTableName();
         createTable(otherTableName);
-        insertItems(otherTableName, 1, 1);
-        insertItems(otherTableName, 3, 1);
+
+
+        String sql = getInsertSQL(otherTableName, 1, "name-1");
+        executeJdbc(sql);
+        sql = getInsertSQL(otherTableName, 3, "name-1");
+        executeJdbc(sql);
+
 
         execute(
                 "CREATE MAPPING " + otherTableName + " ("
@@ -190,16 +204,17 @@ public class JdbcInnerJoinTest extends JdbcSqlTestSupport {
         );
 
         assertRowsAnyOrder(
-                "SELECT t1.id, t2.name " +
+                "SELECT t1.name, t1.id, t2.id " +
                 "FROM " + tableName + " t1 " +
                 "JOIN " + otherTableName + " t2 " +
-                "   ON t1.id = t2.id",
+                "   ON t1.name = t2.name",
                 newArrayList(
-                        new Row(1, "name-1"),
-                        new Row(3, "name-3")
+                        new Row("name-1", 1, 1),
+                        new Row("name-1", 1, 3)
                 )
         );
     }
+
 
     @Test
     public void joinWithOtherJdbcNonDefaultSchema() throws SQLException {

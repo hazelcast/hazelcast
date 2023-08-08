@@ -42,7 +42,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -166,9 +168,7 @@ public class JdbcJoinIndexScanProcessorSupplier
                                         ResultSet resultSet,
                                         Object[] values,
                                         int queryNumberColumnIndex) throws SQLException {
-
-        JetJoinInfo joinInfo = jdbcJoinParameters.getJoinInfo();
-        List<Expression<?>> projections = jdbcJoinParameters.getProjections();
+        Set<Integer> processedQueryNumbers = new HashSet<>();
 
         boolean moveResultSetForward = true;
         boolean hasNext = false;
@@ -178,32 +178,62 @@ public class JdbcJoinIndexScanProcessorSupplier
                 hasNext = resultSet.next();
             }
             if (!hasNext) {
-                createExtendedRowIfNecessary(leftRow, projections, joinInfo, resultRows);
+                createExtendedRowIfNecessary(leftRow, jdbcJoinParameters, resultRows);
                 moveResultSetForward = false;
-            } else {
+                continue;
+            }
+            do {
                 fillValueArray(resultSet, values);
                 int queryNumberFromResultSet = resultSet.getInt(queryNumberColumnIndex);
                 // We have arrived to new query result
                 if (leftRowIndex != queryNumberFromResultSet) {
-                    // No need to move the ResultSet forward because we could not process it yet
+                    // No need to move the ResultSet forward
                     moveResultSetForward = false;
-                    createExtendedRowIfNecessary(leftRow, projections, joinInfo, resultRows);
+                    processMismatchingQueryNumber(resultRows, processedQueryNumbers, jdbcJoinParameters,
+                            leftRowIndex, leftRow);
                 } else {
-                    // Join the leftRow with the row from DB
-                    JetSqlRow jetSqlRowFromDB = new JetSqlRow(expressionEvalContext.getSerializationService(), values);
-                    JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRowFromDB, joinInfo.nonEquiCondition(),
-                            expressionEvalContext);
-                    if (joinedRow != null) {
-                        // The DB row evaluated as true
-                        resultRows.add(joinedRow);
-                    } else {
-                        // The DB row evaluated as false
-                        createExtendedRowIfNecessary(leftRow, projections, joinInfo, resultRows);
-                    }
                     moveResultSetForward = true;
+                    processMatchingQueryNumber(expressionEvalContext, resultRows, values, processedQueryNumbers,
+                            jdbcJoinParameters, leftRowIndex, leftRow);
                 }
-            }
+            } while (moveResultSetForward && (hasNext = resultSet.next()));
         }
+    }
+
+
+    // Called when leftRowIndex is behind the query number or changing to a new query number
+    private static void processMismatchingQueryNumber(List<JetSqlRow> resultRows,
+                                                      Set<Integer> processedQueryNumbers,
+                                                      JdbcJoinParameters jdbcJoinParameters,
+                                                      int leftRowIndex,
+                                                      JetSqlRow leftRow) {
+        // Check if we have processed this leftRow before
+        if (!processedQueryNumbers.contains(leftRowIndex)) {
+            createExtendedRowIfNecessary(leftRow, jdbcJoinParameters, resultRows);
+            processedQueryNumbers.add(leftRowIndex);
+        }
+    }
+
+    private static void processMatchingQueryNumber(ExpressionEvalContext expressionEvalContext,
+                                                   List<JetSqlRow> resultRows,
+                                                   Object[] values,
+                                                   Set<Integer> processedQueryNumbers,
+                                                   JdbcJoinParameters jdbcJoinParameters,
+                                                   int leftRowIndex,
+                                                   JetSqlRow leftRow) {
+        // Join the leftRow with the row from DB
+        JetJoinInfo joinInfo = jdbcJoinParameters.getJoinInfo();
+        JetSqlRow jetSqlRowFromDB = new JetSqlRow(expressionEvalContext.getSerializationService(), values);
+        JetSqlRow joinedRow = ExpressionUtil.join(leftRow, jetSqlRowFromDB, joinInfo.nonEquiCondition(),
+                expressionEvalContext);
+        if (joinedRow != null) {
+            // The DB row evaluated as true
+            resultRows.add(joinedRow);
+        } else {
+            // The DB row evaluated as false
+            createExtendedRowIfNecessary(leftRow, jdbcJoinParameters, resultRows);
+        }
+        processedQueryNumbers.add(leftRowIndex);
     }
 
     private static void setObjectsToPreparedStatement(PreparedStatement preparedStatement,
@@ -217,15 +247,24 @@ public class JdbcJoinIndexScanProcessorSupplier
 
         for (JetSqlRow leftRow : leftRowsList) {
             for (int index = 0; index < rightEquiJoinIndices.length; index++) {
-                preparedStatement.setObject(objectIndex++, leftRow.get(index));
+                // Get value at the array
+                int rightEquiJoinIndex = rightEquiJoinIndices[index];
+
+                // If value is out of bounds. This happes for Table Valued Functions
+                if (rightEquiJoinIndex > leftRow.getValues().length - 1) {
+                    // Use index
+                    rightEquiJoinIndex = index;
+                }
+                preparedStatement.setObject(objectIndex++, leftRow.get(rightEquiJoinIndex));
             }
         }
     }
 
     private static void createExtendedRowIfNecessary(JetSqlRow leftRow,
-                                                     List<Expression<?>> projections,
-                                                     JetJoinInfo joinInfo,
+                                                     JdbcJoinParameters jdbcJoinParameters,
                                                      List<JetSqlRow> jetSqlRows) {
+        JetJoinInfo joinInfo = jdbcJoinParameters.getJoinInfo();
+        List<Expression<?>> projections = jdbcJoinParameters.getProjections();
         if (!joinInfo.isInner()) {
             // This is not an inner join, so return a null padded JetSqlRow
             JetSqlRow extendedRow = leftRow.extendedRow(projections.size());
