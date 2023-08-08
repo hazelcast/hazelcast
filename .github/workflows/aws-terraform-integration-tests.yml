@@ -3,6 +3,8 @@ name: aws-tests
 on:
   workflow_dispatch:
   push:
+    branches:
+      - "CN-930*"
   pull_request_target:
     types:
       - labeled
@@ -24,14 +26,6 @@ jobs:
   build:
     name: AWS Tests
     runs-on: ubuntu-latest
-    if: >-
-      github.repository_owner == 'hazelcast' && 
-      ( github.event_name == 'workflow_dispatch' || 
-        (github.event_name == 'pull_request_target' && 
-          github.event.action == 'labeled' && 
-          github.event.label.name == 'run-discovery-tests' 
-        )
-      )
     outputs:
       HZ_IMG: ${{ steps.get-hz-image-tag.outputs.HZ_IMG }}
       CL_IMG: ${{ steps.get-cl-image-tag.outputs.CL_IMG }}
