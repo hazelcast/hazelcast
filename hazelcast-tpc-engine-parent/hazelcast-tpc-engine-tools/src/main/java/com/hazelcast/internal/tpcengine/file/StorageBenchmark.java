@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.file;
+package com.hazelcast.internal.tpcengine.file;
 
-import com.hazelcast.FormatUtil;
+import com.hazelcast.internal.tpcengine.FormatUtil;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorType;
-import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
@@ -39,7 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.FormatUtil.humanReadableByteCountSI;
+import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableByteCountSI;
 import static com.hazelcast.internal.tpcengine.Reactor.Builder.newReactorBuilder;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_CREAT;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_DIRECT;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.net;
+package com.hazelcast.internal.tpcengine.net;
 
 
 import com.hazelcast.internal.tpcengine.iouring.AcceptMemory;

@@ -14,15 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.internal.tpcengine;
 
 
-import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorType;
-import com.hazelcast.internal.tpcengine.Task;
-import com.hazelcast.internal.tpcengine.TaskProcessor;
-import com.hazelcast.internal.tpcengine.TaskQueue;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.jctools.util.PaddedAtomicLong;
@@ -33,7 +27,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static com.hazelcast.FormatUtil.humanReadableCountSI;
+import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.TaskQueue.Builder.MAX_NICE;
 import static com.hazelcast.internal.tpcengine.TaskQueue.Builder.MIN_NICE;
 import static java.lang.System.currentTimeMillis;

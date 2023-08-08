@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.net;
+package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorType;
@@ -22,8 +22,6 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonPooledIOBufferAllocator;
-import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.jctools.util.PaddedAtomicLong;
@@ -35,8 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.FormatUtil.humanReadableByteCountSI;
-import static com.hazelcast.FormatUtil.humanReadableCountSI;
+import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableByteCountSI;
+import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_REUSEPORT;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.net;
+package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
@@ -48,7 +48,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.FormatUtil.humanReadableCountSI;
+import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static java.lang.Math.min;
 import static java.lang.System.currentTimeMillis;

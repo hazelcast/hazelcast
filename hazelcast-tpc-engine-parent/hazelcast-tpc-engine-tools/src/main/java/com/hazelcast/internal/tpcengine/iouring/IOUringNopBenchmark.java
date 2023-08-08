@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.iouring;
-
-import com.hazelcast.internal.tpcengine.iouring.CompletionQueue;
-import com.hazelcast.internal.tpcengine.iouring.IOUring;
-import com.hazelcast.internal.tpcengine.iouring.Linux;
-import com.hazelcast.internal.tpcengine.iouring.SubmissionQueue;
+package com.hazelcast.internal.tpcengine.iouring;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.internal.tpcengine;
 
 import joptsimple.BuiltinHelpFormatter;
 import joptsimple.OptionParser;

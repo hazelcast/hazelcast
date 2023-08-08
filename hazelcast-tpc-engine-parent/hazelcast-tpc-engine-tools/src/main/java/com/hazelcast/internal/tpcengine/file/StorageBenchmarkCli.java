@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.file;
+package com.hazelcast.internal.tpcengine.file;
 
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.util.OS;
@@ -24,15 +24,10 @@ import joptsimple.OptionSpec;
 
 import java.util.Arrays;
 
-import static com.hazelcast.CliUtils.getToolsVersion;
-import static com.hazelcast.CliUtils.printHelp;
-import static com.hazelcast.GitInfo.getBuildTime;
-import static com.hazelcast.GitInfo.getCommitIdAbbrev;
-import static com.hazelcast.file.StorageBenchmark.READWRITE_NOP;
-import static com.hazelcast.file.StorageBenchmark.READWRITE_RANDREAD;
-import static com.hazelcast.file.StorageBenchmark.READWRITE_RANDWRITE;
-import static com.hazelcast.file.StorageBenchmark.READWRITE_READ;
-import static com.hazelcast.file.StorageBenchmark.READWRITE_WRITE;
+import static com.hazelcast.internal.tpcengine.CliUtils.getToolsVersion;
+import static com.hazelcast.internal.tpcengine.CliUtils.printHelp;
+import static com.hazelcast.internal.tpcengine.GitInfo.getBuildTime;
+import static com.hazelcast.internal.tpcengine.GitInfo.getCommitIdAbbrev;
 
 public class StorageBenchmarkCli {
     private final OptionParser parser = new OptionParser();
@@ -128,15 +123,15 @@ public class StorageBenchmarkCli {
 
         String readwrite = options.valueOf(readwriteSpec);
         if ("read".equals(readwrite)) {
-            benchmark.readwrite = READWRITE_READ;
+            benchmark.readwrite = StorageBenchmark.READWRITE_READ;
         } else if ("write".equals(readwrite)) {
-            benchmark.readwrite = READWRITE_WRITE;
+            benchmark.readwrite = StorageBenchmark.READWRITE_WRITE;
         } else if ("randread".equals(readwrite)) {
-            benchmark.readwrite = READWRITE_RANDREAD;
+            benchmark.readwrite = StorageBenchmark.READWRITE_RANDREAD;
         } else if ("randwrite".equals(readwrite)) {
-            benchmark.readwrite = READWRITE_RANDWRITE;
+            benchmark.readwrite = StorageBenchmark.READWRITE_RANDWRITE;
         } else if ("nop".equals(readwrite)) {
-            benchmark.readwrite = READWRITE_NOP;
+            benchmark.readwrite = StorageBenchmark.READWRITE_NOP;
         } else {
             System.out.println("Unrecognized readwrite value [" + readwrite + "]");
         }

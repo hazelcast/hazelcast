@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.ReactorType;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
-import static com.hazelcast.CliUtils.getToolsVersion;
-import static com.hazelcast.CliUtils.printHelp;
-import static com.hazelcast.GitInfo.getBuildTime;
-import static com.hazelcast.GitInfo.getCommitIdAbbrev;
+import static com.hazelcast.internal.tpcengine.CliUtils.getToolsVersion;
+import static com.hazelcast.internal.tpcengine.CliUtils.printHelp;
+import static com.hazelcast.internal.tpcengine.GitInfo.getBuildTime;
+import static com.hazelcast.internal.tpcengine.GitInfo.getCommitIdAbbrev;
 
-/**
- * Tests how fast the Reactor can schedule tasks.
- */
-public class SchedulingBenchmarkCli {
+public class EchoBenchmarkCli {
+
     private final OptionParser parser = new OptionParser();
 
     private final OptionSpec<String> runtimeSpec = parser
@@ -37,28 +35,30 @@ public class SchedulingBenchmarkCli {
             .withRequiredArg().ofType(String.class)
             .defaultsTo("60s");
 
-    private final OptionSpec<String> reactorTypeSpec = parser
-            .accepts("reactortype", "The type of reactor.  Available options: iouring or nio.")
+    private final OptionSpec<String> ioengineSpec = parser
+            .accepts("ioengine", "The type of ioengine (AKA reactortype). "
+                    + "Available options: iouring or nio. "
+                    + "The nio option can't be used with fio. ")
             .withRequiredArg().ofType(String.class)
-            .defaultsTo("nio");
+            .defaultsTo("iouring");
 
-    private final OptionSpec<Integer> reactorsSpec = parser
-            .accepts("reactors", "The number of reactors.")
+    private final OptionSpec<Integer> serverReactorsSpec = parser
+            .accepts("serverReactors", "The number of server reactors")
             .withRequiredArg().ofType(Integer.class)
             .defaultsTo(1);
 
-    private final OptionSpec<String> affinitySpec = parser
-            .accepts("affinity", "The CPU affinity")
-            .withRequiredArg().ofType(String.class)
-            .defaultsTo(null);
+    private final OptionSpec<Integer> clientReactorsSpec = parser
+            .accepts("clientReactors", "The number of client reactors")
+            .withRequiredArg().ofType(Integer.class)
+            .defaultsTo(1);
 
     public static void main(String[] args) throws Exception {
-        SchedulingBenchmarkCli cli = new SchedulingBenchmarkCli();
+        EchoBenchmarkCli cli = new EchoBenchmarkCli();
         cli.run(args);
     }
 
     private void run(String[] args) throws Exception {
-        System.out.println("SchedulingBenchmark");
+        System.out.println("Echo Benchmark");
 
         System.out.printf("Version: %s, Commit: %s, Build Time: %s%n",
                 getToolsVersion(), getCommitIdAbbrev(), getBuildTime());
@@ -71,7 +71,7 @@ public class SchedulingBenchmarkCli {
             return;
         }
 
-        SchedulingBenchmark benchmark = new SchedulingBenchmark();
+        EchoBenchmark benchmark = new EchoBenchmark();
         String runtime = options.valueOf(runtimeSpec);
         if (!runtime.endsWith("s")) {
             System.out.println("Runtime needs to end with 's'");
@@ -79,9 +79,10 @@ public class SchedulingBenchmarkCli {
 
         String runtimeSec = runtime.substring(0, runtime.length() - 1).trim();
         benchmark.runtimeSeconds = Integer.parseInt(runtimeSec);
-        benchmark.reactorType = ReactorType.fromString(options.valueOf(reactorTypeSpec));
-        benchmark.reactorCount = options.valueOf(reactorsSpec);
-        benchmark.affinity = options.valueOf(affinitySpec);
+        benchmark.spin = false;
+        benchmark.reactorType = ReactorType.fromString(options.valueOf(ioengineSpec));
+        benchmark.serverReactorCount = options.valueOf(serverReactorsSpec);
+        benchmark.clientReactorCount = options.valueOf(clientReactorsSpec);
         benchmark.run();
         System.exit(0);
     }

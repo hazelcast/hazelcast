@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.internal.tpcengine;
 
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
