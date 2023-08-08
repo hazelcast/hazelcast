@@ -19,7 +19,6 @@ package com.hazelcast.test.starter;
 import static com.hazelcast.internal.util.OsHelper.isWindows;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
-import static java.lang.String.format;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -31,6 +30,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.maven.artifact.DefaultArtifact;
+import org.apache.maven.artifact.handler.ArtifactHandler;
+import org.apache.maven.artifact.handler.DefaultArtifactHandler;
+import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
+import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
@@ -44,6 +49,9 @@ public class HazelcastVersionLocator {
         SQL_JAR(false, false, "hazelcast-sql"),
         EE_JAR(true, false, "hazelcast-enterprise");
 
+        private static final ArtifactHandler ARTIFACT_HANDLER = new DefaultArtifactHandler("");
+        private static final ArtifactRepositoryLayout REPOSITORY_LAYOUT = new DefaultRepositoryLayout();
+
         private final boolean enterprise;
         private final boolean test;
         private final String artifactId;
@@ -54,11 +62,15 @@ public class HazelcastVersionLocator {
             this.artifactId = artifactId;
         }
 
+        private org.apache.maven.artifact.Artifact toMavenArtifact(String version) {
+            return new DefaultArtifact("com.hazelcast", artifactId, version, "", "", test ? "tests" : "", ARTIFACT_HANDLER);
+        }
+
         /** @return a path to the artifact in the local Maven repository, downloading if required */
         private File locateArtifact(final String version) {
-            final String path = format("/com/hazelcast/%1$s/%2$s/%1$s-%2$s%3$s.jar", artifactId, version,
-                    (test ? "-tests" : ""));
-            final File localCopy = new File(LOCAL_M2_REPOSITORY_PREFIX + path);
+            final File localCopy = new File(
+                    LOCAL_M2_REPOSITORY_PREFIX + File.separator + REPOSITORY_LAYOUT.pathOf(toMavenArtifact(version)) + ".jar");
+
             if (!localCopy.exists()) {
                 downloadArtifact(version);
             }
@@ -98,7 +110,7 @@ public class HazelcastVersionLocator {
             builder.add(getMvn());
 
             builder.add("dependency:get");
-            builder.add("-D" + getArtifactArgument(version));
+            builder.add("-Dartifact=" + getArtifactArgument(version));
 
             if (enterprise) {
                 builder.add("-DremoteRepositories=https://repository.hazelcast.com/release");
@@ -115,8 +127,8 @@ public class HazelcastVersionLocator {
     static {
         try {
             // https://stackoverflow.com/a/16218772
-            final Process process = new ProcessBuilder(getMvn(), "help:evaluate",
-                    "-Dexpression=settings.localRepository", "-q", "-DforceStdout").start();
+            final Process process = new ProcessBuilder(getMvn(), "help:evaluate", "-Dexpression=settings.localRepository", "-q",
+                    "-DforceStdout").start();
 
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 LOCAL_M2_REPOSITORY_PREFIX = reader.readLine();
@@ -127,7 +139,7 @@ public class HazelcastVersionLocator {
     }
 
     private static String getMvn() {
-        return isWindows() ? "mvn.cmd" : "mvn";
+        return isWindows() ? "mvn.cmd" : "/opt/homebrew/bin/mvn";
     }
 
     public static Map<Artifact, File> locateVersion(final String version, final boolean enterprise) {
