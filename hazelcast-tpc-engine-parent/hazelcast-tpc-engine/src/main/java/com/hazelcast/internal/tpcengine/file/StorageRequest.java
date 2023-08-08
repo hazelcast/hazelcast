@@ -20,24 +20,25 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 
 /**
- * Represents a request to the {@link BlockDevice} like a read or write.
+ * Represents a request to the {@link StorageDevice} like a read or write.
  * <p/>
- * BlockRequests should be pooled by the {@link BlockRequestScheduler} to avoid litter.
+ * BlockRequests should be pooled by the {@link StorageScheduler} to avoid litter.
  * <p/>
  * BlockRequests are 'generic' in the sense that the same BlockRequest object can be
- * interpreted in many different ways depending on the opcode. So there are on different
- * subclasses for e.g. a read or a write.
+ * interpreted in many different ways depending on the opcode. So there are no different
+ * subclasses for e.g. a read or a write. Unlike C, Java doesn't have support for unions
+ * and hence we end up with this approach.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
-public class BlockRequest {
-    public static final int BLK_REQ_OP_NOP = 1;
-    public static final int BLK_REQ_OP_READ = 2;
-    public static final int BLK_REQ_OP_WRITE = 3;
-    public static final int BLK_REQ_OP_FSYNC = 4;
-    public static final int BLK_REQ_OP_FDATASYNC = 5;
-    public static final int BLK_REQ_OP_OPEN = 6;
-    public static final int BLK_REQ_OP_CLOSE = 7;
-    public static final int BLK_REQ_OP_FALLOCATE = 8;
+public class StorageRequest {
+    public static final int STR_REQ_OP_NOP = 1;
+    public static final int STR_REQ_OP_READ = 2;
+    public static final int STR_REQ_OP_WRITE = 3;
+    public static final int STR_REQ_OP_FSYNC = 4;
+    public static final int STR_REQ_OP_FDATASYNC = 5;
+    public static final int STR_REQ_OP_OPEN = 6;
+    public static final int STR_REQ_OP_CLOSE = 7;
+    public static final int STR_REQ_OP_FALLOCATE = 8;
 
     public IOBuffer buffer;
     public int permissions;

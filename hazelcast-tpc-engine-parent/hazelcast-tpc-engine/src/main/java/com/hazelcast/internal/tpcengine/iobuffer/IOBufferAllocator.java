@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.iobuffer;
 
+/**
+ * An allocator for {@link IOBuffer} instances.
+ */
 public interface IOBufferAllocator {
 
     // Not desirable on this interface

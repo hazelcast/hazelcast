@@ -20,9 +20,9 @@ import java.nio.ByteBuffer;
 
 
 /**
- * A {@link AsyncSocketReader} that disposes any bytes on the receive buffer.
+ * A {@link AsyncSocket.Reader} that disposes any bytes on the receive buffer.
  */
-public class DevNullAsyncSocketReader extends AsyncSocketReader {
+public class DevNullAsyncSocketReader extends AsyncSocket.Reader {
     @Override
     public void onRead(ByteBuffer src) {
         src.position(src.limit());

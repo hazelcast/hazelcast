@@ -17,9 +17,7 @@
 package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -31,11 +29,10 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
-import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -44,18 +41,12 @@ public abstract class AsyncSocketTest {
 
     private final List<Reactor> reactors = new ArrayList<>();
 
-    public abstract ReactorBuilder newReactorBuilder();
+    public abstract Reactor.Builder newReactorBuilder();
 
     public Reactor newReactor() {
-        ReactorBuilder builder = newReactorBuilder();
-        Reactor reactor = builder.build();
+        Reactor reactor = newReactorBuilder().build();
         reactors.add(reactor);
         return reactor.start();
-    }
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
     }
 
     @After
@@ -66,10 +57,9 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_construction() {
         Reactor reactor = newReactor();
-        AsyncSocket socket = reactor
-                .newAsyncSocketBuilder()
-                .setReader(new DevNullAsyncSocketReader())
-                .build();
+        AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket socket = socketBuilder.build();
 
         assertNotNull(socket.metrics());
         assertNotNull(socket.context());
@@ -78,10 +68,9 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_remoteAddress_whenNotConnected() {
         Reactor reactor = newReactor();
-        AsyncSocket socket = reactor
-                .newAsyncSocketBuilder()
-                .setReader(new DevNullAsyncSocketReader())
-                .build();
+        AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket socket = socketBuilder.build();
         socket.start();
 
         SocketAddress remoteAddress = socket.getRemoteAddress();
@@ -91,10 +80,9 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_localAddress_whenNotConnected() {
         Reactor reactor = newReactor();
-        AsyncSocket socket = reactor
-                .newAsyncSocketBuilder()
-                .setReader(new DevNullAsyncSocketReader())
-                .build();
+        AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket socket = socketBuilder.build();
         socket.start();
 
         SocketAddress localAddress = socket.getLocalAddress();
@@ -105,22 +93,22 @@ public abstract class AsyncSocketTest {
     public void test_connect() throws ExecutionException, InterruptedException {
         Reactor reactor = newReactor();
         CompletableFuture<AsyncSocket> remoteSocketFuture = new CompletableFuture<>();
-        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptFn(acceptRequest -> {
-                    AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
-                            .setReader(new DevNullAsyncSocketReader())
-                            .build();
-                    remoteSocketFuture.complete(socket);
-                    socket.start();
-                })
-                .build();
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+            AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
+            socketBuilder.reader = new DevNullAsyncSocketReader();
+            AsyncSocket socket = socketBuilder.build();
+            remoteSocketFuture.complete(socket);
+            socket.start();
+        };
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
 
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
-        AsyncSocket localSocket = reactor.newAsyncSocketBuilder()
-                .setReader(new DevNullAsyncSocketReader())
-                .build();
+        AsyncSocket.Builder localSocketBuilder = reactor.newAsyncSocketBuilder();
+        localSocketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket localSocket = localSocketBuilder.build();
         localSocket.start();
 
         CompletableFuture<Void> connect = localSocket.connect(serverSocket.getLocalAddress());
@@ -147,9 +135,9 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_connect_whenNoServerRunning() {
         Reactor reactor = newReactor();
-        AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
-                .setReader(new DevNullAsyncSocketReader())
-                .build();
+        AsyncSocket.Builder clientSocketBuilder = reactor.newAsyncSocketBuilder();
+        clientSocketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket clientSocket = clientSocketBuilder.build();
         clientSocket.start();
 
         CompletableFuture<Void> future = clientSocket.connect(new InetSocketAddress("127.0.0.1", 5002));
@@ -160,9 +148,10 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_close_whenNotStarted() {
         Reactor reactor = newReactor();
-        AsyncSocket socket = reactor.newAsyncSocketBuilder()
-                .setReader(new DevNullAsyncSocketReader())
-                .build();
+        AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket socket = socketBuilder.build();
+
 
         socket.close();
 
@@ -172,9 +161,9 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_close_whenNotActivated_andAlreadyClosed() {
         Reactor reactor = newReactor();
-        AsyncSocket socket = reactor.newAsyncSocketBuilder()
-                .setReader(new DevNullAsyncSocketReader())
-                .build();
+        AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket socket = socketBuilder.build();
 
         socket.close();
 
@@ -186,9 +175,10 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_start_whenAlreadyStarted() {
         Reactor reactor = newReactor();
-        AsyncSocket socket = reactor.newAsyncSocketBuilder()
-                .setReader(new DevNullAsyncSocketReader())
-                .build();
+        AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket socket = socketBuilder.build();
+
 
         socket.start();
         assertThrows(CompletionException.class, socket::start);
@@ -197,20 +187,21 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_readable() {
         Reactor reactor = newReactor();
-        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptFn(acceptRequest -> {
-                    AsyncSocket socket = reactor.newAsyncSocketBuilder(acceptRequest)
-                            .setReader(new DevNullAsyncSocketReader())
-                            .build();
-                    socket.start();
-                }).build();
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+            AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
+            socketBuilder.reader = new DevNullAsyncSocketReader();
+            AsyncSocket socket = socketBuilder.build();
+            socket.start();
+        };
 
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
 
-        AsyncSocket clientSocket = reactor.newAsyncSocketBuilder()
-                .setReader(new DevNullAsyncSocketReader())
-                .build();
+        AsyncSocket.Builder clientSocketBuilder = reactor.newAsyncSocketBuilder();
+        clientSocketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket clientSocket = clientSocketBuilder.build();
         clientSocket.start();
 
         CompletableFuture<Void> connect = clientSocket.connect(serverSocket.getLocalAddress());

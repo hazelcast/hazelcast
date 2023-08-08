@@ -17,17 +17,13 @@
 package com.hazelcast.net;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
-import com.hazelcast.internal.tpcengine.iobuffer.UnpooledIOBufferAllocator;
+import com.hazelcast.internal.tpcengine.iobuffer.NonPooledIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.jctools.util.PaddedAtomicLong;
@@ -37,17 +33,17 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.FormatUtil.humanReadableByteCountSI;
 import static com.hazelcast.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEPORT;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_REUSEPORT;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
+import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -74,9 +70,9 @@ public class EchoBenchmark {
     public int runtimeSeconds = 2000;
     public int payloadSize = 0;
     // the number of concurrent request send over a single connection.
-    public int concurrency = 100;
+    public int concurrency = 1000;
     // the total number of connections.
-    public int connections = 100;
+    public int connections = 10;
 
     public boolean tcpNoDelay = true;
     public boolean spin = false;
@@ -92,6 +88,7 @@ public class EchoBenchmark {
     public boolean useDirectByteBuffers = true;
     public Long ioIntervalNanos = null;//TimeUnit.MICROSECONDS.toNanos(2000);
     public Long stallThresholdNanos = null;//TimeUnit.MICROSECONDS.toNanos(1);
+    public boolean unsafeWrite = true;
 
     // private to the benchmark
     private volatile boolean stop;
@@ -132,6 +129,7 @@ public class EchoBenchmark {
                 byte[] payload = new byte[payloadSize];
                 IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
                 buf.writeInt(payload.length);
+                buf.writeLong(Long.MAX_VALUE);
                 buf.writeBytes(payload);
                 buf.flip();
                 if (!clientSocket.write(buf)) {
@@ -180,25 +178,25 @@ public class EchoBenchmark {
         System.out.println("clientReactorCount:" + clientReactorCount);
         System.out.println("serverReactorCount:" + serverReactorCount);
         System.out.println("responsePooling:" + responsePooling);
+        System.out.println("unsafeWrite:" + unsafeWrite);
     }
 
     private List<Reactor> newServerReactors() {
         List<Reactor> reactors = new ArrayList<>();
         ThreadAffinity affinity = cpuAffinityServer == null ? null : new ThreadAffinity(cpuAffinityServer);
         for (int k = 0; k < serverReactorCount; k++) {
-            ReactorBuilder builder = ReactorBuilder.newReactorBuilder(reactorType);
-            builder.setSpin(spin);
-            builder.setReactorName("ServerReactor-" + k);
-            builder.setThreadName("ServerReactor-" + k);
-            builder.setThreadAffinity(affinity);
-            //builder.setStallHandler(aggregatingStallHandler);
+            Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(reactorType);
+            reactorBuilder.spin = spin;
+            reactorBuilder.reactorName = "ServerReactor-" + k;
+            reactorBuilder.threadName = "ServerReactor-" + k;
+            reactorBuilder.threadAffinity = affinity;
             if (stallThresholdNanos != null) {
-                builder.setStallThreshold(stallThresholdNanos, TimeUnit.NANOSECONDS);
+                reactorBuilder.stallThresholdNanos = stallThresholdNanos;
             }
             if (ioIntervalNanos != null) {
-                builder.setIoInterval(ioIntervalNanos, TimeUnit.NANOSECONDS);
+                reactorBuilder.ioIntervalNanos = ioIntervalNanos;
             }
-            Reactor reactor = builder.build();
+            Reactor reactor = reactorBuilder.build();
             reactors.add(reactor);
             reactor.start();
         }
@@ -209,19 +207,18 @@ public class EchoBenchmark {
         List<Reactor> reactors = new ArrayList<>();
         ThreadAffinity affinity = cpuAffinityClient == null ? null : new ThreadAffinity(cpuAffinityClient);
         for (int k = 0; k < clientReactorCount; k++) {
-            ReactorBuilder builder = ReactorBuilder.newReactorBuilder(reactorType);
-            builder.setSpin(spin);
-            builder.setReactorName("ClientReactor-" + k);
-            builder.setThreadName("ClientReactor-" + k);
-            builder.setThreadAffinity(affinity);
-            //builder.setStallHandler(aggregatingStallHandler);
+            Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(reactorType);
+            reactorBuilder.spin = spin;
+            reactorBuilder.reactorName = "ClientReactor-" + k;
+            reactorBuilder.threadName = "ClientReactor-" + k;
+            reactorBuilder.threadAffinity = affinity;
             if (stallThresholdNanos != null) {
-                builder.setStallThreshold(stallThresholdNanos, TimeUnit.NANOSECONDS);
+                reactorBuilder.stallThresholdNanos = stallThresholdNanos;
             }
             if (ioIntervalNanos != null) {
-                builder.setIoInterval(ioIntervalNanos, TimeUnit.NANOSECONDS);
+                reactorBuilder.ioIntervalNanos = ioIntervalNanos;
             }
-            Reactor reactor = builder.build();
+            Reactor reactor = reactorBuilder.build();
             reactors.add(reactor);
             reactor.start();
         }
@@ -244,16 +241,15 @@ public class EchoBenchmark {
             PaddedAtomicLong echoCounter = echoCounters[k % clientReactorCount];
             AsyncServerSocket serverSocket = serverSockets.get(k % serverReactorCount);
 
-            AsyncSocketBuilder socketBuilder = clientReactor.newAsyncSocketBuilder()
-                    .set(TCP_NODELAY, tcpNoDelay)
-                    .set(SO_SNDBUF, socketBufferSize)
-                    .set(SO_RCVBUF, socketBufferSize)
-                    .setReader(new EchoAsyncSocketReader(echoCounter));
-
-            AsyncSocket clientSocket = socketBuilder.build();
-            clientSocket.start();
-            clientSocket.connect(serverSocket.getLocalAddress()).join();
-            sockets.add(clientSocket);
+            AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
+            socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+            socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+            socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+            socketBuilder.reader = new EchoSocketReader(echoCounter);
+            AsyncSocket socket = socketBuilder.build();
+            socket.start();
+            socket.connect(serverSocket.getLocalAddress()).join();
+            sockets.add(socket);
         }
         return sockets;
     }
@@ -264,19 +260,20 @@ public class EchoBenchmark {
             Reactor serverReactor = serverReactors.get(k);
             SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", port + k);
 
-            AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
-                    .set(SO_RCVBUF, socketBufferSize)
-                    .set(SO_REUSEPORT, true)
-                    .setAcceptFn(acceptRequest -> {
-                        AsyncSocketBuilder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest)
-                                .set(TCP_NODELAY, tcpNoDelay)
-                                .set(SO_RCVBUF, socketBufferSize)
-                                .set(SO_SNDBUF, socketBufferSize)
-                                .setReader(new EchoAsyncSocketReader(null));
-                        AsyncSocket socket = socketBuilder.build();
-                        socket.start();
-                    }).build();
+            AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+            serverSocketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+            serverSocketBuilder.options.set(SO_REUSEPORT, true);
+            serverSocketBuilder.acceptFn = acceptRequest -> {
+                AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
+                socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
+                socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
+                socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
+                socketBuilder.reader = new EchoSocketReader(null);
+                AsyncSocket socket = socketBuilder.build();
+                socket.start();
+            };
 
+            AsyncServerSocket serverSocket = serverSocketBuilder.build();
             serverSocket.bind(serverAddress);
             serverSocket.start();
             serverSockets.add(serverSocket);
@@ -285,7 +282,7 @@ public class EchoBenchmark {
     }
 
     // todo: add option to flatten
-    private class EchoAsyncSocketReader extends AsyncSocketReader {
+    private class EchoSocketReader extends AsyncSocket.Reader {
         private static final int SIZEOF_HEADER = SIZEOF_INT;
 
         private final PaddedAtomicLong echoCounter;
@@ -293,12 +290,12 @@ public class EchoBenchmark {
         private int payloadSize;
         private final IOBufferAllocator responseAllocator;
 
-        public EchoAsyncSocketReader(PaddedAtomicLong echoCounter) {
+        public EchoSocketReader(PaddedAtomicLong echoCounter) {
             this.echoCounter = echoCounter;
             this.payloadSize = -1;
             this.responseAllocator = responsePooling
                     ? new NonConcurrentIOBufferAllocator(SIZEOF_HEADER, useDirectByteBuffers)
-                    : new UnpooledIOBufferAllocator();
+                    : new NonPooledIOBufferAllocator();
         }
 
         @Override
@@ -338,7 +335,11 @@ public class EchoBenchmark {
                     echoCounter.lazySet(echoCounter.get() + 1);
                 }
 
-                if (!socket.unsafeWriteAndFlush(response)) {
+                boolean offered = unsafeWrite
+                        ? socket.insideWriteAndFlush(response)
+                        : socket.writeAndFlush(response);
+
+                if (!offered) {
                     throw new RuntimeException("Socket has no space");
                 }
 
@@ -419,7 +420,7 @@ public class EchoBenchmark {
 
         for (Reactor reactor : reactors) {
             reactor.sockets().foreach(s -> {
-                AsyncSocketMetrics metrics = s.metrics();
+                AsyncSocket.Metrics metrics = s.metrics();
                 target.reads += metrics.reads();
                 target.writes += metrics.writes();
                 target.bytesWritten += metrics.bytesWritten();

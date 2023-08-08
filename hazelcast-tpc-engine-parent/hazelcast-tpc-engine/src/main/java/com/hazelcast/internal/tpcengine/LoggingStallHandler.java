@@ -29,9 +29,11 @@ public final class LoggingStallHandler implements StallHandler {
     private final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
 
     @Override
-    public void onStall(Reactor reactor, TaskQueue taskQueue, Object task, long startNanos, long durationNanos) {
+    public void onStall(Reactor reactor, TaskQueue taskQueue, Object task,
+                        long startNanos, long durationNanos) {
         if (logger.isSevereEnabled()) {
-            logger.severe(reactor + " detected stall of " + durationNanos + " ns, the culprit is " + task
+            logger.severe(reactor + " detected stall of " + durationNanos
+                    + " ns, the culprit is " + task
                     + " in taskQueue " + taskQueue.name);
         }
     }

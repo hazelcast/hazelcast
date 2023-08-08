@@ -14,26 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.nio;
-
-import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
-import com.hazelcast.internal.tpcengine.ReactorType;
-
 /**
- * A {@link ReactorBuilder} that builds a {@link NioReactor}.
+ * The only reason this package exists is that there is no common module
+ * containing key components like logging. As soon as such a module is
+ * introduced, this whole package can be deleted.
  */
-public class NioReactorBuilder extends ReactorBuilder {
-
-    /**
-     * Creates a new NioReactorBuilder.
-     */
-    public NioReactorBuilder() {
-        super(ReactorType.NIO);
-    }
-
-    @Override
-    protected Reactor build0() {
-        return new NioReactor(this);
-    }
-}
+package com.hazelcast.internal.tpcengine.logging;

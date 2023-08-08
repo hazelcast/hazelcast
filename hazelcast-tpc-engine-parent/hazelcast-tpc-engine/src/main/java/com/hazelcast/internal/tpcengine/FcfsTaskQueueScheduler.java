@@ -58,6 +58,11 @@ class FcfsTaskQueueScheduler implements TaskQueueScheduler {
     }
 
     @Override
+    public int capacity() {
+        return capacity;
+    }
+
+    @Override
     public int size() {
         return runQueue.size();
     }

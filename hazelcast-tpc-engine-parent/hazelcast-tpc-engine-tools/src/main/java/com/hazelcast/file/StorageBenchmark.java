@@ -18,11 +18,9 @@ package com.hazelcast.file;
 
 import com.hazelcast.FormatUtil;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.AsyncFileMetrics;
-import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
+import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
@@ -41,7 +39,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.FormatUtil.humanReadableByteCountSI;
-import static com.hazelcast.internal.tpcengine.ReactorBuilder.newReactorBuilder;
+import static com.hazelcast.internal.tpcengine.Reactor.Builder.newReactorBuilder;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_CREAT;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_DIRECT;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_NOATIME;
@@ -121,21 +119,22 @@ public class StorageBenchmark {
     //  private final Map<Reactor, List<AsyncFile>> filesMap = new ConcurrentHashMap<>();
     private final Map<Reactor, List<String>> pathsMap = new ConcurrentHashMap<>();
 
-    private final BlockDeviceRegistry blockDeviceRegistry = new BlockDeviceRegistry();
+    private final StorageDeviceRegistry blockDeviceRegistry = new StorageDeviceRegistry();
     private final ArrayList<Reactor> reactors = new ArrayList<>();
     private static volatile boolean stop;
 
     public static void main(String[] args) {
         StorageBenchmark benchmark = new StorageBenchmark();
         benchmark.runtimeSeconds = 20;
-        benchmark.affinity = "0,1,8";
-        benchmark.numJobs = 3;
+        benchmark.affinity = "1,2,3";
+        benchmark.numJobs = 1;
         benchmark.iodepth = 64;
         benchmark.fileSize = 4 * 1024 * 1024L;
         benchmark.bs = 4 * 1024;
-        benchmark.directories.add("/mnt/benchdrive1");
-        benchmark.directories.add("/mnt/benchdrive2");
-        benchmark.directories.add("/mnt/benchdrive3");
+        benchmark.directories.add("/home/pveentjer");
+        //benchmark.directories.add("/mnt/benchdrive1");
+        //benchmark.directories.add("/mnt/benchdrive2");
+        //benchmark.directories.add("/mnt/benchdrive3");
         benchmark.readwrite = READWRITE_READ;
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = true;
@@ -241,13 +240,11 @@ public class StorageBenchmark {
         // storageDeviceRegistry.register(dir, 512, 512);
 
         for (int k = 0; k < numJobs; k++) {
-            ReactorBuilder builder = newReactorBuilder(reactorType);
-            //builder.setFlags(IORING_SETUP_IOPOLL);
-            builder.setThreadAffinity(threadAffinity);
-            builder.setSpin(spin);
-            builder.setBlockDeviceRegistry(blockDeviceRegistry);
-
-            Reactor reactor = builder.build();
+            Reactor.Builder reactorBuilder = newReactorBuilder(reactorType);
+            reactorBuilder.threadAffinity = threadAffinity;
+            reactorBuilder.spin = spin;
+            reactorBuilder.storageDeviceRegistry = blockDeviceRegistry;
+            Reactor reactor = reactorBuilder.build();
             reactors.add(reactor);
             reactor.start();
         }
@@ -730,7 +727,7 @@ public class StorageBenchmark {
 
         for (Reactor reactor : reactors) {
             reactor.files().foreach(f -> {
-                AsyncFileMetrics metrics = f.metrics();
+                AsyncFile.Metrics metrics = f.metrics();
                 target.reads += metrics.reads();
                 target.writes += metrics.writes();
                 target.nops += metrics.nops();

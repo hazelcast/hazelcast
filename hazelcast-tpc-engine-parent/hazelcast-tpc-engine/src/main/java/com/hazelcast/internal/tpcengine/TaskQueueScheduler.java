@@ -43,6 +43,7 @@ public interface TaskQueueScheduler {
      */
     int size();
 
+    int capacity();
     /**
      * Returns the length of the time slice of the active TaskQueue. This is the total amount
      * of time that can be spend on the CPU before the task group should yield. Individual tasks
@@ -103,4 +104,5 @@ public interface TaskQueueScheduler {
      * @param taskQueue the taskQueue to enqueue.
      */
     void enqueue(TaskQueue taskQueue);
+
 }

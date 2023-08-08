@@ -28,21 +28,21 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * <p/>
  * This class isn't thread-safe.
  */
-public class BlockDeviceRegistry {
-    private final BlockDevice root = new BlockDevice("/", 4096, 4096);
-    private final List<BlockDevice> devs = new ArrayList<>();
+public class StorageDeviceRegistry {
+    private final StorageDevice root = new StorageDevice("/", 4096, 4096);
+    private final List<StorageDevice> devs = new ArrayList<>();
 
     /**
-     * Finds the {@link BlockDevice} for the given file path.
+     * Finds the {@link StorageDevice} for the given file path.
      *
      * @param path the path of the file to lookup the device for.
      * @return the BlockDevice. If there is no device for the given path, the root device is returned.
      * @throws NullPointerException if path is null.
      */
-    public BlockDevice findBlockDevice(String path) {
+    public StorageDevice findDevice(String path) {
         checkNotNull(path, "path");
 
-        for (BlockDevice dev : devs) {
+        for (StorageDevice dev : devs) {
             if (path.startsWith(dev.path())) {
                 return dev;
             }
@@ -84,11 +84,11 @@ public class BlockDeviceRegistry {
             throw new RuntimeException("Storage device [" + path + "] is unreadable.");
         }
 
-        if (findBlockDevice(path) != root) {
+        if (findDevice(path) != root) {
             throw new RuntimeException("A storage device [" + path + "] already exists.");
         }
 
-        BlockDevice dev = new BlockDevice(path, maxConcurrent, maxPending);
+        StorageDevice dev = new StorageDevice(path, maxConcurrent, maxPending);
         devs.add(dev);
     }
 }

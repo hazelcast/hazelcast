@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 @Threads(value = 1)
 public class SelectorBenchmark {
     private final Selector selector;
+    private final int ONE_MS = 1;
 
     public SelectorBenchmark(){
         try {
@@ -37,4 +38,9 @@ public class SelectorBenchmark {
         return selector.selectNow();
     }
 
+    // Select with 1ms timeout.
+    @Benchmark
+    public long select_1ms() throws IOException {
+        return selector.select(ONE_MS);
+    }
 }

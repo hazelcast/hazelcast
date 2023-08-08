@@ -16,22 +16,15 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static junit.framework.TestCase.assertEquals;
 
 public class AsyncSocketMetricsTest {
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
-    }
-
     @Test
     public void test_bytesRead() {
-        AsyncSocketMetrics metrics = new AsyncSocketMetrics();
+        AsyncSocket.Metrics metrics = new AsyncSocket.Metrics();
 
         metrics.incBytesRead(10);
         assertEquals(10, metrics.bytesRead());
@@ -42,7 +35,7 @@ public class AsyncSocketMetricsTest {
 
     @Test
     public void test_bytesWritten() {
-        AsyncSocketMetrics metrics = new AsyncSocketMetrics();
+        AsyncSocket.Metrics metrics = new AsyncSocket.Metrics();
 
         metrics.incBytesWritten(10);
         assertEquals(10, metrics.bytesWritten());
@@ -53,7 +46,7 @@ public class AsyncSocketMetricsTest {
 
     @Test
     public void test_writeEvents() {
-        AsyncSocketMetrics metrics = new AsyncSocketMetrics();
+        AsyncSocket.Metrics metrics = new AsyncSocket.Metrics();
 
         metrics.incWrites();
         assertEquals(1, metrics.writes());
@@ -64,7 +57,7 @@ public class AsyncSocketMetricsTest {
 
     @Test
     public void test_readEvents() {
-        AsyncSocketMetrics metrics = new AsyncSocketMetrics();
+        AsyncSocket.Metrics metrics = new AsyncSocket.Metrics();
 
         metrics.incReads();
         assertEquals(1, metrics.reads());

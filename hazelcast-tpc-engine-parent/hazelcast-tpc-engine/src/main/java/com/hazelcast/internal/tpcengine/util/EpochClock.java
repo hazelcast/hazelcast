@@ -21,12 +21,16 @@ package com.hazelcast.internal.tpcengine.util;
  * <p>
  * This class is thread-safe.
  */
-public final class EpochClock implements Clock {
+public final class EpochClock {
 
     public static final EpochClock INSTANCE = new EpochClock();
 
     // todo: we need to determine the actual epoch time START_TIME
     private static final long START_TIME = System.nanoTime();
+
+    private EpochClock() {
+    }
+
 //
 //    static {
 //        for(;;){
@@ -37,8 +41,7 @@ public final class EpochClock implements Clock {
 //        }
 //    }
 
-    @Override
-    public long nanoTime() {
+    public static long epochNanos() {
         return System.nanoTime() - START_TIME;
     }
 

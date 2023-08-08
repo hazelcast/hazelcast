@@ -18,10 +18,8 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.BlockDevice;
-import com.hazelcast.internal.tpcengine.file.BlockRequestScheduler;
-import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
-import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpcengine.file.StorageDevice;
+import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
@@ -34,7 +32,6 @@ import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMES
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
-import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 @SuppressWarnings({"checkstyle:MemberName",
@@ -45,14 +42,10 @@ public final class IOUringEventloop extends Eventloop {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     protected static final int NANOSECONDS_IN_SECOND = 1_000_000_000;
 
-    private final IOUringReactor ioUringReactor;
     private final IOUring uring;
 
     final LongObjectHashMap<CompletionHandler> handlers = new LongObjectHashMap<>(4096);
 
-    // this is not a very efficient allocator. It would be better to allocate a large chunk of
-    // memory and then carve out smaller blocks. But for now it will do.
-    private final IOBufferAllocator blockIOBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
     final SubmissionQueue sq;
     private final CompletionQueue cq;
     private final CompletionProcessor completionProcessor;
@@ -62,20 +55,22 @@ public final class IOUringEventloop extends Eventloop {
 
     final EventFd eventfd = new EventFd();
     private final long eventFdReadBuf = UNSAFE.allocateMemory(SIZEOF_LONG);
+    private final IOUringNetworkScheduler ioUringNetworkScheduler;
 
     private long permanentHandlerIdGenerator;
     private long tmpHandlerIdGenerator = -1;
 
-    public IOUringEventloop(IOUringReactor reactor, IOUringReactorBuilder builder) {
-        super(reactor, builder);
-        this.ioUringReactor = reactor;
-
+    private IOUringEventloop(Builder builder) {
+        super(builder);
+        this.ioUringNetworkScheduler = (IOUringNetworkScheduler) builder.networkScheduler;
+        IOUringReactor.Builder reactorBuilder = (IOUringReactor.Builder) builder.reactorBuilder;
         // The uring instance needs to be created on the eventloop thread.
         // This is required for some of the setup flags.
-        this.uring = new IOUring(builder.entries, builder.setupFlags);
-        if (builder.registerRing) {
+        this.uring = new IOUring(reactorBuilder.entries, reactorBuilder.setupFlags);
+        if (reactorBuilder.registerRing) {
             this.uring.registerRingFd();
         }
+
         this.sq = uring.submissionQueue();
         this.cq = uring.completionQueue();
 
@@ -107,23 +102,18 @@ public final class IOUringEventloop extends Eventloop {
     }
 
     @Override
-    public IOBufferAllocator blockIOBufferAllocator() {
-        return blockIOBufferAllocator;
-    }
-
-    @Override
     public AsyncFile newAsyncFile(String path) {
         checkNotNull(path, "path");
 
-        BlockDevice dev = blockDeviceRegistry.findBlockDevice(path);
+        StorageDevice dev = storageDeviceRegistry.findDevice(path);
         if (dev == null) {
             throw newUncheckedIOException("Could not find storage device for [" + path + "]");
         }
 
-        BlockRequestScheduler blockRequestScheduler = deviceSchedulers.get(dev);
+        StorageScheduler blockRequestScheduler = storageSchedulers.get(dev);
         if (blockRequestScheduler == null) {
-            blockRequestScheduler = new IOUringBlockRequestScheduler(dev, this);
-            deviceSchedulers.put(dev, blockRequestScheduler);
+            blockRequestScheduler = new IOUringStorageScheduler(dev, this);
+            storageSchedulers.put(dev, blockRequestScheduler);
         }
 
         return new IOUringAsyncFile(path, this, blockRequestScheduler);
@@ -137,6 +127,12 @@ public final class IOUringEventloop extends Eventloop {
 
     @Override
     protected void park(long timeoutNanos) throws IOException {
+        ioUringNetworkScheduler.tick();
+
+        // todo: what if a dirty socket got added at this point.
+        // it will not wakeup the eventloop because the wakeup needed
+        // flag isn't set.
+
         boolean completions = false;
         if (cq.hasCompletions()) {
             completions = true;
@@ -148,7 +144,7 @@ public final class IOUringEventloop extends Eventloop {
             sq.submit();
         } else {
             wakeupNeeded.set(true);
-            if (scheduleBlockedGlobal()) {
+            if (scheduleBlockedOutside() || ioUringNetworkScheduler.isDirty()) {
                 //System.out.println("submit2");
                 sq.submit();
             } else {
@@ -168,6 +164,8 @@ public final class IOUringEventloop extends Eventloop {
 
     @Override
     protected boolean ioSchedulerTick() {
+        ioUringNetworkScheduler.tick();
+
         boolean worked = false;
 
         // todo: this is where we want to iterate over the dev schedulers and submit
@@ -239,7 +237,6 @@ public final class IOUringEventloop extends Eventloop {
                 userdata_eventRead);
     }
 
-
     private class CompletionProcessor implements CompletionHandler {
         final LongObjectHashMap<CompletionHandler> handlers = IOUringEventloop.this.handlers;
 
@@ -271,6 +268,23 @@ public final class IOUringEventloop extends Eventloop {
     private class TimeoutCompletionHandler implements CompletionHandler {
         @Override
         public void handle(int res, int flags, long userdata) {
+        }
+    }
+
+    public static class Builder extends Eventloop.Builder {
+
+        @Override
+        protected void conclude() {
+            super.conclude();
+
+            if (networkScheduler == null) {
+                networkScheduler = new IOUringNetworkScheduler(reactorBuilder.maxSockets);
+            }
+        }
+
+        @Override
+        protected IOUringEventloop doBuild() {
+            return new IOUringEventloop(this);
         }
     }
 }

@@ -17,7 +17,7 @@
 /**
  * Contains the NioReactor and related logic.
  * <br>
- * Apart from the {@link com.hazelcast.internal.tpcengine.nio.NioReactorBuilder},
+ * Apart from the {@link com.hazelcast.internal.tpcengine.nio.NioReactor.Builder},
  * nothing in this package is public API.
  */
 package com.hazelcast.internal.tpcengine.nio;

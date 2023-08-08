@@ -16,22 +16,15 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static junit.framework.TestCase.assertEquals;
 
 public class AsyncServerSocketMetricsTest {
 
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
-    }
-
     @Test
     public void test_writeEvents() {
-        AsyncServerSocketMetrics metrics = new AsyncServerSocketMetrics();
+        AsyncServerSocket.Metrics metrics = new AsyncServerSocket.Metrics();
 
         metrics.incAccepted();
         assertEquals(1, metrics.accepted());

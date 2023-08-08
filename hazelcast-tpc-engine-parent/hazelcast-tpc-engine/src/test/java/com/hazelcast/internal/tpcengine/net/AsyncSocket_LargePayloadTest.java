@@ -16,15 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.util.PrintAtomicLongThread;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpcengine.util.PrintAtomicLongThread;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -35,15 +33,17 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertOpenEventually;
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.TCP_NODELAY;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
 
+/**
+ * todo: Should be converted to a time based test instead of ieration based
+ */
 public abstract class AsyncSocket_LargePayloadTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
@@ -51,16 +51,11 @@ public abstract class AsyncSocket_LargePayloadTest {
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     private final AtomicLong iteration = new AtomicLong();
-    private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", iteration);
+    private final PrintAtomicLongThread monitorThread = new PrintAtomicLongThread("at:", iteration);
     private Reactor clientReactor;
     private Reactor serverReactor;
 
-    public abstract ReactorBuilder newReactorBuilder();
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
-    }
+    public abstract Reactor.Builder newReactorBuilder();
 
     @Before
     public void before() {
@@ -70,14 +65,14 @@ public abstract class AsyncSocket_LargePayloadTest {
         serverReactor = newReactorBuilder()
                 .build()
                 .start();
-        printThread.start();
+        monitorThread.start();
     }
 
     @After
     public void after() throws InterruptedException {
         terminate(clientReactor);
         terminate(serverReactor);
-        printThread.shutdown();
+        monitorThread.shutdown();
     }
 
     @Test
@@ -254,37 +249,38 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch completionLatch) {
-        AsyncSocket clientSocket = clientReactor.newAsyncSocketBuilder()
-                .set(TCP_NODELAY, true)
-                .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
-                .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setReader(new ClientAsyncSocketReader(completionLatch))
-                .build();
+        AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
+        socketBuilder.options.set(TCP_NODELAY, true);
+        socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
+        socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+        socketBuilder.reader = new ClientReader(completionLatch);
 
-        clientSocket.start();
-        clientSocket.connect(serverAddress).join();
-        return clientSocket;
+        AsyncSocket socket = socketBuilder.build();
+        socket.start();
+        socket.connect(serverAddress).join();
+        return socket;
     }
 
     private AsyncServerSocket newServer() {
-        AsyncServerSocket serverSocket = serverReactor.newAsyncServerSocketBuilder()
-                .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                .setAcceptFn(acceptRequest -> {
-                    serverReactor.newAsyncSocketBuilder(acceptRequest)
-                            .set(TCP_NODELAY, true)
-                            .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
-                            .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
-                            .setReader(new ServerAsyncSocketReader())
-                            .build()
-                            .start();
-                })
-                .build();
+        AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+            AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
+            socketBuilder.options.set(TCP_NODELAY, true);
+            socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
+            socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+            socketBuilder.reader = new ServerReader();
+            AsyncSocket socket = socketBuilder.build();
+            socket.start();
+        };
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
+        // Bind on any available port.
         serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
         return serverSocket;
     }
 
-    private static class ServerAsyncSocketReader extends AsyncSocketReader {
+    private static class ServerReader extends AsyncSocket.Reader {
         private ByteBuffer payloadBuffer;
         private long round;
         private int payloadSize = -1;
@@ -317,7 +313,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                 responseBuf.writeLong(round - 1);
                 responseBuf.write(payloadBuffer);
                 responseBuf.flip();
-                if (!socket.unsafeWriteAndFlush(responseBuf)) {
+                if (!socket.insideWriteAndFlush(responseBuf)) {
                     throw new RuntimeException("Socket has no space");
                 }
                 payloadSize = -1;
@@ -325,17 +321,19 @@ public abstract class AsyncSocket_LargePayloadTest {
         }
     }
 
-    private class ClientAsyncSocketReader extends AsyncSocketReader {
+    private class ClientReader extends AsyncSocket.Reader {
         private final CountDownLatch latch;
+        // TODO: This code can be simplified by creating the response buffer directly
+        // instead of dealing with an intermediate payload buffer.
         private ByteBuffer payloadBuffer;
         private long round;
         private int payloadSize;
         private final IOBufferAllocator responseAllocator;
 
-        ClientAsyncSocketReader(CountDownLatch latch) {
+        ClientReader(CountDownLatch latch) {
             this.latch = latch;
-            payloadSize = -1;
-            responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+            this.payloadSize = -1;
+            this.responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
         }
 
         @Override
@@ -371,7 +369,7 @@ public abstract class AsyncSocket_LargePayloadTest {
                     responseBuf.writeLong(round);
                     responseBuf.write(payloadBuffer);
                     responseBuf.flip();
-                    if (!socket.unsafeWriteAndFlush(responseBuf)) {
+                    if (!socket.insideWriteAndFlush(responseBuf)) {
                         throw new RuntimeException();
                     }
                 }

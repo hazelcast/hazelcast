@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
+import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorTest;
 
 public class NioReactorTest extends ReactorTest {
 
     @Override
-    public ReactorBuilder newReactorBuilder() {
-        return new NioReactorBuilder();
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
     }
 }

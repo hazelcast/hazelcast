@@ -17,18 +17,15 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
-import com.hazelcast.internal.tpcengine.net.AcceptRequest;
+import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
-import com.hazelcast.internal.tpcengine.util.ExceptionUtil;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_ACCEPT;
@@ -57,25 +54,16 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final LinuxSocket linuxSocket;
-
     private final AcceptMemory acceptMemory = new AcceptMemory();
     private final IOUringEventloop eventloop;
     private final SubmissionQueue sq;
-    private final Consumer<AcceptRequest> acceptFn;
-    private final IOUringAsyncServerSocketOptions options;
-    private final Thread eventloopThread;
-
     private long userdata_OP_ACCEPT;
     private boolean bind;
-    private boolean started;
 
-    IOUringAsyncServerSocket(IOUringAsyncServerSocketBuilder builder) {
-        super(builder.reactor);
+    private IOUringAsyncServerSocket(Builder builder) {
+        super(builder);
         this.eventloop = (IOUringEventloop) reactor.eventloop();
-        this.options = builder.options;
         this.linuxSocket = builder.nativeSocket;
-        this.eventloopThread = reactor.eventloopThread();
-        this.acceptFn = builder.acceptFn;
         this.sq = eventloop.sq;
 
         // todo: return value not checked.
@@ -84,15 +72,6 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
             this.userdata_OP_ACCEPT = eventloop.nextPermanentHandlerId();
             eventloop.handlers.put(userdata_OP_ACCEPT, new Handler_OP_ACCEPT());
         });
-    }
-
-    /**
-     * Returns the underlying {@link LinuxSocket}.
-     *
-     * @return the {@link LinuxSocket}.
-     */
-    public LinuxSocket nativeSocket() {
-        return linuxSocket;
     }
 
     @Override
@@ -137,41 +116,8 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public AsyncSocketOptions options() {
-        return options;
-    }
-
-    @Override
-    public void start() {
-        if (Thread.currentThread() == eventloopThread) {
-            start0();
-        } else {
-            CompletableFuture<Void> future = new CompletableFuture<>();
-            reactor.execute(() -> {
-                try {
-                    start0();
-                    future.complete(null);
-                } catch (Throwable t) {
-                    future.completeExceptionally(t);
-                    throw ExceptionUtil.sneakyThrow(t);
-                }
-            });
-
-            future.join();
-        }
-    }
-
-    private void start0() {
-        if (started) {
-            throw new IllegalStateException(this + " is already started");
-        }
-        started = true;
-
+    protected void start0() {
         sq_add_OP_ACCEPT();
-
-        if (logger.isInfoEnabled()) {
-            logger.info("ServerSocket listening at " + getLocalAddress());
-        }
     }
 
     private void sq_add_OP_ACCEPT() {
@@ -236,6 +182,98 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
             } catch (Exception e) {
                 close(null, e);
             }
+        }
+    }
+
+    @SuppressWarnings("checkstyle:SimplifyBooleanReturn")
+    public static class IOUringOptions implements AsyncSocket.Options {
+
+        private final LinuxSocket nativeSocket;
+
+        IOUringOptions(LinuxSocket nativeSocket) {
+            this.nativeSocket = nativeSocket;
+        }
+
+        @Override
+        public boolean isSupported(Option option) {
+            checkNotNull(option, "option");
+
+            if (AsyncSocket.Options.SO_RCVBUF.equals(option)) {
+                return true;
+            } else if (AsyncSocket.Options.SO_REUSEADDR.equals(option)) {
+                return true;
+            } else if (AsyncSocket.Options.SO_REUSEPORT.equals(option)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public <T> boolean set(Option<T> option, T value) {
+            checkNotNull(option, "option");
+            checkNotNull(value, "value");
+
+            try {
+                if (AsyncSocket.Options.SO_RCVBUF.equals(option)) {
+                    nativeSocket.setReceiveBufferSize((Integer) value);
+                    return true;
+                } else if (AsyncSocket.Options.SO_REUSEADDR.equals(option)) {
+                    nativeSocket.setReuseAddress((Boolean) value);
+                    return true;
+                } else if (AsyncSocket.Options.SO_REUSEPORT.equals(option)) {
+                    nativeSocket.setReusePort((Boolean) value);
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to set " + option.name() + " with value [" + value + "]", e);
+            }
+        }
+
+        @Override
+        public <T> T get(Option<T> option) {
+            checkNotNull(option, "option");
+
+            try {
+                if (AsyncSocket.Options.SO_RCVBUF.equals(option)) {
+                    return (T) (Integer) nativeSocket.getReceiveBufferSize();
+                } else if (AsyncSocket.Options.SO_REUSEADDR.equals(option)) {
+                    return (T) (Boolean) nativeSocket.isReuseAddress();
+                } else if (AsyncSocket.Options.SO_REUSEPORT.equals(option)) {
+                    return (T) (Boolean) nativeSocket.isReusePort();
+                } else {
+                    return null;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to get option " + option.name(), e);
+            }
+        }
+    }
+
+    @SuppressWarnings({"checkstyle:VisibilityModifier"})
+    public static class Builder extends AsyncServerSocket.Builder {
+
+        public final LinuxSocket nativeSocket;
+
+        Builder() {
+            // to conclude.
+            this.nativeSocket = LinuxSocket.openTcpIpv4Socket();
+            nativeSocket.setBlocking(true);
+            this.options = new IOUringOptions(nativeSocket);
+        }
+
+        @Override
+        protected void conclude() {
+            super.conclude();
+
+            checkNotNull(nativeSocket, "nativeSocket");
+        }
+
+        @Override
+        public AsyncServerSocket doBuild() {
+            return new IOUringAsyncServerSocket(this);
         }
     }
 }

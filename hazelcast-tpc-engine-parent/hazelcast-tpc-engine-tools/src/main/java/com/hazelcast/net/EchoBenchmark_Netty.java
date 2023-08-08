@@ -68,8 +68,8 @@ public class EchoBenchmark_Netty {
     public int runtimeSeconds = 600;
     public int payloadSize = 0;
     // the number of inflight packets per connection
-    public int concurrency = 100;
-    public int connections = 100;
+    public int concurrency = 10;
+    public int connections = 10;
     public Type type = Type.NIO;
     public String cpuAffinityClient = "1,2";
     public String cpuAffinityServer = "5,6";

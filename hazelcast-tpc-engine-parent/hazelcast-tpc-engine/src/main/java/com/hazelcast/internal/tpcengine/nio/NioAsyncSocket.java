@@ -16,28 +16,25 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.TaskQueue;
+import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketMetrics;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketReader;
 import com.hazelcast.internal.tpcengine.util.BufferUtil;
-import org.jctools.queues.MpmcArrayQueue;
+import jdk.net.ExtendedSocketOptions;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.SocketOption;
+import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
@@ -54,47 +51,26 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 @SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityOrder", "checkstyle:MethodCount", "java:S1181"})
 public final class NioAsyncSocket extends AsyncSocket {
 
-    private final NioAsyncSocketOptions options;
-    private final AtomicReference<Thread> flushThread = new AtomicReference<>(currentThread());
-    private final MpmcArrayQueue<IOBuffer> writeQueue;
-    private final Handler handler;
+    final Handler handler;
     private final SocketChannel socketChannel;
-    private final Thread eventloopThread;
     private final SelectionKey key;
     private final IOVector ioVector = new IOVector();
-    private final boolean regularSchedule;
-    private final boolean writeThrough;
-    private final AsyncSocketReader reader;
-    private final TaskQueue localTaskQueue;
-    private final Eventloop eventloop;
 
-    // only accessed from eventloop thread
-    private boolean started;
     // only accessed from eventloop thread
     private boolean connecting;
     private volatile CompletableFuture<Void> connectFuture;
 
-    NioAsyncSocket(NioAsyncSocketBuilder builder) {
-        super(builder.reactor, builder.clientSide);
-
-        assert currentThread() == builder.reactor.eventloopThread();
+    NioAsyncSocket(Builder builder) {
+        super(builder);
 
         try {
-            this.localTaskQueue = reactor.eventloop().getTaskQueue(builder.taskQueueHandle);
-            this.options = builder.options;
-            this.eventloopThread = reactor.eventloopThread();
-            this.eventloop = reactor.eventloop();
             this.socketChannel = builder.socketChannel;
             if (!clientSide) {
                 this.localAddress = socketChannel.getLocalAddress();
                 this.remoteAddress = socketChannel.getRemoteAddress();
             }
-            this.writeThrough = builder.writeThrough;
-            this.regularSchedule = builder.regularSchedule;
-            this.writeQueue = new MpmcArrayQueue<>(builder.writeQueueCapacity);
             this.handler = new Handler(builder);
-            this.key = socketChannel.register(builder.reactor.selector, 0, handler);
-            this.reader = builder.reader;
+            this.key = socketChannel.register(builder.selector, 0, handler);
             reader.init(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -102,27 +78,11 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public AsyncSocketOptions options() {
-        return options;
-    }
-
-    @Override
     public void setReadable(boolean readable) {
         if (currentThread() == eventloopThread) {
             setReadable0(readable);
         } else {
-            CompletableFuture future = new CompletableFuture();
-            reactor.execute(() -> {
-                try {
-                    setReadable0(readable);
-                    future.complete(null);
-                } catch (Throwable t) {
-                    future.completeExceptionally(t);
-                    throw sneakyThrow(t);
-                }
-            });
-
-            future.join();
+            reactor.submit(() -> setReadable0(readable)).join();
         }
     }
 
@@ -137,6 +97,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             key.interestOpsAnd(~OP_READ);
         }
 
+        // todo: doesn't make sense since we are on the eventloop
         // We are not running on the eventloop thread. We need to notify the
         // reactor because a change in the interest set isn't picked up while
         // the reactor is waiting on the selectionKey
@@ -167,32 +128,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void start() {
-        if (currentThread() == reactor.eventloopThread()) {
-            start0();
-        } else {
-            CompletableFuture future = new CompletableFuture();
-            reactor.execute(() -> {
-                try {
-                    start0();
-                    future.complete(null);
-                } catch (Throwable e) {
-                    future.completeExceptionally(e);
-                    throw sneakyThrow(e);
-                }
-            });
-            future.join();
-        }
-    }
-
-    private void start0() {
-        if (started) {
-            throw new IllegalStateException(this + " is already started");
-        }
-        started = true;
-
-        assert flushThread.get() == reactor.eventloopThread();
-
+    protected void start0() {
         if (!clientSide) {
             // on the server side we immediately start reading.
             key.interestOps(key.interestOps() | OP_READ);
@@ -263,92 +199,48 @@ public final class NioAsyncSocket extends AsyncSocket {
         resetFlushed();
     }
 
-    @SuppressWarnings("java:S1135")
-    @Override
-    public void flush() {
-        Thread currentThread = currentThread();
-        if (flushThread.compareAndSet(null, currentThread)) {
-            if (currentThread == eventloopThread) {
-                // todo: return value
-                // todo: local not guaranteed to be set.
-                localTaskQueue.offerLocal(handler);
-            } else if (writeThrough) {
-                handler.run();
-            } else if (regularSchedule) {
-                // todo: should we make use of custom run queue.
-                // todo: return value
-                reactor.offer(handler);
-            } else {
-                key.interestOps(key.interestOps() | OP_WRITE);
-                // we need to call the select wakeup because the interest set will only take
-                // effect after a select operation.
-                reactor.wakeup();
-            }
-        }
-    }
-
-    @SuppressWarnings({"java:S3398", "java:S1066"})
-    private void resetFlushed() {
-        flushThread.set(null);
-
-        if (!writeQueue.isEmpty()) {
-            if (flushThread.compareAndSet(null, currentThread())) {
-                reactor.offer(handler);
-            }
-        }
-    }
+    /**
+     * This flag only has meaning within the eventloop thread.
+     * <p>
+     * When the eventloop thread writes a packet using the unsafe write, we want
+     * to prevent writing that packet to the expensive writeQueue. We want to
+     * write the packet to the IOVector instead if there is space. The problem
+     * is that without additional care it can lead to reordering of packets.
+     * <p>
+     * So imagine the IOVector was full and as a consequence packet P1 is written to the
+     * writeQueue. And write to the socket completes and some space is freed up in the
+     * IOVector. If there would be write of packet P2, it can be placed in the
+     * IOVector, since there is space. But now we have an ordering problem because P2
+     * overtakes P1.
+     * <p>
+     * This flag will prevent that. So as long as no packets have been written to the
+     * writeQueue, you can keep writing to the IOVector directly. But once a write
+     * has been made to the writeQueue, ioVectorWriteAllowed is to to false and
+     * all further writes need to be done to the writeQueue until the writeQueue has
+     * been fully drained. Once it is drained, the ioVectorWriteAllowed is set to true
+     * again and packets can be written directly to the IOVector.
+     * <p>
+     * For any packet send by a thread different than the eventloop thread, the writeQueue
+     * needs to be used. Ordering of packets send by other threads and the eventloop thread
+     * isn't an issue since they are concurrent and any order goes.
+     * <p>
+     * What might be an issue is starvation when the eventloop thread keeps filling up the
+     * IOVector and the writeQueue filled by other threads isn't drained.
+     */
+    private boolean ioVectorWriteAllowed = true;
 
     @Override
-    public boolean write(IOBuffer buf) {
-        return writeQueue.add(buf);
-    }
-
-    @Override
-    public boolean writeAll(Collection<IOBuffer> bufs) {
-        return writeQueue.addAll(bufs);
-    }
-
-    @Override
-    public boolean writeAndFlush(IOBuffer buf) {
-        boolean result = write(buf);
-        flush();
-        return result;
-    }
-
-    @Override
-    public boolean unsafeWriteAndFlush(IOBuffer buf) {
-        Thread currentFlushThread = flushThread.get();
-        Thread currentThread = currentThread();
-
-        assert currentThread == eventloopThread;
-
-        boolean result;
-        if (currentFlushThread == null) {
-            if (flushThread.compareAndSet(null, currentThread)) {
-                // todo: return value
-                localTaskQueue.offerLocal(handler);
-
-                // todo: we can end up with ordering problem
-                if (ioVector.offer(buf)) {
-                    result = true;
-                } else {
-                    result = writeQueue.offer(buf);
-                }
-            } else {
-                result = writeQueue.offer(buf);
-            }
-        } else if (currentFlushThread == eventloopThread) {
-            // todo: we can end up with ordering problem
+    protected boolean insideWrite(IOBuffer buf) {
+        if (ioVectorWriteAllowed) {
             if (ioVector.offer(buf)) {
-                result = true;
+                return true;
             } else {
-                result = writeQueue.offer(buf);
+                ioVectorWriteAllowed = false;
+                return writeQueue.offer(buf);
             }
         } else {
-            result = writeQueue.offer(buf);
-            flush();
+            return writeQueue.offer(buf);
         }
-        return result;
     }
 
     @Override
@@ -360,12 +252,17 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @SuppressWarnings("java:S125")
-    private final class Handler implements NioHandler, Runnable {
+    final class Handler implements NioHandler, Runnable {
+        // Todo: the way the rcvBuffer is used isn't memory efficient because every socket
+        // will get its own buffer. If the rcvBuffer is guaranteed to be drained, a single
+        // rcvBuffer can be shared between all sockets from the same reactor. So you get a
+        // significant memory saving and it will also help with improved cache utilization
+        // etc.
         private final ByteBuffer rcvBuffer;
         private final ByteBuffer sndBuffer;
-        private final AsyncSocketMetrics metrics = NioAsyncSocket.this.metrics;
+        private final Metrics metrics = NioAsyncSocket.this.metrics;
 
-        private Handler(NioAsyncSocketBuilder builder) throws SocketException {
+        private Handler(Builder builder) throws SocketException {
             int rcvBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
             this.rcvBuffer = builder.receiveBufferIsDirect
                     ? ByteBuffer.allocateDirect(rcvBufferSize)
@@ -376,8 +273,7 @@ public final class NioAsyncSocket extends AsyncSocket {
                     ? ByteBuffer.allocateDirect(sndBufferSize)
                     : ByteBuffer.allocate(sndBufferSize);
             //this.sndBuffer = ByteBuffer.allocateDirect(sndBufferSize);
-
-  //          this.sndBuffer = null;
+            //this.sndBuffer = null;
         }
 
         @Override
@@ -454,6 +350,10 @@ public final class NioAsyncSocket extends AsyncSocket {
 
             ioVector.populate(writeQueue);
 
+            if (writeQueue.isEmpty()) {
+                ioVectorWriteAllowed = true;
+            }
+
             ByteBuffer[] srcs = ioVector.array();
             long written;
             if (sndBuffer != null) {
@@ -479,7 +379,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             metrics.incBytesWritten(written);
             // System.out.println(NioAsyncSocket.this + " bytes written:" + written);
 
-            if (ioVector.isEmpty()) {
+            if (ioVector.isEmpty() && (sndBuffer == null || !sndBuffer.hasRemaining())) {
                 // everything got written
                 int interestOps = key.interestOps();
 
@@ -490,7 +390,9 @@ public final class NioAsyncSocket extends AsyncSocket {
 
                 resetFlushed();
             } else {
-                // We need to register for the OP_WRITE because not everything got written
+                // not everything got written, therefor we need to register
+                // for the OP_WRITE so that we get an event as soon as space
+                // is available in the send buffer of the socket.
                 key.interestOps(key.interestOps() | OP_WRITE);
             }
         }
@@ -510,6 +412,138 @@ public final class NioAsyncSocket extends AsyncSocket {
                     connectFuture.completeExceptionally(e);
                 }
                 throw sneakyThrow(e);
+            }
+        }
+    }
+
+
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "java:S3776"})
+    public static class NioOptions implements Options {
+
+        private final SocketChannel socketChannel;
+
+        NioOptions(SocketChannel socketChannel) {
+            this.socketChannel = socketChannel;
+        }
+
+        private static SocketOption toSocketOption(Option option) {
+            if (TCP_NODELAY.equals(option)) {
+                return StandardSocketOptions.TCP_NODELAY;
+            } else if (SO_RCVBUF.equals(option)) {
+                return StandardSocketOptions.SO_RCVBUF;
+            } else if (SO_SNDBUF.equals(option)) {
+                return StandardSocketOptions.SO_SNDBUF;
+            } else if (SO_KEEPALIVE.equals(option)) {
+                return StandardSocketOptions.SO_KEEPALIVE;
+            } else if (SO_REUSEADDR.equals(option)) {
+                return StandardSocketOptions.SO_REUSEADDR;
+            } else if (TCP_KEEPCOUNT.equals(option)) {
+                return ExtendedSocketOptions.TCP_KEEPCOUNT;
+            } else if (TCP_KEEPINTERVAL.equals(option)) {
+                return ExtendedSocketOptions.TCP_KEEPINTERVAL;
+            } else if (TCP_KEEPIDLE.equals(option)) {
+                return ExtendedSocketOptions.TCP_KEEPIDLE;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public boolean isSupported(Option option) {
+            checkNotNull(option, "option");
+
+            return isSupported(toSocketOption(option));
+        }
+
+        private boolean isSupported(SocketOption socketOption) {
+            return socketOption != null && socketChannel.supportedOptions().contains(socketOption);
+        }
+
+        @Override
+        public <T> T get(Option<T> option) {
+            checkNotNull(option, "option");
+
+            try {
+                SocketOption socketOption = toSocketOption(option);
+                if (isSupported(socketOption)) {
+                    return (T) socketChannel.getOption(socketOption);
+                } else {
+                    return null;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public <T> boolean set(Option<T> option, T value) {
+            checkNotNull(option, "option");
+            checkNotNull(value, "value");
+
+            try {
+                SocketOption socketOption = toSocketOption(option);
+                if (isSupported(socketOption)) {
+                    socketChannel.setOption(socketOption, value);
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    /**
+     * A {@link Builder} that creates a {@link NioAsyncSocket} instance.
+     */
+    @SuppressWarnings({"checkstyle:VisibilityModifier"})
+    public static class Builder extends AsyncSocket.Builder {
+        public SocketChannel socketChannel;
+        public Selector selector;
+        public boolean receiveBufferIsDirect = true;
+
+        public Builder(NioAsyncServerSocket.AcceptRequest acceptRequest) {
+            try {
+                if (acceptRequest == null) {
+                    this.socketChannel = SocketChannel.open();
+                    this.clientSide = true;
+                } else {
+                    this.socketChannel = acceptRequest.socketChannel;
+                    this.clientSide = false;
+                }
+                this.socketChannel.configureBlocking(false);
+                this.options = new NioOptions(socketChannel);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        protected void conclude() {
+            super.conclude();
+
+            checkNotNull(socketChannel, "socketChannel");
+            checkNotNull(selector, "selector");
+        }
+
+        @SuppressWarnings("java:S1181")
+        @Override
+        protected AsyncSocket doBuild() {
+            if (currentThread() == reactor.eventloopThread()) {
+                return new NioAsyncSocket(Builder.this);
+            } else {
+                CompletableFuture<NioAsyncSocket> future = new CompletableFuture<>();
+                reactor.execute(() -> {
+                    try {
+                        future.complete(new NioAsyncSocket(Builder.this));
+                    } catch (Throwable e) {
+                        future.completeExceptionally(e);
+                        throw sneakyThrow(e);
+                    }
+                });
+
+                return future.join();
             }
         }
     }

@@ -16,21 +16,24 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.net.AcceptRequest;
+import com.hazelcast.internal.tpcengine.Option;
+import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketOptions;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
+import java.net.SocketOption;
+import java.net.StandardSocketOptions;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
@@ -45,29 +48,16 @@ import static java.nio.channels.SelectionKey.OP_ACCEPT;
 public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     private final ServerSocketChannel serverSocketChannel;
-    private final Thread eventloopThread;
     private final SelectionKey key;
-    private final NioAsyncServerSocketOptions options;
-    private final Consumer<AcceptRequest> acceptFn;
-    // only accessed from eventloop thread
-    private boolean started;
 
-    NioAsyncServerSocket(NioAsyncServerSocketBuilder builder) {
-        super(builder.reactor);
+    NioAsyncServerSocket(Builder builder) {
+        super(builder);
         try {
-            this.acceptFn = builder.acceptFn;
-            this.options = builder.options;
-            this.eventloopThread = reactor.eventloopThread();
             this.serverSocketChannel = builder.serverSocketChannel;
-            this.key = serverSocketChannel.register(builder.reactor.selector, 0, new Handler());
+            this.key = serverSocketChannel.register(builder.selector, 0, new Handler());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    @Override
-    public AsyncSocketOptions options() {
-        return options;
     }
 
     @Override
@@ -105,38 +95,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
-    @SuppressWarnings("java:S1181")
     @Override
-    public void start() {
-        if (Thread.currentThread() == eventloopThread) {
-            start0();
-        } else {
-            CompletableFuture<Void> future = new CompletableFuture<>();
-            reactor.execute(() -> {
-                try {
-                    start0();
-                    future.complete(null);
-                } catch (Throwable t) {
-                    future.completeExceptionally(t);
-                    throw sneakyThrow(t);
-                }
-            });
-
-            future.join();
-        }
-    }
-
-    private void start0() {
-        if (started) {
-            throw new IllegalStateException(this + " is already started");
-        }
-        started = true;
-
+    protected void start0() {
         key.interestOps(key.interestOps() | OP_ACCEPT);
-
-        if (logger.isInfoEnabled()) {
-            logger.info(getLocalAddress() + " started accepting");
-        }
     }
 
     @SuppressWarnings("java:S1135")
@@ -156,17 +117,143 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             SocketChannel socketChannel = serverSocketChannel.accept();
             metrics.incAccepted();
             if (logger.isInfoEnabled()) {
-                logger.info(NioAsyncServerSocket.this + " accepted: " + socketChannel.getRemoteAddress()
+                logger.info(NioAsyncServerSocket.this
+                        + " accepted: " + socketChannel.getRemoteAddress()
                         + "->" + socketChannel.getLocalAddress());
             }
 
-            NioAcceptRequest acceptRequest = new NioAcceptRequest(socketChannel);
+            AcceptRequest acceptRequest = new AcceptRequest(socketChannel);
             try {
                 acceptFn.accept(acceptRequest);
             } catch (Throwable t) {
                 closeQuietly(acceptRequest);
                 throw sneakyThrow(t);
             }
+        }
+    }
+
+    /**
+     * The Options for the {@link NioAsyncServerSocket}.
+     */
+    public static class NioOptions implements AsyncSocket.Options {
+
+        private final ServerSocketChannel serverSocketChannel;
+
+        NioOptions(ServerSocketChannel serverSocketChannel) {
+            this.serverSocketChannel = serverSocketChannel;
+        }
+
+        private static SocketOption toSocketOption(Option option) {
+            if (SO_RCVBUF.equals(option)) {
+                return StandardSocketOptions.SO_RCVBUF;
+            } else if (SO_REUSEADDR.equals(option)) {
+                return StandardSocketOptions.SO_REUSEADDR;
+            } else if (SO_REUSEPORT.equals(option)) {
+                return StandardSocketOptions.SO_REUSEPORT;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public boolean isSupported(Option option) {
+            checkNotNull(option, "option");
+
+            SocketOption socketOption = toSocketOption(option);
+            return isSupported(socketOption);
+        }
+
+        private boolean isSupported(SocketOption socketOption) {
+            return socketOption != null && serverSocketChannel.supportedOptions().contains(socketOption);
+        }
+
+        @Override
+        public <T> boolean set(Option<T> option, T value) {
+            checkNotNull(option, "option");
+            checkNotNull(value, "value");
+
+            try {
+                SocketOption socketOption = toSocketOption(option);
+                if (isSupported(socketOption)) {
+                    serverSocketChannel.setOption(socketOption, value);
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to set " + option.name()
+                        + " with value [" + value + "]", e);
+            }
+        }
+
+        @Override
+        public <T> T get(Option<T> option) {
+            checkNotNull(option, "option");
+
+            try {
+                SocketOption socketOption = toSocketOption(option);
+                if (isSupported(socketOption)) {
+                    return (T) serverSocketChannel.getOption(socketOption);
+                } else {
+                    return null;
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to get option " + option.name(), e);
+            }
+        }
+    }
+
+    /**
+     * An {@link AsyncServerSocket} builder.
+     */
+    @SuppressWarnings({"checkstyle:VisibilityModifier"})
+    public static class Builder extends AsyncServerSocket.Builder {
+
+        public ServerSocketChannel serverSocketChannel;
+        public Selector selector;
+
+        Builder() {
+            // todo: should move into conclude0
+            try {
+                this.serverSocketChannel = ServerSocketChannel.open();
+                serverSocketChannel.configureBlocking(false);
+                this.options = new NioOptions(serverSocketChannel);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        protected void conclude() {
+            super.conclude();
+
+            checkNotNull(selector, "selector");
+            checkNotNull(serverSocketChannel, "serverSocketChannel");
+        }
+
+        @Override
+        public AsyncServerSocket doBuild() {
+            if (Thread.currentThread() == reactor.eventloopThread()) {
+                return new NioAsyncServerSocket(this);
+            } else {
+                CompletableFuture<NioAsyncServerSocket> future = reactor.submit(
+                        () -> new NioAsyncServerSocket(Builder.this));
+                return future.join();
+            }
+        }
+    }
+
+    public static class AcceptRequest implements AbstractAsyncSocket.AcceptRequest {
+
+        final SocketChannel socketChannel;
+
+        AcceptRequest(SocketChannel socketChannel) {
+            this.socketChannel = checkNotNull(socketChannel, "socketChannel");
+        }
+
+        @Override
+        public void close() throws Exception {
+            socketChannel.close();
         }
     }
 }

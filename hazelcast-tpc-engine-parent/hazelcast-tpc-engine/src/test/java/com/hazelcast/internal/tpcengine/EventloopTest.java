@@ -37,13 +37,13 @@ public abstract class EventloopTest {
 
     public int runQueueCapacity = 1024;
 
-    public abstract ReactorBuilder newReactorBuilder();
+    public abstract Reactor.Builder newReactorBuilder();
 
     @Before
     public void before() {
-        ReactorBuilder reactorBuilder = newReactorBuilder();
-        reactorBuilder.setRunQueueCapacity(runQueueCapacity);
-        reactor = reactorBuilder.build().start();
+        Reactor.Builder builder = newReactorBuilder();
+        builder.runQueueCapacity = runQueueCapacity;
+        reactor = builder.build().start();
     }
 
     @After
@@ -56,15 +56,15 @@ public abstract class EventloopTest {
         CompletableFuture future = new CompletableFuture();
         reactor.offer(() -> {
             for (int k = 0; k < runQueueCapacity - 1; k++) {
-                reactor.eventloop.newTaskQueueBuilder()
-                        .setLocal(new CircularQueue<>(10))
-                        .build();
+                TaskQueue.Builder taskQueueBuilder = reactor.eventloop.newTaskQueueBuilder();
+                taskQueueBuilder.inside = new CircularQueue<>(10);
+                taskQueueBuilder.build();
             }
 
             try {
-                reactor.eventloop.newTaskQueueBuilder()
-                        .setLocal(new CircularQueue<>(10))
-                        .build();
+                TaskQueue.Builder taskQueueBuilder = reactor.eventloop.newTaskQueueBuilder();
+                taskQueueBuilder.inside = new CircularQueue<>(10);
+                taskQueueBuilder.build();
                 future.completeExceptionally(
                         new IllegalStateException(
                                 "Should not be able to create more than " + runQueueCapacity + " task queues"));

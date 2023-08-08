@@ -17,18 +17,19 @@
 package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.BlockDevice;
-import com.hazelcast.internal.tpcengine.file.BlockDeviceRegistry;
-import com.hazelcast.internal.tpcengine.file.BlockRequestScheduler;
+import com.hazelcast.internal.tpcengine.file.StorageDevice;
+import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
+import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpcengine.util.Clock;
+import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
+import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
 import com.hazelcast.internal.tpcengine.util.EpochClock;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.Promise;
 import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
-import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -39,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_BLOCKED;
+import static com.hazelcast.internal.tpcengine.util.EpochClock.epochNanos;
+import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.lang.Math.max;
@@ -63,59 +66,53 @@ public abstract class Eventloop {
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     // todo:padding to prevent false sharing
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
-    protected final Clock epochClock;
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
-    protected final TaskQueueHandle defaultTaskQueueHandle;
-    private final ReactorMetrics metrics;
+    protected final TaskQueue.Handle defaultTaskQueueHandle;
+    private final Reactor.Metrics metrics;
     private final long minGranularityNanos;
+    private final NetworkScheduler networkScheduler;
+    private final IOBufferAllocator blockBufferAllocator;
     protected boolean stop;
     protected long taskStartNanos;
-    protected final SlabAllocator<TaskQueue> taskQueueAllocator = new SlabAllocator<>(1024, TaskQueue::new);
     private final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
     protected TaskQueue sharedFirst;
     protected TaskQueue sharedLast;
+    // todo: should be resources?
     // contains all the task-queues. The scheduler only contains the runnable ones.
     protected final Set<TaskQueue> taskQueues = new HashSet<>();
-    protected final int runQueueCapacity;
+    // protected final int runQueueCapacity;
     private final long stallThresholdNanos;
     final TaskQueueScheduler taskQueueScheduler;
     private final StallHandler stallHandler;
     private long taskDeadlineNanos;
-    protected final BlockDeviceRegistry blockDeviceRegistry;
-    protected final Map<BlockDevice, BlockRequestScheduler> deviceSchedulers = new HashMap<>();
+    protected final StorageDeviceRegistry storageDeviceRegistry;
+    protected final Map<StorageDevice, StorageScheduler> storageSchedulers = new HashMap<>();
 
-    protected Eventloop(Reactor reactor, ReactorBuilder builder) {
-        this.epochClock = new EpochClock();
-        this.reactor = reactor;
+    protected Eventloop(Builder builder) {
+        this.reactor = builder.reactor;
         this.metrics = reactor.metrics;
-        this.deadlineScheduler = new DeadlineScheduler(builder.deadlineRunQueueCapacity);
-        this.runQueueCapacity = builder.runQueueCapacity;
-        this.minGranularityNanos = builder.minGranularityNanos;
-        this.spin = builder.spin;
+        this.minGranularityNanos = builder.reactorBuilder.minGranularityNanos;
+        this.spin = builder.reactorBuilder.spin;
+        this.deadlineScheduler = builder.deadlineScheduler;
+        this.networkScheduler = builder.networkScheduler;
+        this.taskQueueScheduler = builder.taskQueueScheduler;
+        this.blockBufferAllocator = builder.blockBufferAllocator;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
-        this.blockDeviceRegistry = builder.blockDeviceRegistry;
-        this.stallThresholdNanos = builder.stallThresholdNanos;
-        this.ioIntervalNanos = builder.ioIntervalNanos;
-        this.stallHandler = builder.stallHandler;
+        this.storageDeviceRegistry = builder.reactorBuilder.storageDeviceRegistry;
+        this.stallThresholdNanos = builder.reactorBuilder.stallThresholdNanos;
+        this.ioIntervalNanos = builder.reactorBuilder.ioIntervalNanos;
+        this.stallHandler = builder.reactorBuilder.stallHandler;
 
-        if (builder.cfs) {
-            this.taskQueueScheduler = new CfsTaskQueueScheduler(
-                    builder.runQueueCapacity,
-                    builder.targetLatencyNanos,
-                    builder.minGranularityNanos);
-        } else {
-            this.taskQueueScheduler = new FcfsTaskQueueScheduler(
-                    builder.runQueueCapacity,
-                    builder.targetLatencyNanos,
-                    builder.minGranularityNanos);
-        }
-
-        TaskQueueBuilder defaultTaskQueueBuilder = builder.newDefaultTaskQueueBuilder();
+        TaskQueue.Builder defaultTaskQueueBuilder = builder.reactorBuilder.defaultTaskQueueBuilder;
         defaultTaskQueueBuilder.eventloop = this;
         this.defaultTaskQueueHandle = defaultTaskQueueBuilder.build();
+    }
+
+    public NetworkScheduler networkScheduler() {
+        return networkScheduler;
     }
 
     /**
@@ -123,7 +120,7 @@ public abstract class Eventloop {
      *
      * @return the reactor.
      */
-    public final Reactor getReactor() {
+    public final Reactor reactor() {
         return reactor;
     }
 
@@ -138,11 +135,11 @@ public abstract class Eventloop {
     }
 
     /**
-     * Gets the {@link TaskQueueHandle} for the default {@link TaskQueue}.
+     * Gets the {@link TaskQueue.Handle} for the default {@link TaskQueue}.
      *
      * @return the handle for the default {@link TaskQueue}.
      */
-    public final TaskQueueHandle defaultTaskQueueHandle() {
+    public final TaskQueue.Handle defaultTaskQueueHandle() {
         return defaultTaskQueueHandle;
     }
 
@@ -162,14 +159,14 @@ public abstract class Eventloop {
      * @return true if the caller should yield, false otherwise.
      */
     public final boolean shouldYield() {
-        return epochClock.nanoTime() > taskDeadlineNanos;
+        return epochNanos() > taskDeadlineNanos;
     }
 
     public final boolean offer(Object task) {
         return offer(task, defaultTaskQueueHandle);
     }
 
-    public final boolean offer(Object task, TaskQueueHandle handle) {
+    public final boolean offer(Object task, TaskQueue.Handle handle) {
         //checkNotNull(task, "task");
         //checkNotNull(handle,"handle");
 
@@ -178,7 +175,7 @@ public abstract class Eventloop {
         //    throw new IllegalArgumentException();
         //}
         //checkEventloopThread();
-        return handle.queue.offerLocal(task);
+        return handle.queue.offerInside(task);
     }
 
     protected final void ensureEventloopThread() {
@@ -188,25 +185,25 @@ public abstract class Eventloop {
     }
 
     /**
-     * Gets the {@link TaskQueue} for the given {@link TaskQueueHandle}.
+     * Gets the {@link TaskQueue} for the given {@link TaskQueue.Handle}.
      *
      * @param handle the handle
      * @return the TaskQueue that belongs to this handle.
      */
-    public final TaskQueue getTaskQueue(TaskQueueHandle handle) {
+    public final TaskQueue taskQueue(TaskQueue.Handle handle) {
         ensureEventloopThread();
         return handle.queue;
     }
 
     /**
-     * Creates an new {@link TaskQueueBuilder} for this Eventloop.
+     * Creates an new {@link TaskQueue.Builder} for this Eventloop.
      *
-     * @return the TaskQueueBuilder.
+     * @return the created builder.
      * @throws IllegalStateException if current thread is not the Eventloop thread.
      */
-    public final TaskQueueBuilder newTaskQueueBuilder() {
+    public final TaskQueue.Builder newTaskQueueBuilder() {
         ensureEventloopThread();
-        TaskQueueBuilder taskQueueBuilder = new TaskQueueBuilder();
+        TaskQueue.Builder taskQueueBuilder = new TaskQueue.Builder();
         taskQueueBuilder.eventloop = this;
         return taskQueueBuilder;
     }
@@ -245,7 +242,9 @@ public abstract class Eventloop {
      *
      * @return the block IOBufferAllocator.
      */
-    public abstract IOBufferAllocator blockIOBufferAllocator();
+    public final IOBufferAllocator blockIOBufferAllocator() {
+        return blockBufferAllocator;
+    }
 
     /**
      * Creates a new AsyncFile instance for the given path.
@@ -271,7 +270,7 @@ public abstract class Eventloop {
         reactor.serverSockets().foreach(serverSocket -> serverSocket.close("Reactor is shutting down", null));
     }
 
-    protected final boolean scheduleBlockedGlobal() {
+    protected final boolean scheduleBlockedOutside() {
         boolean scheduled = false;
         TaskQueue queue = sharedFirst;
 
@@ -279,8 +278,8 @@ public abstract class Eventloop {
             assert queue.runState == RUN_STATE_BLOCKED : "taskQueue.state" + queue.runState;
             TaskQueue next = queue.next;
 
-            if (!queue.global.isEmpty()) {
-                removeBlockedGlobal(queue);
+            if (!queue.outside.isEmpty()) {
+                removeBlockedOutside(queue);
                 scheduled = true;
                 taskQueueScheduler.enqueue(queue);
             }
@@ -291,8 +290,8 @@ public abstract class Eventloop {
         return scheduled;
     }
 
-    final void removeBlockedGlobal(TaskQueue taskQueue) {
-        assert taskQueue.global != null;
+    final void removeBlockedOutside(TaskQueue taskQueue) {
+        assert taskQueue.outside != null;
         assert taskQueue.runState == RUN_STATE_BLOCKED;
 
         TaskQueue next = taskQueue.next;
@@ -313,8 +312,8 @@ public abstract class Eventloop {
         }
     }
 
-    final void addBlockedGlobal(TaskQueue taskQueue) {
-        assert taskQueue.global != null;
+    final void addBlockedOutside(TaskQueue taskQueue) {
+        assert taskQueue.outside != null;
         assert taskQueue.runState == RUN_STATE_BLOCKED;
         assert taskQueue.prev == null;
         assert taskQueue.next == null;
@@ -334,20 +333,16 @@ public abstract class Eventloop {
      * When you override it, make sure you call {@code super.beforeRun()}.
      */
     protected void beforeRun() {
-        this.taskStartNanos = epochClock.nanoTime();
+        this.taskStartNanos = epochNanos();
     }
-
-    private long tasks;
-    private long ioTicks;
-    private long parks;
 
     /**
      * Runs the actual eventloop.
      * <p/>
      * Is called from the reactor thread.
      * <p>
-     * {@link EpochClock#nanoTime()} is pretty expensive (+/-25ns) due to {@link System#nanoTime()}. For
-     * every task processed we do not want to call the {@link EpochClock#nanoTime()} more than once because
+     * {@link EpochClock#epochNanos()} is pretty expensive (+/-25ns) due to {@link System#nanoTime()}. For
+     * every task processed we do not want to call the {@link EpochClock#epochNanos()} more than once because
      * the clock already dominates the context switch time.
      *
      * @throws Exception if something fails while running the eventloop. The reactor
@@ -360,17 +355,16 @@ public abstract class Eventloop {
             "checkstyle:MagicNumber"})
     public final void run() throws Exception {
         //System.out.println("eventloop.run");
-        long nowNanos = epochClock.nanoTime();
+        long nowNanos = epochNanos();
         long ioDeadlineNanos = nowNanos + ioIntervalNanos;
 
         while (!stop) {
             deadlineScheduler.tick(nowNanos);
 
-            scheduleBlockedGlobal();
+            scheduleBlockedOutside();
 
             TaskQueue taskQueue = taskQueueScheduler.pickNext();
             if (taskQueue == null) {
-                parks++;
                 // There is no work and therefor we need to park.
 
                 long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
@@ -382,7 +376,7 @@ public abstract class Eventloop {
 
                 // todo: we should only need to update the clock if real parking happened
                 // and not when work was detected
-                nowNanos = epochClock.nanoTime();
+                nowNanos = epochNanos();
                 ioDeadlineNanos = nowNanos + ioIntervalNanos;
                 continue;
             }
@@ -402,19 +396,6 @@ public abstract class Eventloop {
                     break;
                 }
 
-//                tasks++;
-//                if (tasks % 100000 == 0) {
-//                    System.out.println(reactor.name + "tasks:" + tasks
-//                            + " parks:" + parks
-//                            + " ioticks:" + ioTicks
-//                            + " tqs.count:" + taskQueueScheduler.size()
-//                            + " taskQueue.length:" + taskQueue.size());
-//                }
-//
-//                if (tasks % 100000 == 0 && reactor.name.startsWith("ClientReactor")) {
-//                    System.out.println("            " + taskQueue.task.toString());
-//                }
-
                 taskStartNanos = nowNanos;
                 taskDeadlineNanos = nowNanos + minGranularityNanos;
 
@@ -422,7 +403,7 @@ public abstract class Eventloop {
                 taskCount++;
 
                 if (clockSampleRound == 1) {
-                    nowNanos = epochClock.nanoTime();
+                    nowNanos = epochNanos();
                     clockSampleRound = taskQueue.clockSampleInterval;
                 } else {
                     clockSampleRound--;
@@ -440,10 +421,9 @@ public abstract class Eventloop {
                 // what if this is the last task of the last task queue; then first we are going to do an
                 // ioSchedulerTick and then we are going to do a park.
                 if (nowNanos >= ioDeadlineNanos) {
-                    ioTicks++;
                     // todo: return value isn't used.
                     ioSchedulerTick();
-                    nowNanos = epochClock.nanoTime();
+                    nowNanos = epochNanos();
                     ioDeadlineNanos = nowNanos + ioIntervalNanos;
                 }
 
@@ -462,10 +442,10 @@ public abstract class Eventloop {
                 taskQueue.runState = RUN_STATE_BLOCKED;
                 taskQueue.blockedCount++;
 
-                if (taskQueue.global != null) {
+                if (taskQueue.outside != null) {
                     // we also need to add it to the shared taskQueues so the eventloop will
-                    // see any items that are written to global queues.
-                    addBlockedGlobal(taskQueue);
+                    // see any items that are written to outside queues.
+                    addBlockedOutside(taskQueue);
                 }
             } else {
                 // Task queue wasn't fully drained.
@@ -519,13 +499,13 @@ public abstract class Eventloop {
     public final boolean schedule(Runnable cmd,
                                   long delay,
                                   TimeUnit unit,
-                                  TaskQueueHandle handle) {
+                                  TaskQueue.Handle handle) {
         checkNotNull(cmd);
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
         checkNotNull(handle);
 
-        DeadlineTask task = new DeadlineTask(epochClock, deadlineScheduler);
+        DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
         task.cmd = cmd;
         task.taskQueue = handle.queue;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
@@ -546,14 +526,14 @@ public abstract class Eventloop {
                                                 long initialDelay,
                                                 long delay,
                                                 TimeUnit unit,
-                                                TaskQueueHandle handle) {
+                                                TaskQueue.Handle handle) {
         checkNotNull(cmd);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
         checkNotNull(handle);
 
-        DeadlineTask task = new DeadlineTask(epochClock, deadlineScheduler);
+        DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
         task.cmd = cmd;
         task.taskQueue = handle.queue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
@@ -574,14 +554,14 @@ public abstract class Eventloop {
                                              long initialDelay,
                                              long period,
                                              TimeUnit unit,
-                                             TaskQueueHandle handle) {
+                                             TaskQueue.Handle handle) {
         checkNotNull(cmd);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(period, "period");
         checkNotNull(unit);
         checkNotNull(handle);
 
-        DeadlineTask task = new DeadlineTask(epochClock, deadlineScheduler);
+        DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
         task.cmd = cmd;
         task.taskQueue = handle.queue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
@@ -594,7 +574,7 @@ public abstract class Eventloop {
         checkNotNull(unit, "unit");
 
         Promise promise = promiseAllocator.allocate();
-        DeadlineTask task = new DeadlineTask(epochClock, deadlineScheduler);
+        DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
         task.promise = promise;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
         task.taskQueue = defaultTaskQueueHandle.queue;
@@ -603,11 +583,52 @@ public abstract class Eventloop {
     }
 
     private long toDeadlineNanos(long delay, TimeUnit unit) {
-        long deadlineNanos = epochClock.nanoTime() + unit.toNanos(delay);
+        long deadlineNanos = epochNanos() + unit.toNanos(delay);
         if (deadlineNanos < 0) {
             // protection against overflow
             deadlineNanos = Long.MAX_VALUE;
         }
         return deadlineNanos;
+    }
+
+    @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MagicNumber"})
+    public abstract static class Builder extends AbstractBuilder<Eventloop> {
+
+        public Reactor reactor;
+        public Reactor.Builder reactorBuilder;
+        public NetworkScheduler networkScheduler;
+        public TaskQueueScheduler taskQueueScheduler;
+        public DeadlineScheduler deadlineScheduler;
+        public IOBufferAllocator blockBufferAllocator;
+
+        @Override
+        protected void conclude() {
+            super.conclude();
+
+            checkNotNull(reactor, "reactor");
+            checkNotNull(reactorBuilder, "reactorBuilder");
+
+            if (deadlineScheduler == null) {
+                this.deadlineScheduler = new DeadlineScheduler(reactorBuilder.deadlineRunQueueCapacity);
+            }
+
+            if (blockBufferAllocator == null) {
+                blockBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
+            }
+
+            if (taskQueueScheduler == null) {
+                if (reactorBuilder.cfs) {
+                    this.taskQueueScheduler = new CfsTaskQueueScheduler(
+                            reactorBuilder.runQueueCapacity,
+                            reactorBuilder.targetLatencyNanos,
+                            reactorBuilder.minGranularityNanos);
+                } else {
+                    this.taskQueueScheduler = new FcfsTaskQueueScheduler(
+                            reactorBuilder.runQueueCapacity,
+                            reactorBuilder.targetLatencyNanos,
+                            reactorBuilder.minGranularityNanos);
+                }
+            }
+        }
     }
 }

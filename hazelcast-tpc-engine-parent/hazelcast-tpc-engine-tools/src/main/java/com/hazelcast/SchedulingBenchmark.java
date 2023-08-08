@@ -19,11 +19,10 @@ package com.hazelcast;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import com.hazelcast.internal.tpcengine.ReactorType;
 import com.hazelcast.internal.tpcengine.Task;
 import com.hazelcast.internal.tpcengine.TaskProcessor;
-import com.hazelcast.internal.tpcengine.TaskQueueHandle;
+import com.hazelcast.internal.tpcengine.TaskQueue;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.jctools.util.PaddedAtomicLong;
@@ -31,12 +30,12 @@ import org.jctools.util.PaddedAtomicLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.tpcengine.TaskQueueBuilder.MAX_NICE;
-import static com.hazelcast.internal.tpcengine.TaskQueueBuilder.MIN_NICE;
+import static com.hazelcast.internal.tpcengine.TaskQueue.Builder.MAX_NICE;
+import static com.hazelcast.internal.tpcengine.TaskQueue.Builder.MIN_NICE;
 import static java.lang.System.currentTimeMillis;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -54,15 +53,15 @@ public class SchedulingBenchmark {
     public ReactorType reactorType = ReactorType.NIO;
     public boolean useTask = true;
     public int clockSampleInterval = 1;
-    public int taskGroupCnt = 10;
+    public int taskGroupCnt = 1;
     public boolean randomNiceLevel = false;
-    public boolean useCfs = true;
+    public boolean cfs = true;
     public String affinity = "0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15";
     // When set to -1, value is ignored.
     public long minGranularityNanos = -1;
     // When set to -1, value is ignored.
     public long targetLatencyNanos = -1;
-    public int reactorCount = 16;
+    public int reactorCount = 1;
 
     private volatile boolean stop = false;
     private PaddedAtomicLong[] csCounters;
@@ -89,7 +88,7 @@ public class SchedulingBenchmark {
             Reactor reactor = reactors[reactorIndex];
             final PaddedAtomicLong counter = csCounters[reactorIndex];
             reactor.execute(() -> {
-                List<TaskQueueHandle> handles = new ArrayList<>();
+                List<TaskQueue.Handle> handles = new ArrayList<>();
                 if (taskGroupCnt == 0) {
                     handles.add(reactor.eventloop().defaultTaskQueueHandle());
                 } else {
@@ -98,7 +97,7 @@ public class SchedulingBenchmark {
                     }
                 }
 
-                for (TaskQueueHandle handle : handles) {
+                for (TaskQueue.Handle handle : handles) {
                     for (int k = 0; k < tasksPerTaskGroupCnt; k++) {
                         if (useTask) {
                             RunnableJob task = new RunnableJob(reactor, handle, useEventloopDirectly, counter);
@@ -127,12 +126,13 @@ public class SchedulingBenchmark {
         printResults(start);
     }
 
-    private void printResults(long start) {
+    private void printResults(long startMs) {
         long csCount = sum(csCounters);
-        long duration = currentTimeMillis() - start;
-        System.out.println("Duration " + duration + " ms");
+        long durationMs = currentTimeMillis() - startMs;
+        System.out.println("Duration " + durationMs + " ms");
         System.out.println("Context switches:" + csCount);
-        System.out.println("Throughput:" + (csCount * 1000f / duration) + " tasks/second");
+        System.out.println("Throughput:" + (csCount * 1000f / durationMs) + " tasks/second");
+        System.out.println("Avg context switch latency:" + (TimeUnit.MILLISECONDS.toNanos(durationMs) / (csCount / reactorCount)) + " ns");
     }
 
     private void printConfig() {
@@ -145,7 +145,7 @@ public class SchedulingBenchmark {
         System.out.println("taskGroupCnt:" + taskGroupCnt);
         System.out.println("tasksPerTaskGroupCnt:" + tasksPerTaskGroupCnt);
         System.out.println("randomNiceLevel:" + randomNiceLevel);
-        System.out.println("use completely fair scheduler:" + useCfs);
+        System.out.println("use completely fair scheduler:" + cfs);
         System.out.println("affinity:" + affinity);
         System.out.println("useEventloopDirectly:" + useEventloopDirectly);
         System.out.println("useTask:" + useTask);
@@ -155,49 +155,47 @@ public class SchedulingBenchmark {
         ThreadAffinity threadAffinity = affinity == null ? null : new ThreadAffinity(affinity);
         Reactor[] reactors = new Reactor[reactorCount];
         for (int k = 0; k < reactors.length; k++) {
-            ReactorBuilder builder = ReactorBuilder.newReactorBuilder(reactorType);
-            builder.setCfs(useCfs);
-            builder.setRunQueueCapacity(taskGroupCnt + 1);
+            Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(reactorType);
+            reactorBuilder.cfs = cfs;
+            reactorBuilder.runQueueCapacity = taskGroupCnt + 1;
+            reactorBuilder.threadAffinity = threadAffinity;
 
             if (minGranularityNanos != -1) {
-                builder.setMinGranularity(minGranularityNanos, NANOSECONDS);
+                reactorBuilder.minGranularityNanos = minGranularityNanos;
             }
 
             if (targetLatencyNanos != -1) {
-                builder.setTargetLatency(targetLatencyNanos, NANOSECONDS);
+                reactorBuilder.targetLatencyNanos = targetLatencyNanos;
             }
 
-            builder.setThreadAffinity(threadAffinity);
-
-            Reactor reactor = builder.build();
+            Reactor reactor = reactorBuilder.build();
             reactor.start();
             reactors[k] = reactor;
         }
         return reactors;
     }
 
-    public final Function<Eventloop, TaskQueueHandle> taskGroupFactory = eventloop -> {
-        int priority = randomNiceLevel
+    public final Function<Eventloop, TaskQueue.Handle> taskGroupFactory = eventloop -> {
+        int nice = randomNiceLevel
                 ? random.nextInt(MAX_NICE - MIN_NICE + 1) + MIN_NICE
                 : 0;
 
-        return eventloop
-                .newTaskQueueBuilder()
-                .setNice(priority)
-                .setClockSampleInterval(clockSampleInterval)
-                .setLocal(new CircularQueue<>(1024))
-                .build();
+        TaskQueue.Builder taskQueueBuilder = eventloop.newTaskQueueBuilder();
+        taskQueueBuilder.nice = nice;
+        taskQueueBuilder.clockSampleInterval = clockSampleInterval;
+        taskQueueBuilder.inside = new CircularQueue<>(1024);
+        return taskQueueBuilder.build();
     };
 
     private class RunnableJob implements Runnable {
         private final Eventloop eventloop;
         private final boolean useEventloopDirectly;
         private final Reactor reactor;
-        private final TaskQueueHandle taskGroupHandle;
+        private final TaskQueue.Handle taskGroupHandle;
         private final PaddedAtomicLong counter;
 
         public RunnableJob(Reactor reactor,
-                           TaskQueueHandle taskGroupHandle,
+                           TaskQueue.Handle taskGroupHandle,
                            boolean useEventloopDirectly,
                            PaddedAtomicLong counter) {
             this.reactor = reactor;

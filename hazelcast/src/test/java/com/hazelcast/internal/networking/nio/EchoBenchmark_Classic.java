@@ -69,8 +69,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class EchoBenchmark_Classic {
     public int runtimeSeconds = 3000;
     public int payloadSize = 0;
-    public int concurrency = 100;
-    public int connections = 100;
+    public int concurrency = 1000;
+    public int connections = 10;
 
     public int socketBufferSize = 256 * 1024;
     public int port = 8000;

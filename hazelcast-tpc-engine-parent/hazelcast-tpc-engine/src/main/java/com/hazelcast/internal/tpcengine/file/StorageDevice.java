@@ -24,7 +24,7 @@ import java.io.File;
  * One of the problems is that every eventloop will assume full ownership of this device.
  * So if you have maxConcurrency is 100 and 10 reactors, the total concurrency is 10x100=1000.
  */
-public class BlockDevice {
+public class StorageDevice {
     private final int maxConcurrent;
     private final String path;
     private final int maxWaiting;
@@ -34,9 +34,9 @@ public class BlockDevice {
      * @param concurrentLimit the number of concurrent requests on the dev.
      * @param maxWaiting      the maximum number of waiting in case of no space for waiting requests.
      */
-    public BlockDevice(String path,
-                       int concurrentLimit,
-                       int maxWaiting) {
+    public StorageDevice(String path,
+                         int concurrentLimit,
+                         int maxWaiting) {
         this.path = path;
         File file = new File(path);
         if (!file.isDirectory()) {

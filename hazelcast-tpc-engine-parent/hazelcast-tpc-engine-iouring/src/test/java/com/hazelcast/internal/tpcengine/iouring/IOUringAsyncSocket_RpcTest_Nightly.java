@@ -19,9 +19,11 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.TimeUnit;
+
 @Category(NightlyTest.class)
 public class IOUringAsyncSocket_RpcTest_Nightly extends IOUringAsyncSocket_RpcTest {
     public IOUringAsyncSocket_RpcTest_Nightly() {
-        iterations = 20000;
+        durationMillis = TimeUnit.SECONDS.toMillis(60);
     }
 }

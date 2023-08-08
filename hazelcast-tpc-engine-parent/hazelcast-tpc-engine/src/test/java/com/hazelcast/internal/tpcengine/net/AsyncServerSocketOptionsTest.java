@@ -18,21 +18,18 @@ package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.ReactorBuilder;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotIbmJDK8;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assumeNotWindows;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_RCVBUF;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEADDR;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_REUSEPORT;
-import static com.hazelcast.internal.tpcengine.net.AsyncSocketOptions.SO_SNDBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_REUSEADDR;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_REUSEPORT;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -44,12 +41,7 @@ public abstract class AsyncServerSocketOptionsTest {
     private static final Option<Boolean> SUPPORTED_OPTION = SO_REUSEPORT;
     private final List<Reactor> reactors = new ArrayList<>();
 
-    public abstract ReactorBuilder newReactorBuilder();
-
-    @BeforeClass
-    public static void beforeClass() throws Exception {
-        assumeNotIbmJDK8();
-    }
+    public abstract Reactor.Builder newReactorBuilder();
 
     @After
     public void after() {
@@ -57,24 +49,23 @@ public abstract class AsyncServerSocketOptionsTest {
     }
 
     private AsyncServerSocket newServerSocket() {
-        ReactorBuilder reactorBuilder = newReactorBuilder();
+        Reactor.Builder reactorBuilder = newReactorBuilder();
         Reactor reactor = reactorBuilder.build();
         reactors.add(reactor);
         reactor.start();
 
-        AsyncServerSocket serverSocket = reactor.newAsyncServerSocketBuilder()
-                .setAcceptFn(acceptRequest -> {
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+        };
 
-                })
-                .build();
-        return serverSocket;
+        return serverSocketBuilder.build();
     }
 
     @Test
     public void test_set() {
         assumeNotWindows();
         try (AsyncServerSocket serverSocket = newServerSocket()) {
-            AsyncSocketOptions options = serverSocket.options();
+            AsyncSocket.Options options = serverSocket.options();
             assertTrue(options.set(SUPPORTED_OPTION, true));
         }
     }
@@ -82,7 +73,7 @@ public abstract class AsyncServerSocketOptionsTest {
     @Test
     public void test_set_nullOption() {
         try (AsyncServerSocket serverSocket = newServerSocket()) {
-            AsyncSocketOptions options = serverSocket.options();
+            AsyncSocket.Options options = serverSocket.options();
             assertThrows(NullPointerException.class, () -> options.set(null, 1));
         }
     }
@@ -90,7 +81,7 @@ public abstract class AsyncServerSocketOptionsTest {
     @Test
     public void test_set_nullValue() {
         try (AsyncServerSocket serverSocket = newServerSocket()) {
-            AsyncSocketOptions options = serverSocket.options();
+            AsyncSocket.Options options = serverSocket.options();
             assertThrows(NullPointerException.class, () -> options.set(SO_RCVBUF, null));
         }
     }
@@ -98,7 +89,7 @@ public abstract class AsyncServerSocketOptionsTest {
     @Test
     public void test_set_unsupportedOption() {
         try (AsyncServerSocket serverSocket = newServerSocket()) {
-            AsyncSocketOptions options = serverSocket.options();
+            AsyncSocket.Options options = serverSocket.options();
             // SO_SNDBUF is not supported for server sockets.
             assertFalse(options.set(SO_SNDBUF, 64 * 1024));
         }
@@ -107,7 +98,7 @@ public abstract class AsyncServerSocketOptionsTest {
     @Test
     public void test_get_unsupportedOption() {
         try (AsyncServerSocket serverSocket = newServerSocket()) {
-            AsyncSocketOptions options = serverSocket.options();
+            AsyncSocket.Options options = serverSocket.options();
             // SO_SNDBUF is not supported for server sockets.
             assertNull(options.get(SO_SNDBUF));
         }
@@ -116,7 +107,7 @@ public abstract class AsyncServerSocketOptionsTest {
     @Test
     public void test_get_nullOption() {
         try (AsyncServerSocket serverSocket = newServerSocket()) {
-            AsyncSocketOptions options = serverSocket.options();
+            AsyncSocket.Options options = serverSocket.options();
             assertThrows(NullPointerException.class, () -> options.get(null));
         }
     }
@@ -124,7 +115,7 @@ public abstract class AsyncServerSocketOptionsTest {
     @Test
     public void test_SO_RCVBUF() {
         AsyncServerSocket serverSocket = newServerSocket();
-        AsyncSocketOptions options = serverSocket.options();
+        AsyncSocket.Options options = serverSocket.options();
         int newSize = 64 * 1024;
         options.set(SO_RCVBUF, newSize);
 
@@ -137,7 +128,7 @@ public abstract class AsyncServerSocketOptionsTest {
     @Test
     public void test_SO_REUSEADDR() {
         try (AsyncServerSocket serverSocket = newServerSocket()) {
-            AsyncSocketOptions options = serverSocket.options();
+            AsyncSocket.Options options = serverSocket.options();
             options.set(SO_REUSEADDR, true);
             assertEquals(Boolean.TRUE, options.get(SO_REUSEADDR));
             options.set(SO_REUSEADDR, false);
@@ -148,7 +139,7 @@ public abstract class AsyncServerSocketOptionsTest {
     @Test
     public void test_SO_REUSE_PORT() {
         try (AsyncServerSocket serverSocket = newServerSocket()) {
-            AsyncSocketOptions options = serverSocket.options();
+            AsyncSocket.Options options = serverSocket.options();
             if (options.isSupported(SO_REUSEPORT)) {
                 options.set(SO_REUSEPORT, true);
                 assertEquals(Boolean.TRUE, options.get(SO_REUSEPORT));

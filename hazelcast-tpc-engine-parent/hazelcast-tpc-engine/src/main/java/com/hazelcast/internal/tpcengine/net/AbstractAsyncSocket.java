@@ -35,7 +35,6 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 public abstract class AbstractAsyncSocket implements Closeable {
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
-
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
     private volatile String closeReason;
@@ -45,8 +44,8 @@ public abstract class AbstractAsyncSocket implements Closeable {
     private boolean closeListenerChecked;
 
     /**
-     * Allows for objects to be bound to this {@link AbstractAsyncSocket}. Useful for the lookup
-     * of services and other dependencies.
+     * Allows for objects to be bound to this {@link AbstractAsyncSocket}.
+     * Useful for the lookup of services and other dependencies.
      * <p/>
      * This method is thread-safe.
      */
@@ -61,8 +60,8 @@ public abstract class AbstractAsyncSocket implements Closeable {
      * <p/>
      * This call is threadsafe.
      * <p/>
-     * If the method is called when the socket already is closed, the {@link CloseListener}
-     * is notified.
+     * If the method is called when the socket already is closed, the
+     * {@link CloseListener} is notified.
      *
      * @param listener the close listener to set.
      * @param executor the executor used to execute the close listener.
@@ -158,7 +157,6 @@ public abstract class AbstractAsyncSocket implements Closeable {
             }
         }
 
-
         try {
             close0();
         } catch (Exception e) {
@@ -194,7 +192,8 @@ public abstract class AbstractAsyncSocket implements Closeable {
     }
 
     /**
-     * Does the actual closing. No guarantee is made on which thread this is called.
+     * Does the actual closing. No guarantee is made on which thread this is
+     * called.
      * <p/>
      * Is guaranteed to be called at most once.
      *
@@ -203,14 +202,14 @@ public abstract class AbstractAsyncSocket implements Closeable {
     protected abstract void close0() throws IOException;
 
     /**
-     * Gets the reason this socket was closed. Can be <code>null</code> if no reason
-     * was given or if the socket is still active. It is purely meant for debugging to
-     * shed some light on why sockets are closed.
+     * Gets the reason this socket was closed. Can be <code>null</code> if no
+     * reason was given or if the socket is still active. It is purely meant for
+     * debugging to shed some light on why sockets are closed.
      * <p>
      * This method is thread-safe and can be called at any moment.
      * <p>
-     * If the socket is closed and no reason is available, it is very likely that the
-     * close cause does contain the reason of closing.
+     * If the socket is closed and no reason is available, it is very likely
+     * that the close cause does contain the reason of closing.
      *
      * @return the reason this socket was closed.
      * @see #getCloseCause()
@@ -221,9 +220,9 @@ public abstract class AbstractAsyncSocket implements Closeable {
     }
 
     /**
-     * Gets the cause this socket was closed. Can be <code>null</code> if no cause was
-     * given or if the socket is still active. It is purely meant for debugging to shed
-     * some light on why sockets are closed.
+     * Gets the cause this socket was closed. Can be <code>null</code> if no
+     * cause was given or if the socket is still active. It is purely meant for
+     * debugging to shed some light on why sockets are closed.
      * <p>
      * This method is thread-safe.
      *
@@ -246,5 +245,18 @@ public abstract class AbstractAsyncSocket implements Closeable {
      */
     public interface CloseListener {
         void onClose(AbstractAsyncSocket socket);
+    }
+
+    /**
+     * Contains an accept request when a socket connects to the
+     * {@link AsyncServerSocket}. Is processed by setting the
+     * {@link AsyncServerSocket.Builder#acceptFn}.
+     * <p/>
+     * Currently it is just a dumb placeholder so that we can pass the
+     * appropriate resource (e.g. the accepted SocketChannel) to the constructor
+     * of the AsyncSocket in a typesafe manner.
+     */
+    public interface AcceptRequest extends AutoCloseable {
+
     }
 }

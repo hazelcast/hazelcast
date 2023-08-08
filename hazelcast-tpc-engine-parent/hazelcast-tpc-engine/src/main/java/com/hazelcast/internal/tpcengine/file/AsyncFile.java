@@ -21,14 +21,17 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_CLOSE;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FALLOCATE;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FDATASYNC;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_FSYNC;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_NOP;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_OPEN;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_READ;
-import static com.hazelcast.internal.tpcengine.file.BlockRequest.BLK_REQ_OP_WRITE;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_CLOSE;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_FALLOCATE;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_FDATASYNC;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_FSYNC;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_NOP;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_OPEN;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_READ;
+import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
@@ -48,8 +51,8 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * implementation/configuration, there are special requirements e.g. 4K alignment in
  * case of Direct I/O.
  * <p/>
- * The primary functionality of the AsyncFile is to issue {@link BlockRequest} to the
- * {@link BlockRequestScheduler}. The actual I/O is done by this scheduler.
+ * The primary functionality of the AsyncFile is to issue {@link StorageRequest} to the
+ * {@link StorageScheduler}. The actual I/O is done by that scheduler.
  */
 @SuppressWarnings({"checkstyle:IllegalTokenText", "checkstyle:VisibilityModifier"})
 public abstract class AsyncFile {
@@ -68,10 +71,10 @@ public abstract class AsyncFile {
 
     // todo: should be made private and using a varhandle it should be modified
     public int fd = -1;
-    private final AsyncFileMetrics metrics = new AsyncFileMetrics();
+    private final Metrics metrics = new Metrics();
     private final Eventloop eventloop;
     private final String path;
-    private final BlockRequestScheduler scheduler;
+    private final StorageScheduler scheduler;
     private final IntPromiseAllocator promiseAllocator;
 
     // todo: Using path as a string forces creating litter.
@@ -84,12 +87,12 @@ public abstract class AsyncFile {
      * @param eventloop
      * @param scheduler
      */
-    public AsyncFile(String path, Eventloop eventloop, BlockRequestScheduler scheduler) {
+    public AsyncFile(String path, Eventloop eventloop, StorageScheduler scheduler) {
         this.path = path;
         this.eventloop = eventloop;
         this.promiseAllocator = eventloop.intPromiseAllocator();
         this.scheduler = scheduler;
-        this.eventloop.getReactor().files().add(this);
+        this.eventloop.reactor().files().add(this);
     }
 
     /**
@@ -113,11 +116,11 @@ public abstract class AsyncFile {
     }
 
     /**
-     * Returns the {@link AsyncFileMetrics} for this AsyncFile.
+     * Returns the {@link Metrics} for this AsyncFile.
      *
      * @return the metrics.
      */
-    public final AsyncFileMetrics metrics() {
+    public final Metrics metrics() {
         return metrics;
     }
 
@@ -152,13 +155,13 @@ public abstract class AsyncFile {
     public final IntPromise nop() {
         IntPromise promise = promiseAllocator.allocate();
 
-        BlockRequest request = scheduler.reserve();
+        StorageRequest request = scheduler.allocate();
         if (request == null) {
             return failOnOverload(promise);
         }
         metrics.incNops();
 
-        request.opcode = BLK_REQ_OP_NOP;
+        request.opcode = STR_REQ_OP_NOP;
         request.promise = promise;
         request.file = this;
 
@@ -196,12 +199,12 @@ public abstract class AsyncFile {
      */
     public final IntPromise fsync() {
         IntPromise promise = promiseAllocator.allocate();
-        BlockRequest request = scheduler.reserve();
+        StorageRequest request = scheduler.allocate();
         if (request == null) {
             return failOnOverload(promise);
         }
 
-        request.opcode = BLK_REQ_OP_FSYNC;
+        request.opcode = STR_REQ_OP_FSYNC;
         request.file = this;
         request.promise = promise;
         scheduler.submit(request);
@@ -236,12 +239,12 @@ public abstract class AsyncFile {
 
     public final IntPromise fdatasync() {
         IntPromise promise = promiseAllocator.allocate();
-        BlockRequest request = scheduler.reserve();
+        StorageRequest request = scheduler.allocate();
         if (request == null) {
             return failOnOverload(promise);
         }
 
-        request.opcode = BLK_REQ_OP_FDATASYNC;
+        request.opcode = STR_REQ_OP_FDATASYNC;
         request.file = this;
         request.promise = promise;
         scheduler.submit(request);
@@ -253,12 +256,12 @@ public abstract class AsyncFile {
         checkNotNegative(length, "length");
 
         IntPromise promise = promiseAllocator.allocate();
-        BlockRequest request = scheduler.reserve();
+        StorageRequest request = scheduler.allocate();
         if (request == null) {
             return failOnOverload(promise);
         }
 
-        request.opcode = BLK_REQ_OP_FALLOCATE;
+        request.opcode = STR_REQ_OP_FALLOCATE;
         request.file = this;
         request.promise = promise;
         // The address field is used to store the length of the allocation
@@ -281,12 +284,12 @@ public abstract class AsyncFile {
     public IntPromise open(int flags, int permissions) {
         IntPromise promise = promiseAllocator.allocate();
 
-        BlockRequest request = scheduler.reserve();
+        StorageRequest request = scheduler.allocate();
         if (request == null) {
             return failOnOverload(promise);
         }
 
-        request.opcode = BLK_REQ_OP_OPEN;
+        request.opcode = STR_REQ_OP_OPEN;
         request.promise = promise;
         request.file = this;
         request.flags = flags;
@@ -306,7 +309,7 @@ public abstract class AsyncFile {
      * @return a Promise holding the result of the close.
      */
     public IntPromise close() {
-        eventloop.getReactor().files().remove(this);
+        eventloop.reactor().files().remove(this);
 
         IntPromise promise = promiseAllocator.allocate();
         if (fd == -1) {
@@ -314,12 +317,12 @@ public abstract class AsyncFile {
             return promise;
         }
 
-        BlockRequest request = scheduler.reserve();
+        StorageRequest request = scheduler.allocate();
         if (request == null) {
             return failOnOverload(promise);
         }
 
-        request.opcode = BLK_REQ_OP_CLOSE;
+        request.opcode = STR_REQ_OP_CLOSE;
         request.file = this;
         request.promise = promise;
 
@@ -344,12 +347,12 @@ public abstract class AsyncFile {
 
         IntPromise promise = promiseAllocator.allocate();
 
-        BlockRequest request = scheduler.reserve();
+        StorageRequest request = scheduler.allocate();
         if (request == null) {
             return failOnOverload(promise);
         }
 
-        request.opcode = BLK_REQ_OP_READ;
+        request.opcode = STR_REQ_OP_READ;
         request.file = this;
         request.promise = promise;
         request.buffer = dst;
@@ -391,12 +394,12 @@ public abstract class AsyncFile {
         checkNotNull(src, "src");
 
         IntPromise promise = promiseAllocator.allocate();
-        BlockRequest request = scheduler.reserve();
+        StorageRequest request = scheduler.allocate();
         if (request == null) {
             return failOnOverload(promise);
         }
 
-        request.opcode = BLK_REQ_OP_WRITE;
+        request.opcode = STR_REQ_OP_WRITE;
         request.file = this;
         request.promise = promise;
         request.buffer = src;
@@ -411,5 +414,122 @@ public abstract class AsyncFile {
     @Override
     public final String toString() {
         return path;
+    }
+
+    /**
+     * Contains the metrics for the {@link AsyncFile}.
+     * <p/>
+     * The metrics should only be updated by the event loop thread, but can be read by any thread.
+     */
+    @SuppressWarnings("checkstyle:ConstantName")
+    public static final class Metrics {
+
+        private static final VarHandle NOPS;
+        private static final VarHandle READS;
+        private static final VarHandle WRITES;
+        private static final VarHandle FSYNCS;
+        private static final VarHandle FDATASYNCS;
+        private static final VarHandle BYTES_READ;
+        private static final VarHandle BYTES_WRITTEN;
+
+        private volatile long nops;
+        private volatile long reads;
+        private volatile long writes;
+        private volatile long fsyncs;
+        private volatile long fdatasyncs;
+        private volatile long bytesRead;
+        private volatile long bytesWritten;
+
+        static {
+            try {
+                MethodHandles.Lookup l = MethodHandles.lookup();
+                NOPS = l.findVarHandle(Metrics.class, "nops", long.class);
+                READS = l.findVarHandle(Metrics.class, "reads", long.class);
+                WRITES = l.findVarHandle(Metrics.class, "writes", long.class);
+                FSYNCS = l.findVarHandle(Metrics.class, "fsyncs", long.class);
+                FDATASYNCS = l.findVarHandle(Metrics.class, "fdatasyncs", long.class);
+                BYTES_READ = l.findVarHandle(Metrics.class, "bytesRead", long.class);
+                BYTES_WRITTEN = l.findVarHandle(Metrics.class, "bytesWritten", long.class);
+            } catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
+
+        /**
+         * Returns the number of read operations that have been successfully performed on the file.
+         */
+        public long reads() {
+            return (long) READS.getOpaque(this);
+        }
+
+        public void incReads() {
+            READS.setOpaque(this, (long) READS.getOpaque(this) + 1);
+        }
+
+        /**
+         * Returns the number of write operations that have been successfully performed on the file.
+         */
+        public long writes() {
+            return (long) WRITES.getOpaque(this);
+        }
+
+        public void incWrites() {
+            WRITES.setOpaque(this, (long) WRITES.getOpaque(this) + 1);
+        }
+
+        /**
+         * Returns the number of nop operations that have been successfully performed on the file.
+         */
+        public long nops() {
+            return (long) NOPS.getOpaque(this);
+        }
+
+        public void incNops() {
+            NOPS.setOpaque(this, (long) NOPS.getOpaque(this) + 1);
+        }
+
+        /**
+         * Returns the number of fsyncs that have been successfully called on the file.
+         */
+        public long fsyncs() {
+            return (long) FSYNCS.getOpaque(this);
+        }
+
+        public void incFsyncs() {
+            FSYNCS.setOpaque(this, (long) FSYNCS.getOpaque(this) + 1);
+        }
+
+        /**
+         * Returns the number of fdatasyncs that have been successfully called on the file.
+         */
+        public long fdatasyncs() {
+            return (long) FDATASYNCS.getOpaque(this);
+        }
+
+        public void incFdatasyncs() {
+            FDATASYNCS.setOpaque(this, (long) FDATASYNCS.getOpaque(this) + 1);
+        }
+
+        /**
+         * Returns the number bytes that have been successfully written to the file.
+         */
+        public long bytesWritten() {
+            return (long) BYTES_WRITTEN.getOpaque(this);
+        }
+
+        public void incBytesWritten(int amount) {
+            BYTES_WRITTEN.setOpaque(this, (long) BYTES_WRITTEN.getOpaque(this) + amount);
+        }
+
+        /**
+         * Returns the number of bytes that have been successfully read from the file.
+         */
+        public long bytesRead() {
+            return (long) BYTES_READ.getOpaque(this);
+        }
+
+        public void incBytesRead(int amount) {
+            BYTES_READ.setOpaque(this, (long) BYTES_READ.getOpaque(this) + amount);
+        }
     }
 }

@@ -25,45 +25,39 @@ import static org.junit.Assert.assertThrows;
 public class TpcEngineBuilderTest {
 
     @Test
-    public void test_setReactorBuilderFn_WhenNull() {
-        TpcEngineBuilder builder = new TpcEngineBuilder();
-        assertThrows(NullPointerException.class, () -> builder.setReactorBuilderConfigureFn(null));
+    public void test_reactorConfigureFn_WhenNull() {
+        TpcEngine.Builder builder = new TpcEngine.Builder();
+        builder.reactorConfigureFn = null;
+        assertThrows(NullPointerException.class, () -> builder.conclude());
     }
 
     @Test
-    public void test_setReactorBuilderCOnfigureFn_whenAlreadyBuilt() {
-        TpcEngineBuilder builder = new TpcEngineBuilder();
-        builder.build();
-
-        assertThrows(IllegalStateException.class, () -> builder.setReactorBuilderConfigureFn(reactorBuilder -> {
-        }));
+    public void test_reactorCount_whenZero() {
+        TpcEngine.Builder builder = new TpcEngine.Builder();
+        builder.reactorCount = 0;
+        assertThrows(IllegalArgumentException.class, () -> builder.conclude());
     }
 
     @Test
-    public void test_setReactorCount_whenZero() {
-        TpcEngineBuilder builder = new TpcEngineBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setReactorCount(0));
+    public void test_reactorCount_whenNegative() {
+        TpcEngine.Builder builder = new TpcEngine.Builder();
+        builder.reactorCount = -1;
+        assertThrows(IllegalArgumentException.class, () -> builder.conclude());
     }
-
-    @Test
-    public void test_setReactorCount_whenNegative() {
-        TpcEngineBuilder builder = new TpcEngineBuilder();
-        assertThrows(IllegalArgumentException.class, () -> builder.setReactorCount(-1));
-    }
-
-    @Test
-    public void test_setReactorCount_whenAlreadyBuilt() {
-        TpcEngineBuilder builder = new TpcEngineBuilder();
-        builder.build();
-
-        assertThrows(IllegalStateException.class, () -> builder.setReactorCount(0));
-    }
+//
+//    @Test
+//    public void test_setReactorCount_whenAlreadyBuilt() {
+//        TpcEngine.Context builder = new TpcEngine.Context();
+//        builder.build();
+//
+//        assertThrows(IllegalStateException.class, () -> builder.setReactorCount(0));
+//    }
 
     @Test
     public void test_build() {
-        TpcEngine engine = new TpcEngineBuilder()
-                .setReactorCount(2)
-                .build();
+        TpcEngine.Builder builder = new TpcEngine.Builder();
+        builder.reactorCount = 2;
+        TpcEngine engine = builder.build();
         assertNotNull(engine);
         assertEquals(ReactorType.NIO, engine.reactorType());
         assertEquals(2, engine.reactorCount());
@@ -71,9 +65,9 @@ public class TpcEngineBuilderTest {
 
     @Test
     public void test_build_whenAlreadyBuilt() {
-        TpcEngineBuilder tpcEngineBuilder = new TpcEngineBuilder();
-        tpcEngineBuilder.build();
+        TpcEngine.Builder builder = new TpcEngine.Builder();
+        builder.build();
 
-        assertThrows(IllegalStateException.class, tpcEngineBuilder::build);
+        assertThrows(IllegalStateException.class, builder::build);
     }
 }
