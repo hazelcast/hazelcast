@@ -20,7 +20,7 @@ defaults:
 
 jobs:
   build:
-    name: AWS Tests
+    name: Kubernetes Tests
     runs-on: ubuntu-latest
     if: >-
       github.repository_owner == 'hazelcast' && 
@@ -34,13 +34,6 @@ jobs:
       HZ_IMG: ${{ steps.get-hz-image-tag.outputs.HZ_IMG }}
       CL_IMG: ${{ steps.get-cl-image-tag.outputs.CL_IMG }}
     steps:
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2.0.0
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
 
       - name: Checkout Auto Discovery Test Suite
         uses: actions/checkout@v3
@@ -151,33 +144,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        suite: ['ec2_cl_to_ec2_m', 'ec2_cl_to_fargate_ecs_m', 'fargate_ecs_cl_to_ec2_m', 'fargate_ecs_cl_to_fargate_ecs_m']
+        suite: ['gke']
+    env:
+      GCLOUD_KEYFILE_JSON=: ${{ secrets.GCP_KEY_FILE }}
     steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2.0.0
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
       - name: Checkout Auto Discovery Test Suite
         uses: actions/checkout@v3
         with:
           repository: hazelcast/auto-discovery-test-suite
           token: ${{ secrets.DEVOPS_GITHUB_TOKEN }}
           path: aws-discovery-suite
-
-      - name: Download hazelcast.jar
-        uses: actions/download-artifact@v3
-        with:
-          name: hazelcast.jar
-          path: aws-discovery-suite/terraform/tools
-
-      - name: Download aws-discovery-client.jar
-        uses: actions/download-artifact@v3
-        with:
-          name: aws-discovery-client.jar
-          path: aws-discovery-suite/terraform/tools/client
 
       - name : Set-up Terraform
         uses: hashicorp/setup-terraform@v2.0.3
