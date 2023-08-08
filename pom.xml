@@ -532,6 +532,7 @@
                                 <includedLicense>CC0-1.0</includedLicense>
                                 <includedLicense>CDDL</includedLicense>
                                 <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
+                                <includedLicense>EPL-1.0</includedLicense>
                                 <includedLicense>EPL-2.0</includedLicense>
                                 <includedLicense>JSON</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
@@ -595,9 +596,15 @@
                                     EDL 1.0
                                 </licenseMerge>
                                 <licenseMerge>
+                                    EPL-1.0 |
+                                    EPL 1.0 |
+                                    Eclipse Public License - Version 1.0
+                                </licenseMerge>
+                                <licenseMerge>
                                     EPL-2.0 |
                                     EPL 2.0 |
-                                    Eclipse Public License - Version 2.0
+                                    Eclipse Public License - Version 2.0 |
+                                    Eclipse Public License, Version 2.0
                                 </licenseMerge>
                                 <licenseMerge>
                                     JSON |
