@@ -1,10 +1,10 @@
-name: k8s-tests
+name: test-tests
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - "1CN-930*"
+      - "CN-930*"
   pull_request_target:
     types:
       - labeled
@@ -19,11 +19,6 @@ env:
   AWS_REGION: us-east-1
 
 jobs:
-  build:
-    name: Build Jar's And Docker Images
-    uses: ./.github/workflows/build-artifact.yml
-    secrets: inherit
-
   test:
     name: Run Tests
     needs: build
