@@ -2,15 +2,14 @@ name: k8s-tests
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - "CN-930*"
   pull_request_target:
     types:
       - labeled
     branches:
       - "master"
       - "*.z"
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/kubernetes/**'
 
 env:
   GAR_PROJECT_ID: hazelcast-33
@@ -28,6 +27,14 @@ jobs:
     name: Run Tests
     needs: build
     runs-on: ubuntu-latest
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'run-discovery-tests' 
+        )
+      )
     strategy:
       matrix:
         suite: ['gke']
