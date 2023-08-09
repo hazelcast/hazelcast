@@ -1728,7 +1728,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                     entries,
                                     entriesByPartition
                             );
-                            if(resultFuture.isDone()) {
+                            if (!resultFuture.isDone()) {
                                 resultFuture.complete(null);
                             }
                         }
