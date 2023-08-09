@@ -67,7 +67,6 @@ public class HazelcastVersionLocatorTest {
         assertTrue("File \"" + file + "\" not found", file.exists());
         byte[] memberBytes = toByteArray(file);
         HashCode memberHash = md5Hash.hashBytes(memberBytes);
-        assertEquals("Expected hash of Hazelcast " + label + " JAR (" + file + ")to be " + expectedHash, expectedHash,
-                memberHash.toString());
+        assertEquals("Expected hash of Hazelcast " + label + " JAR to be " + expectedHash, expectedHash, memberHash.toString());
     }
 }
