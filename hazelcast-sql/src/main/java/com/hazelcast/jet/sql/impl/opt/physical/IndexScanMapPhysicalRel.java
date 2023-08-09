@@ -100,7 +100,8 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
             } else {
                 // order is not forced, use default comparator for the index columns
                 collations = getIndex().getFieldOrdinals().stream()
-                        .map(i -> new FieldCollation(i, RelFieldCollation.Direction.ASCENDING, RelFieldCollation.NullDirection.UNSPECIFIED))
+                        .map(i -> new FieldCollation(i, RelFieldCollation.Direction.ASCENDING,
+                                RelFieldCollation.NullDirection.UNSPECIFIED))
                         .collect(toList());
             }
             return ExpressionUtil.comparisonFn(collations);
@@ -213,7 +214,9 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
         // 3. Get cost of the project taking into account the filter and number of expressions. Project never produces IO.
         double projectCpu = CostUtils.adjustCpuForConstrainedScan(CostUtils.getProjectCpu(filterRowCount, projectCount));
 
-        double sortCpu = requiresSort ? 0.1 * projectCpu : 0;
+        // 4. Cost of merging the rows into a sorted stream, it depends on the number of resulting rows and their size.
+        // Note that no full sorting is performed, sorted row streams are only merged.
+        double sortCpu = requiresSort ? CostUtils.INDEX_SCAN_CPU_MULTIPLIER_SORTED_ORDER_REQUIRED * projectCpu : 0;
 
         // 4. Finally, return sum of both scan and project.
         return planner.getCostFactory().makeCost(
