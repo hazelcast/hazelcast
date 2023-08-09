@@ -58,6 +58,11 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
 
+      - name: Echo home
+        run: |
+          echo ${HOME}
+          ls -la ${HOME}/.kube/
+
       - name: Checkout Auto Discovery Test Suite
         uses: actions/checkout@v3
         with:
