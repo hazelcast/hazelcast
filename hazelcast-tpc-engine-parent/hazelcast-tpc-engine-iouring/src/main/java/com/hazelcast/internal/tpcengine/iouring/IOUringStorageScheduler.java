@@ -22,7 +22,6 @@ import com.hazelcast.internal.tpcengine.file.StorageRequest;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
-import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
@@ -61,7 +60,6 @@ public class IOUringStorageScheduler implements StorageScheduler {
     final String path;
     IOUringEventloop eventloop;
     private final int concurrentLimit;
-    private final LongObjectHashMap<CompletionHandler> handlers;
     private final SubmissionQueue sq;
     private final StorageDevice dev;
     private int concurrent;
@@ -71,6 +69,7 @@ public class IOUringStorageScheduler implements StorageScheduler {
     private final CircularQueue<IOUringStorageRequest> waitQueue;
     private final SlabAllocator<IOUringStorageRequest> requestAllocator;
     private long count;
+    private final CompletionQueue cq;
 
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final StringBuilder msgBuilder = new StringBuilder();
@@ -82,8 +81,8 @@ public class IOUringStorageScheduler implements StorageScheduler {
         this.waitQueue = new CircularQueue<>(dev.maxWaiting());
         this.requestAllocator = new SlabAllocator<>(dev.maxWaiting(), IOUringStorageRequest::new);
         this.eventloop = eventloop;
-        this.handlers = eventloop.handlers;
-        this.sq = eventloop.sq;
+        this.sq = eventloop.uring.sq();
+        this.cq = eventloop.uring.cq();
     }
 
     @Override
@@ -97,29 +96,29 @@ public class IOUringStorageScheduler implements StorageScheduler {
     }
 
     @Override
-    public void submit(StorageRequest req) {
+    public void schedule(StorageRequest req) {
         if (concurrent < concurrentLimit) {
             // The request should not immediately be offered to
             // io_uring; only when there is a scheduler tick, the
             // request should be flushed.
-            offer((IOUringStorageRequest) req);
+            addRequest((IOUringStorageRequest) req);
         } else if (!waitQueue.offer((IOUringStorageRequest) req)) {
             throw new IllegalStateException("Too many concurrent requests");
         }
     }
 
-    private void scheduleNext() {
+    private void addNextRequest() {
         if (concurrent < concurrentLimit) {
             IOUringStorageRequest req = waitQueue.poll();
             if (req != null) {
-                offer(req);
+                addRequest(req);
             }
         }
     }
 
-    private void offer(IOUringStorageRequest req) {
-        long userdata = eventloop.nextTmpHandlerId();
-        handlers.put(userdata, req);
+    private void addRequest(IOUringStorageRequest req) {
+        long userdata = cq.nextTmpHandlerId();
+        cq.register(userdata, req);
 
         concurrent++;
 
@@ -133,9 +132,6 @@ public class IOUringStorageScheduler implements StorageScheduler {
         }
     }
 
-    /**
-     * Represents a single I/O req on a block device. For example a read or write to disk.
-     */
     final class IOUringStorageRequest extends StorageRequest implements CompletionHandler {
 
         void writeSqe(int sqIndex, long userdata) {
@@ -218,7 +214,7 @@ public class IOUringStorageScheduler implements StorageScheduler {
         }
 
         @Override
-        public void handle(int res, int flags, long userdata) {
+        public void completeRequest(int res, int flags, long userdata) {
             concurrent--;
             if (res >= 0) {
                 AsyncFile.Metrics metrics = file.metrics();
@@ -261,7 +257,7 @@ public class IOUringStorageScheduler implements StorageScheduler {
                 handleError(res);
             }
 
-            scheduleNext();
+            addNextRequest();
             rwFlags = 0;
             flags = 0;
             opcode = 0;
@@ -324,10 +320,9 @@ public class IOUringStorageScheduler implements StorageScheduler {
             promise.completeWithIOException(msgBuilder.toString(), null);
         }
 
-
         @Override
         public String toString() {
-            return "BlockRequest{"
+            return "StorageRequest{"
                     + "file=" + file
                     + ", offset=" + offset
                     + ", length=" + length

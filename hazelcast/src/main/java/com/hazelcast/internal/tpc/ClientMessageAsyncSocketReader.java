@@ -39,7 +39,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.CLIENT_PROTOCOL_UNVER
  * A {@link AsyncSocket.Reader} that reads incoming traffic from clients. The main
  * payloads being the {@link ClientMessage}.
  */
-public class ClientAsyncSocketReader extends AsyncSocket.Reader {
+public class ClientMessageAsyncSocketReader extends AsyncSocket.Reader {
 
     private static final byte[] PROTOCOL_BYTES = Protocols.CLIENT_BINARY.getBytes(StandardCharsets.UTF_8);
 
@@ -49,7 +49,7 @@ public class ClientAsyncSocketReader extends AsyncSocket.Reader {
     private boolean trusted;
     private Connection connection;
 
-    public ClientAsyncSocketReader(ClientEngine clientEngine, HazelcastProperties properties) {
+    public ClientMessageAsyncSocketReader(ClientEngine clientEngine, HazelcastProperties properties) {
         this.clientEngine = clientEngine;
         int maxMessageLength = properties.getInteger(CLIENT_PROTOCOL_UNVERIFIED_MESSAGE_BYTES);
         clientMessageReader = new ClientMessageReader(maxMessageLength);

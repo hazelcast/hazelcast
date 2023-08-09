@@ -20,7 +20,8 @@ import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
+import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpcengine.nio.IOVector;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
@@ -33,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Thread.currentThread;
 
@@ -61,13 +63,14 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     protected final AtomicReference<Thread> flushThread = new AtomicReference<>(currentThread());
     protected final Queue writeQueue;
     protected final Thread eventloopThread;
-    protected final Metrics metrics = new Metrics();
+    protected final Metrics metrics;
     protected final boolean clientSide;
     protected final Reactor reactor;
+    protected final Eventloop eventloop;
     protected final NetworkScheduler networkScheduler;
     protected final Reader reader;
+    protected final Writer writer;
     protected final Options options;
-    protected final Eventloop eventloop;
     protected volatile long lastReadTimeNanos = -1;
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
@@ -75,15 +78,17 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     protected boolean started;
 
     protected AsyncSocket(Builder builder) {
+        super(builder);
+        this.metrics = builder.metrics;
         this.clientSide = builder.clientSide;
         this.reactor = builder.reactor;
         this.eventloop = builder.reactor.eventloop();
         this.eventloopThread = reactor.eventloopThread();
         this.networkScheduler = builder.networkScheduler;
         this.writeQueue = builder.writeQueue;
-        this.reader = builder.reader;
         this.options = builder.options;
-        reader.init(this);
+        this.reader = builder.reader;
+        this.writer = builder.writer;
     }
 
     /**
@@ -293,6 +298,13 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * @return true if the IOBuffer was accepted, false otherwise.
      */
     public final boolean write(Object buf) {
+        checkNotNull(buf, "buf");
+
+        if (writer == null && !(buf instanceof IOBuffer)) {
+            throw new IllegalArgumentException(
+                    "Message needs to be an IOBuffer is writer is not set.");
+        }
+
         if (writeQueue.add(buf)) {
             return true;
         } else {
@@ -336,8 +348,14 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      *                               thread.
      */
     public final boolean insideWriteAndFlush(Object buf) {
-        Thread currentThread = currentThread();
+        checkNotNull(buf, "buf");
 
+        if (writer == null && !(buf instanceof IOBuffer)) {
+            throw new IllegalArgumentException(
+                    "Only accepting IOBuffers if writer isn't set.");
+        }
+
+        Thread currentThread = currentThread();
         if (currentThread != eventloopThread) {
             throw new IllegalStateException(
                     "unsafeWriteAndFlush can only be made from eventloop thread, "
@@ -607,9 +625,49 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
 
     /**
+     * The {@link Writer} is called to convert messages from the writeQueue to
+     * bytes so they can be send over the socket.
+     * <p/>
+     * A writer is specific to a {@link AsyncSocket} and can't be shared between
+     * multiple AsyncSocket instances.
+     */
+    public abstract static class Writer {
+        // todo: ugly
+        public ByteBuffer dst;
+        protected AsyncSocket socket;
+        protected Reactor reactor;
+        protected Eventloop eventloop;
+        protected Queue writeQueue;
+
+        /**
+         * Initializes the Reader. This method is called once and from the
+         * eventloop thread that owns the socket.
+         *
+         * @param socket the socket this Reader belongs to.
+         */
+        public void init(AsyncSocket socket) {
+            this.socket = checkNotNull(socket);
+            this.writeQueue = socket.writeQueue;
+            this.reactor = socket.reactor();
+            this.eventloop = reactor.eventloop();
+        }
+
+        /**
+         * Is called when data needs to be written to the socket.
+         *
+         * @return true if the Writer is clean, false if dirty. It is dirty
+         * when it could not manage to write all data to the dst buffer.
+         */
+        public abstract boolean onWrite();
+    }
+
+    /**
      * The {@link Reader} is called when data is received on an
      * {@link AsyncSocket} and needs to be processed by the application. This
      * is where e.g. ClientMessages of Packets could be created.
+     * <p/>
+     * A reader is specific to a {@link AsyncSocket} and can't be shared between
+     * multiple AsyncSocket instances.
      */
     public abstract static class Reader {
 
@@ -631,6 +689,10 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
 
         /**
          * Process the received data on the socket.
+         * <p/>
+         * The <code>src</code> buffer is owned by the reader. It should only
+         * be drained. Don't take ownership of this buffer; e.g. don't wrap it
+         * into an IOBuffer.
          * <p/>
          * Idea:
          * Currently we are forced to consume the bytes from the src buffer; so
@@ -657,20 +719,52 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * Cast to specific builder for specialized options when available.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
-    public abstract static class Builder extends AbstractBuilder<AsyncSocket> {
-        static final int DEFAULT_WRITE_QUEUE_CAPACITY = 2 << 16;
+    public abstract static class Builder extends AbstractAsyncSocket.Builder<AsyncSocket> {
+        public static final int DEFAULT_WRITE_QUEUE_CAPACITY = 2 << 16;
 
         public AcceptRequest acceptRequest;
         public Reactor reactor;
         public NetworkScheduler networkScheduler;
         public int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
+
+        /**
+         * The reader that is responsible for processing the received data from
+         * the socket.
+         */
         public Reader reader;
+
+        /**
+         * The writer that is responsible for writing the send message to a data-structure
+         * that can be send to the socket.
+         * <p>
+         * If the writer isn't set, the socket can only accept IOBuffers as message.
+         */
+        public Writer writer;
+
+        /**
+         * If the socket is an client side socket (so the side that initiated the
+         * accept request) or if the socket is server side (so the side that accepted
+         * the request).
+         */
         public boolean clientSide;
+
+        /**
+         * The queue of messages
+         */
         public Queue writeQueue;
+
         public Options options;
+
+        public IOVector ioVector;
+
+        public Metrics metrics;
 
         @Override
         protected void conclude() {
+            if (logger == null) {
+                logger = TpcLoggerLocator.getLogger(AsyncSocket.class);
+            }
+
             super.conclude();
 
             checkNotNull(reactor, "reactor");
@@ -679,8 +773,20 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
             checkNotNull(reader, "reader");
             checkNotNull(options, "options");
 
+            if (metrics == null) {
+                metrics = new Metrics();
+            }
+
             if (writeQueue == null) {
                 writeQueue = new MpmcArrayQueue(writeQueueCapacity);
+            }
+
+            if (writer == null) {
+                if (ioVector == null) {
+                    ioVector = new IOVector();
+                }
+            } else {
+                checkNull(ioVector, "ioVector");
             }
         }
     }

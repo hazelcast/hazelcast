@@ -16,7 +16,11 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
+/**
+ * Callback interface to consume the completion events from the
+ * {@link CompletionQueue}.
+ */
 public interface CompletionHandler {
 
-    void handle(int res, int flags, long userdata);
+    void completeRequest(int res, int flags, long userdata);
 }

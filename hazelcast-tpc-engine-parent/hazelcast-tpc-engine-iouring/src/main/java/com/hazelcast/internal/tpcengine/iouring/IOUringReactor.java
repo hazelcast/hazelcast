@@ -20,7 +20,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorType;
-import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
+import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket.AcceptRequest;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 
@@ -43,10 +43,12 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 public final class IOUringReactor extends Reactor {
 
     private final EventFd eventFd;
+    private final IOUringEventloop eventloop;
 
     private IOUringReactor(Builder builder) {
         super(builder);
-        this.eventFd = ((IOUringEventloop) eventloop()).eventfd;
+        this.eventloop = (IOUringEventloop) eventloop();
+        this.eventFd = eventloop.eventFdHandler.eventFd;
     }
 
     @Override
@@ -64,15 +66,17 @@ public final class IOUringReactor extends Reactor {
         IOUringAsyncSocket.Builder socketBuilder = new IOUringAsyncSocket.Builder(null);
         socketBuilder.networkScheduler = eventloop.networkScheduler();
         socketBuilder.reactor = this;
+        socketBuilder.uring = eventloop.uring;
         return socketBuilder;
     }
 
     @Override
-    public AsyncSocket.Builder newAsyncSocketBuilder(AbstractAsyncSocket.AcceptRequest acceptRequest) {
+    public AsyncSocket.Builder newAsyncSocketBuilder(AcceptRequest acceptRequest) {
         checkRunning();
 
-        IOUringAsyncSocket.Builder socketBuilder = new IOUringAsyncSocket.Builder(
-                (IOUringAcceptRequest) acceptRequest);
+        IOUringAsyncSocket.Builder socketBuilder
+                = new IOUringAsyncSocket.Builder((IOUringAcceptRequest) acceptRequest);
+        socketBuilder.uring = eventloop.uring;
         socketBuilder.reactor = this;
         socketBuilder.networkScheduler = eventloop.networkScheduler();
         return socketBuilder;
@@ -82,9 +86,10 @@ public final class IOUringReactor extends Reactor {
     public AsyncServerSocket.Builder newAsyncServerSocketBuilder() {
         checkRunning();
 
-        IOUringAsyncServerSocket.Builder serverBuilder = new IOUringAsyncServerSocket.Builder();
-        serverBuilder.reactor = this;
-        return serverBuilder;
+        IOUringAsyncServerSocket.Builder serverSocketBuilder = new IOUringAsyncServerSocket.Builder();
+        serverSocketBuilder.reactor = this;
+        serverSocketBuilder.uring = eventloop.uring;
+        return serverSocketBuilder;
     }
 
     @Override

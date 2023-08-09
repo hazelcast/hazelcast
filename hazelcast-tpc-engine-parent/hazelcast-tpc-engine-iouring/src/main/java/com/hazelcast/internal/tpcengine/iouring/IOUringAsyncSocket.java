@@ -20,6 +20,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -27,7 +28,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_RECV;
@@ -46,17 +49,13 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQ
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
+import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 
-// TODO: In the future add padding to get isolated state separated from state accessed by other threads.
-@SuppressWarnings({"checkstyle:TrailingComment",
-        "checkstyle:MemberName",
-        "checkstyle:TypeName",
-        "checkstyle:MethodName",
-        "checkstyle:ExecutableStatementCount",
-        "checkstyle:DeclarationOrder"})
+@SuppressWarnings({"checkstyle:DeclarationOrder"})
 public final class IOUringAsyncSocket extends AsyncSocket {
 
     // Ensure JNI is initialized as soon as this class is loaded
@@ -66,54 +65,27 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
-    private final IOUringEventloop ioUringEventloop;
-    private final SubmissionQueue sq;
-
-    private final CompletionHandler_OP_READ handler_OP_READ;
-    private final long userdata_OP_READ;
-
-    private final CompletionHandler_OP_WRITE handler_OP_WRITE;
-    private final long userdata_OP_WRITE;
-
-    private final CompletionHandler_OP_WRITEV handler_op_WRITEV;
-    private final long userdata_OP_WRITEV;
-
     private final LinuxSocket linuxSocket;
-
-    // ======================================================
-    // For the reading side of the socket
-    // ======================================================
-    private final ByteBuffer rcvBuff;
-
-    private final IOVector ioVector;
-    final SubmissionHandler_WRITE submissionHandler_write = new SubmissionHandler_WRITE();
+    private final ReadHandler readHandler;
+    final WriteHandler writeHandler;
+    private final IOUring uring;
 
     private IOUringAsyncSocket(Builder builder) {
         super(builder);
 
-        this.ioVector = builder.ioVector;
-        this.linuxSocket = builder.nativeSocket;
+        this.uring = builder.uring;
+        this.linuxSocket = builder.linuxSocket;
         if (!clientSide) {
             this.localAddress = linuxSocket.getLocalAddress();
             this.remoteAddress = linuxSocket.getRemoteAddress();
         }
+        this.readHandler = new ReadHandler(builder, this);
+        this.writeHandler = new WriteHandler(builder, this);
 
-        this.ioUringEventloop = (IOUringEventloop) reactor.eventloop();
-        this.sq = ioUringEventloop.sq;
-        this.rcvBuff = ByteBuffer.allocateDirect(options.get(Options.SO_RCVBUF));
-
-        this.handler_OP_READ = new CompletionHandler_OP_READ();
-        this.userdata_OP_READ = ioUringEventloop.nextPermanentHandlerId();
-        ioUringEventloop.handlers.put(userdata_OP_READ, handler_OP_READ);
-
-        this.handler_OP_WRITE = new CompletionHandler_OP_WRITE();
-        this.userdata_OP_WRITE = ioUringEventloop.nextPermanentHandlerId();
-        ioUringEventloop.handlers.put(userdata_OP_WRITE, handler_OP_WRITE);
-
-        this.handler_op_WRITEV = new CompletionHandler_OP_WRITEV();
-        this.userdata_OP_WRITEV = ioUringEventloop.nextPermanentHandlerId();
-        ioUringEventloop.handlers.put(userdata_OP_WRITEV, handler_op_WRITEV);
-
+        reader.init(this);
+        if (writer != null) {
+            writer.init(this);
+        }
         reactor.sockets().add(this);
     }
 
@@ -128,15 +100,22 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    protected boolean insideWrite(IOBuffer buf) {
+    protected boolean insideWrite(Object buf) {
         // todo: optimize
         return writeQueue.offer(buf);
     }
 
     @Override
     protected void start0() {
+        CompletionQueue cq = uring.cq();
+        writeHandler.userdata = cq.nextPermanentHandlerId();
+        cq.register(writeHandler.userdata, writeHandler);
+
+        readHandler.userdata = cq.nextPermanentHandlerId();
+        cq.register(readHandler.userdata, readHandler);
+
         if (!clientSide) {
-            sq_addRead();
+            readHandler.addRequest();
         }
 
         resetFlushed();
@@ -145,41 +124,20 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     @Override
     protected void close0() throws IOException {
         super.close0();
-        //todo: also think about releasing the resources like IOBuffers
 
         if (linuxSocket != null) {
             linuxSocket.close();
         }
-    }
 
-    // todo: boolean return
-    private void sq_addRead() {
-        int pos = rcvBuff.position();
-
-        // todo: why is this done every time
-        long address = addressOf(rcvBuff) + pos;
-        int length = rcvBuff.remaining();
-        if (length == 0) {
-            throw new RuntimeException("Calling sq_addRead with 0 length for the read buffer");
-        }
-
-        int index = sq.nextIndex();
-        if (index < 0) {
-            throw new RuntimeException("No space in submission queue");
-        }
-
-        long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
-        // IORING_OP_RECV provides better performance than IORING_OP_READ
-        // https://github.com/axboe/liburing/issues/536
-        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_RECV);
-        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, address);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, length);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_READ);
+//        reactor.offer(() -> {
+//            if (readHandler.userdata != 0) {
+//                uring.cq().removeHandler(readHandler.userdata);
+//            }
+//
+//            if (writeHandler.userdata != 0) {
+//                uring.cq().removeHandler(writeHandler.userdata);
+//            }
+//        });
     }
 
     @Override
@@ -202,7 +160,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     logger.info("Connected from " + localAddress + "->" + remoteAddress);
                 }
 
-                reactor.offer(this::sq_addRead);
+                reactor.offer(readHandler::addRequest);
 
                 future.complete(null);
             } else {
@@ -216,11 +174,52 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         return future;
     }
 
-    // todo: Doesn't need to be runnable any longer since not run on reactor.
-    class SubmissionHandler_WRITE implements Runnable {
+    // In the future we could add a WriteHandler that is optimized
+    // for when a Writer is set and bypasses the the whole ioVector ceremony
+    // But the Writer API needs to harden a bit first.
+    static final class WriteHandler implements CompletionHandler {
 
-        @Override
-        public void run() {
+        private final IOBuffer sndBuffer;
+        private final AtomicReference<Thread> flushThread;
+        private final SubmissionQueue sq;
+        private final IOVector ioVector;
+        private final LinuxSocket linuxSocket;
+        private final Writer writer;
+        private final Queue writeQueue;
+        private final IOUringAsyncSocket socket;
+        private final Metrics metrics;
+        private final NetworkScheduler networkScheduler;
+        private long userdata;
+        private boolean writerClean = true;
+
+        WriteHandler(IOUringAsyncSocket.Builder builder, IOUringAsyncSocket socket) {
+            this.socket = socket;
+            this.flushThread = socket.flushThread;
+            this.sq = builder.uring.sq();
+            this.ioVector = builder.ioVector;
+            this.linuxSocket = builder.linuxSocket;
+            this.writer = builder.writer;
+            this.writeQueue = builder.writeQueue;
+            this.networkScheduler = builder.networkScheduler;
+            this.metrics = builder.metrics;
+
+            if (writer != null) {
+                try {
+                    // should go through an allocator
+                    // if it goes through an allocator we need to ensure that
+                    // the iovector doesn't release it
+                    this.sndBuffer = new IOBuffer(builder.linuxSocket.getSendBufferSize(), true);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                // hack
+                writer.dst = sndBuffer.byteBuffer();
+            } else {
+                this.sndBuffer = null;
+            }
+        }
+
+        public void addRequest() {
             try {
                 if (flushThread.get() == null) {
                     throw new IllegalStateException("Channel should be in scheduled state");
@@ -232,7 +231,17 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                 }
 
                 long sqeAddr = sq.sqesAddr + ((long) index * SIZEOF_SQE);
-                ioVector.populate(writeQueue);
+
+                if (writer == null) {
+                    ioVector.populate(writeQueue);
+                } else {
+                    writerClean = writer.onWrite();
+                    sndBuffer.flip();
+                    // todo: result
+
+                    // add it if isn't added already
+                    ioVector.offer(sndBuffer);
+                }
 
                 if (ioVector.cnt() == 1) {
                     // There is just one item in the ioVecArray, so instead of doing a vectorized write,
@@ -248,7 +257,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, addressOf(buffer) + buffer.position());
                     UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, buffer.remaining());
                     UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_WRITE);
+                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
                 } else {
                     UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_WRITEV);
                     UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
@@ -258,87 +267,119 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, ioVector.addr());
                     UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, ioVector.cnt());
                     UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_WRITEV);
+                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
                 }
             } catch (Exception e) {
-                close("Closing IOUringAsyncSocket due to exception", e);
+                socket.close("Closing socket due to write problem.", e);
             }
         }
-    }
-
-    private class CompletionHandler_OP_WRITEV implements CompletionHandler {
 
         @Override
-        public void handle(int res, int flags, long userdata) {
+        public void completeRequest(int res, int flags, long userdata) {
             //System.out.println(IOUringAsyncSocket.this + " CompletionHandler_OP_WRITEV.handle");
             try {
                 if (res >= 0) {
                     metrics.incBytesWritten(res);
                     metrics.incWrites();
                     //System.out.println(IOUringAsyncSocket.this + " written " + res);
-                    ioVector.compact(res);
 
-                    if (ioVector.isEmpty() && writeQueue.isEmpty()) {
-                        resetFlushed();
+                    boolean sndBufferClean = true;
+                    if (sndBuffer != null) {
+                        ioVector.clear();
+                        sndBuffer.position(sndBuffer.position() + res);
+                        sndBufferClean = !sndBuffer.byteBuffer().hasRemaining();
+                        compactOrClear(sndBuffer.byteBuffer());
+                    } else {
+                        ioVector.compact(res);
+                    }
+
+                    // todo: this will not compact the underlying bytebuffer.
+
+                    if (writerClean && sndBufferClean && ioVector.isEmpty() && writeQueue.isEmpty()) {
+                        socket.resetFlushed();
                     } else {
                         // todo: we don't need to
-                        networkScheduler.schedule(IOUringAsyncSocket.this);
+                        networkScheduler.schedule(socket);
                     }
                 } else if (res == -EAGAIN) {
                     System.out.println("EAGAIN");
                     // TODO: Can this lead to spinning?
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
                     // todo: return value
-                    networkScheduler.schedule(IOUringAsyncSocket.this);
+                    networkScheduler.schedule(socket);
                 } else {
-                    throw newCQEFailedException("Failed to write data to the socket.", "writev(3p)", IORING_OP_WRITEV, -res);
-                }
-            } catch (Exception e) {
-                close("Closing due to socket write problem.", e);
-            }
-        }
-    }
-
-    // todo: since this is copy of CompletionHandler_OP_WRITEV, do we need the first?
-    private class CompletionHandler_OP_WRITE implements CompletionHandler {
-
-        @Override
-        public void handle(int res, int flags, long userdata) {
-            //System.out.println(IOUringAsyncSocket.this + " CompletionHandler_OP_WRITE.handle");
-            try {
-                if (res >= 0) {
-                    metrics.incBytesWritten(res);
-                    metrics.incWrites();
-                    // System.out.println(IOUringAsyncSocket.this + " written " + res);
-                    ioVector.compact(res);
-
-                    if (writeQueue.isEmpty() && ioVector.isEmpty()) {
-                        resetFlushed();
+                    if (ioVector.cnt() == 1) {
+                        throw newCQEFailedException(
+                                "Failed to write data to the socket.", "write(2)", IORING_OP_SEND, -res);
                     } else {
-                        networkScheduler.schedule(IOUringAsyncSocket.this);
+                        throw newCQEFailedException(
+                                "Failed to write data to the socket.", "writev(3p)", IORING_OP_WRITEV, -res);
                     }
-                } else if (res == -EAGAIN) {
-                    // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
-                    // todo: return value
-                    networkScheduler.schedule(IOUringAsyncSocket.this);
-                } else {
-                    throw newCQEFailedException("Failed to write data to the socket.", "write(2)", IORING_OP_SEND, -res);
                 }
             } catch (Exception e) {
-                close("Closing due to socket write problem.", e);
+                socket.close("Closing socket due to write problem.", e);
             }
         }
     }
 
-    private class CompletionHandler_OP_READ implements CompletionHandler {
+    private static final class ReadHandler implements CompletionHandler {
+
+        private final Metrics metrics;
+        private final ByteBuffer rcvBuff;
+        private final SubmissionQueue sq;
+        private final LinuxSocket linuxSocket;
+        private final IOUringAsyncSocket socket;
+        private final Reader reader;
+        private final IOUringEventloop eventloop;
+        private final long rcvBuffAddress;
+        private long userdata;
+
+        private ReadHandler(IOUringAsyncSocket.Builder builder, IOUringAsyncSocket socket) {
+            this.socket = socket;
+            this.reader = builder.reader;
+            this.metrics = builder.metrics;
+            this.linuxSocket = builder.linuxSocket;
+            this.eventloop = (IOUringEventloop) builder.reactor.eventloop();
+            this.sq = builder.uring.sq();
+            this.rcvBuff = ByteBuffer.allocateDirect(builder.options.get(SO_RCVBUF));
+            this.rcvBuffAddress = addressOf(rcvBuff);
+        }
+
+        // todo: boolean return
+        private void addRequest() {
+            int pos = rcvBuff.position();
+            long address = rcvBuffAddress + pos;
+            int length = rcvBuff.remaining();
+            if (length == 0) {
+                throw new RuntimeException("Calling sq_addRead with 0 length for the read buffer");
+            }
+
+            int index = sq.nextIndex();
+            if (index < 0) {
+                throw new RuntimeException("No space in submission queue");
+            }
+
+            long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
+            // IORING_OP_RECV provides better performance than IORING_OP_READ
+            // https://github.com/axboe/liburing/issues/536
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_RECV);
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, 0);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, address);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, length);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+        }
 
         @Override
-        public void handle(int res, int flags, long userdata) {
+        public void completeRequest(int res, int flags, long userdata) {
             // System.out.println(IOUringAsyncSocket.this + " CompletionHandler_OP_READ.handle");
             try {
                 if (res > 0) {
                     int bytesRead = res;
-                    LAST_READ_TIME_NANOS.setOpaque(IOUringAsyncSocket.this, ioUringEventloop.taskStartNanos());
+                    LAST_READ_TIME_NANOS.setOpaque(socket, eventloop.taskStartNanos());
                     metrics.incReads();
                     metrics.incBytesRead(bytesRead);
 
@@ -356,23 +397,24 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     compactOrClear(rcvBuff);
 
                     // we want to read more data
-                    sq_addRead();
+                    addRequest();
                 } else if (res == 0) {
                     // 0 indicates end of stream.
                     // https://man7.org/linux/man-pages/man2/recv.2.html
-                    close("Socket closed by peer.", null);
+                    socket.close("Socket closed by peer.", null);
                 } else if (res == -ECONNRESET) {
                     // https://man7.org/linux/man-pages/man2/recv.2.html
-                    close("Socket reset by peer.", null);
+                    socket.close("Socket reset by peer.", null);
                 } else {
-                    throw newCQEFailedException("Failed to read data from the socket.", "recv(2)", IORING_OP_RECV, -res);
+                    throw newCQEFailedException(
+                            "Failed to read data from the socket.", "recv(2)", IORING_OP_RECV, -res);
                 }
 
                 // TODO: It could be that we run into an EAGAIN or EWOULDBLOCK.
 
                 //System.out.println(IOUringAsyncSocket.this + " bytes read:" + res);
             } catch (Exception e) {
-                close("Closing IOUringAsyncSocket due to exception", e);
+                socket.close("Closing IOUringAsyncSocket due to exception", e);
             }
         }
     }
@@ -390,21 +432,21 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
         @Override
         public boolean isSupported(Option option) {
-            if (Options.TCP_NODELAY.equals(option)) {
+            if (TCP_NODELAY.equals(option)) {
                 return true;
-            } else if (Options.SO_RCVBUF.equals(option)) {
+            } else if (SO_RCVBUF.equals(option)) {
                 return true;
-            } else if (Options.SO_SNDBUF.equals(option)) {
+            } else if (SO_SNDBUF.equals(option)) {
                 return true;
-            } else if (Options.SO_KEEPALIVE.equals(option)) {
+            } else if (SO_KEEPALIVE.equals(option)) {
                 return true;
-            } else if (Options.SO_REUSEADDR.equals(option)) {
+            } else if (SO_REUSEADDR.equals(option)) {
                 return true;
-            } else if (Options.TCP_KEEPCOUNT.equals(option)) {
+            } else if (TCP_KEEPCOUNT.equals(option)) {
                 return true;
-            } else if (Options.TCP_KEEPINTERVAL.equals(option)) {
+            } else if (TCP_KEEPINTERVAL.equals(option)) {
                 return true;
-            } else if (Options.TCP_KEEPIDLE.equals(option)) {
+            } else if (TCP_KEEPIDLE.equals(option)) {
                 return true;
             } else {
                 return false;
@@ -416,27 +458,28 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             checkNotNull(option, "option");
 
             try {
-                if (Options.TCP_NODELAY.equals(option)) {
+                if (TCP_NODELAY.equals(option)) {
                     return (T) (Boolean) nativeSocket.isTcpNoDelay();
-                } else if (Options.SO_RCVBUF.equals(option)) {
+                } else if (SO_RCVBUF.equals(option)) {
                     return (T) (Integer) nativeSocket.getReceiveBufferSize();
-                } else if (Options.SO_SNDBUF.equals(option)) {
+                } else if (SO_SNDBUF.equals(option)) {
                     return (T) (Integer) nativeSocket.getSendBufferSize();
-                } else if (Options.SO_KEEPALIVE.equals(option)) {
+                } else if (SO_KEEPALIVE.equals(option)) {
                     return (T) (Boolean) nativeSocket.isKeepAlive();
-                } else if (Options.SO_REUSEADDR.equals(option)) {
+                } else if (SO_REUSEADDR.equals(option)) {
                     return (T) (Boolean) nativeSocket.isReuseAddress();
-                } else if (Options.TCP_KEEPCOUNT.equals(option)) {
+                } else if (TCP_KEEPCOUNT.equals(option)) {
                     return (T) (Integer) nativeSocket.getTcpKeepaliveProbes();
-                } else if (Options.TCP_KEEPINTERVAL.equals(option)) {
+                } else if (TCP_KEEPINTERVAL.equals(option)) {
                     return (T) (Integer) nativeSocket.getTcpKeepaliveIntvl();
-                } else if (Options.TCP_KEEPIDLE.equals(option)) {
+                } else if (TCP_KEEPIDLE.equals(option)) {
                     return (T) (Integer) nativeSocket.getTcpKeepAliveTime();
                 } else {
                     return null;
                 }
             } catch (IOException e) {
-                throw new UncheckedIOException("Failed to getOption [" + option.name() + "]", e);
+                throw new UncheckedIOException(
+                        "Failed to getOption [" + option.name() + "]", e);
             }
         }
 
@@ -447,35 +490,36 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             checkNotNull(value, "value");
 
             try {
-                if (Options.TCP_NODELAY.equals(option)) {
+                if (TCP_NODELAY.equals(option)) {
                     nativeSocket.setTcpNoDelay((Boolean) value);
                     return true;
-                } else if (Options.SO_RCVBUF.equals(option)) {
+                } else if (SO_RCVBUF.equals(option)) {
                     nativeSocket.setReceiveBufferSize((Integer) value);
                     return true;
-                } else if (Options.SO_SNDBUF.equals(option)) {
+                } else if (SO_SNDBUF.equals(option)) {
                     nativeSocket.setSendBufferSize((Integer) value);
                     return true;
-                } else if (Options.SO_KEEPALIVE.equals(option)) {
+                } else if (SO_KEEPALIVE.equals(option)) {
                     nativeSocket.setKeepAlive((Boolean) value);
                     return true;
-                } else if (Options.SO_REUSEADDR.equals(option)) {
+                } else if (SO_REUSEADDR.equals(option)) {
                     nativeSocket.setReuseAddress((Boolean) value);
                     return true;
-                } else if (Options.TCP_KEEPCOUNT.equals(option)) {
+                } else if (TCP_KEEPCOUNT.equals(option)) {
                     nativeSocket.setTcpKeepAliveProbes((Integer) value);
                     return true;
-                } else if (Options.TCP_KEEPIDLE.equals(option)) {
+                } else if (TCP_KEEPIDLE.equals(option)) {
                     nativeSocket.setTcpKeepAliveTime((Integer) value);
                     return true;
-                } else if (Options.TCP_KEEPINTERVAL.equals(option)) {
+                } else if (TCP_KEEPINTERVAL.equals(option)) {
                     nativeSocket.setTcpKeepaliveIntvl((Integer) value);
                     return true;
                 } else {
                     return false;
                 }
             } catch (IOException e) {
-                throw new UncheckedIOException("Failed to setOption [" + option.name() + "] with value [" + value + "]", e);
+                throw new UncheckedIOException(
+                        "Failed to setOption [" + option.name() + "] with value [" + value + "]", e);
             }
         }
     }
@@ -486,28 +530,35 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends AsyncSocket.Builder {
 
-        public LinuxSocket nativeSocket;
+        public LinuxSocket linuxSocket;
         public IOVector ioVector;
+        public IOUring uring;
 
         Builder(IOUringAcceptRequest acceptRequest) {
             if (acceptRequest == null) {
-                this.nativeSocket = LinuxSocket.openTcpIpv4Socket();
+                this.linuxSocket = LinuxSocket.openTcpIpv4Socket();
                 this.clientSide = true;
             } else {
-                this.nativeSocket = acceptRequest.linuxSocket;
+                this.linuxSocket = acceptRequest.linuxSocket;
                 this.clientSide = false;
             }
-            this.options = new IOUringOptions(nativeSocket);
+            this.options = new IOUringOptions(linuxSocket);
         }
 
         @Override
         protected void conclude() {
             super.conclude();
 
-            checkNotNull(nativeSocket, "nativeSocket");
+            checkNotNull(linuxSocket, "nativeSocket");
+            checkNotNull(uring, "uring");
 
-            if (ioVector == null) {
-                ioVector = new IOVector(IOV_MAX);
+            if (writer == null) {
+                if (ioVector == null) {
+                    ioVector = new IOVector(IOV_MAX);
+                }
+            } else {
+                checkNull(ioVector, "ioVector");
+                ioVector = new IOVector(1);
             }
         }
 

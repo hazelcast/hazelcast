@@ -20,6 +20,7 @@ import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import com.hazelcast.internal.tpcengine.util.PrintAtomicLongThread;
 import org.junit.After;
 import org.junit.Before;
@@ -28,30 +29,37 @@ import org.junit.Test;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.concurrent.CountDownLatch;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT;
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertOpenEventually;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_SNDBUF;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.TCP_NODELAY;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
-import static com.hazelcast.internal.tpcengine.util.BufferUtil.put;
 
 /**
  * todo: Should be converted to a time based test instead of ieration based
  */
 public abstract class AsyncSocket_LargePayloadTest {
+    // payloadSize (int) + round (long) + hash (int)
+    private static final int SIZEOF_HEADER = SIZEOF_INT + SIZEOF_LONG + SIZEOF_INT;
+
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
-    public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
+    public int SOCKET_BUFFER_SIZE = 16 * 1024;
     public int iterations = 20;
     public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     private final AtomicLong iteration = new AtomicLong();
     private final PrintAtomicLongThread monitorThread = new PrintAtomicLongThread("at:", iteration);
+    private final List<Future> futures = new ArrayList<>();
     private Reactor clientReactor;
     private Reactor serverReactor;
 
@@ -76,168 +84,323 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     @Test
-    public void test_concurrency_1_payload_0B() throws InterruptedException {
-        test(0, 1);
+    public void test_concurrency_1_payload_0B_withoutWriter() throws Exception {
+        test(0, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_1B() throws InterruptedException {
-        test(1, 1);
+    public void test_concurrency_1_payload_1B_withoutWriter() throws Exception {
+        test(1, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_1KB() throws InterruptedException {
-        test(1024, 1);
+    public void test_concurrency_1_payload_1KB_withoutWriter() throws Exception {
+        test(1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_2KB() throws InterruptedException {
-        test(2 * 1024, 1);
+    public void test_concurrency_1_payload_2KB_withoutWriter() throws Exception {
+        test(2 * 1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_4KB() throws InterruptedException {
-        test(4 * 1024, 1);
+    public void test_concurrency_1_payload_4KB_withoutWriter() throws Exception {
+        test(4 * 1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_16KB() throws InterruptedException {
-        test(16 * 1024, 1);
+    public void test_concurrency_1_payload_16KB_withoutWriter() throws Exception {
+        test(16 * 1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_32KB() throws InterruptedException {
-        test(32 * 1024, 1);
+    public void test_concurrency_1_payload_32KB_withoutWriter() throws Exception {
+        test(32 * 1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_64KB() throws InterruptedException {
-        test(64 * 1024, 1);
+    public void test_concurrency_1_payload_64KB_withoutWriter() throws Exception {
+        test(64 * 1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_128KB() throws InterruptedException {
-        test(128 * 1024, 1);
+    public void test_concurrency_1_payload_128KB_withoutWriter() throws Exception {
+        test(128 * 1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_256KB() throws InterruptedException {
-        test(256 * 1024, 1);
+    public void test_concurrency_1_payload_256KB_withoutWriter() throws Exception {
+        test(256 * 1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_512KB() throws InterruptedException {
-        test(512 * 1024, 1);
+    public void test_concurrency_1_payload_512KB_withoutWriter() throws Exception {
+        test(512 * 1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_1MB() throws InterruptedException {
-        test(1024 * 1024, 1);
+    public void test_concurrency_1_payload_1MB_withoutWriter() throws Exception {
+        test(1024 * 1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_1_payload_2MB() throws InterruptedException {
-        test(2048 * 1024, 1);
+    public void test_concurrency_1_payload_2MB_withoutWriter() throws Exception {
+        test(2048 * 1024, 1, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_0B() throws InterruptedException {
-        test(0, 10);
+    public void test_concurrency_10_payload_0B_withoutWriter() throws Exception {
+        test(0, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_1B() throws InterruptedException {
-        test(1, 10);
+    public void test_concurrency_10_payload_1B_withoutWriter() throws Exception {
+        test(1, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_1KB() throws InterruptedException {
-        test(1024, 10);
+    public void test_concurrency_10_payload_1KB_withoutWriter() throws Exception {
+        test(1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_2KB() throws InterruptedException {
-        test(2 * 1024, 10);
+    public void test_concurrency_10_payload_2KB_withoutWriter() throws Exception {
+        test(2 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_4KB() throws InterruptedException {
-        test(4 * 1024, 10);
+    public void test_concurrency_10_payload_4KB_withoutWriter() throws Exception {
+        test(4 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_16KB() throws InterruptedException {
-        test(16 * 1024, 10);
+    public void test_concurrency_10_payload_16KB_withoutWriter() throws Exception {
+        test(16 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_32KB() throws InterruptedException {
-        test(32 * 1024, 10);
+    public void test_concurrency_10_payload_32KB_withoutWriter() throws Exception {
+        test(32 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_64KB() throws InterruptedException {
-        test(64 * 1024, 10);
+    public void test_concurrency_10_payload_64KB_withoutWriter() throws Exception {
+        test(64 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_128KB() throws InterruptedException {
-        test(128 * 1024, 10);
+    public void test_concurrency_10_payload_128KB_withoutWriter() throws Exception {
+        test(128 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_256KB() throws InterruptedException {
-        test(256 * 1024, 10);
+    public void test_concurrency_10_payload_256KB_withoutWriter() throws Exception {
+        test(256 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_512KB() throws InterruptedException {
-        test(512 * 1024, 10);
+    public void test_concurrency_10_payload_512KB_withoutWriter() throws Exception {
+        test(512 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_1MB() throws InterruptedException {
-        test(1024 * 1024, 10);
+    public void test_concurrency_10_payload_1MB_withoutWriter() throws Exception {
+        test(1024 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_2MB() throws InterruptedException {
-        test(2048 * 1024, 10);
+    public void test_concurrency_10_payload_2MB_withoutWriter() throws Exception {
+        test(2048 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_4MB() throws InterruptedException {
-        test(4096 * 1024, 10);
+    public void test_concurrency_10_payload_4MB_withoutWriter() throws Exception {
+        test(4096 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_8MB() throws InterruptedException {
-        test(8192 * 1024, 10);
+    public void test_concurrency_10_payload_8MB_withoutWriter() throws Exception {
+        test(8192 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_16MB() throws InterruptedException {
-        test(16384 * 1024, 10);
+    public void test_concurrency_10_payload_16MB_withoutWriter() throws Exception {
+        test(16384 * 1024, 10, false);
     }
 
     @Test
-    public void test_concurrency_10_payload_32MB() throws InterruptedException {
-        test(32768 * 1024, 10);
+    public void test_concurrency_10_payload_32MB_withoutWriter() throws Exception {
+        test(32768 * 1024, 10, false);
     }
 
-    public void test(int payloadSize, int concurrency) throws InterruptedException {
-        AsyncServerSocket serverSocket = newServer();
+    @Test
+    public void test_concurrency_1_payload_0B_withWriter() throws Exception {
+        test(0, 1, true);
+    }
 
-        CountDownLatch completionLatch = new CountDownLatch(concurrency);
+    @Test
+    public void test_concurrency_1_payload_1B_withWriter() throws Exception {
+        test(1, 1, true);
+    }
 
-        AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress(), completionLatch);
+    @Test
+    public void test_concurrency_1_payload_1KB_withWriter() throws Exception {
+        test(1024, 1, true);
+    }
 
+    @Test
+    public void test_concurrency_1_payload_2KB_withWriter() throws Exception {
+        test(2 * 1024, 1, true);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_4KB_withWriter() throws Exception {
+        test(4 * 1024, 1, true);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_16KB_withWriter() throws Exception {
+        test(16 * 1024, 1, true);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_32KB_withWriter() throws Exception {
+        test(32 * 1024, 1, true);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_64KB_withWriter() throws Exception {
+        test(64 * 1024, 1, true);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_128KB_withWriter() throws Exception {
+        test(128 * 1024, 1, true);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_256KB_withWriter() throws Exception {
+        test(256 * 1024, 1, true);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_512KB_withWriter() throws Exception {
+        test(512 * 1024, 1, true);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_1MB_withWriter() throws Exception {
+        test(1024 * 1024, 1, true);
+    }
+
+    @Test
+    public void test_concurrency_1_payload_2MB_withWriter() throws Exception {
+        test(2048 * 1024, 1, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_0B_withWriter() throws Exception {
+        test(0, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_1B_withWriter() throws Exception {
+        test(1, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_1KB_withWriter() throws Exception {
+        test(1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_2KB_withWriter() throws Exception {
+        test(2 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_4KB_withWriter() throws Exception {
+        test(4 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_16KB_withWriter() throws Exception {
+        test(16 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_32KB_withWriter() throws Exception {
+        test(32 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_64KB_withWriter() throws Exception {
+        test(64 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_128KB_withWriter() throws Exception {
+        test(128 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_256KB_withWriter() throws Exception {
+        test(256 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_512KB_withWriter() throws Exception {
+        test(512 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_1MB_withWriter() throws Exception {
+        test(1024 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_2MB_withWriter() throws Exception {
+        test(2048 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_4MB_withWriter() throws Exception {
+        test(4096 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_8MB_withWriter() throws Exception {
+        test(8192 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_16MB_withWriter() throws Exception {
+        test(16384 * 1024, 10, true);
+    }
+
+    @Test
+    public void test_concurrency_10_payload_32MB_withWriter() throws Exception {
+        test(32768 * 1024, 10, true);
+    }
+
+    public void test(int payloadSize, int concurrency, boolean useWriter) throws Exception {
+        AsyncServerSocket serverSocket = newServer(useWriter);
+
+        AsyncSocket clientSocket = newClient(serverSocket.getLocalAddress(), useWriter);
+
+        Random random = new Random();
         for (int k = 0; k < concurrency; k++) {
             byte[] payload = new byte[payloadSize];
-            IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
+            random.nextBytes(payload);
+            IOBuffer buf = new IOBuffer(SIZEOF_HEADER + payload.length, true);
             buf.writeInt(payload.length);
             buf.writeLong(iterations / concurrency);
+            int pos = buf.position();
+            // hash placeholder
+            buf.writeInt(0);
             buf.writeBytes(payload);
+            // and now we write the hash
+            buf.putInt(pos, hash(buf, payloadSize));
             buf.flip();
             if (!clientSocket.write(buf)) {
                 throw new RuntimeException();
@@ -245,15 +408,26 @@ public abstract class AsyncSocket_LargePayloadTest {
         }
         clientSocket.flush();
 
-        assertOpenEventually(completionLatch, testTimeoutMs);
+        assertCompletesEventually(futures, testTimeoutMs);
+
+        System.out.println("iterations:" + iteration.get());
+
+        for (Future future : futures) {
+            future.get();
+        }
     }
 
-    private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch completionLatch) {
+    private AsyncSocket newClient(SocketAddress serverAddress, boolean useWriter) {
         AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
         socketBuilder.options.set(TCP_NODELAY, true);
         socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
         socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
-        socketBuilder.reader = new ClientReader(completionLatch);
+        CompletableFuture future = new CompletableFuture();
+        futures.add(future);
+        socketBuilder.reader = new ClientReader(future);
+        if (useWriter) {
+            socketBuilder.writer = new IOBufferWriter();
+        }
 
         AsyncSocket socket = socketBuilder.build();
         socket.start();
@@ -261,7 +435,7 @@ public abstract class AsyncSocket_LargePayloadTest {
         return socket;
     }
 
-    private AsyncServerSocket newServer() {
+    private AsyncServerSocket newServer(boolean useWriter) {
         AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
         serverSocketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
         serverSocketBuilder.acceptFn = acceptRequest -> {
@@ -270,6 +444,9 @@ public abstract class AsyncSocket_LargePayloadTest {
             socketBuilder.options.set(SO_SNDBUF, SOCKET_BUFFER_SIZE);
             socketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
             socketBuilder.reader = new ServerReader();
+            if (useWriter) {
+                socketBuilder.writer = new IOBufferWriter();
+            }
             AsyncSocket socket = socketBuilder.build();
             socket.start();
         };
@@ -281,99 +458,140 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private static class ServerReader extends AsyncSocket.Reader {
-        private ByteBuffer payloadBuffer;
-        private long round;
-        private int payloadSize = -1;
-        private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+        private final IOBufferAllocator bufferAllocator = new NonConcurrentIOBufferAllocator(SIZEOF_HEADER, true);
+        private IOBuffer message;
 
         @Override
         public void onRead(ByteBuffer src) {
             for (; ; ) {
-                if (payloadSize == -1) {
-                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                if (message == null) {
+                    if (src.remaining() < SIZEOF_HEADER) {
                         break;
                     }
-                    payloadSize = src.getInt();
-                    round = src.getLong();
-                    if (round < 0) {
-                        throw new RuntimeException("round can't be smaller than 0, found:" + round);
-                    }
-                    payloadBuffer = ByteBuffer.allocate(payloadSize);
+                    int payloadSize = src.getInt();
+                    long round = src.getLong();
+                    int hash = src.getInt();
+                    message = bufferAllocator.allocate(SIZEOF_HEADER + payloadSize);
+                    message.byteBuffer().limit(SIZEOF_HEADER + payloadSize);
+                    message.writeInt(payloadSize);
+                    message.writeLong(round - 1);
+                    message.writeInt(hash);
                 }
 
-                put(payloadBuffer, src);
-                if (payloadBuffer.remaining() > 0) {
+                BufferUtil.put(message.byteBuffer(), src);
+                //response.write(src);
+
+                if (message.remaining() > 0) {
                     // not all bytes have been received.
                     break;
                 }
+                message.flip();
 
-                payloadBuffer.flip();
-                IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
-                responseBuf.writeInt(payloadSize);
-                responseBuf.writeLong(round - 1);
-                responseBuf.write(payloadBuffer);
-                responseBuf.flip();
-                if (!socket.insideWriteAndFlush(responseBuf)) {
+                if (!socket.insideWriteAndFlush(message)) {
                     throw new RuntimeException("Socket has no space");
                 }
-                payloadSize = -1;
+                message = null;
             }
         }
     }
 
+    private static int hash(IOBuffer buffer, int payloadSize) {
+        int hash = 1;
+        for (int k = SIZEOF_HEADER; k < SIZEOF_HEADER + payloadSize; k++) {
+            byte element = buffer.getByte(k);
+            hash = 31 * hash + element;
+        }
+        return hash;
+    }
+
+    /**
+     * This writer isn't very interesting; it just writes the IOBuffer
+     * on the socket send buffer.
+     */
+    private class IOBufferWriter extends AsyncSocket.Writer {
+        private IOBuffer current;
+
+        @Override
+        public boolean onWrite() {
+            if (current == null) {
+                current = (IOBuffer) writeQueue.poll();
+            }
+
+            while (current != null) {
+                BufferUtil.put(dst, current.byteBuffer());
+                if (current.byteBuffer().hasRemaining()) {
+                    // The current message was not fully written
+                    return false;
+                }
+
+                current.release();
+                current = (IOBuffer) writeQueue.poll();
+            }
+
+            return true;
+        }
+    }
+
     private class ClientReader extends AsyncSocket.Reader {
-        private final CountDownLatch latch;
-        // TODO: This code can be simplified by creating the response buffer directly
-        // instead of dealing with an intermediate payload buffer.
-        private ByteBuffer payloadBuffer;
+        private final CompletableFuture future;
         private long round;
         private int payloadSize;
-        private final IOBufferAllocator responseAllocator;
+        private final IOBufferAllocator bufferAllocator = new NonConcurrentIOBufferAllocator(SIZEOF_HEADER, true);
+        private IOBuffer message;
+        private int hash;
 
-        ClientReader(CountDownLatch latch) {
-            this.latch = latch;
-            this.payloadSize = -1;
-            this.responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+        ClientReader(CompletableFuture future) {
+            this.future = future;
         }
 
         @Override
         public void onRead(ByteBuffer src) {
             for (; ; ) {
-                if (payloadSize == -1) {
-                    if (src.remaining() < SIZEOF_INT + SIZEOF_LONG) {
+                if (message == null) {
+                    if (src.remaining() < SIZEOF_HEADER) {
                         break;
                     }
 
                     payloadSize = src.getInt();
                     round = src.getLong();
+                    hash = src.getInt();
                     if (round < 0) {
                         throw new RuntimeException("round can't be smaller than 0, found:" + round);
                     }
-                    payloadBuffer = ByteBuffer.allocate(payloadSize);
+                    message = bufferAllocator.allocate(SIZEOF_HEADER + payloadSize);
+                    message.byteBuffer().limit(SIZEOF_HEADER + payloadSize);
+                    message.writeInt(payloadSize);
+                    message.writeLong(round);
+                    message.writeInt(hash);
                 }
 
-                put(payloadBuffer, src);
+                BufferUtil.put(message.byteBuffer(), src);
+                //response.write(src);
 
-                if (payloadBuffer.remaining() > 0) {
+                if (message.remaining() > 0) {
                     // not all bytes have been received.
                     break;
                 }
-                payloadBuffer.flip();
+                message.flip();
+
+                int foundHash = hash(message, payloadSize);
+                if (foundHash != hash) {
+                    src.clear();
+                    future.completeExceptionally(new IllegalStateException("Hash mismatch, datastream is corrupted"));
+                    socket.close();
+                    return;
+                }
+
                 iteration.incrementAndGet();
 
                 if (round == 0) {
-                    latch.countDown();
+                    future.complete(null);
                 } else {
-                    IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
-                    responseBuf.writeInt(payloadSize);
-                    responseBuf.writeLong(round);
-                    responseBuf.write(payloadBuffer);
-                    responseBuf.flip();
-                    if (!socket.insideWriteAndFlush(responseBuf)) {
+                    if (!socket.insideWriteAndFlush(message)) {
                         throw new RuntimeException();
                     }
                 }
-                payloadSize = -1;
+                message = null;
             }
         }
     }

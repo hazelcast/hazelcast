@@ -100,8 +100,8 @@ public class EchoBenchmark_Naked_IOUring {
         @Override
         public void run() {
             uring = new IOUring(4096, iouringSetupFlags);
-            sq = uring.submissionQueue();
-            cq = uring.completionQueue();
+            sq = uring.sq();
+            cq = uring.cq();
 
             try {
                 ThreadAffinity threadAffinity = cpuAffinityClient == null ? null : new ThreadAffinity(cpuAffinityClient);
@@ -161,7 +161,7 @@ public class EchoBenchmark_Naked_IOUring {
         private class CompletionHandler implements com.hazelcast.internal.tpcengine.iouring.CompletionHandler {
 
             @Override
-            public void handle(int res, int flags, long userdata) {
+            public void completeRequest(int res, int flags, long userdata) {
                 if (res < 0) {
                     throw new UncheckedIOException(new IOException(strerror(-res)));
                 }
@@ -228,8 +228,8 @@ public class EchoBenchmark_Naked_IOUring {
         @Override
         public void run() {
             uring = new IOUring(4096, iouringSetupFlags);
-            sq = uring.submissionQueue();
-            cq = uring.completionQueue();
+            sq = uring.sq();
+            cq = uring.cq();
             try {
                 ThreadAffinity threadAffinity = cpuAffinityServer == null ? null : new ThreadAffinity(cpuAffinityServer);
                 if (threadAffinity != null) {
@@ -274,7 +274,7 @@ public class EchoBenchmark_Naked_IOUring {
         private class CompletionHandler implements com.hazelcast.internal.tpcengine.iouring.CompletionHandler {
 
             @Override
-            public void handle(int res, int flags, long userdata_id) {
+            public void completeRequest(int res, int flags, long userdata_id) {
                 try {
                     if (res < 0) {
                         throw new UncheckedIOException(new IOException(strerror(-res)));

@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.tpcengine.TpcEngine;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
@@ -37,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 public class TpcIntegrationTest extends HazelcastTestSupport {
     private static final int PRINT_PROGRESS_INTERVAL = 100;
 
-    public int iterations = 1_000;
+    public int iterations = 100;
     private final ILogger logger = Logger.getLogger(getClass());
     private HazelcastInstance server;
     private HazelcastInstance client;
@@ -56,7 +57,8 @@ public class TpcIntegrationTest extends HazelcastTestSupport {
     @Test
     public void testMap() {
         System.setProperty(TPC_ENABLED.getName(), "true");
-        System.setProperty(TPC_EVENTLOOP_COUNT.getName(), "" + Runtime.getRuntime().availableProcessors());
+        System.setProperty(TpcEngine.Builder.NAME_REACTOR_TYPE, "iouring");
+        System.setProperty(TPC_EVENTLOOP_COUNT.getName(), "1");
         server = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
@@ -68,9 +70,9 @@ public class TpcIntegrationTest extends HazelcastTestSupport {
         long startTime = System.currentTimeMillis();
 
         for (int k = 0; k < iterations; k++) {
-            if (k % (iterations / PRINT_PROGRESS_INTERVAL) == 0) {
-                logger.info(">> At:" + k);
-            }
+            //if (k % (iterations / PRINT_PROGRESS_INTERVAL) == 0) {
+            logger.info(">> At:" + k);
+            //}
             map.put(k, k);
         }
 

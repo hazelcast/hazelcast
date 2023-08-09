@@ -101,7 +101,7 @@ public class NioStorageScheduler implements StorageScheduler {
     }
 
     @Override
-    public void submit(StorageRequest req) {
+    public void schedule(StorageRequest req) {
         NioStorageRequest nioBlockRequest = (NioStorageRequest) req;
         if (concurrent < concurrentLimit) {
             submit0(nioBlockRequest);
@@ -249,7 +249,7 @@ public class NioStorageScheduler implements StorageScheduler {
         concurrent--;
 
         while (waitQueue.hasRemaining() && concurrent < concurrentLimit) {
-            submit(waitQueue.poll());
+            schedule(waitQueue.poll());
         }
     }
 

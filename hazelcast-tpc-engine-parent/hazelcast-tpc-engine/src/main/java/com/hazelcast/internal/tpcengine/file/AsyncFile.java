@@ -165,7 +165,7 @@ public abstract class AsyncFile {
         request.promise = promise;
         request.file = this;
 
-        scheduler.submit(request);
+        scheduler.schedule(request);
         return promise;
     }
 
@@ -207,7 +207,7 @@ public abstract class AsyncFile {
         request.opcode = STR_REQ_OP_FSYNC;
         request.file = this;
         request.promise = promise;
-        scheduler.submit(request);
+        scheduler.schedule(request);
         return promise;
     }
 
@@ -247,7 +247,7 @@ public abstract class AsyncFile {
         request.opcode = STR_REQ_OP_FDATASYNC;
         request.file = this;
         request.promise = promise;
-        scheduler.submit(request);
+        scheduler.schedule(request);
         return promise;
     }
 
@@ -270,7 +270,7 @@ public abstract class AsyncFile {
         request.length = mode;
         request.rwFlags = mode;
         request.offset = offset;
-        scheduler.submit(request);
+        scheduler.schedule(request);
         return promise;
     }
 
@@ -295,7 +295,7 @@ public abstract class AsyncFile {
         request.flags = flags;
         request.permissions = permissions;
 
-        scheduler.submit(request);
+        scheduler.schedule(request);
         return promise;
     }
 
@@ -326,7 +326,7 @@ public abstract class AsyncFile {
         request.file = this;
         request.promise = promise;
 
-        scheduler.submit(request);
+        scheduler.schedule(request);
         return promise;
     }
 
@@ -359,7 +359,7 @@ public abstract class AsyncFile {
         request.length = length;
         request.offset = offset;
 
-        scheduler.submit(request);
+        scheduler.schedule(request);
 
         return promise;
     }
@@ -406,7 +406,7 @@ public abstract class AsyncFile {
         request.length = length;
         request.offset = offset;
 
-        scheduler.submit(request);
+        scheduler.schedule(request);
         return promise;
     }
 

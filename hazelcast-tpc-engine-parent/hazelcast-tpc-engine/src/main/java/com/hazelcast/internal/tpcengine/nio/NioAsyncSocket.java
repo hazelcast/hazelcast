@@ -19,7 +19,6 @@ package com.hazelcast.internal.tpcengine.nio;
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
-import com.hazelcast.internal.tpcengine.util.BufferUtil;
 import jdk.net.ExtendedSocketOptions;
 
 import java.io.EOFException;
@@ -34,6 +33,7 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
@@ -53,7 +53,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     final Handler handler;
     private final SocketChannel socketChannel;
     private final SelectionKey key;
-    private final IOVector ioVector = new IOVector();
+    private final IOVector ioVector;
     private boolean connecting;
     private volatile CompletableFuture<Void> connectFuture;
     /**
@@ -84,7 +84,7 @@ public final class NioAsyncSocket extends AsyncSocket {
      * What might be an issue is starvation when the eventloop thread keeps filling up the
      * IOVector and the writeQueue filled by other threads isn't drained.
      */
-    private boolean ioVectorWriteAllowed = true;
+    private boolean ioVectorWriteAllowed;
 
     private NioAsyncSocket(Builder builder) {
         super(builder);
@@ -95,8 +95,15 @@ public final class NioAsyncSocket extends AsyncSocket {
                 this.localAddress = socketChannel.getLocalAddress();
                 this.remoteAddress = socketChannel.getRemoteAddress();
             }
-            this.handler = new Handler(builder);
+            this.ioVector = builder.ioVector;
+            this.ioVectorWriteAllowed = ioVector != null;
+            this.handler = new Handler(builder, this);
             this.key = socketChannel.register(builder.selector, 0, handler);
+            handler.key = key;
+            reader.init(this);
+            if (writer != null) {
+                writer.init(this);
+            }
             reactor.sockets().add(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -132,24 +139,6 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public boolean isReadable() {
-        if (currentThread() == eventloopThread) {
-            return isReadable0();
-        } else {
-            CompletableFuture<Boolean> future = new CompletableFuture<>();
-            reactor.execute(() -> {
-                try {
-                    future.complete(isReadable0());
-                } catch (Throwable t) {
-                    future.completeExceptionally(t);
-                    throw sneakyThrow(t);
-                }
-            });
-
-            return future.join();
-        }
-    }
-
-    private boolean isReadable0() {
         return (key.interestOps() & OP_READ) != 0;
     }
 
@@ -225,11 +214,10 @@ public final class NioAsyncSocket extends AsyncSocket {
         resetFlushed();
     }
 
-
     @Override
-    protected boolean insideWrite(IOBuffer buf) {
+    protected boolean insideWrite(Object buf) {
         if (ioVectorWriteAllowed) {
-            if (ioVector.offer(buf)) {
+            if (ioVector.offer((IOBuffer) buf)) {
                 return true;
             } else {
                 ioVectorWriteAllowed = false;
@@ -249,28 +237,49 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @SuppressWarnings("java:S125")
-    final class Handler implements NioHandler, Runnable {
+    static final class Handler implements NioHandler, Runnable {
         // Todo: the way the rcvBuffer is used isn't memory efficient because every socket
         // will get its own buffer. If the rcvBuffer is guaranteed to be drained, a single
         // rcvBuffer can be shared between all sockets from the same reactor. So you get a
         // significant memory saving and it will also help with improved cache utilization
         // etc.
         private final ByteBuffer rcvBuffer;
+        // Same goes for sndBuffer. Having dedicated sndBuffer per socket is expensive.
         private final ByteBuffer sndBuffer;
-        private final Metrics metrics = NioAsyncSocket.this.metrics;
+        private final Metrics metrics;
+        private final SocketChannel socketChannel;
+        private final NioEventloop eventloop;
+        private final IOVector ioVector;
+        private SelectionKey key;
+        private final Reader reader;
+        private final Writer writer;
+        private final Queue writeQueue;
+        private final NioAsyncSocket socket;
 
-        private Handler(Builder builder) throws SocketException {
+        private Handler(Builder builder, NioAsyncSocket socket) throws SocketException {
+            this.socket = socket;
+            this.metrics = socket.metrics();
+            this.socketChannel = socket.socketChannel;
+            this.eventloop = (NioEventloop) socket.eventloop;
+            this.ioVector = socket.ioVector;
+            this.reader = socket.reader;
+            this.writer = socket.writer;
+            this.writeQueue = socket.writeQueue;
             int rcvBufferSize = builder.socketChannel.socket().getReceiveBufferSize();
             this.rcvBuffer = builder.receiveBufferIsDirect
                     ? ByteBuffer.allocateDirect(rcvBufferSize)
                     : ByteBuffer.allocate(rcvBufferSize);
 
-            int sndBufferSize = builder.socketChannel.socket().getSendBufferSize();
-//            this.sndBuffer = builder.receiveBufferIsDirect
-//                    ? ByteBuffer.allocateDirect(sndBufferSize)
-//                    : ByteBuffer.allocate(sndBufferSize);
-            //this.sndBuffer = ByteBuffer.allocateDirect(sndBufferSize);
-            this.sndBuffer = null;
+            if (ioVector == null) {
+                int sndBufferSize = builder.socketChannel.socket().getSendBufferSize();
+                this.sndBuffer = builder.receiveBufferIsDirect
+                        ? ByteBuffer.allocateDirect(sndBufferSize)
+                        : ByteBuffer.allocate(sndBufferSize);
+                //todo:hack
+                writer.dst = sndBuffer;
+            } else {
+                this.sndBuffer = null;
+            }
         }
 
         @Override
@@ -288,9 +297,9 @@ public final class NioAsyncSocket extends AsyncSocket {
             if (cause instanceof EOFException) {
                 // The stacktrace of an EOFException isn't important. It just means that the
                 // Exception is closed by the remote side.
-                NioAsyncSocket.this.close(reason != null ? reason : cause.getMessage(), null);
+                socket.close(reason != null ? reason : cause.getMessage(), null);
             } else {
-                NioAsyncSocket.this.close(reason, cause);
+                socket.close(reason, cause);
             }
         }
 
@@ -318,15 +327,15 @@ public final class NioAsyncSocket extends AsyncSocket {
         private void handleRead() throws IOException {
             metrics.incReads();
 
-            // todo: Need to revise.
-            LAST_READ_TIME_NANOS.setOpaque(NioAsyncSocket.this, eventloop.taskStartNanos());
-
             int read = socketChannel.read(rcvBuffer);
             // System.out.println(NioAsyncSocket.this + " bytes read: " + read);
 
             if (read == -1) {
                 throw new EOFException("Socket closed by peer");
             }
+
+            // todo: Need to revise.
+            LAST_READ_TIME_NANOS.setOpaque(socket, eventloop.taskStartNanos());
 
             metrics.incBytesRead(read);
 
@@ -338,46 +347,46 @@ public final class NioAsyncSocket extends AsyncSocket {
             compactOrClear(rcvBuffer);
         }
 
+        // todo: temp notes.
+        // In netty there is logic in the NioSocketChannel.doWrite
+        // 1) all the collected messages are IOBUffers, do a writev.
+        // 2) if there is only 1 message and it an IOBuffer, then do a write
+        // 3) if at least one of the messages is a non IOBuffer, then fallback
+        // to a normal write.
         private void handleWrite() throws IOException {
-            // typically this method is called with the flushThread being set.
-            // but in case of cancellation of the key, this method is also
-            // called without the flushThread being set.
-            // So we can't do an assert flushThread!=null.
-
             metrics.incWrites();
 
-            ioVector.populate(writeQueue);
+            long bytesWritten;
+            boolean clean;
+            if (writer == null) {
+                // the writeQueue is guaranteed to have only IOBuffers
+                // if the writer isn't set.
+                ioVector.populate(writeQueue);
 
-            if (writeQueue.isEmpty()) {
-                ioVectorWriteAllowed = true;
-            }
-
-            ByteBuffer[] srcs = ioVector.array();
-            long written;
-            if (sndBuffer != null) {
-                for (int k = 0; k < ioVector.length(); k++) {
-                    ByteBuffer src = srcs[k];
-                    BufferUtil.put(sndBuffer, src);
-                    if (src.hasRemaining()) {
-                        break;
-                    }
+                if (writeQueue.isEmpty()) {
+                    socket.ioVectorWriteAllowed = true;
                 }
-                sndBuffer.flip();
-                written = socketChannel.write(sndBuffer);
-                compactOrClear(sndBuffer);
-            } else {
-                int length = ioVector.length();
-                written = length == 1
+
+                int ioVectorLength = ioVector.length();
+                ByteBuffer[] srcs = ioVector.array();
+                bytesWritten = ioVectorLength == 1
                         ? socketChannel.write(srcs[0])
-                        : socketChannel.write(srcs, 0, length);
+                        : socketChannel.write(srcs, 0, ioVectorLength);
+                ioVector.compact(bytesWritten);
+                clean = ioVector.isEmpty();
+            } else {
+                boolean writerClean = writer.onWrite();
+                sndBuffer.flip();
+                bytesWritten = socketChannel.write(sndBuffer);
+                boolean sndBufferClean = !sndBuffer.hasRemaining();
+                clean = writerClean && sndBufferClean;
+                compactOrClear(sndBuffer);
             }
 
-            ioVector.compact(written);
+            metrics.incBytesWritten(bytesWritten);
+            //System.out.println(socket + " bytes written:" + bytesWritten);
 
-            metrics.incBytesWritten(written);
-            // System.out.println(NioAsyncSocket.this + " bytes written:" + written);
-
-            if (ioVector.isEmpty() && (sndBuffer == null || !sndBuffer.hasRemaining())) {
+            if (clean) {
                 // everything got written
                 int interestOps = key.interestOps();
 
@@ -386,7 +395,7 @@ public final class NioAsyncSocket extends AsyncSocket {
                     key.interestOps(interestOps & ~OP_WRITE);
                 }
 
-                resetFlushed();
+                socket.resetFlushed();
             } else {
                 // not everything got written, therefor we need to register
                 // for the OP_WRITE so that we get an event as soon as space
@@ -399,21 +408,20 @@ public final class NioAsyncSocket extends AsyncSocket {
         // gets the event that the connection is completed.
         private void handleConnect() {
             try {
-                assert flushThread.get() != null;
+                assert socket.flushThread.get() != null;
 
                 if (!socketChannel.finishConnect()) {
                     throw new IllegalStateException();
                 }
-                onConnectFinished();
+                socket.onConnectFinished();
             } catch (Throwable e) {
-                if (connectFuture != null) {
-                    connectFuture.completeExceptionally(e);
+                if (socket.connectFuture != null) {
+                    socket.connectFuture.completeExceptionally(e);
                 }
                 throw sneakyThrow(e);
             }
         }
     }
-
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:returncount", "java:S3776"})
     public static class NioOptions implements Options {

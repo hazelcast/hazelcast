@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 
 import com.hazelcast.internal.tpcengine.Option;
+import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
@@ -26,6 +27,7 @@ import sun.misc.Unsafe;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
 import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_ACCEPT;
@@ -49,46 +51,37 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 /**
  * The io_uring implementation of the {@link AsyncServerSocket}.
  */
-@SuppressWarnings({"checkstyle:MethodName", "checkstyle:TypeName", "checkstyle:MemberName"})
 public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final LinuxSocket linuxSocket;
-    private final AcceptMemory acceptMemory = new AcceptMemory();
-    private final IOUringEventloop eventloop;
-    private final SubmissionQueue sq;
-    private long userdata_OP_ACCEPT;
+    //   private final IOUringEventloop eventloop;
+    private final AcceptHandler acceptHandler;
+    private final IOUring uring;
     private boolean bind;
 
     private IOUringAsyncServerSocket(Builder builder) {
         super(builder);
-        this.eventloop = (IOUringEventloop) reactor.eventloop();
-        this.linuxSocket = builder.nativeSocket;
-        this.sq = eventloop.sq;
-
-        // todo: return value not checked.
-        reactor.offer(() -> {
-            // todo: on close we need to deregister
-            this.userdata_OP_ACCEPT = eventloop.nextPermanentHandlerId();
-            eventloop.handlers.put(userdata_OP_ACCEPT, new Handler_OP_ACCEPT());
-        });
+        this.uring = builder.uring;
+        this.linuxSocket = builder.linuxSocket;
+        this.acceptHandler = new AcceptHandler(builder, this);
     }
 
     @Override
     public int getLocalPort() {
-        if (!bind) {
-            return -1;
-        } else {
+        if (bind) {
             return linuxSocket.getLocalAddress().getPort();
+        } else {
+            return -1;
         }
     }
 
     @Override
     protected SocketAddress getLocalAddress0() {
-        if (!bind) {
-            return null;
-        } else {
+        if (bind) {
             return linuxSocket.getLocalAddress();
+        } else {
+            return null;
         }
     }
 
@@ -96,6 +89,10 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     protected void close0() throws IOException {
         super.close0();
         linuxSocket.close();
+
+        reactor.offer(() -> {
+            acceptHandler.closed = true;
+        });
     }
 
     @Override
@@ -117,45 +114,69 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void start0() {
-        sq_add_OP_ACCEPT();
+        CompletionQueue cq = uring.cq();
+        acceptHandler.userdata = cq.nextPermanentHandlerId();
+        cq.register(acceptHandler.userdata, acceptHandler);
+        acceptHandler.addRequest();
     }
 
-    private void sq_add_OP_ACCEPT() {
-        int index = sq.nextIndex();
-        if (index < 0) {
-            throw new RuntimeException("No space in submission queue");
+    private static final class AcceptHandler implements CompletionHandler {
+
+        private final IOUringAsyncServerSocket socket;
+        private final SubmissionQueue sq;
+        private final LinuxSocket linuxSocket;
+        private final AcceptMemory acceptMemory = new AcceptMemory();
+        private final Metrics metrics;
+        private final TpcLogger logger;
+        private final Consumer<AcceptRequest> acceptFn;
+        private final CompletionQueue cq;
+        private long userdata;
+        private boolean closed;
+
+        private AcceptHandler(Builder builder, IOUringAsyncServerSocket socket) {
+            this.socket = socket;
+            this.cq = builder.uring.cq();
+            this.acceptFn = builder.acceptFn;
+            this.metrics = builder.metrics;
+            this.linuxSocket = builder.linuxSocket;
+            this.sq = builder.uring.sq();
+            this.logger = builder.logger;
         }
 
-        long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
-        UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_ACCEPT);
-        UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-        UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, acceptMemory.lenAddr);
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, acceptMemory.addr);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
-        UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, SOCK_NONBLOCK | SOCK_CLOEXEC);
-        UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata_OP_ACCEPT);
-    }
+        private void addRequest() {
+            int index = sq.nextIndex();
+            if (index < 0) {
+                throw new RuntimeException("No space in submission queue");
+            }
 
-    private class Handler_OP_ACCEPT implements CompletionHandler {
+            long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_ACCEPT);
+            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
+            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, acceptMemory.lenAddr);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, acceptMemory.addr);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, SOCK_NONBLOCK | SOCK_CLOEXEC);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+        }
 
         @Override
-        public void handle(int res, int flags, long userdata) {
+        public void completeRequest(int res, int flags, long userdata) {
             try {
                 if (res >= 0) {
                     int fd = res;
                     metrics.incAccepted();
 
                     // re-register for more accepts.
-                    sq_add_OP_ACCEPT();
+                    addRequest();
 
                     SocketAddress address = LinuxSocket.toInetSocketAddress(
                             acceptMemory.addr,
                             acceptMemory.lenAddr);
 
                     if (logger.isInfoEnabled()) {
-                        logger.info(IOUringAsyncServerSocket.this + " new connected accepted: " + address);
+                        logger.info(socket + " new connected accepted: " + address);
                     }
 
                     // todo: ugly that AF_INET is hard configured.
@@ -173,14 +194,18 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
                         closeQuietly(acceptRequest);
 
                         if (logger.isWarningEnabled()) {
-                            logger.warning("Closing socket " + address + "->" + getLocalAddress());
+                            logger.warning("Closing socket " + address + "->" + socket.getLocalAddress());
                         }
                     }
                 } else {
                     throw newCQEFailedException("Failed to accept a socket.", "accept(2)", IORING_OP_ACCEPT, -res);
                 }
             } catch (Exception e) {
-                close(null, e);
+                socket.close(null, e);
+            } finally {
+                if (closed) {
+                    cq.unregister(userdata);
+                }
             }
         }
     }
@@ -258,20 +283,22 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends AsyncServerSocket.Builder {
 
-        public final LinuxSocket nativeSocket;
+        public final LinuxSocket linuxSocket;
+        public IOUring uring;
 
         Builder() {
             // to conclude.
-            this.nativeSocket = LinuxSocket.openTcpIpv4Socket();
-            nativeSocket.setBlocking(true);
-            this.options = new IOUringOptions(nativeSocket);
+            this.linuxSocket = LinuxSocket.openTcpIpv4Socket();
+            linuxSocket.setBlocking(true);
+            this.options = new IOUringOptions(linuxSocket);
         }
 
         @Override
         protected void conclude() {
             super.conclude();
 
-            checkNotNull(nativeSocket, "nativeSocket");
+            checkNotNull(linuxSocket, "nativeSocket");
+            checkNotNull(uring, "uring");
         }
 
         @Override

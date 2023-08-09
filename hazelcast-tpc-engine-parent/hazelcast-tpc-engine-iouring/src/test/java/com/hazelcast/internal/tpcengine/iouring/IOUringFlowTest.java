@@ -34,8 +34,8 @@ public class IOUringFlowTest {
     public void before() {
         uring = new IOUring(16384, 0);
 
-        sq = uring.submissionQueue();
-        cq = uring.completionQueue();
+        sq = uring.sq();
+        cq = uring.cq();
     }
 
     @After

@@ -40,7 +40,7 @@ public class IOUringNetworkScheduler implements NetworkScheduler<IOUringAsyncSoc
                 break;
             }
 
-            socket.submissionHandler_write.run();
+            socket.writeHandler.addRequest();
         }
     }
 

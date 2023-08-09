@@ -22,6 +22,7 @@ import java.util.LinkedList;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 public class PreconditionsTest {
@@ -74,5 +75,15 @@ public class PreconditionsTest {
     @Test
     public void test_checkNotNull1_whenNotNull() {
         checkNotNull(new LinkedList());
+    }
+
+    @Test
+    public void test_checkNull_whenNull() {
+        checkNull(null, "foo");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_checkNull_whenNotNull() {
+        checkNull(new LinkedList(), "foo");
     }
 }

@@ -346,7 +346,7 @@ public final class IOUring implements AutoCloseable {
      *
      * @return the submission queue.
      */
-    public SubmissionQueue submissionQueue() {
+    public SubmissionQueue sq() {
         return sq;
     }
 
@@ -355,7 +355,7 @@ public final class IOUring implements AutoCloseable {
      *
      * @return the completion queue.
      */
-    public CompletionQueue completionQueue() {
+    public CompletionQueue cq() {
         return cq;
     }
 

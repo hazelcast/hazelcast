@@ -54,9 +54,9 @@ public final class IOVector {
     private final IOBuffer[] ioBufs;
     private final int capacity;
     private final long addr;
+    private final ByteBuffer buf;
     private int count;
     private long pending;
-    private final ByteBuffer buf;
 
     /**
      * Creates a new IOVector with the given capacity.
@@ -72,6 +72,11 @@ public final class IOVector {
         this.ioBufs = new IOBuffer[capacity];
         this.buf = allocateDirect(capacity * SIZEOF_IOVEC);
         this.addr = addressOf(buf);
+    }
+
+    public void clear() {
+        pending = 0;
+        count = 0;
     }
 
     /**

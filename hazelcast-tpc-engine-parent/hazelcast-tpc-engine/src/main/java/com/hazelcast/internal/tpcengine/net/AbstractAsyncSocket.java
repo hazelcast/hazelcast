@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
-import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -35,13 +35,17 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 public abstract class AbstractAsyncSocket implements Closeable {
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
-    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    protected final TpcLogger logger;
     protected final AtomicReference<State> state = new AtomicReference<>(State.OPEN);
     private volatile String closeReason;
     private volatile Throwable closeCause;
     private CloseListener closeListener;
     private Executor closeExecutor;
     private boolean closeListenerChecked;
+
+    protected AbstractAsyncSocket(Builder builder) {
+        this.logger = builder.logger;
+    }
 
     /**
      * Allows for objects to be bound to this {@link AbstractAsyncSocket}.
@@ -257,6 +261,17 @@ public abstract class AbstractAsyncSocket implements Closeable {
      * of the AsyncSocket in a typesafe manner.
      */
     public interface AcceptRequest extends AutoCloseable {
+    }
 
+    @SuppressWarnings({"checkstyle:VisibilityModifier"})
+    public abstract static class Builder<S extends AbstractAsyncSocket> extends AbstractBuilder<S> {
+        public TpcLogger logger;
+
+        @Override
+        protected void conclude() {
+            super.conclude();
+
+            checkNotNull(logger, "logger");
+        }
     }
 }

@@ -825,6 +825,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     private Channel createTpcChannel(Address address, TcpClientConnection connection) {
+        System.out.println("TcpClientConnectionManager:Creating TPCChannel");
         SocketChannel socketChannel = null;
         try {
             socketChannel = SocketChannel.open();
@@ -851,8 +852,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             attributeMap.put(TpcChannelClientConnectionAdapter.class, new TpcChannelClientConnectionAdapter(channel));
 
             InetSocketAddress socketAddress = new InetSocketAddress(address.getHost(), address.getPort());
+            System.out.println("Connecting");
             channel.connect(socketAddress, connectionTimeoutMillis);
-
+            System.out.println("Connecting success");
             // TODO: Socket interceptor for TPC?
             channel.start();
             return channel;

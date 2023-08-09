@@ -237,7 +237,6 @@ public abstract class AsyncServerSocketTest {
         AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
         serverSocketBuilder.acceptFn = CloseUtil::closeQuietly;
         try (AsyncServerSocket serverSocket = serverSocketBuilder.build()) {
-
             serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
             serverSocket.start();
             serverAddress = serverSocket.getLocalAddress();

@@ -123,7 +123,7 @@ public final class Preconditions {
     }
 
     /**
-     * Tests if an argument is not null.
+     * Tests if an argument is not <code>null</code>.
      *
      * @param argument the argument tested to see if it is not null.
      * @param name     the name of the variable/field that can't be null
@@ -135,6 +135,20 @@ public final class Preconditions {
             throw new NullPointerException(name + " can't be null");
         }
         return argument;
+    }
+
+    /**
+     * Tests if an argument is <code>null</code>.
+     *
+     * @param argument the argument tested to see if it is <code>null</code>.
+     * @param name     the name of the variable/field that must be <code>null</code>
+     * @return the argument that was tested.
+     * @throws IllegalArgumentException if argument is not null
+     */
+    public static <T> void checkNull(T argument, String name) {
+        if (argument != null) {
+            throw new IllegalArgumentException(name + " must be null");
+        }
     }
 
     /**

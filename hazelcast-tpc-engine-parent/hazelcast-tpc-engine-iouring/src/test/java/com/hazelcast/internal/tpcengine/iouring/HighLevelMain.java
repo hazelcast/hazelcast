@@ -22,7 +22,7 @@ public class HighLevelMain {
     public static void main(String[] args) throws InterruptedException {
         IOUring uring = new IOUring(16384, 0);
 
-        SubmissionQueue sq = uring.submissionQueue();
+        SubmissionQueue sq = uring.sq();
 
         int count = 10;
         for (int k = 0; k < count; k++) {
@@ -31,7 +31,7 @@ public class HighLevelMain {
         int submittedEntries = sq.submit();
 
         System.out.println("submittedEntries:" + submittedEntries);
-        CompletionQueue cq = uring.completionQueue();
+        CompletionQueue cq = uring.cq();
         int head = cq.acquireHead();
 
         for (; ; ) {

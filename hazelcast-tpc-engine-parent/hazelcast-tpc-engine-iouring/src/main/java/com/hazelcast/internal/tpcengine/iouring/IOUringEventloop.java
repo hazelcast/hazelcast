@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
-import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -31,6 +30,7 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings({"checkstyle:MemberName",
         "checkstyle:DeclarationOrder",
@@ -38,29 +38,18 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
         "checkstyle:MethodName"})
 public final class IOUringEventloop extends Eventloop {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
-    protected static final int NANOSECONDS_IN_SECOND = 1_000_000_000;
+    private static final long NS_PER_SECOND = SECONDS.toNanos(1);
 
-    private final IOUring uring;
-
-    final LongObjectHashMap<CompletionHandler> handlers = new LongObjectHashMap<>(4096);
-
-    final SubmissionQueue sq;
+    final IOUring uring;
+    private final SubmissionQueue sq;
     private final CompletionQueue cq;
-    private final CompletionProcessor completionProcessor;
-    private final long userdata_eventRead;
-    private final long userdata_timeout;
-    private final long timeoutSpecAddr = UNSAFE.allocateMemory(SIZEOF_KERNEL_TIMESPEC);
-
-    final EventFd eventfd = new EventFd();
-    private final long eventFdReadBuf = UNSAFE.allocateMemory(SIZEOF_LONG);
-    private final IOUringNetworkScheduler ioUringNetworkScheduler;
-
-    private long permanentHandlerIdGenerator;
-    private long tmpHandlerIdGenerator = -1;
+    final EventFdHandler eventFdHandler;
+    private final TimeoutHandler timeoutHandler;
+    private final IOUringNetworkScheduler networkScheduler;
 
     private IOUringEventloop(Builder builder) {
         super(builder);
-        this.ioUringNetworkScheduler = (IOUringNetworkScheduler) builder.networkScheduler;
+        this.networkScheduler = (IOUringNetworkScheduler) builder.networkScheduler;
         IOUringReactor.Builder reactorBuilder = (IOUringReactor.Builder) builder.reactorBuilder;
         // The uring instance needs to be created on the eventloop thread.
         // This is required for some of the setup flags.
@@ -69,35 +58,18 @@ public final class IOUringEventloop extends Eventloop {
             this.uring.registerRingFd();
         }
 
-        this.sq = uring.submissionQueue();
-        this.cq = uring.completionQueue();
+        this.sq = uring.sq();
+        this.cq = uring.cq();
 
-        this.completionProcessor = new CompletionProcessor();
-        this.userdata_eventRead = nextPermanentHandlerId();
-        this.userdata_timeout = nextPermanentHandlerId();
-        handlers.put(userdata_eventRead, new EventFdCompletionHandler());
-        handlers.put(userdata_timeout, new TimeoutCompletionHandler());
+        eventFdHandler = new EventFdHandler();
+        eventFdHandler.userdata = cq.nextPermanentHandlerId();
+        cq.register(eventFdHandler.userdata, eventFdHandler);
+
+        timeoutHandler = new TimeoutHandler();
+        timeoutHandler.userdata = cq.nextPermanentHandlerId();
+        cq.register(timeoutHandler.userdata, timeoutHandler);
     }
 
-    /**
-     * Gets the next handler id for a permanent handler. A permanent handler stays registered after receiving
-     * a completion event.
-     *
-     * @return the next handler id.
-     */
-    public long nextPermanentHandlerId() {
-        return permanentHandlerIdGenerator++;
-    }
-
-    /**
-     * Gets the next handler id for a temporary handler. A temporary handler is automatically removed after receiving
-     * the completion event.
-     *
-     * @return the next handler id.
-     */
-    public long nextTmpHandlerId() {
-        return tmpHandlerIdGenerator--;
-    }
 
     @Override
     public AsyncFile newAsyncFile(String path) {
@@ -120,28 +92,28 @@ public final class IOUringEventloop extends Eventloop {
     @Override
     public void beforeRun() {
         super.beforeRun();
-        sq_offerEventFdRead();
+        eventFdHandler.addRequest();
     }
 
     @Override
     protected void park(long timeoutNanos) {
-        ioUringNetworkScheduler.tick();
+        networkScheduler.tick();
 
         boolean completions = false;
         if (cq.hasCompletions()) {
             completions = true;
-            cq.process(completionProcessor);
+            cq.process();
         }
 
         if (spin || timeoutNanos == 0 || completions) {
             sq.submit();
         } else {
             wakeupNeeded.set(true);
-            if (taskQueueScheduler.hasOutsidePending() || ioUringNetworkScheduler.hasPending()) {
+            if (taskQueueScheduler.hasOutsidePending() || networkScheduler.hasPending()) {
                 sq.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {
-                    sq_offerTimeout(timeoutNanos);
+                    timeoutHandler.addRequest(timeoutNanos);
                 }
 
                 sq.submitAndWait();
@@ -150,13 +122,13 @@ public final class IOUringEventloop extends Eventloop {
         }
 
         if (cq.hasCompletions()) {
-            cq.process(completionProcessor);
+            cq.process();
         }
     }
 
     @Override
     protected boolean ioSchedulerTick() {
-        ioUringNetworkScheduler.tick();
+        networkScheduler.tick();
 
         boolean worked = false;
 
@@ -168,7 +140,7 @@ public final class IOUringEventloop extends Eventloop {
         }
 
         if (cq.hasCompletions()) {
-            cq.process(completionProcessor);
+            cq.process();
             worked = true;
         }
 
@@ -180,86 +152,76 @@ public final class IOUringEventloop extends Eventloop {
         super.destroy();
 
         closeQuietly(uring);
-        closeQuietly(eventfd);
-
-        if (timeoutSpecAddr != 0) {
-            UNSAFE.freeMemory(timeoutSpecAddr);
-        }
-
-        if (eventFdReadBuf != 0) {
-            UNSAFE.freeMemory(eventFdReadBuf);
-        }
+        closeQuietly(eventFdHandler);
+        closeQuietly(timeoutHandler);
     }
 
-    // todo: I'm questioning of this is not going to lead to problems. Can it happen that
-    // multiple timeout requests are offered? So one timeout request is scheduled while another command is
-    // already in the pipeline. Then the thread waits, and this earlier command completes while the later
-    // timeout command is still scheduled. If another timeout is scheduled, then you have 2 timeouts in the
-    // uring and both share the same timeoutSpecAddr.
-    private void sq_offerTimeout(long timeoutNanos) {
-        if (timeoutNanos <= 0) {
-            UNSAFE.putLong(timeoutSpecAddr, 0);
-            UNSAFE.putLong(timeoutSpecAddr + SIZEOF_LONG, 0);
-        } else {
-            long seconds = timeoutNanos / NANOSECONDS_IN_SECOND;
-            UNSAFE.putLong(timeoutSpecAddr, seconds);
-            UNSAFE.putLong(timeoutSpecAddr + SIZEOF_LONG, timeoutNanos - seconds * NANOSECONDS_IN_SECOND);
+    final class EventFdHandler implements CompletionHandler, AutoCloseable {
+        private long userdata;
+        final EventFd eventFd = new EventFd();
+        private final long readBufAddr = UNSAFE.allocateMemory(SIZEOF_LONG);
+
+        private void addRequest() {
+            // todo: we are not checking return value.
+            sq.offer(IORING_OP_READ,
+                    0,
+                    0,
+                    eventFd.fd(),
+                    readBufAddr,
+                    SIZEOF_LONG,
+                    0,
+                    userdata);
         }
-
-        // todo: return value isn't checked
-        sq.offer(IORING_OP_TIMEOUT,
-                0,
-                0,
-                -1,
-                timeoutSpecAddr,
-                1,
-                0,
-                userdata_timeout);
-    }
-
-    private void sq_offerEventFdRead() {
-        // todo: we are not checking return value.
-        sq.offer(IORING_OP_READ,
-                0,
-                0,
-                eventfd.fd(),
-                eventFdReadBuf,
-                SIZEOF_LONG,
-                0,
-                userdata_eventRead);
-    }
-
-    private class CompletionProcessor implements CompletionHandler {
-        final LongObjectHashMap<CompletionHandler> handlers = IOUringEventloop.this.handlers;
 
         @Override
-        public void handle(int res, int flags, long userdata) {
-            // Temporary handlers have a userdata smaller than 0 and need to be removed
-            // on completion.
-            // Permanent handlers have a userdata equal or larger than 0 and should not
-            // be removed on completion.
-            CompletionHandler h = userdata >= 0
-                    ? handlers.get(userdata)
-                    : handlers.remove(userdata);
+        public void close() {
+            closeQuietly(eventFd);
+            UNSAFE.freeMemory(readBufAddr);
+        }
 
-            if (h == null) {
-                logger.warning("no handler found for: " + userdata);
+        @Override
+        public void completeRequest(int res, int flags, long userdata) {
+            addRequest();
+        }
+    }
+
+    private class TimeoutHandler implements CompletionHandler, AutoCloseable {
+        private long userdata;
+        private final long addr = UNSAFE.allocateMemory(SIZEOF_KERNEL_TIMESPEC);
+
+        @Override
+        public void close() {
+            UNSAFE.freeMemory(addr);
+        }
+
+        // todo: I'm questioning of this is not going to lead to problems. Can it happen that
+        // multiple timeout requests are offered? So one timeout request is scheduled while another command is
+        // already in the pipeline. Then the thread waits, and this earlier command completes while the later
+        // timeout command is still scheduled. If another timeout is scheduled, then you have 2 timeouts in the
+        // uring and both share the same timeoutSpecAddr.
+        private void addRequest(long timeoutNanos) {
+            if (timeoutNanos <= 0) {
+                UNSAFE.putLong(addr, 0);
+                UNSAFE.putLong(addr + SIZEOF_LONG, 0);
             } else {
-                h.handle(res, flags, userdata);
+                long seconds = timeoutNanos / NS_PER_SECOND;
+                UNSAFE.putLong(addr, seconds);
+                UNSAFE.putLong(addr + SIZEOF_LONG, timeoutNanos - seconds * NS_PER_SECOND);
             }
-        }
-    }
 
-    private class EventFdCompletionHandler implements CompletionHandler {
-        @Override
-        public void handle(int res, int flags, long userdata) {
-            sq_offerEventFdRead();
+            // todo: return value isn't checked
+            sq.offer(IORING_OP_TIMEOUT,
+                    0,
+                    0,
+                    -1,
+                    addr,
+                    1,
+                    0,
+                    userdata);
         }
-    }
 
-    private class TimeoutCompletionHandler implements CompletionHandler {
         @Override
-        public void handle(int res, int flags, long userdata) {
+        public void completeRequest(int res, int flags, long userdata) {
         }
     }
 

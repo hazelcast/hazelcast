@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
+import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -34,7 +34,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  */
 public abstract class AsyncServerSocket extends AbstractAsyncSocket {
 
-    protected final Metrics metrics = new Metrics();
+    protected final Metrics metrics;
     protected final Reactor reactor;
     protected final Thread eventloopThread;
     protected final Consumer<AcceptRequest> acceptFn;
@@ -42,6 +42,9 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     protected boolean started;
 
     protected AsyncServerSocket(Builder builder) {
+        super(builder);
+
+        this.metrics = builder.metrics;
         this.reactor = builder.reactor;
         this.acceptFn = builder.acceptFn;
         this.eventloopThread = reactor.eventloopThread();
@@ -251,7 +254,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * Cast to specific Builder for specialized options when available.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
-    public abstract static class Builder extends AbstractBuilder<AsyncServerSocket> {
+    public abstract static class Builder extends AbstractAsyncSocket.Builder<AsyncServerSocket> {
 
         /**
          * Sets the accept function to process accept requests.
@@ -268,13 +271,26 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
          */
         public AsyncSocket.Options options;
 
+        /**
+         * The metrics of the AsyncSocket.
+         */
+        public Metrics metrics;
+
         @Override
         protected void conclude() {
+            if (logger == null) {
+                logger = TpcLoggerLocator.getLogger(AsyncServerSocket.class);
+            }
+
             super.conclude();
 
             checkNotNull(reactor, "reactor");
             checkNotNull(acceptFn, "acceptFn");
             checkNotNull(options, "options");
+
+            if (metrics == null) {
+                metrics = new Metrics();
+            }
         }
     }
 }

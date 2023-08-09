@@ -68,7 +68,7 @@ public final class SubmissionQueue {
         this.enterRingFd = uring.enterRingFd;
     }
 
-    public IOUring ioUring() {
+    public IOUring uring() {
         return uring;
     }
 
@@ -184,9 +184,11 @@ public final class SubmissionQueue {
     }
 
     /**
-     * @return the number of submitted entries.
-     * <p>
+     * Submits and
+     *
      * https://manpages.debian.org/unstable/liburing-dev/io_uring_enter.2.en.html
+     *
+     * @return the number of submitted entries.
      */
     public int enter(int toSubmit, int minComplete, int flags) {
         if (ringBufferRegistered) {
@@ -221,6 +223,7 @@ public final class SubmissionQueue {
     }
 
     public int submit() {
+        // acquire load.
         int tail = UNSAFE.getIntVolatile(null, tailAddr);
         int toSubmit = localTail - tail;
 
@@ -234,6 +237,7 @@ public final class SubmissionQueue {
             flags |= IORING_ENTER_REGISTERED_RING;
         }
 
+        // release store.
         UNSAFE.putOrderedInt(null, this.tailAddr, localTail);
 
         int res = IOUring.enter(enterRingFd, toSubmit, 0, flags);

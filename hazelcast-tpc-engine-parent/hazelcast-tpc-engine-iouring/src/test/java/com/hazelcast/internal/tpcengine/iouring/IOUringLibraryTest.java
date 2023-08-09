@@ -29,7 +29,7 @@ public class IOUringLibraryTest {
 
         // ensure that we can actually load the IOUring.
         IOUring uring = new IOUring(10, 0);
-        assertNotNull(uring.submissionQueue());
-        assertNotNull(uring.completionQueue());
+        assertNotNull(uring.sq());
+        assertNotNull(uring.cq());
     }
 }

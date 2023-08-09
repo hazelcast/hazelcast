@@ -117,8 +117,8 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
             if (registerRingFd) {
                 uring.registerRingFd();
             }
-            final SubmissionQueue sq = uring.submissionQueue();
-            final CompletionQueue cq = uring.completionQueue();
+            final SubmissionQueue sq = uring.sq();
+            final CompletionQueue cq = uring.cq();
             final LinuxSocket socket = LinuxSocket.openTcpIpv4Socket();
             socket.setTcpNoDelay(true);
             socket.connect(address);
@@ -223,8 +223,8 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
             if (registerRingFd) {
                 uring.registerRingFd();
             }
-            final SubmissionQueue sq = uring.submissionQueue();
-            final CompletionQueue cq = uring.completionQueue();
+            final SubmissionQueue sq = uring.sq();
+            final CompletionQueue cq = uring.cq();
             final LinuxSocket serverSocket = LinuxSocket.openTcpIpv4Socket();
             final AcceptMemory acceptMemory = new AcceptMemory();
 

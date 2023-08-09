@@ -31,7 +31,7 @@ public class EnterBenchmark {
         if (registerRingFd) {
             uring.registerRingFd();
         }
-        this.sq = uring.submissionQueue();
+        this.sq = uring.sq();
     }
 
     @Benchmark

@@ -19,29 +19,29 @@ package com.hazelcast.internal.tpcengine.file;
 /**
  * The scheduler for {@link StorageRequest}s.
  * <p/>
- * A BlockRequestScheduler is bound to a single Reactor and can only process
+ * A StorageScheduler is bound to a single Reactor and can only process
  * {@link StorageRequest} instances from {@link AsyncFile} that belong to that
  * reactor.
  */
 public interface StorageScheduler {
 
     /**
-     * Reserves a single IO. The IO is not submitted to io_uring yet.
+     * Reserves a single StorageRequest.
      * <p/>
      * If a non null value is returned, it is guaranteed that
-     * {@link #submit(StorageRequest)} will complete successfully.
+     * {@link #schedule(StorageRequest)} will complete successfully.
      *
-     * @return the reserved IO or null if there is no space.
+     * @return the allocated StorageRequest or null if there is no space.
      */
     StorageRequest allocate();
 
     /**
-     * Submits a BlockRequest so that it is processed at some point in the
-     * future. Only BlockRequest that have been allocated using the
-     * {@link #allocate()} method on this BlockRequestScheduler should be
+     * Schedules a StorageRequest so that it is processed at some point in the
+     * future. Only StorageRequest that have been allocated using the
+     * {@link #allocate()} method on this StorageScheduler should be
      * submitted.
      *
      * @param req the BlockRequest.
      */
-    void submit(StorageRequest req);
+    void schedule(StorageRequest req);
 }

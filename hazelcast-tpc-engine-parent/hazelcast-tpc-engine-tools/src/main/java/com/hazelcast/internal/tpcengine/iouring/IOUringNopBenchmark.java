@@ -48,8 +48,8 @@ public class IOUringNopBenchmark {
         public void run() {
             try {
                 final IOUring uring = new IOUring(4096, 0);
-                final SubmissionQueue sq = uring.submissionQueue();
-                final CompletionQueue cq = uring.completionQueue();
+                final SubmissionQueue sq = uring.sq();
+                final CompletionQueue cq = uring.cq();
                 final IOUringNopBenchmark.CompletionHandler handler = new IOUringNopBenchmark.CompletionHandler(sq, latch);
                 final boolean spin = IOUringNopBenchmark.spin;
 
@@ -82,7 +82,7 @@ public class IOUringNopBenchmark {
         }
 
         @Override
-        public void handle(int res, int flags, long userdata) {
+        public void completeRequest(int res, int flags, long userdata) {
             if (res < 0) {
                 throw new UncheckedIOException(new IOException(Linux.strerror(-res)));
             }
