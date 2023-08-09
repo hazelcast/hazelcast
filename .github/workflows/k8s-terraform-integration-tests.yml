@@ -53,7 +53,8 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
-        install_components: 'gke-gcloud-auth-plugin,kubectl'
+        with:
+          install_components: 'gke-gcloud-auth-plugin,kubectl'
 
       - name: Copy kubeconfig
         run: |
