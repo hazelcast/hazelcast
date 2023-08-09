@@ -60,6 +60,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_REMOTE_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_ASYNC_OPERATIONS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_CALL_TIMEOUT_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.OPERATION_METRIC_OPERATION_SERVICE_FAILED_BACKUPS;
@@ -247,6 +248,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
         return operationExecutor.getExecutedOperationCount();
     }
 
+    @Probe(name = OPERATION_METRIC_INVOCATION_REGISTRY_INVOCATIONS_REMOTE_COUNT, level = MANDATORY)
     @Override
     public int getRemoteOperationsCount() {
         return invocationRegistry.size();
