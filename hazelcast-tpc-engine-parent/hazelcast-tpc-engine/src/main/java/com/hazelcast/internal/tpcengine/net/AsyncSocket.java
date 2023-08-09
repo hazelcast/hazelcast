@@ -28,7 +28,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -303,10 +302,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         }
     }
 
-    public final boolean writeAll(Collection<IOBuffer> bufs) {
-        return writeQueue.addAll(bufs);
-    }
-
     /**
      * Writes a {@link IOBuffer} to this AsyncSocket and flushes it. Flushing
      * causes the AsyncSocket
@@ -333,12 +328,12 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     /**
      * Writes an {@link IOBuffer} and ensure it gets written from the eventloop
      * thread.
-     *
+     * <p>
      * This call can only be made inside the eventloop.
      *
      * @return true if the buf was successfully offered, false otherwise.
      * @throws IllegalStateException if the current thread isn't the eventloop
-     * thread.
+     *                               thread.
      */
     public final boolean insideWriteAndFlush(IOBuffer buf) {
         Thread currentThread = currentThread();
