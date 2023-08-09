@@ -33,58 +33,74 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
 
         StringBuilder sb = new StringBuilder();
 
-        appendIFClause(sb);
+        appendMergeClause(sb);
         sb.append(' ');
-        appendValuesClause(sb);
-        sb.append(' ');
-        appendElseClause(sb);
+        appendMatchedClause(sb);
 
         query = sb.toString();
     }
 
-    void appendIFClause(StringBuilder sb) {
-        sb.append("IF NOT EXISTS (SELECT 1 FROM ");
+    void appendMergeClause(StringBuilder sb) {
+        sb.append("MERGE INTO ");
         dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
-        appendPrimaryKeys(sb);
-        sb.append(") BEGIN INSERT INTO ");
-        dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
-        sb.append(' ');
+        sb.append(" USING (");
+        appendValuesClause(sb);
+        sb.append(") AS source ");
         appendFieldNames(sb, jdbcTable.dbFieldNames());
+        sb.append(" ON ");
+        appendPrimaryKeys(sb);
     }
 
     void appendValuesClause(StringBuilder sb) {
         sb.append("VALUES ");
         appendValues(sb, jdbcTable.dbFieldNames().size());
-        sb.append(" END");
     }
 
-    void appendElseClause(StringBuilder sb) {
-        sb.append("ELSE BEGIN UPDATE ");
+    void appendMatchedClause(StringBuilder sb) {
+        sb.append("WHEN MATCHED THEN ");
+        sb.append("UPDATE ");
         dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
         sb.append(" SET ");
         Iterator<String> it = jdbcTable.dbFieldNames().iterator();
         while (it.hasNext()) {
             String dbFieldName = it.next();
             dialect.quoteIdentifier(sb, dbFieldName);
-            sb.append(" = ? ");
+            sb.append(" = source.");
+            dialect.quoteIdentifier(sb, dbFieldName);
             if (it.hasNext()) {
                 sb.append(',');
             }
         }
-        appendPrimaryKeys(sb);
-        sb.append(" END");
+        sb.append(" WHEN NOT MATCHED THEN INSERT ");
+        appendFieldNames(sb, jdbcTable.dbFieldNames());
+        sb.append(" VALUES");
+        appendSourceFieldNames(sb, jdbcTable.dbFieldNames());
+        sb.append(";");
     }
 
     void appendPrimaryKeys(StringBuilder sb) {
-        sb.append(" WHERE ");
         List<String> pkFields = jdbcTable.getPrimaryKeyList();
         for (int i = 0; i < pkFields.size(); i++) {
             String field = pkFields.get(i);
             sb.append(dialect.quoteIdentifier(field))
-                    .append("=?");
+                    .append("= ?");
             if (i < pkFields.size() - 1) {
                 sb.append(" AND ");
             }
         }
+    }
+
+    void appendSourceFieldNames(StringBuilder sb, List<String> fieldNames) {
+        sb.append('(');
+        Iterator<String> it = fieldNames.iterator();
+        while (it.hasNext()) {
+            String fieldName = it.next();
+            sb.append("source.");
+            dialect.quoteIdentifier(sb, fieldName);
+            if (it.hasNext()) {
+                sb.append(',');
+            }
+        }
+        sb.append(')');
     }
 }
