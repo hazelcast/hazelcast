@@ -86,14 +86,14 @@ public class HazelcastVersionLocator {
             this.artifactId = artifactId;
         }
 
-        private org.eclipse.aether.artifact.Artifact toMavenArtifact(final String version) {
+        private org.eclipse.aether.artifact.Artifact toAetherArtifact(final String version) {
             return new DefaultArtifact(GROUP_ID, artifactId, test ? "tests" : null, null, version);
         }
 
         /** @return a path to the artifact in the local Maven repository, downloading if required */
         private File locateArtifact(final String version) {
             final File localCopy = new File(REPOSITORY_MANAGER.getRepository().getBasedir(),
-                    REPOSITORY_MANAGER.getPathForLocalArtifact(toMavenArtifact(version)) + ".jar");
+                    REPOSITORY_MANAGER.getPathForLocalArtifact(toAetherArtifact(version)) + ".jar");
 
             if (!localCopy.exists()) {
                 downloadArtifact(version);
@@ -111,13 +111,14 @@ public class HazelcastVersionLocator {
                     // Eclipse doesn't properly read the $PATH, so hardcode another location -
                     // https://stackoverflow.com/q/76866453
                     return "/opt/homebrew/bin/mvn";
+                } else {
+                    return mvn;
                 }
-
-                return mvn;
             }
         }
 
         private void downloadArtifact(final String version) {
+            // It's also possible to download this via Aether but I was unable to get this working
             final ProcessBuilder builder = new ProcessBuilder(buildMavenCommand(version).toArray(String[]::new)).inheritIO();
             try {
                 final Process process = builder.start();
