@@ -876,6 +876,27 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test
+    public void testDeleteAsync() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+        String key = "Key";
+        String value = "value";
+
+        map.put(key, value);
+        Future<Boolean> result = map.deleteAsync(key).toCompletableFuture();
+
+        assertTrue(result.get());
+        assertNull(map.get(key));
+    }
+
+    @Test
+    public void testDeleteAsync_whenKeyNotPresent() throws Exception {
+        IMap<String, String> map = client.getMap(randomString());
+
+        Future<Boolean> result = map.deleteAsync("NOT_THERE").toCompletableFuture();
+        assertFalse(result.get());
+    }
+
+    @Test
     public void testReplaceAllWithStaticSerializableFunction() {
         IMap<String, String> map = client.getMap(randomString());
         map.put("k1", "v1");

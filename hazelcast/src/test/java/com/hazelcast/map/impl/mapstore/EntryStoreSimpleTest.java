@@ -301,6 +301,13 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDeleteAsync() throws ExecutionException, InterruptedException {
+        map.put("key", "value");
+        map.deleteAsync("key").toCompletableFuture().get();
+        assertEntryNotStored("key");
+    }
+
+    @Test
     public void tesReplace() {
         map.put("key", "value");
         map.replace("key", "replaced");
