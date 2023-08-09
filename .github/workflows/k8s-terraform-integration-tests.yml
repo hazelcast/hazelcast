@@ -18,10 +18,6 @@ env:
   GAR_REPO: auto-discovery-test-suite
   AWS_REGION: us-east-1
 
-defaults:
-  run:
-    working-directory: auto-discovery-suite/terraform/test
-
 jobs:
   build:
     name: Build Jar's And Docker Images
@@ -87,5 +83,6 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Run Tests
+        working-directory: auto-discovery-suite/terraform/test
         run: |
           go test -v -timeout 20m -run TestSuite -suite ${{ matrix.suite }} -member-image ${{ needs.build.outputs.HZ_IMG }} -client-image ${{ needs.build.outputs.CL_IMG }}
