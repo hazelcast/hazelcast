@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Builder for upsert statement in Microsoft SQL Server syntax.
+ * Upsert statement builder in Microsoft SQL Server syntax.
  */
 public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
 
@@ -41,7 +41,7 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
     }
 
     void appendMergeClause(StringBuilder sb) {
-        sb.append("MERGE INTO ");
+        sb.append("MERGE ");
         dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
         sb.append(" USING (");
         appendValuesClause(sb);
@@ -59,7 +59,6 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
     void appendMatchedClause(StringBuilder sb) {
         sb.append("WHEN MATCHED THEN ");
         sb.append("UPDATE ");
-        dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
         sb.append(" SET ");
         Iterator<String> it = jdbcTable.dbFieldNames().iterator();
         while (it.hasNext()) {
@@ -82,8 +81,11 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
         List<String> pkFields = jdbcTable.getPrimaryKeyList();
         for (int i = 0; i < pkFields.size(); i++) {
             String field = pkFields.get(i);
-            sb.append(dialect.quoteIdentifier(field))
-                    .append("= ?");
+            dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
+            sb.append(".")
+                    .append(field)
+                    .append("= source.")
+                    .append(field);
             if (i < pkFields.size() - 1) {
                 sb.append(" AND ");
             }
