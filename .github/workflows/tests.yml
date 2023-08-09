@@ -45,7 +45,6 @@ jobs:
       - name: Echo home
         run: |
           echo ${KUBECONFIG}
-          kubectl config view
           echo ${HOME}
           ls -la ${HOME}/.kube/
 

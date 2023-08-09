@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - "1CN-930*"
+      - "CN-930*"
   pull_request_target:
     types:
       - labeled
@@ -48,12 +48,11 @@ jobs:
 
       - uses: azure/setup-kubectl@v3
 
-      - name: Echo home
+      - name: Copy kubeconfig
         run: |
-          echo ${KUBECONFIG}
-          kubectl config view
-          echo ${HOME}
-          ls -la ${HOME}/.kube/
+          mkdir ${HOME}/.kube/
+          touch ${HOME}/.kube/config
+          kubectl config view > ${HOME}/.kube/config
 
       - name: Checkout Auto Discovery Test Suite
         uses: actions/checkout@v3
