@@ -1709,6 +1709,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
         AtomicInteger counter = new AtomicInteger(entriesByPartition.size());
         InternalCompletableFuture<Void> resultFuture = new InternalCompletableFuture<>();
+        if (counter.get() == 0) {
+            resultFuture.complete(null);
+        }
         for (Entry<Integer, ? extends List<SimpleEntryView<Data, Data>>> entry : entriesByPartition.entrySet()) {
             Integer partitionId = entry.getKey();
             ClientMessage request = MapPutAllWithMetadataCodec.encodeRequest(name, entry.getValue());
@@ -1725,7 +1728,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                     entries,
                                     entriesByPartition
                             );
-                            resultFuture.complete(null);
+                            if(resultFuture.isDone()) {
+                                resultFuture.complete(null);
+                            }
                         }
                     }, ConcurrencyUtil.getDefaultAsyncExecutor());
         }
