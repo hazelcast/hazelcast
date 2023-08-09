@@ -46,13 +46,7 @@ jobs:
             DEVOPS_GITHUB_TOKEN,CN/DEVOPS_GITHUB_TOKEN
             GCLOUD_KEYFILE_JSON,CN/GKE_SA_KEY
 
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v1.1.1
-        with:
-          credentials_json: ${{ env.GCLOUD_KEYFILE_JSON }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+      - uses: azure/setup-kubectl@v3
 
       - name: Echo home
         run: |
