@@ -136,7 +136,7 @@ public class StepRunner extends Offload
         final boolean runningOnPartitionThread = isRunningOnPartitionThread();
         final long start = System.nanoTime();
 
-        Runnable step;
+        Runnable step = null;
         do {
             try {
                 // set stepSupplier if it is not set yet
@@ -144,6 +144,7 @@ public class StepRunner extends Offload
                 if (stepSupplier == null || (step = stepSupplier.get()) == null) {
                     // set stepSupplier only on partition threads
                     if (runningOnPartitionThread) {
+                        dropOpFromOffloadQueue(step);
                         stepSupplier = getNextStepSupplierOrNull();
                         if (stepSupplier == null) {
                             return;
@@ -197,6 +198,15 @@ public class StepRunner extends Offload
                 stepSupplier.handleOperationError(throwable);
             }
         } while (!currentThread().isInterrupted());
+    }
+
+    private void dropOpFromOffloadQueue(Runnable step) {
+        if (stepSupplier != null && step == null) {
+            MapOperation operation = stepSupplier.getOperation();
+            boolean removed = offloadedOperations.remove(operation);
+            assert removed;
+            operation.getRecordStore().decMapStoreOffloadedOperationsCount();
+        }
     }
 
     /**
@@ -277,10 +287,7 @@ public class StepRunner extends Offload
         public void sendResponse(Operation op, Object response) {
             assertRunningOnPartitionThread();
 
-            if (offloadedOperations.remove(op)) {
-                ((MapOperation) op).getRecordStore().decMapStoreOffloadedOperationsCount();
-                delegate.sendResponse(op, response);
-            }
+            delegate.sendResponse(op, response);
         }
     }
 }
