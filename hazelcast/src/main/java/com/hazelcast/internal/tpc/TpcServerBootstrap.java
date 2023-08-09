@@ -125,12 +125,11 @@ public class TpcServerBootstrap {
     }
 
     public int eventloopCount() {
-        return loadEventloopCount();
+        return loadReactorCount();
     }
 
-    private int loadEventloopCount() {
+    private int loadReactorCount() {
         String eventloopCountString = nodeEngine.getProperties().getString(TPC_EVENTLOOP_COUNT);
-        System.out.println("eventloopCountString:" + eventloopCountString);
         if (eventloopCountString == null) {
             return config.getTpcConfig().getEventloopCount();
         } else {
@@ -145,36 +144,36 @@ public class TpcServerBootstrap {
 
         logger.info("Starting TpcServerBootstrap");
 
-        TpcEngine.Builder tpcEngineCtx = new TpcEngine.Builder();
+        TpcEngine.Builder tpcEngineBuilder = new TpcEngine.Builder();
         // The current approach for allowing the OperationThreads to become the reactor threads
         // is done to lower the risk to introduce TPC next to the classic design. But eventually
         // the system needs be be build around the TPC engine.
-        tpcEngineCtx.reactorConfigureFn = new Consumer<>() {
+        tpcEngineBuilder.reactorConfigureFn = new Consumer<>() {
             private int threadIndex;
 
             @Override
-            public void accept(Reactor.Builder reactorCtx) {
+            public void accept(Reactor.Builder reactorBuilder) {
                 OperationExecutorImpl operationExecutor = (OperationExecutorImpl) nodeEngine
                         .getOperationService()
                         .getOperationExecutor();
                 TpcPartitionOperationThread operationThread = (TpcPartitionOperationThread) operationExecutor
                         .getPartitionThreads()[threadIndex];
 
-                reactorCtx.threadFactory = eventloopTask -> {
+                reactorBuilder.threadFactory = eventloopTask -> {
                     operationThread.setEventloopTask(eventloopTask);
                     return operationThread;
                 };
 
-                TaskQueue.Builder defaultTaskQueueContext = new TaskQueue.Builder();
-                defaultTaskQueueContext.processor = operationThread;
-                defaultTaskQueueContext.outside = operationThread.getQueue().getNormalQueue();
+                reactorBuilder.defaultTaskQueueBuilder =  new TaskQueue.Builder();
+                reactorBuilder.defaultTaskQueueBuilder.processor = operationThread;
+                reactorBuilder.defaultTaskQueueBuilder.outside = operationThread.getQueue();
                 //ugly, but needed for now
-                defaultTaskQueueContext.inside = operationThread.getQueue().getNormalQueue();
+                reactorBuilder.defaultTaskQueueBuilder.inside = operationThread.getQueue();
                 threadIndex++;
             }
         };
-        tpcEngineCtx.reactorCount = loadEventloopCount();
-        tpcEngine = tpcEngineCtx.build();
+        tpcEngineBuilder.reactorCount = loadReactorCount();
+        tpcEngine = tpcEngineBuilder.build();
         // The TpcPartitionOperationThread are created with the right TpcOperationQueue, but
         // the reactor isn't set yet.
         // The tpcEngine (and hence reactor.start) will create the appropriate happens-before
@@ -211,12 +210,12 @@ public class TpcServerBootstrap {
                     () -> new ClientAsyncSocketReader(nodeEngine.getNode().clientEngine, nodeEngine.getProperties());
             readHandlerSuppliers.put(reactor, readHandlerSupplier);
 
-            AsyncServerSocket.Builder serverSocketCtx = reactor.newAsyncServerSocketBuilder();
+            AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
 
             // for window scaling to work, this property needs to be set
-            serverSocketCtx.options.set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE);
+            serverSocketBuilder.options.set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE);
 
-            serverSocketCtx.acceptFn = acceptRequest -> {
+            serverSocketBuilder.acceptFn = acceptRequest -> {
                 AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
                 socketBuilder.reader = readHandlerSuppliers.get(reactor).get();
                 socketBuilder.options.set(SO_SNDBUF, socketConfig.getSendBufferSizeKB() * KILO_BYTE);
@@ -226,7 +225,7 @@ public class TpcServerBootstrap {
                 AsyncSocket socket = socketBuilder.build();
                 socket.start();
             };
-            AsyncServerSocket serverSocket = serverSocketCtx.build();
+            AsyncServerSocket serverSocket = serverSocketBuilder.build();
             serverSockets.add(serverSocket);
             port = bind(serverSocket, port, limit);
             serverSocket.start();

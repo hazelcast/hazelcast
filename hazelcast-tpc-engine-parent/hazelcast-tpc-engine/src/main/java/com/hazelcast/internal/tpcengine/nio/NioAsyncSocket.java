@@ -266,11 +266,11 @@ public final class NioAsyncSocket extends AsyncSocket {
                     : ByteBuffer.allocate(rcvBufferSize);
 
             int sndBufferSize = builder.socketChannel.socket().getSendBufferSize();
-            this.sndBuffer = builder.receiveBufferIsDirect
-                    ? ByteBuffer.allocateDirect(sndBufferSize)
-                    : ByteBuffer.allocate(sndBufferSize);
+//            this.sndBuffer = builder.receiveBufferIsDirect
+//                    ? ByteBuffer.allocateDirect(sndBufferSize)
+//                    : ByteBuffer.allocate(sndBufferSize);
             //this.sndBuffer = ByteBuffer.allocateDirect(sndBufferSize);
-            //this.sndBuffer = null;
+            this.sndBuffer = null;
         }
 
         @Override

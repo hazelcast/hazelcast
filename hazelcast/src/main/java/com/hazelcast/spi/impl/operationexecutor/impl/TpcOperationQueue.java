@@ -18,11 +18,13 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.internal.tpcengine.Reactor;
 
+import java.util.AbstractQueue;
+import java.util.Iterator;
 import java.util.Queue;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-public class TpcOperationQueue implements OperationQueue {
+public class TpcOperationQueue extends AbstractQueue implements OperationQueue {
 
     // There is no data-race on this queue because the field is set before the thread is started.
     private Reactor reactor;
@@ -34,9 +36,19 @@ public class TpcOperationQueue implements OperationQueue {
         this.priorityQueue = checkNotNull(priorityQueue, "priorityQueue");
     }
 
+    @Override
+    public Iterator iterator() {
+        throw new UnsupportedOperationException();
+    }
 
-    public Queue<Object> getNormalQueue() {
-        return normalQueue;
+    @Override
+    public boolean offer(Object o) {
+        return normalQueue.offer(o);
+    }
+
+    @Override
+    public Object peek() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -73,12 +85,11 @@ public class TpcOperationQueue implements OperationQueue {
 
     @Override
     public Object poll() {
-        Object item = priorityQueue.poll();
-        if (item != null) {
-            return item;
-        } else {
-            return normalQueue.poll();
+        Object result = priorityQueue.poll();
+        if (result == null) {
+            result = normalQueue.poll();
         }
+        return result;
     }
 
     @Override
