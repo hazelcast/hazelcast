@@ -59,7 +59,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
     }
 
     protected final AtomicReference<Thread> flushThread = new AtomicReference<>(currentThread());
-    protected final Queue<IOBuffer> writeQueue;
+    protected final Queue writeQueue;
     protected final Thread eventloopThread;
     protected final Metrics metrics = new Metrics();
     protected final boolean clientSide;
@@ -307,7 +307,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * causes the AsyncSocket
      * to be scheduled in the {@link Reactor}.
      * <p>
-     * This is the same as calling {@link #write(IOBuffer)} followed by a
+     * This is the same as calling {@link #write(Object)} followed by a
      * {@link #flush()}.
      * <p>
      * There is no guarantee that IOBuffer is actually going to be received by
@@ -319,7 +319,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * @param buf the IOBuffer to write.
      * @return true if the IOBuffer was accepted, false otherwise.
      */
-    public final boolean writeAndFlush(IOBuffer buf) {
+    public final boolean writeAndFlush(Object buf) {
         boolean offered = write(buf);
         flush();
         return offered;
@@ -335,7 +335,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * @throws IllegalStateException if the current thread isn't the eventloop
      *                               thread.
      */
-    public final boolean insideWriteAndFlush(IOBuffer buf) {
+    public final boolean insideWriteAndFlush(Object buf) {
         Thread currentThread = currentThread();
 
         if (currentThread != eventloopThread) {
@@ -369,7 +369,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         return offered;
     }
 
-    protected abstract boolean insideWrite(IOBuffer buf);
+    protected abstract boolean insideWrite(Object buf);
 
     /**
      * Connects asynchronously to some address.
@@ -666,7 +666,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         public int writeQueueCapacity = DEFAULT_WRITE_QUEUE_CAPACITY;
         public Reader reader;
         public boolean clientSide;
-        public MpmcArrayQueue<IOBuffer> writeQueue;
+        public Queue writeQueue;
         public Options options;
 
         @Override
@@ -680,7 +680,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
             checkNotNull(options, "options");
 
             if (writeQueue == null) {
-                writeQueue = new MpmcArrayQueue<>(writeQueueCapacity);
+                writeQueue = new MpmcArrayQueue(writeQueueCapacity);
             }
         }
     }
