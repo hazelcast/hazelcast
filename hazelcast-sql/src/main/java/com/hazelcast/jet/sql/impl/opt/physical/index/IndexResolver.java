@@ -252,7 +252,7 @@ public final class IndexResolver {
     }
 
     private static RelNode removeCollation(RelNode rel) {
-        return ((IndexScanMapPhysicalRel)rel).withoutCollation();
+        return ((IndexScanMapPhysicalRel) rel).withoutCollation();
     }
 
     /**
