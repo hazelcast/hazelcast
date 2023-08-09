@@ -1,0 +1,144 @@
+name: Build and Dockerize
+
+on:
+  workflow_call:
+    outputs:
+      HZ_IMG:
+        description: "The Hazelcast Docker image"
+        value: ${{ jobs.build.outputs.HZ_IMG }}
+      CL_IMG:
+        description: "The client Docker image"
+        value: ${{ jobs.build.outputs.CL_IMG }}
+
+jobs:
+  build:
+    name: Build Jar's And Docker Images
+    runs-on: ubuntu-latest
+    env:
+      GAR_PROJECT_ID: hazelcast-33
+      GAR_REGION: us-east1
+      GAR_REPO: auto-discovery-test-suite
+      AWS_REGION: us-east-1
+    defaults:
+      run:
+        working-directory: aws-discovery-suite/terraform/test
+    outputs:
+      HZ_IMG: ${{ steps.get-hz-image-tag.outputs.HZ_IMG }}
+      CL_IMG: ${{ steps.get-cl-image-tag.outputs.CL_IMG }}
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2.0.0
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get Secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            DEVOPS_GITHUB_TOKEN,CN/DEVOPS_GITHUB_TOKEN
+            GCP_SA_KEY,CN/GKE_SA_KEY
+
+      - name: Checkout Auto Discovery Test Suite
+        uses: actions/checkout@v3
+        with:
+          repository: hazelcast/auto-discovery-test-suite
+          token: ${{ env.DEVOPS_GITHUB_TOKEN }}
+          path: aws-discovery-suite
+
+      - name: Decide Which 'ref' To Checkout
+        id: decide-ref
+        run: |
+          if [[ "${{github.event_name}}" == "pull_request_target" ]]; then
+            echo "ref=refs/pull/${{ github.event.pull_request.number }}/merge" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{github.ref}}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{steps.decide-ref.outputs.ref}}
+          path: ${{steps.decide-ref.outputs.ref}}
+
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: 17
+          architecture: x64
+          distribution: adopt
+          cache: 'maven'
+
+      - name: Setup Local Maven Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Build hazelcast jar
+        working-directory: ${{steps.decide-ref.outputs.ref}}
+        run: |
+          HAZELCAST_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "HAZELCAST_VERSION=${HAZELCAST_VERSION}" >> $GITHUB_ENV
+           ./mvnw -T 4 -B -V -e clean install \
+           -Dfindbugs.skip \
+           -Dcheckstyle.skip \
+           -Dpmd.skip=true \
+           -Dspotbugs.skip \
+           -Denforcer.skip \
+           -Dmaven.javadoc.skip \
+           -DskipTests \
+           -Dlicense.skip=true \
+           -Drat.skip=true \
+           -Dspotless.check.skip=true \
+           -Dattribution.skip \
+           -Danimal.sniffer.skip=true \
+           -Dmaven.source.skip=true
+            cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ${GITHUB_WORKSPACE}/aws-discovery-suite/terraform/tools/hazelcast.jar
+
+      - name: Build client jar
+        working-directory: aws-discovery-suite/terraform/tools/client
+        run: |
+          mvn versions:set-property -Dproperty=hazelcast.version -DnewVersion=$HAZELCAST_VERSION
+          mvn clean package
+          mv target/aws-discovery-client.jar aws-discovery-client.jar
+
+      - name: Upload hazelcast.jar
+        uses: actions/upload-artifact@v3
+        with:
+          name: hazelcast.jar
+          path: aws-discovery-suite/terraform/tools/hazelcast.jar
+
+      - name: Upload aws-discovery-client.jar
+        uses: actions/upload-artifact@v3
+        with:
+          name: aws-discovery-client.jar
+          path: aws-discovery-suite/terraform/tools/client/aws-discovery-client.jar
+
+      - name: Authenticate to GAR
+        uses: docker/login-action@v2
+        with:
+          registry: us-east1-docker.pkg.dev
+          username: _json_key
+          password: ${{ env.GCP_SA_KEY }}
+
+      - name: Build Hazelcast Image
+        id: get-hz-image-tag
+        working-directory: aws-discovery-suite/terraform/tools
+        run: |
+          HZ_IMG="${{ env.GAR_REGION }}-docker.pkg.dev/${{ env.GAR_PROJECT_ID }}/${{ env.GAR_REPO }}/$(uuidgen):3d"
+          echo "HZ_IMG=${HZ_IMG}" >> $GITHUB_OUTPUT
+          docker build -f Dockerfile -t ${HZ_IMG} .
+          docker push ${HZ_IMG}
+
+      - name: Build Client Image
+        id: get-cl-image-tag
+        working-directory: aws-discovery-suite/terraform/tools/client
+        run: |
+          CL_IMG="${{ env.GAR_REGION }}-docker.pkg.dev/${{ env.GAR_PROJECT_ID }}/${{ env.GAR_REPO }}/$(uuidgen):3d"
+          echo "CL_IMG=${CL_IMG}" >> $GITHUB_OUTPUT
+          docker build -f Dockerfile -t ${CL_IMG} .
+          docker push ${CL_IMG}
