@@ -41,7 +41,6 @@ import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.hazelcast.function.Functions.wholeItem;
 import static com.hazelcast.jet.core.Partitioner.defaultPartitioner;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Objects.requireNonNull;
@@ -343,7 +342,9 @@ public class Edge implements IdentifiedDataSerializable {
     @Nonnull
     public Edge allToOne(Object key) {
         throwIfLocked();
-        return partitioned(wholeItem(), new Single(key));
+        this.routingPolicy = RoutingPolicy.PARTITIONED;
+        this.partitioner = new Single(key);
+        return this;
     }
 
     /**
@@ -756,6 +757,11 @@ public class Edge implements IdentifiedDataSerializable {
         @Override
         public int getPartition(@Nonnull Object item, int partitionCount) {
             return partition;
+        }
+
+        @Override
+        public Object getConstantPartitioningKey() {
+            return key;
         }
 
         @Override

@@ -20,13 +20,6 @@ env:
 jobs:
   build:
     name: Build Jar's And Docker Images
-    uses: ./.github/workflows/build-artifact.yml
-    secrets: inherit
-
-  test:
-    name: Run Tests
-    needs: build
-    runs-on: ubuntu-latest
     if: >-
       github.repository_owner == 'hazelcast' && 
       ( github.event_name == 'workflow_dispatch' || 
@@ -35,6 +28,14 @@ jobs:
           github.event.label.name == 'run-discovery-tests' 
         )
       )
+    uses: ./.github/workflows/build-artifact.yml
+    secrets: inherit
+
+  test:
+    name: Run Tests
+    needs: build
+    runs-on: ubuntu-latest
+
     strategy:
       matrix:
         suite: ['gke']

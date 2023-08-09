@@ -36,6 +36,7 @@ public class PartitionedMapTable extends AbstractMapTable {
     private final List<MapTableIndex> indexes;
     private final boolean hd;
     private final List<String> partitioningAttributes;
+    private final boolean supportsPartitionPruning;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     public PartitionedMapTable(
@@ -50,7 +51,8 @@ public class PartitionedMapTable extends AbstractMapTable {
             Object valueJetMetadata,
             List<MapTableIndex> indexes,
             boolean hd,
-            List<String> partitioningAttributes
+            List<String> partitioningAttributes,
+            boolean supportsPartitionPruning
     ) {
         super(
             schemaName,
@@ -68,6 +70,7 @@ public class PartitionedMapTable extends AbstractMapTable {
         this.indexes = indexes;
         this.hd = hd;
         this.partitioningAttributes = partitioningAttributes;
+        this.supportsPartitionPruning = supportsPartitionPruning;
     }
 
     @Override
@@ -88,7 +91,8 @@ public class PartitionedMapTable extends AbstractMapTable {
                 getValueJetMetadata(),
                 getIndexes(),
                 isHd(),
-                partitioningAttributes());
+                partitioningAttributes(),
+                supportsPartitionPruning());
     }
 
     public List<MapTableIndex> getIndexes() {
@@ -136,6 +140,15 @@ public class PartitionedMapTable extends AbstractMapTable {
         return partitioningAttributes != null ? partitioningAttributes : emptyList();
     }
 
+    /**
+     * Flag to indicate whether underlying Map/Table uses one of the supported PartitioningStrategies and therefore
+     * can support Partition Pruning.
+     * @return true if table supports Partition Pruning
+     */
+    public boolean supportsPartitionPruning() {
+        return supportsPartitionPruning;
+    }
+
     static class PartitionedMapPlanObjectKey implements PlanObjectKey {
 
         private final String schemaName;
@@ -150,6 +163,7 @@ public class PartitionedMapTable extends AbstractMapTable {
         private final boolean hd;
         private final Set<String> conflictingSchemas;
         private final List<String> partitioningAttributes;
+        private final boolean supportsPartitionPruning;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         PartitionedMapPlanObjectKey(
@@ -164,7 +178,8 @@ public class PartitionedMapTable extends AbstractMapTable {
                 Object valueJetMetadata,
                 List<MapTableIndex> indexes,
                 boolean hd,
-                final List<String> partitioningAttributes) {
+                final List<String> partitioningAttributes,
+                final boolean supportsPartitionPruning) {
             this.schemaName = schemaName;
             this.tableName = tableName;
             this.mapName = mapName;
@@ -177,6 +192,7 @@ public class PartitionedMapTable extends AbstractMapTable {
             this.hd = hd;
             this.conflictingSchemas = conflictingSchemas;
             this.partitioningAttributes = partitioningAttributes;
+            this.supportsPartitionPruning = supportsPartitionPruning;
         }
 
         @Override
@@ -203,7 +219,8 @@ public class PartitionedMapTable extends AbstractMapTable {
                     && Objects.equals(valueJetMetadata, that.valueJetMetadata)
                     && indexes.equals(that.indexes)
                     && conflictingSchemas.equals(that.conflictingSchemas)
-                    && partitioningAttributes.equals(that.partitioningAttributes);
+                    && partitioningAttributes.equals(that.partitioningAttributes)
+                    && supportsPartitionPruning == that.supportsPartitionPruning;
         }
 
         @Override
@@ -220,6 +237,7 @@ public class PartitionedMapTable extends AbstractMapTable {
             result = 31 * result + (hd ? 1 : 0);
             result = 31 * result + conflictingSchemas.hashCode();
             result = 31 * result + partitioningAttributes.hashCode();
+            result = 31 * result + (supportsPartitionPruning ? 1 : 0);
             return result;
         }
     }

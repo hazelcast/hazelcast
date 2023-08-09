@@ -47,10 +47,20 @@ jobs:
           token: ${{ env.DEVOPS_GITHUB_TOKEN }}
           path: aws-discovery-suite
 
+      - name: Decide Which 'ref' To Checkout
+        id: decide-ref
+        run: |
+          if [[ "${{github.event_name}}" == "pull_request_target" ]]; then
+            echo "ref=refs/pull/${{ github.event.pull_request.number }}/merge" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{github.ref}}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          path: master
+          ref: ${{steps.decide-ref.outputs.ref}}
+          path: ${{steps.decide-ref.outputs.ref}}
 
       - name: Setup JDK
         uses: actions/setup-java@v3
@@ -69,9 +79,8 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Build hazelcast jar
-        working-directory: master
+        working-directory: ${{steps.decide-ref.outputs.ref}}
         run: |
-          echo ${GITHUB_WORKSPACE}
           HAZELCAST_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "HAZELCAST_VERSION=${HAZELCAST_VERSION}" >> $GITHUB_ENV
            ./mvnw -T 4 -B -V -e clean install \

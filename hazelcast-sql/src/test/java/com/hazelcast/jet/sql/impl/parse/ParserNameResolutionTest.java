@@ -201,7 +201,8 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 null,
                 null,
                 false,
-                Collections.emptyList());
+                Collections.emptyList(),
+                false);
         PartitionedMapTable table2 = new PartitionedMapTable(
                 SCHEMA_2,
                 TABLE_2,
@@ -214,7 +215,8 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 null,
                 null,
                 false,
-                Collections.emptyList());
+                Collections.emptyList(),
+                false);
 
         TableResolver resolver1 = TestTableResolver.create(SCHEMA_1, table1);
         TableResolver resolver2 = TestTableResolver.create(SCHEMA_2, table2);

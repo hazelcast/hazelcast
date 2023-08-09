@@ -526,7 +526,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * Each edge is represented by an array of conveyors between the producers and consumers.
      * There are as many conveyors as there are consumers.
      * Each conveyor has one queue per producer.
-     *
+     * <p>
      * For a distributed edge, there is one additional producer per member represented
      * by the ReceiverTasklet.
      */
@@ -607,10 +607,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.get(edge.edgeId());
         if (edge.routingPolicy() == RoutingPolicy.ISOLATED) {
             OutboundCollector[] localCollectors = IntStream.range(0, downstreamParallelism)
-                            .filter(i -> i % upstreamParallelism == processorIndex % downstreamParallelism)
-                            .mapToObj(i -> new ConveyorCollector(localConveyors[i],
-                                    processorIndex / downstreamParallelism, null))
-                            .toArray(OutboundCollector[]::new);
+                    .filter(i -> i % upstreamParallelism == processorIndex % downstreamParallelism)
+                    .mapToObj(i -> new ConveyorCollector(localConveyors[i],
+                            processorIndex / downstreamParallelism, null))
+                    .toArray(OutboundCollector[]::new);
             return compositeCollector(localCollectors, edge, totalPartitionCount, true, false);
         } else {
             OutboundCollector[] localCollectors = new OutboundCollector[downstreamParallelism];
@@ -835,14 +835,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     public int getStoreSnapshotTaskletCount() {
         return (int) tasklets.stream()
-                             .filter(t -> t instanceof StoreSnapshotTasklet)
-                             .count();
+                .filter(t -> t instanceof StoreSnapshotTasklet)
+                .count();
     }
 
     public int getProcessorTaskletCount() {
         return (int) tasklets.stream()
-                             .filter(t -> t instanceof ProcessorTasklet)
-                             .count();
+                .filter(t -> t instanceof ProcessorTasklet)
+                .count();
     }
 
     public int getHigherPriorityVertexCount() {

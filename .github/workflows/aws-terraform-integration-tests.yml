@@ -15,6 +15,14 @@ on:
 jobs:
   build:
     name: Build Jar's And Docker Images
+    if: >-
+      github.repository_owner == 'hazelcast' && 
+      ( github.event_name == 'workflow_dispatch' || 
+        (github.event_name == 'pull_request_target' && 
+          github.event.action == 'labeled' && 
+          github.event.label.name == 'run-discovery-tests' 
+        )
+      )
     uses: ./.github/workflows/build-artifact.yml
     secrets: inherit
 
@@ -27,14 +35,6 @@ jobs:
         working-directory: aws-discovery-suite/terraform/test
     env:
       AWS_REGION: us-east-1
-    if: >-
-      github.repository_owner == 'hazelcast' && 
-      ( github.event_name == 'workflow_dispatch' || 
-        (github.event_name == 'pull_request_target' && 
-          github.event.action == 'labeled' && 
-          github.event.label.name == 'run-discovery-tests' 
-        )
-      )
     strategy:
       matrix:
         suite: ['ec2_cl_to_ec2_m', 'ec2_cl_to_fargate_ecs_m', 'fargate_ecs_cl_to_ec2_m', 'fargate_ecs_cl_to_fargate_ecs_m']
