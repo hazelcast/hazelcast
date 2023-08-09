@@ -50,7 +50,8 @@ jobs:
 
       - name: Echo home
         run: |
-          kubectl config get-contexts
+          echo ${KUBECONFIG}
+          kubectl config view
           echo ${HOME}
           ls -la ${HOME}/.kube/
 
