@@ -16,22 +16,6 @@
 
 package com.hazelcast.test.starter.test;
 
-import static com.google.common.io.Files.toByteArray;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_JAR;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_JAR;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_TEST_JAR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.util.Map;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -39,6 +23,21 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastVersionLocator;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+
+import java.io.File;
+import java.util.Map;
+
+import static com.google.common.io.Files.toByteArray;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_JAR;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_JAR;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_TEST_JAR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("UnstableApiUsage")
 @RunWith(HazelcastParallelClassRunner.class)
