@@ -88,7 +88,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     private void testListenersWhenClientIsGone(boolean isSmartClient) {
-        factory.newInstances(null, 2);
+        factory.newInstances(() -> null, 2);
         ClientConfig clientConfig = createClientConfig(isSmartClient);
         client = factory.newHazelcastClient(clientConfig);
 
@@ -111,7 +111,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     private void testListenersTerminateRandomNode(boolean isSmartClient) {
-        factory.newInstances(null, 3);
+        factory.newInstances(() -> null, 3);
         ClientConfig clientConfig = createClientConfig(isSmartClient);
         client = factory.newHazelcastClient(clientConfig);
 
@@ -162,7 +162,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     private void testListenersTemporaryNetworkBlockage(boolean isSmart, int clusterSize) {
-        factory.newInstances(null, clusterSize);
+        factory.newInstances(() -> null, clusterSize);
 
         ClientConfig clientConfig = createClientConfig(isSmart);
         client = factory.newHazelcastClient(clientConfig);
@@ -211,7 +211,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     private void testListenersHeartbeatTimeoutToCluster(boolean isSmartClient, int nodeCount) {
-        factory.newInstances(null, nodeCount);
+        factory.newInstances(() -> null, nodeCount);
         ClientConfig clientConfig = createClientConfig(isSmartClient);
         ListenerConfig listenerConfig = new ListenerConfig();
         AtomicInteger connectCount = new AtomicInteger();
@@ -275,7 +275,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     private void testListenersTerminateCluster(boolean isSmartClient, int clusterSize) {
-        factory.newInstances(null, clusterSize);
+        factory.newInstances(() -> null, clusterSize);
 
         ClientConfig clientConfig = createClientConfig(isSmartClient);
         ListenerConfig listenerConfig = new ListenerConfig();

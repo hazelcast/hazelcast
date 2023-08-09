@@ -43,6 +43,14 @@ public class MockUtil {
         return Mockito.mock(clazz, settings);
     }
 
+    public static void closeMocks(AutoCloseable closeable) {
+        try {
+            closeable.close();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to close Mockito mocks", ex);
+        }
+    }
+
     /**
      * Mockito Answer that delegates invocations to another object. Similar to
      * {@link AdditionalAnswers#delegatesTo(Object)} but also supports objects

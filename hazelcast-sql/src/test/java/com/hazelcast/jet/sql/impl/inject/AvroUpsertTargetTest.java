@@ -54,19 +54,10 @@ public class AvroUpsertTargetTest {
                 .name("time").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
                 .name("date").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
                 .name("timestamp").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-                .name("timestampTz").type()
-                        .unionOf()
-                        .nullType()
-                        .and().booleanType()
-                        .and().intType()
-                        .and().longType()
-                        .and().floatType()
-                        .and().doubleType()
-                        .and().stringType()
-                        .endUnion().nullDefault()
+                .name("timestampTz").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
                 .endRecord();
 
-        UpsertTarget target = new AvroUpsertTarget(schema.toString());
+        UpsertTarget target = new AvroUpsertTarget(schema);
         UpsertInjector nullInjector = target.createInjector("null", QueryDataType.OBJECT);
         UpsertInjector stringInjector = target.createInjector("string", QueryDataType.VARCHAR);
         UpsertInjector booleanInjector = target.createInjector("boolean", QueryDataType.BOOLEAN);
@@ -156,7 +147,7 @@ public class AvroUpsertTargetTest {
                                      .endUnion().nullDefault()
                                      .endRecord();
 
-        UpsertTarget target = new AvroUpsertTarget(schema.toString());
+        UpsertTarget target = new AvroUpsertTarget(schema);
         UpsertInjector injector = target.createInjector("object", QueryDataType.OBJECT);
 
         target.init();

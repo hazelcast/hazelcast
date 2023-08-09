@@ -48,10 +48,10 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.spi.annotation.Beta;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Message;
 
 import javax.annotation.Nonnull;
-import javax.jms.ConnectionFactory;
-import javax.jms.Message;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -1226,9 +1226,9 @@ public final class Sources {
      * </pre>
      *
      * This version creates a connection without any authentication parameters.
-     * JMS {@link javax.jms.Message} objects are emitted to downstream.
+     * JMS {@link jakarta.jms.Message} objects are emitted to downstream.
      * <p>
-     * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
+     * <b>Note:</b> {@link jakarta.jms.Message} might not be serializable. In
      * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx) the
      * builder} and add a projection.
      *
@@ -1298,10 +1298,10 @@ public final class Sources {
      *
      * This version creates a connection without any authentication parameters.
      * A non-durable, non-shared consumer is used, only one member will connect
-     * to the broker. JMS {@link javax.jms.Message} objects are emitted to
+     * to the broker. JMS {@link jakarta.jms.Message} objects are emitted to
      * downstream.
      * <p>
-     * <b>Note:</b> {@link javax.jms.Message} might not be serializable. In
+     * <b>Note:</b> {@link jakarta.jms.Message} might not be serializable. In
      * that case you can use {@linkplain #jmsQueueBuilder(SupplierEx) the
      * builder} and add a projection.
      *

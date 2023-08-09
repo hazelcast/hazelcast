@@ -36,6 +36,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -122,8 +123,9 @@ public class UpdateProcessorTest extends SqlTestSupport {
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
                 emptyList(),
-                false
-        );
+                false,
+                Collections.emptyList(),
+                false);
     }
 
     private Object executeUpdate(

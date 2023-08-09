@@ -54,13 +54,13 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
+import jakarta.jms.Connection;
+import jakarta.jms.Message;
+import jakarta.jms.MessageConsumer;
+import jakarta.jms.Session;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.jms.Connection;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.security.Permission;
@@ -100,7 +100,7 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readMapP(@Nonnull String mapName) {
-        return HazelcastReaders.readLocalMapSupplier(mapName, null);
+        return HazelcastReaders.readLocalMapSupplier(mapName);
     }
 
     /**

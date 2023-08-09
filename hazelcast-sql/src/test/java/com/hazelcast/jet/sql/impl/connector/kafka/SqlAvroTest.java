@@ -18,13 +18,8 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.nio.Bits;
-import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlService;
-import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
-import io.confluent.kafka.schemaregistry.rest.SchemaRegistryRestApplication;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.avro.Schema;
@@ -35,8 +30,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
-import org.eclipse.jetty.server.Server;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -50,10 +43,11 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.time.ZoneOffset.UTC;
@@ -64,68 +58,47 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
-public class SqlAvroTest extends SqlTestSupport {
-
+public class SqlAvroTest extends KafkaSqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 4;
 
-    private static KafkaTestSupport kafkaTestSupport;
-    private static Server schemaRegistry;
-
-    private static SqlService sqlService;
+    static final Schema ID_SCHEMA = SchemaBuilder.record("jet.sql")
+            .fields()
+            .name("id").type().unionOf().nullType().and().intType().endUnion().nullDefault()
+            .endRecord();
+    static final Schema NAME_SCHEMA = SchemaBuilder.record("jet.sql")
+            .fields()
+            .name("name").type().unionOf().nullType().and().stringType().endUnion().nullDefault()
+            .endRecord();
 
     @BeforeClass
-    public static void setUpClass() throws Exception {
-        initialize(1, null);
-        sqlService = instance().getSql();
-
-        kafkaTestSupport = KafkaTestSupport.create();
-        kafkaTestSupport.createKafkaCluster();
-
-        Properties properties = new Properties();
-        properties.put("listeners", "http://0.0.0.0:0");
-        properties.put(SchemaRegistryConfig.KAFKASTORE_BOOTSTRAP_SERVERS_CONFIG, kafkaTestSupport.getBrokerConnectionString());
-        //When Kafka is under load the schema registry may give
-        //io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Register operation timed out; error code: 50002
-        //Because the default timeout is 500 ms. Use a bigger timeout value to avoid it
-        properties.put(SchemaRegistryConfig.KAFKASTORE_TIMEOUT_CONFIG, "5000");
-        SchemaRegistryConfig config = new SchemaRegistryConfig(properties);
-        SchemaRegistryRestApplication schemaRegistryApplication = new SchemaRegistryRestApplication(config);
-        schemaRegistry = schemaRegistryApplication.createServer();
-        schemaRegistry.start();
+    public static void initialize() throws Exception {
+        createSchemaRegistry();
     }
 
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-        if (schemaRegistry != null) {
-            schemaRegistry.stop();
-        }
-        if (kafkaTestSupport != null) {
-            kafkaTestSupport.shutdownKafkaCluster();
-        }
+    private static SqlMapping kafkaMapping(String name) {
+        return new SqlMapping(name, KafkaSqlConnector.TYPE_NAME).options(
+                OPTION_KEY_FORMAT, AVRO_FORMAT,
+                OPTION_VALUE_FORMAT, AVRO_FORMAT,
+                "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
+                "schema.registry.url", kafkaTestSupport.getSchemaRegistryURI(),
+                "auto.offset.reset", "earliest"
+        );
     }
 
     @Test
     public void test_nulls() {
         String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "id INT EXTERNAL NAME \"__key.id\""
-                + ", name VARCHAR"
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(name)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR")
+                .create();
 
         assertTopicEventually(
                 name,
                 "INSERT INTO " + name + " VALUES (null, null)",
                 createMap(
-                        new GenericRecordBuilder(intSchema("id")).build(),
-                        new GenericRecordBuilder(stringSchema("name")).set("name", null).build()
+                        new GenericRecordBuilder(ID_SCHEMA).build(),
+                        new GenericRecordBuilder(NAME_SCHEMA).set("name", null).build()
                 )
         );
         assertRowsEventuallyInAnyOrder(
@@ -137,25 +110,17 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void test_fieldsMapping() {
         String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "key_name VARCHAR EXTERNAL NAME \"__key.name\""
-                + ", value_name VARCHAR EXTERNAL NAME \"this.name\""
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(name)
+                .fields("key_name VARCHAR EXTERNAL NAME \"__key.name\"",
+                        "value_name VARCHAR EXTERNAL NAME \"this.name\"")
+                .create();
 
         assertTopicEventually(
                 name,
                 "INSERT INTO " + name + " (value_name, key_name) VALUES ('Bob', 'Alice')",
                 createMap(
-                        new GenericRecordBuilder(stringSchema("name")).set("name", "Alice").build(),
-                        new GenericRecordBuilder(stringSchema("name")).set("name", "Bob").build()
+                        new GenericRecordBuilder(NAME_SCHEMA).set("name", "Alice").build(),
+                        new GenericRecordBuilder(NAME_SCHEMA).set("name", "Bob").build()
                 )
         );
         assertRowsEventuallyInAnyOrder(
@@ -167,36 +132,20 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void test_schemaEvolution() {
         String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "id INT EXTERNAL NAME \"__key.id\""
-                + ", name VARCHAR"
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(name)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR")
+                .create();
 
         // insert initial record
         sqlService.execute("INSERT INTO " + name + " VALUES (13, 'Alice')");
 
         // alter schema
-        sqlService.execute("CREATE OR REPLACE MAPPING " + name + " ("
-                + "id INT EXTERNAL NAME \"__key.id\""
-                + ", name VARCHAR"
-                + ", ssn BIGINT"
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(name)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR",
+                        "ssn BIGINT")
+                .createOrReplace();
 
         // insert record against new schema
         sqlService.execute("INSERT INTO " + name + " VALUES (69, 'Bob', 123456789)");
@@ -217,32 +166,24 @@ public class SqlAvroTest extends SqlTestSupport {
         TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + to + " ("
-                + "id VARCHAR EXTERNAL NAME \"__key.id\""
-                + ", string VARCHAR"
-                + ", \"boolean\" BOOLEAN"
-                + ", byte TINYINT"
-                + ", short SMALLINT"
-                + ", \"int\" INT"
-                + ", long BIGINT"
-                + ", \"float\" REAL"
-                + ", \"double\" DOUBLE"
-                + ", \"decimal\" DECIMAL"
-                + ", \"time\" TIME"
-                + ", \"date\" DATE"
-                + ", \"timestamp\" TIMESTAMP"
-                + ", timestampTz TIMESTAMP WITH TIME ZONE"
-                + ", map OBJECT"
-                + ", object OBJECT"
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(to)
+                .fields("id VARCHAR EXTERNAL NAME \"__key.id\"",
+                        "string VARCHAR",
+                        "\"boolean\" BOOLEAN",
+                        "byte TINYINT",
+                        "short SMALLINT",
+                        "\"int\" INT",
+                        "long BIGINT",
+                        "\"float\" REAL",
+                        "\"double\" DOUBLE",
+                        "\"decimal\" DECIMAL",
+                        "\"time\" TIME",
+                        "\"date\" DATE",
+                        "\"timestamp\" TIMESTAMP",
+                        "timestampTz TIMESTAMP WITH TIME ZONE",
+                        "map OBJECT",
+                        "object OBJECT")
+                .create();
 
         sqlService.execute("INSERT INTO " + to + " SELECT '1', f.* FROM " + from + " f");
 
@@ -289,16 +230,10 @@ public class SqlAvroTest extends SqlTestSupport {
 
     private void when_explicitTopLevelField_then_fail(String field, String otherField) {
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING kafka ("
-                        + field + " VARCHAR"
-                        + ", f VARCHAR EXTERNAL NAME \"" + otherField + ".f\""
-                        + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ("
-                        + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
-                        + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
-                        + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                        + ", 'auto.offset.reset'='earliest'"
-                        + ")"))
+                    kafkaMapping("kafka")
+                            .fields(field + " VARCHAR",
+                                    "f VARCHAR EXTERNAL NAME \"" + otherField + ".f\"")
+                            .create())
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("Cannot use the '" + field + "' field with Avro serialization");
     }
@@ -306,17 +241,10 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void test_writingToTopLevel() {
         String mapName = randomName();
-        sqlService.execute("CREATE MAPPING " + mapName + "("
-                + "id INT EXTERNAL NAME \"__key.id\""
-                + ", name VARCHAR"
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(mapName)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR")
+                .create();
 
         assertThatThrownBy(() ->
                 sqlService.execute("INSERT INTO " + mapName + "(__key, name) VALUES('{\"id\":1}', null)"))
@@ -332,25 +260,17 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void test_topLevelFieldExtraction() {
         String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "id INT EXTERNAL NAME \"__key.id\""
-                + ", name VARCHAR"
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(name)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR")
+                .create();
         sqlService.execute("INSERT INTO " + name + " VALUES (1, 'Alice')");
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT __key, this FROM " + name,
                 singletonList(new Row(
-                        new GenericRecordBuilder(intSchema("id")).set("id", 1).build(),
-                        new GenericRecordBuilder(stringSchema("name")).set("name", "Alice").build()
+                        new GenericRecordBuilder(ID_SCHEMA).set("id", 1).build(),
+                        new GenericRecordBuilder(NAME_SCHEMA).set("name", "Alice").build()
                 ))
         );
     }
@@ -358,29 +278,21 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void test_explicitKeyAndValueSerializers() {
         String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "key_name VARCHAR EXTERNAL NAME \"__key.name\""
-                + ", value_name VARCHAR EXTERNAL NAME \"this.name\""
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + '\''
-                + ", 'key.serializer'='" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + KafkaAvroSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + KafkaAvroDeserializer.class.getCanonicalName() + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
+        kafkaMapping(name)
+                .fields("key_name VARCHAR EXTERNAL NAME \"__key.name\"",
+                        "value_name VARCHAR EXTERNAL NAME \"this.name\"")
+                .options("key.serializer", KafkaAvroSerializer.class.getCanonicalName(),
+                         "key.deserializer", KafkaAvroDeserializer.class.getCanonicalName(),
+                         "value.serializer", KafkaAvroSerializer.class.getCanonicalName(),
+                         "value.deserializer", KafkaAvroDeserializer.class.getCanonicalName())
+                .create();
 
         assertTopicEventually(
                 name,
                 "INSERT INTO " + name + " (value_name, key_name) VALUES ('Bob', 'Alice')",
                 createMap(
-                        new GenericRecordBuilder(stringSchema("name")).set("name", "Alice").build(),
-                        new GenericRecordBuilder(stringSchema("name")).set("name", "Bob").build()
+                        new GenericRecordBuilder(NAME_SCHEMA).set("name", "Alice").build(),
+                        new GenericRecordBuilder(NAME_SCHEMA).set("name", "Bob").build()
                 )
         );
         assertRowsEventuallyInAnyOrder(
@@ -392,16 +304,12 @@ public class SqlAvroTest extends SqlTestSupport {
     @Test
     public void test_schemaIdForTwoQueriesIsEqual() {
         String topicName = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + topicName + " (__key INT, field1 VARCHAR) "
-                + "TYPE Kafka "
-                + "OPTIONS ("
-                + "'keyFormat'='java'"
-                + ", 'keyJavaClass'='java.lang.Integer'"
-                + ", 'valueFormat'='avro'"
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + '\''
-                + ", 'auto.offset.reset'='earliest')"
-        );
+        kafkaMapping(topicName)
+                .fields("__key INT",
+                        "field1 VARCHAR")
+                .options(OPTION_KEY_FORMAT, JAVA_FORMAT,
+                         OPTION_KEY_CLASS, Integer.class.getCanonicalName())
+                .create();
 
         sqlService.execute("INSERT INTO " + topicName + " VALUES(42, 'foo')");
         sqlService.execute("INSERT INTO " + topicName + " VALUES(43, 'bar')");
@@ -426,9 +334,7 @@ public class SqlAvroTest extends SqlTestSupport {
     }
 
     private static String createRandomTopic() {
-        String topicName = "t_" + randomString().replace('-', '_');
-        kafkaTestSupport.createTopic(topicName, INITIAL_PARTITION_COUNT);
-        return topicName;
+        return createRandomTopic(INITIAL_PARTITION_COUNT);
     }
 
     private static void assertTopicEventually(String name, String sql, Map<Object, Object> expected) {
@@ -439,21 +345,7 @@ public class SqlAvroTest extends SqlTestSupport {
                 expected,
                 KafkaAvroDeserializer.class,
                 KafkaAvroDeserializer.class,
-                ImmutableMap.of("schema.registry.url", schemaRegistry.getURI().toString())
+                ImmutableMap.of("schema.registry.url", kafkaTestSupport.getSchemaRegistryURI().toString())
         );
-    }
-
-    private static Schema intSchema(String fieldName) {
-        return SchemaBuilder.record("jet.sql")
-                            .fields()
-                            .name(fieldName).type().unionOf().nullType().and().intType().endUnion().nullDefault()
-                            .endRecord();
-    }
-
-    private static Schema stringSchema(String fieldName) {
-        return SchemaBuilder.record("jet.sql")
-                            .fields()
-                            .name(fieldName).type().unionOf().nullType().and().stringType().endUnion().nullDefault()
-                            .endRecord();
     }
 }
