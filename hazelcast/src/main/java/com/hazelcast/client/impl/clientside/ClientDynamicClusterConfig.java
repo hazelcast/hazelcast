@@ -35,6 +35,9 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecuto
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddWanReplicationConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder;
@@ -42,6 +45,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHold
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
+import com.hazelcast.client.impl.protocol.task.dynamicconfig.WanReplicationConfigTransformer;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.AdvancedNetworkConfig;
@@ -354,20 +358,22 @@ public class ClientDynamicClusterConfig extends Config {
         return this;
     }
 
+
     @Override
     public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        Data consumerConfig = serializationService.toData(wanReplicationConfig.getConsumerConfig());
-        List<Data> customPublisherConfigs =
+        WanReplicationConfigTransformer transformer = new WanReplicationConfigTransformer(serializationService);
+        WanConsumerConfigHolder consumerConfig = transformer.toHolder(wanReplicationConfig.getConsumerConfig());
+        List<WanCustomPublisherConfigHolder> customPublisherConfigs =
                 wanReplicationConfig.getCustomPublisherConfigs()
                                     .stream()
                                     .filter(Objects::nonNull)
-                                    .map(customPublisherConfig -> (Data) serializationService.toData(customPublisherConfig))
+                                    .map(transformer::toHolder)
                                     .collect(Collectors.toList());
-        List<Data> batchPublisherConfigs =
+        List<WanBatchPublisherConfigHolder> batchPublisherConfigs =
                 wanReplicationConfig.getBatchPublisherConfigs()
                                     .stream()
                                     .filter(Objects::nonNull)
-                                    .map(batchPublisherConfig -> (Data) serializationService.toData(batchPublisherConfig))
+                                    .map(transformer::toHolder)
                                     .collect(Collectors.toList());
         ClientMessage request = DynamicConfigAddWanReplicationConfigCodec.encodeRequest(
                 wanReplicationConfig.getName(), consumerConfig, customPublisherConfigs, batchPublisherConfigs);

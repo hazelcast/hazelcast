@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a WAN replication configuration.
  */
-@Generated("b5eee93c147c31cdbf2c85e0098be718")
+@Generated("342a0c2d9bd6845933491471a63262a2")
 public final class DynamicConfigAddWanReplicationConfigCodec {
     //hex: 0x1B1200
     public static final int REQUEST_MESSAGE_TYPE = 1774080;
@@ -57,22 +57,22 @@ public final class DynamicConfigAddWanReplicationConfigCodec {
         public java.lang.String name;
 
         /**
-         * A serialized {@link com.hazelcast.config.WanConsumerConfig} instance.
+         * The WAN consumer configuration.
          */
-        public @Nullable com.hazelcast.internal.serialization.Data consumerConfig;
+        public @Nullable com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder consumerConfig;
 
         /**
-         * A serialized list of {@link com.hazelcast.config.WanCustomPublisherConfig} instances.
+         * The WAN custom publisher configurations.
          */
-        public java.util.List<com.hazelcast.internal.serialization.Data> customPublisherConfigs;
+        public java.util.List<com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder> customPublisherConfigs;
 
         /**
-         * A serialized list of {@link com.hazelcast.config.WanBatchPublisherConfig} instances.
+         * The WAN batch publisher configurations.
          */
-        public java.util.List<com.hazelcast.internal.serialization.Data> batchPublisherConfigs;
+        public java.util.List<com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder> batchPublisherConfigs;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String name, @Nullable com.hazelcast.internal.serialization.Data consumerConfig, java.util.Collection<com.hazelcast.internal.serialization.Data> customPublisherConfigs, java.util.Collection<com.hazelcast.internal.serialization.Data> batchPublisherConfigs) {
+    public static ClientMessage encodeRequest(java.lang.String name, @Nullable com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder consumerConfig, java.util.List<com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder> customPublisherConfigs, java.util.List<com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder> batchPublisherConfigs) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
@@ -82,9 +82,9 @@ public final class DynamicConfigAddWanReplicationConfigCodec {
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, name);
-        CodecUtil.encodeNullable(clientMessage, consumerConfig, DataCodec::encode);
-        ListMultiFrameCodec.encode(clientMessage, customPublisherConfigs, DataCodec::encode);
-        ListMultiFrameCodec.encode(clientMessage, batchPublisherConfigs, DataCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, consumerConfig, WanConsumerConfigHolderCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, customPublisherConfigs, WanCustomPublisherConfigHolderCodec::encode);
+        ListMultiFrameCodec.encode(clientMessage, batchPublisherConfigs, WanBatchPublisherConfigHolderCodec::encode);
         return clientMessage;
     }
 
@@ -94,9 +94,9 @@ public final class DynamicConfigAddWanReplicationConfigCodec {
         //empty initial frame
         iterator.next();
         request.name = StringCodec.decode(iterator);
-        request.consumerConfig = CodecUtil.decodeNullable(iterator, DataCodec::decode);
-        request.customPublisherConfigs = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
-        request.batchPublisherConfigs = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
+        request.consumerConfig = CodecUtil.decodeNullable(iterator, WanConsumerConfigHolderCodec::decode);
+        request.customPublisherConfigs = ListMultiFrameCodec.decode(iterator, WanCustomPublisherConfigHolderCodec::decode);
+        request.batchPublisherConfigs = ListMultiFrameCodec.decode(iterator, WanBatchPublisherConfigHolderCodec::decode);
         return request;
     }
 

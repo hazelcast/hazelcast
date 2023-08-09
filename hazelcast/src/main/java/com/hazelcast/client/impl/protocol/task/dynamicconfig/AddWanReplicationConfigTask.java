@@ -52,23 +52,28 @@ public class AddWanReplicationConfigTask
         return "addWanReplicationConfig";
     }
 
+
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        WanConsumerConfig wanConsumerConfig = serializationService.toObject(parameters.consumerConfig);
+        WanReplicationConfigTransformer transformer = new WanReplicationConfigTransformer(serializationService);
+        WanConsumerConfig wanConsumerConfig = transformer.toConfig(parameters.consumerConfig);
+
         List<WanCustomPublisherConfig> customPublisherConfigs =
                 parameters.customPublisherConfigs.stream()
                                                  .filter(Objects::nonNull)
-                                                 .map(serializationService::<WanCustomPublisherConfig>toObject)
+                                                 .map(transformer::toConfig)
                                                  .collect(Collectors.toList());
         List<WanBatchPublisherConfig> batchPublisherConfigs =
                 parameters.batchPublisherConfigs.stream()
                                                  .filter(Objects::nonNull)
-                                                 .map(serializationService::<WanBatchPublisherConfig>toObject)
+                                                 .map(transformer::toConfig)
                                                  .collect(Collectors.toList());
 
         WanReplicationConfig config = new WanReplicationConfig();
         config.setName(parameters.name);
-        config.setConsumerConfig(wanConsumerConfig);
+        if (wanConsumerConfig != null) {
+            config.setConsumerConfig(wanConsumerConfig);
+        }
         config.setCustomPublisherConfigs(customPublisherConfigs);
         config.setBatchPublisherConfigs(batchPublisherConfigs);
         return config;
