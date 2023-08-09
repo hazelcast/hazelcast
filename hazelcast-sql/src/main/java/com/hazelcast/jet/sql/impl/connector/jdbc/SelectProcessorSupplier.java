@@ -58,7 +58,7 @@ public class SelectProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    private Map<String, BiFunctionEx<ResultSet, Integer, Object>> GETTERS = new HashMap<>();
+    private Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters;
 
     private String query;
     private int[] parameterPositions;
@@ -77,7 +77,7 @@ public class SelectProcessorSupplier
         super(dataConnectionName);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
-        initializeGETTERS(dialect);
+        this.getters = initializeGetters(dialect);
     }
 
     @Override
@@ -130,7 +130,7 @@ public class SelectProcessorSupplier
         BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
         for (int j = 0; j < metaData.getColumnCount(); j++) {
             String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
-            valueGetters[j] = GETTERS.getOrDefault(
+            valueGetters[j] = getters.getOrDefault(
                     type,
                     (resultSet, n) -> rs.getObject(n)
             );
@@ -149,7 +149,7 @@ public class SelectProcessorSupplier
         out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
-        out.writeObject(GETTERS);
+        out.writeObject(getters);
     }
 
     @Override
@@ -157,49 +157,51 @@ public class SelectProcessorSupplier
         dataConnectionName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
-        GETTERS = in.readObject();
+        getters = in.readObject();
     }
 
-    private void initializeGETTERS(SqlDialect sqldialect) {
-        GETTERS.put("BOOLEAN", ResultSet::getBoolean);
-        GETTERS.put("BOOL", ResultSet::getBoolean);
-        GETTERS.put("BIT", ResultSet::getBoolean);
+    private Map<String, BiFunctionEx<ResultSet, Integer, Object>> initializeGetters(SqlDialect sqldialect) {
+        Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = new HashMap<>();
+        getters.put("BOOLEAN", ResultSet::getBoolean);
+        getters.put("BOOL", ResultSet::getBoolean);
+        getters.put("BIT", ResultSet::getBoolean);
 
-        GETTERS.put("TINYINT", ResultSet::getByte);
+        getters.put("TINYINT", ResultSet::getByte);
 
-        GETTERS.put("SMALLINT", ResultSet::getShort);
-        GETTERS.put("INT2", ResultSet::getShort);
+        getters.put("SMALLINT", ResultSet::getShort);
+        getters.put("INT2", ResultSet::getShort);
 
-        GETTERS.put("INT", ResultSet::getInt);
-        GETTERS.put("INT4", ResultSet::getInt);
-        GETTERS.put("INTEGER", ResultSet::getInt);
+        getters.put("INT", ResultSet::getInt);
+        getters.put("INT4", ResultSet::getInt);
+        getters.put("INTEGER", ResultSet::getInt);
 
-        GETTERS.put("INT8", ResultSet::getLong);
-        GETTERS.put("BIGINT", ResultSet::getLong);
+        getters.put("INT8", ResultSet::getLong);
+        getters.put("BIGINT", ResultSet::getLong);
 
-        GETTERS.put("VARCHAR", ResultSet::getString);
-        GETTERS.put("CHARACTER VARYING", ResultSet::getString);
-        GETTERS.put("TEXT", ResultSet::getString);
+        getters.put("VARCHAR", ResultSet::getString);
+        getters.put("CHARACTER VARYING", ResultSet::getString);
+        getters.put("TEXT", ResultSet::getString);
 
-        GETTERS.put("REAL", ResultSet::getFloat);
-        GETTERS.put("FLOAT4", ResultSet::getFloat);
+        getters.put("REAL", ResultSet::getFloat);
+        getters.put("FLOAT4", ResultSet::getFloat);
 
-        GETTERS.put("DOUBLE", ResultSet::getDouble);
-        GETTERS.put("DOUBLE PRECISION", ResultSet::getDouble);
-        GETTERS.put("DECIMAL", ResultSet::getBigDecimal);
-        GETTERS.put("NUMERIC", ResultSet::getBigDecimal);
+        getters.put("DOUBLE", ResultSet::getDouble);
+        getters.put("DOUBLE PRECISION", ResultSet::getDouble);
+        getters.put("DECIMAL", ResultSet::getBigDecimal);
+        getters.put("NUMERIC", ResultSet::getBigDecimal);
 
-        GETTERS.put("DATE", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDate.class));
-        GETTERS.put("TIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalTime.class));
+        getters.put("DATE", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDate.class));
+        getters.put("TIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalTime.class));
 
         if (sqldialect instanceof MssqlSqlDialect) {
-            GETTERS.put("FLOAT", ResultSet::getDouble);
-            GETTERS.put("DATETIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-            GETTERS.put("DATETIMEOFFSET", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
+            getters.put("FLOAT", ResultSet::getDouble);
+            getters.put("DATETIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
+            getters.put("DATETIMEOFFSET", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
         } else {
-            GETTERS.put("FLOAT", ResultSet::getFloat);
-            GETTERS.put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-            GETTERS.put("TIMESTAMP_WITH_TIMEZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
+            getters.put("FLOAT", ResultSet::getFloat);
+            getters.put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
+            getters.put("TIMESTAMP_WITH_TIMEZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
         }
+        return getters;
     }
 }
