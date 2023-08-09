@@ -16,9 +16,7 @@
 
 package com.hazelcast.test.starter;
 
-import static com.hazelcast.internal.util.OsHelper.isWindows;
 import static com.hazelcast.internal.util.Preconditions.checkState;
-import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,8 +36,7 @@ import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
 import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
 
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.version.Version;
 
 public class HazelcastVersionLocator {
@@ -49,6 +46,7 @@ public class HazelcastVersionLocator {
         SQL_JAR(false, false, "hazelcast-sql"),
         EE_JAR(true, false, "hazelcast-enterprise");
 
+        private static final String GROUP_ID = "com.hazelcast";
         private static final ArtifactHandler ARTIFACT_HANDLER = new DefaultArtifactHandler("");
         private static final ArtifactRepositoryLayout REPOSITORY_LAYOUT = new DefaultRepositoryLayout();
 
@@ -62,8 +60,8 @@ public class HazelcastVersionLocator {
             this.artifactId = artifactId;
         }
 
-        private org.apache.maven.artifact.Artifact toMavenArtifact(String version) {
-            return new DefaultArtifact("com.hazelcast", artifactId, version, "", "", test ? "tests" : "", ARTIFACT_HANDLER);
+        private org.apache.maven.artifact.Artifact toMavenArtifact(final String version) {
+            return new DefaultArtifact(GROUP_ID, artifactId, version, "", "", test ? "tests" : "", ARTIFACT_HANDLER);
         }
 
         /** @return a path to the artifact in the local Maven repository, downloading if required */
@@ -78,7 +76,6 @@ public class HazelcastVersionLocator {
         }
 
         private void downloadArtifact(final String version) {
-            logWarningForArtifactDownload(version);
             final ProcessBuilder builder = new ProcessBuilder(buildMavenCommand(version).toArray(String[]::new)).inheritIO();
             try {
                 final Process process = builder.start();
@@ -90,27 +87,19 @@ public class HazelcastVersionLocator {
             }
         }
 
-        private void logWarningForArtifactDownload(final String version) {
-            if (isOnJenkins()) {
-                return;
-            }
-            LOGGER.warning("Hazelcast binaries for version " + version + (enterprise ? " EE " : " ")
-                    + "will be downloaded from a remote repository. You can speed up the compatibility tests by "
-                    + "installing the missing artifacts in your local maven repository so they don't have to be "
-                    + "downloaded each time:\n $ " + buildMavenCommand(version).collect(Collectors.joining(" ")));
-        }
-
-        private String getArtifactArgument(final String version) {
-            return "com.hazelcast:" + artifactId + ":" + version + (test ? ":jar:tests" : "");
-        }
-
         private Stream<String> buildMavenCommand(final String version) {
             final Stream.Builder<String> builder = Stream.builder();
 
             builder.add(getMvn());
 
             builder.add("dependency:get");
-            builder.add("-Dartifact=" + getArtifactArgument(version));
+            builder.add("-DgroupId=" + GROUP_ID);
+            builder.add("-DartifactId=" + artifactId);
+            builder.add("-Dversion=" + version);
+
+            if (test) {
+                builder.add("-Dclassifier=tests");
+            }
 
             if (enterprise) {
                 builder.add("-DremoteRepositories=https://repository.hazelcast.com/release");
@@ -120,15 +109,15 @@ public class HazelcastVersionLocator {
         }
     }
 
-    private static final ILogger LOGGER = Logger.getLogger(HazelcastVersionLocator.class);
-
     private static final String LOCAL_M2_REPOSITORY_PREFIX;
 
     static {
         try {
             // https://stackoverflow.com/a/16218772
-            final Process process = new ProcessBuilder(getMvn(), "help:evaluate", "-Dexpression=settings.localRepository", "-q",
-                    "-DforceStdout").start();
+            // Ideally you'd run this using the maven-invoker plugin, but I couldn't get this to work -
+            // https://stackoverflow.com/q/76866880
+            final Process process = new ProcessBuilder(getMvn(), "help:evaluate", "-Dexpression=settings.localRepository",
+                    "--quiet", "--batch-mode", "-DforceStdout").start();
 
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 LOCAL_M2_REPOSITORY_PREFIX = reader.readLine();
@@ -139,7 +128,18 @@ public class HazelcastVersionLocator {
     }
 
     private static String getMvn() {
-        return isWindows() ? "mvn.cmd" : "/opt/homebrew/bin/mvn";
+        if (OsHelper.isWindows()) {
+            return "mvn.cmd";
+        } else {
+            final String mvn = "mvn";
+
+            if (!new File(mvn).exists() && OsHelper.isMac()) {
+                // Eclipse doesn't properly read the $PATH, so hardcode another location - https://stackoverflow.com/q/76866453
+                return "/opt/homebrew/bin/mvn";
+            }
+
+            return mvn;
+        }
     }
 
     public static Map<Artifact, File> locateVersion(final String version, final boolean enterprise) {

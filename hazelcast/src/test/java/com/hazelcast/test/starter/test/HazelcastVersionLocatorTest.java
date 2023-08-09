@@ -30,7 +30,14 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.google.common.io.Files.toByteArray;
 import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_JAR;
@@ -51,6 +58,16 @@ public class HazelcastVersionLocatorTest {
 
     @Test
     public void testDownloadVersion() throws Exception {
+        // TODO This test doesn't force a redownload, so if an artifact is cached in the local repository, the download won't be
+        // excercised. It's difficult to modify the local maven repository as it's not encapsulated for the scope of testing
+
+        // TODO Remove
+        try (Stream<Path> dirStream = Files.walk(Paths.get("/Users/jgreen/.m2/repository/com/hazelcast/hazelcast/4.0"))) {
+            dirStream.map(Path::toFile).sorted(Comparator.reverseOrder()).forEach(File::delete);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
         Map<HazelcastVersionLocator.Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", true);
 
         assertHash(files.get(OS_JAR), "bc409b12b96ece6d05c3bd1e99b202bb", "OS");
@@ -63,6 +80,7 @@ public class HazelcastVersionLocatorTest {
     private void assertHash(File file, String expectedHash, String label) throws Exception {
         byte[] memberBytes = toByteArray(file);
         HashCode memberHash = md5Hash.hashBytes(memberBytes);
-        assertEquals("Expected hash of Hazelcast " + label + " JAR to be " + expectedHash, expectedHash, memberHash.toString());
+        assertEquals("Expected hash of Hazelcast " + label + " JAR (" + file + ")to be " + expectedHash, expectedHash,
+                memberHash.toString());
     }
 }
