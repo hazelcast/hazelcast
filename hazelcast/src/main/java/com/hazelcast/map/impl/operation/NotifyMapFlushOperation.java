@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.Notifier;
@@ -48,8 +49,27 @@ public class NotifyMapFlushOperation extends MapOperation
     }
 
     @Override
+    protected void innerBeforeRun() throws Exception {
+        // No need registration for tstore
+        // This op has an empty runInternal
+    }
+
+    @Override
+    public void afterRunFinal() {
+        // No need registration for tstore
+        // This op has an empty runInternal
+    }
+
+    @Override
     protected void runInternal() {
         // NOP.
+    }
+
+    @Override
+    public Step getStartingStep() {
+        // keep starting step as null to prevent
+        // this operation running with StepRunner
+        return null;
     }
 
     @Override

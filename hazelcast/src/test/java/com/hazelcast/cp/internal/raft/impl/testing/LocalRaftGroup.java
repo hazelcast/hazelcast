@@ -42,6 +42,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftUtil.minority;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newRaftMember;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -486,6 +487,14 @@ public class LocalRaftGroup {
             node.forceSetTerminatedStatus().joinInternal();
             integration.shutdown();
         }
+    }
+
+    /**
+     * Creates an artificial load on the given Raft node by sleeping its thread for
+     * the given duration.
+     */
+    public void slowDownNode(RaftEndpoint endpoint, int seconds) {
+        getNode(endpoint).execute(() -> sleepSeconds(seconds));
     }
 
     public int size() {

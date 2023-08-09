@@ -1140,6 +1140,51 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
     CompletionStage<V> removeAsync(@Nonnull K key);
 
     /**
+     * Asynchronously removes the given key, returning an {@link CompletionStage}
+     * on which the caller can register further computation stages to be invoked
+     * upon delete operation completion or block waiting for the operation to
+     * complete using one of blocking ways to wait on
+     * {@link CompletionStage#toCompletableFuture()}.
+     *
+     * <p>
+     * Unlike {@link #removeAsync(Object)}, this operation does not return
+     * the removed value, which avoids the serialization and network transfer cost of the
+     * returned value. If the removed value will not be used, this operation
+     * is preferred over the removeAsync operation for better performance.
+     *
+     * <p>The returned {@link CompletionStage} completes with a boolean value:
+     * {@code true} if the key is in memory and deletion is successful,
+     * {@code false} otherwise.
+     *
+     * <p>
+     * <b>Warning:</b>
+     * <p>
+     * This method uses {@code hashCode} and {@code equals} of the binary form
+     * of the {@code key}, not the actual implementations of {@code hashCode}
+     * and {@code equals} defined in the {@code key}'s class.
+     *
+     * <p><b>Interactions with the map store</b>
+     * <p>
+     * If write-through persistence mode is configured, before the value
+     * is removed from the memory, {@link MapStore#delete(Object)}
+     * is called to remove the value from the map store. Exceptions
+     * thrown by delete fail the operation and are propagated to the
+     * caller.
+     * <p>
+     * If write-behind persistence mode is configured with
+     * write-coalescing turned off,
+     * {@link com.hazelcast.map.ReachedMaxSizeException} may be thrown
+     * if the write-behind queue has reached its per-node maximum
+     * capacity.
+     *
+     * @param key The key of the map entry to remove
+     * @return {@link CompletionStage} which completes with a {@code boolean} value, indicating the result of the deletion
+     * @throws NullPointerException if the specified key is {@code null}
+     * @see CompletionStage
+     */
+    CompletionStage<Boolean> deleteAsync(@Nonnull K key);
+
+    /**
      * Tries to remove the entry with the given key from this map
      * within the specified timeout value. If the key is already locked by another
      * thread and/or member, then this operation will wait the timeout

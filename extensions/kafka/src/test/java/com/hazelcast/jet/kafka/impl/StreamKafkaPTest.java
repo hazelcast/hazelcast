@@ -55,7 +55,6 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -167,7 +166,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 String value = i + "-x";
                 assertTrue("missing entry: " + value, list.contains(value));
             }
-        }, 5);
+        });
     }
 
     @Test
@@ -219,7 +218,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         IList<Tuple2<String, String>> list = instance().getList(sinkListName);
         int totalRecordsRead = expectedRecordsReadFromTopic1 + expectedRecordsReadFromTopic2;
-        assertTrueEventually(() -> assertEquals(totalRecordsRead, list.size()), 5);
+        assertTrueEventually(() -> assertEquals(totalRecordsRead, list.size()));
 
         // group retrieved records by topic and check if expected number of records were skipped
         Map<String, List<String>> recordsByTopic = list.stream()
@@ -326,28 +325,24 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     ) {
         String sinkListName = randomName();
         for (int i = 0; i < messageCount; i++) {
-            kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
+                kafkaTestSupport.produceSync(topic1Name, i, String.valueOf(i));
         }
-        sleepAtLeastSeconds(3);
-
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.<Integer, String, String>kafka(kafkaProperties, ConsumerRecord::value, topicsConfig))
                 .withoutTimestamps()
                 .writeTo(Sinks.list(sinkListName));
 
         Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(processingGuarantee));
-        sleepAtLeastSeconds(3);
-
-        assertTrueEventually(() -> assertEquals(expectedCountBeforeRestart, instance().getList(sinkListName).size()), 5);
+        long oldExecutionId = assertJobRunningEventually(instance(), job, null);
+        assertTrueEventually(() -> assertEquals(expectedCountBeforeRestart, instance().getList(sinkListName).size()));
 
         job.restart();
 
         for (int i = messageCount; i < messageCount * 2; i++) {
             kafkaTestSupport.produce(topic1Name, i, String.valueOf(i));
         }
-        sleepAtLeastSeconds(3);
-
-        assertTrueEventually(() -> assertEquals(expectedCountAfterRestart, instance().getList(sinkListName).size()), 5);
+        assertJobRunningEventually(instance(), job, oldExecutionId);
+        assertTrueEventually(() -> assertEquals(expectedCountAfterRestart, instance().getList(sinkListName).size()));
     }
 
     @Test
@@ -390,7 +385,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                 assertTrue("missing entry: " + entry1, list.contains(entry1));
                 assertTrue("missing entry: " + entry2, list.contains(entry2));
             }
-        }, 15);
+        });
 
         if (guarantee != ProcessingGuarantee.NONE) {
             // wait until a new snapshot appears
@@ -422,7 +417,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
                     assertTrue("missing entry: " + entry1, list.contains(entry1));
                     assertTrue("missing entry: " + entry2, list.contains(entry2));
                 }
-            }, 10);
+            });
         }
 
         assertFalse(job.getFuture().isDone());
@@ -546,7 +541,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         JobConfig config = new JobConfig();
         Job job = instances[0].getJet().newJob(p, config);
 
-        assertJobStatusEventually(job, RUNNING, 10);
+        assertJobStatusEventually(job, RUNNING);
 
         int messageCount = 1000;
         for (int i = 0; i < messageCount; i++) {
@@ -556,7 +551,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         IList<Object> list = instances[0].getList(sinkListName);
         try {
             // Wait for all messages
-            assertTrueEventually(() -> assertThat(list).hasSize(messageCount), 15);
+            assertTrueEventually(() -> assertThat(list).hasSize(messageCount));
             // Check there are no more messages (duplicates..)
             assertTrueAllTheTime(() -> assertThat(list).hasSize(messageCount), 1);
         } finally {
@@ -605,7 +600,6 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         assertEquals(entry(0, "0"), consumeEventually(processor, outbox));
 
         kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 2);
-        kafkaTestSupport.resetProducer(); // this allows production to the added partition
 
         boolean somethingInPartition1 = false;
         for (int i = 1; i < 11; i++) {
@@ -654,7 +648,6 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         assertEquals(entry(1, "1"), consumeEventually(processor, outbox));
 
         kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 2);
-        kafkaTestSupport.resetProducer(); // this allows production to the added partition
 
         boolean somethingInPartition1 = false;
         for (int i = 2; i < 12; i++) {
@@ -824,13 +817,12 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         assertTrueEventually(() -> {
             assertFalse(processor.complete());
             assertFalse("no item in outbox", outbox.queue(0).isEmpty());
-        }, 3);
+        });
         assertEquals("1", outbox.queue(0).poll());
         assertNull(outbox.queue(0).poll());
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast-jet/issues/3011")
     public void when_topicDoesNotExist_then_partitionCountGreaterThanZero() {
         KafkaConsumer<Integer, String> c = kafkaTestSupport.createConsumer("non-existing-topic");
         assertGreaterOrEquals("partition count", c.partitionsFor("non-existing-topic", Duration.ofSeconds(2)).size(), 1);
@@ -868,7 +860,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         kafkaTestSupport.produce(topic1Name, 0, "0").get();
         instance().getJet().newJob(p);
-        assertTrueEventually(() -> assertThat(sinkList).contains(entry(0, "0")), 2);
+        assertTrueEventually(() -> assertThat(sinkList).contains(entry(0, "0")));
     }
 
     @SuppressWarnings("unchecked")
@@ -876,7 +868,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         assertTrueEventually(() -> {
             assertFalse(processor.complete());
             assertFalse("no item in outbox", outbox.queue(0).isEmpty());
-        }, 12);
+        });
         return (T) outbox.queue(0).poll();
     }
 
@@ -923,8 +915,6 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     private Entry<Integer, String> produceEventToNewPartition(int partitionId) throws Exception {
         String value;
         while (true) {
-            // reset the producer for each attempt as it might not see the new partition yet
-            kafkaTestSupport.resetProducer();
             value = UuidUtil.newUnsecureUuidString();
             Future<RecordMetadata> future = kafkaTestSupport.produce(topic1Name, partitionId, null, 0, value);
             RecordMetadata recordMetadata = future.get();
