@@ -28,7 +28,6 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.LocalMapStats;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.Predicate;
