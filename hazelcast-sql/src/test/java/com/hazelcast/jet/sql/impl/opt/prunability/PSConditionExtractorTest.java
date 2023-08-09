@@ -27,7 +27,6 @@ import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,6 +46,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.apache.calcite.sql.type.SqlTypeName.INTEGER;
 import static org.junit.Assert.assertEquals;
@@ -64,14 +64,14 @@ public class PSConditionExtractorTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/25033")
     public void test_singleEquals() {
         var table = partitionedTable(
                 "m",
                 asList(
                         mapField(KEY, INT, QueryPath.KEY_PATH),
                         mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
-                10).getTarget();
+                emptyList(),
+                10, emptyList(), true).getTarget();
 
         var b = new RexBuilder(typeFactory);
         var leftInputRef = b.makeInputRef(typeFactory.createSqlType(INTEGER), 0);
@@ -92,7 +92,7 @@ public class PSConditionExtractorTest extends OptimizerTestSupport {
                         mapField("comp2", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp3")),
                         mapField(KEY, OBJECT, QueryPath.KEY_PATH),
                         mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
-                Collections.emptyList(), 10, Arrays.asList("comp1", "comp2")).getTarget();
+                Collections.emptyList(), 10, Arrays.asList("comp1", "comp2"), true).getTarget();
 
         // comp0 = ?2 AND comp1 = ?1 AND comp2 = ?0
         var b = new RexBuilder(typeFactory);
@@ -126,7 +126,7 @@ public class PSConditionExtractorTest extends OptimizerTestSupport {
                         mapField("comp2", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp3")),
                         mapField(KEY, OBJECT, QueryPath.KEY_PATH),
                         mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
-                Collections.emptyList(), 10, Arrays.asList("comp1", "comp2")).getTarget();
+                Collections.emptyList(), 10, Arrays.asList("comp1", "comp2"), true).getTarget();
 
         // comp0 = ?2 AND comp1 = ?1 AND comp2 = ?0
         var b = new RexBuilder(typeFactory);
@@ -157,7 +157,7 @@ public class PSConditionExtractorTest extends OptimizerTestSupport {
                         mapField("comp2", BIGINT, QueryPath.create(QueryPath.KEY_PREFIX + "comp3")),
                         mapField(KEY, OBJECT, QueryPath.KEY_PATH),
                         mapField(VALUE, VARCHAR, QueryPath.VALUE_PATH)),
-                Collections.emptyList(), 10, Arrays.asList("comp1", "comp2")).getTarget();
+                Collections.emptyList(), 10, Arrays.asList("comp1", "comp2"), true).getTarget();
 
         // comp0 = ?2 AND comp1 = ?1 AND comp2 = ?0
         var b = new RexBuilder(typeFactory);

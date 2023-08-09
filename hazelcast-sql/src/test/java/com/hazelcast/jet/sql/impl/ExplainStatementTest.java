@@ -21,7 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningAttributeConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
-import com.hazelcast.jet.sql.impl.opt.prunability.PartitionPruningIT;
+import com.hazelcast.jet.sql.impl.opt.prunability.PartitionPruningIntegrationTest.KeyObj;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -309,7 +308,6 @@ public class ExplainStatementTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/25033")
     public void test_partitioningKeyInfoWithSimpleKey() {
         createMapping("test", Long.class, String.class);
         // non-prunable
@@ -337,7 +335,7 @@ public class ExplainStatementTest extends SqlTestSupport {
                 + ") TYPE IMap OPTIONS ("
                 + "'valueFormat'='varchar', "
                 + "'keyFormat'='java', "
-                + "'keyJavaClass'='" + PartitionPruningIT.KeyObj.class.getName() + "')");
+                + "'keyJavaClass'='" + KeyObj.class.getName() + "')");
 
         // non-prunable
         assertRowsOrdered("EXPLAIN PLAN FOR SELECT this FROM test WHERE c1 = ? AND c2 = ?", rows(1,
@@ -372,7 +370,7 @@ public class ExplainStatementTest extends SqlTestSupport {
                 + ") TYPE IMap OPTIONS ("
                 + "'valueFormat'='varchar', "
                 + "'keyFormat'='java', "
-                + "'keyJavaClass'='" + PartitionPruningIT.KeyObj.class.getName() + "')");
+                + "'keyJavaClass'='" + KeyObj.class.getName() + "')");
 
         // simple query for which member pruning is not possible
         assertRowsAnyOrder("EXPLAIN PLAN FOR SELECT this FROM test WHERE c3 = 1 AND c2 = ?" +
@@ -406,7 +404,7 @@ public class ExplainStatementTest extends SqlTestSupport {
                 + ") TYPE IMap OPTIONS ("
                 + "'valueFormat'='varchar', "
                 + "'keyFormat'='java', "
-                + "'keyJavaClass'='" + PartitionPruningIT.KeyObj.class.getName() + "')");
+                + "'keyJavaClass'='" + KeyObj.class.getName() + "')");
 
         // complicated query that should not be eligible for member pruning
         // but at least one side of the join should execute full scan that is eligible for scan partition pruning

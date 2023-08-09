@@ -112,8 +112,14 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
         // should print 0 and 1.
         assertJobStatusEventually(job, JobStatus.COMPLETED);
         List<List<Object>> lists = consumerPms.getLists();
+        List<List<Object>> nonEmptyRes = lists.stream().filter(l -> !l.isEmpty()).collect(Collectors.toList());
+
         // one of the processors should get all data
-        assertThat(lists).contains(List.of(0, 1));
+        assertThat(nonEmptyRes).isNotEmpty();
+        assertThat(nonEmptyRes.size()).isOne();
+
+        List<Object> results = nonEmptyRes.get(0);
+        assertThat(results).containsExactlyInAnyOrder(0, 1);
     }
 
     @Test
@@ -140,8 +146,14 @@ public class JetJobPrunabilityTest extends SimpleTestInClusterSupport {
 
         assertJobStatusEventually(job, JobStatus.COMPLETED);
         List<List<Object>> lists = consumerPms.getLists();
+        List<List<Object>> nonEmptyRes = lists.stream().filter(l -> !l.isEmpty()).collect(Collectors.toList());
+
         // one of the processors should get all data
-        assertThat(lists).contains(List.of(0, 1, 0, 1));
+        assertThat(nonEmptyRes).isNotEmpty();
+        assertThat(nonEmptyRes.size()).isOne();
+
+        List<Object> results = nonEmptyRes.get(0);
+        assertThat(results).containsExactlyInAnyOrder(0, 1, 1, 0);
     }
 
     @Test

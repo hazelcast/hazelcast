@@ -48,6 +48,7 @@ import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -170,6 +171,7 @@ public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalSc
             partitioningKeyValues = candidates.get(target.getSqlName()).stream()
                     .map(candidate -> fieldNames.stream()
                             .map(candidate::get)
+                            .filter(Objects::nonNull)
                             .map(RexNode::toString)
                             .collect(Collectors.joining(", ")))
                     .map(s -> "(" + s + ")")
