@@ -16,6 +16,22 @@
 
 package com.hazelcast.test.starter.test;
 
+import static com.google.common.io.Files.toByteArray;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_JAR;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_JAR;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_TEST_JAR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.util.Map;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -23,28 +39,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastVersionLocator;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.stream.Stream;
-
-import static com.google.common.io.Files.toByteArray;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_JAR;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_JAR;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_TEST_JAR;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("UnstableApiUsage")
 @RunWith(HazelcastParallelClassRunner.class)
@@ -61,17 +55,6 @@ public class HazelcastVersionLocatorTest {
     public void testDownloadVersion() throws Exception {
         // TODO This test doesn't force a redownload, so if an artifact is cached in the local repository, the download won't be
         // excercised. It's difficult to modify the local maven repository as it's not encapsulated for the scope of testing
-
-        // TODO Remove
-        Path file = Paths.get("/Users/jgreen/.m2/repository/com/hazelcast/hazelcast/4.0");
-        if (Files.exists(file)) {
-            try (Stream<Path> dirStream = Files.walk(file)) {
-                dirStream.map(Path::toFile).sorted(Comparator.reverseOrder()).forEach(File::delete);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
         Map<HazelcastVersionLocator.Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", true);
 
         assertHash(files.get(OS_JAR), "bc409b12b96ece6d05c3bd1e99b202bb", "OS");
