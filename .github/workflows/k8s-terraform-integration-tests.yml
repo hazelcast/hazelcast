@@ -58,6 +58,7 @@ jobs:
 
       - name: Copy kubeconfig
         run: |
+          echo ${KUBECONFIG}
           mkdir ${HOME}/.kube/
           touch ${HOME}/.kube/config
           kubectl config view > ${HOME}/.kube/config
