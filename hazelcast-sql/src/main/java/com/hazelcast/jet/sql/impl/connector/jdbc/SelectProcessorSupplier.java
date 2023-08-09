@@ -58,7 +58,7 @@ public class SelectProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    private static final Map<String, BiFunctionEx<ResultSet, Integer, Object>> GETTERS = new HashMap<>();
+    private Map<String, BiFunctionEx<ResultSet, Integer, Object>> GETTERS = new HashMap<>();
 
     private String query;
     private int[] parameterPositions;
@@ -149,6 +149,7 @@ public class SelectProcessorSupplier
         out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
+        out.writeObject(GETTERS);
     }
 
     @Override
@@ -156,6 +157,7 @@ public class SelectProcessorSupplier
         dataConnectionName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
+        GETTERS = in.readObject();
     }
 
     private void initializeGETTERS(SqlDialect sqldialect) {
