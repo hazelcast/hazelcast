@@ -46,6 +46,12 @@ public class FieldCollation implements Serializable, IdentifiedDataSerializable 
         nullDirection = coll.nullDirection;
     }
 
+    public FieldCollation(int index, Direction direction, NullDirection nullDirection) {
+        this.index = index;
+        this.direction = direction;
+        this.nullDirection = nullDirection;
+    }
+
     public static List<FieldCollation> convertCollation(List<RelFieldCollation> colls) {
         return Util.toList(colls, FieldCollation::new);
     }
