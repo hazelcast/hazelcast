@@ -583,6 +583,7 @@ public interface SqlConnector {
          * * - these are currently not implemented, but are a simple example.
          *
          * @return if result should be sorted if possible
+         * @since 5.4
          */
         boolean mayNeedSorting();
 

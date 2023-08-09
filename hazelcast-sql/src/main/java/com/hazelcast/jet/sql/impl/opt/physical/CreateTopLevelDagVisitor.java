@@ -736,6 +736,13 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         return objectKeys;
     }
 
+
+    /**
+     * Execute given subtree visiting operation in the context in which order of
+     * produced results is irrelevant.
+     *
+     * @see SqlConnector.DagBuildContext#mayNeedSorting
+     */
     private <T> T orderIrrelevant(Supplier<T> operation) {
         return dagBuildContext.withSorting(false, operation);
     }
