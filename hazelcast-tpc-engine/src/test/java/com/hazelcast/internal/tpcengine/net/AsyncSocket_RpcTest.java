@@ -69,7 +69,10 @@ public abstract class AsyncSocket_RpcTest {
 
     public abstract ReactorBuilder newReactorBuilder();
 
-    protected void customizeSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    protected void customizeClientSocketBuilder(AsyncSocketBuilder socketBuilder) {
+    }
+
+    protected void customizeServerSocketBuilder(AsyncSocketBuilder socketBuilder) {
     }
 
     @BeforeClass
@@ -289,7 +292,7 @@ public abstract class AsyncSocket_RpcTest {
                 .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                 .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                 .setReader(new ClientAsyncSocketReader());
-        customizeSocketBuilder(clientSocketBuilder);
+        customizeClientSocketBuilder(clientSocketBuilder);
         AsyncSocket clientSocket = clientSocketBuilder.build();
 
         clientSocket.start();
@@ -306,7 +309,7 @@ public abstract class AsyncSocket_RpcTest {
                             .set(SO_SNDBUF, SOCKET_BUFFER_SIZE)
                             .set(SO_RCVBUF, SOCKET_BUFFER_SIZE)
                             .setReader(new ServerAsyncSocketReader());
-                    customizeSocketBuilder(socketBuilder);
+                    customizeServerSocketBuilder(socketBuilder);
                     socketBuilder.build()
                             .start();
                 })
