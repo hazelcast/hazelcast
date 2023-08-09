@@ -22,18 +22,20 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.handler.ArtifactHandler;
-import org.apache.maven.artifact.handler.DefaultArtifactHandler;
-import org.apache.maven.artifact.repository.layout.ArtifactRepositoryLayout;
-import org.apache.maven.artifact.repository.layout.DefaultRepositoryLayout;
+import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.internal.impl.DefaultLocalRepositoryProvider;
+import org.eclipse.aether.internal.impl.SimpleLocalRepositoryManagerFactory;
+import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.LocalRepositoryManager;
+import org.eclipse.aether.repository.NoLocalRepositoryManagerException;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.OsHelper;
@@ -47,8 +49,32 @@ public class HazelcastVersionLocator {
         EE_JAR(true, false, "hazelcast-enterprise");
 
         private static final String GROUP_ID = "com.hazelcast";
-        private static final ArtifactHandler ARTIFACT_HANDLER = new DefaultArtifactHandler("");
-        private static final ArtifactRepositoryLayout REPOSITORY_LAYOUT = new DefaultRepositoryLayout();
+        private static final LocalRepositoryManager REPOSITORY_MANAGER;
+
+        static {
+            try {
+                // https://stackoverflow.com/a/16218772
+                // Ideally you'd run this using the maven-invoker plugin, but I couldn't get this to work -
+                // https://stackoverflow.com/q/76866880
+                final Process process = new ProcessBuilder(getMvn(), "help:evaluate", "-Dexpression=settings.localRepository",
+                        "--quiet", "--batch-mode", "-DforceStdout").start();
+
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                    // Based off
+                    // https://github.com/jbonofre/karaf5/blob/main/tooling/common/src/main/java/org/apache/karaf/minho/tooling/common/maven/Parser.java#L707
+                    final DefaultLocalRepositoryProvider repositoryProvider = new DefaultLocalRepositoryProvider();
+
+                    repositoryProvider.setLocalRepositoryManagerFactories(
+                            Collections.singletonList(new SimpleLocalRepositoryManagerFactory()));
+
+                    final LocalRepository localRepo = new LocalRepository(reader.readLine());
+                    REPOSITORY_MANAGER = repositoryProvider.newLocalRepositoryManager(MavenRepositorySystemUtils.newSession(),
+                            localRepo);
+                }
+            } catch (final IOException | NoLocalRepositoryManagerException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         private final boolean enterprise;
         private final boolean test;
@@ -60,19 +86,35 @@ public class HazelcastVersionLocator {
             this.artifactId = artifactId;
         }
 
-        private org.apache.maven.artifact.Artifact toMavenArtifact(final String version) {
-            return new DefaultArtifact(GROUP_ID, artifactId, version, "", "", test ? "tests" : "", ARTIFACT_HANDLER);
+        private org.eclipse.aether.artifact.Artifact toMavenArtifact(final String version) {
+            return new DefaultArtifact(GROUP_ID, artifactId, test ? "tests" : null, null, version);
         }
 
         /** @return a path to the artifact in the local Maven repository, downloading if required */
         private File locateArtifact(final String version) {
-            final File localCopy = new File(
-                    LOCAL_M2_REPOSITORY_PREFIX + File.separator + REPOSITORY_LAYOUT.pathOf(toMavenArtifact(version)) + ".jar");
+            final File localCopy = new File(REPOSITORY_MANAGER.getRepository().getBasedir(),
+                    REPOSITORY_MANAGER.getPathForLocalArtifact(toMavenArtifact(version)) + ".jar");
 
             if (!localCopy.exists()) {
                 downloadArtifact(version);
             }
             return localCopy;
+        }
+
+        private static String getMvn() {
+            if (OsHelper.isWindows()) {
+                return "mvn.cmd";
+            } else {
+                final String mvn = "mvn";
+
+                if (!new File(mvn).exists() && OsHelper.isMac()) {
+                    // Eclipse doesn't properly read the $PATH, so hardcode another location -
+                    // https://stackoverflow.com/q/76866453
+                    return "/opt/homebrew/bin/mvn";
+                }
+
+                return mvn;
+            }
         }
 
         private void downloadArtifact(final String version) {
@@ -106,39 +148,6 @@ public class HazelcastVersionLocator {
             }
 
             return builder.build();
-        }
-    }
-
-    private static final String LOCAL_M2_REPOSITORY_PREFIX;
-
-    static {
-        try {
-            // https://stackoverflow.com/a/16218772
-            // Ideally you'd run this using the maven-invoker plugin, but I couldn't get this to work -
-            // https://stackoverflow.com/q/76866880
-            final Process process = new ProcessBuilder(getMvn(), "help:evaluate", "-Dexpression=settings.localRepository",
-                    "--quiet", "--batch-mode", "-DforceStdout").start();
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                LOCAL_M2_REPOSITORY_PREFIX = reader.readLine();
-            }
-        } catch (final IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static String getMvn() {
-        if (OsHelper.isWindows()) {
-            return "mvn.cmd";
-        } else {
-            final String mvn = "mvn";
-
-            if (!new File(mvn).exists() && OsHelper.isMac()) {
-                // Eclipse doesn't properly read the $PATH, so hardcode another location - https://stackoverflow.com/q/76866453
-                return "/opt/homebrew/bin/mvn";
-            }
-
-            return mvn;
         }
     }
 

@@ -44,10 +44,11 @@ import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_JAR
 import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_JAR;
 import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_TEST_JAR;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("UnstableApiUsage")
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Category({ SlowTest.class, ParallelJVMTest.class })
 public class HazelcastVersionLocatorTest {
 
     @Rule
@@ -62,10 +63,13 @@ public class HazelcastVersionLocatorTest {
         // excercised. It's difficult to modify the local maven repository as it's not encapsulated for the scope of testing
 
         // TODO Remove
-        try (Stream<Path> dirStream = Files.walk(Paths.get("/Users/jgreen/.m2/repository/com/hazelcast/hazelcast/4.0"))) {
-            dirStream.map(Path::toFile).sorted(Comparator.reverseOrder()).forEach(File::delete);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        Path file = Paths.get("/Users/jgreen/.m2/repository/com/hazelcast/hazelcast/4.0");
+        if (Files.exists(file)) {
+            try (Stream<Path> dirStream = Files.walk(file)) {
+                dirStream.map(Path::toFile).sorted(Comparator.reverseOrder()).forEach(File::delete);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
 
         Map<HazelcastVersionLocator.Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", true);
@@ -78,6 +82,7 @@ public class HazelcastVersionLocatorTest {
     }
 
     private void assertHash(File file, String expectedHash, String label) throws Exception {
+        assertTrue("File \"" + file + "\" not found", file.exists());
         byte[] memberBytes = toByteArray(file);
         HashCode memberHash = md5Hash.hashBytes(memberBytes);
         assertEquals("Expected hash of Hazelcast " + label + " JAR (" + file + ")to be " + expectedHash, expectedHash,
