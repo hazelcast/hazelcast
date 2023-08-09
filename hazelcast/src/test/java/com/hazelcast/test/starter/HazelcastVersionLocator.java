@@ -60,8 +60,6 @@ public class HazelcastVersionLocator {
                         "--quiet", "--batch-mode", "-DforceStdout").start();
 
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    // Based off
-                    // https://github.com/jbonofre/karaf5/blob/main/tooling/common/src/main/java/org/apache/karaf/minho/tooling/common/maven/Parser.java#L707
                     final DefaultLocalRepositoryProvider repositoryProvider = new DefaultLocalRepositoryProvider();
 
                     repositoryProvider.setLocalRepositoryManagerFactories(
