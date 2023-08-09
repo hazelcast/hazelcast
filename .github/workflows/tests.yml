@@ -21,7 +21,6 @@ env:
 jobs:
   test:
     name: Run Tests
-    needs: build
     runs-on: ubuntu-latest
     strategy:
       matrix:
