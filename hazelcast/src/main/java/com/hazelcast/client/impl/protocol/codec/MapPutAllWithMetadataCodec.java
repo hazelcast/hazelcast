@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  * Copies all of the mappings from the specified entry list to this map, including metadata.
- * The implementation uses MergeOperation with PassThroughMergePolicy, so the effect of
+ * The implementation uses MergeOperation with PassThroughMergePolicy, so the effect of 
  * this call is equivalent to synchronizing given entries using WAN replication.
  * Please note that all the keys in the request should belong to the partition id to which this request is being sent, all keys
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
