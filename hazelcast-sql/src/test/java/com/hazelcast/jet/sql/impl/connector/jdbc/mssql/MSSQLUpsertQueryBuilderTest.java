@@ -17,18 +17,20 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.mssql;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
+import com.hazelcast.mock.MockUtil;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.MssqlSqlDialect;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 public class MSSQLUpsertQueryBuilderTest {
 
@@ -36,10 +38,11 @@ public class MSSQLUpsertQueryBuilderTest {
     JdbcTable jdbcTable;
 
     SqlDialect dialect = MssqlSqlDialect.DEFAULT;
+    private AutoCloseable openMocks;
 
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
+        openMocks = openMocks(this);
 
         when(jdbcTable.getExternalName()).thenReturn(new String[]{"table1"});
         when(jdbcTable.getExternalNameList()).thenReturn(singletonList("table1"));
@@ -47,13 +50,18 @@ public class MSSQLUpsertQueryBuilderTest {
         when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
     }
 
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
+    }
+
     @Test
-    public void appendIFClause() {
+    public void appendMergeClause() {
         MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
         StringBuilder sb = new StringBuilder();
-        builder.appendIFClause(sb);
-        String insertClause = sb.toString();
-        assertThat(insertClause).isEqualTo("IF NOT EXISTS (SELECT 1 FROM [table1] WHERE [pk1]=? AND [pk2]=?) BEGIN INSERT INTO [table1] ([field1],[field2])");
+        builder.appendMergeClause(sb);
+        String mergeClause = sb.toString();
+        assertThat(mergeClause).isEqualTo("MERGE [table1] USING (VALUES (?,?)) AS source ([field1],[field2]) ON [table1].pk1= source.pk1 AND [table1].pk2= source.pk2");
     }
 
     @Test
@@ -63,19 +71,19 @@ public class MSSQLUpsertQueryBuilderTest {
         builder.appendValuesClause(sb);
 
         String valuesClause = sb.toString();
-        assertThat(valuesClause).isEqualTo("VALUES (?,?) END");
+        assertThat(valuesClause).isEqualTo("VALUES (?,?)");
     }
 
     @Test
-    public void appendElseClause() {
+    public void appendMatchedClause() {
         MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
         StringBuilder sb = new StringBuilder();
-        builder.appendElseClause(sb);
+        builder.appendMatchedClause(sb);
 
-        String valuesClause = sb.toString();
-        assertThat(valuesClause).isEqualTo(
-                "ELSE BEGIN UPDATE [table1] SET [field1] = ? ,[field2] = ?"
-                        + "  WHERE [pk1]=? AND [pk2]=? END");
+        String matchedClause = sb.toString();
+        assertThat(matchedClause).isEqualTo(
+                "WHEN MATCHED THEN UPDATE  SET [field1] = source.[field1],[field2] = source.[field2] "
+                        + "WHEN NOT MATCHED THEN INSERT ([field1],[field2]) VALUES(source.[field1],source.[field2]);");
     }
 
     @Test
@@ -83,8 +91,9 @@ public class MSSQLUpsertQueryBuilderTest {
         MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
         String result = builder.query();
         assertThat(result).isEqualTo(
-                "IF NOT EXISTS (SELECT 1 FROM [table1] WHERE [pk1]=? AND [pk2]=?) BEGIN INSERT INTO [table1] ([field1],[field2])"
-                        + " VALUES (?,?) END ELSE BEGIN UPDATE [table1] SET [field1] = ? ,[field2] = ?  WHERE [pk1]=? AND [pk2]=? END"
+                "MERGE [table1] USING (VALUES (?,?)) AS source ([field1],[field2]) ON [table1].pk1= source.pk1 AND [table1].pk2= source.pk2 "
+                        + "WHEN MATCHED THEN UPDATE  SET [field1] = source.[field1],[field2] = source.[field2] "
+                        + "WHEN NOT MATCHED THEN INSERT ([field1],[field2]) VALUES(source.[field1],source.[field2]);"
         );
     }
 }
