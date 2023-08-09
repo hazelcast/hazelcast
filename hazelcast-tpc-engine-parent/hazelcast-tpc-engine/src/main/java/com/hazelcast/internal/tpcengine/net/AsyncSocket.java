@@ -292,7 +292,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * @param buf the IOBuffer to write.
      * @return true if the IOBuffer was accepted, false otherwise.
      */
-    public final boolean write(IOBuffer buf) {
+    public final boolean write(Object buf) {
         if (writeQueue.add(buf)) {
             return true;
         } else {
