@@ -150,6 +150,58 @@ public class JdbcInnerEquiJoinTest extends JdbcSqlTestSupport {
         );
     }
 
+    private String getDummyTable1Sql(String tableName, int id, String name) {
+        return String.format("INSERT INTO %s (id,name) VALUES(%d,%s)", tableName, id, name);
+    }
+
+    // Left side is batch : joinInfo indices are used
+    @Test
+    public void joinWithOtherJdbc_Right_Side_Has_Different_Mapping_Order() throws SQLException {
+        String otherTableName1 = randomTableName();
+        createTable(otherTableName1, "id INT PRIMARY KEY", "name VARCHAR(10)",
+                "dummy1 VARCHAR(10) DEFAULT 'dummy1'", "dummy2 VARCHAR(10) DEFAULT 'dummy2'");
+
+        String sql = getDummyTable1Sql(otherTableName1, 1, "'Alice'");
+        executeJdbc(sql);
+
+        execute(
+                "CREATE MAPPING " + otherTableName1 + " ("
+                + " id INT, "
+                + " dummy1 VARCHAR ,"
+                + " dummy2 VARCHAR ,"
+                + " name VARCHAR "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        sql = getDummyTable1Sql(otherTableName1, 2, "'Bob'");
+        executeJdbc(sql);
+
+        String otherTableName2 = randomTableName();
+        createTable(otherTableName2, "id INT PRIMARY KEY", "dummy1 VARCHAR(10) DEFAULT 'dummy1'",
+                "dummy2 VARCHAR(10) DEFAULT 'dummy2'", "name VARCHAR(10)");
+        sql = getDummyTable1Sql(otherTableName2, 1, "'Alice'");
+        executeJdbc(sql);
+
+        execute(
+                "CREATE MAPPING " + otherTableName2 + " ("
+                + " name VARCHAR ,"
+                + " id INT "
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+
+        assertRowsAnyOrder(
+                "SELECT t1.dummy1, t1.dummy2, t1.id, t2.name " +
+                "FROM " + otherTableName1 + " t1 " +
+                "JOIN " + otherTableName2 + " t2 " +
+                "   ON t1.id = t2.id AND t1.name = t2.name",
+                newArrayList(
+                        new Row("dummy1", "dummy2", 1, "Alice")
+                )
+        );
+    }
+
     // Left side is batch : joinInfo indices are used
     @Test
     public void joinWithOtherJdbcWhereClause() throws SQLException {

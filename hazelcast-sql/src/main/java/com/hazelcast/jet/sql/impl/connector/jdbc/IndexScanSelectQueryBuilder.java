@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.jet.sql.impl.HazelcastRexBuilder;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
-import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
@@ -61,14 +60,18 @@ class IndexScanSelectQueryBuilder extends AbstractQueryBuilder {
         // Join On Multiple Conditions usually use AND predicate
         // e.g.  "JOIN table2 ON table1.column = table2.column AND table1.column1 = table2.column1"
         String delimiter = "AND ";
+
+        // Check it condition is OR
         if (joinInfo.condition() instanceof OrPredicate) {
             delimiter = "OR ";
         }
         int[] rightEquiJoinIndices = joinInfo.rightEquiJoinIndices();
         String whereClause = Arrays.stream(rightEquiJoinIndices)
                 .mapToObj(index -> {
-                    TableField tableField = jdbcTable.getField(index);
-                    return tableField.getName() + " = ? ";
+                    // Get the field defined with "CREATE MAPPING ...."
+                    JdbcTableField jdbcTableField = jdbcTable.getField(index);
+                    String quotedIdentifier = dialect.quoteIdentifier(jdbcTableField.externalName());
+                    return quotedIdentifier + " = ? ";
                 })
                 .collect(Collectors.joining(delimiter));
         stringBuilder.append(whereClause);

@@ -240,22 +240,17 @@ public class JdbcJoinIndexScanProcessorSupplier
                                                       JetJoinInfo joinInfo,
                                                       List<JetSqlRow> leftRowsList)
             throws SQLException {
-        int[] rightEquiJoinIndices = joinInfo.rightEquiJoinIndices();
+        int[] leftEquiJoinIndices = joinInfo.leftEquiJoinIndices();
 
         // PreparedStatement parameter index starts from 1
-        int objectIndex = 1;
+        int parameterIndex = 1;
 
+        // leftRow contains all left table columns used in the select statement
+        // leftEquiJoinIndices contains index of columns used in the JOIN clause
         for (JetSqlRow leftRow : leftRowsList) {
-            for (int index = 0; index < rightEquiJoinIndices.length; index++) {
-                // Get value at the array
-                int rightEquiJoinIndex = rightEquiJoinIndices[index];
-
-                // If value is out of bounds. This happes for Table Valued Functions
-                if (rightEquiJoinIndex > leftRow.getValues().length - 1) {
-                    // Use index
-                    rightEquiJoinIndex = index;
-                }
-                preparedStatement.setObject(objectIndex++, leftRow.get(rightEquiJoinIndex));
+            for (int leftEquiJoinIndexValue : leftEquiJoinIndices) {
+                Object value = leftRow.get(leftEquiJoinIndexValue);
+                preparedStatement.setObject(parameterIndex++, value);
             }
         }
     }
