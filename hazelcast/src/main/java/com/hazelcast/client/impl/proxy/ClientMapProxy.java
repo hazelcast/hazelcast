@@ -1708,7 +1708,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
                        ));
 
         AtomicInteger counter = new AtomicInteger(entriesByPartition.size());
-        List<CompletableFuture<Void>> futures = new ArrayList<>(entriesByPartition.size());
+        InternalCompletableFuture<Void> resultFuture = new InternalCompletableFuture<>();
         for (Entry<Integer, ? extends List<SimpleEntryView<Data, Data>>> entry : entriesByPartition.entrySet()) {
             Integer partitionId = entry.getKey();
             ClientMessage request = MapPutAllWithMetadataCodec.encodeRequest(name, entry.getValue());
@@ -1716,17 +1716,21 @@ public class ClientMapProxy<K, V> extends ClientProxy
                     .invoke();
 
             future.whenCompleteAsync((clientMessage, throwable) -> {
+                        if (throwable != null) {
+                            resultFuture.completeExceptionally(throwable);
+                            return;
+                        }
                         if (counter.decrementAndGet() == 0) {
                             finalizePutAll(
                                     entries,
                                     entriesByPartition
                             );
+                            resultFuture.complete(null);
                         }
                     }, ConcurrencyUtil.getDefaultAsyncExecutor());
-            futures.add(new ClientDelegatingFuture<>(future, getSerializationService(), clientMessage -> null));
         }
 
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        return resultFuture;
     }
 
     protected void finalizePutAll(
