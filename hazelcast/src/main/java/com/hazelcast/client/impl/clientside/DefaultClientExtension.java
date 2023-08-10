@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.connection.tcp.ClientPlainChannelInitializer;
 import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.ClientProxyFactory;
 import com.hazelcast.client.map.impl.nearcache.NearCachedClientMapProxy;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
@@ -154,7 +155,7 @@ public class DefaultClientExtension implements ClientExtension {
         //  behaviour is not correct (it should read the ClientConfig properties). By using ClientConfig#getProperty
         //  we will be checking the ClientConfig first, and otherwise falling back to a System Property.
         String partitioningStrategyClassName = client.getClientConfig().getProperty(
-                ClusterProperty.PARTITIONING_STRATEGY_CLASS.getName());
+                ClientProperty.PARTITIONING_STRATEGY_CLASS.getName());
         if (partitioningStrategyClassName != null && !partitioningStrategyClassName.isEmpty()) {
             return ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
         } else {
