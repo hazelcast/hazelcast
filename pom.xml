@@ -92,9 +92,9 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.2</avro.version>
-        <aws.sdk.version>1.12.521</aws.sdk.version>
+        <aws.sdk.version>1.12.526</aws.sdk.version>
         <calcite.version>1.32.0</calcite.version>
-        <classgraph.version>4.8.161</classgraph.version>
+        <classgraph.version>4.8.162</classgraph.version>
         <debezium.version>1.9.7.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
         <guava.version>32.1.2-jre</guava.version>
@@ -133,7 +133,7 @@
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>2.0</snakeyaml.version>
+        <snakeyaml.version>2.1</snakeyaml.version>
         <snakeyaml.engine.version>2.6</snakeyaml.engine.version>
         <mongodb.version>4.10.2</mongodb.version>
 
@@ -145,7 +145,7 @@
         <bytebuddy.version>1.14.5</bytebuddy.version>
         <commons-codec.version>1.16.0</commons-codec.version>
         <commons-io.version>2.13.0</commons-io.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <commons-lang3.version>3.13.0</commons-lang3.version>
         <confluent.version>7.4.0</confluent.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
@@ -158,7 +158,7 @@
         <testcontainers.version>1.18.3</testcontainers.version>
         <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
-        <archunit.version>1.0.1</archunit.version>
+        <archunit.version>1.1.0</archunit.version>
         <errorprone.version>2.21.0</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
         <kubernetes-server-mock.version>6.8.0</kubernetes-server-mock.version>
@@ -547,37 +547,96 @@
                             <failOnMissing>true</failOnMissing>
                             <fileTemplate>${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl</fileTemplate>
                             <includedLicenses>
-                                <includedLicense>CC0</includedLicense>
-                                <includedLicense>Apache License, Version 2.0</includedLicense>
-                                <includedLicense>MIT License</includedLicense>
-                                <includedLicense>Public Domain</includedLicense>
-                                <includedLicense>EPL 2.0</includedLicense>
+                                <!-- 
+                                  Always use SPDX license identifiers listed in https://spdx.org/licenses (when available)
+                                  note: GPL licenses are excluded in https://github.com/hazelcast/hazelcast/blob/master/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl
+                                -->
+                                <includedLicense>Apache-2.0</includedLicense>
+                                <includedLicense>MIT</includedLicense>
+                                <includedLicense>BSD-2-Clause</includedLicense>
+                                <includedLicense>BSD-3-Clause</includedLicense>
+                                <includedLicense>CC0-1.0</includedLicense>
+                                <includedLicense>CDDL</includedLicense>
                                 <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
-                                <includedLicense>BSD 3-Clause License</includedLicense>
-                                <includedLicense>BSD 2-Clause License</includedLicense>
-                                <includedLicense>The JSON License</includedLicense>
+                                <includedLicense>EPL-1.0</includedLicense>
+                                <includedLicense>EPL-2.0</includedLicense>
+                                <includedLicense>JSON</includedLicense>
+                                <includedLicense>Public Domain</includedLicense>
                             </includedLicenses>
                             <licenseMerges>
+                                <!-- 
+                                  Only merge new 3rd Party dependency license if you get a license build failure
+                                -->
                                 <licenseMerge>
-                                    Apache License, Version 2.0|Apache License v2.0|
-                                    Apache Software License 2.0|The Apache Software License, Version 2.0|
-                                    Apache License, version 2.0|The Apache Software License, version 2.0|
-                                    Apache 2|Apache 2.0|Apache-2.0|Apache License 2.0|The Apache License, Version 2.0|
-                                    Apache Software License - Version 2.0|Apache License Version 2.0
+                                    Apache-2.0 |
+                                    Apache License v2.0 |
+                                    Apache Software License 2.0 |
+                                    The Apache Software License, Version 2.0 |
+                                    The Apache Software License, version 2.0 |
+                                    Apache License, Version 2.0 |
+                                    Apache 2 |
+                                    Apache 2.0 |
+                                    The Apache License, Version 2.0 |
+                                    Apache Software License - Version 2.0 |
+                                    Apache License Version 2.0 |
+                                    Apache License 2.0
                                 </licenseMerge>
-                                <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)</licenseMerge>
                                 <licenseMerge>
-                                    BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License|
-                                    New BSD License|New BSD license|The New BSD License|Revised BSD|BSD New license|
-                                    BSD-3-Clause|BSD 3-clause
-                                </licenseMerge>
-                                <licenseMerge>BSD 2-Clause License|BSD-2-Clause|BSD 2-Clause license</licenseMerge>
-                                <licenseMerge>CC0|Public Domain, per Creative Commons CC0</licenseMerge>
-                                <licenseMerge>
-                                    CDDL|CDDL + GPLv2 with classpath exception|CDDL License|CDDL/GPLv2+CE
+                                    MIT |
+                                    The MIT License |
+                                    MIT License |
+                                    MIT license |
+                                    The MIT License (MIT)
                                 </licenseMerge>
                                 <licenseMerge>
-                                    Eclipse Distribution License - v 1.0|EDL 1.0
+                                    BSD-2-Clause |
+                                    BSD 2-Clause License |
+                                    BSD 2-Clause license
+                                </licenseMerge>
+                                <licenseMerge>
+                                    BSD-3-Clause |
+                                    BSD 3-Clause License |
+                                    BSD |
+                                    BSD licence |
+                                    The BSD License |
+                                    3-Clause BSD License |
+                                    New BSD license |
+                                    New BSD License |
+                                    Modified BSD License |
+                                    The New BSD License |
+                                    Revised BSD |
+                                    BSD New license |
+                                    BSD 3-clause
+                                </licenseMerge>
+                                <licenseMerge>
+                                    CC0-1.0 |
+                                    CC0 |
+                                    Public Domain, per Creative Commons CC0
+                                </licenseMerge>
+                                <licenseMerge>
+                                    CDDL |
+                                    CDDL + GPLv2 with classpath exception |
+                                    CDDL License |
+                                    CDDL/GPLv2+CE
+                                </licenseMerge>
+                                <licenseMerge>
+                                    Eclipse Distribution License - v 1.0 |
+                                    EDL 1.0
+                                </licenseMerge>
+                                <licenseMerge>
+                                    EPL-1.0 |
+                                    EPL 1.0 |
+                                    Eclipse Public License - Version 1.0
+                                </licenseMerge>
+                                <licenseMerge>
+                                    EPL-2.0 |
+                                    EPL 2.0 |
+                                    Eclipse Public License - Version 2.0 |
+                                    Eclipse Public License, Version 2.0
+                                </licenseMerge>
+                                <licenseMerge>
+                                    JSON |
+                                    The JSON License
                                 </licenseMerge>
                             </licenseMerges>
                         </configuration>
@@ -1900,7 +1959,7 @@
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-iam-v1</artifactId>
-                <version>1.14.0</version>
+                <version>1.18.0</version>
             </dependency>
             <!-- Force higher version, compatible with M1 -->
             <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->

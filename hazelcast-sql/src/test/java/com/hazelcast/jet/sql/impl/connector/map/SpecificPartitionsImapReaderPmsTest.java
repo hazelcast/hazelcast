@@ -91,8 +91,8 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         map.put(0, 0);
 
         DAG dag = new DAG();
-        ProcessorMetaSupplier readPms = mapReader(mapName, List.of(
-                List.of(ConstantExpression.create(pKey, QueryDataType.INT))));
+        ProcessorMetaSupplier readPms = mapReader(mapName, null, List.of(
+                List.of(ConstantExpression.create(0, QueryDataType.INT))));
         Vertex source = dag.newVertex("source", readPms);
         Vertex sink = dag.newVertex("sink", writeMapP(sinkName));
 
@@ -110,7 +110,7 @@ public class SpecificPartitionsImapReaderPmsTest extends SimpleTestInClusterSupp
         map.put(pKey, pKey);
 
         // Given
-        ProcessorMetaSupplier pms = mapReader(mapName, List.of(
+        ProcessorMetaSupplier pms = mapReader(mapName, null, List.of(
                 List.of(ConstantExpression.create(pKey, QueryDataType.INT))
         ));
 

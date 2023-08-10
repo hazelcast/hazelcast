@@ -75,7 +75,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.AttributePartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
@@ -794,19 +793,20 @@ public class PlanExecutor {
                         throw new HazelcastException("Partition Pruning candidate"
                                 + " does not contain mandatory attribute: " + attribute);
                     }
+
                     partitionKeyComponents[i] = perMapCandidate.get(attribute).eval(null, evalContext);
                 }
 
-                final Partition partition = hazelcastInstance.getPartitionService().getPartition(
-                        PartitioningStrategyUtil.constructAttributeBasedKey(partitionKeyComponents)
-                );
-                if (partition == null) {
-                    // Can happen if the cluster is mid-repartitioning/migration, in this case we revert to
-                    // non-pruning logic. Alternative scenario is if the produced partitioning key somehow invalid.
+                final Integer partitionId = PartitioningStrategyUtil.getPartitionIdFromKeyComponents(
+                        nodeEngine, strategy, partitionKeyComponents);
+
+                if (partitionId == null) {
+                    // The produced partitioning key is somehow invalid, most likely null.
+                    // In this case we revert to non-pruning logic.
                     allVariantsValid = false;
                     break;
                 }
-                partitions.add(partition.getPartitionId());
+                partitions.add(partitionId);
             }
         }
         return allVariantsValid && partitions.size() > 0 ? partitions : emptySet();

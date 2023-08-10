@@ -180,6 +180,16 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
     }
 
     @Test
+    public void deleteAsync_successful_whenSplitBrainProtectionSize_met() throws Exception {
+        map(0).deleteAsync("foo").toCompletableFuture().get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void deleteAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
+        map(3).deleteAsync("foo").toCompletableFuture().get();
+    }
+
+    @Test
     public void delete_successful_whenSplitBrainProtectionSize_met() {
         map(0).delete("foo");
     }
