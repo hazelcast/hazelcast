@@ -23,13 +23,17 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobCoordinationService;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContextImpl;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -40,34 +44,47 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toSet;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
+    protected ExpressionEvalContext eec;
+
+    protected NodeEngine nodeEngine;
     protected SqlServiceImpl sqlService;
     protected PlanExecutor planExecutor;
     protected JobCoordinationService jobCoordinationService;
     protected PreJobInvocationObserverImpl preJobInvocationObserver;
     protected JobInvocationObserverImpl jobInvocationObserver;
 
+
     @Before
     public void setUp() throws Exception {
+        nodeEngine = getNodeEngineImpl(instance());
         preJobInvocationObserver = new PreJobInvocationObserverImpl();
         jobInvocationObserver = new JobInvocationObserverImpl();
         sqlService = (SqlServiceImpl) instance().getSql();
         planExecutor = sqlService.getOptimizer().getPlanExecutor();
-        jobCoordinationService = ((JetServiceBackend) getNodeEngineImpl(instance())
+        jobCoordinationService = ((JetServiceBackend) nodeEngine
                 .getService(JetServiceBackend.SERVICE_NAME))
                 .getJobCoordinationService();
 
         planExecutor.registerJobInvocationObserver(preJobInvocationObserver);
         jobCoordinationService.registerInvocationObserver(jobInvocationObserver);
+
+        eec = new ExpressionEvalContextImpl(
+                emptyList(),
+                Util.getSerializationService(instance()),
+                Util.getNodeEngine(instance()));
     }
 
     SqlPlanImpl.SelectPlan assertQueryPlan(String query) {
@@ -83,9 +100,17 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         return (SqlPlanImpl.SelectPlan) plan;
     }
 
-    void assertQueryResult(SqlPlanImpl.SelectPlan selectPlan, Collection<Row> expectedResults) {
+    void assertQueryResult(SqlPlanImpl.SelectPlan selectPlan, Collection<Row> expectedResults, Object... args) {
+        List<Object> arguments = Collections.emptyList();
+        if (args.length > 0) {
+            arguments = Arrays.asList(args);
+            eec = new ExpressionEvalContextImpl(
+                    arguments,
+                    Util.getSerializationService(instance()),
+                    Util.getNodeEngine(instance()));
+        }
         QueryId queryId = QueryId.create(UUID.randomUUID());
-        SqlResult result = planExecutor.execute(selectPlan, queryId, Collections.emptyList(), 0L);
+        SqlResult result = planExecutor.execute(selectPlan, queryId, arguments, 0L);
         assertCollection(expectedResults, collectResult(result));
     }
 
