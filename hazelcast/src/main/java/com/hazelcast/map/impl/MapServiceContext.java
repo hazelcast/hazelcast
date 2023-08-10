@@ -81,7 +81,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
      *
      * @see {@link MapServiceContext#isForceOffloadEnabled}
      */
-    boolean DEFAULT_FORCE_OFFLOAD_ALL_OPERATIONS = false;
+    boolean DEFAULT_FORCE_OFFLOAD_ALL_OPERATIONS = true;
     String PROP_FORCE_OFFLOAD_ALL_OPERATIONS
             = "hazelcast.internal.map.force.offload.all.map.operations";
     HazelcastProperty FORCE_OFFLOAD_ALL_OPERATIONS
