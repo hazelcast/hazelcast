@@ -16,7 +16,19 @@
 
 package com.hazelcast.security;
 
-public class SecurityInterceptorConstants {
+import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
+import com.hazelcast.internal.crdt.pncounter.PNCounterService;
+import com.hazelcast.map.impl.MapService;
+
+public final class SecurityInterceptorConstants {
+    // Service Names
+    public static final String ICACHE_SERVICE = ICacheService.SERVICE_NAME;
+    public static final String IMAP_SERVICE = MapService.SERVICE_NAME;
+    public static final String PN_COUNTER_SERVICE = PNCounterService.SERVICE_NAME;
+    public static final String CARDINALITY_ESTIMATOR_SERVICE = CardinalityEstimatorService.SERVICE_NAME;
+
+    // Method names
     public static final String ADD_ENTRY_LISTENER = "addEntryListener";
     public static final String ADD_NEAR_CACHE_INVALIDATION_LISTENER = "addNearCacheInvalidationListener";
     public static final String REMOVE_INVALIDATION_LISTENER = "removeInvalidationListener";
@@ -50,4 +62,50 @@ public class SecurityInterceptorConstants {
     public static final String REPLACE = "replace";
     public static final String SET_EXPIRY_POLICY = "setExpiryPolicy";
     public static final String SIZE = "size";
+
+    public static final String ADD = "add";
+    public static final String ESTIMATE = "estimate";
+
+    public static final String GET_CONFIGURED_REPLICA_COUNT = "getConfiguredReplicaCount";
+
+    public static final String ADD_INDEX = "addIndex";
+    public static final String ADD_INTERCEPTOR = "addInterceptor";
+    public static final String AGGREGATE = "aggregate";
+    public static final String AGGREGATE_WITH_PREDICATE = "aggregateWithPredicate";
+    public static final String CONTAINS_VALUE = "containsValue";
+    public static final String DELETE = "delete";
+    public static final String DESTROY_CACHE = "destroyCache";
+    public static final String ENTRY_SET = "entrySet";
+    public static final String EVICT_ALL = "evictAll";
+    public static final String EVICT = "evict";
+    public static final String EXECUTE_ON_ENTRIES = "executeOnEntries";
+    public static final String EXECUTE_ON_KEY = "executeOnKey";
+    public static final String EXECUTE_ON_KEYS = "executeOnKeys";
+    public static final String ITERATOR_FETCH_ENTRIES = "iteratorFetchEntries";
+    public static final String ITERATOR_FETCH_KEYS = "iteratorFetchKeys";
+    public static final String FETCH_NEAR_CACHE_INVALIDATION_METADATA = "fetchNearCacheInvalidationMetadata";
+    public static final String ITERATOR_FETCH_WITH_QUERY = "iteratorFetchWithQuery";
+    public static final String FLUSH = "flush";
+    public static final String FORCE_UNLOCK = "forceUnlock";
+    public static final String GET_ENTRY_VIEW = "getEntryView";
+    public static final String IS_EMPTY = "isEmpty";
+    public static final String IS_LOCKED = "isLocked";
+    public static final String KEY_SET = "keySet";
+    public static final String LOCK = "lock";
+    public static final String PROJECT = "project";
+    public static final String PUT_TRANSIENT = "putTransient";
+    public static final String REMOVE_ENTRY_LISTENER = "removeEntryListener";
+    public static final String REMOVE_INTERCEPTOR = "removeInterceptor";
+    public static final String REPLACE_ALL = "replaceAll";
+    public static final String SET = "set";
+    public static final String SET_TTL = "setTtl";
+    public static final String SUBMIT_TO_KEY = "submitToKey";
+    public static final String TRY_LOCK = "tryLock";
+    public static final String TRY_PUT = "tryPut";
+    public static final String TRY_REMOVE = "tryRemove";
+    public static final String UNLOCK = "unlock";
+    public static final String VALUES = "values";
+
+    private SecurityInterceptorConstants() {
+    }
 }

@@ -166,7 +166,7 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return SecurityInterceptorConstants.ICACHE_SERVICE;
     }
 
     @Override
