@@ -21,6 +21,9 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.mongodb.impl.UpdateMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoP;
 import com.hazelcast.jet.mongodb.impl.WriteMongoParams;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.mongodb.client.MongoClient;
@@ -31,6 +34,7 @@ import com.mongodb.client.model.WriteModel;
 import org.bson.Document;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 
@@ -44,18 +48,21 @@ import static java.util.Arrays.asList;
  * ProcessorSupplier that creates {@linkplain WriteMongoP} processors on each instance
  * that will delete given item.
  */
-public class DeleteProcessorSupplier implements ProcessorSupplier {
+public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
-    private final String connectionString;
-    private final String databaseName;
-    private final String collectionName;
-    private final Serializable predicate;
-    private final String[] externalNames;
-    private final boolean hasInput;
+    private String connectionString;
+    private String databaseName;
+    private String collectionName;
+    private Serializable predicate;
+    private String[] externalNames;
+    private boolean hasInput;
+    private String dataConnectionName;
+    private String idField;
     private transient SupplierEx<MongoClient> clientSupplier;
-    private final String dataConnectionName;
-    private final String idField;
     private ExpressionEvalContext evalContext;
+
+    public DeleteProcessorSupplier() {
+    }
 
     DeleteProcessorSupplier(MongoTable table, Serializable predicate, boolean hasInput) {
         this.connectionString = table.connectionString;
@@ -128,4 +135,27 @@ public class DeleteProcessorSupplier implements ProcessorSupplier {
         return row.getValues()[0];
     }
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(connectionString);
+        out.writeString(databaseName);
+        out.writeString(collectionName);
+        out.writeObject(predicate);
+        out.writeStringArray(externalNames);
+        out.writeBoolean(hasInput);
+        out.writeString(dataConnectionName);
+        out.writeString(idField);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        connectionString = in.readString();
+        databaseName = in.readString();
+        collectionName = in.readString();
+        predicate = in.readObject();
+        externalNames = in.readStringArray();
+        hasInput = in.readBoolean();
+        dataConnectionName = in.readString();
+        idField = in.readString();
+    }
 }
