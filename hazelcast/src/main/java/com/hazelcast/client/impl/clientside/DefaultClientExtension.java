@@ -150,8 +150,12 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
-        String partitioningStrategyClassName = ClusterProperty.PARTITIONING_STRATEGY_CLASS.getSystemProperty();
-        if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
+        // This method historically only fetched our strategy from the client's local System Properties - this
+        //  behaviour is not correct (it should read the ClientConfig properties). By using ClientConfig#getProperty
+        //  we will be checking the ClientConfig first, and otherwise falling back to a System Property.
+        String partitioningStrategyClassName = client.getClientConfig().getProperty(
+                ClusterProperty.PARTITIONING_STRATEGY_CLASS.getName());
+        if (partitioningStrategyClassName != null && !partitioningStrategyClassName.isEmpty()) {
             return ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
         } else {
             return new DefaultPartitioningStrategy();
