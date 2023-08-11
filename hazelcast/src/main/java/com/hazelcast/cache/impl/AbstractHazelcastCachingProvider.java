@@ -388,23 +388,12 @@ public abstract class AbstractHazelcastCachingProvider implements CachingProvide
     }
 
     /**
-     * Tests if the configuration file provided is XML. If the test fails then it's assumed to be YAML. The test is based on
-     * the file extension of the configuration file.
-     * @param configURL Configuration URL to test.
-     * @throws IllegalArgumentException if the file extension is not one of the following: .xml, .yml or .yaml.
-     * @return true if the configuration file is XML, otherwise false.
+     * Tests if the configuration file provided is a YAML file. The test is based on the file extension.
+     * @param configURL configuration URL to test.
+     * @return true if the configuration file extension is .yml or .yaml; otherwise, false.
      */
-    protected static boolean isXmlConfiguration(URL configURL) {
+    protected static boolean isYamlConfiguration(URL configURL) {
         String path = configURL.getPath();
-        if (path.endsWith(".xml")) {
-            return true;
-        }
-
-        if (path.endsWith(".yml") || path.endsWith(".yaml")) {
-            return false;
-        }
-
-        throw new IllegalArgumentException(
-                String.format("Unsupported configuration extension: %s; Supported extensions: %s", path, ".xml, .yml, .yaml"));
+        return path.endsWith(".yml") || path.endsWith(".yaml");
     }
 }

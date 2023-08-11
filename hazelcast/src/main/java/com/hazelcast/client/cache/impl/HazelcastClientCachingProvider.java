@@ -126,9 +126,9 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
     }
 
     private ClientConfig getConfig(URL configURL, ClassLoader theClassLoader, String instanceName) throws IOException {
-        ClientConfig config = isXmlConfiguration(configURL)
-                ? new XmlClientConfigBuilder(configURL).build()
-                : new YamlClientConfigBuilder(configURL).build();
+        ClientConfig config = isYamlConfiguration(configURL)
+                ? new YamlClientConfigBuilder(configURL).build()
+                : new XmlClientConfigBuilder(configURL).build();
         config.setClassLoader(theClassLoader);
         if (instanceName != null) {
             // if the instance name is specified via properties use it,
