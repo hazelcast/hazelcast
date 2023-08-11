@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Option;
+import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
@@ -33,6 +34,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.UnsupportedAddressTypeException;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
@@ -53,7 +55,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         super(builder);
         try {
             this.serverSocketChannel = builder.serverSocketChannel;
-            this.key = serverSocketChannel.register(builder.selector, 0, new Handler());
+            Handler handler = new Handler(builder, this);
+            this.key = serverSocketChannel.register(builder.selector, 0, handler);
+            handler.key = key;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -100,11 +104,26 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @SuppressWarnings("java:S1135")
-    private final class Handler implements NioHandler {
+    private static final class Handler implements NioHandler {
+
+        private final NioAsyncServerSocket socket;
+        private final Metrics metrics;
+        private final TpcLogger logger;
+        private final ServerSocketChannel serverSocketChannel;
+        private final Consumer<AbstractAsyncSocket.AcceptRequest> acceptFn;
+        private SelectionKey key;
+
+        private Handler(Builder builder, NioAsyncServerSocket socket) {
+            this.socket = socket;
+            this.metrics = builder.metrics;
+            this.logger = builder.logger;
+            this.serverSocketChannel = builder.serverSocketChannel;
+            this.acceptFn = builder.acceptFn;
+        }
 
         @Override
         public void close(String reason, Throwable cause) {
-            NioAsyncServerSocket.this.close(reason, cause);
+            socket.close(reason, cause);
         }
 
         @Override
@@ -116,8 +135,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             SocketChannel socketChannel = serverSocketChannel.accept();
             metrics.incAccepted();
             if (logger.isInfoEnabled()) {
-                logger.info(NioAsyncServerSocket.this
-                        + " accepted: " + socketChannel.getRemoteAddress()
+                logger.info(socket + " accepted: " + socketChannel.getRemoteAddress()
                         + "->" + socketChannel.getLocalAddress());
             }
 
