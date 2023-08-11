@@ -1,4 +1,7 @@
-<!-- Sorted using `xmllint &#x002D;&#x002D;c14n hz-formatter.xml hz-formatter-new.xml for diffability -->
+<!-- Sorted for diffability using:
+`cp hz-formatter.xml hz-formatter-copy.xml && \
+xmllint &#x002D;&#x002D;c14n hz-formatter-copy.xml > hz-formatter.xml && \
+rm hz-formatter-copy.xml` -->
 <profiles version="11">
     <profile kind="CodeFormatterProfile" name="Hazelcast" version="1">
         <setting id="org.eclipse.jdt.core.formatter.comment.insert_new_line_before_root_tags" value="insert"></setting>
