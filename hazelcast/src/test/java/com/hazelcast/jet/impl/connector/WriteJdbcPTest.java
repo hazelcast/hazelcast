@@ -423,8 +423,8 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     private int rowCount() throws SQLException {
         try (Connection connection = ((DataSource) createDataSource(false)).getConnection();
-             Statement statement = connection.createStatement()) {
-            ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM " + tableName);
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("SELECT COUNT(*) FROM " + tableName)) {
             if (!resultSet.next()) {
                 return 0;
             }
@@ -443,7 +443,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     private static SupplierEx<DataSource> failTwiceDataSourceSupplier() {
-        return new SupplierEx<DataSource>() {
+        return new SupplierEx<>() {
             int remainingFailures = 2;
 
             @Override
@@ -462,7 +462,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     private static BiConsumerEx<PreparedStatement, Entry<Integer, String>> failOnceBindFn() {
-        return new BiConsumerEx<PreparedStatement, Entry<Integer, String>>() {
+        return new BiConsumerEx<>() {
             int remainingFailures = 1;
 
             @Override
