@@ -51,8 +51,6 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     NioAsyncServerSocket(Builder builder) {
         super(builder);
-
-        System.out.println("NioAsyncServerSocket created");
         try {
             this.serverSocketChannel = builder.serverSocketChannel;
             this.key = serverSocketChannel.register(builder.selector, 0, new Handler());
