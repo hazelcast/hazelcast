@@ -118,6 +118,41 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
     }
 
     @Test
+    public void when_renamingScanWithCompoundPruningKey_then_prunable() {
+        // Given
+        final int c = 2; // constant
+        final String query = "SELECT * FROM hazelcast.public." + mapName + " WHERE f0 = " + c + " AND f1 = " + c;
+
+        preparePrunableMap(asList("f0", "f1"), mapName, c);
+
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
+
+        // When
+        assertQueryResult(selectPlan, singletonList(new Row(c, c, c, "" + c)));
+
+        // Then
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, eec);
+        assertPrunability(1, partitionsToUse);
+    }
+
+    @Test
+    public void when_renamingNonPartitionedScanWithCompoundPruningKey_then_nonPrunable() {
+        // Given
+        final int c = 2; // constant
+        final String query = "SELECT * FROM hazelcast.public." + mapName + " WHERE f0 = " + c + " AND f1 = " + c;
+
+        preparePrunableMap(emptyList(), mapName, c);
+
+        SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
+
+        // When
+        assertQueryResult(selectPlan, singletonList(new Row(c, c, c, "" + c)));
+
+        var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, eec);
+        assertEquals(0, partitionsToUse.size());
+    }
+
+    @Test
     public void when_keyWithNestedPartitionAwareKey_then_prunable() {
         // Given
         final long c = 2;
