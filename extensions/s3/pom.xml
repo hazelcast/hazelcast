@@ -52,6 +52,20 @@
             </plugin>
             <plugin>
                 <artifactId>maven-shade-plugin</artifactId>
+                <configuration>
+                    <filters combine.children="append">
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>Parser.jj</exclude>
+                                <exclude>META-INF/MANIFEST.MF</exclude>
+                                <exclude>META-INF/maven/**</exclude>
+                                <exclude>META-INF/NOTICE-binary</exclude>
+                                <exclude>META-INF/licenses-binary</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                </configuration>
             </plugin>
         </plugins>
     </build>
