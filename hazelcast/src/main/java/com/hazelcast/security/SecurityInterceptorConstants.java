@@ -105,6 +105,12 @@ public final class SecurityInterceptorConstants {
     public static final String TRY_REMOVE = "tryRemove";
     public static final String UNLOCK = "unlock";
     public static final String VALUES = "values";
+    public static final String ADD_CACHE_CONFIG = "addCacheConfig";
+    public static final String ADD_CARDINALITY_ESTIMATOR_CONFIG = "addCardinalityEstimatorConfig";
+    public static final String ADD_DATA_CONNECTION_CONFIG = "addDataConnectionConfig";
+    public static final String ADD_DURABLE_EXECUTOR_CONFIG = "addDurableExecutorConfig";
+    public static final String ADD_EXECUTOR_CONFIG = "addExecutorConfig";
+    public static final String ADD_FLAKE_ID_GENERATOR_CONFIG = "addFlakeIdGeneratorConfig";
 
     private SecurityInterceptorConstants() {
     }
