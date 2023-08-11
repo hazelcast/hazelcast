@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("UnstableApiUsage")
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ SlowTest.class, ParallelJVMTest.class })
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class HazelcastVersionLocatorTest {
 
     @Rule
@@ -54,7 +54,7 @@ public class HazelcastVersionLocatorTest {
     public void testDownloadVersion() throws Exception {
         // TODO This test doesn't force a re-download, so if an artifact is cached in the local repository, the download won't
         // be excercised. It's difficult to modify the local Maven repository as it's not encapsulated for the scope of testing
-        Map<HazelcastVersionLocator.Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", true);
+        final Map<HazelcastVersionLocator.Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", true);
 
         assertHash(files.get(OS_JAR), "bc409b12b96ece6d05c3bd1e99b202bb", "OS");
 
@@ -63,10 +63,10 @@ public class HazelcastVersionLocatorTest {
         assertHash(files.get(EE_JAR), "765816e628ca4ca57d5bd7387e761eaa", "EE");
     }
 
-    private void assertHash(File file, String expectedHash, String label) throws Exception {
+    private void assertHash(final File file, final String expectedHash, final String label) throws Exception {
         assertTrue("File \"" + file + "\" not found", file.exists());
-        byte[] memberBytes = toByteArray(file);
-        HashCode memberHash = md5Hash.hashBytes(memberBytes);
+        final byte[] memberBytes = toByteArray(file);
+        final HashCode memberHash = md5Hash.hashBytes(memberBytes);
         assertEquals("Expected hash of Hazelcast " + label + " JAR to be " + expectedHash, expectedHash, memberHash.toString());
     }
 }
