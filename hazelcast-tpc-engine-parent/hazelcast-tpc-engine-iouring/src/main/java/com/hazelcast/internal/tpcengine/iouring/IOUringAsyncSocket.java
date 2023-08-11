@@ -302,7 +302,6 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     System.out.println("EAGAIN");
                     // TODO: Can this lead to spinning?
                     // Deal with spurious EAGAIN; so we just reschedule the socket to be written.
-                    // todo: return value
                     networkScheduler.schedule(socket);
                 } else {
                     if (ioVector.cnt() == 1) {

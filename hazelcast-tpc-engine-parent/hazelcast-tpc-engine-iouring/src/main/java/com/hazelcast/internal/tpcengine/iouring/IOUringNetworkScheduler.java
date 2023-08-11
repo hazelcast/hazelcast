@@ -29,8 +29,10 @@ public class IOUringNetworkScheduler implements NetworkScheduler<IOUringAsyncSoc
     }
 
     @Override
-    public boolean schedule(IOUringAsyncSocket socket) {
-        return dirtyQueue.offer(socket);
+    public void schedule(IOUringAsyncSocket socket) {
+        if (!dirtyQueue.offer(socket)) {
+            throw new IllegalStateException("Too many sockets");
+        }
     }
 
     public void tick() {

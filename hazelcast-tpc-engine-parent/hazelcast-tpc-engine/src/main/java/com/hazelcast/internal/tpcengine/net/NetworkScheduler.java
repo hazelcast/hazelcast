@@ -34,12 +34,11 @@ public interface NetworkScheduler<S extends AsyncSocket> {
      * the future.
      *
      * @param socket the AsyncSocket to schedule.
-     * @return true if AsyncSocket was accepted, false otherwise.
      */
-    boolean schedule(S socket);
+    void schedule(S socket);
 
-    default boolean unsafeSchedule(S socket) {
-        return schedule(socket);
+    default void unsafeSchedule(S socket) {
+        schedule(socket);
     }
 
     boolean hasPending();

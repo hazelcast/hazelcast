@@ -255,10 +255,8 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         // schedule it at the network scheduler so it gets picked up for
         // processing.
         if (currentThread == eventloopThread) {
-            // todo: return value
             networkScheduler.unsafeSchedule(this);
         } else {
-            // todo: return value
             networkScheduler.schedule(this);
             reactor.wakeup();
         }

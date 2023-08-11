@@ -33,8 +33,10 @@ public class NioNetworkScheduler implements NetworkScheduler<NioAsyncSocket> {
     }
 
     @Override
-    public boolean schedule(NioAsyncSocket socket) {
-        return dirtyQueue.offer(socket);
+    public void schedule(NioAsyncSocket socket) {
+        if (!dirtyQueue.offer(socket)) {
+            throw new IllegalStateException("Too many sockets");
+        }
     }
 
     public void tick() {
