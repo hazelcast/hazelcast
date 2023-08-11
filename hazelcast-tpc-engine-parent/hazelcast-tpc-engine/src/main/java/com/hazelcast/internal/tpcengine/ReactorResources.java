@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
  * Contains a collection of async resources like the AsyncSocket that are
@@ -33,15 +34,28 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 public final class ReactorResources<E> {
 
     private final ConcurrentMap<E, E> map = new ConcurrentHashMap<>();
+    private final int capacity;
+
+    public ReactorResources(int capacity) {
+        this.capacity = checkPositive(capacity, "capacity");
+    }
 
     /**
      * Adds a resource. If already added, call is ignored.
      *
      * @param e the resource to add.
+     * @return true if added, false when rejected.
      * @throws NullPointerException if e is null.
      */
-    public void add(E e) {
-        map.put(e, e);
+    public boolean add(E e) {
+        synchronized (this) {
+            if (map.size() == capacity) {
+                return false;
+            }
+
+            map.put(e, e);
+            return true;
+        }
     }
 
     /**
@@ -52,6 +66,10 @@ public final class ReactorResources<E> {
      */
     public void remove(E e) {
         map.remove(e);
+    }
+
+    public int size() {
+        return map.size();
     }
 
     /**

@@ -33,6 +33,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
@@ -204,13 +205,19 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * Typically you do not want to share this AsyncSocket with other threads
      * till this method is called.
      *
-     * @throws RuntimeException if the Socket could not be started.
+     * @throws RuntimeException      if the Socket could not be started.
+     * @throws IllegalStateException if there are too many sockets on the reactor.
      */
     public final void start() {
-        if (Thread.currentThread() == eventloopThread) {
-            startInternal();
-        } else {
-            reactor.submit(this::startInternal).join();
+        try {
+            if (Thread.currentThread() == eventloopThread) {
+                startInternal();
+            } else {
+                reactor.submit(this::startInternal).join();
+            }
+        } catch (Throwable t) {
+            close("Problems during socket start", t);
+            sneakyThrow(t);
         }
     }
 
@@ -218,10 +225,18 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
         if (started) {
             throw new IllegalStateException(this + " is already started");
         }
+
+        if (!reactor.sockets().add(this)) {
+            String msg = "Exceeded the maximum number of sockets on reactor [" + reactor + "]";
+            close(msg, null);
+            throw new IllegalStateException(msg);
+        }
+
         started = true;
         start0();
     }
 
+    // Guaranteed to be running on the eventloop thread.
     protected abstract void start0();
 
 
@@ -583,7 +598,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
          * See {@code jdk.net.ExtendedSocketOptions#TCP_KEEPCOUNT}
          */
         Option<Integer> TCP_KEEPCOUNT = new Option<>("TCP_KEEPCOUNT", Integer.class);
-
 
         /**
          * Checks if the option is supported.

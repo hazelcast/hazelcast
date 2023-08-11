@@ -104,7 +104,6 @@ public final class NioAsyncSocket extends AsyncSocket {
             if (writer != null) {
                 writer.init(this);
             }
-            reactor.sockets().add(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

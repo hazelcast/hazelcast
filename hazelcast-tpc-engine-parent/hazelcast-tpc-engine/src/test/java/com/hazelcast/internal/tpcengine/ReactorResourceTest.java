@@ -23,31 +23,33 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class ReactorResourceTest {
 
     @Test
     public void add_whenNull() {
-        ReactorResources<String> resources = new ReactorResources<>();
+        ReactorResources<String> resources = new ReactorResources<>(1024);
         assertThrows(NullPointerException.class, () -> resources.add(null));
     }
 
     @Test
     public void remove_whenNull() {
-        ReactorResources<String> resources = new ReactorResources<>();
+        ReactorResources<String> resources = new ReactorResources<>(1024);
         assertThrows(NullPointerException.class, () -> resources.remove(null));
     }
 
     @Test
     public void remove_whenNotAdded() {
-        ReactorResources<String> resources = new ReactorResources<>();
+        ReactorResources<String> resources = new ReactorResources<>(1024);
         resources.remove("foo");
     }
 
     @Test
     public void test_addAndRemove() {
-        ReactorResources<String> resources = new ReactorResources<>();
+        ReactorResources<String> resources = new ReactorResources<>(1024);
 
         resources.add("a1");
         resources.add("a2");
@@ -65,14 +67,26 @@ public class ReactorResourceTest {
     }
 
     @Test
+    public void test_add_whenRejected() {
+        ReactorResources<String> resources = new ReactorResources<>(10);
+
+        for (int k = 0; k < 10; k++) {
+            assertTrue(resources.add("" + k));
+        }
+
+        assertFalse(resources.add("unwanted"));
+        assertEquals(10, resources.size());
+    }
+
+    @Test
     public void test_forEach_whenNull() {
-        ReactorResources<String> resources = new ReactorResources<>();
+        ReactorResources<String> resources = new ReactorResources<>(1024);
         assertThrows(NullPointerException.class, () -> resources.foreach(null));
     }
 
     @Test
     public void test_forEach() {
-        ReactorResources<String> resources = new ReactorResources<>();
+        ReactorResources<String> resources = new ReactorResources<>(1024);
 
         Set<String> set = new HashSet<>();
         set.add("foo1");

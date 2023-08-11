@@ -26,6 +26,7 @@ import java.lang.invoke.VarHandle;
 import java.net.SocketAddress;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
@@ -37,20 +38,16 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
     protected final Metrics metrics;
     protected final Reactor reactor;
     protected final Thread eventloopThread;
-    protected final Consumer<AcceptRequest> acceptFn;
     protected final AsyncSocket.Options options;
     protected boolean started;
 
     protected AsyncServerSocket(Builder builder) {
         super(builder);
 
+        this.options = builder.options;
         this.metrics = builder.metrics;
         this.reactor = builder.reactor;
-        this.acceptFn = builder.acceptFn;
         this.eventloopThread = reactor.eventloopThread();
-        this.options = builder.options;
-
-        reactor.serverSockets().add(this);
     }
 
     /**
@@ -173,12 +170,20 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * <p/>
      * Before accept is called, {@link #bind(SocketAddress, int)} needs to be
      * called.
+     *
+     * @throws IllegalStateException if there are too many server sockets on
+     *                               the reactor.
      */
     public final void start() {
-        if (Thread.currentThread() == eventloopThread) {
-            startInternal();
-        } else {
-            reactor.submit(this::startInternal).join();
+        try {
+            if (Thread.currentThread() == eventloopThread) {
+                startInternal();
+            } else {
+                reactor.submit(this::startInternal).join();
+            }
+        } catch (Throwable t) {
+            close("Problems during socket start", t);
+            sneakyThrow(t);
         }
     }
 
@@ -186,6 +191,13 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
         if (started) {
             throw new IllegalStateException(this + " is already started");
         }
+
+        if (!reactor.serverSockets().add(this)) {
+            String msg = "Exceeded the maximum number of server sockets on reactor [" + reactor + "]";
+            close(msg, null);
+            throw new IllegalStateException(msg);
+        }
+
         started = true;
 
         start0();

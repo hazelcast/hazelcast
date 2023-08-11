@@ -104,9 +104,10 @@ public abstract class Reactor implements Executor {
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
     private final CountDownLatch startLatch = new CountDownLatch(1);
     private final Consumer<Reactor> initFn;
-    private final ReactorResources<AsyncSocket> sockets = new ReactorResources<>();
-    private final ReactorResources<AsyncServerSocket> serverSockets = new ReactorResources<>();
-    private final ReactorResources<AsyncFile> files = new ReactorResources<>();
+    private final ReactorResources<AsyncSocket> sockets;
+    private final ReactorResources<AsyncServerSocket> serverSockets;
+    private final ReactorResources<AsyncFile> files;
+
 
     @SuppressWarnings("java:S1845")
     protected volatile State state = NEW;
@@ -122,6 +123,9 @@ public abstract class Reactor implements Executor {
         this.spin = builder.spin;
         this.engine = builder.engine;
         this.initFn = builder.initFn;
+        this.sockets = new ReactorResources<>(builder.maxSockets);
+        this.serverSockets = new ReactorResources<>(builder.maxServerSockets);
+        this.files = new ReactorResources<>(builder.maxFiles);
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
         this.eventloopThread = builder.threadFactory.newThread(new StartEventloopTask(eventloopFuture, builder));
 
@@ -692,6 +696,10 @@ public abstract class Reactor implements Executor {
                 = "hazelcast.tpc.reactor.ioInterval.ns";
         public static final String NAME_MAX_SOCKETS
                 = "hazelcast.tpc.reactor.maxSockets";
+        public static final String NAME_MAX_SERVER_SOCKETS
+                = "hazelcast.tpc.reactor.maxServerSockets";
+        public static final String NAME_MAX_FILES
+                = "hazelcast.tpc.reactor.maxFiles";
         public static final String NAME_CFS
                 = "hazelcast.tpc.reactor.cfs";
         public static final String NAME_REACTOR_AFFINITY
@@ -710,6 +718,8 @@ public abstract class Reactor implements Executor {
         private static final long DEFAULT_TARGET_LATENCY_NANOS = MILLISECONDS.toNanos(1);
         private static final long DEFAULT_MIN_GRANULARITY_NANOS = MICROSECONDS.toNanos(100);
         private static final int DEFAULT_MAX_SOCKETS = 16384;
+        private static final int DEFAULT_MAX_SERVER_SOCKETS = 16384;
+        private static final int DEFAULT_MAX_FILES = 16384;
         private static final boolean DEFAULT_CFS = true;
         private static final boolean DEFAULT_SPIN = false;
 
@@ -741,6 +751,10 @@ public abstract class Reactor implements Executor {
                 IO_URING_REACTOR_BUILDER_CONSTRUCTOR = constructor;
             }
         }
+
+
+        private final int maxServerSockets;
+        private final int maxFiles;
 
         public StorageDeviceRegistry storageDeviceRegistry;
 
@@ -874,6 +888,8 @@ public abstract class Reactor implements Executor {
             this.cfs = Boolean.parseBoolean(getProperty(NAME_CFS, Boolean.toString(DEFAULT_CFS)));
             this.threadAffinity = DEFAULT_THREAD_AFFINITY;
             this.maxSockets = Integer.getInteger(NAME_MAX_SOCKETS, DEFAULT_MAX_SOCKETS);
+            this.maxServerSockets = Integer.getInteger(NAME_MAX_SERVER_SOCKETS, DEFAULT_MAX_SERVER_SOCKETS);
+            this.maxFiles = Integer.getInteger(NAME_MAX_FILES, DEFAULT_MAX_FILES);
         }
 
         /**
@@ -912,6 +928,8 @@ public abstract class Reactor implements Executor {
             super.conclude();
 
             checkPositive(maxSockets, "maxSockets");
+            checkPositive(maxServerSockets, "maxServerSockets");
+            checkPositive(maxFiles, "maxFiles");
             checkPositive(runQueueCapacity, "runQueueCapacity");
             checkPositive(targetLatencyNanos, "targetLatencyNanos");
             checkPositive(minGranularityNanos, "minGranularityNanos");

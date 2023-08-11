@@ -186,6 +186,8 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
                     try {
                         acceptFn.accept(acceptRequest);
                     } catch (Throwable t) {
+
+                        // todo: logging mismatch between this and NioAsyncServersocket.
                         logger.severe(t);
 
                         // If for whatever reason the socket isn't consumed, we need
@@ -201,6 +203,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
                     throw newCQEFailedException("Failed to accept a socket.", "accept(2)", IORING_OP_ACCEPT, -res);
                 }
             } catch (Exception e) {
+                // todo: do we want to close the server socket on error of a handler??
                 socket.close(null, e);
             } finally {
                 if (closed) {

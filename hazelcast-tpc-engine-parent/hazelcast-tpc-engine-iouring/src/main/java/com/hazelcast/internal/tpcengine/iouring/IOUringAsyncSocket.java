@@ -86,7 +86,6 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         if (writer != null) {
             writer.init(this);
         }
-        reactor.sockets().add(this);
     }
 
     @Override
@@ -296,7 +295,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     if (writerClean && sndBufferClean && ioVector.isEmpty() && writeQueue.isEmpty()) {
                         socket.resetFlushed();
                     } else {
-                         networkScheduler.schedule(socket);
+                        networkScheduler.schedule(socket);
                     }
                 } else if (res == -EAGAIN) {
                     System.out.println("EAGAIN");
