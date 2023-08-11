@@ -41,11 +41,9 @@ import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
@@ -86,7 +84,6 @@ public class TpcServerBootstrap {
     @SuppressWarnings("java:S1170")
     private final boolean tcpNoDelay = true;
     private final boolean enabled;
-    private final Map<Reactor, Supplier<? extends AsyncSocket.Reader>> readHandlerSuppliers = new HashMap<>();
     private final List<AsyncServerSocket> serverSockets = new ArrayList<>();
     private final Config config;
     private volatile List<Integer> clientPorts;
@@ -164,7 +161,7 @@ public class TpcServerBootstrap {
                     return operationThread;
                 };
 
-                reactorBuilder.defaultTaskQueueBuilder =  new TaskQueue.Builder();
+                reactorBuilder.defaultTaskQueueBuilder = new TaskQueue.Builder();
                 reactorBuilder.defaultTaskQueueBuilder.processor = operationThread;
                 reactorBuilder.defaultTaskQueueBuilder.outside = operationThread.getQueue();
                 //ugly, but needed for now
@@ -190,11 +187,11 @@ public class TpcServerBootstrap {
         }
 
         tpcEngine.start();
-        openTpcServerSocketsForClients();
+        setupServerSocketsForClients();
         clientPorts = serverSockets.stream().map(AsyncServerSocket::getLocalPort).collect(Collectors.toList());
     }
 
-    private void openTpcServerSocketsForClients() {
+    private void setupServerSocketsForClients() {
         TpcSocketConfig socketConfig = getClientSocketConfig();
 
         String[] range = socketConfig.getPortRange().split("-");
@@ -206,18 +203,13 @@ public class TpcServerBootstrap {
         for (int k = 0; k < tpcEngine.reactorCount(); k++) {
             Reactor reactor = tpcEngine.reactor(k);
 
-            Supplier<AsyncSocket.Reader> readHandlerSupplier =
-                    () -> new ClientMessageAsyncSocketReader(nodeEngine.getNode().clientEngine, nodeEngine.getProperties());
-            readHandlerSuppliers.put(reactor, readHandlerSupplier);
-
             AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
-
             // for window scaling to work, this property needs to be set
             serverSocketBuilder.options.set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE);
-
             serverSocketBuilder.acceptFn = acceptRequest -> {
                 AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
-                socketBuilder.reader = readHandlerSuppliers.get(reactor).get();
+                socketBuilder.reader = new ClientMessageAsyncSocketReader(
+                        nodeEngine.getNode().clientEngine, nodeEngine.getProperties());
                 socketBuilder.writer = new ClientMessageAsyncSocketWriter();
                 socketBuilder.options.set(SO_SNDBUF, socketConfig.getSendBufferSizeKB() * KILO_BYTE);
                 socketBuilder.options.set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE);

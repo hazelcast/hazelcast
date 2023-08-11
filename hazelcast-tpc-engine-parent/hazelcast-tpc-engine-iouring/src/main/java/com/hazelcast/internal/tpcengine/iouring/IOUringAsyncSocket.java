@@ -293,13 +293,10 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                         ioVector.compact(res);
                     }
 
-                    // todo: this will not compact the underlying bytebuffer.
-
                     if (writerClean && sndBufferClean && ioVector.isEmpty() && writeQueue.isEmpty()) {
                         socket.resetFlushed();
                     } else {
-                        // todo: we don't need to
-                        networkScheduler.schedule(socket);
+                         networkScheduler.schedule(socket);
                     }
                 } else if (res == -EAGAIN) {
                     System.out.println("EAGAIN");

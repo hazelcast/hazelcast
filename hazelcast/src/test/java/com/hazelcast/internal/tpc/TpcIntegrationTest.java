@@ -36,9 +36,9 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class TpcIntegrationTest extends HazelcastTestSupport {
-    private static final int PRINT_PROGRESS_INTERVAL = 100;
+    private static final int PRINT_PROGRESS_INTERVAL = 1000;
 
-    public int iterations = 100;
+    public int iterations = 10000;
     private final ILogger logger = Logger.getLogger(getClass());
     private HazelcastInstance server;
     private HazelcastInstance client;
@@ -70,9 +70,9 @@ public class TpcIntegrationTest extends HazelcastTestSupport {
         long startTime = System.currentTimeMillis();
 
         for (int k = 0; k < iterations; k++) {
-            //if (k % (iterations / PRINT_PROGRESS_INTERVAL) == 0) {
-            logger.info(">> At:" + k);
-            //}
+            if (k % PRINT_PROGRESS_INTERVAL == 0) {
+                logger.info(">> At:" + k);
+            }
             map.put(k, k);
         }
 
