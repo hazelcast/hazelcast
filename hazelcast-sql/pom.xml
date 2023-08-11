@@ -309,7 +309,6 @@
                                     <excludes>
                                         <exclude>Parser.jj</exclude>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
-                                        <exclude>META-INF/maven/**</exclude>
                                         <exclude>META-INF/NOTICE-binary</exclude>
                                         <exclude>META-INF/licenses-binary/**</exclude>
                                     </excludes>
@@ -321,7 +320,6 @@
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
-                                        <exclude>META-INF/maven/**</exclude>
                                         <exclude>META-INF/licenses-binary/**</exclude>
                                         <exclude>**/package-info.java</exclude>
                                         <exclude>org/apache/calcite/runtime/CalciteResource.properties</exclude>
@@ -335,7 +333,6 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
-                                        <exclude>META-INF/maven/**</exclude>
                                         <exclude>META-INF/licenses-binary/**</exclude>
                                     </excludes>
                                 </filter>
