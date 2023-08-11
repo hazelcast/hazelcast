@@ -71,11 +71,11 @@ public abstract class AsyncFile {
 
     // todo: should be made private and using a varhandle it should be modified
     public int fd = -1;
+    protected final IntPromiseAllocator promiseAllocator;
     private final Metrics metrics = new Metrics();
     private final Eventloop eventloop;
     private final String path;
     private final StorageScheduler scheduler;
-    private final IntPromiseAllocator promiseAllocator;
 
     // todo: Using path as a string forces creating litter.
 

@@ -21,6 +21,7 @@ import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.channels.AsynchronousFileChannel;
 
@@ -42,6 +43,13 @@ public class NioAsyncFile extends AsyncFile {
 
     @Override
     public IntPromise delete() {
-        throw new RuntimeException("Not yet implemented");
+        File file = new File(path());
+        IntPromise promise = promiseAllocator.allocate();
+        if (file.delete()) {
+            promise.complete(0);
+        } else {
+            promise.completeExceptionally(new IOException("Failed to delete [" + path() + "]"));
+        }
+        return promise;
     }
 }
