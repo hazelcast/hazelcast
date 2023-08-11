@@ -274,8 +274,8 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
             return;
         }
 
-        // Darn, even though we successfully managed to unflush, the socket is
-        // dirty So we need to flush it to prevent ending up with dirty socket
+        // Darn, even though we successfully managed to reset flushed, the socket
+        // is dirty So we need to flush it to prevent ending up with dirty socket
         // that isn't flushed.
         flush();
     }
