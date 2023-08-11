@@ -52,8 +52,8 @@ public class HazelcastVersionLocatorTest {
 
     @Test
     public void testDownloadVersion() throws Exception {
-        // TODO This test doesn't force a redownload, so if an artifact is cached in the local repository, the download won't be
-        // excercised. It's difficult to modify the local maven repository as it's not encapsulated for the scope of testing
+        // TODO This test doesn't force a re-download, so if an artifact is cached in the local repository, the download won't
+        // be excercised. It's difficult to modify the local Maven repository as it's not encapsulated for the scope of testing
         Map<HazelcastVersionLocator.Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", true);
 
         assertHash(files.get(OS_JAR), "bc409b12b96ece6d05c3bd1e99b202bb", "OS");
