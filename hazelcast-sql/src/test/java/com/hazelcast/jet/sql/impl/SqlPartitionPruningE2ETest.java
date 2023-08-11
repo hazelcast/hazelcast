@@ -199,21 +199,22 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
     public void when_selfUnionAllForOrPredicateAndSimplePruningKey_then_prunable() {
         // Given
         final int[] c = new int[]{2, 3}; // constants
-        final String query = "(SELECT f2 FROM " + mapName + " WHERE f0 = " + c[0] + ")"
+        final String query = "(SELECT * FROM " + mapName + " WHERE f1 = " + c[0] + ")"
                 + " UNION ALL "
-                + "(SELECT f2 FROM " + mapName + " WHERE f0 = " + c[1] + ")";
+                + "(SELECT * FROM " + mapName + " WHERE f1 = " + c[1] + ")";
 
-        preparePrunableMap(singletonList("f0"), mapName, c);
+        preparePrunableMap(singletonList("f1"), mapName, c);
 
         SqlPlanImpl.SelectPlan selectPlan = assertQueryPlan(query);
 
         // When
-        assertQueryResult(selectPlan, asList(new Row(c[0]), new Row(c[1])));
+        assertQueryResult(selectPlan, asList(
+                new Row(c[0], c[0], c[0], "" + c[0]),
+                new Row(c[1], c[1], c[1], "" + c[1])));
 
         // Then
         var partitionsToUse = planExecutor.tryUsePrunability(selectPlan, eec);
         assertPrunability(c.length, partitionsToUse);
-        // endregion
     }
 
     @Test
@@ -379,7 +380,7 @@ public class SqlPartitionPruningE2ETest extends SqlEndToEndTestSupport {
         for (int equalityConstants : partitionedPredicateConstants) {
             Object[] constants = new Object[arity];
             Arrays.fill(constants, equalityConstants);
-            Data keyData = nodeEngine.getSerializationService().toData(constants, v -> v);
+            Data keyData = nodeEngine.getSerializationService().toData(constructAttributeBasedKey(constants), v -> v);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(keyData);
             assertTrue(reversedPartitionAssignment.containsKey(partitionId));
 
