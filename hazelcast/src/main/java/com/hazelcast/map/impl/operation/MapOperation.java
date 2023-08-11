@@ -403,7 +403,7 @@ public abstract class MapOperation extends AbstractNamedOperation
      * one-partition which matches partitionId of the map name.
      */
     protected final void invalidateAllKeysInNearCaches() {
-        if (mapContainer.hasInvalidationListener()) {
+        if (mapContainer != null && mapContainer.hasInvalidationListener()) {
             int partitionId = getPartitionId();
             Invalidator invalidator = getNearCacheInvalidator();
 
