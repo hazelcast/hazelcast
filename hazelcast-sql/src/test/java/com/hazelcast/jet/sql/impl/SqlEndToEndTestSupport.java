@@ -123,7 +123,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         return actualRows;
     }
 
-    protected static class PreJobInvocationObserverImpl implements PreJobInvocationObserver {
+    public static class PreJobInvocationObserverImpl implements PreJobInvocationObserver {
         public DAG dag;
         public JobConfig jobConfig;
 
@@ -134,7 +134,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         }
     }
 
-    protected static class JobInvocationObserverImpl implements JobInvocationObserver {
+    public static class JobInvocationObserverImpl implements JobInvocationObserver {
         public long jobId;
         public Set<MemberInfo> members;
         public DAG dag;
