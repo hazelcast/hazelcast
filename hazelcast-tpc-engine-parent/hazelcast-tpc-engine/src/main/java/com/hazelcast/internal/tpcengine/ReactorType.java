@@ -42,7 +42,7 @@ public enum ReactorType {
         } else if (type.equalsIgnoreCase("nio")) {
             return NIO;
         } else {
-            throw new IllegalArgumentException("Reactor type [" + type + "] not recognized.");
+            throw new IllegalArgumentException("Reactor type [" + type + "] is not recognized.");
         }
     }
 }
