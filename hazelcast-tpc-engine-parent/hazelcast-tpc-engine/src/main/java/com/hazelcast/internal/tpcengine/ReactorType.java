@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+
 /**
  * The Type of {@link Reactor}.
  * <p/>
@@ -31,12 +33,16 @@ public enum ReactorType {
     IOURING;
 
     public static ReactorType fromString(String type) {
-        if (type.equalsIgnoreCase("io_uring") || type.equalsIgnoreCase("iouring")) {
+        checkNotNull(type, "type");
+
+        if (type.equalsIgnoreCase("io_uring")
+                || type.equalsIgnoreCase("iouring")
+                || type.equalsIgnoreCase("uring")) {
             return IOURING;
         } else if (type.equalsIgnoreCase("nio")) {
             return NIO;
         } else {
-            throw new IllegalArgumentException("Unrecognized reactor type [" + type + ']');
+            throw new IllegalArgumentException("Reactor type [" + type + "] not recognized.");
         }
     }
 }

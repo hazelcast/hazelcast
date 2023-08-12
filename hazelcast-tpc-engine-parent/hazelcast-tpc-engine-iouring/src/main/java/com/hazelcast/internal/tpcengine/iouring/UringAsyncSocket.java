@@ -275,12 +275,12 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         @Override
         public void completeRequest(int res, int flags, long userdata) {
-            //System.out.println(IOUringAsyncSocket.this + " CompletionHandler_OP_WRITEV.handle");
+            //System.out.println(socket + " CompletionHandler_OP_WRITEV.handle");
             try {
                 if (res >= 0) {
                     metrics.incBytesWritten(res);
                     metrics.incWrites();
-                    //System.out.println(IOUringAsyncSocket.this + " written " + res);
+                    //System.out.println(socket + " written " + res);
 
                     boolean sndBufferClean = true;
                     if (sndBuffer != null) {
@@ -370,7 +370,7 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         @Override
         public void completeRequest(int res, int flags, long userdata) {
-            // System.out.println(IOUringAsyncSocket.this + " CompletionHandler_OP_READ.handle");
+            // System.out.println(socket + " CompletionHandler_OP_READ.handle");
             try {
                 if (res > 0) {
                     int bytesRead = res;
@@ -407,9 +407,9 @@ public final class UringAsyncSocket extends AsyncSocket {
 
                 // TODO: It could be that we run into an EAGAIN or EWOULDBLOCK.
 
-                //System.out.println(IOUringAsyncSocket.this + " bytes read:" + res);
+                //System.out.println(socket + " bytes read:" + res);
             } catch (Exception e) {
-                socket.close("Closing IOUringAsyncSocket due to exception", e);
+                socket.close("Closing due to exception", e);
             }
         }
     }
@@ -417,11 +417,11 @@ public final class UringAsyncSocket extends AsyncSocket {
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity",
             "checkstyle:returncount",
             "checkstyle:SimplifyBooleanReturn"})
-    public static class IOUringOptions implements Options {
+    public static class UringOptions implements Options {
 
         private final LinuxSocket nativeSocket;
 
-        IOUringOptions(LinuxSocket nativeSocket) {
+        UringOptions(LinuxSocket nativeSocket) {
             this.nativeSocket = nativeSocket;
         }
 
@@ -537,7 +537,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                 this.linuxSocket = acceptRequest.linuxSocket;
                 this.clientSide = false;
             }
-            this.options = new IOUringOptions(linuxSocket);
+            this.options = new UringOptions(linuxSocket);
         }
 
         @Override

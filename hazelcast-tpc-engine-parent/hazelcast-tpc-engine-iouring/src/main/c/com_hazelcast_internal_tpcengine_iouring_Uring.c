@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "include/com_hazelcast_internal_tpcengine_iouring_IOUring.h"
+#include "include/com_hazelcast_internal_tpcengine_iouring_Uring.h"
 #include "include/io_uring.h"
 #include "include/utils.h"
 

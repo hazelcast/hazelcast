@@ -26,7 +26,7 @@ import java.nio.file.Files;
 import java.util.UUID;
 
 /**
- * Contains the functionality for loading the IOUring library.
+ * Contains the functionality for loading the io_uring library.
  */
 @SuppressWarnings({"checkstyle:SimplifyBooleanReturn", "checkstyle:no-uuid-randomUUID"})
 public final class UringLibrary {
@@ -110,5 +110,4 @@ public final class UringLibrary {
             return true;
         }
     }
-
 }

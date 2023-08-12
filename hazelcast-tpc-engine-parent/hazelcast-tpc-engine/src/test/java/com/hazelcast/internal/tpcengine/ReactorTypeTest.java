@@ -29,6 +29,7 @@ public class ReactorTypeTest {
         assertEquals(ReactorType.IOURING, ReactorType.fromString("iouring"));
         assertEquals(ReactorType.IOURING, ReactorType.fromString("io_uring"));
         assertEquals(ReactorType.IOURING, ReactorType.fromString("IOURING"));
+        assertEquals(ReactorType.IOURING, ReactorType.fromString("uring"));
     }
 
     @Test(expected = NullPointerException.class)

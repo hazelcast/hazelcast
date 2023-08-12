@@ -55,7 +55,6 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final LinuxSocket linuxSocket;
-    //   private final IOUringEventloop eventloop;
     private final AcceptHandler acceptHandler;
     private final Uring uring;
     private boolean bind;
@@ -214,11 +213,11 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     }
 
     @SuppressWarnings("checkstyle:SimplifyBooleanReturn")
-    public static class IOUringOptions implements AsyncSocket.Options {
+    public static class UringOptions implements AsyncSocket.Options {
 
         private final LinuxSocket nativeSocket;
 
-        IOUringOptions(LinuxSocket nativeSocket) {
+        UringOptions(LinuxSocket nativeSocket) {
             this.nativeSocket = nativeSocket;
         }
 
@@ -293,7 +292,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
             // to conclude.
             this.linuxSocket = LinuxSocket.openTcpIpv4Socket();
             linuxSocket.setBlocking(true);
-            this.options = new IOUringOptions(linuxSocket);
+            this.options = new UringOptions(linuxSocket);
         }
 
         @Override

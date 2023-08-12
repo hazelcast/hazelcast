@@ -24,7 +24,7 @@ import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 
 /**
- * IOUring implementation of the {@link AsyncFile}.
+ * io_uring implementation of the {@link AsyncFile}.
  */
 @SuppressWarnings({"checkstyle:TrailingComment"})
 public final class UringAsyncFile extends AsyncFile {

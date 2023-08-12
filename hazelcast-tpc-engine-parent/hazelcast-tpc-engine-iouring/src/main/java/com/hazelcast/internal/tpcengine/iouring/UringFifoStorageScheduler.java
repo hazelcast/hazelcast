@@ -79,8 +79,8 @@ public class UringFifoStorageScheduler implements StorageScheduler {
 
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final StringBuilder msgBuilder = new StringBuilder();
-    private final SlabAllocator<IOUringStorageRequest> requestAllocator;
-    private final CircularQueue<IOUringStorageRequest> stagingQueue;
+    private final SlabAllocator<UringStorageRequest> requestAllocator;
+    private final CircularQueue<UringStorageRequest> stagingQueue;
     private final SubmissionQueue submissionQueue;
     private final CompletionQueue completionQueue;
     private final int maxIoDepth;
@@ -91,7 +91,7 @@ public class UringFifoStorageScheduler implements StorageScheduler {
                                      int maxIoDepth,
                                      int capacity) {
         this.maxIoDepth = maxIoDepth;
-        this.requestAllocator = new SlabAllocator<>(capacity, IOUringStorageRequest::new);
+        this.requestAllocator = new SlabAllocator<>(capacity, UringStorageRequest::new);
         this.pathAllocator = new NonConcurrentIOBufferAllocator(512, true);
         this.stagingQueue = new CircularQueue<>(capacity);
         this.submissionQueue = uring.sq();
@@ -105,7 +105,7 @@ public class UringFifoStorageScheduler implements StorageScheduler {
 
     @Override
     public void schedule(StorageRequest req) {
-        if (!stagingQueue.offer((IOUringStorageRequest) req)) {
+        if (!stagingQueue.offer((UringStorageRequest) req)) {
             throw new IllegalStateException("Too many concurrent requests");
         }
     }
@@ -113,7 +113,7 @@ public class UringFifoStorageScheduler implements StorageScheduler {
     @Override
     public void tick() {
         // Submits as many staged requests as allowed to the submission queue.
-        // Completion events are processed in the IOUringEventloop, so we
+        // Completion events are processed in the eventloop, so we
         // don't need to deal with that here.
         int submitCount = min(maxIoDepth - ioDepth, stagingQueue.size());
 
@@ -125,14 +125,14 @@ public class UringFifoStorageScheduler implements StorageScheduler {
             }
 
             ioDepth++;
-            IOUringStorageRequest req = stagingQueue.poll();
+            UringStorageRequest req = stagingQueue.poll();
             long userdata = completionQueue.nextTmpHandlerId();
             completionQueue.register(userdata, req);
             req.writeSqe(sqIndex, userdata);
         }
     }
 
-    final class IOUringStorageRequest extends StorageRequest implements CompletionHandler {
+    final class UringStorageRequest extends StorageRequest implements CompletionHandler {
 
         void writeSqe(int sqIndex, long userdata) {
             long sqeAddr = submissionQueue.sqesAddr + sqIndex * SIZEOF_SQE;

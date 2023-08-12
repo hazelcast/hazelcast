@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>Contains the IOUring Eventloop<br>
+ * <p>Contains the io_uring reactor<br>
  */
 package com.hazelcast.internal.tpcengine.iouring;

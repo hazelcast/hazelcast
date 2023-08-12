@@ -27,7 +27,7 @@ public class UringLibraryTest {
     public void test() {
         assumeTrue(UringLibrary.isAvailable());
 
-        // ensure that we can actually load the IOUring.
+        // ensure that we can actually load the Uring.
         Uring uring = new Uring(10, 0);
         assertNotNull(uring.sq());
         assertNotNull(uring.cq());
