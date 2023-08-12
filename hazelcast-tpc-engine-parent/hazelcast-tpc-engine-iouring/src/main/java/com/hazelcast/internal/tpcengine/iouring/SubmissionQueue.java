@@ -21,9 +21,9 @@ import sun.misc.Unsafe;
 
 import java.io.UncheckedIOException;
 
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_ENTER_GETEVENTS;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_ENTER_REGISTERED_RING;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_NOP;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_ENTER_GETEVENTS;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_ENTER_REGISTERED_RING;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_NOP;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
@@ -60,15 +60,15 @@ public final class SubmissionQueue {
     int ringEntries;
     int localTail;
     int localHead;
-    private final IOUring uring;
+    private final Uring uring;
 
-    SubmissionQueue(IOUring uring) {
+    SubmissionQueue(Uring uring) {
         this.uring = uring;
         this.ringFd = uring.ringFd;
         this.enterRingFd = uring.enterRingFd;
     }
 
-    public IOUring uring() {
+    public Uring uring() {
         return uring;
     }
 
@@ -195,7 +195,7 @@ public final class SubmissionQueue {
             flags |= IORING_ENTER_REGISTERED_RING;
         }
 
-        return IOUring.enter(enterRingFd, toSubmit, minComplete, flags);
+        return Uring.enter(enterRingFd, toSubmit, minComplete, flags);
     }
 
     /**
@@ -213,7 +213,7 @@ public final class SubmissionQueue {
             flags |= IORING_ENTER_REGISTERED_RING;
         }
 
-        int res = IOUring.enter(enterRingFd, toSubmit, 1, flags);
+        int res = Uring.enter(enterRingFd, toSubmit, 1, flags);
 
         if (res >= 0) {
             return toSubmit;
@@ -240,7 +240,7 @@ public final class SubmissionQueue {
         // release store.
         UNSAFE.putOrderedInt(null, this.tailAddr, localTail);
 
-        int res = IOUring.enter(enterRingFd, toSubmit, 0, flags);
+        int res = Uring.enter(enterRingFd, toSubmit, 0, flags);
         if (res < 0) {
             throw newEnterFailedException(-res);
         }

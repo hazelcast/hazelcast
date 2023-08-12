@@ -18,7 +18,7 @@ package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.iouring.AcceptMemory;
 import com.hazelcast.internal.tpcengine.iouring.CompletionQueue;
-import com.hazelcast.internal.tpcengine.iouring.IOUring;
+import com.hazelcast.internal.tpcengine.iouring.Uring;
 import com.hazelcast.internal.tpcengine.iouring.LinuxSocket;
 import com.hazelcast.internal.tpcengine.iouring.SubmissionQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
@@ -30,9 +30,9 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_ACCEPT;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_RECV;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_SEND;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_ACCEPT;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_RECV;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_SEND;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_CLOEXEC;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_NONBLOCK;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
@@ -89,7 +89,7 @@ public class EchoBenchmark_Naked_IOUring {
         private long sendBufferAddress;
         final LinuxSocket socket = LinuxSocket.openTcpIpv4Socket();
         final CompletionHandler handler = new CompletionHandler();
-        private IOUring uring;
+        private Uring uring;
         private SubmissionQueue sq;
         private CompletionQueue cq;
 
@@ -99,7 +99,7 @@ public class EchoBenchmark_Naked_IOUring {
 
         @Override
         public void run() {
-            uring = new IOUring(4096, iouringSetupFlags);
+            uring = new Uring(4096, iouringSetupFlags);
             sq = uring.sq();
             cq = uring.cq();
 
@@ -218,7 +218,7 @@ public class EchoBenchmark_Naked_IOUring {
     private static class ServerThread extends Thread {
         private int handlerIdGenerator = 0;
         private Handler[] handlers = new Handler[1024];
-        IOUring uring;
+        Uring uring;
         SubmissionQueue sq;
         CompletionQueue cq;
         final LinuxSocket serverSocket = LinuxSocket.openTcpIpv4Socket();
@@ -227,7 +227,7 @@ public class EchoBenchmark_Naked_IOUring {
 
         @Override
         public void run() {
-            uring = new IOUring(4096, iouringSetupFlags);
+            uring = new Uring(4096, iouringSetupFlags);
             sq = uring.sq();
             cq = uring.cq();
             try {

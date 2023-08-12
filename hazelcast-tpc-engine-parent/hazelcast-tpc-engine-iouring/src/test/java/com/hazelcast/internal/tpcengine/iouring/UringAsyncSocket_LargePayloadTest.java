@@ -16,20 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import org.junit.Test;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket_LargePayloadTest;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+public class UringAsyncSocket_LargePayloadTest extends AsyncSocket_LargePayloadTest {
 
-public class IOUringLibraryTest {
-
-    @Test
-    public void test() {
-        assumeTrue(IOUringLibrary.isAvailable());
-
-        // ensure that we can actually load the IOUring.
-        IOUring uring = new IOUring(10, 0);
-        assertNotNull(uring.sq());
-        assertNotNull(uring.cq());
+    @Override
+    public Reactor.Builder newReactorBuilder() {
+        return new UringReactor.Builder();
     }
 }

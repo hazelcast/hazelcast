@@ -17,12 +17,12 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.net.AsyncSocket_LargePayloadTest;
+import com.hazelcast.internal.tpcengine.file.FileCopyTest;
 
-public class IOUringAsyncSocket_LargePayloadTest extends AsyncSocket_LargePayloadTest {
+public class UringFileCopyTest extends FileCopyTest {
 
     @Override
-    public Reactor.Builder newReactorBuilder() {
-        return new IOUringReactor.Builder();
+    public Reactor newReactor() {
+        return new UringReactor.Builder().build();
     }
 }

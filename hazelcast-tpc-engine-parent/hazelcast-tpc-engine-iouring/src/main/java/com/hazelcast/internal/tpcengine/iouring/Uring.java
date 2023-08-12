@@ -31,10 +31,10 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * IORING_SETUP_SINGLE_ISSUER
  */
 @SuppressWarnings({"checkstyle:ParameterName", "checkstyle:ConstantName"})
-public final class IOUring implements AutoCloseable {
+public final class Uring implements AutoCloseable {
 
     static {
-        IOUringLibrary.ensureAvailable();
+        UringLibrary.ensureAvailable();
     }
 
     public static final byte IORING_OP_NOP = 0;
@@ -200,7 +200,7 @@ public final class IOUring implements AutoCloseable {
      * @param entries the number of entries in the ring.
      * @throws IllegalArgumentException when entries smaller than 1
      */
-    public IOUring(int entries, int flags) {
+    public Uring(int entries, int flags) {
         checkPositive(entries, "entries must be larger than 0");
         checkNotNegative(flags, "flags can't be smaller than 0");
         if ((flags & IORING_SETUP_SQE128) != 0) {

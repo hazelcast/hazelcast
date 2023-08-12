@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.iouring.AcceptMemory;
 import com.hazelcast.internal.tpcengine.iouring.CompletionQueue;
-import com.hazelcast.internal.tpcengine.iouring.IOUring;
+import com.hazelcast.internal.tpcengine.iouring.Uring;
 import com.hazelcast.internal.tpcengine.iouring.LinuxSocket;
 import com.hazelcast.internal.tpcengine.iouring.SubmissionQueue;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
@@ -37,11 +37,11 @@ import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.CQE_SIZE;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.OFFSET_CQE_FLAGS;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.OFFSET_CQE_RES;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.OFFSET_CQE_USERDATA;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_ACCEPT;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_RECV;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_SEND;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_SETUP_COOP_TASKRUN;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_SETUP_SINGLE_ISSUER;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_ACCEPT;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_RECV;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_SEND;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_SETUP_COOP_TASKRUN;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_SETUP_SINGLE_ISSUER;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_CLOEXEC;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_NONBLOCK;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
@@ -113,7 +113,7 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
         }
 
         private void doRun() throws IOException {
-            final IOUring uring = new IOUring(4096, iouringSetupFlags);
+            final Uring uring = new Uring(4096, iouringSetupFlags);
             if (registerRingFd) {
                 uring.registerRingFd();
             }
@@ -219,7 +219,7 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
         private void doRun() throws IOException {
             final Handler[] handlers = new Handler[1024];
             int handlerIdGenerator = 0;
-            final IOUring uring = new IOUring(4096, iouringSetupFlags);
+            final Uring uring = new Uring(4096, iouringSetupFlags);
             if (registerRingFd) {
                 uring.registerRingFd();
             }

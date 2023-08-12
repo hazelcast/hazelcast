@@ -40,20 +40,20 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * no syscalls:
  * https://wjwh.eu/posts/2021-10-01-no-syscall-server-iouring.html
  */
-public final class IOUringReactor extends Reactor {
+public final class UringReactor extends Reactor {
 
     private final EventFd eventFd;
-    private final IOUringEventloop eventloop;
+    private final UringEventloop eventloop;
 
-    private IOUringReactor(Builder builder) {
+    private UringReactor(Builder builder) {
         super(builder);
-        this.eventloop = (IOUringEventloop) eventloop();
+        this.eventloop = (UringEventloop) eventloop();
         this.eventFd = eventloop.eventFdHandler.eventFd;
     }
 
     @Override
     protected Eventloop newEventloop(Reactor.Builder reactorBuilder) {
-        IOUringEventloop.Builder eventloopBuilder = new IOUringEventloop.Builder();
+        UringEventloop.Builder eventloopBuilder = new UringEventloop.Builder();
         eventloopBuilder.reactorBuilder = reactorBuilder;
         eventloopBuilder.reactor = this;
         return eventloopBuilder.build();
@@ -63,7 +63,7 @@ public final class IOUringReactor extends Reactor {
     public AsyncSocket.Builder newAsyncSocketBuilder() {
         checkRunning();
 
-        IOUringAsyncSocket.Builder socketBuilder = new IOUringAsyncSocket.Builder(null);
+        UringAsyncSocket.Builder socketBuilder = new UringAsyncSocket.Builder(null);
         socketBuilder.networkScheduler = eventloop.networkScheduler();
         socketBuilder.reactor = this;
         socketBuilder.uring = eventloop.uring;
@@ -74,8 +74,8 @@ public final class IOUringReactor extends Reactor {
     public AsyncSocket.Builder newAsyncSocketBuilder(AcceptRequest acceptRequest) {
         checkRunning();
 
-        IOUringAsyncSocket.Builder socketBuilder
-                = new IOUringAsyncSocket.Builder((IOUringAcceptRequest) acceptRequest);
+        UringAsyncSocket.Builder socketBuilder
+                = new UringAsyncSocket.Builder((UringAcceptRequest) acceptRequest);
         socketBuilder.uring = eventloop.uring;
         socketBuilder.reactor = this;
         socketBuilder.networkScheduler = eventloop.networkScheduler();
@@ -86,7 +86,7 @@ public final class IOUringReactor extends Reactor {
     public AsyncServerSocket.Builder newAsyncServerSocketBuilder() {
         checkRunning();
 
-        IOUringAsyncServerSocket.Builder serverSocketBuilder = new IOUringAsyncServerSocket.Builder();
+        UringAsyncServerSocket.Builder serverSocketBuilder = new UringAsyncServerSocket.Builder();
         serverSocketBuilder.reactor = this;
         serverSocketBuilder.uring = eventloop.uring;
         return serverSocketBuilder;
@@ -104,7 +104,7 @@ public final class IOUringReactor extends Reactor {
     }
 
     /**
-     * An {@link IOUringReactor} builder.
+     * An {@link UringReactor} builder.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends Reactor.Builder {
@@ -145,7 +145,7 @@ public final class IOUringReactor extends Reactor {
 
         @Override
         protected Reactor construct() {
-            return new IOUringReactor(this);
+            return new UringReactor(this);
         }
 
         @Override

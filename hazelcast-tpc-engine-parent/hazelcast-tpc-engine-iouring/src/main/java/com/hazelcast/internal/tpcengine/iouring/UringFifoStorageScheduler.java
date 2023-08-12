@@ -29,15 +29,15 @@ import sun.misc.Unsafe;
 
 import java.nio.charset.StandardCharsets;
 
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_FSYNC_DATASYNC;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_CLOSE;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_FALLOCATE;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_FSYNC;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_NOP;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_OPENAT;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITE;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.opcodeToString;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_FSYNC_DATASYNC;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_CLOSE;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_FALLOCATE;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_FSYNC;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_NOP;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_OPENAT;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITE;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_flags;
@@ -73,7 +73,7 @@ import static java.lang.Math.min;
         "checkstyle:MemberName",
         "checkstyle:LocalVariableName",
         "checkstyle:MagicNumber"})
-public class IOUringFifoStorageScheduler implements StorageScheduler {
+public class UringFifoStorageScheduler implements StorageScheduler {
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
@@ -87,9 +87,9 @@ public class IOUringFifoStorageScheduler implements StorageScheduler {
     private final IOBufferAllocator pathAllocator;
     private int ioDepth;
 
-    public IOUringFifoStorageScheduler(IOUring uring,
-                                       int maxIoDepth,
-                                       int capacity) {
+    public UringFifoStorageScheduler(Uring uring,
+                                     int maxIoDepth,
+                                     int capacity) {
         this.maxIoDepth = maxIoDepth;
         this.requestAllocator = new SlabAllocator<>(capacity, IOUringStorageRequest::new);
         this.pathAllocator = new NonConcurrentIOBufferAllocator(512, true);

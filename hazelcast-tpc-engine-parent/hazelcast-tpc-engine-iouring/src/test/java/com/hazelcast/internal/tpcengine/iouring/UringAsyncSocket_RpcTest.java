@@ -17,17 +17,12 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.net.AsyncSocketTest;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket_RpcTest;
 
-public class IOUringAsyncSocketTest extends AsyncSocketTest {
+public class UringAsyncSocket_RpcTest extends AsyncSocket_RpcTest {
 
     @Override
     public Reactor.Builder newReactorBuilder() {
-        return new IOUringReactor.Builder();
-    }
-
-    @Override
-    public void test_readable() {
-        // not implemented yet
+        return new UringReactor.Builder();
     }
 }

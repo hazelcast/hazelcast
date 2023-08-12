@@ -25,7 +25,7 @@
 #include "include/utils.h"
 
 JNIEXPORT void JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_IOUring_init(JNIEnv* env, jobject this_object,
+Java_com_hazelcast_internal_tpcengine_iouring_Uring_init(JNIEnv* env, jobject this_object,
                                                      jint entries, jint flags){
     struct io_uring *p_ring = malloc(sizeof(struct io_uring));
 
@@ -60,7 +60,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_IOUring_init(JNIEnv* env, jobject 
 }
 
 JNIEXPORT void JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_IOUring_register(JNIEnv* env, jclass this_class, jint fd,
+Java_com_hazelcast_internal_tpcengine_iouring_Uring_register(JNIEnv* env, jclass this_class, jint fd,
                                                          jint opcode, jlong arg, jint nr_args){
      int res = io_uring_register(fd, opcode, (void *)arg, nr_args);
      if (res < 0) {
@@ -69,7 +69,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_IOUring_register(JNIEnv* env, jcla
 }
 
 JNIEXPORT int JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_IOUring_registerRingFd(JNIEnv* env, jclass this_class,
+Java_com_hazelcast_internal_tpcengine_iouring_Uring_registerRingFd(JNIEnv* env, jclass this_class,
                                                                jlong ring_addr){
     // https://man7.org/linux/man-pages/man3/io_uring_register_ring_fd.3.html
     int res = io_uring_register_ring_fd((struct io_uring *)ring_addr);
@@ -81,7 +81,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_IOUring_registerRingFd(JNIEnv* env
 }
 
 JNIEXPORT void JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_IOUring_unregisterRingFd(JNIEnv* env, jclass this_class,
+Java_com_hazelcast_internal_tpcengine_iouring_Uring_unregisterRingFd(JNIEnv* env, jclass this_class,
                                                                jlong ring_addr){
     // https://man7.org/linux/man-pages/man3/io_uring_unregister_ring_fd.3.html
     int res = io_uring_unregister_ring_fd((struct io_uring *)ring_addr);
@@ -91,7 +91,7 @@ Java_com_hazelcast_internal_tpcengine_iouring_IOUring_unregisterRingFd(JNIEnv* e
 }
 
 JNIEXPORT jint JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_IOUring_enter(JNIEnv* env, jclass this_class, jint fd,
+Java_com_hazelcast_internal_tpcengine_iouring_Uring_enter(JNIEnv* env, jclass this_class, jint fd,
                                                       jint to_submit, jint min_complete, jint flags){
     int res = io_uring_enter(fd, to_submit, min_complete, flags, NULL);
     if (res < 0) {
@@ -109,6 +109,6 @@ Java_com_hazelcast_internal_tpcengine_iouring_IOUring_enter(JNIEnv* env, jclass 
 }
 
 JNIEXPORT void JNICALL
-Java_com_hazelcast_internal_tpcengine_iouring_IOUring_exit(JNIEnv* env, jclass this_class, jlong ring){
+Java_com_hazelcast_internal_tpcengine_iouring_Uring_exit(JNIEnv* env, jclass this_class, jlong ring){
     io_uring_queue_exit((struct io_uring *)ring);
 }

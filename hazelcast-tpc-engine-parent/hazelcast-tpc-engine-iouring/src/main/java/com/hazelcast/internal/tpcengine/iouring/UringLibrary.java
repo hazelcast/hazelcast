@@ -29,14 +29,14 @@ import java.util.UUID;
  * Contains the functionality for loading the IOUring library.
  */
 @SuppressWarnings({"checkstyle:SimplifyBooleanReturn", "checkstyle:no-uuid-randomUUID"})
-public final class IOUringLibrary {
+public final class UringLibrary {
     private static final int MIN_MAJOR_VERSION = 5;
     // We need at least 5.6 due to reliance on IORING_OP_TIMEOUT
     private static final int MIN_MINOR_VERSION = 6;
 
     private static final Throwable LOAD_FAILURE;
 
-    private IOUringLibrary() {
+    private UringLibrary() {
     }
 
     static {
@@ -64,7 +64,7 @@ public final class IOUringLibrary {
             }
 
             String path = "/lib/linux-x86_64/libiouring_hz.so";
-            URL url = IOUring.class.getResource(path);
+            URL url = Uring.class.getResource(path);
             if (url == null) {
                 throw new IOException("Could not find [" + path + "] in the hazelcast-tpc-engine jar");
             }

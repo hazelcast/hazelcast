@@ -35,7 +35,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 public final class LinuxSocket implements AutoCloseable {
 
     static {
-        IOUringLibrary.ensureAvailable();
+        UringLibrary.ensureAvailable();
         initNative();
     }
 

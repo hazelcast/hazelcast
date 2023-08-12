@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.net.AsyncServerSocketBuilderTest;
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
-public class IOUringAsyncServerSocketBuilderTest extends AsyncServerSocketBuilderTest {
+import java.util.concurrent.TimeUnit;
 
-    @Override
-    public Reactor.Builder newReactorBuilder() {
-        return new IOUringReactor.Builder();
+@Category(NightlyTest.class)
+public class UringAsyncSocket_RpcTest_Nightly extends UringAsyncSocket_RpcTest {
+    public UringAsyncSocket_RpcTest_Nightly() {
+        durationMillis = TimeUnit.SECONDS.toMillis(60);
     }
 }

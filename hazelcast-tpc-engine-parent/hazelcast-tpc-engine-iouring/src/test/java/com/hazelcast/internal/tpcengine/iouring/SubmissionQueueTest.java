@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 
 public class SubmissionQueueTest {
 
-    private IOUring uring;
+    private Uring uring;
 
     @After
     public void after() {
@@ -39,7 +39,7 @@ public class SubmissionQueueTest {
     @Test
     public void test_construction() {
         int entries = 16384;
-        uring = new IOUring(entries, 0);
+        uring = new Uring(entries, 0);
         SubmissionQueue sq = uring.sq();
 
         assertSame(uring, sq.uring());
@@ -54,7 +54,7 @@ public class SubmissionQueueTest {
     @Test
     public void test_submitAndWait() {
         int entries = 16384;
-        uring = new IOUring(entries, 0);
+        uring = new Uring(entries, 0);
         SubmissionQueue sq = uring.sq();
 
         int count = 10;
@@ -69,7 +69,7 @@ public class SubmissionQueueTest {
     // @Test
     public void test_submitAndWait_whenNoWork() {
         int entries = 16384;
-        uring = new IOUring(entries, 0);
+        uring = new Uring(entries, 0);
         SubmissionQueue sq = uring.sq();
 
         int submitted = sq.submitAndWait();
@@ -78,7 +78,7 @@ public class SubmissionQueueTest {
 
     @Test
     public void test_submit_whenNoWork() {
-        uring = new IOUring(16384, 0);
+        uring = new Uring(16384, 0);
         SubmissionQueue sq = uring.sq();
 
         long localHead = sq.localHead;
@@ -97,7 +97,7 @@ public class SubmissionQueueTest {
 
     @Test
     public void test_submit_whenWork() {
-        uring = new IOUring(16384, 0);
+        uring = new Uring(16384, 0);
         SubmissionQueue sq = uring.sq();
 
         int pending = 10;
@@ -143,7 +143,7 @@ public class SubmissionQueueTest {
     @Test
     public void test_offer() {
         int entries = 16;
-        uring = new IOUring(entries, 0);
+        uring = new Uring(entries, 0);
         SubmissionQueue sq = uring.sq();
 
         for (int k = 0; k < entries; k++) {
@@ -156,7 +156,7 @@ public class SubmissionQueueTest {
     @Test
     public void test_offerWhenFull() {
         int entries = 16;
-        uring = new IOUring(entries, 0);
+        uring = new Uring(entries, 0);
         SubmissionQueue sq = uring.sq();
         for (int k = 0; k < entries; k++) {
             assertTrue(sq.offer_NOP(1));

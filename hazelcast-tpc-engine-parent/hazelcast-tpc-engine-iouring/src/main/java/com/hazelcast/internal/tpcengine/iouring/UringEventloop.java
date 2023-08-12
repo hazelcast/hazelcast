@@ -22,8 +22,8 @@ import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_READ;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_TIMEOUT;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMESPEC;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
@@ -35,20 +35,20 @@ import static java.util.concurrent.TimeUnit.SECONDS;
         "checkstyle:DeclarationOrder",
         "checkstyle:NestedIfDepth",
         "checkstyle:MethodName"})
-public final class IOUringEventloop extends Eventloop {
+public final class UringEventloop extends Eventloop {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     private static final long NS_PER_SECOND = SECONDS.toNanos(1);
 
-    final IOUring uring;
+    final Uring uring;
     private final SubmissionQueue sq;
     private final CompletionQueue cq;
     final EventFdHandler eventFdHandler;
     private final TimeoutHandler timeoutHandler;
 
-    private IOUringEventloop(Builder builder) {
+    private UringEventloop(Builder builder) {
         super(builder);
 
-        IOUringReactor.Builder reactorBuilder = (IOUringReactor.Builder) builder.reactorBuilder;
+        UringReactor.Builder reactorBuilder = (UringReactor.Builder) builder.reactorBuilder;
         this.uring = builder.uring;
         if (reactorBuilder.registerRing) {
             this.uring.registerRingFd();
@@ -76,7 +76,7 @@ public final class IOUringEventloop extends Eventloop {
             throw newUncheckedIOException("Could not find storage device for [" + path + "]");
         }
 
-        return new IOUringAsyncFile(path, this, storageScheduler, dev);
+        return new UringAsyncFile(path, this, storageScheduler, dev);
     }
 
     @Override
@@ -221,31 +221,31 @@ public final class IOUringEventloop extends Eventloop {
     @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MagicNumber"})
     public static class Builder extends Eventloop.Builder {
 
-        public IOUring uring;
+        public Uring uring;
 
         @Override
         protected void conclude() {
             super.conclude();
 
             if (networkScheduler == null) {
-                networkScheduler = new IOUringNetworkScheduler(reactorBuilder.maxSockets);
+                networkScheduler = new UringNetworkScheduler(reactorBuilder.maxSockets);
             }
 
             if (uring == null) {
                 // The uring instance needs to be created on the eventloop thread.
                 // This is required for some of the setup flags.
-                IOUringReactor.Builder reactorBuilder = (IOUringReactor.Builder) this.reactorBuilder;
-                this.uring = new IOUring(reactorBuilder.entries, reactorBuilder.setupFlags);
+                UringReactor.Builder reactorBuilder = (UringReactor.Builder) this.reactorBuilder;
+                this.uring = new Uring(reactorBuilder.entries, reactorBuilder.setupFlags);
             }
 
             if (storageScheduler == null) {
-                storageScheduler = new IOUringFifoStorageScheduler(uring, 1024, 4096);
+                storageScheduler = new UringFifoStorageScheduler(uring, 1024, 4096);
             }
         }
 
         @Override
-        protected IOUringEventloop construct() {
-            return new IOUringEventloop(this);
+        protected UringEventloop construct() {
+            return new UringEventloop(this);
         }
     }
 }

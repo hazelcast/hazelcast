@@ -1,6 +1,6 @@
 package io.netty.incubator.channel.uring;
 
-import com.hazelcast.internal.tpcengine.iouring.IOUring;
+import com.hazelcast.internal.tpcengine.iouring.Uring;
 import com.hazelcast.internal.tpcengine.iouring.Linux;
 
 import java.io.IOException;
@@ -41,7 +41,7 @@ public class NettyNopBenchmark {
                 CompletionHandler handler = new CompletionHandler(sq, latch);
 
                 for (int k = 0; k < concurrency; k++) {
-                    sq.enqueueSqe(IOUring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, (short) 0);
+                    sq.enqueueSqe(Uring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, (short) 0);
                 }
 
                 for (; ; ) {
@@ -78,7 +78,7 @@ public class NettyNopBenchmark {
             if (iteration == operations) {
                 latch.countDown();
             } else {
-                sq.enqueueSqe(IOUring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, (short) 0);
+                sq.enqueueSqe(Uring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, (short) 0);
             }
         }
     }

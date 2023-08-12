@@ -27,12 +27,12 @@ import com.hazelcast.internal.tpcengine.util.IntPromise;
  * IOUring implementation of the {@link AsyncFile}.
  */
 @SuppressWarnings({"checkstyle:TrailingComment"})
-public final class IOUringAsyncFile extends AsyncFile {
+public final class UringAsyncFile extends AsyncFile {
 
-    public IOUringAsyncFile(String path,
-                            Eventloop eventloop,
-                            StorageScheduler scheduler,
-                            StorageDevice device) {
+    public UringAsyncFile(String path,
+                          Eventloop eventloop,
+                          StorageScheduler scheduler,
+                          StorageDevice device) {
         super(path, eventloop, scheduler, device);
     }
 

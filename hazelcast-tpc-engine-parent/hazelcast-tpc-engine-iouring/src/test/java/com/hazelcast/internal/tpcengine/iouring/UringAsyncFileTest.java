@@ -19,10 +19,10 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.file.AsyncFileTest;
 
-public class IOUringAsyncFileTest extends AsyncFileTest {
+public class UringAsyncFileTest extends AsyncFileTest {
 
     @Override
     public Reactor newReactor() {
-        return new IOUringReactor.Builder().build();
+        return new UringReactor.Builder().build();
     }
 }

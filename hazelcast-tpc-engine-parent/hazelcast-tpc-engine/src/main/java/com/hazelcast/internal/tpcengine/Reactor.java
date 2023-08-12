@@ -729,7 +729,7 @@ public abstract class Reactor implements Executor {
         private static final Constructor<Builder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
 
         private static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
-                = "com.hazelcast.internal.tpcengine.iouring.IOUringReactor$Builder";
+                = "com.hazelcast.internal.tpcengine.iouring.UringReactor$Builder";
 
         private static final ThreadFactory DEFAULT_THREAD_FACTORY = r -> {
             Thread thread = new Thread(r);

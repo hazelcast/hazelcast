@@ -1,6 +1,6 @@
 package com.hazelcast.iouring;
 
-import com.hazelcast.internal.tpcengine.iouring.IOUring;
+import com.hazelcast.internal.tpcengine.iouring.Uring;
 import com.hazelcast.internal.tpcengine.iouring.SubmissionQueue;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -22,12 +22,12 @@ public class EnterBenchmark {
     @Param({"true", "false"})
     public boolean registerRingFd;
 
-    private IOUring uring;
+    private Uring uring;
     private SubmissionQueue sq;
 
     @Setup
     public void setup() {
-        this.uring = new IOUring(4096, 0);
+        this.uring = new Uring(4096, 0);
         if (registerRingFd) {
             uring.registerRingFd();
         }

@@ -21,15 +21,15 @@ import org.jctools.queues.MpscArrayQueue;
 
 import java.util.Queue;
 
-public class IOUringNetworkScheduler implements NetworkScheduler<IOUringAsyncSocket> {
-    private final Queue<IOUringAsyncSocket> dirtyQueue;
+public class UringNetworkScheduler implements NetworkScheduler<UringAsyncSocket> {
+    private final Queue<UringAsyncSocket> dirtyQueue;
 
-    public IOUringNetworkScheduler(int maxSockets) {
+    public UringNetworkScheduler(int maxSockets) {
         this.dirtyQueue = new MpscArrayQueue<>(maxSockets);
     }
 
     @Override
-    public void schedule(IOUringAsyncSocket socket) {
+    public void schedule(UringAsyncSocket socket) {
         if (!dirtyQueue.offer(socket)) {
             throw new IllegalStateException("Too many sockets");
         }
@@ -37,7 +37,7 @@ public class IOUringNetworkScheduler implements NetworkScheduler<IOUringAsyncSoc
 
     public void tick() {
         for (; ; ) {
-            IOUringAsyncSocket socket = dirtyQueue.poll();
+            UringAsyncSocket socket = dirtyQueue.poll();
             if (socket == null) {
                 break;
             }

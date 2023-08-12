@@ -24,7 +24,7 @@ import sun.misc.Unsafe;
 
 import java.io.UncheckedIOException;
 
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.opcodeToString;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.toManPagesUrl;
@@ -72,13 +72,13 @@ public final class CompletionQueue {
     public int ringMask;
 
     private final TpcLogger logger = TpcLoggerLocator.getLogger(CompletionQueue.class);
-    private final IOUring uring;
+    private final Uring uring;
 
     private long permanentHandlerIdGenerator = 1;
     private long tmpHandlerIdGenerator = -1;
     private final LongObjectHashMap<CompletionHandler> handlers = new LongObjectHashMap<>(4096);
 
-    CompletionQueue(IOUring uring) {
+    CompletionQueue(Uring uring) {
         this.uring = uring;
     }
 
@@ -238,7 +238,7 @@ public final class CompletionQueue {
         return ringMask;
     }
 
-    public IOUring uring() {
+    public Uring uring() {
         return uring;
     }
 

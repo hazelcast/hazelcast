@@ -30,7 +30,7 @@ import java.net.SocketAddress;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_ACCEPT;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_ACCEPT;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_CLOEXEC;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_NONBLOCK;
 import static com.hazelcast.internal.tpcengine.iouring.LinuxSocket.AF_INET;
@@ -51,16 +51,16 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 /**
  * The io_uring implementation of the {@link AsyncServerSocket}.
  */
-public final class IOUringAsyncServerSocket extends AsyncServerSocket {
+public final class UringAsyncServerSocket extends AsyncServerSocket {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final LinuxSocket linuxSocket;
     //   private final IOUringEventloop eventloop;
     private final AcceptHandler acceptHandler;
-    private final IOUring uring;
+    private final Uring uring;
     private boolean bind;
 
-    private IOUringAsyncServerSocket(Builder builder) {
+    private UringAsyncServerSocket(Builder builder) {
         super(builder);
         this.uring = builder.uring;
         this.linuxSocket = builder.linuxSocket;
@@ -122,7 +122,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
     private static final class AcceptHandler implements CompletionHandler {
 
-        private final IOUringAsyncServerSocket socket;
+        private final UringAsyncServerSocket socket;
         private final SubmissionQueue sq;
         private final LinuxSocket linuxSocket;
         private final AcceptMemory acceptMemory = new AcceptMemory();
@@ -133,7 +133,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         private long userdata;
         private boolean closed;
 
-        private AcceptHandler(Builder builder, IOUringAsyncServerSocket socket) {
+        private AcceptHandler(Builder builder, UringAsyncServerSocket socket) {
             this.socket = socket;
             this.cq = builder.uring.cq();
             this.acceptFn = builder.acceptFn;
@@ -182,7 +182,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
                     // todo: ugly that AF_INET is hard configured.
                     // We should use the address to determine the type
                     LinuxSocket linuxSocket = new LinuxSocket(fd, AF_INET);
-                    AcceptRequest acceptRequest = new IOUringAcceptRequest(linuxSocket);
+                    AcceptRequest acceptRequest = new UringAcceptRequest(linuxSocket);
                     try {
                         acceptFn.accept(acceptRequest);
                     } catch (Throwable t) {
@@ -281,13 +281,13 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     /**
-     * An {@link IOUringAsyncServerSocket} builder.
+     * An {@link UringAsyncServerSocket} builder.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends AsyncServerSocket.Builder {
 
         public final LinuxSocket linuxSocket;
-        public IOUring uring;
+        public Uring uring;
 
         Builder() {
             // to conclude.
@@ -306,7 +306,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
 
         @Override
         public AsyncServerSocket construct() {
-            return new IOUringAsyncServerSocket(this);
+            return new UringAsyncServerSocket(this);
         }
     }
 }

@@ -24,15 +24,15 @@ import java.text.DecimalFormat;
 
 import static org.junit.Assert.assertEquals;
 
-public class IOUringFlowTest {
+public class UringFlowTest {
 
-    private IOUring uring;
+    private Uring uring;
     private SubmissionQueue sq;
     private CompletionQueue cq;
 
     @Before
     public void before() {
-        uring = new IOUring(16384, 0);
+        uring = new Uring(16384, 0);
 
         sq = uring.sq();
         cq = uring.cq();

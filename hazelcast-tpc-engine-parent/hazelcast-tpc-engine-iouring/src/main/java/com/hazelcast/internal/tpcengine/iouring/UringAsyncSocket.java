@@ -33,9 +33,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_RECV;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_SEND;
-import static com.hazelcast.internal.tpcengine.iouring.IOUring.IORING_OP_WRITEV;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_RECV;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_SEND;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITEV;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EAGAIN;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
@@ -56,11 +56,11 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNull;
 
 @SuppressWarnings({"checkstyle:DeclarationOrder"})
-public final class IOUringAsyncSocket extends AsyncSocket {
+public final class UringAsyncSocket extends AsyncSocket {
 
     // Ensure JNI is initialized as soon as this class is loaded
     static {
-        IOUringLibrary.ensureAvailable();
+        UringLibrary.ensureAvailable();
     }
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
@@ -68,9 +68,9 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     private final LinuxSocket linuxSocket;
     private final ReadHandler readHandler;
     final WriteHandler writeHandler;
-    private final IOUring uring;
+    private final Uring uring;
 
-    private IOUringAsyncSocket(Builder builder) {
+    private UringAsyncSocket(Builder builder) {
         super(builder);
 
         this.uring = builder.uring;
@@ -185,13 +185,13 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         private final LinuxSocket linuxSocket;
         private final Writer writer;
         private final Queue writeQueue;
-        private final IOUringAsyncSocket socket;
+        private final UringAsyncSocket socket;
         private final Metrics metrics;
         private final NetworkScheduler networkScheduler;
         private long userdata;
         private boolean writerClean = true;
 
-        WriteHandler(IOUringAsyncSocket.Builder builder, IOUringAsyncSocket socket) {
+        WriteHandler(UringAsyncSocket.Builder builder, UringAsyncSocket socket) {
             this.socket = socket;
             this.flushThread = socket.flushThread;
             this.sq = builder.uring.sq();
@@ -323,18 +323,18 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         private final ByteBuffer rcvBuff;
         private final SubmissionQueue sq;
         private final LinuxSocket linuxSocket;
-        private final IOUringAsyncSocket socket;
+        private final UringAsyncSocket socket;
         private final Reader reader;
-        private final IOUringEventloop eventloop;
+        private final UringEventloop eventloop;
         private final long rcvBuffAddress;
         private long userdata;
 
-        private ReadHandler(IOUringAsyncSocket.Builder builder, IOUringAsyncSocket socket) {
+        private ReadHandler(UringAsyncSocket.Builder builder, UringAsyncSocket socket) {
             this.socket = socket;
             this.reader = builder.reader;
             this.metrics = builder.metrics;
             this.linuxSocket = builder.linuxSocket;
-            this.eventloop = (IOUringEventloop) builder.reactor.eventloop();
+            this.eventloop = (UringEventloop) builder.reactor.eventloop();
             this.sq = builder.uring.sq();
             this.rcvBuff = ByteBuffer.allocateDirect(builder.options.get(SO_RCVBUF));
             this.rcvBuffAddress = addressOf(rcvBuff);
@@ -520,16 +520,16 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     /**
-     * A {@link IOUringAsyncSocket} builder.
+     * A {@link UringAsyncSocket} builder.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends AsyncSocket.Builder {
 
         public LinuxSocket linuxSocket;
         public IOVector ioVector;
-        public IOUring uring;
+        public Uring uring;
 
-        Builder(IOUringAcceptRequest acceptRequest) {
+        Builder(UringAcceptRequest acceptRequest) {
             if (acceptRequest == null) {
                 this.linuxSocket = LinuxSocket.openTcpIpv4Socket();
                 this.clientSide = true;
@@ -560,9 +560,9 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         @Override
         protected AsyncSocket construct() {
             if (Thread.currentThread() == reactor.eventloopThread()) {
-                return new IOUringAsyncSocket(this);
+                return new UringAsyncSocket(this);
             } else {
-                return reactor.submit(() -> new IOUringAsyncSocket(Builder.this)).join();
+                return reactor.submit(() -> new UringAsyncSocket(Builder.this)).join();
             }
         }
     }

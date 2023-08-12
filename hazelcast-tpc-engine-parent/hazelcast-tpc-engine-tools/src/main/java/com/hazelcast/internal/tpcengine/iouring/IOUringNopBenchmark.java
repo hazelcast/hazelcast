@@ -47,14 +47,14 @@ public class IOUringNopBenchmark {
         @Override
         public void run() {
             try {
-                final IOUring uring = new IOUring(4096, 0);
+                final Uring uring = new Uring(4096, 0);
                 final SubmissionQueue sq = uring.sq();
                 final CompletionQueue cq = uring.cq();
                 final IOUringNopBenchmark.CompletionHandler handler = new IOUringNopBenchmark.CompletionHandler(sq, latch);
                 final boolean spin = IOUringNopBenchmark.spin;
 
                 for (int k = 0; k < concurrency; k++) {
-                    sq.offer(IOUring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, 0);
+                    sq.offer(Uring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, 0);
                 }
 
                 for (; ; ) {
@@ -91,7 +91,7 @@ public class IOUringNopBenchmark {
             if (iteration == operations) {
                 latch.countDown();
             } else {
-                if (!sq.offer(IOUring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, 0)) {
+                if (!sq.offer(Uring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, 0)) {
                     throw new UncheckedIOException(new IOException("failed to offer"));
                 }
             }

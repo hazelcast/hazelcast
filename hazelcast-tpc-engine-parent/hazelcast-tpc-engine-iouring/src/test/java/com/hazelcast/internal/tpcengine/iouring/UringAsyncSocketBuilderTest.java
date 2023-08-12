@@ -16,18 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilderTest;
 
-public class IOUringAcceptRequest implements AbstractAsyncSocket.AcceptRequest {
-
-    final LinuxSocket linuxSocket;
-
-    public IOUringAcceptRequest(LinuxSocket linuxSocket) {
-        this.linuxSocket = linuxSocket;
-    }
+public class UringAsyncSocketBuilderTest extends AsyncSocketBuilderTest {
 
     @Override
-    public void close() throws Exception {
-        linuxSocket.close();
+    public Reactor.Builder newReactorBuilder() {
+        return new UringReactor.Builder();
     }
 }

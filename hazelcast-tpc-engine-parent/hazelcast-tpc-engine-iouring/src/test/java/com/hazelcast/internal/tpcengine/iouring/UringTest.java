@@ -21,9 +21,9 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
 
-public class IOUringTest {
+public class UringTest {
 
-    private IOUring uring;
+    private Uring uring;
 
     @After
     public void after() {
@@ -34,24 +34,24 @@ public class IOUringTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void test_constructor_withZeroEntries() {
-        new IOUring(0, 0);
+        new Uring(0, 0);
     }
 
 
     @Test(expected = IllegalArgumentException.class)
     public void test_constructor_withNegativeEntries() {
-        new IOUring(-1, 0);
+        new Uring(-1, 0);
     }
 
 
     @Test(expected = IllegalArgumentException.class)
     public void test_constructor_withNegativeFlags() {
-        new IOUring(16, -1);
+        new Uring(16, -1);
     }
 
     @Test
     public void test_constructor() {
-        uring = new IOUring(16384, 0);
+        uring = new Uring(16384, 0);
 
         assertTrue("uring.ring_fd should be larger than 0", uring.ringFd() > 0);
     }

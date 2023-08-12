@@ -3,5 +3,5 @@
 /src/main/c/include/com_hazelcast_internal_tpcengine_iouring_SubmissionQueue.h
 /src/main/c/include/com_hazelcast_internal_tpcengine_iouring_Linux.h
 /src/main/c/include/com_hazelcast_internal_util_ThreadAffinityHelper.h
-/src/main/c/include/com_hazelcast_internal_tpcengine_iouring_IOUring.h
+/src/main/c/include/com_hazelcast_internal_tpcengine_iouring_Uring.h
 /src/main/c/include/com_hazelcast_internal_tpcengine_iouring_LinuxSocket.h

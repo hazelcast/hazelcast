@@ -16,13 +16,20 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.experimental.categories.Category;
+import org.junit.Test;
 
-@Category(NightlyTest.class)
-public class IOUringAsyncSocket_LargePayloadTest_Nightly extends IOUringAsyncSocket_LargePayloadTest {
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeTrue;
 
-    public IOUringAsyncSocket_LargePayloadTest_Nightly() {
-        iterations = 20000;
+public class UringLibraryTest {
+
+    @Test
+    public void test() {
+        assumeTrue(UringLibrary.isAvailable());
+
+        // ensure that we can actually load the IOUring.
+        Uring uring = new Uring(10, 0);
+        assertNotNull(uring.sq());
+        assertNotNull(uring.cq());
     }
 }

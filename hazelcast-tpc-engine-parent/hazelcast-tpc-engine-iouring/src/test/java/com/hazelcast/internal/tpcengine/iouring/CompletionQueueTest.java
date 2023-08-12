@@ -26,7 +26,7 @@ public class CompletionQueueTest {
     @Test
     public void test() {
         int entries = 16384;
-        IOUring uring = new IOUring(entries, 0);
+        Uring uring = new Uring(entries, 0);
         CompletionQueue cq = uring.cq();
 
         assertSame(uring, cq.uring());

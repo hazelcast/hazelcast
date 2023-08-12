@@ -200,7 +200,7 @@ public final class Linux {
 
 
     static {
-        IOUringLibrary.ensureAvailable();
+        UringLibrary.ensureAvailable();
     }
 
     private Linux() {

@@ -20,7 +20,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 public class HighLevelMain {
 
     public static void main(String[] args) throws InterruptedException {
-        IOUring uring = new IOUring(16384, 0);
+        Uring uring = new Uring(16384, 0);
 
         SubmissionQueue sq = uring.sq();
 
