@@ -18,7 +18,6 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.StorageDevice;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -29,7 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
-import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -59,13 +57,7 @@ final class NioEventloop extends Eventloop {
     @Override
     public AsyncFile newAsyncFile(String path) {
         checkNotNull(path, "path");
-
-        StorageDevice dev = storageDeviceRegistry.findDevice(path);
-        if (dev == null) {
-            throw newUncheckedIOException("Could not find storage device for [" + path + "]");
-        }
-
-        return new NioAsyncFile(path, this, storageScheduler, dev);
+        return new NioAsyncFile(path, this, storageScheduler);
     }
 
     @Override

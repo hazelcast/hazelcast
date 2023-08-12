@@ -265,7 +265,6 @@ public class UringFifoStorageScheduler implements StorageScheduler {
             buffer = null;
             file = null;
             promise = null;
-            dev = null;
             requestAllocator.free(this);
         }
 

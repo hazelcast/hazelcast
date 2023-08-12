@@ -36,23 +36,25 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegati
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
- * A File where most operations are asynchronous. So operations are submitted asynchronously
- * to the storage device and do not block.
+ * A File where most operations are asynchronous. So operations are submitted
+ * asynchronously to the storage device and do not block.
  * <p/>
- * This class isn't thread-safe. It should only be processed by the owning {@link Eventloop}.
+ * This class isn't thread-safe. It should only be processed by the owning
+ * {@link Eventloop}.
  * <p/>
- * If in the future we want to support Virtual Threads, we do not need to introduce a new
- * 'SyncFile'. It would be sufficient to offer blocking operations which acts like scheduling
- * points. This way you can use the API from virtual threads and from platform threads. The platform
- * threads should probably run into an exception when they call a blocking method.
+ * If in the future we want to support Virtual Threads, we do not need to
+ * introduce a new 'SyncFile'. It would be sufficient to offer blocking operations
+ * which acts like scheduling points. This way you can use the API from virtual
+ * threads and from platform threads. The platform threads should probably run
+ * into an exception when they call a blocking method.
  * <p>
  * The {@link IOBuffer} used for reading/writing be created using the
  * {@link Eventloop#blockIOBufferAllocator()} because depending on the AsyncFile
- * implementation/configuration, there are special requirements e.g. 4K alignment in
- * case of Direct I/O.
+ * implementation/configuration, there are special requirements e.g. 4K alignment
+ * in case of Direct I/O.
  * <p/>
- * The primary functionality of the AsyncFile is to issue {@link StorageRequest} to the
- * {@link StorageScheduler}. The actual I/O is done by that scheduler.
+ * The primary functionality of the AsyncFile is to issue {@link StorageRequest}
+ * to the {@link StorageScheduler}. The actual I/O is done by that scheduler.
  */
 @SuppressWarnings({"checkstyle:IllegalTokenText", "checkstyle:VisibilityModifier"})
 public abstract class AsyncFile {
@@ -78,7 +80,6 @@ public abstract class AsyncFile {
     private final String path;
     private final StorageScheduler scheduler;
     private final Eventloop eventloop;
-    private final StorageDevice dev;
 
     // todo: Using path as a string forces creating litter.
 
@@ -90,12 +91,11 @@ public abstract class AsyncFile {
      * @param eventloop
      * @param scheduler
      */
-    public AsyncFile(String path, Eventloop eventloop, StorageScheduler scheduler, StorageDevice dev) {
+    public AsyncFile(String path, Eventloop eventloop, StorageScheduler scheduler) {
         this.path = path;
         this.eventloop = eventloop;
         this.promiseAllocator = eventloop.intPromiseAllocator();
         this.scheduler = scheduler;
-        this.dev = dev;
 
         // todo: deal with
         this.eventloop.reactor().files().add(this);
@@ -170,7 +170,6 @@ public abstract class AsyncFile {
         request.opcode = STR_REQ_OP_NOP;
         request.promise = promise;
         request.file = this;
-        request.dev = dev;
 
         scheduler.schedule(request);
         return promise;
@@ -188,19 +187,20 @@ public abstract class AsyncFile {
 
 
     /**
-     * Submits an fsync. The sync isn't ordered with respect to any concurrent writes. See
-     * {@link #barrierFsync()} for that.
+     * Submits an fsync. The sync isn't ordered with respect to any concurrent
+     * writes. See {@link #barrierFsync()} for that.
      * <p>
      * todo: probably better to add flag for fdatasync instead of making it a method.
      * <p/>
-     * fsync combined with buffered I/O (so using the page cache) is very unreliable. When
-     * there are dirty pages in the page cache and an fsync is performed, it will force these
-     * dirty pages to be written to disk. If at least one of these writes fails, the page will
-     * be marked as failed. As a consequence the fsync will fail, but it will also mark the
-     * page as clean and remove the failed state from that page. So if you would perform another
-     * fsync, then it very likely would succeed since there are no dirty pages. The problem is
-     * that the changes never made it to disk, so that fsync is useless. For more information
-     * see: https://danluu.com/fsyncgate/
+     * fsync combined with buffered I/O (so using the page cache) is very
+     * unreliable. When there are dirty pages in the page cache and an fsync
+     * is performed, it will force these dirty pages to be written to disk. If
+     * at least one of these writes fails, the page will be marked as failed.
+     * As a consequence the fsync will fail, but it will also mark the page as
+     * clean and remove the failed state from that page. So if you would perform
+     * another fsync, then it very likely would succeed since there are no dirty
+     * pages. The problem is that the changes never made it to disk, so that
+     * fsync is useless. For more information see: https://danluu.com/fsyncgate/
      *
      * @return
      */
@@ -213,16 +213,15 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_FSYNC;
         request.file = this;
-        request.dev = dev;
         request.promise = promise;
         scheduler.schedule(request);
         return promise;
     }
 
     /**
-     * Waits for all prior writes to complete before issuing the fsync. So all earlier writes
-     * will be ordered before this fsync but later writes will not be ordered with respect to
-     * this fsync.
+     * Waits for all prior writes to complete before issuing the fsync. So all
+     * earlier writes will be ordered before this fsync but later writes will
+     * not be ordered with respect to this fsync.
      * <p>
      * todo: probably better to add flag for fdata sync instead of making it a method.
      * <p>
@@ -254,7 +253,6 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_FDATASYNC;
         request.file = this;
-        request.dev = dev;
         request.promise = promise;
         scheduler.schedule(request);
         return promise;
@@ -272,7 +270,6 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_FALLOCATE;
         request.file = this;
-        request.dev = dev;
         request.promise = promise;
         // The address field is used to store the length of the allocation
         //request.addr = length;
@@ -303,7 +300,6 @@ public abstract class AsyncFile {
         request.opcode = STR_REQ_OP_OPEN;
         request.promise = promise;
         request.file = this;
-        request.dev = dev;
         request.flags = flags;
         request.permissions = permissions;
 
@@ -336,7 +332,6 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_CLOSE;
         request.file = this;
-        request.dev = dev;
         request.promise = promise;
 
         scheduler.schedule(request);
@@ -367,7 +362,6 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_READ;
         request.file = this;
-        request.dev = dev;
         request.promise = promise;
         request.buffer = dst;
         request.length = length;
@@ -381,19 +375,22 @@ public abstract class AsyncFile {
     /**
      * Writes data to a file from the given offset.
      * <p/>
-     * If Direct I/O is used and the write completes successfully, the write is either
-     * in the write buffer of the storage device or on persistent storage of that device.
+     * If Direct I/O is used and the write completes successfully, the write
+     * is either in the write buffer of the storage device or on persistent
+     * storage of that device.
      * <p/>
-     * If the write is in the write buffer of that device, the f(data)sync will guarantee
-     * that the write is on persistent storage. On proper enterprise grade SSDs there will
-     * be a capacitor or some form of battery on the SSD to guarantee that the write buffer
-     * gets written to persistent storage in case of power loss. So in that case, the fsync
-     * in theory isn't needed and effectively can be treated as a no-op by the SSD.
+     * If the write is in the write buffer of that device, the f(data)sync
+     * will guarantee that the write is on persistent storage. On proper
+     * enterprise grade SSDs there will be a capacitor or some form of battery
+     * on the SSD to guarantee that the write buffer gets written to persistent
+     * storage in case of power loss. So in that case, the fsync in theory isn't
+     * needed and effectively can be treated as a no-op by the SSD.
      * <p/>
-     * If buffered I/O is used (so through the page cache), the write is only in the page cache
-     * and not on disk. Only at some point in the future, this write ends up at disk. This makes
-     * dealing with I/O errors much more complicated because there is a disconnect between the
-     * making the write and completing it (on the page cache) and the actual write to disk. And
+     * If buffered I/O is used (so through the page cache), the write is only
+     * in the page cache and not on disk. Only at some point in the future, this
+     * write ends up at disk. This makes dealing with I/O errors much more
+     * complicated because there is a disconnect between the making the write
+     * and completing it (on the page cache) and the actual write to disk. And
      * these problems can bubble up at the fsync.
      *
      * @param offset the offset within the file.
@@ -415,7 +412,6 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_WRITE;
         request.file = this;
-        request.dev = dev;
         request.promise = promise;
         request.buffer = src;
         request.length = length;
@@ -434,7 +430,8 @@ public abstract class AsyncFile {
     /**
      * Contains the metrics for the {@link AsyncFile}.
      * <p/>
-     * The metrics should only be updated by the event loop thread, but can be read by any thread.
+     * The metrics should only be updated by the event loop thread, but can be
+     * read by any thread.
      */
     @SuppressWarnings("checkstyle:ConstantName")
     public static final class Metrics {
@@ -471,7 +468,8 @@ public abstract class AsyncFile {
         }
 
         /**
-         * Returns the number of read operations that have been successfully performed on the file.
+         * Returns the number of read operations that have been successfully
+         * performed on the file.
          */
         public long reads() {
             return (long) READS.getOpaque(this);
@@ -482,7 +480,8 @@ public abstract class AsyncFile {
         }
 
         /**
-         * Returns the number of write operations that have been successfully performed on the file.
+         * Returns the number of write operations that have been successfully
+         * performed on the file.
          */
         public long writes() {
             return (long) WRITES.getOpaque(this);
@@ -493,7 +492,8 @@ public abstract class AsyncFile {
         }
 
         /**
-         * Returns the number of nop operations that have been successfully performed on the file.
+         * Returns the number of nop operations that have been successfully
+         * performed on the file.
          */
         public long nops() {
             return (long) NOPS.getOpaque(this);
@@ -504,7 +504,8 @@ public abstract class AsyncFile {
         }
 
         /**
-         * Returns the number of fsyncs that have been successfully called on the file.
+         * Returns the number of fsyncs that have been successfully called
+         * on the file.
          */
         public long fsyncs() {
             return (long) FSYNCS.getOpaque(this);
@@ -515,7 +516,8 @@ public abstract class AsyncFile {
         }
 
         /**
-         * Returns the number of fdatasyncs that have been successfully called on the file.
+         * Returns the number of fdatasyncs that have been successfully
+         * called on the file.
          */
         public long fdatasyncs() {
             return (long) FDATASYNCS.getOpaque(this);
@@ -526,7 +528,8 @@ public abstract class AsyncFile {
         }
 
         /**
-         * Returns the number bytes that have been successfully written to the file.
+         * Returns the number bytes that have been successfully written to the
+         * file.
          */
         public long bytesWritten() {
             return (long) BYTES_WRITTEN.getOpaque(this);
@@ -537,7 +540,8 @@ public abstract class AsyncFile {
         }
 
         /**
-         * Returns the number of bytes that have been successfully read from the file.
+         * Returns the number of bytes that have been successfully read from the
+         * file.
          */
         public long bytesRead() {
             return (long) BYTES_READ.getOpaque(this);

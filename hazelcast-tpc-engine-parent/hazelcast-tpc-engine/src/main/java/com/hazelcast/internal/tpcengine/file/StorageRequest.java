@@ -20,7 +20,7 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 
 /**
- * Represents a request to the {@link StorageDevice} like a read or write.
+ * Represents a request to file like a read or write.
  * <p/>
  * BlockRequests should be pooled by the {@link StorageScheduler} to avoid litter.
  * <p/>
@@ -49,5 +49,4 @@ public class StorageRequest {
     public int flags;
     public int rwFlags;
     public IntPromise promise;
-    public StorageDevice dev;
 }

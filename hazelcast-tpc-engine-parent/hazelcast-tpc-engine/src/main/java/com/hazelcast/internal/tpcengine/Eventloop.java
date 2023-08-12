@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
@@ -76,7 +75,6 @@ public abstract class Eventloop {
     protected final TaskQueueScheduler taskQueueScheduler;
     private final StallHandler stallHandler;
     private long taskDeadlineNanos;
-    protected final StorageDeviceRegistry storageDeviceRegistry;
 
     protected Eventloop(Builder builder) {
         this.reactor = builder.reactor;
@@ -90,7 +88,6 @@ public abstract class Eventloop {
         this.blockBufferAllocator = builder.blockBufferAllocator;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
-        this.storageDeviceRegistry = builder.reactorBuilder.storageDeviceRegistry;
         this.stallThresholdNanos = builder.reactorBuilder.stallThresholdNanos;
         this.ioIntervalNanos = builder.reactorBuilder.ioIntervalNanos;
         this.stallHandler = builder.reactorBuilder.stallHandler;

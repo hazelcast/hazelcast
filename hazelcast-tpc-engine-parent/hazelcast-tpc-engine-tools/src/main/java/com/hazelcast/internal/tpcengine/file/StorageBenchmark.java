@@ -119,7 +119,6 @@ public class StorageBenchmark {
     //  private final Map<Reactor, List<AsyncFile>> filesMap = new ConcurrentHashMap<>();
     private final Map<Reactor, List<String>> pathsMap = new ConcurrentHashMap<>();
 
-    private final StorageDeviceRegistry blockDeviceRegistry = new StorageDeviceRegistry();
     private final ArrayList<Reactor> reactors = new ArrayList<>();
     private static volatile boolean stop;
 
@@ -237,13 +236,11 @@ public class StorageBenchmark {
         long startMs = System.currentTimeMillis();
         System.out.println("Setup: starting");
         ThreadAffinity threadAffinity = affinity == null ? null : new ThreadAffinity(affinity);
-        // storageDeviceRegistry.register(dir, 512, 512);
 
         for (int k = 0; k < numJobs; k++) {
             Reactor.Builder reactorBuilder = newReactorBuilder(reactorType);
             reactorBuilder.threadAffinity = threadAffinity;
             reactorBuilder.spin = spin;
-            reactorBuilder.storageDeviceRegistry = blockDeviceRegistry;
             Reactor reactor = reactorBuilder.build();
             reactors.add(reactor);
             reactor.start();

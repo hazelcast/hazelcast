@@ -18,7 +18,6 @@ package com.hazelcast.internal.tpcengine;
 
 
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket.AcceptRequest;
@@ -756,8 +755,6 @@ public abstract class Reactor implements Executor {
         private final int maxServerSockets;
         private final int maxFiles;
 
-        public StorageDeviceRegistry storageDeviceRegistry;
-
         public final ReactorType type;
 
         //  Sets the maximum number of {@link AsyncSocket} supported by this Reactor.
@@ -936,10 +933,6 @@ public abstract class Reactor implements Executor {
             checkPositive(stallThresholdNanos, "stallThresholdNanos");
             checkPositive(ioIntervalNanos, "ioIntervalNanos");
             checkPositive(deadlineRunQueueCapacity, "deadlineRunQueueCapacity");
-
-            if (storageDeviceRegistry == null) {
-                storageDeviceRegistry = new StorageDeviceRegistry();
-            }
 
             if (reactorName == null) {
                 reactorName = "Reactor-" + REACTOR_ID_GENERATOR.getAndIncrement();

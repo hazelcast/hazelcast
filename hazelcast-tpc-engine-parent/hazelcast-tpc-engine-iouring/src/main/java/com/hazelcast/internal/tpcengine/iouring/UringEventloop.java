@@ -18,7 +18,6 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -27,7 +26,6 @@ import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_TIMEOUT;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMESPEC;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
-import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -70,13 +68,7 @@ public final class UringEventloop extends Eventloop {
     @Override
     public AsyncFile newAsyncFile(String path) {
         checkNotNull(path, "path");
-
-        StorageDevice dev = storageDeviceRegistry.findDevice(path);
-        if (dev == null) {
-            throw newUncheckedIOException("Could not find storage device for [" + path + "]");
-        }
-
-        return new UringAsyncFile(path, this, storageScheduler, dev);
+        return new UringAsyncFile(path, this, storageScheduler);
     }
 
     @Override
