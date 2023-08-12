@@ -26,22 +26,22 @@ import java.util.Queue;
  */
 public class NioNetworkScheduler implements NetworkScheduler<NioAsyncSocket> {
 
-    private final Queue<NioAsyncSocket> dirtyQueue;
+    private final Queue<NioAsyncSocket> stagingQueue;
 
     public NioNetworkScheduler(int maxSockets) {
-        this.dirtyQueue = new MpscArrayQueue<>(maxSockets);
+        this.stagingQueue = new MpscArrayQueue<>(maxSockets);
     }
 
     @Override
     public void schedule(NioAsyncSocket socket) {
-        if (!dirtyQueue.offer(socket)) {
+        if (!stagingQueue.offer(socket)) {
             throw new IllegalStateException("Too many sockets");
         }
     }
 
     public void tick() {
         for (; ; ) {
-            NioAsyncSocket socket = dirtyQueue.poll();
+            NioAsyncSocket socket = stagingQueue.poll();
             if (socket == null) {
                 break;
             }
@@ -52,6 +52,6 @@ public class NioNetworkScheduler implements NetworkScheduler<NioAsyncSocket> {
 
     @Override
     public boolean hasPending() {
-        return !dirtyQueue.isEmpty();
+        return !stagingQueue.isEmpty();
     }
 }

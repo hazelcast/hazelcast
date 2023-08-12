@@ -22,22 +22,22 @@ import org.jctools.queues.MpscArrayQueue;
 import java.util.Queue;
 
 public class UringNetworkScheduler implements NetworkScheduler<UringAsyncSocket> {
-    private final Queue<UringAsyncSocket> dirtyQueue;
+    private final Queue<UringAsyncSocket> stagingQueue;
 
     public UringNetworkScheduler(int maxSockets) {
-        this.dirtyQueue = new MpscArrayQueue<>(maxSockets);
+        this.stagingQueue = new MpscArrayQueue<>(maxSockets);
     }
 
     @Override
     public void schedule(UringAsyncSocket socket) {
-        if (!dirtyQueue.offer(socket)) {
+        if (!stagingQueue.offer(socket)) {
             throw new IllegalStateException("Too many sockets");
         }
     }
 
     public void tick() {
         for (; ; ) {
-            UringAsyncSocket socket = dirtyQueue.poll();
+            UringAsyncSocket socket = stagingQueue.poll();
             if (socket == null) {
                 break;
             }
@@ -48,6 +48,6 @@ public class UringNetworkScheduler implements NetworkScheduler<UringAsyncSocket>
 
     @Override
     public boolean hasPending() {
-        return !dirtyQueue.isEmpty();
+        return !stagingQueue.isEmpty();
     }
 }
