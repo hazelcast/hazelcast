@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
+import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 
@@ -28,8 +29,11 @@ import com.hazelcast.internal.tpcengine.util.IntPromise;
 @SuppressWarnings({"checkstyle:TrailingComment"})
 public final class IOUringAsyncFile extends AsyncFile {
 
-    public IOUringAsyncFile(String path, Eventloop eventloop, StorageScheduler scheduler) {
-        super(path, eventloop, scheduler);
+    public IOUringAsyncFile(String path,
+                            Eventloop eventloop,
+                            StorageScheduler scheduler,
+                            StorageDevice device) {
+        super(path, eventloop, scheduler, device);
     }
 
 

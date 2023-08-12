@@ -44,4 +44,6 @@ public interface StorageScheduler {
      * @param req the BlockRequest.
      */
     void schedule(StorageRequest req);
+
+    void tick();
 }

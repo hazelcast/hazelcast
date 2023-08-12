@@ -17,10 +17,11 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.file.StorageRequest;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
@@ -48,94 +49,93 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQ
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
+import static java.lang.Math.min;
+
 
 /**
- * Todo: The IOScheduler should be a scheduler for all storage devices. Currently it is only for a single device.
+ * A io_uring specific {@link StorageScheduler} that processes all requests
+ * in FIFO order.
+ * <p/>
+ * There are 3 important queues:
+ * <ol>
+ *     <li>stagingQueue: this is the queue where scheduled request initially
+ *     end up.</li>
+ *     <li>submissionQueue: on every scheduled tick, requests from the staging
+ *     queue are moved to the submission queue.</li>
+ *     <li>
+ *         completionQueue: once io_uring has completed the requests, the
+ *         completed requests end up at the completion queue.
+ *     </li>
+ * </ol>
  */
-@SuppressWarnings({"checkstyle:MethodLength", "checkstyle:MemberName", "checkstyle:LocalVariableName"})
-public class IOUringStorageScheduler implements StorageScheduler {
+// todo: remove magic number
+@SuppressWarnings({"checkstyle:MethodLength",
+        "checkstyle:MemberName",
+        "checkstyle:LocalVariableName",
+        "checkstyle:MagicNumber"})
+public class IOUringFifoStorageScheduler implements StorageScheduler {
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
-    final String path;
-    IOUringEventloop eventloop;
-    private final int concurrentLimit;
-    private final SubmissionQueue sq;
-    private final StorageDevice dev;
-    private int concurrent;
-    // a queue of IoOps that could not be submitted to io_uring because either
-    // io_uring was full or because the max number of concurrent IoOps for that
-    // device was exceeded.
-    private final CircularQueue<IOUringStorageRequest> waitQueue;
-    private final SlabAllocator<IOUringStorageRequest> requestAllocator;
-    private long count;
-    private final CompletionQueue cq;
-
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final StringBuilder msgBuilder = new StringBuilder();
+    private final SlabAllocator<IOUringStorageRequest> requestAllocator;
+    private final CircularQueue<IOUringStorageRequest> stagingQueue;
+    private final SubmissionQueue submissionQueue;
+    private final CompletionQueue completionQueue;
+    private final int maxIoDepth;
+    private final IOBufferAllocator pathAllocator;
+    private int ioDepth;
 
-    public IOUringStorageScheduler(StorageDevice dev, IOUringEventloop eventloop) {
-        this.dev = dev;
-        this.path = dev.path();
-        this.concurrentLimit = dev.concurrentLimit();
-        this.waitQueue = new CircularQueue<>(dev.maxWaiting());
-        this.requestAllocator = new SlabAllocator<>(dev.maxWaiting(), IOUringStorageRequest::new);
-        this.eventloop = eventloop;
-        this.sq = eventloop.uring.sq();
-        this.cq = eventloop.uring.cq();
+    public IOUringFifoStorageScheduler(IOUring uring,
+                                       int maxIoDepth,
+                                       int capacity) {
+        this.maxIoDepth = maxIoDepth;
+        this.requestAllocator = new SlabAllocator<>(capacity, IOUringStorageRequest::new);
+        this.pathAllocator = new NonConcurrentIOBufferAllocator(512, true);
+        this.stagingQueue = new CircularQueue<>(capacity);
+        this.submissionQueue = uring.sq();
+        this.completionQueue = uring.cq();
     }
 
     @Override
     public StorageRequest allocate() {
-        //todo: not the right condition
-        if (concurrent >= concurrentLimit) {
-            return null;
-        }
-
         return requestAllocator.allocate();
     }
 
     @Override
     public void schedule(StorageRequest req) {
-        if (concurrent < concurrentLimit) {
-            // The request should not immediately be offered to
-            // io_uring; only when there is a scheduler tick, the
-            // request should be flushed.
-            addRequest((IOUringStorageRequest) req);
-        } else if (!waitQueue.offer((IOUringStorageRequest) req)) {
+        if (!stagingQueue.offer((IOUringStorageRequest) req)) {
             throw new IllegalStateException("Too many concurrent requests");
         }
     }
 
-    private void addNextRequest() {
-        if (concurrent < concurrentLimit) {
-            IOUringStorageRequest req = waitQueue.poll();
-            if (req != null) {
-                addRequest(req);
+    @Override
+    public void tick() {
+        // Submits as many staged requests as allowed to the submission queue.
+        // Completion events are processed in the IOUringEventloop, so we
+        // don't need to deal with that here.
+        int submitCount = min(maxIoDepth - ioDepth, stagingQueue.size());
+
+        for (int k = 0; k < submitCount; k++) {
+            int sqIndex = submissionQueue.nextIndex();
+            if (sqIndex < 0) {
+                // the submission queue is full
+                break;
             }
-        }
-    }
 
-    private void addRequest(IOUringStorageRequest req) {
-        long userdata = cq.nextTmpHandlerId();
-        cq.register(userdata, req);
-
-        concurrent++;
-
-        int sqIndex = sq.nextIndex();
-        if (sqIndex >= 0) {
+            ioDepth++;
+            IOUringStorageRequest req = stagingQueue.poll();
+            long userdata = completionQueue.nextTmpHandlerId();
+            completionQueue.register(userdata, req);
             req.writeSqe(sqIndex, userdata);
-        } else {
-            // can't happen
-            // todo: we need to find better solution
-            throw new RuntimeException("Could not offer req: " + req);
         }
     }
 
     final class IOUringStorageRequest extends StorageRequest implements CompletionHandler {
 
         void writeSqe(int sqIndex, long userdata) {
-            long sqeAddr = sq.sqesAddr + sqIndex * SIZEOF_SQE;
+            long sqeAddr = submissionQueue.sqesAddr + sqIndex * SIZEOF_SQE;
             byte sqe_opcode;
             int sqe_fd = 0;
             long sqe_addr = 0;
@@ -203,9 +203,7 @@ public class IOUringStorageScheduler implements StorageScheduler {
             // todo: unwanted litter.
             byte[] chars = file.path().getBytes(StandardCharsets.UTF_8);
 
-            // todo: we do not need a blockIOBuffer for this; this is just used for passing the name
-            // of the file as a string to the kernel.
-            IOBuffer pathBuffer = eventloop.blockIOBufferAllocator().allocate(chars.length + SIZEOF_CHAR);
+            IOBuffer pathBuffer = pathAllocator.allocate(chars.length + SIZEOF_CHAR);
             pathBuffer.writeBytes(chars);
             // C strings end with \0
             pathBuffer.writeChar('\0');
@@ -215,7 +213,8 @@ public class IOUringStorageScheduler implements StorageScheduler {
 
         @Override
         public void completeRequest(int res, int flags, long userdata) {
-            concurrent--;
+            ioDepth--;
+
             if (res >= 0) {
                 AsyncFile.Metrics metrics = file.metrics();
                 switch (opcode) {
@@ -257,7 +256,6 @@ public class IOUringStorageScheduler implements StorageScheduler {
                 handleError(res);
             }
 
-            addNextRequest();
             rwFlags = 0;
             flags = 0;
             opcode = 0;
@@ -267,6 +265,7 @@ public class IOUringStorageScheduler implements StorageScheduler {
             buffer = null;
             file = null;
             promise = null;
+            dev = null;
             requestAllocator.free(this);
         }
 

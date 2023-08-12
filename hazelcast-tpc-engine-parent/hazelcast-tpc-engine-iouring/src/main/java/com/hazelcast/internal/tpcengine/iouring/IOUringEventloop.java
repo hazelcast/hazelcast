@@ -19,7 +19,6 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.StorageDevice;
-import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -45,15 +44,12 @@ public final class IOUringEventloop extends Eventloop {
     private final CompletionQueue cq;
     final EventFdHandler eventFdHandler;
     private final TimeoutHandler timeoutHandler;
-    private final IOUringNetworkScheduler networkScheduler;
 
     private IOUringEventloop(Builder builder) {
         super(builder);
-        this.networkScheduler = (IOUringNetworkScheduler) builder.networkScheduler;
+
         IOUringReactor.Builder reactorBuilder = (IOUringReactor.Builder) builder.reactorBuilder;
-        // The uring instance needs to be created on the eventloop thread.
-        // This is required for some of the setup flags.
-        this.uring = new IOUring(reactorBuilder.entries, reactorBuilder.setupFlags);
+        this.uring = builder.uring;
         if (reactorBuilder.registerRing) {
             this.uring.registerRingFd();
         }
@@ -80,13 +76,7 @@ public final class IOUringEventloop extends Eventloop {
             throw newUncheckedIOException("Could not find storage device for [" + path + "]");
         }
 
-        StorageScheduler storageScheduler = storageSchedulers.get(dev);
-        if (storageScheduler == null) {
-            storageScheduler = new IOUringStorageScheduler(dev, this);
-            storageSchedulers.put(dev, storageScheduler);
-        }
-
-        return new IOUringAsyncFile(path, this, storageScheduler);
+        return new IOUringAsyncFile(path, this, storageScheduler, dev);
     }
 
     @Override
@@ -98,6 +88,7 @@ public final class IOUringEventloop extends Eventloop {
     @Override
     protected void park(long timeoutNanos) {
         networkScheduler.tick();
+        storageScheduler.tick();
 
         boolean completions = false;
         if (cq.hasCompletions()) {
@@ -129,6 +120,7 @@ public final class IOUringEventloop extends Eventloop {
     @Override
     protected boolean ioSchedulerTick() {
         networkScheduler.tick();
+        storageScheduler.tick();
 
         boolean worked = false;
 
@@ -225,7 +217,11 @@ public final class IOUringEventloop extends Eventloop {
         }
     }
 
+    // todo: remove magic number
+    @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MagicNumber"})
     public static class Builder extends Eventloop.Builder {
+
+        public IOUring uring;
 
         @Override
         protected void conclude() {
@@ -233,6 +229,17 @@ public final class IOUringEventloop extends Eventloop {
 
             if (networkScheduler == null) {
                 networkScheduler = new IOUringNetworkScheduler(reactorBuilder.maxSockets);
+            }
+
+            if (uring == null) {
+                // The uring instance needs to be created on the eventloop thread.
+                // This is required for some of the setup flags.
+                IOUringReactor.Builder reactorBuilder = (IOUringReactor.Builder) this.reactorBuilder;
+                this.uring = new IOUring(reactorBuilder.entries, reactorBuilder.setupFlags);
+            }
+
+            if (storageScheduler == null) {
+                storageScheduler = new IOUringFifoStorageScheduler(uring, 1024, 4096);
             }
         }
 

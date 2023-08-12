@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpcengine;
 
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.file.StorageDeviceRegistry;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
@@ -32,8 +31,6 @@ import com.hazelcast.internal.tpcengine.util.Promise;
 import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -68,8 +65,9 @@ public abstract class Eventloop {
     protected final TaskQueue.Handle defaultTaskQueueHandle;
     private final Reactor.Metrics metrics;
     private final long minGranularityNanos;
-    private final NetworkScheduler networkScheduler;
+    protected final NetworkScheduler networkScheduler;
     private final IOBufferAllocator blockBufferAllocator;
+    protected final StorageScheduler storageScheduler;
     protected boolean stop;
     protected long taskStartNanos;
     private final long ioIntervalNanos;
@@ -79,7 +77,6 @@ public abstract class Eventloop {
     private final StallHandler stallHandler;
     private long taskDeadlineNanos;
     protected final StorageDeviceRegistry storageDeviceRegistry;
-    protected final Map<StorageDevice, StorageScheduler> storageSchedulers = new HashMap<>();
 
     protected Eventloop(Builder builder) {
         this.reactor = builder.reactor;
@@ -88,6 +85,7 @@ public abstract class Eventloop {
         this.spin = builder.reactorBuilder.spin;
         this.deadlineScheduler = builder.deadlineScheduler;
         this.networkScheduler = builder.networkScheduler;
+        this.storageScheduler = builder.storageScheduler;
         this.taskQueueScheduler = builder.taskQueueScheduler;
         this.blockBufferAllocator = builder.blockBufferAllocator;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
@@ -522,6 +520,7 @@ public abstract class Eventloop {
         public Reactor reactor;
         public Reactor.Builder reactorBuilder;
         public NetworkScheduler networkScheduler;
+        public StorageScheduler storageScheduler;
         public TaskQueueScheduler taskQueueScheduler;
         public DeadlineScheduler deadlineScheduler;
         public IOBufferAllocator blockBufferAllocator;

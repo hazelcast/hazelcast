@@ -69,13 +69,16 @@ public abstract class AsyncFile {
     public static final int O_SYNC = 04000000;
     public static final int O_NOATIME = 01000000;
 
+
     // todo: should be made private and using a varhandle it should be modified
     public int fd = -1;
     protected final IntPromiseAllocator promiseAllocator;
     private final Metrics metrics = new Metrics();
-    private final Eventloop eventloop;
+    //private final Eventloop eventloop;
     private final String path;
     private final StorageScheduler scheduler;
+    private final Eventloop eventloop;
+    private final StorageDevice dev;
 
     // todo: Using path as a string forces creating litter.
 
@@ -87,11 +90,14 @@ public abstract class AsyncFile {
      * @param eventloop
      * @param scheduler
      */
-    public AsyncFile(String path, Eventloop eventloop, StorageScheduler scheduler) {
+    public AsyncFile(String path, Eventloop eventloop, StorageScheduler scheduler, StorageDevice dev) {
         this.path = path;
         this.eventloop = eventloop;
         this.promiseAllocator = eventloop.intPromiseAllocator();
         this.scheduler = scheduler;
+        this.dev = dev;
+
+        // todo: deal with
         this.eventloop.reactor().files().add(this);
     }
 
@@ -164,6 +170,7 @@ public abstract class AsyncFile {
         request.opcode = STR_REQ_OP_NOP;
         request.promise = promise;
         request.file = this;
+        request.dev = dev;
 
         scheduler.schedule(request);
         return promise;
@@ -206,6 +213,7 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_FSYNC;
         request.file = this;
+        request.dev = dev;
         request.promise = promise;
         scheduler.schedule(request);
         return promise;
@@ -246,6 +254,7 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_FDATASYNC;
         request.file = this;
+        request.dev = dev;
         request.promise = promise;
         scheduler.schedule(request);
         return promise;
@@ -263,6 +272,7 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_FALLOCATE;
         request.file = this;
+        request.dev = dev;
         request.promise = promise;
         // The address field is used to store the length of the allocation
         //request.addr = length;
@@ -289,9 +299,11 @@ public abstract class AsyncFile {
             return failOnOverload(promise);
         }
 
+
         request.opcode = STR_REQ_OP_OPEN;
         request.promise = promise;
         request.file = this;
+        request.dev = dev;
         request.flags = flags;
         request.permissions = permissions;
 
@@ -324,6 +336,7 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_CLOSE;
         request.file = this;
+        request.dev = dev;
         request.promise = promise;
 
         scheduler.schedule(request);
@@ -354,6 +367,7 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_READ;
         request.file = this;
+        request.dev = dev;
         request.promise = promise;
         request.buffer = dst;
         request.length = length;
@@ -401,6 +415,7 @@ public abstract class AsyncFile {
 
         request.opcode = STR_REQ_OP_WRITE;
         request.file = this;
+        request.dev = dev;
         request.promise = promise;
         request.buffer = src;
         request.length = length;

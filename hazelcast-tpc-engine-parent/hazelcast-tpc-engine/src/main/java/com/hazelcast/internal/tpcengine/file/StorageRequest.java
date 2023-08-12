@@ -49,4 +49,5 @@ public class StorageRequest {
     public int flags;
     public int rwFlags;
     public IntPromise promise;
+    public StorageDevice dev;
 }

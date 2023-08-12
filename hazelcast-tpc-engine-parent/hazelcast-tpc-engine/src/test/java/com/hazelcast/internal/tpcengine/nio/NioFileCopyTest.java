@@ -18,9 +18,7 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.file.FileCopyTest;
-import org.junit.Ignore;
 
-@Ignore
 public class NioFileCopyTest extends FileCopyTest {
     @Override
     public Reactor newReactor() {

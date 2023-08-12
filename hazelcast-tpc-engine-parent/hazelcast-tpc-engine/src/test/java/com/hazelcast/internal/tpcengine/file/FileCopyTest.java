@@ -177,7 +177,6 @@ public abstract class FileCopyTest {
             } else {
                 dst.pwrite(bytesWritten, bytesToWrite, buffer).then(this);
             }
-            System.out.println("run done");
         }
 
         @Override
@@ -188,19 +187,15 @@ public abstract class FileCopyTest {
             }
 
             if (read) {
-                System.out.println("read");
                 buffer.flip();
                 read = false;
                 bytesToWrite = res;
                 run();
-                System.out.println("post run read");
             } else {
-                System.out.println("write");
-                buffer.clearOrCompact();
+                 buffer.clearOrCompact();
                 read = true;
                 bytesWritten += res;
                 if (bytesWritten == src.size()) {
-                    System.out.println("file has been fully copied");
                     // we we are at the end
                     dst.close().then((integer1, throwable1) -> {
                         if (throwable1 != null) {
@@ -211,7 +206,6 @@ public abstract class FileCopyTest {
                         future.complete(null);
                     });
                 } else {
-                    System.out.println("run again");
                     // triggers the read
                     run();
                     block++;

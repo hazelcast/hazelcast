@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
+import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 
@@ -28,8 +29,11 @@ import java.nio.channels.AsynchronousFileChannel;
 public class NioAsyncFile extends AsyncFile {
     AsynchronousFileChannel channel;
 
-    public NioAsyncFile(String path, Eventloop eventloop, StorageScheduler scheduler) {
-        super(path, eventloop, scheduler);
+    public NioAsyncFile(String path,
+                        Eventloop eventloop,
+                        StorageScheduler scheduler,
+                        StorageDevice device) {
+        super(path, eventloop, scheduler, device);
     }
 
     @Override

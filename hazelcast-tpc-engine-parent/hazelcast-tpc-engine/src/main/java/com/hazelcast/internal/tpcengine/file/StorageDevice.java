@@ -57,4 +57,9 @@ public class StorageDevice {
     public int maxWaiting() {
         return maxWaiting;
     }
+
+    @Override
+    public String toString() {
+        return "StorageDevice[" + path + "]";
+    }
 }

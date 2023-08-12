@@ -18,9 +18,8 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.file.AsyncFileTest;
-import org.junit.Ignore;
 
-@Ignore
+
 public class NioAsyncFileTest extends AsyncFileTest {
     @Override
     public Reactor newReactor() {

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
-import com.hazelcast.internal.tpcengine.file.StorageDevice;
 import com.hazelcast.internal.tpcengine.file.StorageRequest;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
@@ -34,7 +33,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_CREAT;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_DIRECT;
@@ -51,48 +49,45 @@ import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_NO
 import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_OPEN;
 import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_READ;
 import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_WRITE;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
+/**
+ * Nio {@link StorageScheduler} implementation.
+ * <p>
+ * It is a FIFO based scheduler where all requests end up in a single requestQueue.
+ * Requests are picked from this request queue until the queue is empty or until
+ * the maximum ioDepth has been reached.
+ */
 @SuppressWarnings({
         "checkstyle:CyclomaticComplexity",
         "checkstyle:VisibilityModifier",
         "checkstyle:MethodLength"})
-public class NioStorageScheduler implements StorageScheduler {
+public class NioFifoStorageScheduler implements StorageScheduler {
 
-    private static final Executor EXECUTOR = Executors.newCachedThreadPool((Runnable r) -> {
-        Thread t = new Thread(r);
-        t.setDaemon(true);
-        return t;
-    });
-
-    final MpscArrayQueue<NioStorageRequest> cq;
     private final NioReactor reactor;
-    private final int concurrentLimit;
-    private final CircularQueue<NioStorageRequest> waitQueue;
-    private int concurrent;
+    private final Executor executor;
     private final SlabAllocator<NioStorageRequest> requestAllocator;
-    private final CompletionHandler<Integer, NioStorageRequest> rwCompletionHandler = new CompletionHandler<>() {
-        @Override
-        public void completed(Integer result, NioStorageRequest attachment) {
-            attachment.result = result;
-            cq.add(attachment);
-            reactor.wakeup();
-        }
+    private final CompletionHandler<Integer, NioStorageRequest> handler = new StorageRequestCompletionHandler();
+    // This is where completed requests end up
+    private final MpscArrayQueue<NioStorageRequest> completionQueue;
+    // This is where the scheduled request first end up
+    private final CircularQueue<NioStorageRequest> stagingQueue;
+    private final int maxIoDepth;
+    private int ioDepth;
 
-        @Override
-        public void failed(Throwable exc, NioStorageRequest attachment) {
-            attachment.exc = exc;
-            cq.add(attachment);
-            reactor.wakeup();
+    public NioFifoStorageScheduler(NioReactor reactor, Executor executor, int maxIoDepth, int capacity) {
+        this.maxIoDepth = checkPositive(maxIoDepth, "ioDepth");
+        if (capacity < maxIoDepth) {
+            throw new IllegalArgumentException();
         }
-    };
-
-    public NioStorageScheduler(StorageDevice dev, NioEventloop nioEventloop) {
-        concurrentLimit = dev.concurrentLimit();
-        // is npe possible down the line?
-        reactor = (NioReactor) nioEventloop.reactor();
-        waitQueue = new CircularQueue<>(dev.maxWaiting() - concurrentLimit);
-        requestAllocator = new SlabAllocator<>(dev.maxWaiting(), NioStorageRequest::new);
-        cq = new MpscArrayQueue<>(dev.maxWaiting());
+        this.reactor = checkNotNull(reactor, "reactor");
+        this.executor = checkNotNull(executor, "executor");
+        this.requestAllocator = new SlabAllocator<>(capacity, NioStorageRequest::new);
+        this.stagingQueue = new CircularQueue<>(capacity);
+        // Needs to be thread safe because the completion is send from
+        // a thread from the executor.
+        this.completionQueue = new MpscArrayQueue<>(maxIoDepth);
     }
 
     @Override
@@ -101,33 +96,59 @@ public class NioStorageScheduler implements StorageScheduler {
     }
 
     @Override
-    public void schedule(StorageRequest req) {
-        NioStorageRequest nioBlockRequest = (NioStorageRequest) req;
-        if (concurrent < concurrentLimit) {
-            submit0(nioBlockRequest);
-            concurrent++;
-        } else if (!waitQueue.offer(nioBlockRequest)) {
-            throw new IllegalStateException("Too many concurrent IOs");
+    public void schedule(StorageRequest r) {
+        if (!stagingQueue.offer((NioStorageRequest) r)) {
+            // This should not happen because the allocate protect against overload.
+            throw new IllegalStateException("Too many concurrent StorageRequests");
         }
     }
 
-    private void submit0(NioStorageRequest req) {
+    @Override
+    public void tick() {
+        processCompleted();
+        submit();
+    }
+
+    public boolean hasPending() {
+        return !completionQueue.isEmpty();
+    }
+
+    /**
+     * Takes as many requests from the staging queue as allowed and submits them
+     * for actual processing.
+     */
+    private void submit() {
+        for (; ; ) {
+            if (ioDepth == maxIoDepth) {
+                break;
+            }
+
+            NioStorageRequest req = stagingQueue.poll();
+            if (req == null) {
+                break;
+            }
+            submit(req);
+        }
+    }
+
+    private void submit(NioStorageRequest req) {
+        ioDepth++;
         switch (req.opcode) {
             case STR_REQ_OP_NOP:
-                EXECUTOR.execute(() -> {
+                executor.execute(() -> {
                     req.result = 0;
-                    cq.add(req);
+                    completionQueue.add(req);
                     reactor.wakeup();
                 });
                 break;
             case STR_REQ_OP_READ:
-                req.getFile().channel.read(req.buffer.byteBuffer(), req.offset, req, rwCompletionHandler);
+                req.getFile().channel.read(req.buffer.byteBuffer(), req.offset, req, handler);
                 break;
             case STR_REQ_OP_WRITE:
-                req.getFile().channel.write(req.buffer.byteBuffer(), req.offset, req, rwCompletionHandler);
+                req.getFile().channel.write(req.buffer.byteBuffer(), req.offset, req, handler);
                 break;
             case STR_REQ_OP_FSYNC:
-                EXECUTOR.execute(() -> {
+                executor.execute(() -> {
                     try {
                         req.getFile().channel.force(true);
                         req.result = 0;
@@ -135,12 +156,12 @@ public class NioStorageScheduler implements StorageScheduler {
                         req.exc = e;
                     }
 
-                    cq.add(req);
+                    completionQueue.add(req);
                     reactor.wakeup();
                 });
                 break;
             case STR_REQ_OP_FDATASYNC:
-                EXECUTOR.execute(() -> {
+                executor.execute(() -> {
                     try {
                         req.getFile().channel.force(false);
                         req.result = 0;
@@ -148,12 +169,12 @@ public class NioStorageScheduler implements StorageScheduler {
                         req.exc = e;
                     }
 
-                    cq.add(req);
+                    completionQueue.add(req);
                     reactor.wakeup();
                 });
                 break;
             case STR_REQ_OP_OPEN:
-                EXECUTOR.execute(() -> {
+                executor.execute(() -> {
                     try {
                         req.channel = AsynchronousFileChannel.open(
                                 Path.of(req.file.path()),
@@ -163,12 +184,12 @@ public class NioStorageScheduler implements StorageScheduler {
                         req.exc = e;
                     }
 
-                    cq.add(req);
+                    completionQueue.add(req);
                     reactor.wakeup();
                 });
                 break;
             case STR_REQ_OP_CLOSE:
-                EXECUTOR.execute(() -> {
+                executor.execute(() -> {
                     try {
                         req.getFile().channel.close();
                         req.result = 0;
@@ -176,7 +197,7 @@ public class NioStorageScheduler implements StorageScheduler {
                         req.exc = e;
                     }
 
-                    cq.add(req);
+                    completionQueue.add(req);
                     reactor.wakeup();
                 });
                 break;
@@ -223,6 +244,24 @@ public class NioStorageScheduler implements StorageScheduler {
         return opts.toArray(new OpenOption[0]);
     }
 
+    /**
+     * Processes all the completed StorageRequests.
+     *
+     * @return
+     */
+    private int processCompleted() {
+        int completed = 0;
+        for (; ; ) {
+            NioStorageRequest req = completionQueue.poll();
+            if (req == null) {
+                break;
+            }
+            complete(req);
+            completed++;
+        }
+        return completed;
+    }
+
     void complete(NioStorageRequest req) {
         if (req.exc != null) {
             req.promise.completeExceptionally(req.exc);
@@ -231,7 +270,7 @@ public class NioStorageScheduler implements StorageScheduler {
                 req.getFile().channel = req.channel;
             }
             req.promise.complete(req.result);
-            handleMetrics(req);
+            updateMetrics(req);
         }
 
         req.rwFlags = 0;
@@ -246,17 +285,13 @@ public class NioStorageScheduler implements StorageScheduler {
         req.result = 0;
         req.exc = null;
         requestAllocator.free(req);
-        concurrent--;
-
-        while (waitQueue.hasRemaining() && concurrent < concurrentLimit) {
-            schedule(waitQueue.poll());
-        }
+        ioDepth--;
     }
 
-    private void handleMetrics(NioStorageRequest nioBlockRequest) {
-        AsyncFile.Metrics metrics = nioBlockRequest.file.metrics();
-        int res = nioBlockRequest.result;
-        switch (nioBlockRequest.opcode) {
+    private void updateMetrics(NioStorageRequest req) {
+        AsyncFile.Metrics metrics = req.file.metrics();
+        int res = req.result;
+        switch (req.opcode) {
             case STR_REQ_OP_NOP:
                 metrics.incNops();
                 break;
@@ -279,9 +314,10 @@ public class NioStorageScheduler implements StorageScheduler {
             case STR_REQ_OP_FALLOCATE:
                 break;
             default:
-                throw new IllegalStateException("Unknown opcode: " + nioBlockRequest.opcode);
+                throw new IllegalStateException("Unknown opcode: " + req.opcode);
         }
     }
+
 
     public static final class NioStorageRequest extends StorageRequest {
         // only modify these 3 fields in io threads
@@ -292,6 +328,23 @@ public class NioStorageScheduler implements StorageScheduler {
 
         public NioAsyncFile getFile() {
             return (NioAsyncFile) file;
+        }
+    }
+
+    private class StorageRequestCompletionHandler implements CompletionHandler<Integer, NioStorageRequest> {
+
+        @Override
+        public void completed(Integer result, NioStorageRequest req) {
+            req.result = result;
+            completionQueue.add(req);
+            reactor.wakeup();
+        }
+
+        @Override
+        public void failed(Throwable exc, NioStorageRequest req) {
+            req.exc = exc;
+            completionQueue.add(req);
+            reactor.wakeup();
         }
     }
 }

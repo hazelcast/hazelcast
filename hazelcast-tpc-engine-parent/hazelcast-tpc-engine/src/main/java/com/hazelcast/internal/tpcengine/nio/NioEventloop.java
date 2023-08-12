@@ -19,14 +19,13 @@ package com.hazelcast.internal.tpcengine.nio;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.StorageDevice;
-import com.hazelcast.internal.tpcengine.file.StorageScheduler;
-import com.hazelcast.internal.tpcengine.nio.NioStorageScheduler.NioStorageRequest;
-import org.jctools.queues.MpscArrayQueue;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
@@ -52,12 +51,9 @@ final class NioEventloop extends Eventloop {
         }
     };
 
-    private final NioNetworkScheduler nioNetworkScheduler;
-
     NioEventloop(NioEventloop.Builder builder) {
         super(builder);
         this.selector = builder.selector;
-        this.nioNetworkScheduler = (NioNetworkScheduler) builder.networkScheduler;
     }
 
     @Override
@@ -69,18 +65,13 @@ final class NioEventloop extends Eventloop {
             throw newUncheckedIOException("Could not find storage device for [" + path + "]");
         }
 
-        StorageScheduler storageScheduler = storageSchedulers.get(dev);
-        if (storageScheduler == null) {
-            storageScheduler = new NioStorageScheduler(dev, this);
-            storageSchedulers.put(dev, storageScheduler);
-        }
-
-        return new NioAsyncFile(path, this, storageScheduler);
+        return new NioAsyncFile(path, this, storageScheduler, dev);
     }
 
     @Override
     protected boolean ioSchedulerTick() throws IOException {
-        nioNetworkScheduler.tick();
+        storageScheduler.tick();
+        networkScheduler.tick();
 
         int keyCount = selector.selectNow();
         boolean worked;
@@ -114,7 +105,8 @@ final class NioEventloop extends Eventloop {
 
     @Override
     protected void park(long timeoutNanos) throws IOException {
-        nioNetworkScheduler.tick();
+        networkScheduler.tick();
+        storageScheduler.tick();
 
         boolean worked = false;
         //runDeviceSchedulerCompletions();
@@ -129,7 +121,10 @@ final class NioEventloop extends Eventloop {
             // check for any 'outside' work that has been offered. Otherwise the
             // thread goes to sleep even though there is work that it should have
             // processed and this can lead to stalled behavior like stalled socket
-            if (taskQueueScheduler.hasOutsidePending() || nioNetworkScheduler.hasPending()) {
+            //todo: ugly hack with the storage scheduler
+            if (taskQueueScheduler.hasOutsidePending()
+                    || ((NioFifoStorageScheduler) storageScheduler).hasPending()
+                    || networkScheduler.hasPending()) {
                 keyCount = selector.selectNow();
             } else {
                 keyCount = timeoutNanos == Long.MAX_VALUE
@@ -143,25 +138,12 @@ final class NioEventloop extends Eventloop {
             handleSelectedKeys();
         }
 
-        // todo: 2x
-        //runDeviceSchedulerCompletions();
+        // todo: skip
+        //networkScheduler.tick();
+        storageScheduler.tick();
+
     }
 
-    private boolean runStorageCompletions() {
-        // similar to cq completions in io_uring
-        boolean worked = false;
-
-        // todo: litter
-        for (StorageScheduler storageScheduler : storageSchedulers.values()) {
-            NioStorageScheduler scheduler = (NioStorageScheduler) storageScheduler;
-            MpscArrayQueue<NioStorageRequest> cq = scheduler.cq;
-            int drained = cq.drain(scheduler::complete);
-            if (drained > 0) {
-                worked = true;
-            }
-        }
-        return worked;
-    }
 
 //    @Override
 //    protected boolean ioSchedulerTick() throws IOException {
@@ -209,13 +191,23 @@ final class NioEventloop extends Eventloop {
         closeQuietly(selector);
     }
 
-    @SuppressWarnings({"checkstyle:VisibilityModifier"})
+    // todo: remove magic number
+    @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MagicNumber"})
     public static class Builder extends Eventloop.Builder {
         public Selector selector;
+        public Executor storageExecutor;
 
         @Override
         protected void conclude() {
             super.conclude();
+
+            if (storageScheduler == null) {
+                if (storageExecutor == null) {
+                    storageExecutor = Executors.newSingleThreadExecutor();
+                }
+
+                storageScheduler = new NioFifoStorageScheduler((NioReactor) reactor, storageExecutor, 1024, 4096);
+            }
 
             if (networkScheduler == null) {
                 networkScheduler = new NioNetworkScheduler(reactorBuilder.maxSockets);
