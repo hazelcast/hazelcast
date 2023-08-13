@@ -26,7 +26,7 @@ import static java.lang.Math.round;
 
 /**
  * A {@link Scheduler} that always schedules the task group with the lowest
- * vruntime first.
+ * vruntime first and is modelled after the Linux CFS scheduler.
  * <p/>
  * The CompletelyFairScheduler is a fair scheduler. So if there are 2 tasks
  * with equal weight, they will both get half of the CPU time. If one of the
