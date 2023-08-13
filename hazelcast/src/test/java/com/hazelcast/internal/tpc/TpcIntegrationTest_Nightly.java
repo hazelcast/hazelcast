@@ -21,10 +21,12 @@ import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class TpcIntegrationTest_Nightly extends TpcIntegrationTest {
     public TpcIntegrationTest_Nightly() {
-        iterations = 5_000;
+        durationMs = TimeUnit.SECONDS.toMillis(30);
     }
 }

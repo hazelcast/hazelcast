@@ -30,15 +30,17 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.internal.tpc.TpcServerBootstrap.TPC_ENABLED;
 import static com.hazelcast.internal.tpc.TpcServerBootstrap.TPC_EVENTLOOP_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class TpcIntegrationTest extends HazelcastTestSupport {
-    private static final int PRINT_PROGRESS_INTERVAL = 1000;
+    private static final int PRINT_PROGRESS_INTERVAL = 10000;
 
-    public int iterations = 10000;
+    public long durationMs = TimeUnit.SECONDS.toMillis(10);
     private final ILogger logger = Logger.getLogger(getClass());
     private HazelcastInstance server;
     private HazelcastInstance client;
@@ -67,16 +69,18 @@ public class TpcIntegrationTest extends HazelcastTestSupport {
         logger.info(">> Client created");
         IMap<Integer, Integer> map = client.getMap("foo");
 
-        long startTime = System.currentTimeMillis();
-
-        for (int k = 0; k < iterations; k++) {
-            if (k % PRINT_PROGRESS_INTERVAL == 0) {
-                logger.info(">> At:" + k);
+        long startMs = System.currentTimeMillis();
+        long endMs = startMs + durationMs;
+        int iterations = 0;
+        while (System.currentTimeMillis() < endMs) {
+            if (iterations % PRINT_PROGRESS_INTERVAL == 0) {
+                logger.info(">> At:" + iterations);
             }
-            map.put(k, k);
+            map.put(iterations, iterations);
+            iterations++;
         }
 
-        long duration = System.currentTimeMillis() - startTime;
+        long duration = System.currentTimeMillis() - startMs;
         double throughput = iterations * 1000f / duration;
         logger.info(">> Throughput:" + throughput + " op/s");
 
