@@ -24,6 +24,7 @@ import org.junit.Test;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -233,6 +234,27 @@ public abstract class AsyncSocketTest {
         CompletableFuture<Void> future = socket.connect(new InetSocketAddress("127.0.0.1", 5002));
 
         assertThrows(CompletionException.class, () -> future.join());
+    }
+
+    @Test
+    public void test_reactor_sockets() {
+        Reactor reactor = newReactor();
+        AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder();
+        socketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket socket = socketBuilder.build();
+
+        assertEquals(0, reactor.sockets().size());
+
+        socket.start();
+
+        List<AsyncSocket> list = new ArrayList<>();
+        reactor.sockets().foreach(list::add);
+
+        assertEquals(Collections.singletonList(socket), list);
+
+        socket.close();
+
+        assertEquals(0, reactor.sockets().size());
     }
 
     @Test

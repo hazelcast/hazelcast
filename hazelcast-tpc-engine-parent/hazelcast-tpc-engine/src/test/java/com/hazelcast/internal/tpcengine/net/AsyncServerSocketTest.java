@@ -25,6 +25,7 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -339,5 +340,33 @@ public abstract class AsyncServerSocketTest {
         for (AsyncServerSocket goodSocket : goodServerSockets) {
             assertFalse(goodSocket.isClosed());
         }
+    }
+
+    @Test
+    public void test_reactor_serverSockets() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+            AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
+            socketBuilder.reader = new DevNullAsyncSocketReader();
+            AsyncSocket socket = socketBuilder.build();
+            socket.start();
+        };
+
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
+
+        assertEquals(0, reactor.sockets().size());
+
+        serverSocket.start();
+
+        List<AsyncServerSocket> list = new ArrayList<>();
+        reactor.serverSockets().foreach(list::add);
+
+        assertEquals(Collections.singletonList(serverSocket), list);
+
+        serverSocket.close();
+
+        assertEquals(0, reactor.sockets().size());
     }
 }
