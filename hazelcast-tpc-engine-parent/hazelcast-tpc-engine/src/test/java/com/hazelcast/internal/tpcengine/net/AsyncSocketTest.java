@@ -29,8 +29,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -47,6 +49,14 @@ public abstract class AsyncSocketTest {
 
     public Reactor newReactor() {
         Reactor reactor = newReactorBuilder().build();
+        reactors.add(reactor);
+        return reactor.start();
+    }
+
+    public Reactor newReactor(Consumer<Reactor.Builder> configFn) {
+        Reactor.Builder reactorBuilder = newReactorBuilder();
+        configFn.accept(reactorBuilder);
+        Reactor reactor = reactorBuilder.build();
         reactors.add(reactor);
         return reactor.start();
     }
@@ -292,5 +302,54 @@ public abstract class AsyncSocketTest {
         assertTrue(socket.isReadable());
         socket.setReadable(false);
         assertFalse(socket.isReadable());
+    }
+
+    @Test
+    public void test_tooManySockets() {
+        int socketLimit = 10;
+        Reactor serverReactor = newReactor(builder -> builder.socketLimit = socketLimit);
+
+        AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+            AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
+            socketBuilder.reader = new DevNullAsyncSocketReader();
+            AsyncSocket socket = socketBuilder.build();
+            socket.start();
+        };
+
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
+        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+        serverSocket.start();
+
+        // make sure that the client reactor can handle at least this amount of sockets.
+        Reactor clientReactor = newReactor(builder -> builder.socketLimit = socketLimit + 1);
+
+        // we create as many sockets as is allowed.
+        List<AsyncSocket> goodSockets = new ArrayList<>();
+        for (int k = 0; k < socketLimit; k++) {
+            AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
+            socketBuilder.reader = new DevNullAsyncSocketReader();
+            AsyncSocket socket = socketBuilder.build();
+            goodSockets.add(socket);
+            socket.start();
+
+            assertCompletesEventually(socket.connect(serverSocket.getLocalAddress()));
+        }
+
+        // And then we create one more socket.
+        AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
+        socketBuilder.reader = new DevNullAsyncSocketReader();
+        AsyncSocket socket = socketBuilder.build();
+        socket.start();
+
+        assertCompletesEventually(socket.connect(serverSocket.getLocalAddress()));
+
+        // make sure that the extra socket is closed eventually
+        assertTrueEventually(() -> assertTrue(socket.isClosed()));
+
+        // we need to make sure that the good sockets are still open
+        for (AsyncSocket goodSocket : goodSockets) {
+            assertFalse(goodSocket.isClosed());
+        }
     }
 }
