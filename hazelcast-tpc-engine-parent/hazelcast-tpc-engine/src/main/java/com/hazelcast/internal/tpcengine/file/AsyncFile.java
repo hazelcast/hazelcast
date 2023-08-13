@@ -49,7 +49,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * into an exception when they call a blocking method.
  * <p>
  * The {@link IOBuffer} used for reading/writing be created using the
- * {@link Eventloop#blockIOBufferAllocator()} because depending on the AsyncFile
+ * {@link Eventloop#storageAllocator()} because depending on the AsyncFile
  * implementation/configuration, there are special requirements e.g. 4K alignment
  * in case of Direct I/O.
  * <p/>
@@ -346,7 +346,7 @@ public abstract class AsyncFile {
      * @param length the number of bytes to read.
      * @param dst    the IOBuffer to read the data into.
      * @return a Promise with the response code of the request.
-     * @see Eventloop#blockIOBufferAllocator()
+     * @see Eventloop#storageAllocator()
      */
     public final IntPromise pread(long offset, int length, IOBuffer dst) {
         checkNotNegative(offset, "offset");
@@ -397,7 +397,7 @@ public abstract class AsyncFile {
      * @param length the number of bytes to write
      * @param src    the IOBuffer to read the data from.
      * @return a Promise with the response code of the request.
-     * @see Eventloop#blockIOBufferAllocator()
+     * @see Eventloop#storageAllocator()
      */
     public final IntPromise pwrite(long offset, int length, IOBuffer src) {
         checkNotNegative(offset, "offset");

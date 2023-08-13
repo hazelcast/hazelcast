@@ -212,13 +212,13 @@ public abstract class Eventloop {
     }
 
     /**
-     * Returns the IOBufferAllocator for block device access. The eventloop will ensure
-     * that a compatible IOBuffer is returned that can be used to deal with the {@link AsyncFile}
-     * instances created by this Eventloop.
+     * Returns the IOBufferAllocator for {@link AsyncFile}. The eventloop will
+     * ensure that a compatible IOBuffer is returned that can be used to deal
+     * with the {@link AsyncFile} instances created by this Eventloop.
      *
-     * @return the block IOBufferAllocator.
+     * @return the storage IOBufferAllocator.
      */
-    public final IOBufferAllocator blockIOBufferAllocator() {
+    public final IOBufferAllocator storageAllocator() {
         return storageAllocator;
     }
 

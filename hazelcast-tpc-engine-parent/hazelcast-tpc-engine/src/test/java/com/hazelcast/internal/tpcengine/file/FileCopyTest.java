@@ -163,7 +163,7 @@ public abstract class FileCopyTest {
         private boolean read = true;
 
         private CopyFileTask(Reactor reactor, AsyncFile src, AsyncFile dst, CompletableFuture future) {
-            this.buffer = reactor.eventloop().blockIOBufferAllocator().allocate(pageSize());
+            this.buffer = reactor.eventloop().storageAllocator().allocate(pageSize());
             this.blockCount = src.size();
             this.src = src;
             this.dst = dst;

@@ -283,12 +283,12 @@ public class StorageBenchmark {
 
             this.block = (blockCount * taskIndex) / benchmark.iodepth;
             // Setting up the buffer
-            this.writeBuffer = reactor.eventloop().blockIOBufferAllocator().allocate(bs);
+            this.writeBuffer = reactor.eventloop().storageAllocator().allocate(bs);
             for (int c = 0; c < writeBuffer.capacity() / 2; c++) {
                 writeBuffer.writeChar('c');
             }
             writeBuffer.flip();
-            this.readBuffer = reactor.eventloop().blockIOBufferAllocator().allocate(bs);
+            this.readBuffer = reactor.eventloop().storageAllocator().allocate(bs);
         }
 
         @Override
@@ -476,7 +476,7 @@ public class StorageBenchmark {
 
         public InitFileTask(Reactor reactor, int ioTaskIndex, int iodepth) {
             // Setting up the buffer
-            this.buffer = reactor.eventloop().blockIOBufferAllocator().allocate(StorageBenchmark.this.bs);
+            this.buffer = reactor.eventloop().storageAllocator().allocate(StorageBenchmark.this.bs);
             for (int c = 0; c < buffer.capacity() / 2; c++) {
                 buffer.writeChar('c');
             }
