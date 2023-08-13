@@ -644,8 +644,6 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
      * multiple AsyncSocket instances.
      */
     public abstract static class Writer {
-        // todo: ugly
-        public ByteBuffer dst;
         protected AsyncSocket socket;
         protected Reactor reactor;
         protected Eventloop eventloop;
@@ -670,7 +668,7 @@ public abstract class AsyncSocket extends AbstractAsyncSocket {
          * @return true if the Writer is clean, false if dirty. It is dirty
          * when it could not manage to write all data to the dst buffer.
          */
-        public abstract boolean onWrite();
+        public abstract boolean onWrite(ByteBuffer dst);
     }
 
     /**

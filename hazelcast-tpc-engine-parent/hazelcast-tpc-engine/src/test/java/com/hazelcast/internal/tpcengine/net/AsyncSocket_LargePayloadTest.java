@@ -512,7 +512,7 @@ public abstract class AsyncSocket_LargePayloadTest {
         private IOBuffer current;
 
         @Override
-        public boolean onWrite() {
+        public boolean onWrite(ByteBuffer dst) {
             if (current == null) {
                 current = (IOBuffer) writeQueue.poll();
             }

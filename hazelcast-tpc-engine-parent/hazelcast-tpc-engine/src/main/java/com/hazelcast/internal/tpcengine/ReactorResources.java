@@ -24,7 +24,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
- * Contains a collection of async resources like the AsyncSocket that are
+ * Contains a collection of reactor resources like the AsyncSocket that are
  * specific to the Reactor.
  * <p/>
  * All methods on this class are thread-safe.
@@ -34,22 +34,22 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 public final class ReactorResources<E> {
 
     private final ConcurrentMap<E, E> map = new ConcurrentHashMap<>();
-    private final int capacity;
+    private final int limit;
 
-    public ReactorResources(int capacity) {
-        this.capacity = checkPositive(capacity, "capacity");
+    public ReactorResources(int limit) {
+        this.limit = checkPositive(limit, "limit");
     }
 
     /**
      * Adds a resource. If already added, call is ignored.
      *
      * @param e the resource to add.
-     * @return true if added, false when rejected.
+     * @return true if added, false when rejected because the limit was exceeded.
      * @throws NullPointerException if e is null.
      */
     public boolean add(E e) {
         synchronized (this) {
-            if (map.size() == capacity) {
+            if (map.size() == limit) {
                 return false;
             }
 
@@ -68,6 +68,11 @@ public final class ReactorResources<E> {
         map.remove(e);
     }
 
+    /**
+     * Returns the size.
+     *
+     * @return the size.
+     */
     public int size() {
         return map.size();
     }

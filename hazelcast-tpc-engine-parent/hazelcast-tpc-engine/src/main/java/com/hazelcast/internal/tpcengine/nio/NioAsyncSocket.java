@@ -274,8 +274,6 @@ public final class NioAsyncSocket extends AsyncSocket {
                 this.sndBuffer = builder.receiveBufferIsDirect
                         ? ByteBuffer.allocateDirect(sndBufferSize)
                         : ByteBuffer.allocate(sndBufferSize);
-                //todo:hack
-                writer.dst = sndBuffer;
             } else {
                 this.sndBuffer = null;
             }
@@ -374,7 +372,7 @@ public final class NioAsyncSocket extends AsyncSocket {
                 ioVector.compact(bytesWritten);
                 clean = ioVector.isEmpty();
             } else {
-                boolean writerClean = writer.onWrite();
+                boolean writerClean = writer.onWrite(sndBuffer);
                 sndBuffer.flip();
                 bytesWritten = socketChannel.write(sndBuffer);
                 boolean sndBufferClean = !sndBuffer.hasRemaining();

@@ -188,6 +188,7 @@ public final class UringAsyncSocket extends AsyncSocket {
         private final UringAsyncSocket socket;
         private final Metrics metrics;
         private final NetworkScheduler networkScheduler;
+        private final ByteBuffer sndByteBuffer;
         private long userdata;
         private boolean writerClean = true;
 
@@ -211,10 +212,10 @@ public final class UringAsyncSocket extends AsyncSocket {
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
-                // hack
-                writer.dst = sndBuffer.byteBuffer();
+                this.sndByteBuffer = sndBuffer.byteBuffer();
             } else {
                 this.sndBuffer = null;
+                this.sndByteBuffer = null;
             }
         }
 
@@ -234,10 +235,8 @@ public final class UringAsyncSocket extends AsyncSocket {
                 if (writer == null) {
                     ioVector.populate(writeQueue);
                 } else {
-                    writerClean = writer.onWrite();
+                    writerClean = writer.onWrite(sndByteBuffer);
                     sndBuffer.flip();
-                    // todo: result
-
                     // add it if isn't added already
                     ioVector.offer(sndBuffer);
                 }

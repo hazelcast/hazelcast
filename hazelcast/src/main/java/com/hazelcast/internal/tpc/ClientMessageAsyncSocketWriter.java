@@ -20,13 +20,15 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageWriter;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 
+import java.nio.ByteBuffer;
+
 public class ClientMessageAsyncSocketWriter extends AsyncSocket.Writer {
 
     private final ClientMessageWriter writer = new ClientMessageWriter();
     private ClientMessage current;
 
     @Override
-    public boolean onWrite() {
+    public boolean onWrite(ByteBuffer dst) {
         if (current == null) {
             current = (ClientMessage) writeQueue.poll();
         }
