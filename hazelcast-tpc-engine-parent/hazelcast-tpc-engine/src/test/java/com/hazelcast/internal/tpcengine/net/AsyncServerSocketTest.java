@@ -27,12 +27,14 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertCompletesEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -47,8 +49,15 @@ public abstract class AsyncServerSocketTest {
     public abstract Reactor.Builder newReactorBuilder();
 
     public Reactor newReactor() {
-        Reactor.Builder builder = newReactorBuilder();
-        Reactor reactor = builder.build();
+        return newReactor(null);
+    }
+
+    public Reactor newReactor(Consumer<Reactor.Builder> configFn) {
+        Reactor.Builder reactorBuilder = newReactorBuilder();
+        if (configFn != null) {
+            configFn.accept(reactorBuilder);
+        }
+        Reactor reactor = reactorBuilder.build();
         reactors.add(reactor);
         return reactor.start();
     }
@@ -288,6 +297,47 @@ public abstract class AsyncServerSocketTest {
             serverSocket.start();
             terminate(reactor);
             reactors.remove(reactor);
+        }
+    }
+
+    @Test
+    public void test_tooManySockets() {
+        int serverSocketLimit = 10;
+        Reactor serverReactor = newReactor(builder -> builder.serverSocketsLimit = serverSocketLimit);
+
+        List<AsyncServerSocket> goodServerSockets = new ArrayList<>();
+        for (int k = 0; k < serverSocketLimit; k++) {
+            AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+
+            serverSocketBuilder.acceptFn = acceptRequest -> {
+                AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
+                socketBuilder.reader = new DevNullAsyncSocketReader();
+                AsyncSocket socket = socketBuilder.build();
+                socket.start();
+            };
+
+            AsyncServerSocket serverSocket = serverSocketBuilder.build();
+            goodServerSockets.add(serverSocket);
+            serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+            serverSocket.start();
+        }
+
+        AsyncServerSocket.Builder badServerSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
+        badServerSocketBuilder.acceptFn = acceptRequest -> {
+            AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
+            socketBuilder.reader = new DevNullAsyncSocketReader();
+            AsyncSocket socket = socketBuilder.build();
+            socket.start();
+        };
+
+        AsyncServerSocket badServerSocket = badServerSocketBuilder.build();
+        badServerSocket.bind(new InetSocketAddress("127.0.0.1", 0));
+        assertThrows(RuntimeException.class, () -> badServerSocket.start());
+        assertTrue(badServerSocket.isClosed());
+
+        // we need to make sure that the good sockets are still open
+        for (AsyncServerSocket goodSocket : goodServerSockets) {
+            assertFalse(goodSocket.isClosed());
         }
     }
 }

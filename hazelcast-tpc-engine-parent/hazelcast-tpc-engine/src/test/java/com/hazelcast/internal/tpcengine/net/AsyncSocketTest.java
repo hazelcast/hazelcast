@@ -48,14 +48,14 @@ public abstract class AsyncSocketTest {
     public abstract Reactor.Builder newReactorBuilder();
 
     public Reactor newReactor() {
-        Reactor reactor = newReactorBuilder().build();
-        reactors.add(reactor);
-        return reactor.start();
+        return newReactor(null);
     }
 
     public Reactor newReactor(Consumer<Reactor.Builder> configFn) {
         Reactor.Builder reactorBuilder = newReactorBuilder();
-        configFn.accept(reactorBuilder);
+        if (configFn != null) {
+            configFn.accept(reactorBuilder);
+        }
         Reactor reactor = reactorBuilder.build();
         reactors.add(reactor);
         return reactor.start();
