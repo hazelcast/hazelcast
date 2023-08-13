@@ -27,7 +27,7 @@ import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_BLOCKED;
  * doesn't yield the CPU, it prevents the other tasks from running. It will
  * also prevent the deadline-scheduler and io-scheduler from running.
  * <p/>
- * The runqueue of a TaskQueueScheduler only contains TaskQueue that are runnable.
+ * The runqueue of a Scheduler only contains TaskQueue that are runnable.
  * So if a taskqueue is blocked, it is removed from the scheduler using
  * {@link Scheduler#dequeueActive()}. When the taskqueue becomes runnable
  * again, it is enqueued using {@link Scheduler#enqueue(TaskQueue)}
