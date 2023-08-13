@@ -58,5 +58,5 @@ public interface StorageScheduler {
      * A period call that is done to the scheduler to submit staged requests
      * and deal with completed requests if needed.
      */
-    void tick();
+    boolean tick();
 }

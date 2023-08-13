@@ -43,5 +43,5 @@ public interface NetworkScheduler<S extends AsyncSocket> {
 
     boolean hasPending();
 
-    void tick();
+    boolean tick();
 }

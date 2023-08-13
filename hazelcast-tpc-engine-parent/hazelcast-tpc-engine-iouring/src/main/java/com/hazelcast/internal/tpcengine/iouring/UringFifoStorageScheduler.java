@@ -79,13 +79,13 @@ public class UringFifoStorageScheduler implements StorageScheduler {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
+    private final IOBufferAllocator pathAllocator;
     private final StringBuilder msgBuilder = new StringBuilder();
     private final SlabAllocator<UringStorageRequest> requestAllocator;
     private final CircularQueue<UringStorageRequest> stagingQueue;
     private final SubmissionQueue submissionQueue;
     private final CompletionQueue completionQueue;
     private final int submitLimit;
-    private final IOBufferAllocator pathAllocator;
     private int submitCount;
 
     public UringFifoStorageScheduler(Uring uring,
@@ -112,7 +112,7 @@ public class UringFifoStorageScheduler implements StorageScheduler {
     }
 
     @Override
-    public void tick() {
+    public boolean tick() {
         // Submits as many staged requests as allowed to the submission queue.
         int c = min(submitLimit - submitCount, stagingQueue.size());
 
@@ -130,6 +130,8 @@ public class UringFifoStorageScheduler implements StorageScheduler {
 
         // Completion events are processed in the eventloop, so we
         // don't need to deal with that here.
+
+        return false;
     }
 
     final class UringStorageRequest extends StorageRequest implements CompletionHandler {

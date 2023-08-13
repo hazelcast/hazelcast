@@ -62,20 +62,18 @@ final class NioEventloop extends Eventloop {
 
     @Override
     protected boolean ioSchedulerTick() throws IOException {
-        storageScheduler.tick();
-        networkScheduler.tick();
+        boolean worked = false;
 
+        worked |= storageScheduler.tick();
+        worked |= networkScheduler.tick();
+
+        // A selectNow that has nothing do so will take between 75/200ns
         int keyCount = selector.selectNow();
-        boolean worked;
 
-        if (keyCount == 0) {
-            worked = false;
-        } else {
+        if (keyCount > 0) {
             handleSelectedKeys();
             worked = true;
         }
-
-        //worked |= runStorageCompletions();
 
         return worked;
     }
@@ -97,6 +95,7 @@ final class NioEventloop extends Eventloop {
 
     @Override
     protected void park(long timeoutNanos) throws IOException {
+        // todo:
         networkScheduler.tick();
         storageScheduler.tick();
 

@@ -338,10 +338,11 @@ public abstract class Eventloop {
                     stallHandler.onStall(reactor, taskQueue, taskQueue.task, taskStartNanos, taskCpuTimeNanos);
                 }
 
-                // what if this is the last task of the last task queue; then first we are going to do an
-                // ioSchedulerTick and then we are going to do a park.
+                // todo:
+                // what if this is the last task of the last task queue; then
+                // first we are going to do an ioSchedulerTick and then we are
+                // going to do a park.
                 if (nowNanos >= ioDeadlineNanos) {
-                    // todo: return value isn't used.
                     ioSchedulerTick();
                     nowNanos = epochNanos();
                     ioDeadlineNanos = nowNanos + ioIntervalNanos;
@@ -374,6 +375,11 @@ public abstract class Eventloop {
         }
     }
 
+    /**
+     *
+     * @return true if work was triggered that requires attention of the eventloop.
+     * @throws IOException
+     */
     protected abstract boolean ioSchedulerTick() throws IOException;
 
     /**

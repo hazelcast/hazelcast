@@ -35,7 +35,8 @@ public class UringNetworkScheduler implements NetworkScheduler<UringAsyncSocket>
         }
     }
 
-    public void tick() {
+    public boolean tick() {
+
         for (; ; ) {
             UringAsyncSocket socket = stagingQueue.poll();
             if (socket == null) {
@@ -44,6 +45,9 @@ public class UringNetworkScheduler implements NetworkScheduler<UringAsyncSocket>
 
             socket.writeHandler.addRequest();
         }
+
+        //todo
+        return false;
     }
 
     @Override

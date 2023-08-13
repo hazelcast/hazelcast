@@ -51,6 +51,7 @@ import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_RE
 import static com.hazelcast.internal.tpcengine.file.StorageRequest.STR_REQ_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
+import static java.lang.Math.min;
 
 /**
  * Nio {@link StorageScheduler} implementation.
@@ -85,11 +86,11 @@ public class NioFifoStorageScheduler implements StorageScheduler {
     /**
      * Creates a NioFifoStorageScheduler.
      *
-     * @param reactor the NioReactor this scheduler belongs to.
-     * @param executor the executor that processes the storage requests.
-     * @param submitLimit the limit on the number of storage requests submitted
-     *                    for processing; so are actually being offered to the
-     *                    executor for processing).
+     * @param reactor      the NioReactor this scheduler belongs to.
+     * @param executor     the executor that processes the storage requests.
+     * @param submitLimit  the limit on the number of storage requests submitted
+     *                     for processing; so are actually being offered to the
+     *                     executor for processing).
      * @param pendingLimit the limit on the number of storage request pending;
      *                     so are either stages or submitted.
      */
@@ -124,11 +125,13 @@ public class NioFifoStorageScheduler implements StorageScheduler {
     }
 
     @Override
-    public void tick() {
-        processCompleted();
-        dispatch();
+    public boolean tick() {
+        int completed = processCompleted();
+        submit();
+        return completed > 0;
     }
 
+    // todo: better name
     public boolean hasPending() {
         return !completionQueue.isEmpty();
     }
@@ -137,21 +140,15 @@ public class NioFifoStorageScheduler implements StorageScheduler {
      * Takes as many requests from the staging queue as allowed and submits them
      * for actual processing.
      */
-    private void dispatch() {
-        for (; ; ) {
-            if (submitCount == submitLimit) {
-                break;
-            }
-
+    private void submit() {
+        int c = min(submitLimit - submitCount, stagingQueue.size());
+        for (int k = 0; k < c; k++) {
             NioStorageRequest req = stagingQueue.poll();
-            if (req == null) {
-                break;
-            }
-            dispatch(req);
+            submit(req);
         }
     }
 
-    private void dispatch(NioStorageRequest req) {
+    private void submit(NioStorageRequest req) {
         submitCount++;
         switch (req.opcode) {
             case STR_REQ_OP_NOP:

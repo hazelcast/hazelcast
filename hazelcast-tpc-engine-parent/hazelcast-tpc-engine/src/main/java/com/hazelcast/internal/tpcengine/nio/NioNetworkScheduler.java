@@ -40,7 +40,8 @@ public class NioNetworkScheduler implements NetworkScheduler<NioAsyncSocket> {
         }
     }
 
-    public void tick() {
+    public boolean tick() {
+        boolean result = false;
         for (; ; ) {
             NioAsyncSocket socket = stagingQueue.poll();
             if (socket == null) {
@@ -48,7 +49,10 @@ public class NioNetworkScheduler implements NetworkScheduler<NioAsyncSocket> {
             }
 
             socket.handler.run();
+            result = true;
         }
+
+        return result;
     }
 
     @Override
