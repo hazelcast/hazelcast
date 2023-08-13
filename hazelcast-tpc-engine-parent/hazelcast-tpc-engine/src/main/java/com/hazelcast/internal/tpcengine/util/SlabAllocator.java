@@ -22,8 +22,6 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
  * An allocator that contains an array with pooled object instances of the same type.
- * <p>
- * LIFO would be more cache friendly
  *
  * @param <E>
  */

@@ -28,7 +28,7 @@ import java.util.PriorityQueue;
  * @param <E> the type of elements in this BoundPriorityQueue.
  */
 @SerializableByConvention
-public class BoundPriorityQueue<E> extends PriorityQueue<E> {
+public final class BoundPriorityQueue<E> extends PriorityQueue<E> {
 
     private final int capacity;
 

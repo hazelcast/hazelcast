@@ -103,12 +103,16 @@ public final class BufferUtil {
      * @return the debug String
      */
     public static String toDebugString(String name, ByteBuffer byteBuffer) {
-        return name + "(pos:" + byteBuffer.position() + " lim:" + byteBuffer.limit()
-                + " remain:" + byteBuffer.remaining() + " cap:" + byteBuffer.capacity() + ")";
+        return name
+                + "(pos:" + byteBuffer.position()
+                + " lim:" + byteBuffer.limit()
+                + " remain:" + byteBuffer.remaining()
+                + " cap:" + byteBuffer.capacity() + ")";
     }
 
     /**
-     * Compacts or clears the buffer depending if bytes are remaining in the byte-buffer.
+     * Compacts or clears the buffer depending if bytes are remaining in the
+     * byte-buffer.
      *
      * @param bb the ByteBuffer
      */

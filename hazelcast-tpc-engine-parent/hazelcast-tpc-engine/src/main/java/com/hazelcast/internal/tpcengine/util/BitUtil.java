@@ -31,8 +31,8 @@ public final class BitUtil {
     }
 
     /**
-     * Hash function based on Knuth's multiplicative method. This version is faster than using Murmur hash but provides
-     * acceptable behavior.
+     * Hash function based on Knuth's multiplicative method. This version is faster
+     * than using Murmur hash but provides acceptable behavior.
      *
      * @param k the long for which the hash will be calculated
      * @return the hash
@@ -50,11 +50,13 @@ public final class BitUtil {
     }
 
     /**
-     * Fast method of finding the next power of 2 greater than or equal to the supplied value.
+     * Fast method of finding the next power of 2 greater than or equal to the
+     * supplied value.
      * <p>
      * If the value is &lt;= 0 then 1 will be returned.
      * <p>
-     * This method is not suitable for {@link Integer#MIN_VALUE} or numbers greater than 2^30.
+     * This method is not suitable for {@link Integer#MIN_VALUE} or numbers
+     * greater than 2^30.
      *
      * @param value from which to search for next power of 2
      * @return The next power of 2 or the value itself if it is a power of 2

@@ -28,13 +28,15 @@ import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIO
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
- * This an object similar in nature to the {@link java.util.concurrent.CompletableFuture} that
- * is designed to work with the {@link Reactor}.
+ * This an object similar in nature to the
+ * {@link java.util.concurrent.CompletableFuture} that is designed to work with
+ * the {@link Reactor}.
  * <p>
- * This class is not thread-safe and should only be used inside the {@link Eventloop}.
+ * This class is not thread-safe and should only be used inside the
+ * {@link Eventloop}.
  * <p>
- * The Promise supports pooling. So when you get a promise, make sure you call {@link #release()}
- * when you are done with it.
+ * The Promise supports pooling. So when you get a promise, make sure you call
+ * {@link #release()} when you are done with it.
  *
  * @param <E>
  */
