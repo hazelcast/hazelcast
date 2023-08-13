@@ -22,15 +22,15 @@ import java.util.Set;
 import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_BLOCKED;
 
 /**
- * The {@link TaskQueueScheduler} is a cooperative scheduler (unlike the
+ * The {@link Scheduler} is a cooperative scheduler (unlike the
  * schedulers in Linux). So it is up to the task to yield the CPU. If a task
  * doesn't yield the CPU, it prevents the other tasks from running. It will
  * also prevent the deadline-scheduler and io-scheduler from running.
  * <p/>
  * The runqueue of a TaskQueueScheduler only contains TaskQueue that are runnable.
  * So if a taskqueue is blocked, it is removed from the scheduler using
- * {@link TaskQueueScheduler#dequeueActive()}. When the taskqueue becomes runnable
- * again, it is enqueued using {@link TaskQueueScheduler#enqueue(TaskQueue)}
+ * {@link Scheduler#dequeueActive()}. When the taskqueue becomes runnable
+ * again, it is enqueued using {@link Scheduler#enqueue(TaskQueue)}
  * <p/>
  * A task-queue is tied to a particular {@link Eventloop} and doesn't need to be
  * thread-safe.
@@ -39,7 +39,7 @@ import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_BLOCKED;
  * from one {@link Eventloop} to another. This is fine since we do not want to move
  * work between cores.
  */
-public abstract class TaskQueueScheduler {
+public abstract class Scheduler {
     // todo: should be resources?
     // contains all the task-queues. The scheduler only contains the runnable ones.
     protected final Set<TaskQueue> taskQueues = new HashSet<>();

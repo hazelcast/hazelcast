@@ -22,7 +22,7 @@ import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_RUNNING;
 import static java.lang.Math.max;
 
 /**
- * A first come first serve (FIFO) {@link TaskQueueScheduler}. So tasks
+ * A first come first serve (FIFO) {@link Scheduler}. So tasks
  * are added to a queue and the first task in the queue is picked. On yield
  * the task queue added to the end of the queue.
  * <p>
@@ -30,17 +30,17 @@ import static java.lang.Math.max;
  * the number of running taskQueues. To prevent very small time slices,
  * there is a lower bound using the {@code minGranularityNanos}.
  * <p>
- * The FcfsTaskQueueScheduler will be helpful to pinpoint problems:
+ * The FifoScheduler will be helpful to pinpoint problems:
  * <ol>
- *     <li>we can exclude the {@link CfsTaskQueueScheduler} if there is some
+ *     <li>we can exclude the {@link CompletelyFairScheduler} if there is some
  *     scheduling problem and we have difficulties which component is the
  *     cause.</li>
  *     <li>we can exclude the overhead of the O(log(n)) complexity of the
- *     {@link CfsTaskQueueScheduler}. This will be useful for benchmarking so
+ *     {@link CompletelyFairScheduler}. This will be useful for benchmarking so
  *     we can have a baseline to compare against.</li>
  * </ol>
  */
-public class FcfsTaskQueueScheduler extends TaskQueueScheduler {
+public class FifoScheduler extends Scheduler {
 
     final CircularQueue<TaskQueue> runQueue;
     final int runQueueCapacity;
@@ -49,9 +49,10 @@ public class FcfsTaskQueueScheduler extends TaskQueueScheduler {
     final long minGranularityNanos;
     TaskQueue active;
 
-    public FcfsTaskQueueScheduler(int runQueueCapacity,
-                                  long targetLatencyNanos,
-                                  long minGranularityNanos) {
+    //todo: runQueueLimit?
+    public FifoScheduler(int runQueueCapacity,
+                         long targetLatencyNanos,
+                         long minGranularityNanos) {
         this.runQueue = new CircularQueue<>(runQueueCapacity);
         this.runQueueCapacity = runQueueCapacity;
         this.targetLatencyNanos = targetLatencyNanos;

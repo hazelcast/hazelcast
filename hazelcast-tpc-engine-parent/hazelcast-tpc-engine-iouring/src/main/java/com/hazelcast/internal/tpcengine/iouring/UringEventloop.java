@@ -92,7 +92,7 @@ public final class UringEventloop extends Eventloop {
             submissionQueue.submit();
         } else {
             wakeupNeeded.set(true);
-            if (taskQueueScheduler.hasOutsidePending() || networkScheduler.hasPending()) {
+            if (scheduler.hasOutsidePending() || networkScheduler.hasPending()) {
                 submissionQueue.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {

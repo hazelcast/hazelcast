@@ -860,7 +860,7 @@ public abstract class Reactor implements Executor {
         public long ioIntervalNanos;
 
         /**
-         * Sets the capacity for the run queue of the {@link TaskQueueScheduler}.This defines
+         * Sets the capacity for the run queue of the {@link Scheduler}.This defines
          * the maximum number of TaskQueues that can be created within an {@link Eventloop}.
          */
         public int runQueueCapacity;
@@ -868,7 +868,7 @@ public abstract class Reactor implements Executor {
 
         /**
          * Sets the total amount of time that can be divided over the taskqueues in the
-         * {@link TaskQueueScheduler}. It depends on the scheduler implementation how
+         * {@link Scheduler}. It depends on the scheduler implementation how
          * this is interpreted.
          */
         public long targetLatencyNanos;
@@ -883,8 +883,8 @@ public abstract class Reactor implements Executor {
         public long minGranularityNanos;
 
         /**
-         * The scheduler to use. If cfs is true, the {@link CfsTaskQueueScheduler}
-         * it used. Otherwise the {@link FcfsTaskQueueScheduler} is used. The primary
+         * The scheduler to use. If cfs is true, the {@link CompletelyFairScheduler}
+         * it used. Otherwise the {@link FifoScheduler} is used. The primary
          * reason to set cfs=false is for performance testing and debugging purposes.
          */
         public boolean cfs;

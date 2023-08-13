@@ -29,11 +29,11 @@ public class FcfsTaskQueueSchedulerTest {
     public static final long TARGET_LATENCY_NANOS = TimeUnit.MILLISECONDS.toNanos(1);
     public static final long MIN_GRANULARITY_NANOS = TimeUnit.MICROSECONDS.toNanos(100);
 
-    private FcfsTaskQueueScheduler scheduler;
+    private FifoScheduler scheduler;
 
     @Before
     public void setup() {
-        scheduler = new FcfsTaskQueueScheduler(100, TARGET_LATENCY_NANOS, MIN_GRANULARITY_NANOS);
+        scheduler = new FifoScheduler(100, TARGET_LATENCY_NANOS, MIN_GRANULARITY_NANOS);
     }
 
     @Test

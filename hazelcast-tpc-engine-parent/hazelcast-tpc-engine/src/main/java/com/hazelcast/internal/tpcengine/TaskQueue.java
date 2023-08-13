@@ -23,7 +23,7 @@ import java.lang.invoke.VarHandle;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.internal.tpcengine.CfsTaskQueueScheduler.niceToWeight;
+import static com.hazelcast.internal.tpcengine.CompletelyFairScheduler.niceToWeight;
 import static com.hazelcast.internal.tpcengine.util.EpochClock.epochNanos;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
@@ -54,7 +54,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
  * queue.
  * <p>
  * Every TaskQueue has a vruntime which stands for virtual runtime. This is used
- * by the {@link CfsTaskQueueScheduler} to pick the TaskQueue with the lowest
+ * by the {@link CompletelyFairScheduler} to pick the TaskQueue with the lowest
  * vruntime.
  * <p>
  * vruntime/pruntime
@@ -101,8 +101,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     TaskProcessor processor;
     // The eventloop this TaskQueue belongs to.
     Eventloop eventloop;
-    // The TaskQueueScheduler that processed the TaskQueue.
-    TaskQueueScheduler taskQueueScheduler;
+    // The scheduler that processed the TaskQueue.
+    Scheduler scheduler;
     // The accumulated amount of time this task has spend on the CPU. If there
     // are other threads running on the same processor, sumExecRuntimeNanos can
     // be distorted because these threads can contribute to the runtime of this
@@ -233,10 +233,10 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             // If there is an outside queue, we don't need to notified
             // of any events because the queue will register itself
             // if it blocks.
-            taskQueueScheduler.removeOutsideBlocked(this);
+            scheduler.removeOutsideBlocked(this);
         }
 
-        taskQueueScheduler.enqueue(this);
+        scheduler.enqueue(this);
         return true;
     }
 
@@ -446,7 +446,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 throw new IllegalStateException("The inside and outside queue can't both be null.");
             }
 
-            if (eventloop.taskQueueScheduler.taskQueues.size() == eventloop.taskQueueScheduler.runQueueCapacity()) {
+            if (eventloop.scheduler.taskQueues.size() == eventloop.scheduler.runQueueCapacity()) {
                 throw new IllegalStateException("Too many taskgroups.");
             }
 
@@ -472,15 +472,15 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             taskQueue.processor = processor;
             taskQueue.name = name;
             taskQueue.eventloop = eventloop;
-            taskQueue.taskQueueScheduler = eventloop.taskQueueScheduler;
+            taskQueue.scheduler = eventloop.scheduler;
             taskQueue.runState = RUN_STATE_BLOCKED;
             taskQueue.weight = niceToWeight(nice);
 
             if (taskQueue.outside != null) {
-                eventloop.taskQueueScheduler.addOutsideBlocked(taskQueue);
+                eventloop.scheduler.addOutsideBlocked(taskQueue);
             }
 
-            eventloop.taskQueueScheduler.taskQueues.add(taskQueue);
+            eventloop.scheduler.taskQueues.add(taskQueue);
             return new Handle(taskQueue, taskQueue.metrics);
         }
     }

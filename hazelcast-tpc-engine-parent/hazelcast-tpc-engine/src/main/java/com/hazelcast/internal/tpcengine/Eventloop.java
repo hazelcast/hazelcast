@@ -66,14 +66,14 @@ public abstract class Eventloop {
     protected final NetworkScheduler networkScheduler;
     protected final IOBufferAllocator blockBufferAllocator;
     protected final StorageScheduler storageScheduler;
-    protected boolean stop;
     protected long taskStartNanos;
     protected final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
     protected final long stallThresholdNanos;
-    protected final TaskQueueScheduler taskQueueScheduler;
+    protected final Scheduler scheduler;
     protected final StallHandler stallHandler;
     protected long taskDeadlineNanos;
+    protected boolean stop;
 
     protected Eventloop(Builder builder) {
         this.reactor = builder.reactor;
@@ -83,7 +83,7 @@ public abstract class Eventloop {
         this.deadlineScheduler = builder.deadlineScheduler;
         this.networkScheduler = builder.networkScheduler;
         this.storageScheduler = builder.storageScheduler;
-        this.taskQueueScheduler = builder.taskQueueScheduler;
+        this.scheduler = builder.scheduler;
         this.blockBufferAllocator = builder.blockBufferAllocator;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
@@ -280,9 +280,9 @@ public abstract class Eventloop {
         while (!stop) {
             deadlineScheduler.tick(nowNanos);
 
-            taskQueueScheduler.scheduleOutsideBlocked();
+            scheduler.scheduleOutsideBlocked();
 
-            TaskQueue taskQueue = taskQueueScheduler.pickNext();
+            TaskQueue taskQueue = scheduler.pickNext();
             if (taskQueue == null) {
                 // There is no work and therefor we need to park.
 
@@ -300,7 +300,7 @@ public abstract class Eventloop {
                 continue;
             }
 
-            final long taskQueueDeadlineNanos = nowNanos + taskQueueScheduler.timeSliceNanosActive();
+            final long taskQueueDeadlineNanos = nowNanos + scheduler.timeSliceNanosActive();
             // The time the taskGroup has spend on the CPU.
             long taskGroupCpuTimeNanos = 0;
             int taskCount = 0;
@@ -350,14 +350,14 @@ public abstract class Eventloop {
                 taskQueue.task = null;
             }
 
-            taskQueueScheduler.updateActive(taskGroupCpuTimeNanos);
+            scheduler.updateActive(taskGroupCpuTimeNanos);
             metrics.incTasksProcessedCount(taskCount);
             metrics.incCpuTimeNanos(taskGroupCpuTimeNanos);
             metrics.incContextSwitchCount();
 
             if (taskQueueEmpty || taskQueue.isEmpty()) {
                 // the taskQueue has been fully drained.
-                taskQueueScheduler.dequeueActive();
+                scheduler.dequeueActive();
 
                 taskQueue.runState = RUN_STATE_BLOCKED;
                 taskQueue.blockedCount++;
@@ -365,11 +365,11 @@ public abstract class Eventloop {
                 if (taskQueue.outside != null) {
                     // we also need to add it to the shared taskQueues so the eventloop will
                     // see any items that are written to outside queues.
-                    taskQueueScheduler.addOutsideBlocked(taskQueue);
+                    scheduler.addOutsideBlocked(taskQueue);
                 }
             } else {
                 // Task queue wasn't fully drained.
-                taskQueueScheduler.yieldActive();
+                scheduler.yieldActive();
             }
         }
     }
@@ -523,7 +523,7 @@ public abstract class Eventloop {
         public Reactor.Builder reactorBuilder;
         public NetworkScheduler networkScheduler;
         public StorageScheduler storageScheduler;
-        public TaskQueueScheduler taskQueueScheduler;
+        public Scheduler scheduler;
         public DeadlineScheduler deadlineScheduler;
         public IOBufferAllocator blockBufferAllocator;
 
@@ -539,17 +539,17 @@ public abstract class Eventloop {
             }
 
             if (blockBufferAllocator == null) {
-                blockBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
+                this.blockBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
             }
 
-            if (taskQueueScheduler == null) {
+            if (scheduler == null) {
                 if (reactorBuilder.cfs) {
-                    this.taskQueueScheduler = new CfsTaskQueueScheduler(
+                    this.scheduler = new CompletelyFairScheduler(
                             reactorBuilder.runQueueCapacity,
                             reactorBuilder.targetLatencyNanos,
                             reactorBuilder.minGranularityNanos);
                 } else {
-                    this.taskQueueScheduler = new FcfsTaskQueueScheduler(
+                    this.scheduler = new FifoScheduler(
                             reactorBuilder.runQueueCapacity,
                             reactorBuilder.targetLatencyNanos,
                             reactorBuilder.minGranularityNanos);

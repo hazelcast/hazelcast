@@ -25,12 +25,12 @@ import static java.lang.Math.pow;
 import static java.lang.Math.round;
 
 /**
- * A {@link TaskQueue} scheduler that always schedules the task group with the
- * lowest vruntime first.
+ * A {@link Scheduler} that always schedules the task group with the lowest
+ * vruntime first.
  * <p/>
- * The CFS scheduler is a fair scheduler. So if there are 2 tasks with equal
- * weight, they will both get half of the CPU time. If one of the tasks is
- * blocked, the other task will get all the CPU time.
+ * The CompletelyFairScheduler is a fair scheduler. So if there are 2 tasks
+ * with equal weight, they will both get half of the CPU time. If one of the
+ * tasks is blocked, the other task will get all the CPU time.
  * <p/>
  * Currently a min-heap is used to store the tasks based on the vruntime. On the
  * original CFS scheduler a red-black tree is used. The complexity of picking the
@@ -52,7 +52,7 @@ import static java.lang.Math.round;
  * https://mechpen.github.io/posts/2020-04-27-cfs-group/index.html
  */
 @SuppressWarnings({"checkstyle:MemberName", "checkstyle:MagicNumber"})
-public class CfsTaskQueueScheduler extends TaskQueueScheduler {
+public class CompletelyFairScheduler extends Scheduler {
     public static final int NICE_0_LOAD = 1024;
 
     final PriorityQueue<TaskQueue> runQueue;
@@ -66,9 +66,9 @@ public class CfsTaskQueueScheduler extends TaskQueueScheduler {
     long totalWeight;
     TaskQueue active;
 
-    public CfsTaskQueueScheduler(int runQueueCapacity,
-                                 long targetLatencyNanos,
-                                 long minGranularityNanos) {
+    public CompletelyFairScheduler(int runQueueCapacity,
+                                   long targetLatencyNanos,
+                                   long minGranularityNanos) {
         this.capacity = checkPositive(runQueueCapacity, "runQueueCapacity");
         this.runQueue = new PriorityQueue<>(runQueueCapacity);
         this.targetLatencyNanos = checkPositive(targetLatencyNanos, "targetLatencyNanos");

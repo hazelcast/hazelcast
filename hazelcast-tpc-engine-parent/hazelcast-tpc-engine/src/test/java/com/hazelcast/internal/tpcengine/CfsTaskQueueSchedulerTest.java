@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpcengine;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.hazelcast.internal.tpcengine.CfsTaskQueueScheduler.niceToWeight;
+import static com.hazelcast.internal.tpcengine.CompletelyFairScheduler.niceToWeight;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -30,11 +30,11 @@ public class CfsTaskQueueSchedulerTest {
     public static final long MIN_GRANULARITY_NANOS = 10;
     public static final int RUN_QUEUE_CAPACITY = 100;
 
-    private CfsTaskQueueScheduler scheduler;
+    private CompletelyFairScheduler scheduler;
 
     @Before
     public void setup() {
-        scheduler = new CfsTaskQueueScheduler(RUN_QUEUE_CAPACITY, TARGET_LATENCY_NANOS, MIN_GRANULARITY_NANOS);
+        scheduler = new CompletelyFairScheduler(RUN_QUEUE_CAPACITY, TARGET_LATENCY_NANOS, MIN_GRANULARITY_NANOS);
     }
 
     @Test
