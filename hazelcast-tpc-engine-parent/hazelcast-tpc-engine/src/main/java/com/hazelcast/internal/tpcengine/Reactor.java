@@ -692,9 +692,9 @@ public abstract class Reactor implements Executor {
         public static final String NAME_IO_INTERVAL_NANOS
                 = "hazelcast.tpc.reactor.ioInterval.ns";
         public static final String NAME_SOCKETS_LIMIT
-                = "hazelcast.tpc.reactor.socket.limit";
+                = "hazelcast.tpc.reactor.sockets.limit";
         public static final String NAME_SERVER_SOCKETS_LIMIT
-                = "hazelcast.tpc.reactor.serversockets.limit";
+                = "hazelcast.tpc.reactor.serverSockets.limit";
         public static final String NAME_FILES_LIMIT
                 = "hazelcast.tpc.reactor.files.limit";
         public static final String NAME_STORAGE_PENDING_LIMIT
