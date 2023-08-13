@@ -51,7 +51,6 @@ import static java.lang.Math.max;
  * can be run on top of difference eventloops. So casting to a specific Eventloop type
  * is a no-go.
  */
-@SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityModifier", "rawtypes"})
 public abstract class Eventloop {
     private static final int INITIAL_PROMISE_ALLOCATOR_CAPACITY = 1024;
 
@@ -62,19 +61,19 @@ public abstract class Eventloop {
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
     protected final TaskQueue.Handle defaultTaskQueueHandle;
-    private final Reactor.Metrics metrics;
-    private final long minGranularityNanos;
+    protected final Reactor.Metrics metrics;
+    protected final long minGranularityNanos;
     protected final NetworkScheduler networkScheduler;
-    private final IOBufferAllocator blockBufferAllocator;
+    protected final IOBufferAllocator blockBufferAllocator;
     protected final StorageScheduler storageScheduler;
     protected boolean stop;
     protected long taskStartNanos;
-    private final long ioIntervalNanos;
+    protected final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
-    private final long stallThresholdNanos;
+    protected final long stallThresholdNanos;
     protected final TaskQueueScheduler taskQueueScheduler;
-    private final StallHandler stallHandler;
-    private long taskDeadlineNanos;
+    protected final StallHandler stallHandler;
+    protected long taskDeadlineNanos;
 
     protected Eventloop(Builder builder) {
         this.reactor = builder.reactor;

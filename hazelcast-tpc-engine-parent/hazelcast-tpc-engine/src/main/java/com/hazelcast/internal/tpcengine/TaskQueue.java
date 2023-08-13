@@ -442,7 +442,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 throw new IllegalArgumentException("nice can't be larger than " + MAX_NICE);
             }
 
-
             if (inside == null && outside == null) {
                 throw new IllegalStateException("The inside and outside queue can't both be null.");
             }

@@ -85,7 +85,6 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  * A single Reactor can also serve many {@link com.hazelcast.internal.tpcengine.file.AsyncFile}
  * instances.
  */
-@SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityModifier", "rawtypes"})
 public abstract class Reactor implements Executor {
 
     protected static final AtomicReferenceFieldUpdater<Reactor, State> STATE
@@ -99,16 +98,14 @@ public abstract class Reactor implements Executor {
     protected final Thread eventloopThread;
     protected final String name;
     protected final AtomicBoolean wakeupNeeded;
-    private final TpcEngine engine;
-    private final ReactorType type;
-    private final CountDownLatch terminationLatch = new CountDownLatch(1);
-    private final CountDownLatch startLatch = new CountDownLatch(1);
-    private final Consumer<Reactor> initFn;
-    private final ReactorResources<AsyncSocket> sockets;
-    private final ReactorResources<AsyncServerSocket> serverSockets;
-    private final ReactorResources<AsyncFile> files;
-
-
+    protected final TpcEngine engine;
+    protected final ReactorType type;
+    protected final CountDownLatch terminationLatch = new CountDownLatch(1);
+    protected final CountDownLatch startLatch = new CountDownLatch(1);
+    protected final Consumer<Reactor> initFn;
+    protected final ReactorResources<AsyncSocket> sockets;
+    protected final ReactorResources<AsyncServerSocket> serverSockets;
+    protected final ReactorResources<AsyncFile> files;
     @SuppressWarnings("java:S1845")
     protected volatile State state = NEW;
     protected final Metrics metrics = new Metrics();
