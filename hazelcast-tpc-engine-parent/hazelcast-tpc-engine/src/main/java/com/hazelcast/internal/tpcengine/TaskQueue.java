@@ -446,7 +446,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 throw new IllegalStateException("The inside and outside queue can't both be null.");
             }
 
-            if (eventloop.scheduler.taskQueues.size() == eventloop.scheduler.runQueueCapacity()) {
+            if (eventloop.scheduler.taskQueues.size() == eventloop.scheduler.runQueueLimit()) {
                 throw new IllegalStateException("Too many taskgroups.");
             }
 

@@ -140,7 +140,7 @@ public abstract class Scheduler {
      *
      * @return the capacity.
      */
-    public abstract int runQueueCapacity();
+    public abstract int runQueueLimit();
 
     /**
      * Returns the length of the time slice of the active TaskQueue. This is

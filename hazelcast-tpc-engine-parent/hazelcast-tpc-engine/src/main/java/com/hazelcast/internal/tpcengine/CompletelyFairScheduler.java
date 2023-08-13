@@ -56,7 +56,7 @@ public class CompletelyFairScheduler extends Scheduler {
     public static final int NICE_0_LOAD = 1024;
 
     final PriorityQueue<TaskQueue> runQueue;
-    final int capacity;
+    final int runQueueLimit;
     final long targetLatencyNanos;
     final long minGranularityNanos;
     long min_virtualRuntimeNanos;
@@ -66,18 +66,18 @@ public class CompletelyFairScheduler extends Scheduler {
     long totalWeight;
     TaskQueue active;
 
-    public CompletelyFairScheduler(int runQueueCapacity,
+    public CompletelyFairScheduler(int runQueueLimit,
                                    long targetLatencyNanos,
                                    long minGranularityNanos) {
-        this.capacity = checkPositive(runQueueCapacity, "runQueueCapacity");
-        this.runQueue = new PriorityQueue<>(runQueueCapacity);
+        this.runQueueLimit = checkPositive(runQueueLimit, "runQueueLimit");
+        this.runQueue = new PriorityQueue<>(runQueueLimit);
         this.targetLatencyNanos = checkPositive(targetLatencyNanos, "targetLatencyNanos");
         this.minGranularityNanos = checkPositive(minGranularityNanos, "minGranularityNanos");
     }
 
     @Override
-    public int runQueueCapacity() {
-        return capacity;
+    public int runQueueLimit() {
+        return runQueueLimit;
     }
 
     @Override
@@ -178,7 +178,7 @@ public class CompletelyFairScheduler extends Scheduler {
     @Override
     public void enqueue(TaskQueue taskQueue) {
         // the eventloop should control the number of created taskQueues
-        assert nrRunning <= capacity;
+        assert nrRunning <= runQueueLimit;
 
         totalWeight += taskQueue.weight;
         nrRunning++;

@@ -42,7 +42,7 @@ public abstract class EventloopTest {
     @Before
     public void before() {
         Reactor.Builder builder = newReactorBuilder();
-        builder.runQueueCapacity = runQueueCapacity;
+        builder.runQueueLimit = runQueueCapacity;
         reactor = builder.build().start();
     }
 

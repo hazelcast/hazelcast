@@ -535,7 +535,7 @@ public abstract class Eventloop {
             checkNotNull(reactorBuilder, "reactorBuilder");
 
             if (deadlineScheduler == null) {
-                this.deadlineScheduler = new DeadlineScheduler(reactorBuilder.deadlineRunQueueCapacity);
+                this.deadlineScheduler = new DeadlineScheduler(reactorBuilder.deadlineRunQueueLimit);
             }
 
             if (storageAllocator == null) {
@@ -545,12 +545,12 @@ public abstract class Eventloop {
             if (scheduler == null) {
                 if (reactorBuilder.cfs) {
                     this.scheduler = new CompletelyFairScheduler(
-                            reactorBuilder.runQueueCapacity,
+                            reactorBuilder.runQueueLimit,
                             reactorBuilder.targetLatencyNanos,
                             reactorBuilder.minGranularityNanos);
                 } else {
                     this.scheduler = new FifoScheduler(
-                            reactorBuilder.runQueueCapacity,
+                            reactorBuilder.runQueueLimit,
                             reactorBuilder.targetLatencyNanos,
                             reactorBuilder.minGranularityNanos);
                 }

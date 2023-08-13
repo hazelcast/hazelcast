@@ -43,25 +43,24 @@ import static java.lang.Math.max;
 public class FifoScheduler extends Scheduler {
 
     final CircularQueue<TaskQueue> runQueue;
-    final int runQueueCapacity;
+    final int runQueueLimit;
     int runQueueSize;
     final long targetLatencyNanos;
     final long minGranularityNanos;
     TaskQueue active;
 
-    //todo: runQueueLimit?
-    public FifoScheduler(int runQueueCapacity,
+    public FifoScheduler(int runQueueLimit,
                          long targetLatencyNanos,
                          long minGranularityNanos) {
-        this.runQueue = new CircularQueue<>(runQueueCapacity);
-        this.runQueueCapacity = runQueueCapacity;
+        this.runQueue = new CircularQueue<>(runQueueLimit);
+        this.runQueueLimit = runQueueLimit;
         this.targetLatencyNanos = targetLatencyNanos;
         this.minGranularityNanos = minGranularityNanos;
     }
 
     @Override
-    public int runQueueCapacity() {
-        return runQueueCapacity;
+    public int runQueueLimit() {
+        return runQueueLimit;
     }
 
     @Override
@@ -116,7 +115,7 @@ public class FifoScheduler extends Scheduler {
     @Override
     public void enqueue(TaskQueue taskQueue) {
         // the eventloop should control the number of created taskQueues
-        assert runQueueSize <= runQueueCapacity;
+        assert runQueueSize <= runQueueLimit;
 
         taskQueue.runState = RUN_STATE_RUNNING;
         runQueue.add(taskQueue);

@@ -37,7 +37,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 public final class DeadlineScheduler {
 
     private int runQueueSize;
-    private final int runQueueCapacity;
+    private final int runQueueLimit;
     // -1 indicates that there is no task in the deadline scheduler.
     private long earliestDeadlineNanos = -1;
 
@@ -47,12 +47,12 @@ public final class DeadlineScheduler {
     /**
      * Creates a new scheduler with the given capacity.
      *
-     * @param runQueueCapacity the capacity of the run queue
+     * @param runQueueLimit the capacity of the run queue
      * @throws IllegalArgumentException when the capacity is smaller than 1.
      */
-    public DeadlineScheduler(int runQueueCapacity) {
-        this.runQueueCapacity = checkPositive(runQueueCapacity, "runQueueCapacity");
-        this.runQueue = new PriorityQueue<>(runQueueCapacity);
+    public DeadlineScheduler(int runQueueLimit) {
+        this.runQueueLimit = checkPositive(runQueueLimit, "runQueueLimit");
+        this.runQueue = new PriorityQueue<>(runQueueLimit);
     }
 
     /**

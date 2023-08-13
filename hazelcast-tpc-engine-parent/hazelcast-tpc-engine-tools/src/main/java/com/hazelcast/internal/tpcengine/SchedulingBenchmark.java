@@ -152,7 +152,7 @@ public class SchedulingBenchmark {
         for (int k = 0; k < reactors.length; k++) {
             Reactor.Builder reactorBuilder = Reactor.Builder.newReactorBuilder(reactorType);
             reactorBuilder.cfs = cfs;
-            reactorBuilder.runQueueCapacity = taskGroupCnt + 1;
+            reactorBuilder.runQueueLimit = taskGroupCnt + 1;
             reactorBuilder.threadAffinity = threadAffinity;
 
             if (minGranularityNanos != -1) {

@@ -679,10 +679,10 @@ public abstract class Reactor implements Executor {
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public abstract static class Builder extends AbstractBuilder<Reactor> {
 
-        public static final String NAME_SCHEDULED_RUN_QUEUE_CAPACITY
-                = "hazelcast.tpc.reactor.deadlineRunQueue.capacity";
-        public static final String NAME_RUN_QUEUE_CAPACITY
-                = "hazelcast.tpc.reactor.runQueue.capacity";
+        public static final String NAME_SCHEDULED_RUN_QUEUE_LIMIT
+                = "hazelcast.tpc.reactor.deadlineRunQueue.limit";
+        public static final String NAME_RUN_QUEUE_LIMIT
+                = "hazelcast.tpc.reactor.runQueue.limit";
         public static final String NAME_TARGET_LATENCY_NANOS
                 = "hazelcast.tpc.reactor.targetLatency.ns";
         public static final String NAME_MIN_GRANULARITY_NANOS
@@ -701,7 +701,6 @@ public abstract class Reactor implements Executor {
                 = "hazelcast.tpc.reactor.storage.pending.limit";
         public static final String NAME_STORAGE_SUBMIT_LIMIT
                 = "hazelcast.tpc.reactor.storage.submit.limit";
-
         public static final String NAME_CFS
                 = "hazelcast.tpc.reactor.cfs";
         public static final String NAME_REACTOR_AFFINITY
@@ -709,33 +708,33 @@ public abstract class Reactor implements Executor {
         public static final String NAME_REACTOR_SPIN
                 = "hazelcast.tpc.reactor.spin";
 
-        private static final AtomicInteger THREAD_ID_GENERATOR = new AtomicInteger();
-        private static final AtomicInteger REACTOR_ID_GENERATOR = new AtomicInteger();
-        private static final int DEFAULT_INSIDE_TASK_QUEUE_CAPACITY = 65536;
-        private static final int DEFAULT_OUTSIDE_TASK_QUEUE_CAPACITY = 65536;
-        private static final int DEFAULT_SCHEDULED_RUN_QUEUE_CAPACITY = 4096;
-        private static final int DEFAULT_RUN_QUEUE_CAPACITY = 1024;
-        private static final long DEFAULT_STALL_THRESHOLD_NANOS = MICROSECONDS.toNanos(500);
-        private static final long DEFAULT_IO_INTERVAL_NANOS = MICROSECONDS.toNanos(50);
-        private static final long DEFAULT_TARGET_LATENCY_NANOS = MILLISECONDS.toNanos(1);
-        private static final long DEFAULT_MIN_GRANULARITY_NANOS = MICROSECONDS.toNanos(100);
-        private static final int DEFAULT_SOCKETS_LIMIT = 1024;
-        private static final int DEFAULT_SERVER_SOCKETS_LIMIT = 128;
-        private static final int DEFAULT_FILES_LIMIT = 128;
-        private static final int DEFAULT_STORAGE_PENDING_LIMIT = 16384;
-        private static final int DEFAULT_STORAGE_SUBMIT_LIMIT = 1024;
-        private static final boolean DEFAULT_CFS = true;
-        private static final boolean DEFAULT_SPIN = false;
+        public static final AtomicInteger THREAD_ID_GENERATOR = new AtomicInteger();
+        public static final AtomicInteger REACTOR_ID_GENERATOR = new AtomicInteger();
+        public static final int DEFAULT_INSIDE_TASK_QUEUE_LIMIT = 65536;
+        public static final int DEFAULT_OUTSIDE_TASK_QUEUE_LIMIT = 65536;
+        public static final int DEFAULT_DEADLINE_RUN_QUEUE_LIMIT = 4096;
+        public static final int DEFAULT_RUN_QUEUE_LIMIT = 1024;
+        public static final long DEFAULT_STALL_THRESHOLD_NANOS = MICROSECONDS.toNanos(500);
+        public static final long DEFAULT_IO_INTERVAL_NANOS = MICROSECONDS.toNanos(50);
+        public static final long DEFAULT_TARGET_LATENCY_NANOS = MILLISECONDS.toNanos(1);
+        public static final long DEFAULT_MIN_GRANULARITY_NANOS = MICROSECONDS.toNanos(100);
+        public static final int DEFAULT_SOCKETS_LIMIT = 1024;
+        public static final int DEFAULT_SERVER_SOCKETS_LIMIT = 128;
+        public static final int DEFAULT_FILES_LIMIT = 128;
+        public static final int DEFAULT_STORAGE_PENDING_LIMIT = 16384;
+        public static final int DEFAULT_STORAGE_SUBMIT_LIMIT = 1024;
+        public static final boolean DEFAULT_CFS = true;
+        public static final boolean DEFAULT_SPIN = false;
 
-        private static final ThreadAffinity DEFAULT_THREAD_AFFINITY
+        public static final ThreadAffinity DEFAULT_THREAD_AFFINITY
                 = ThreadAffinity.newSystemThreadAffinity(NAME_REACTOR_AFFINITY);
 
-        private static final Constructor<Builder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
+        public static final Constructor<Builder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
 
-        private static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
+        public static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
                 = "com.hazelcast.internal.tpcengine.iouring.UringReactor$Builder";
 
-        private static final ThreadFactory DEFAULT_THREAD_FACTORY = r -> {
+        public static final ThreadFactory DEFAULT_THREAD_FACTORY = r -> {
             Thread thread = new Thread(r);
             thread.setName("ReactorThread-" + THREAD_ID_GENERATOR.getAndIncrement());
             return thread;
@@ -821,9 +820,10 @@ public abstract class Reactor implements Executor {
         public boolean spin;
 
         /**
-         * Sets the capacity of the run queue for the deadline scheduler.
+         * Sets the limit on the number of items in the runqueue of the deadline
+         * scheduler.
          */
-        public int deadlineRunQueueCapacity;
+        public int deadlineRunQueueLimit;
 
         /**
          * The TpcEngine this Reactor belongs to.
@@ -846,25 +846,26 @@ public abstract class Reactor implements Executor {
         public StallHandler stallHandler;
 
         /**
-         * The interval the I/O scheduler is be checked if there if any I/O activity (either
-         * submitting work or there are any completed events.
+         * The interval the I/O scheduler is be checked if there if any I/O
+         * activity (either submitting work or there are any completed events.
          * <p/>
-         * There is no guarantee that the I/O scheduler is going to be called at the exact interval
-         * when there are other threads/processes contending for the core and when there are stalls
-         * on the reactor.
+         * There is no guarantee that the I/O scheduler is going to be called
+         * at the exact interval when there are other threads/processes contending
+         * for the core and when there are stalls on the reactor.
          * <p/>
-         * Setting the value too low will cause a lot of overhead. It can even lead to the eventloop
-         * spinning on ticks to the io-scheduler instead of able to park. Setting it too high will
-         * suboptimal performance in the I/O system because I/O requests will be delayed.
+         * Setting the value too low will cause a lot of overhead. It can even
+         * lead to the eventloop spinning on ticks to the io-scheduler instead
+         * of able to park. Setting it too high will suboptimal performance in
+         * the I/O system because I/O requests will be delayed.
          */
         public long ioIntervalNanos;
 
         /**
-         * Sets the capacity for the run queue of the {@link Scheduler}.This defines
-         * the maximum number of TaskQueues that can be created within an {@link Eventloop}.
+         * Sets the limit on the number of items in the run queue of the
+         * {@link Scheduler}.This defines the maximum number of TaskQueues
+         * that can be created within an {@link Eventloop}.
          */
-        public int runQueueCapacity;
-
+        public int runQueueLimit;
 
         /**
          * Sets the total amount of time that can be divided over the taskqueues in the
@@ -910,12 +911,12 @@ public abstract class Reactor implements Executor {
 
         protected Builder(ReactorType type) {
             this.type = checkNotNull(type);
-            this.deadlineRunQueueCapacity = Integer.getInteger(
-                    NAME_SCHEDULED_RUN_QUEUE_CAPACITY,
-                    DEFAULT_SCHEDULED_RUN_QUEUE_CAPACITY);
-            this.runQueueCapacity = Integer.getInteger(
-                    NAME_RUN_QUEUE_CAPACITY,
-                    DEFAULT_RUN_QUEUE_CAPACITY);
+            this.deadlineRunQueueLimit = Integer.getInteger(
+                    NAME_SCHEDULED_RUN_QUEUE_LIMIT,
+                    DEFAULT_DEADLINE_RUN_QUEUE_LIMIT);
+            this.runQueueLimit = Integer.getInteger(
+                    NAME_RUN_QUEUE_LIMIT,
+                    DEFAULT_RUN_QUEUE_LIMIT);
             this.targetLatencyNanos = Long.getLong(
                     NAME_TARGET_LATENCY_NANOS,
                     DEFAULT_TARGET_LATENCY_NANOS);
@@ -995,12 +996,12 @@ public abstract class Reactor implements Executor {
             checkIsLessThanOrEqual(
                     storageSubmitLimit, "storageSubmitLimit",
                     storagePendingLimit, "storagePendingLimit");
-            checkPositive(runQueueCapacity, "runQueueCapacity");
+            checkPositive(runQueueLimit, "runQueueLimit");
             checkPositive(targetLatencyNanos, "targetLatencyNanos");
             checkPositive(minGranularityNanos, "minGranularityNanos");
             checkPositive(stallThresholdNanos, "stallThresholdNanos");
             checkPositive(ioIntervalNanos, "ioIntervalNanos");
-            checkPositive(deadlineRunQueueCapacity, "deadlineRunQueueCapacity");
+            checkPositive(deadlineRunQueueLimit, "deadlineRunQueueLimit");
 
             if (threadFactory == null) {
                 threadFactory = DEFAULT_THREAD_FACTORY;
@@ -1013,8 +1014,8 @@ public abstract class Reactor implements Executor {
             if (defaultTaskQueueBuilder == null) {
                 defaultTaskQueueBuilder = new TaskQueue.Builder();
                 defaultTaskQueueBuilder.name = "default";
-                defaultTaskQueueBuilder.outside = new MpscArrayQueue<>(DEFAULT_OUTSIDE_TASK_QUEUE_CAPACITY);
-                defaultTaskQueueBuilder.inside = new CircularQueue<>(DEFAULT_INSIDE_TASK_QUEUE_CAPACITY);
+                defaultTaskQueueBuilder.outside = new MpscArrayQueue<>(DEFAULT_OUTSIDE_TASK_QUEUE_LIMIT);
+                defaultTaskQueueBuilder.inside = new CircularQueue<>(DEFAULT_INSIDE_TASK_QUEUE_LIMIT);
             }
 
             if (stallHandler == null) {
