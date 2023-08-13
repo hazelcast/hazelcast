@@ -857,6 +857,10 @@ public abstract class Reactor implements Executor {
          * lead to the eventloop spinning on ticks to the io-scheduler instead
          * of able to park. Setting it too high will suboptimal performance in
          * the I/O system because I/O requests will be delayed.
+         * <p/>
+         * Calculation example: if the goal is to have at least 1M IOPS with a
+         * storageSubmitLimit of 100, then the ioInterval should be no larger
+         * than 100 us.
          */
         public long ioIntervalNanos;
 
