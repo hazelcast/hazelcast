@@ -29,6 +29,9 @@ import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 
+/**
+ * Represent the Uring ringbuffer for submission queue events (sqe's).
+ */
 // https://github.com/axboe/liburing/blob/master/src/include/liburing.h
 @SuppressWarnings({"checkstyle:ConstantName",
         "checkstyle:ParameterName",

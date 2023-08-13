@@ -76,6 +76,14 @@ public final class Preconditions {
         return value;
     }
 
+
+    public static void checkIsLessThanOrEqual(int firstValue, String firstName,
+                                              int secondValue, String secondName) {
+        if (firstValue > secondValue) {
+            throw new IllegalArgumentException(firstName + " should be smaller than " + secondName);
+        }
+    }
+
     /**
      * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *

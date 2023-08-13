@@ -21,8 +21,8 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 /**
- * A Factory for creating {@link java.net.SocketAddress}. This is used in the JNI
- * code to create the Java objects.
+ * A Factory for creating {@link java.net.SocketAddress}. This is used in the
+ * JNI code to create the Java objects.
  */
 public final class SocketAddressFactory {
 

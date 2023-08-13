@@ -27,7 +27,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
- * A Linux Socket.
+ * A JNI wrapper around a Linux Socket.
  * <p>
  * This class is not thread-safe.
  */

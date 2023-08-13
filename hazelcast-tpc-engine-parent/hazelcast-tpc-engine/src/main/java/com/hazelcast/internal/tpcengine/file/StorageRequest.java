@@ -22,12 +22,23 @@ import com.hazelcast.internal.tpcengine.util.IntPromise;
 /**
  * Represents a request to file like a read or write.
  * <p/>
- * BlockRequests should be pooled by the {@link StorageScheduler} to avoid litter.
+ * StorageRequest should be pooled by the {@link StorageScheduler} to avoid
+ * litter.
  * <p/>
- * BlockRequests are 'generic' in the sense that the same BlockRequest object can be
- * interpreted in many different ways depending on the opcode. So there are no different
- * subclasses for e.g. a read or a write. Unlike C, Java doesn't have support for unions
- * and hence we end up with this approach.
+ * BlockRequests are 'generic' in the sense that the same BlockRequest object
+ * can be interpreted in many different ways depending on the opcode. So there
+ * are no different subclasses for e.g. a read or a write. Unlike C, Java
+ * doesn't have support for unions and hence we end up with this approach. Having
+ * a single type makes makes it a lot easier to pool N instances since just a
+ * single pool needs to be maintained instead of a pool of N instances for every
+ * type.
+ * <p/>
+ * StorageRequest can be subclassed by the {@link StorageScheduler} to add
+ * additional fields or behaviors.
+ * <p/>
+ * An instance fo the StorageRequest is obtained through the
+ * {@link StorageScheduler#allocate()} and then scheduled through the
+ * {@link StorageScheduler#schedule(StorageRequest)} method.
  */
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public class StorageRequest {

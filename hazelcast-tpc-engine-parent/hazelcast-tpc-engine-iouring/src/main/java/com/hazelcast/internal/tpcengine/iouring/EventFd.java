@@ -21,6 +21,8 @@ import static com.hazelcast.internal.tpcengine.iouring.Linux.newSysCallFailedExc
 /**
  * Represents an event file-descriptor. One of the applications is the
  * notification of a thread that is blocking on the io_uring_enter.
+ * <p/>
+ * EventFd is not threadsafe.
  */
 public final class EventFd implements AutoCloseable {
 
@@ -35,6 +37,13 @@ public final class EventFd implements AutoCloseable {
         this.fd = res;
     }
 
+    /**
+     * Writes a value to this EventFd.
+     * <p/>
+     * This will trigger a wakeup to any call waiting for a write on this EventFd.
+     *
+     * @param value a value.
+     */
     public void write(long value) {
         int res = Linux.eventfd_write(fd, value);
         if (res == -1) {
@@ -42,6 +51,11 @@ public final class EventFd implements AutoCloseable {
         }
     }
 
+    /**
+     * Returns the file descriptor.
+     *
+     * @return the file descriptor.
+     */
     public int fd() {
         return fd;
     }

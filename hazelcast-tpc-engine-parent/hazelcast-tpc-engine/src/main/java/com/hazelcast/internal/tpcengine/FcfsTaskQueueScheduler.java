@@ -40,7 +40,7 @@ import static java.lang.Math.max;
  *     we can have a baseline to compare against.</li>
  * </ol>
  */
-class FcfsTaskQueueScheduler extends TaskQueueScheduler {
+public class FcfsTaskQueueScheduler extends TaskQueueScheduler {
 
     final CircularQueue<TaskQueue> runQueue;
     final int runQueueCapacity;
@@ -49,9 +49,9 @@ class FcfsTaskQueueScheduler extends TaskQueueScheduler {
     final long minGranularityNanos;
     TaskQueue active;
 
-    FcfsTaskQueueScheduler(int runQueueCapacity,
-                           long targetLatencyNanos,
-                           long minGranularityNanos) {
+    public FcfsTaskQueueScheduler(int runQueueCapacity,
+                                  long targetLatencyNanos,
+                                  long minGranularityNanos) {
         this.runQueue = new CircularQueue<>(runQueueCapacity);
         this.runQueueCapacity = runQueueCapacity;
         this.targetLatencyNanos = targetLatencyNanos;

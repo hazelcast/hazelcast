@@ -54,6 +54,7 @@ import static com.hazelcast.internal.tpcengine.Reactor.State.NEW;
 import static com.hazelcast.internal.tpcengine.Reactor.State.RUNNING;
 import static com.hazelcast.internal.tpcengine.Reactor.State.SHUTDOWN;
 import static com.hazelcast.internal.tpcengine.Reactor.State.TERMINATED;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkIsLessThanOrEqual;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
@@ -122,9 +123,9 @@ public abstract class Reactor implements Executor {
         this.spin = builder.spin;
         this.engine = builder.engine;
         this.initFn = builder.initFn;
-        this.sockets = new ReactorResources<>(builder.maxSockets);
-        this.serverSockets = new ReactorResources<>(builder.maxServerSockets);
-        this.files = new ReactorResources<>(builder.maxFiles);
+        this.sockets = new ReactorResources<>(builder.socketLimit);
+        this.serverSockets = new ReactorResources<>(builder.serverSocketsLimit);
+        this.files = new ReactorResources<>(builder.fileLimit);
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
         this.eventloopThread = builder.threadFactory.newThread(new StartEventloopTask(eventloopFuture, builder));
 
@@ -693,12 +694,17 @@ public abstract class Reactor implements Executor {
                 = "hazelcast.tpc.reactor.stallThreshold.ns";
         public static final String NAME_IO_INTERVAL_NANOS
                 = "hazelcast.tpc.reactor.ioInterval.ns";
-        public static final String NAME_MAX_SOCKETS
-                = "hazelcast.tpc.reactor.maxSockets";
-        public static final String NAME_MAX_SERVER_SOCKETS
-                = "hazelcast.tpc.reactor.maxServerSockets";
-        public static final String NAME_MAX_FILES
-                = "hazelcast.tpc.reactor.maxFiles";
+        public static final String NAME_SOCKETS_LIMIT
+                = "hazelcast.tpc.reactor.socket.limit";
+        public static final String NAME_SERVER_SOCKETS_LIMIT
+                = "hazelcast.tpc.reactor.serversockets.limit";
+        public static final String NAME_FILES_LIMIT
+                = "hazelcast.tpc.reactor.files.limit";
+        public static final String NAME_STORAGE_PENDING_LIMIT
+                = "hazelcast.tpc.reactor.storage.pending.limit";
+        public static final String NAME_STORAGE_SUBMIT_LIMIT
+                = "hazelcast.tpc.reactor.storage.submit.limit";
+
         public static final String NAME_CFS
                 = "hazelcast.tpc.reactor.cfs";
         public static final String NAME_REACTOR_AFFINITY
@@ -716,9 +722,11 @@ public abstract class Reactor implements Executor {
         private static final long DEFAULT_IO_INTERVAL_NANOS = MICROSECONDS.toNanos(50);
         private static final long DEFAULT_TARGET_LATENCY_NANOS = MILLISECONDS.toNanos(1);
         private static final long DEFAULT_MIN_GRANULARITY_NANOS = MICROSECONDS.toNanos(100);
-        private static final int DEFAULT_MAX_SOCKETS = 16384;
-        private static final int DEFAULT_MAX_SERVER_SOCKETS = 16384;
-        private static final int DEFAULT_MAX_FILES = 16384;
+        private static final int DEFAULT_SOCKETS_LIMIT = 1024;
+        private static final int DEFAULT_SERVER_SOCKETS_LIMIT = 128;
+        private static final int DEFAULT_FILES_LIMIT = 128;
+        private static final int DEFAULT_STORAGE_PENDING_LIMIT = 16384;
+        private static final int DEFAULT_STORAGE_SUBMIT_LIMIT = 1024;
         private static final boolean DEFAULT_CFS = true;
         private static final boolean DEFAULT_SPIN = false;
 
@@ -751,14 +759,42 @@ public abstract class Reactor implements Executor {
             }
         }
 
-
-        private final int maxServerSockets;
-        private final int maxFiles;
-
+        /**
+         * The ReactorType of the Reactor.
+         */
         public final ReactorType type;
 
-        //  Sets the maximum number of {@link AsyncSocket} supported by this Reactor.
-        public int maxSockets;
+        /**
+         * The limit on the number of outstanding storage requests.
+         */
+        public int storagePendingLimit;
+
+        /**
+         * The limit on the number of submitted storage requests. This is the
+         * limit on the number of storage requests that is issued concurrently
+         * to OS storage system. A single SSD requires at least 60/100
+         * submitted storage request to properly utilize and there could be many
+         * SSDs. Keep in mind that every reactor will be able to issue the same
+         * level; so if you have a submittedStorageRequestsLimit of 100 and 2
+         * reactors, then the maximum number submittedStorageRequests is limited
+         * to 200.
+         */
+        public int storageSubmitLimit;
+
+        /**
+         * The limit on the number of AsyncSockets.
+         */
+        public int socketLimit;
+
+        /**
+         * The limit on the number of AsyncServerSockets.
+         */
+        public int serverSocketsLimit;
+
+        /**
+         * The limit on the number of AsyncFiles.
+         */
+        public int fileLimit;
 
         /**
          * Sets the {@link ThreadAffinity}. If the threadAffinity is <code>null</code>,
@@ -769,7 +805,7 @@ public abstract class Reactor implements Executor {
         /**
          * Sets the ThreadFactory used to create the Thread that runs the {@link Reactor}.
          */
-        public ThreadFactory threadFactory = DEFAULT_THREAD_FACTORY;
+        public ThreadFactory threadFactory;
 
         /**
          * Sets the name of the thread. If configured, the thread name is set
@@ -792,6 +828,9 @@ public abstract class Reactor implements Executor {
          */
         public int deadlineRunQueueCapacity;
 
+        /**
+         * The TpcEngine this Reactor belongs to.
+         */
         public TpcEngine engine;
 
         /**
@@ -854,6 +893,7 @@ public abstract class Reactor implements Executor {
         public boolean cfs;
 
         public TaskQueue.Builder defaultTaskQueueBuilder;
+
         /**
          * A function that is executed on the eventloop as soon as the eventloop
          * is starting.
@@ -876,17 +916,43 @@ public abstract class Reactor implements Executor {
             this.deadlineRunQueueCapacity = Integer.getInteger(
                     NAME_SCHEDULED_RUN_QUEUE_CAPACITY,
                     DEFAULT_SCHEDULED_RUN_QUEUE_CAPACITY);
-            this.runQueueCapacity = Integer.getInteger(NAME_RUN_QUEUE_CAPACITY, DEFAULT_RUN_QUEUE_CAPACITY);
-            this.targetLatencyNanos = Long.getLong(NAME_TARGET_LATENCY_NANOS, DEFAULT_TARGET_LATENCY_NANOS);
-            this.minGranularityNanos = Long.getLong(NAME_MIN_GRANULARITY_NANOS, DEFAULT_MIN_GRANULARITY_NANOS);
-            this.stallThresholdNanos = Long.getLong(NAME_STALL_THRESHOLD_NANOS, DEFAULT_STALL_THRESHOLD_NANOS);
-            this.ioIntervalNanos = Long.getLong(NAME_IO_INTERVAL_NANOS, DEFAULT_IO_INTERVAL_NANOS);
-            this.spin = Boolean.parseBoolean(getProperty(NAME_REACTOR_SPIN, Boolean.toString(DEFAULT_SPIN)));
-            this.cfs = Boolean.parseBoolean(getProperty(NAME_CFS, Boolean.toString(DEFAULT_CFS)));
+            this.runQueueCapacity = Integer.getInteger(
+                    NAME_RUN_QUEUE_CAPACITY,
+                    DEFAULT_RUN_QUEUE_CAPACITY);
+            this.targetLatencyNanos = Long.getLong(
+                    NAME_TARGET_LATENCY_NANOS,
+                    DEFAULT_TARGET_LATENCY_NANOS);
+            this.minGranularityNanos = Long.getLong(
+                    NAME_MIN_GRANULARITY_NANOS,
+                    DEFAULT_MIN_GRANULARITY_NANOS);
+            this.stallThresholdNanos = Long.getLong(
+                    NAME_STALL_THRESHOLD_NANOS,
+                    DEFAULT_STALL_THRESHOLD_NANOS);
+            this.ioIntervalNanos = Long.getLong(
+                    NAME_IO_INTERVAL_NANOS,
+                    DEFAULT_IO_INTERVAL_NANOS);
+            this.spin = Boolean.parseBoolean(getProperty(
+                    NAME_REACTOR_SPIN,
+                    Boolean.toString(DEFAULT_SPIN)));
+            this.cfs = Boolean.parseBoolean(
+                    getProperty(NAME_CFS,
+                            Boolean.toString(DEFAULT_CFS)));
             this.threadAffinity = DEFAULT_THREAD_AFFINITY;
-            this.maxSockets = Integer.getInteger(NAME_MAX_SOCKETS, DEFAULT_MAX_SOCKETS);
-            this.maxServerSockets = Integer.getInteger(NAME_MAX_SERVER_SOCKETS, DEFAULT_MAX_SERVER_SOCKETS);
-            this.maxFiles = Integer.getInteger(NAME_MAX_FILES, DEFAULT_MAX_FILES);
+            this.socketLimit = Integer.getInteger(
+                    NAME_SOCKETS_LIMIT,
+                    DEFAULT_SOCKETS_LIMIT);
+            this.serverSocketsLimit = Integer.getInteger(
+                    NAME_SERVER_SOCKETS_LIMIT,
+                    DEFAULT_SERVER_SOCKETS_LIMIT);
+            this.fileLimit = Integer.getInteger(
+                    NAME_FILES_LIMIT,
+                    DEFAULT_FILES_LIMIT);
+            this.storagePendingLimit = Integer.getInteger(
+                    NAME_STORAGE_PENDING_LIMIT,
+                    DEFAULT_STORAGE_PENDING_LIMIT);
+            this.storageSubmitLimit = Integer.getInteger(
+                    NAME_STORAGE_SUBMIT_LIMIT,
+                    DEFAULT_STORAGE_SUBMIT_LIMIT);
         }
 
         /**
@@ -924,15 +990,24 @@ public abstract class Reactor implements Executor {
         protected void conclude() {
             super.conclude();
 
-            checkPositive(maxSockets, "maxSockets");
-            checkPositive(maxServerSockets, "maxServerSockets");
-            checkPositive(maxFiles, "maxFiles");
+            checkPositive(socketLimit, "socketLimit");
+            checkPositive(serverSocketsLimit, "serverSocketsLimit");
+            checkPositive(fileLimit, "fileLimit");
+            checkPositive(storagePendingLimit, "storagePendingLimit");
+            checkPositive(storageSubmitLimit, "storageSubmitLimit");
+            checkIsLessThanOrEqual(
+                    storageSubmitLimit, "storageSubmitLimit",
+                    storagePendingLimit, "storagePendingLimit");
             checkPositive(runQueueCapacity, "runQueueCapacity");
             checkPositive(targetLatencyNanos, "targetLatencyNanos");
             checkPositive(minGranularityNanos, "minGranularityNanos");
             checkPositive(stallThresholdNanos, "stallThresholdNanos");
             checkPositive(ioIntervalNanos, "ioIntervalNanos");
             checkPositive(deadlineRunQueueCapacity, "deadlineRunQueueCapacity");
+
+            if (threadFactory == null) {
+                threadFactory = DEFAULT_THREAD_FACTORY;
+            }
 
             if (reactorName == null) {
                 reactorName = "Reactor-" + REACTOR_ID_GENERATOR.getAndIncrement();

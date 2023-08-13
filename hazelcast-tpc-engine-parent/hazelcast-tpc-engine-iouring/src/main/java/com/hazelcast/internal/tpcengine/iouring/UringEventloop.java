@@ -21,26 +21,26 @@ import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
+import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMESPEC;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_TIMEOUT;
-import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMESPEC;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
+import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-@SuppressWarnings({"checkstyle:MemberName",
-        "checkstyle:DeclarationOrder",
-        "checkstyle:NestedIfDepth",
-        "checkstyle:MethodName"})
+/**
+ * The io_uring implementation of the {@link Eventloop}.
+ */
 public final class UringEventloop extends Eventloop {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     private static final long NS_PER_SECOND = SECONDS.toNanos(1);
 
     final Uring uring;
-    private final SubmissionQueue sq;
-    private final CompletionQueue cq;
     final EventFdHandler eventFdHandler;
+    private final SubmissionQueue submissionQueue;
+    private final CompletionQueue completionQueue;
     private final TimeoutHandler timeoutHandler;
 
     private UringEventloop(Builder builder) {
@@ -49,19 +49,19 @@ public final class UringEventloop extends Eventloop {
         UringReactor.Builder reactorBuilder = (UringReactor.Builder) builder.reactorBuilder;
         this.uring = builder.uring;
         if (reactorBuilder.registerRing) {
-            this.uring.registerRingFd();
+            uring.registerRingFd();
         }
 
-        this.sq = uring.sq();
-        this.cq = uring.cq();
+        this.submissionQueue = uring.sq();
+        this.completionQueue = uring.cq();
 
-        eventFdHandler = new EventFdHandler();
-        eventFdHandler.userdata = cq.nextPermanentHandlerId();
-        cq.register(eventFdHandler.userdata, eventFdHandler);
+        this.eventFdHandler = new EventFdHandler();
+        eventFdHandler.userdata = completionQueue.nextPermanentHandlerId();
+        completionQueue.register(eventFdHandler.userdata, eventFdHandler);
 
-        timeoutHandler = new TimeoutHandler();
-        timeoutHandler.userdata = cq.nextPermanentHandlerId();
-        cq.register(timeoutHandler.userdata, timeoutHandler);
+        this.timeoutHandler = new TimeoutHandler();
+        timeoutHandler.userdata = completionQueue.nextPermanentHandlerId();
+        completionQueue.register(timeoutHandler.userdata, timeoutHandler);
     }
 
 
@@ -83,29 +83,29 @@ public final class UringEventloop extends Eventloop {
         storageScheduler.tick();
 
         boolean completions = false;
-        if (cq.hasCompletions()) {
+        if (completionQueue.hasCompletions()) {
             completions = true;
-            cq.process();
+            completionQueue.process();
         }
 
         if (spin || timeoutNanos == 0 || completions) {
-            sq.submit();
+            submissionQueue.submit();
         } else {
             wakeupNeeded.set(true);
             if (taskQueueScheduler.hasOutsidePending() || networkScheduler.hasPending()) {
-                sq.submit();
+                submissionQueue.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {
                     timeoutHandler.addRequest(timeoutNanos);
                 }
 
-                sq.submitAndWait();
+                submissionQueue.submitAndWait();
             }
             wakeupNeeded.set(false);
         }
 
-        if (cq.hasCompletions()) {
-            cq.process();
+        if (completionQueue.hasCompletions()) {
+            completionQueue.process();
         }
     }
 
@@ -119,12 +119,12 @@ public final class UringEventloop extends Eventloop {
         // todo: this is where we want to iterate over the dev schedulers and submit
         // the pending BlockRequests to the sq.
 
-        if (sq.submit() > 0) {
+        if (submissionQueue.submit() > 0) {
             worked = true;
         }
 
-        if (cq.hasCompletions()) {
-            cq.process();
+        if (completionQueue.hasCompletions()) {
+            completionQueue.process();
             worked = true;
         }
 
@@ -141,13 +141,13 @@ public final class UringEventloop extends Eventloop {
     }
 
     final class EventFdHandler implements CompletionHandler, AutoCloseable {
-        private long userdata;
         final EventFd eventFd = new EventFd();
         private final long readBufAddr = UNSAFE.allocateMemory(SIZEOF_LONG);
+        private long userdata;
 
         private void addRequest() {
             // todo: we are not checking return value.
-            sq.offer(IORING_OP_READ,
+            submissionQueue.offer(IORING_OP_READ,
                     0,
                     0,
                     eventFd.fd(),
@@ -194,7 +194,7 @@ public final class UringEventloop extends Eventloop {
             }
 
             // todo: return value isn't checked
-            sq.offer(IORING_OP_TIMEOUT,
+            submissionQueue.offer(IORING_OP_TIMEOUT,
                     0,
                     0,
                     -1,
@@ -209,8 +209,7 @@ public final class UringEventloop extends Eventloop {
         }
     }
 
-    // todo: remove magic number
-    @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MagicNumber"})
+    @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:TrailingComment"})
     public static class Builder extends Eventloop.Builder {
 
         public Uring uring;
@@ -220,18 +219,34 @@ public final class UringEventloop extends Eventloop {
             super.conclude();
 
             if (networkScheduler == null) {
-                networkScheduler = new UringNetworkScheduler(reactorBuilder.maxSockets);
+                networkScheduler = new UringNetworkScheduler(reactorBuilder.socketLimit);
             }
 
             if (uring == null) {
                 // The uring instance needs to be created on the eventloop thread.
                 // This is required for some of the setup flags.
                 UringReactor.Builder reactorBuilder = (UringReactor.Builder) this.reactorBuilder;
-                this.uring = new Uring(reactorBuilder.entries, reactorBuilder.setupFlags);
+
+                // The ioring can be sized correctly based on the information we have.
+                int entries
+                        // 1 for reading and 1 for writing
+                        = reactorBuilder.socketLimit * 2
+                        + reactorBuilder.serverSocketsLimit
+                        // every server socket needs 1 entry
+                        + reactorBuilder.storageSubmitLimit
+                        // eventFd
+                        + 1
+                        // timeout
+                        + 1
+                        ;
+                this.uring = new Uring(nextPowerOfTwo(entries), reactorBuilder.setupFlags);
             }
 
             if (storageScheduler == null) {
-                storageScheduler = new UringFifoStorageScheduler(uring, 1024, 4096);
+                storageScheduler = new UringFifoStorageScheduler(
+                        uring,
+                        reactorBuilder.storageSubmitLimit,
+                        reactorBuilder.storagePendingLimit);
             }
         }
 

@@ -83,17 +83,17 @@ public class UringFifoStorageScheduler implements StorageScheduler {
     private final CircularQueue<UringStorageRequest> stagingQueue;
     private final SubmissionQueue submissionQueue;
     private final CompletionQueue completionQueue;
-    private final int maxIoDepth;
+    private final int submitLimit;
     private final IOBufferAllocator pathAllocator;
-    private int ioDepth;
+    private int submitCount;
 
     public UringFifoStorageScheduler(Uring uring,
-                                     int maxIoDepth,
-                                     int capacity) {
-        this.maxIoDepth = maxIoDepth;
-        this.requestAllocator = new SlabAllocator<>(capacity, UringStorageRequest::new);
+                                     int submitLimit,
+                                     int pendingLimit) {
+        this.submitLimit = submitLimit;
+        this.requestAllocator = new SlabAllocator<>(pendingLimit, UringStorageRequest::new);
         this.pathAllocator = new NonConcurrentIOBufferAllocator(512, true);
-        this.stagingQueue = new CircularQueue<>(capacity);
+        this.stagingQueue = new CircularQueue<>(pendingLimit);
         this.submissionQueue = uring.sq();
         this.completionQueue = uring.cq();
     }
@@ -113,23 +113,22 @@ public class UringFifoStorageScheduler implements StorageScheduler {
     @Override
     public void tick() {
         // Submits as many staged requests as allowed to the submission queue.
-        // Completion events are processed in the eventloop, so we
-        // don't need to deal with that here.
-        int submitCount = min(maxIoDepth - ioDepth, stagingQueue.size());
+        int c = min(submitLimit - submitCount, stagingQueue.size());
 
-        for (int k = 0; k < submitCount; k++) {
+        for (int k = 0; k < c; k++) {
+            UringStorageRequest req = stagingQueue.poll();
             int sqIndex = submissionQueue.nextIndex();
             if (sqIndex < 0) {
-                // the submission queue is full
-                break;
+                throw new IllegalStateException("No space in submission queue");
             }
-
-            ioDepth++;
-            UringStorageRequest req = stagingQueue.poll();
+            this.submitCount++;
             long userdata = completionQueue.nextTmpHandlerId();
             completionQueue.register(userdata, req);
             req.writeSqe(sqIndex, userdata);
         }
+
+        // Completion events are processed in the eventloop, so we
+        // don't need to deal with that here.
     }
 
     final class UringStorageRequest extends StorageRequest implements CompletionHandler {
@@ -213,7 +212,7 @@ public class UringFifoStorageScheduler implements StorageScheduler {
 
         @Override
         public void completeRequest(int res, int flags, long userdata) {
-            ioDepth--;
+            submitCount--;
 
             if (res >= 0) {
                 AsyncFile.Metrics metrics = file.metrics();

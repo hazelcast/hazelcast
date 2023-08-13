@@ -26,10 +26,12 @@ package com.hazelcast.internal.tpcengine.file;
 public interface StorageScheduler {
 
     /**
-     * Reserves a single StorageRequest.
+     * Allocates a single StorageRequest instance.
      * <p/>
-     * If a non null value is returned, it is guaranteed that
-     * {@link #schedule(StorageRequest)} will complete successfully.
+     * If a non <code>null</code> value is returned, it is guaranteed that
+     * {@link #schedule(StorageRequest)} will complete successfully;
+     * although it doesn't say anything if the actual request will complete
+     * successfully.
      *
      * @return the allocated StorageRequest or null if there is no space.
      */
@@ -45,5 +47,9 @@ public interface StorageScheduler {
      */
     void schedule(StorageRequest req);
 
+    /**
+     * A period call that is done to the scheduler to submit staged requests
+     * and deal with completed requests if needed.
+     */
     void tick();
 }

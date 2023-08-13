@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
+import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
@@ -122,33 +123,33 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     private static final class AcceptHandler implements CompletionHandler {
 
         private final UringAsyncServerSocket socket;
-        private final SubmissionQueue sq;
+        private final SubmissionQueue submissionQueue;
         private final LinuxSocket linuxSocket;
         private final AcceptMemory acceptMemory = new AcceptMemory();
         private final Metrics metrics;
         private final TpcLogger logger;
-        private final Consumer<AcceptRequest> acceptFn;
-        private final CompletionQueue cq;
+        private final Consumer<AbstractAsyncSocket.AcceptRequest> acceptFn;
+        private final CompletionQueue completionQueue;
         private long userdata;
         private boolean closed;
 
         private AcceptHandler(Builder builder, UringAsyncServerSocket socket) {
             this.socket = socket;
-            this.cq = builder.uring.cq();
+            this.completionQueue = builder.uring.cq();
             this.acceptFn = builder.acceptFn;
             this.metrics = builder.metrics;
             this.linuxSocket = builder.linuxSocket;
-            this.sq = builder.uring.sq();
+            this.submissionQueue = builder.uring.sq();
             this.logger = builder.logger;
         }
 
         private void addRequest() {
-            int index = sq.nextIndex();
+            int index = submissionQueue.nextIndex();
             if (index < 0) {
-                throw new RuntimeException("No space in submission queue");
+                throw new IllegalStateException("No space in submission queue");
             }
 
-            long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
+            long sqeAddr = submissionQueue.sqesAddr + index * SIZEOF_SQE;
             UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_ACCEPT);
             UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
             UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
@@ -181,7 +182,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
                     // todo: ugly that AF_INET is hard configured.
                     // We should use the address to determine the type
                     LinuxSocket linuxSocket = new LinuxSocket(fd, AF_INET);
-                    AcceptRequest acceptRequest = new UringAcceptRequest(linuxSocket);
+                    AbstractAsyncSocket.AcceptRequest acceptRequest = new AcceptRequest(linuxSocket);
                     try {
                         acceptFn.accept(acceptRequest);
                     } catch (Throwable t) {
@@ -206,7 +207,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
                 socket.close(null, e);
             } finally {
                 if (closed) {
-                    cq.unregister(userdata);
+                    completionQueue.unregister(userdata);
                 }
             }
         }
@@ -306,6 +307,20 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         @Override
         public AsyncServerSocket construct() {
             return new UringAsyncServerSocket(this);
+        }
+    }
+
+    public static class AcceptRequest implements AbstractAsyncSocket.AcceptRequest {
+
+        final LinuxSocket linuxSocket;
+
+        public AcceptRequest(LinuxSocket linuxSocket) {
+            this.linuxSocket = linuxSocket;
+        }
+
+        @Override
+        public void close() throws Exception {
+            linuxSocket.close();
         }
     }
 }

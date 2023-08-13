@@ -24,14 +24,14 @@ import java.util.Queue;
 public class UringNetworkScheduler implements NetworkScheduler<UringAsyncSocket> {
     private final Queue<UringAsyncSocket> stagingQueue;
 
-    public UringNetworkScheduler(int maxSockets) {
-        this.stagingQueue = new MpscArrayQueue<>(maxSockets);
+    public UringNetworkScheduler(int socketLimit) {
+        this.stagingQueue = new MpscArrayQueue<>(socketLimit);
     }
 
     @Override
     public void schedule(UringAsyncSocket socket) {
         if (!stagingQueue.offer(socket)) {
-            throw new IllegalStateException("Too many sockets");
+            throw new IllegalStateException("Socket limit has been exceeded.");
         }
     }
 

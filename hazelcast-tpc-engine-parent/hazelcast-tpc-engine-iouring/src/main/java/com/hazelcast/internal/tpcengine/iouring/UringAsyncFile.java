@@ -34,22 +34,15 @@ public final class UringAsyncFile extends AsyncFile {
         super(path, eventloop, scheduler);
     }
 
-
     private static IntPromise failOnOverload(IntPromise promise) {
-
-//        promise.completeWithIOException(
-//                "Overload. Max concurrent operations " + maxConcurrent + " dev: [" + dev.path() + "]", null);
-
         promise.completeWithIOException("No more IO available ", null);
         return promise;
     }
-
 
     @Override
     public IntPromise delete() {
         throw new RuntimeException("Not yet implemented");
     }
-
 
     @Override
     public long size() {

@@ -73,21 +73,36 @@ public class NioFifoStorageScheduler implements StorageScheduler {
     private final MpscArrayQueue<NioStorageRequest> completionQueue;
     // This is where the scheduled request first end up
     private final CircularQueue<NioStorageRequest> stagingQueue;
-    private final int maxIoDepth;
-    private int ioDepth;
+    private final int submitLimit;
+    // the number of request that are currently submitted; so the
+    // number of requests offered to the executor
+    private int submitCount;
 
-    public NioFifoStorageScheduler(NioReactor reactor, Executor executor, int maxIoDepth, int capacity) {
-        this.maxIoDepth = checkPositive(maxIoDepth, "ioDepth");
-        if (capacity < maxIoDepth) {
+    /**
+     *
+     * @param reactor
+     * @param executor
+     * @param submitLimit the limit on the number of storage requests submitted
+     *                    for processing; so are actually being offered to the
+     *                    executor for processing).
+     * @param pendingLimit the limit on the number of storage request pending;
+     *                     so are either stages or submitted.
+     */
+    public NioFifoStorageScheduler(NioReactor reactor,
+                                   Executor executor,
+                                   int submitLimit,
+                                   int pendingLimit) {
+        this.submitLimit = checkPositive(submitLimit, "submitLimit");
+        if (pendingLimit < submitLimit) {
             throw new IllegalArgumentException();
         }
         this.reactor = checkNotNull(reactor, "reactor");
         this.executor = checkNotNull(executor, "executor");
-        this.requestAllocator = new SlabAllocator<>(capacity, NioStorageRequest::new);
-        this.stagingQueue = new CircularQueue<>(capacity);
+        this.requestAllocator = new SlabAllocator<>(pendingLimit, NioStorageRequest::new);
+        this.stagingQueue = new CircularQueue<>(pendingLimit);
         // Needs to be thread safe because the completion is send from
         // a thread from the executor.
-        this.completionQueue = new MpscArrayQueue<>(maxIoDepth);
+        this.completionQueue = new MpscArrayQueue<>(submitLimit);
     }
 
     @Override
@@ -106,7 +121,7 @@ public class NioFifoStorageScheduler implements StorageScheduler {
     @Override
     public void tick() {
         processCompleted();
-        submit();
+        dispatch();
     }
 
     public boolean hasPending() {
@@ -117,9 +132,9 @@ public class NioFifoStorageScheduler implements StorageScheduler {
      * Takes as many requests from the staging queue as allowed and submits them
      * for actual processing.
      */
-    private void submit() {
+    private void dispatch() {
         for (; ; ) {
-            if (ioDepth == maxIoDepth) {
+            if (submitCount == submitLimit) {
                 break;
             }
 
@@ -127,12 +142,12 @@ public class NioFifoStorageScheduler implements StorageScheduler {
             if (req == null) {
                 break;
             }
-            submit(req);
+            dispatch(req);
         }
     }
 
-    private void submit(NioStorageRequest req) {
-        ioDepth++;
+    private void dispatch(NioStorageRequest req) {
+        submitCount++;
         switch (req.opcode) {
             case STR_REQ_OP_NOP:
                 executor.execute(() -> {
@@ -285,7 +300,7 @@ public class NioFifoStorageScheduler implements StorageScheduler {
         req.result = 0;
         req.exc = null;
         requestAllocator.free(req);
-        ioDepth--;
+        submitCount--;
     }
 
     private void updateMetrics(NioStorageRequest req) {

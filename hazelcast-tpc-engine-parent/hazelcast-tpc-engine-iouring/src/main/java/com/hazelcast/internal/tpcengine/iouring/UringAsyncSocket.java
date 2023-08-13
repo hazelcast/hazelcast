@@ -321,7 +321,7 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         private final Metrics metrics;
         private final ByteBuffer rcvBuff;
-        private final SubmissionQueue sq;
+        private final SubmissionQueue submissionQueue;
         private final LinuxSocket linuxSocket;
         private final UringAsyncSocket socket;
         private final Reader reader;
@@ -335,7 +335,7 @@ public final class UringAsyncSocket extends AsyncSocket {
             this.metrics = builder.metrics;
             this.linuxSocket = builder.linuxSocket;
             this.eventloop = (UringEventloop) builder.reactor.eventloop();
-            this.sq = builder.uring.sq();
+            this.submissionQueue = builder.uring.sq();
             this.rcvBuff = ByteBuffer.allocateDirect(builder.options.get(SO_RCVBUF));
             this.rcvBuffAddress = addressOf(rcvBuff);
         }
@@ -349,12 +349,12 @@ public final class UringAsyncSocket extends AsyncSocket {
                 throw new RuntimeException("Calling sq_addRead with 0 length for the read buffer");
             }
 
-            int index = sq.nextIndex();
+            int index = submissionQueue.nextIndex();
             if (index < 0) {
-                throw new RuntimeException("No space in submission queue");
+                throw new IllegalStateException("No space in submission queue");
             }
 
-            long sqeAddr = sq.sqesAddr + index * SIZEOF_SQE;
+            long sqeAddr = submissionQueue.sqesAddr + index * SIZEOF_SQE;
             // IORING_OP_RECV provides better performance than IORING_OP_READ
             // https://github.com/axboe/liburing/issues/536
             UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_RECV);
@@ -529,7 +529,7 @@ public final class UringAsyncSocket extends AsyncSocket {
         public IOVector ioVector;
         public Uring uring;
 
-        Builder(UringAcceptRequest acceptRequest) {
+        Builder(UringAsyncServerSocket.AcceptRequest acceptRequest) {
             if (acceptRequest == null) {
                 this.linuxSocket = LinuxSocket.openTcpIpv4Socket();
                 this.clientSide = true;

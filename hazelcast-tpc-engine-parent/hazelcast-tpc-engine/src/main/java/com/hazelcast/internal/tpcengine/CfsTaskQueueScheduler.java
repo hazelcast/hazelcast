@@ -52,7 +52,7 @@ import static java.lang.Math.round;
  * https://mechpen.github.io/posts/2020-04-27-cfs-group/index.html
  */
 @SuppressWarnings({"checkstyle:MemberName", "checkstyle:MagicNumber"})
-class CfsTaskQueueScheduler extends TaskQueueScheduler {
+public class CfsTaskQueueScheduler extends TaskQueueScheduler {
     public static final int NICE_0_LOAD = 1024;
 
     final PriorityQueue<TaskQueue> runQueue;
@@ -66,9 +66,9 @@ class CfsTaskQueueScheduler extends TaskQueueScheduler {
     long totalWeight;
     TaskQueue active;
 
-    CfsTaskQueueScheduler(int runQueueCapacity,
-                          long targetLatencyNanos,
-                          long minGranularityNanos) {
+    public CfsTaskQueueScheduler(int runQueueCapacity,
+                                 long targetLatencyNanos,
+                                 long minGranularityNanos) {
         this.capacity = checkPositive(runQueueCapacity, "runQueueCapacity");
         this.runQueue = new PriorityQueue<>(runQueueCapacity);
         this.targetLatencyNanos = checkPositive(targetLatencyNanos, "targetLatencyNanos");

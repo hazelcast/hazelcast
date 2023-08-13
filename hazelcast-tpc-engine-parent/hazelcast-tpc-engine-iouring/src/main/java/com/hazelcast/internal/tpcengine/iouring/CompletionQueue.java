@@ -24,10 +24,10 @@ import sun.misc.Unsafe;
 
 import java.io.UncheckedIOException;
 
-import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.toManPagesUrl;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 
 /**
@@ -127,7 +127,7 @@ public final class CompletionQueue {
      * Registers a CompletionHandler with the given handlerId.
      *
      * @param handlerId the id to register the CompletionHandler on.
-     * @param handler the CompletionHandler to register.
+     * @param handler   the CompletionHandler to register.
      */
     public void register(long handlerId, CompletionHandler handler) {
         handlers.put(handlerId, handler);
@@ -165,7 +165,7 @@ public final class CompletionQueue {
         int processed = 0;
         while (localHead < localTail) {
             int cqeIndex = localHead & ringMask;
-            long cqeAddress = cqesAddr + cqeIndex * CQE_SIZE;
+            long cqeAddress = cqesAddr + (long) cqeIndex * CQE_SIZE;
 
             long userdata = UNSAFE.getLong(null, cqeAddress + OFFSET_CQE_USERDATA);
             int res = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_RES);
@@ -204,23 +204,23 @@ public final class CompletionQueue {
         int processed = 0;
         while (localHead < localTail) {
             int cqeIndex = localHead & ringMask;
-            long cqeAddress = cqesAddr + cqeIndex * CQE_SIZE;
+            long cqeAddress = cqesAddr + (long) cqeIndex * CQE_SIZE;
 
             long userdata = UNSAFE.getLong(null, cqeAddress + OFFSET_CQE_USERDATA);
             int res = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_RES);
             int flags = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_FLAGS);
 
-            CompletionHandler h = userdata >= 0
+            CompletionHandler handler = userdata >= 0
                     ? handlers.get(userdata)
                     : handlers.remove(userdata);
 
-            if (h == null) {
+            if (handler == null) {
                 logger.warning("no handler found for: " + userdata);
             } else {
                 try {
-                    h.completeRequest(res, flags, userdata);
+                    handler.completeRequest(res, flags, userdata);
                 } catch (Exception e) {
-                    logger.severe("Failed to process " + h + " res:" + res + " flags:"
+                    logger.severe("Failed to process " + handler + " res:" + res + " flags:"
                             + flags + " userdata:" + userdata, e);
                 }
             }

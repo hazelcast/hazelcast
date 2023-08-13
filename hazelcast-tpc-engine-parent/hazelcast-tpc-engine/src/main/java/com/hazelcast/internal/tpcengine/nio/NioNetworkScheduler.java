@@ -22,20 +22,21 @@ import org.jctools.queues.MpscArrayQueue;
 import java.util.Queue;
 
 /**
- * The {@link NetworkScheduler} specific to the {@link NioReactor}.
+ * The {@link NetworkScheduler} specific to the {@link NioReactor}. It will
+ * process sockets in FIFO order.
  */
 public class NioNetworkScheduler implements NetworkScheduler<NioAsyncSocket> {
 
     private final Queue<NioAsyncSocket> stagingQueue;
 
-    public NioNetworkScheduler(int maxSockets) {
-        this.stagingQueue = new MpscArrayQueue<>(maxSockets);
+    public NioNetworkScheduler(int socketLimit) {
+        this.stagingQueue = new MpscArrayQueue<>(socketLimit);
     }
 
     @Override
     public void schedule(NioAsyncSocket socket) {
         if (!stagingQueue.offer(socket)) {
-            throw new IllegalStateException("Too many sockets");
+            throw new IllegalStateException("Socket limit has been exceeded.");
         }
     }
 

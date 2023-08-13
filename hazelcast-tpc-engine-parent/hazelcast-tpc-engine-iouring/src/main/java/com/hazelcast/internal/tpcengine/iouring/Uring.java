@@ -374,8 +374,9 @@ public final class Uring implements AutoCloseable {
     }
 
     /**
-     * Registers the file descriptor of the ring. THis makes enter cheaper. There is a limit
-     * on the number of IOURing instances that can be registered (16).
+     * Registers the file descriptor of the ring. THis makes enter cheaper.
+     * There is a limit of 16 on the number of URing instances that can be
+     * registered.
      * <p>
      * For more info see:
      * https://man7.org/linux/man-pages/man3/io_uring_register_ring_fd.3.html
@@ -386,31 +387,13 @@ public final class Uring implements AutoCloseable {
         sq.ringBufferRegistered = true;
     }
 
-    /**
-     * Unregisters the file descriptor of the ring.
-     * <p/>
-     * For more info see:
-     * // https://man7.org/linux/man-pages/man3/io_uring_unregister_ring_fd.3.html
-     */
-    public void unregisterRingFd() {
-        unregisterRingFd(ringAddr);
-    }
-
     public void register(int opcode, long arg, int nr_args) {
         register(ringFd, opcode, arg, nr_args);
     }
-//
-//    public void registerSocket(int socket_fd){
-//        register_socket(ringFd, socket_fd);
-//    }
-
-    //public static native void register_socket(int ring_fd, int socket_fd);
 
     public static native void register(int fd, int opcode, long arg, int nr_args);
 
     public static native int registerRingFd(long ring_addr);
-
-    public static native void unregisterRingFd(long ring_addr);
 
     public static native int enter(int ringFd, int toSubmit, int minComplete, int flags);
 

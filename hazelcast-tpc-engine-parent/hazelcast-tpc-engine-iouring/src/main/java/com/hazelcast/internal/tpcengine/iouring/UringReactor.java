@@ -20,12 +20,11 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorType;
-import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket.AcceptRequest;
+import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
  * io_uring {@link Reactor} implementation.
@@ -71,11 +70,11 @@ public final class UringReactor extends Reactor {
     }
 
     @Override
-    public AsyncSocket.Builder newAsyncSocketBuilder(AcceptRequest acceptRequest) {
+    public AsyncSocket.Builder newAsyncSocketBuilder(AbstractAsyncSocket.AcceptRequest acceptRequest) {
         checkRunning();
 
         UringAsyncSocket.Builder socketBuilder
-                = new UringAsyncSocket.Builder((UringAcceptRequest) acceptRequest);
+                = new UringAsyncSocket.Builder((UringAsyncServerSocket.AcceptRequest) acceptRequest);
         socketBuilder.uring = eventloop.uring;
         socketBuilder.reactor = this;
         socketBuilder.networkScheduler = eventloop.networkScheduler();
@@ -109,21 +108,11 @@ public final class UringReactor extends Reactor {
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends Reactor.Builder {
 
-        public static final int DEFAULT_ENTRIES = 8192;
-
         /**
          * Sets the setup flags for the io_uring instance. See the IoUring.IORING_SETUP
          * constants.
          */
         public int setupFlags;
-
-        /**
-         * The number of entries for the io_uring instance.
-         * <p/>
-         * For more information see:
-         * https://man7.org/linux/man-pages//man2/io_uring_enter.2.html
-         */
-        public int entries = DEFAULT_ENTRIES;
 
         /**
          * Configures if the file descriptor of the io_uring instance should be
@@ -153,7 +142,6 @@ public final class UringReactor extends Reactor {
             super.conclude();
 
             checkNotNegative(setupFlags, "setupFlags");
-            checkPositive(entries, "entries");
         }
     }
 }
