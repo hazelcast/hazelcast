@@ -64,7 +64,8 @@ import static java.lang.Math.min;
  *     queue are moved to the submission queue.</li>
  *     <li>
  *         completionQueue: once io_uring has completed the requests, the
- *         completed requests end up at the completion queue.
+ *         completed requests end up at the completion queue. The completionQueue
+ *         is processed by the {@link UringEventloop}.
  *     </li>
  * </ol>
  */

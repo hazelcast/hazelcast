@@ -22,6 +22,13 @@ package com.hazelcast.internal.tpcengine.file;
  * A StorageScheduler is bound to a single Reactor and can only process
  * {@link StorageRequest} instances from {@link AsyncFile} that belong to that
  * reactor.
+ * <p/>
+ * The current {@link StorageScheduler} instances are very basic since they
+ * only do a FIFO based processing. In the future smarter schedulers could be
+ * made; e.g. where there is more control on which storage requests gets
+ * preference above others. You could have a background compaction process
+ * running with low priority while requests issued by regular users gets
+ * precedence.
  */
 public interface StorageScheduler {
 
@@ -41,7 +48,7 @@ public interface StorageScheduler {
      * Schedules a StorageRequest so that it is processed at some point in the
      * future. Only StorageRequest that have been allocated using the
      * {@link #allocate()} method on this StorageScheduler should be
-     * submitted.
+     * scheduled.
      *
      * @param req the BlockRequest.
      */

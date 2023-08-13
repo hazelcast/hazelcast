@@ -58,6 +58,9 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * It is a FIFO based scheduler where all requests end up in a single requestQueue.
  * Requests are picked from this request queue until the queue is empty or until
  * the maximum ioDepth has been reached.
+ * <p/>
+ * The actual storage requests are processed by an executor. Where each thread performs
+ * one blocking operation. So the size of the threadpool determines the number of IOPS.
  */
 @SuppressWarnings({
         "checkstyle:CyclomaticComplexity",
@@ -66,6 +69,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 public class NioFifoStorageScheduler implements StorageScheduler {
 
     private final NioReactor reactor;
+    // The queue within the executor is the submission queue.
     private final Executor executor;
     private final SlabAllocator<NioStorageRequest> requestAllocator;
     private final CompletionHandler<Integer, NioStorageRequest> handler = new StorageRequestCompletionHandler();
@@ -79,9 +83,10 @@ public class NioFifoStorageScheduler implements StorageScheduler {
     private int submitCount;
 
     /**
+     * Creates a NioFifoStorageScheduler.
      *
-     * @param reactor
-     * @param executor
+     * @param reactor the NioReactor this scheduler belongs to.
+     * @param executor the executor that processes the storage requests.
      * @param submitLimit the limit on the number of storage requests submitted
      *                    for processing; so are actually being offered to the
      *                    executor for processing).
