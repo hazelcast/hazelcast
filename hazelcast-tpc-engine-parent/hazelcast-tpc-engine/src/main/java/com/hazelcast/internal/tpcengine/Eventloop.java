@@ -64,7 +64,7 @@ public abstract class Eventloop {
     protected final Reactor.Metrics metrics;
     protected final long minGranularityNanos;
     protected final NetworkScheduler networkScheduler;
-    protected final IOBufferAllocator blockBufferAllocator;
+    protected final IOBufferAllocator storageAllocator;
     protected final StorageScheduler storageScheduler;
     protected long taskStartNanos;
     protected final long ioIntervalNanos;
@@ -84,7 +84,7 @@ public abstract class Eventloop {
         this.networkScheduler = builder.networkScheduler;
         this.storageScheduler = builder.storageScheduler;
         this.scheduler = builder.scheduler;
-        this.blockBufferAllocator = builder.blockBufferAllocator;
+        this.storageAllocator = builder.storageAllocator;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.stallThresholdNanos = builder.reactorBuilder.stallThresholdNanos;
@@ -219,7 +219,7 @@ public abstract class Eventloop {
      * @return the block IOBufferAllocator.
      */
     public final IOBufferAllocator blockIOBufferAllocator() {
-        return blockBufferAllocator;
+        return storageAllocator;
     }
 
     /**
@@ -525,7 +525,7 @@ public abstract class Eventloop {
         public StorageScheduler storageScheduler;
         public Scheduler scheduler;
         public DeadlineScheduler deadlineScheduler;
-        public IOBufferAllocator blockBufferAllocator;
+        public IOBufferAllocator storageAllocator;
 
         @Override
         protected void conclude() {
@@ -538,8 +538,8 @@ public abstract class Eventloop {
                 this.deadlineScheduler = new DeadlineScheduler(reactorBuilder.deadlineRunQueueCapacity);
             }
 
-            if (blockBufferAllocator == null) {
-                this.blockBufferAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
+            if (storageAllocator == null) {
+                this.storageAllocator = new NonConcurrentIOBufferAllocator(4096, true, pageSize());
             }
 
             if (scheduler == null) {
