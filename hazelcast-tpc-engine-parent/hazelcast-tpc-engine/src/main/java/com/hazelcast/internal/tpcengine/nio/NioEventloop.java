@@ -202,7 +202,7 @@ final class NioEventloop extends Eventloop {
             }
 
             if (networkScheduler == null) {
-                networkScheduler = new NioNetworkScheduler(reactorBuilder.socketLimit);
+                networkScheduler = new NioFifoNetworkScheduler(reactorBuilder.socketLimit);
             }
 
             if (selector == null) {

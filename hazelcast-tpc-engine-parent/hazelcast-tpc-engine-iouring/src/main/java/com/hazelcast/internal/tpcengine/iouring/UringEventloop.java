@@ -64,7 +64,6 @@ public final class UringEventloop extends Eventloop {
         completionQueue.register(timeoutHandler.userdata, timeoutHandler);
     }
 
-
     @Override
     public AsyncFile newAsyncFile(String path) {
         checkNotNull(path, "path");
@@ -178,11 +177,13 @@ public final class UringEventloop extends Eventloop {
             UNSAFE.freeMemory(addr);
         }
 
-        // todo: I'm questioning of this is not going to lead to problems. Can it happen that
-        // multiple timeout requests are offered? So one timeout request is scheduled while another command is
-        // already in the pipeline. Then the thread waits, and this earlier command completes while the later
-        // timeout command is still scheduled. If another timeout is scheduled, then you have 2 timeouts in the
-        // uring and both share the same timeoutSpecAddr.
+        // todo: I'm questioning of this is not going to lead to problems. Can
+        // it happen that multiple timeout requests are offered? So one timeout
+        // request is scheduled while another command is already in the pipeline.
+        // Then the thread waits, and this earlier command completes while the later
+        // timeout command is still scheduled. If another timeout is scheduled,
+        // then you have 2 timeouts in the uring and both share the same
+        // timeoutSpecAddr.
         private void addRequest(long timeoutNanos) {
             if (timeoutNanos <= 0) {
                 UNSAFE.putLong(addr, 0);
@@ -219,7 +220,7 @@ public final class UringEventloop extends Eventloop {
             super.conclude();
 
             if (networkScheduler == null) {
-                networkScheduler = new UringNetworkScheduler(reactorBuilder.socketLimit);
+                networkScheduler = new UringFifoNetworkScheduler(reactorBuilder.socketLimit);
             }
 
             if (uring == null) {

@@ -14,40 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.iouring;
+package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 import org.jctools.queues.MpscArrayQueue;
 
 import java.util.Queue;
 
-public class UringNetworkScheduler implements NetworkScheduler<UringAsyncSocket> {
-    private final Queue<UringAsyncSocket> stagingQueue;
+/**
+ * The {@link NetworkScheduler} specific to the {@link NioReactor}. It will
+ * process sockets in FIFO order.
+ */
+public class NioFifoNetworkScheduler implements NetworkScheduler<NioAsyncSocket> {
 
-    public UringNetworkScheduler(int socketLimit) {
+    private final Queue<NioAsyncSocket> stagingQueue;
+
+    public NioFifoNetworkScheduler(int socketLimit) {
         this.stagingQueue = new MpscArrayQueue<>(socketLimit);
     }
 
     @Override
-    public void schedule(UringAsyncSocket socket) {
+    public void schedule(NioAsyncSocket socket) {
         if (!stagingQueue.offer(socket)) {
             throw new IllegalStateException("Socket limit has been exceeded.");
         }
     }
 
+    @Override
     public boolean tick() {
-
+        boolean result = false;
         for (; ; ) {
-            UringAsyncSocket socket = stagingQueue.poll();
+            NioAsyncSocket socket = stagingQueue.poll();
             if (socket == null) {
                 break;
             }
 
-            socket.writeHandler.addRequest();
+            socket.handler.run();
+            result = true;
         }
 
-        //todo
-        return false;
+        return result;
     }
 
     @Override

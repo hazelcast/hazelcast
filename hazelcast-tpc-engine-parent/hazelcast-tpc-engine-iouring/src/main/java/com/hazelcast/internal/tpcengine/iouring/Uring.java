@@ -374,7 +374,7 @@ public final class Uring implements AutoCloseable {
     }
 
     /**
-     * Registers the file descriptor of the ring. THis makes enter cheaper.
+     * Registers the file descriptor of the ring. This makes enter cheaper.
      * There is a limit of 16 on the number of URing instances that can be
      * registered.
      * <p>
