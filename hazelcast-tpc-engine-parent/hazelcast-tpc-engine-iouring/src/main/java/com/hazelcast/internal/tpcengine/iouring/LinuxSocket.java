@@ -45,7 +45,6 @@ public final class LinuxSocket implements AutoCloseable {
     public static final int SOCK_STREAM = 1;
     //public static final int SIZEOF_SOCKADDR_STORAGE;
 
-
     private final int fd;
     private boolean closed;
     private final int addressFamily;
