@@ -30,6 +30,10 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
     public String createDatabase(String dbName) {
         container = new MSSQLServerContainer<>("mcr.microsoft.com/mssql/server:" + TEST_MSSQLSERVER_VERSION);
         container.acceptLicense()
+                 // See https://learn.microsoft.com/en-us/sql/connect/jdbc/using-basic-data-types?view=sql-server-ver16
+                 // "To use java.sql.Time with the time SQL Server type, you must set the sendTimeAsDatetime
+                 // connection property to false."
+                .withUrlParam("sendTimeAsDateTime", "false")
                 .withUrlParam("user", container.getUsername())
                 .withUrlParam("password", container.getPassword());
         container.start();
