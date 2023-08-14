@@ -67,7 +67,7 @@ final class NioEventloop extends Eventloop {
         worked |= storageScheduler.tick();
         worked |= networkScheduler.tick();
 
-        // A selectNow that has nothing do so will take between 75/200ns
+        // A selectNow, that has nothing do, will take between 75/200ns
         int keyCount = selector.selectNow();
 
         if (keyCount > 0) {
@@ -100,7 +100,6 @@ final class NioEventloop extends Eventloop {
         storageScheduler.tick();
 
         boolean worked = false;
-        //runDeviceSchedulerCompletions();
         int keyCount;
         long timeoutMs = timeoutNanos / NANOS_PER_MILLI;
         if (spin || timeoutMs == 0 || worked) {
@@ -130,9 +129,7 @@ final class NioEventloop extends Eventloop {
         }
 
         // todo: skip
-        //networkScheduler.tick();
         storageScheduler.tick();
-
     }
 
 
@@ -167,7 +164,8 @@ final class NioEventloop extends Eventloop {
             NioHandler handler = (NioHandler) key.attachment();
 
             if (handler == null) {
-                // There is no handler; so lets cancel the key to be sure it gets cancelled.
+                // There is no handler; so lets cancel the key to be sure it gets
+                // cancelled.
                 key.cancel();
             } else {
                 // There is a handler; so it will take care of cancelling the key.
@@ -182,8 +180,7 @@ final class NioEventloop extends Eventloop {
         closeQuietly(selector);
     }
 
-    // todo: remove magic number
-    @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:MagicNumber"})
+    @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends Eventloop.Builder {
         public Selector selector;
         public Executor storageExecutor;
@@ -197,7 +194,11 @@ final class NioEventloop extends Eventloop {
                     storageExecutor = Executors.newSingleThreadExecutor();
                 }
 
-                storageScheduler = new NioFifoStorageScheduler((NioReactor) reactor, storageExecutor, 1024, 4096);
+                storageScheduler = new NioFifoStorageScheduler(
+                        (NioReactor) reactor,
+                        storageExecutor,
+                        reactorBuilder.storagePendingLimit,
+                        reactorBuilder.storagePendingLimit);
             }
 
             if (networkScheduler == null) {
