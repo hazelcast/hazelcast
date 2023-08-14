@@ -24,9 +24,9 @@ package com.hazelcast.internal.tpcengine.util;
  * A builder should only be used once to create an object.
  * <p/>
  * The idea is that each builder can have zero or more parameters (probably
- * you want to make them public fields) and on completion, call the
- * {@link #conclude()} functionality where the parameters are validated and
- * missing values, where appropriate, are initialized to sensible defaults.
+ * you want to make them public fields) and on completion, call {@link #build()}
+ * method. This will first call {@link #conclude()} to initialize and or validate
+ * the fields of the builder and on success, the {@link #construct()} is called.
  * <p/>
  * Advantages of using the builder:
  * <ol>
@@ -35,10 +35,13 @@ package com.hazelcast.internal.tpcengine.util;
  *     have one or more dependencies from a different object you either need
  *     to expose unwanted getters or make very fat constructors.
  *     </li>
- *     <li>testing is a lot easier since you can easily control
- *      the dependencies.
+ *     <li>
+ *          Testing is a lot easier since you can easily control
+ *          the dependencies.
  *      </li>
- *      <li>Customization of dependencies is a lot easier. </li>
+ *      <li>
+ *          Customization of dependencies is a lot easier.
+ *      </li>
  *      <li>
  *          Complex dependency setup can be localized to the builder. This makes
  *          the object that receive and send this builder a lot simpler.
@@ -46,9 +49,13 @@ package com.hazelcast.internal.tpcengine.util;
  *      <li>
  *          Makes it easy for all 'dependency' fields of the object to be final.
  *      </li>>
+ *      <li>
+ *          The constructors become very simple because the setup of the fields
+ *          of an object is mostly moved to the builder.
+ *      </li>
  * </ol>
  * <p/>
- * The AbstractBuilder isn't threadsafe.
+ * Instances of the AbstractBuilder are not threadsafe.
  */
 public abstract class AbstractBuilder<E> {
 
