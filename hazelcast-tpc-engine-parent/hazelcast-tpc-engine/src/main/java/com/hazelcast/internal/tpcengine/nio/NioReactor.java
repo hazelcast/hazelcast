@@ -43,7 +43,8 @@ public final class NioReactor extends Reactor {
         NioAsyncSocket.Builder socketBuilder = new NioAsyncSocket.Builder(null);
         socketBuilder.reactor = this;
         socketBuilder.selector = selector;
-        socketBuilder.networkScheduler = eventloop.networkScheduler();
+        NioEventloop nioEventloop = (NioEventloop) eventloop;
+        socketBuilder.networkScheduler = nioEventloop.networkScheduler();
         return socketBuilder;
     }
 
@@ -56,7 +57,8 @@ public final class NioReactor extends Reactor {
                 = new NioAsyncSocket.Builder((AcceptRequest) acceptRequest);
         socketBuilder.reactor = this;
         socketBuilder.selector = selector;
-        socketBuilder.networkScheduler = eventloop.networkScheduler();
+        NioEventloop nioEventloop = (NioEventloop) eventloop;
+        socketBuilder.networkScheduler = nioEventloop.networkScheduler();
         return socketBuilder;
     }
 

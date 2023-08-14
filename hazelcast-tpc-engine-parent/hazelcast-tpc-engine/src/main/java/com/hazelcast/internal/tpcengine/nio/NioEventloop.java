@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
+import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -52,6 +53,10 @@ final class NioEventloop extends Eventloop {
     NioEventloop(NioEventloop.Builder builder) {
         super(builder);
         this.selector = builder.selector;
+    }
+
+    public NetworkScheduler networkScheduler() {
+        return networkScheduler;
     }
 
     @Override
@@ -179,6 +184,7 @@ final class NioEventloop extends Eventloop {
 
         closeQuietly(selector);
     }
+
 
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends Eventloop.Builder {

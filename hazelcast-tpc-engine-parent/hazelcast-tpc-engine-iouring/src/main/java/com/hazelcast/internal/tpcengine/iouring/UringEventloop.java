@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
+import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -62,6 +63,10 @@ public final class UringEventloop extends Eventloop {
         this.timeoutHandler = new TimeoutHandler();
         timeoutHandler.userdata = completionQueue.nextPermanentHandlerId();
         completionQueue.register(timeoutHandler.userdata, timeoutHandler);
+    }
+
+    public NetworkScheduler networkScheduler() {
+        return networkScheduler;
     }
 
     @Override

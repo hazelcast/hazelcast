@@ -98,10 +98,6 @@ public abstract class Eventloop {
         this.defaultTaskQueueHandle = defaultTaskQueueBuilder.build();
     }
 
-    public NetworkScheduler networkScheduler() {
-        return networkScheduler;
-    }
-
     /**
      * Returns the Reactor this Eventloop belongs to.
      *
@@ -176,7 +172,7 @@ public abstract class Eventloop {
 
         if (currentThread != reactor.eventloopThread) {
             throw new IllegalThreadStateException("Can only be called from the eventloop thread "
-                    + "[" + eventloopThread + "], found [" + currentThread + "]");
+                    + "[" + eventloopThread + "], found [" + currentThread + "].");
         }
     }
 
@@ -256,7 +252,6 @@ public abstract class Eventloop {
         reactor.sockets().foreach(socket -> socket.close("Reactor is shutting down", null));
         reactor.serverSockets().foreach(serverSocket -> serverSocket.close("Reactor is shutting down", null));
     }
-
 
     /**
      * Override this method to execute some logic before the {@link #run()} method is called.
