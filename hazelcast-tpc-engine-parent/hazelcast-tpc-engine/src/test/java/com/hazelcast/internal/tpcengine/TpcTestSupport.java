@@ -21,7 +21,6 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -63,10 +62,11 @@ public class TpcTestSupport {
         }, timeoutSeconds);
     }
 
-    public static <E> E assertSuccessEventually(final CompletableFuture<E> future) {
+    public static <E> E assertSuccessEventually(final Future<E> future) {
         assertTrueEventually(() -> {
             assertTrue("Future has not completed", future.isDone());
         });
+
         try {
             return future.get();
         } catch (InterruptedException e) {

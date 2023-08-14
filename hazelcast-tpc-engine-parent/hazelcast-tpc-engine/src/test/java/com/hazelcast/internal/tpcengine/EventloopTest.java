@@ -26,10 +26,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertEqualsEventually;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 public abstract class EventloopTest {
 
@@ -104,5 +106,16 @@ public abstract class EventloopTest {
         assertEqualsEventually(1, executedCount);
         long duration = System.currentTimeMillis() - startMs;
         System.out.println("duration:" + duration + " ms");
+    }
+
+    @Test
+    public void test_checkOnEventloopThread_whenNotOnEventloopThread() {
+        assertThrows(IllegalThreadStateException.class, () -> reactor.eventloop.checkOnEventloopThread());
+    }
+
+    @Test
+    public void test_checkOnEventloopThread_whenOnEventloopThread() {
+        CompletableFuture<Void> future = reactor.submit(() -> reactor.eventloop.checkOnEventloopThread());
+        assertSuccessEventually(future);
     }
 }

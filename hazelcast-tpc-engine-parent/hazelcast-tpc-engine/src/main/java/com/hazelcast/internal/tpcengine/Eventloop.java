@@ -167,12 +167,15 @@ public abstract class Eventloop {
 
     /**
      * Checks if the current thread is the eventloop thread of this Eventloop.
+     *
+     * @throws IllegalThreadStateException if the current thread not equals the
+     *                                     eventloop thread.
      */
     public final void checkOnEventloopThread() {
         Thread currentThread = Thread.currentThread();
 
         if (currentThread != reactor.eventloopThread) {
-            throw new IllegalStateException("Can only be called from the eventloop thread "
+            throw new IllegalThreadStateException("Can only be called from the eventloop thread "
                     + "[" + eventloopThread + "], found [" + currentThread + "]");
         }
     }
