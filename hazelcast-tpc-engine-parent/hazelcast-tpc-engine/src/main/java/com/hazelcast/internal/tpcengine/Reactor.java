@@ -120,7 +120,7 @@ public abstract class Reactor implements Executor {
         this.spin = builder.spin;
         this.engine = builder.engine;
         this.initFn = builder.initFn;
-        this.sockets = new ReactorResources<>(builder.socketLimit);
+        this.sockets = new ReactorResources<>(builder.socketsLimit);
         this.serverSockets = new ReactorResources<>(builder.serverSocketsLimit);
         this.files = new ReactorResources<>(builder.fileLimit);
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
@@ -780,7 +780,7 @@ public abstract class Reactor implements Executor {
         /**
          * The limit on the number of AsyncSockets.
          */
-        public int socketLimit;
+        public int socketsLimit;
 
         /**
          * The limit on the number of AsyncServerSockets.
@@ -940,7 +940,7 @@ public abstract class Reactor implements Executor {
                     getProperty(NAME_CFS,
                             Boolean.toString(DEFAULT_CFS)));
             this.threadAffinity = DEFAULT_THREAD_AFFINITY;
-            this.socketLimit = Integer.getInteger(
+            this.socketsLimit = Integer.getInteger(
                     NAME_SOCKETS_LIMIT,
                     DEFAULT_SOCKETS_LIMIT);
             this.serverSocketsLimit = Integer.getInteger(
@@ -992,7 +992,7 @@ public abstract class Reactor implements Executor {
         protected void conclude() {
             super.conclude();
 
-            checkPositive(socketLimit, "socketLimit");
+            checkPositive(socketsLimit, "socketLimit");
             checkPositive(serverSocketsLimit, "serverSocketsLimit");
             checkPositive(fileLimit, "fileLimit");
             checkPositive(storagePendingLimit, "storagePendingLimit");

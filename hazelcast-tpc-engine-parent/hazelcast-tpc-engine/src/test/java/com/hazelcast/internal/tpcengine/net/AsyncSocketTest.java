@@ -329,7 +329,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_tooManySockets() {
         int socketLimit = 10;
-        Reactor serverReactor = newReactor(builder -> builder.socketLimit = socketLimit);
+        Reactor serverReactor = newReactor(builder -> builder.socketsLimit = socketLimit);
 
         AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
         serverSocketBuilder.acceptFn = acceptRequest -> {
@@ -344,7 +344,7 @@ public abstract class AsyncSocketTest {
         serverSocket.start();
 
         // make sure that the client reactor can handle at least this amount of sockets.
-        Reactor clientReactor = newReactor(builder -> builder.socketLimit = socketLimit + 1);
+        Reactor clientReactor = newReactor(builder -> builder.socketsLimit = socketLimit + 1);
 
         // we create as many sockets as is allowed.
         List<AsyncSocket> goodSockets = new ArrayList<>();

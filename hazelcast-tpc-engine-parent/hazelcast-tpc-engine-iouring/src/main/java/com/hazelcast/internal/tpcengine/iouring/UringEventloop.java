@@ -115,9 +115,6 @@ public final class UringEventloop extends Eventloop {
 
         boolean worked = false;
 
-        // todo: this is where we want to iterate over the dev schedulers and submit
-        // the pending BlockRequests to the sq.
-
         if (submissionQueue.submit() > 0) {
             worked = true;
         }
@@ -218,7 +215,7 @@ public final class UringEventloop extends Eventloop {
             super.conclude();
 
             if (networkScheduler == null) {
-                networkScheduler = new UringFifoNetworkScheduler(reactorBuilder.socketLimit);
+                networkScheduler = new UringFifoNetworkScheduler(reactorBuilder.socketsLimit);
             }
 
             if (uring == null) {
@@ -226,10 +223,10 @@ public final class UringEventloop extends Eventloop {
                 // This is required for some of the setup flags.
                 UringReactor.Builder reactorBuilder = (UringReactor.Builder) this.reactorBuilder;
 
-                // The ioring can be sized correctly based on the information we have.
+                // The uring can be sized correctly based on the information we have.
                 int entries
                         // 1 for reading and 1 for writing
-                        = reactorBuilder.socketLimit * 2
+                        = reactorBuilder.socketsLimit * 2
                         + reactorBuilder.serverSocketsLimit
                         // every server socket needs 1 entry
                         + reactorBuilder.storageSubmitLimit
