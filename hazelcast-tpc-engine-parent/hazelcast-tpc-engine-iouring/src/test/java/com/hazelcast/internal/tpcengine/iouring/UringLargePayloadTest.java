@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.nio;
+package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.Reactor;
-import com.hazelcast.internal.tpcengine.net.AsyncSocket_LargePayloadTest;
+import com.hazelcast.internal.tpcengine.net.LargePayloadTest;
 
-public class NioAsyncSocket_LargePayloadTest extends AsyncSocket_LargePayloadTest {
+public class UringLargePayloadTest extends LargePayloadTest {
+
     @Override
     public Reactor.Builder newReactorBuilder() {
-        return new NioReactor.Builder();
+        return new UringReactor.Builder();
     }
 }

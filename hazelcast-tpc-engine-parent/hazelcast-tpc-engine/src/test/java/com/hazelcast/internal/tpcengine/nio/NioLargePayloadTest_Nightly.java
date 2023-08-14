@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.iouring;
+package com.hazelcast.internal.tpcengine.nio;
 
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 
-@Category(NightlyTest.class)
-public class UringAsyncSocket_LargePayloadTest_Nightly extends UringAsyncSocket_LargePayloadTest {
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
 
-    public UringAsyncSocket_LargePayloadTest_Nightly() {
+@Category(NightlyTest.class)
+public class NioLargePayloadTest_Nightly extends NioLargePayloadTest {
+
+    public NioLargePayloadTest_Nightly() {
         iterations = 20000;
+        testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
     }
 }

@@ -51,7 +51,7 @@ import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_LONG;
  * worker thread will send another request.
  * <p>
  */
-public abstract class AsyncSocket_RpcTest {
+public abstract class RpcTest {
     // use small buffers to cause a lot of network scheduling overhead
     // (and shake down problems)
     private static final int SIZEOF_HEADER = SIZEOF_INT + SIZEOF_LONG;

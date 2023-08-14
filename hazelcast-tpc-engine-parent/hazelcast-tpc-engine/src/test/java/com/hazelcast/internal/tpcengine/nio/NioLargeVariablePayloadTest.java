@@ -16,19 +16,12 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
+import com.hazelcast.internal.tpcengine.Reactor;
 
-import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.experimental.categories.Category;
-
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
-
-@Category(NightlyTest.class)
-public class NioAsyncSocket_RpcTest_Nightly extends NioAsyncSocket_RpcTest {
-
-    public NioAsyncSocket_RpcTest_Nightly() {
-        durationMillis = TimeUnit.SECONDS.toMillis(60);
-        testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
+public class NioLargeVariablePayloadTest
+        extends com.hazelcast.internal.tpcengine.net.LargeVariablePayloadTest {
+    @Override
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
     }
 }
