@@ -220,7 +220,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
      * @throws NullPointerException throws if task is null or when inside queue
      *                              is null.
      */
-    public boolean offerInside(Object task) {
+    boolean offerInside(Object task) {
         if (!inside.offer(task)) {
             return false;
         }
@@ -261,6 +261,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
     /**
      * Offers a task.
+     * <p/>
+     * This method is thread-safe.
      *
      * @param task the task to offer.
      * @return true if the task was successfully offered, false otherwise.
