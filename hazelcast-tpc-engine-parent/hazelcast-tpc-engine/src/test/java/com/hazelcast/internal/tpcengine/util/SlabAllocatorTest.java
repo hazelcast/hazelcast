@@ -19,43 +19,89 @@ package com.hazelcast.internal.tpcengine.util;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 
 public class SlabAllocatorTest {
 
+    @Test(expected = IllegalArgumentException.class)
+    public void test_construct_whenNegativeCapacity() {
+        new SlabAllocator<>(-1, () -> "foo");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_construct_whenZeroCapacity() {
+        new SlabAllocator<>(0, () -> "foo");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void test_construct_whenNullConstructorFn() {
+        new SlabAllocator<>(10, null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void test_construct_whenConstructorFnReturnsNull() {
+        new SlabAllocator<>(10, () -> null);
+    }
+
+    @Test
+    public void test_allocate() {
+        int capacity = 10;
+        SlabAllocator<Integer> slabAllocator = new SlabAllocator<>(10, new IntegerSupplier());
+
+        for (int k = 0; k < capacity; k++) {
+            assertEquals(Integer.valueOf(k), slabAllocator.allocate());
+        }
+
+        assertNull(slabAllocator.allocate());
+    }
+
     @Test
     public void test() {
-        SlabAllocator<LinkedList> slabAllocator = new SlabAllocator(10, LinkedList::new);
+        SlabAllocator<Integer> slabAllocator = new SlabAllocator<>(10, new IntegerSupplier());
 
-        LinkedList l1 = slabAllocator.allocate();
-        LinkedList l2 = slabAllocator.allocate();
+        Integer a1 = slabAllocator.allocate();
+        assertEquals(Integer.valueOf(0), a1);
 
-        assertNotNull(l1);
-        assertNotNull(l2);
-        assertNotSame(l1, l2);
+        Integer a2 = slabAllocator.allocate();
+        assertEquals(Integer.valueOf(1), a2);
 
-        slabAllocator.free(l1);
-        slabAllocator.free(l2);
+        Integer a3 = slabAllocator.allocate();
+        assertEquals(Integer.valueOf(2), a3);
 
-        LinkedList l3 = slabAllocator.allocate();
-        LinkedList l4 = slabAllocator.allocate();
+        Integer a4 = slabAllocator.allocate();
+        assertEquals(Integer.valueOf(3), a4);
 
-        assertSame(l1, l4);
-        assertSame(l2, l3);
+        slabAllocator.free(a1);
+
+        Integer a5 = slabAllocator.allocate();
+        assertEquals(a1, a5);
+
+        slabAllocator.free(a4);
+
+        Integer a6 = slabAllocator.allocate();
+        assertEquals(a4, a6);
+
+        slabAllocator.free(a3);
+        slabAllocator.free(a2);
+
+        Integer a7 = slabAllocator.allocate();
+        assertEquals(a2, a7);
+
+        Integer a8 = slabAllocator.allocate();
+        assertEquals(a3, a8);
     }
 
     @Test
     public void test_free_whenFull() {
         int capacity = 10;
-        SlabAllocator<AtomicLong> slabAllocator = new SlabAllocator(capacity, AtomicLong::new);
+        SlabAllocator<Integer> slabAllocator = new SlabAllocator<>(10, new IntegerSupplier());
 
-        List<AtomicLong> objects = new ArrayList<>();
+        List<Integer> objects = new ArrayList<>();
         // allocate a bunch of items
         for (int k = 0; k < capacity; k++) {
             objects.add(slabAllocator.allocate());
@@ -67,12 +113,21 @@ public class SlabAllocatorTest {
         }
 
         // and free an additional item
-        slabAllocator.free(new AtomicLong());
+        assertThrows(IllegalStateException.class, () -> slabAllocator.free(Integer.valueOf(10)));
     }
 
-    @Test(expected = NullPointerException.class)
-    public void test_free_whenNull() {
-        SlabAllocator<LinkedList> slabAllocator = new SlabAllocator(10, LinkedList::new);
-        slabAllocator.free(null);
+    @Test
+    public void test_free_whenNull_then() {
+        SlabAllocator<Integer> slabAllocator = new SlabAllocator<>(10, new IntegerSupplier());
+        assertThrows(NullPointerException.class, () -> slabAllocator.free(null));
+    }
+
+    private static class IntegerSupplier implements Supplier<Integer> {
+        private int x;
+
+        @Override
+        public Integer get() {
+            return x++;
+        }
     }
 }

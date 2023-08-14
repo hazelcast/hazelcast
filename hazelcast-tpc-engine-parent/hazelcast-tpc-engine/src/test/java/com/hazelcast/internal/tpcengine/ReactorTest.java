@@ -72,12 +72,6 @@ public abstract class ReactorTest {
         assertNotNull(reactor.context());
     }
 
-//    @Test
-//    public void test_scheduler() {
-//        Reactor reactor = newReactor();
-//        assertNotNull(reactor.scheduler());
-//    }
-
     @Test(expected = NullPointerException.class)
     public void test_offer_Runnable_whenNull() {
         Reactor reactor = newReactor();
