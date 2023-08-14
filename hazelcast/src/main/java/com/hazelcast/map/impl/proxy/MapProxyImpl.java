@@ -457,6 +457,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     }
 
     @Override
+    public InternalCompletableFuture<Boolean> deleteAsync(@Nonnull K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
+        return newDelegatingFuture(serializationService, deleteAsyncInternal(key));
+    }
+
+    @Override
     public Map<K, V> getAll(@Nullable Set<K> keys) {
         if (CollectionUtil.isEmpty(keys)) {
             // Wrap emptyMap() into unmodifiableMap to make sure put/putAll methods throw UnsupportedOperationException

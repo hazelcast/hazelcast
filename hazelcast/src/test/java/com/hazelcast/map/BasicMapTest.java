@@ -1044,6 +1044,22 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGetPutDeleteAsync() {
+        IMap<Integer, Object> map = getInstance().getMap("testGetPutDeleteAsync");
+        try {
+            assertNull(map.putAsync(1, 1).toCompletableFuture().get());
+            assertEquals(1, map.putAsync(1, 2).toCompletableFuture().get());
+            assertEquals(2, map.getAsync(1).toCompletableFuture().get());
+            assertTrue(map.deleteAsync(1).toCompletableFuture().get());
+            assertEquals(0, map.size());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
     public void testPutIfAbsentAsync() {
         MapProxyImpl<Object, Object> map = (MapProxyImpl<Object, Object>) getInstance().getMap("testPutIfAbsentAsync");
         try {
@@ -1799,6 +1815,13 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "removeAsync(null)");
+
+        runnable = new Runnable() {
+            public void run() {
+                map.deleteAsync(null);
+            }
+        };
+        assertRunnableThrowsNullPointerException(runnable, "deleteAsync(null)");
 
         runnable = new Runnable() {
             public void run() {

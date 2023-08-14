@@ -1,4 +1,5 @@
 name: aws-tests
+
 on:
   workflow_dispatch:
   pull_request_target:
@@ -13,14 +14,7 @@ on:
 
 jobs:
   build:
-    name: AWS Tests
-    defaults:
-      run:
-        shell: bash
-    env:
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
-    runs-on: ubuntu-latest
+    name: Build Jar's And Docker Images
     if: >-
       github.repository_owner == 'hazelcast' && 
       ( github.event_name == 'workflow_dispatch' || 
@@ -29,65 +23,70 @@ jobs:
           github.event.label.name == 'run-discovery-tests' 
         )
       )
+    uses: ./.github/workflows/build-artifact.yml
+    secrets: inherit
+
+  test:
+    name: Run Tests
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aws-discovery-suite/terraform/test
+    env:
+      AWS_REGION: us-east-1
+    strategy:
+      matrix:
+        suite: ['ec2_cl_to_ec2_m', 'ec2_cl_to_fargate_ecs_m', 'fargate_ecs_cl_to_ec2_m', 'fargate_ecs_cl_to_fargate_ecs_m']
     steps:
-      - name: Setup JDK
-        uses: actions/setup-java@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2.0.0
         with:
-          java-version: 11
-          architecture: x64
-          distribution: adopt
-          cache: 'maven'
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Decide which ref to checkout
-        id: decide-ref
-        run: |
-          if [[ "${{github.event_name}}" == "pull_request_target" ]]; then
-            echo "ref=refs/pull/${{ github.event.pull_request.number }}/merge" >> $GITHUB_OUTPUT
-          else
-            echo "ref=${{github.ref}}" >> $GITHUB_OUTPUT
-          fi
+      - name: Get Secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            DEVOPS_GITHUB_TOKEN,CN/DEVOPS_GITHUB_TOKEN
 
-      - name: Checkout
+      - name: Checkout Auto Discovery Test Suite
         uses: actions/checkout@v3
         with:
-          ref: ${{steps.decide-ref.outputs.ref}}
+          repository: hazelcast/auto-discovery-test-suite
+          token: ${{ env.DEVOPS_GITHUB_TOKEN }}
+          path: aws-discovery-suite
 
-      - name: Build hazelcast jar
-        run: |
-          ./mvnw -T 4 -B -V -e clean package \
-          -Dfindbugs.skip \
-          -Dcheckstyle.skip \
-          -Dpmd.skip=true \
-          -Dspotbugs.skip \
-          -Denforcer.skip \
-          -Dmaven.javadoc.skip \
-          -DskipTests \
-          -Dlicense.skip=true \
-          -Drat.skip=true \
-          -Dspotless.check.skip=true \
-          -Dattribution.skip \
-          -Dmaven.source.skip=true
-          echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
-          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/hazelcast.jar
+      - name: Download hazelcast.jar
+        uses: actions/download-artifact@v3
+        with:
+          name: hazelcast.jar
+          path: aws-discovery-suite/terraform/tools
+
+      - name: Download aws-discovery-client.jar
+        uses: actions/download-artifact@v3
+        with:
+          name: aws-discovery-client.jar
+          path: aws-discovery-suite/terraform/tools/client
 
       - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v2.0.0
+        uses: hashicorp/setup-terraform@v2.0.3
         with:
-          terraform_version: 1.1.8
+          terraform_version: 1.5.4
+          terraform_wrapper: false
 
-      - name: Terraform Init
-        working-directory: .github/terraform/aws
-        run: terraform init
+      - name: Cache Golang dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-      - name: Terraform Apply
-        working-directory: .github/terraform/aws
+      - name: Run Tests
         run: |
-          terraform apply \
-            -var="hazelcast_mancenter_version=latest-snapshot" \
-            -var="hazelcast_path=~/hazelcast.jar" \
-            -auto-approve
-
-      - name: Terraform Destroy
-        if: ${{ always() }}
-        working-directory: .github/terraform/aws
-        run: terraform destroy -auto-approve
+          go test -v -timeout 20m -run TestSuite -suite ${{ matrix.suite }} -member-image ${{ needs.build.outputs.HZ_IMG }} -client-image ${{ needs.build.outputs.CL_IMG }}

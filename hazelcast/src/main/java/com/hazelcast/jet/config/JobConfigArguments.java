@@ -40,5 +40,6 @@ public final class JobConfigArguments {
      */
     public static final String KEY_REQUIRED_PARTITIONS = "__sql.requiredPartitions";
 
-    private JobConfigArguments() { }
+    private JobConfigArguments() {
+    }
 }
