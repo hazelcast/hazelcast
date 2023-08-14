@@ -106,6 +106,7 @@ public abstract class Reactor implements Executor {
     protected final ReactorResources<AsyncSocket> sockets;
     protected final ReactorResources<AsyncServerSocket> serverSockets;
     protected final ReactorResources<AsyncFile> files;
+    protected final ReactorResources<TaskQueue> taskQueues;
     protected volatile State state = NEW;
     protected final Metrics metrics = new Metrics();
 
@@ -122,6 +123,7 @@ public abstract class Reactor implements Executor {
         this.sockets = new ReactorResources<>(builder.socketsLimit);
         this.serverSockets = new ReactorResources<>(builder.serverSocketsLimit);
         this.files = new ReactorResources<>(builder.fileLimit);
+        this.taskQueues = new ReactorResources<>(builder.runQueueLimit);
         CompletableFuture<Eventloop> eventloopFuture = new CompletableFuture<>();
         this.eventloopThread = builder.threadFactory.newThread(new StartEventloopTask(eventloopFuture, builder));
 
@@ -174,6 +176,17 @@ public abstract class Reactor implements Executor {
      */
     public final ReactorResources<AsyncFile> files() {
         return files;
+    }
+
+    /**
+     * Gets all the TaskQueues that belong to this Reactor.
+     * <p/>
+     * This method is threadsafe.
+     *
+     * @return the TaskQueues that belong to this Reactors.
+     */
+    public final ReactorResources<TaskQueue> taskQueues() {
+        return taskQueues;
     }
 
     /**

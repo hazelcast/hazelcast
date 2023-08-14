@@ -471,6 +471,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             }
 
             eventloop.scheduler.taskQueues.add(taskQueue);
+            eventloop.reactor.taskQueues.add(taskQueue);
             return taskQueue;
         }
     }
