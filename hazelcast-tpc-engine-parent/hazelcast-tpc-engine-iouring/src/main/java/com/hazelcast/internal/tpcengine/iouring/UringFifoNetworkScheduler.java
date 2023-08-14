@@ -26,6 +26,7 @@ import java.util.Queue;
  * processed in FIFO order.
  */
 public final class UringFifoNetworkScheduler implements NetworkScheduler<UringAsyncSocket> {
+
     private final Queue<UringAsyncSocket> stagingQueue;
 
     public UringFifoNetworkScheduler(int socketLimit) {

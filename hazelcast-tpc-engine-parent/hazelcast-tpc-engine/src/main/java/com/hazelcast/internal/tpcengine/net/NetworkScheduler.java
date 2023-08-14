@@ -19,9 +19,6 @@ package com.hazelcast.internal.tpcengine.net;
 /**
  * A scheduler specific networking requests from the {@link AsyncSocket}.
  * <p>
- * Currently only writes to the network go through the Scheduler.
- * <p>
- * Todo:
  * Currently only dirty sockets are registered. And it isn't comparable with the
  * storage scheduler where storage-requests are scheduled.
  *
