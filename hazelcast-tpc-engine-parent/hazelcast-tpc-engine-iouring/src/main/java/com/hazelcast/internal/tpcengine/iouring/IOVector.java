@@ -32,19 +32,25 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.nio.ByteBuffer.allocateDirect;
 
 /**
- * todo: instead of an 'array' we could use a ring so we don't need to copy to an earlier position
- * TODO: This class assumes direct byte buffers. For future safety we should also allow for non direct
  * An array of:
  * <code>
  * struct iovec {
- *   void  *iov_base;    // Starting address
- *   size_t iov_len;     // Number of bytes to transfer
+ * void  *iov_base;    // Starting address
+ * size_t iov_len;     // Number of bytes to transfer
  * };
  * <code>
+ * This functionality is needed to do a vectorized write (writev) to the socket
+ * instead of writing individual buffers.
+ * <p/>
+ * todo: instead of an 'array' we could use a ring so we don't need to copy to
+ * an earlier position
+ * <p/>
+ * TODO: This class assumes direct byte buffers. For future safety we should
+ * also allow for non direct
  * <p>
- * <p>
- * The current implementation isn't the most efficient because we move all the iovs to the beginning
- * and the way this is done is by evaluating all the non empty buffers. A mem copy would be a lot faster
+ * The current implementation isn't the most efficient because we move all
+ * the iovs to the beginning and the way this is done is by evaluating all
+ * the non empty buffers. A mem copy would be a lot faster
  */
 @SuppressWarnings({"checkstyle:TrailingComment", "checkstyle:LocalVariableName"})
 public final class IOVector {
@@ -62,7 +68,8 @@ public final class IOVector {
      * Creates a new IOVector with the given capacity.
      *
      * @param capacity the capacity
-     * @throws IllegalArgumentException if capacity not positive or larger than IOV_MAX.
+     * @throws IllegalArgumentException if capacity not positive or larger
+     *                                  than IOV_MAX.
      */
     public IOVector(int capacity) {
         this.capacity = checkPositive(capacity, "capacity");
@@ -152,7 +159,8 @@ public final class IOVector {
      * Offers an IOBuffer to add to this IOVector.
      *
      * @param buf the IOBuffer to add.
-     * @return true if the IOBuffer was successfully offered, false if there was no space.
+     * @return true if the IOBuffer was successfully offered, false if there
+     * was no space.
      */
     public boolean offer(IOBuffer buf) {
         //System.out.println("offer::count:" + count + " capacity:" + capacity);
@@ -173,9 +181,11 @@ public final class IOVector {
      * <p>
      * It will go through the array from left to right.
      * <ol>
-     * <li>It will drop all IOBuffer that have been fully written (which will be in the beginning).</li>
-     * <li>As soon as an IOBuffer is found that isn't fully written, it means that the IOBuffers behind it haven't
-     * been written at all. So the first non empty buffer will get its position updated and all buffers will be
+     * <li>It will drop all IOBuffer that have been fully written (which will
+     * be in the beginning).</li>
+     * <li>As soon as an IOBuffer is found that isn't fully written, it means
+     * that the IOBuffers behind it haven't been written at all. So the first
+     * non empty buffer will get its position updated and all buffers will be
      * moved to the beginning of the array</li>
      * </ol>
      *
@@ -202,8 +212,9 @@ public final class IOVector {
                 IOBuffer buf = ioBufs[index];
                 ByteBuffer byteBuf = buf.byteBuffer();
 
-                // io_uring hasn't update the ByteBuffer, so we can call the remaining to determine the number
-                // of bytes that need to be written.
+                // io_uring hasn't update the ByteBuffer, so we can call the
+                // remaining to determine the number of bytes that need to be
+                // written.
                 int bufferLength = byteBuf.remaining();
 
                 if (writtenSoFar >= bufferLength) {
@@ -211,26 +222,29 @@ public final class IOVector {
 
                     writtenSoFar -= bufferLength;
 
-                    // we remove the buffer from the IOVector since it has been fully written
+                    // we remove the buffer from the IOVector since it has been
+                    // fully written
                     set(index, null);
                     buf.release();
                     count--;
                 } else {
                     // the buffer didn't get fully written.
 
-                    // first we need to update the position because io_uring will not do that for us.
+                    // first we need to update the position because io_uring will
+                    // not do that for us.
                     byteBuf.position(byteBuf.position() + (int) writtenSoFar);
 
                     // all written bytes have been accounted for.
                     writtenSoFar = 0;
                     if (index == 0) {
                         set(index, buf); // we need to update the length location!!!
-                        // it the first buffer and not fully written, we are done. We don't need to
-                        // do any compaction.
+                        // it the first buffer and not fully written, we are done.
+                        // We don't need to do any compaction.
                         break;
                     } else {
-                        // it isn't the first buffer, so we need to compact:shift the buffer so that
-                        // all non fully written buffers are at the beginning of the array
+                        // it isn't the first buffer, so we need to compact:shift
+                        // the buffer so that all non fully written buffers are at
+                        // the beginning of the array
                         set(toIndex, ioBufs[index]);
                         set(index, null);
                         toIndex++;
