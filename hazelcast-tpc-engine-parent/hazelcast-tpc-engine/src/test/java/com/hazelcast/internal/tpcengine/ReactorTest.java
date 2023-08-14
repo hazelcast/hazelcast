@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.DevNullAsyncSocketReader;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
@@ -39,19 +38,17 @@ import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public abstract class ReactorTest {
 
-    @Rule
-    public final PortFreeRule portFreeRule = new PortFreeRule(5000);
+    private final List<Reactor> reactors = new ArrayList<>();
 
     @After
     public void after() throws InterruptedException {
         terminateAll(reactors);
     }
-
-    private final List<Reactor> reactors = new ArrayList<>();
 
     public abstract Reactor.Builder newReactorBuilder();
 
@@ -72,10 +69,11 @@ public abstract class ReactorTest {
         assertNotNull(reactor.context());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_offer_Runnable_whenNull() {
         Reactor reactor = newReactor();
-        reactor.offer((Runnable) null);
+
+        assertThrows(NullPointerException.class, () -> reactor.offer((Runnable) null));
     }
 
     @Test
@@ -84,7 +82,7 @@ public abstract class ReactorTest {
         Reactor reactor = newReactor();
         reactor.start();
 
-        boolean result = reactor.offer(() -> completed.countDown());
+        boolean result = reactor.offer(completed::countDown);
 
         assertTrue(result);
         assertOpenEventually(completed);
@@ -96,22 +94,22 @@ public abstract class ReactorTest {
         assertEquals(getType(), reactor.type());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test_start_whenAlreadyStarted() {
         Reactor reactor = newReactor();
         reactor.start();
 
-        reactor.start();
+        assertThrows(IllegalStateException.class, reactor::start);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test_start_whenAlreadyTerminated() throws InterruptedException {
         Reactor reactor = newReactor();
         reactor.start();
         reactor.shutdown();
         reactor.awaitTermination(5, SECONDS);
 
-        reactor.start();
+        assertThrows(IllegalStateException.class, reactor::start);
     }
 
     @Test
