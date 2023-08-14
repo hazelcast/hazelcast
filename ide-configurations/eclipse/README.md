@@ -4,20 +4,14 @@
 
 # Eclipse IDE Configurations
 
-## Code Formatting
+[`Hazelcast-Eclipse.pref.epf`](Hazelcast-Eclipse.pref.epf) is a minimal set of preferences that sets the preferences of
+the formatter, clean up & templates functionality to match the project style.
 
-Import [`hz-formatter.xml`](hz-formatter.xml) under `Settings` -> `Java` -> `Code Style` -> `Formatter` -> `Import`
+## To import
 
-![Eclipse Formatter Settings Screenshot](./formatter-screenshot.png)
+`Settings` -> `Import Preferences` ->
+Select [`Hazelcast-Eclipse.pref.epf`](Hazelcast-Eclipse.pref.epf) -> `Select All` -> `Finish`
 
-## Clean Up
+![Eclipse Import Preferences Screenshot](./import-preferences-button.png)
 
-Import [`hz-formatter.xml`](hz-formatter.xml) under `Settings` -> `Java` -> `Code Style` -> `Clean Up` -> `Import`
-
-![Eclipse Cleanup Settings Screenshot](./cleanup-screenshot.png)
-
-## Templates
-
-Import [`hz-templates.xml`](hz-formatter.xml) under `Settings` -> `Java` -> `Code Style` -> `Code Templates` -> `Import`
-
-![Eclipse Templates Settings Screenshot](./templates-screenshot.png)
+![Eclipse Import Preferences Wizard](./import-preferences-wizard.png)
