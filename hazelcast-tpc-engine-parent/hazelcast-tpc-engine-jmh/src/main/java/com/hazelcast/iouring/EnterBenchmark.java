@@ -1,7 +1,7 @@
 package com.hazelcast.iouring;
 
-import com.hazelcast.internal.tpcengine.iouring.Uring;
 import com.hazelcast.internal.tpcengine.iouring.SubmissionQueue;
+import com.hazelcast.internal.tpcengine.iouring.Uring;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;

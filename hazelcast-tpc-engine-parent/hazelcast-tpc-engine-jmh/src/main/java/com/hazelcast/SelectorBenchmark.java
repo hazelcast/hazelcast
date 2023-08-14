@@ -1,6 +1,5 @@
 package com.hazelcast;
 
-import com.hazelcast.internal.tpcengine.util.EpochClock;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -25,7 +24,7 @@ public class SelectorBenchmark {
     private final Selector selector;
     private final int ONE_MS = 1;
 
-    public SelectorBenchmark(){
+    public SelectorBenchmark() {
         try {
             selector = Selector.open();
         } catch (IOException e) {
