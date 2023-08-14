@@ -145,8 +145,7 @@ public final class UringEventloop extends Eventloop {
         private long userdata;
 
         private void addRequest() {
-            // todo: we are not checking return value.
-            submissionQueue.offer(IORING_OP_READ,
+            submissionQueue.add(IORING_OP_READ,
                     0,
                     0,
                     eventFd.fd(),
@@ -194,8 +193,7 @@ public final class UringEventloop extends Eventloop {
                 UNSAFE.putLong(addr + SIZEOF_LONG, timeoutNanos - seconds * NS_PER_SECOND);
             }
 
-            // todo: return value isn't checked
-            submissionQueue.offer(IORING_OP_TIMEOUT,
+            submissionQueue.add(IORING_OP_TIMEOUT,
                     0,
                     0,
                     -1,

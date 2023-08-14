@@ -21,11 +21,11 @@ import sun.misc.Unsafe;
 
 import java.io.UncheckedIOException;
 
+import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_ENTER_GETEVENTS;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_ENTER_REGISTERED_RING;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_NOP;
-import static com.hazelcast.internal.tpcengine.iouring.Linux.errorcode;
-import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 
@@ -160,6 +160,19 @@ public final class SubmissionQueue {
         //System.out.println("SubmissionQueue: userdata:" + userData + " index:" + index + " op:" + opcode);
     }
 
+    /**
+     * Offers a sqe to the SubmissionQueue.
+     *
+     * @param opcode
+     * @param flags
+     * @param rwFlags
+     * @param fd
+     * @param bufferAddress
+     * @param length
+     * @param offset
+     * @param userdata
+     * @return true if successfully offered, false if there was no space.
+     */
     public boolean offer(byte opcode,
                          int flags,
                          int rwFlags,
@@ -176,6 +189,34 @@ public final class SubmissionQueue {
         return true;
     }
 
+    /**
+     * Adds a sqe to the SubmissionQueue.
+     *
+     * @param opcode
+     * @param flags
+     * @param rwFlags
+     * @param fd
+     * @param bufferAddress
+     * @param length
+     * @param offset
+     * @param userdata
+     * @throws IllegalStateException if there is no space.
+     */
+    public void add(byte opcode,
+                    int flags,
+                    int rwFlags,
+                    int fd,
+                    long bufferAddress,
+                    int length,
+                    long offset,
+                    long userdata) {
+        int index = nextIndex();
+        if (index == -1) {
+            throw new IllegalStateException("No space in the submission queue");
+        }
+        writeSqe(index, opcode, flags, rwFlags, fd, bufferAddress, length, offset, userdata);
+    }
+
     public boolean offer_NOP(long userdata) {
         int index = nextIndex();
         if (index == -1) {
@@ -188,7 +229,7 @@ public final class SubmissionQueue {
 
     /**
      * Submits and
-     *
+     * <p>
      * https://manpages.debian.org/unstable/liburing-dev/io_uring_enter.2.en.html
      *
      * @return the number of submitted entries.
