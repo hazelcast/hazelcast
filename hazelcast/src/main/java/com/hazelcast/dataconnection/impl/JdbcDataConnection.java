@@ -30,7 +30,6 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -121,24 +120,22 @@ public class JdbcDataConnection extends DataConnectionBase {
     @Nonnull
     @Override
     public List<DataConnectionResource> listResources() {
-        try (Connection connection = getConnection()) {
-            DatabaseMetaData metaData = connection.getMetaData();
-            //Retrieving the columns in the database
-            try (ResultSet tables = metaData.getTables(null, null, "%", null)) {
-                List<DataConnectionResource> result = new ArrayList<>();
-                while (tables.next()) {
-                    // Format DataConnectionResource name as catalog + schema+ + table_name
-                    String[] name = Stream.of(
-                                    tables.getString("TABLE_CAT"),
-                                    tables.getString("TABLE_SCHEM"),
-                                    tables.getString("TABLE_NAME"))
-                            .filter(Objects::nonNull)
-                            .toArray(String[]::new);
+        try (Connection connection = getConnection();
+             ResultSet tables = connection.getMetaData()
+                     .getTables(null, null, "%", null)) {
+            List<DataConnectionResource> result = new ArrayList<>();
+            while (tables.next()) {
+                // Format DataConnectionResource name as catalog + schema+ + table_name
+                String[] name = Stream.of(
+                                tables.getString("TABLE_CAT"),
+                                tables.getString("TABLE_SCHEM"),
+                                tables.getString("TABLE_NAME"))
+                        .filter(Objects::nonNull)
+                        .toArray(String[]::new);
 
-                    result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, name));
-                }
-                return result;
+                result.add(new DataConnectionResource(OBJECT_TYPE_TABLE, name));
             }
+            return result;
         } catch (Exception e) {
             throw new HazelcastException("Could not read resources for DataConnection " + getName(), e);
         }
