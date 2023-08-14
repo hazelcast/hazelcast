@@ -52,6 +52,9 @@ import static java.lang.Math.max;
  * is a no-go.
  */
 public abstract class Eventloop {
+
+    static final ThreadLocal<Eventloop> EVENTLOOP_THREAD_LOCAL = new ThreadLocal<>();
+
     private static final int INITIAL_PROMISE_ALLOCATOR_CAPACITY = 1024;
 
     protected final Reactor reactor;
@@ -96,6 +99,18 @@ public abstract class Eventloop {
         TaskQueue.Builder defaultTaskQueueBuilder = builder.reactorBuilder.defaultTaskQueueBuilder;
         defaultTaskQueueBuilder.eventloop = this;
         this.defaultTaskQueueHandle = defaultTaskQueueBuilder.build();
+    }
+
+    /**
+     * Gets the Eventloop from a threadlocal. This method is useful if you are
+     * running on the eventloop thread, but you don't have a reference to the
+     * Eventloop instance.
+     *
+     * @return the Eventloop or null if the current thread isn't the
+     *          eventloop thread.
+     */
+    public static Eventloop getThreadLocalEventloop() {
+        return EVENTLOOP_THREAD_LOCAL.get();
     }
 
     /**

@@ -22,15 +22,19 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.tpcengine.Eventloop.getThreadLocalEventloop;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertEqualsEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static junit.framework.TestCase.assertSame;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
 public abstract class EventloopTest {
@@ -117,5 +121,15 @@ public abstract class EventloopTest {
     public void test_checkOnEventloopThread_whenOnEventloopThread() {
         CompletableFuture<Void> future = reactor.submit(() -> reactor.eventloop.checkOnEventloopThread());
         assertSuccessEventually(future);
+    }
+
+    @Test
+    public void test_getThreadlocalEventloop() throws ExecutionException, InterruptedException {
+        assertNull(getThreadLocalEventloop());
+
+        CompletableFuture<Eventloop> future = reactor.submit(Eventloop::getThreadLocalEventloop);
+
+        assertSuccessEventually(future);
+        assertSame(reactor.eventloop, future.get());
     }
 }

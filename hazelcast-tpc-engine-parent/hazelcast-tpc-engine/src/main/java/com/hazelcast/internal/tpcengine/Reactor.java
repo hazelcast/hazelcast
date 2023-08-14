@@ -545,6 +545,7 @@ public abstract class Reactor implements Executor {
                         // it could be that the thread wakes up due to termination.
                         // So we need to check the state first before running.
                         if (state == RUNNING) {
+                            Eventloop.EVENTLOOP_THREAD_LOCAL.set(eventloop0);
                             eventloop0.beforeRun();
 
                             if (initFn != null) {
@@ -555,6 +556,7 @@ public abstract class Reactor implements Executor {
                         }
                     } finally {
                         eventloop0.destroy();
+                        Eventloop.EVENTLOOP_THREAD_LOCAL.remove();
                     }
                 } catch (Throwable e) {
                     future.completeExceptionally(e);
