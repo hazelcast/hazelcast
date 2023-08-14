@@ -16,9 +16,11 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -26,7 +28,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 public class TaskDefinition<V>
-        implements IdentifiedDataSerializable {
+        implements IdentifiedDataSerializable, Versioned {
 
     public enum Type {
 
@@ -130,7 +132,9 @@ public class TaskDefinition<V>
         out.writeLong(initialDelay);
         out.writeLong(period);
         out.writeString(unit.name());
-        out.writeBoolean(autoDisposable);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) {
+            out.writeBoolean(autoDisposable);
+        }
     }
 
     @Override
@@ -142,7 +146,9 @@ public class TaskDefinition<V>
         initialDelay = in.readLong();
         period = in.readLong();
         unit = TimeUnit.valueOf(in.readString());
-        autoDisposable = in.readBoolean();
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) {
+            autoDisposable = in.readBoolean();
+        }
     }
 
     @Override
