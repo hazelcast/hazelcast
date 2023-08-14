@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.codec.holder.DiscoveryStrategyConfigHo
 import com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanSyncConfigHolder;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -126,7 +127,7 @@ public final class WanReplicationConfigTransformer {
                 config.getKubernetesConfig(),
                 config.getEurekaConfig(),
                 toHolder(config.getDiscoveryConfig()),
-                config.getSyncConfig().getConsistencyCheckStrategy().getId(),
+                toHolder(config.getSyncConfig()),
                 config.getEndpoint()
         );
     }
@@ -156,7 +157,6 @@ public final class WanReplicationConfigTransformer {
         config.setProperties(toProperties(holder.getProperties()));
         config.setPersistWanReplicatedData(holder.isPersistWanReplicatedData());
 
-        // this is all duplicated rubbish
         // note. class name and implementation are mutually exclusive -- className seems the safer of the two
         boolean classNameProvided = holder.getClassName() != null;
         if (classNameProvided) {
@@ -176,7 +176,6 @@ public final class WanReplicationConfigTransformer {
         config.setPublisherId(holder.getPublisherId());
         config.setProperties(toProperties(holder.getProperties()));
 
-        // this is all duplicated rubbish
         // note. class name and implementation are mutually exclusive -- className seems the safer of the two
         boolean classNameProvided = holder.getClassName() != null;
         if (classNameProvided) {
@@ -272,13 +271,27 @@ public final class WanReplicationConfigTransformer {
     }
 
     @Nonnull
+    WanSyncConfig toConfig(@Nonnull WanSyncConfigHolder holder) {
+        ConsistencyCheckStrategy strategy = holder.getConsistencyCheckStrategy() == 1
+                ? ConsistencyCheckStrategy.MERKLE_TREES
+                : ConsistencyCheckStrategy.NONE;
+        WanSyncConfig config = new WanSyncConfig();
+        config.setConsistencyCheckStrategy(strategy);
+        return config;
+    }
+
+    @Nonnull
+    WanSyncConfigHolder toHolder(WanSyncConfig config) {
+        return new WanSyncConfigHolder(config.getConsistencyCheckStrategy().getId());
+    }
+
+    @Nonnull
     WanBatchPublisherConfig toConfig(@Nonnull WanBatchPublisherConfigHolder holder) {
         checkNotNull(holder, "WAN batch publisher config holder must be provided");
         WanBatchPublisherConfig config = new WanBatchPublisherConfig();
         config.setPublisherId(holder.getPublisherId());
         config.setProperties(toProperties(holder.getProperties()));
 
-        // this is all duplicated rubbish
         // note. class name and implementation are mutually exclusive -- className seems the safer of the two
         boolean classNameProvided = holder.getClassName() != null;
         if (classNameProvided) {
@@ -315,13 +328,6 @@ public final class WanReplicationConfigTransformer {
         config.setSyncConfig(toConfig(holder.getSyncConfig()));
 
         config.setEndpoint(holder.getEndpoint());
-        return config;
-    }
-
-    private WanSyncConfig toConfig(byte id) {
-        ConsistencyCheckStrategy strategy = id == 1 ? ConsistencyCheckStrategy.MERKLE_TREES : ConsistencyCheckStrategy.NONE;
-        WanSyncConfig config = new WanSyncConfig();
-        config.setConsistencyCheckStrategy(strategy);
         return config;
     }
 }

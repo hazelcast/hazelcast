@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("8a8181c51107acd00a29f78e3f4c2d00")
+@Generated("5772558c1eb37128cf6146f75683b207")
 public final class WanBatchPublisherConfigHolderCodec {
     private static final int SNAPSHOT_ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_PUBLISHER_STATE_FIELD_OFFSET = SNAPSHOT_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -40,8 +40,7 @@ public final class WanBatchPublisherConfigHolderCodec {
     private static final int USE_ENDPOINT_PRIVATE_ADDRESS_FIELD_OFFSET = MAX_CONCURRENT_INVOCATIONS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int IDLE_MIN_PARK_NS_FIELD_OFFSET = USE_ENDPOINT_PRIVATE_ADDRESS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int IDLE_MAX_PARK_NS_FIELD_OFFSET = IDLE_MIN_PARK_NS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int SYNC_CONFIG_FIELD_OFFSET = IDLE_MAX_PARK_NS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = SYNC_CONFIG_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = IDLE_MAX_PARK_NS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
     private WanBatchPublisherConfigHolderCodec() {
     }
@@ -64,7 +63,6 @@ public final class WanBatchPublisherConfigHolderCodec {
         encodeBoolean(initialFrame.content, USE_ENDPOINT_PRIVATE_ADDRESS_FIELD_OFFSET, wanBatchPublisherConfigHolder.isUseEndpointPrivateAddress());
         encodeLong(initialFrame.content, IDLE_MIN_PARK_NS_FIELD_OFFSET, wanBatchPublisherConfigHolder.getIdleMinParkNs());
         encodeLong(initialFrame.content, IDLE_MAX_PARK_NS_FIELD_OFFSET, wanBatchPublisherConfigHolder.getIdleMaxParkNs());
-        encodeByte(initialFrame.content, SYNC_CONFIG_FIELD_OFFSET, wanBatchPublisherConfigHolder.getSyncConfig());
         clientMessage.add(initialFrame);
 
         CodecUtil.encodeNullable(clientMessage, wanBatchPublisherConfigHolder.getPublisherId(), StringCodec::encode);
@@ -79,6 +77,7 @@ public final class WanBatchPublisherConfigHolderCodec {
         KubernetesConfigCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getKubernetesConfig());
         EurekaConfigCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getEurekaConfig());
         DiscoveryConfigCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getDiscoveryConfig());
+        WanSyncConfigCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getSyncConfig());
         CodecUtil.encodeNullable(clientMessage, wanBatchPublisherConfigHolder.getEndpoint(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -103,7 +102,6 @@ public final class WanBatchPublisherConfigHolderCodec {
         boolean useEndpointPrivateAddress = decodeBoolean(initialFrame.content, USE_ENDPOINT_PRIVATE_ADDRESS_FIELD_OFFSET);
         long idleMinParkNs = decodeLong(initialFrame.content, IDLE_MIN_PARK_NS_FIELD_OFFSET);
         long idleMaxParkNs = decodeLong(initialFrame.content, IDLE_MAX_PARK_NS_FIELD_OFFSET);
-        byte syncConfig = decodeByte(initialFrame.content, SYNC_CONFIG_FIELD_OFFSET);
 
         java.lang.String publisherId = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.lang.String className = CodecUtil.decodeNullable(iterator, StringCodec::decode);
@@ -117,6 +115,7 @@ public final class WanBatchPublisherConfigHolderCodec {
         com.hazelcast.config.KubernetesConfig kubernetesConfig = KubernetesConfigCodec.decode(iterator);
         com.hazelcast.config.EurekaConfig eurekaConfig = EurekaConfigCodec.decode(iterator);
         com.hazelcast.client.impl.protocol.codec.holder.DiscoveryConfigHolder discoveryConfig = DiscoveryConfigCodec.decode(iterator);
+        com.hazelcast.client.impl.protocol.codec.holder.WanSyncConfigHolder syncConfig = WanSyncConfigCodec.decode(iterator);
         java.lang.String endpoint = CodecUtil.decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);

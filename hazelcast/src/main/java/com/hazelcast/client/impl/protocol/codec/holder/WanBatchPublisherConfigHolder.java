@@ -20,6 +20,7 @@ import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
+import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.Map;
@@ -51,7 +52,7 @@ public final class WanBatchPublisherConfigHolder {
     private final KubernetesConfig kubernetesConfig;
     private final EurekaConfig eurekaConfig;
     private final DiscoveryConfigHolder discoveryConfig;
-    private final byte syncConfig;
+    private final WanSyncConfigHolder syncConfig;
     private final String endpoint;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
@@ -62,8 +63,8 @@ public final class WanBatchPublisherConfigHolder {
                                          int maxTargetEndpoints, int maxConcurrentInvocations, boolean useEndpointPrivateAddress,
                                          long idleMinParkNs, long idleMaxParkNs, String targetEndpoints, AwsConfig awsConfig,
                                          GcpConfig gcpConfig, AzureConfig azureConfig, KubernetesConfig kubernetesConfig,
-                                         EurekaConfig eurekaConfig, DiscoveryConfigHolder discoveryConfig, byte syncConfig,
-                                         String endpoint) {
+                                         EurekaConfig eurekaConfig, DiscoveryConfigHolder discoveryConfig,
+                                         WanSyncConfigHolder syncConfig, String endpoint) {
         this.publisherId = publisherId;
         this.className = className;
         this.implementation = implementation;
@@ -182,7 +183,7 @@ public final class WanBatchPublisherConfigHolder {
         return discoveryConfig;
     }
 
-    public byte getSyncConfig() {
+    public WanSyncConfigHolder getSyncConfig() {
         return syncConfig;
     }
 
