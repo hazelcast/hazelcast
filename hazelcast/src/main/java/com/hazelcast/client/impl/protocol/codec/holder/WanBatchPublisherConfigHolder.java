@@ -50,7 +50,7 @@ public final class WanBatchPublisherConfigHolder {
     private final AzureConfig azureConfig;
     private final KubernetesConfig kubernetesConfig;
     private final EurekaConfig eurekaConfig;
-    private final Data discoveryConfig;
+    private final DiscoveryConfigHolder discoveryConfig;
     private final byte syncConfig;
     private final String endpoint;
 
@@ -62,7 +62,8 @@ public final class WanBatchPublisherConfigHolder {
                                          int maxTargetEndpoints, int maxConcurrentInvocations, boolean useEndpointPrivateAddress,
                                          long idleMinParkNs, long idleMaxParkNs, String targetEndpoints, AwsConfig awsConfig,
                                          GcpConfig gcpConfig, AzureConfig azureConfig, KubernetesConfig kubernetesConfig,
-                                         EurekaConfig eurekaConfig, Data discoveryConfig, byte syncConfig, String endpoint) {
+                                         EurekaConfig eurekaConfig, DiscoveryConfigHolder discoveryConfig, byte syncConfig,
+                                         String endpoint) {
         this.publisherId = publisherId;
         this.className = className;
         this.implementation = implementation;
@@ -177,7 +178,7 @@ public final class WanBatchPublisherConfigHolder {
         return eurekaConfig;
     }
 
-    public Data getDiscoveryConfig() {
+    public DiscoveryConfigHolder getDiscoveryConfig() {
         return discoveryConfig;
     }
 

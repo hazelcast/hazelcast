@@ -15,10 +15,14 @@
  */
 package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
+import com.hazelcast.client.impl.protocol.codec.holder.DiscoveryConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.DiscoveryStrategyConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder;
 import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanBatchPublisherConfig;
 import com.hazelcast.config.WanConsumerConfig;
@@ -27,6 +31,8 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.spi.discovery.NodeFilter;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.wan.WanConsumer;
 import com.hazelcast.wan.WanPublisher;
 import com.hazelcast.wan.WanPublisherState;
@@ -35,7 +41,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -116,7 +125,7 @@ public final class WanReplicationConfigTransformer {
                 config.getAzureConfig(),
                 config.getKubernetesConfig(),
                 config.getEurekaConfig(),
-                serializationService.toData(config.getDiscoveryConfig()),
+                toHolder(config.getDiscoveryConfig()),
                 config.getSyncConfig().getConsistencyCheckStrategy().getId(),
                 config.getEndpoint()
         );
@@ -220,6 +229,49 @@ public final class WanReplicationConfigTransformer {
     }
 
     @Nonnull
+    DiscoveryStrategyConfigHolder toHolder(@Nonnull DiscoveryStrategyConfig config) {
+        Map<String, Data> properties = toHolderProperties(config.getProperties());
+        return new DiscoveryStrategyConfigHolder(config.getClassName(), properties);
+    }
+
+    DiscoveryStrategyConfig toConfig(DiscoveryStrategyConfigHolder holder) {
+        Map<String, Comparable> properties = toProperties(holder.getProperties());
+        return new DiscoveryStrategyConfig(holder.getClassName(), properties);
+    }
+
+    DiscoveryConfigHolder toHolder(@Nonnull DiscoveryConfig config) {
+        List<DiscoveryStrategyConfigHolder> discoStrategies =
+                config.getDiscoveryStrategyConfigs().stream()
+                      .filter(Objects::nonNull)
+                      .map(this::toHolder)
+                      .collect(Collectors.toList());
+        Data discoveryServiceProvider = serializationService.toData(config.getDiscoveryServiceProvider());
+        Data nodeFilter = serializationService.toData(config.getNodeFilter());
+        return new DiscoveryConfigHolder(discoStrategies, discoveryServiceProvider, nodeFilter, config.getNodeFilterClass());
+    }
+
+    @Nonnull
+    DiscoveryConfig toConfig(@Nonnull DiscoveryConfigHolder holder) {
+        List<DiscoveryStrategyConfig> discoveryStrategyConfigs =
+                holder.getDiscoveryStrategyConfigs().stream()
+                        .filter(Objects::nonNull)
+                        .map(this::toConfig)
+                        .collect(Collectors.toList());
+        DiscoveryServiceProvider discoveryServiceProvider = serializationService.toObject(holder.getDiscoveryServiceProvider());
+        NodeFilter nodeFilter = serializationService.toObject(holder.getNodeFilter());
+        DiscoveryConfig discoveryConfig = new DiscoveryConfig();
+        discoveryConfig.setDiscoveryStrategyConfigs(discoveryStrategyConfigs);
+        discoveryConfig.setDiscoveryServiceProvider(discoveryServiceProvider);
+        if (holder.getNodeFilterClass() != null) {
+            discoveryConfig.setNodeFilterClass(holder.getNodeFilterClass());
+        }
+        if (nodeFilter != null) {
+            discoveryConfig.setNodeFilter(nodeFilter);
+        }
+        return discoveryConfig;
+    }
+
+    @Nonnull
     WanBatchPublisherConfig toConfig(@Nonnull WanBatchPublisherConfigHolder holder) {
         checkNotNull(holder, "WAN batch publisher config holder must be provided");
         WanBatchPublisherConfig config = new WanBatchPublisherConfig();
@@ -259,7 +311,7 @@ public final class WanReplicationConfigTransformer {
         config.setAzureConfig(holder.getAzureConfig());
         config.setKubernetesConfig(holder.getKubernetesConfig());
         config.setEurekaConfig(holder.getEurekaConfig());
-        config.setDiscoveryConfig(serializationService.toObject(holder.getDiscoveryConfig()));
+        config.setDiscoveryConfig(toConfig(holder.getDiscoveryConfig()));
         config.setSyncConfig(toConfig(holder.getSyncConfig()));
 
         config.setEndpoint(holder.getEndpoint());

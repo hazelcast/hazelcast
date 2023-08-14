@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigH
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
 import com.hazelcast.config.ConsistencyCheckStrategy;
+import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EurekaConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.KubernetesConfig;
@@ -35,6 +37,8 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.wan.WanConsumer;
+import com.hazelcast.wan.WanPublisher;
 import com.hazelcast.wan.WanPublisherState;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +47,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -111,9 +116,28 @@ public class WanReplicationConfigTransformerTest {
 
 
     @Test
-    public void testWanConsumerConfigCustom() {
+    public void testWanConsumerConfigCustomClassName() {
+        testWanConsumerConfigCustom(false);
+    }
+
+    @Test
+    public void testWanConsumerConfigCustomImplementation() {
+        testWanConsumerConfigCustom(true);
+    }
+
+    private void testWanConsumerConfigCustom(boolean useImplementation) {
         WanConsumerConfig expected = new WanConsumerConfig();
-        expected.setClassName(TEST_CLASS_NAME);
+
+        if (useImplementation) {
+            Data wanConsumerData = Mockito.mock(Data.class);
+            WanConsumer wanConsumer = Mockito.mock(WanConsumer.class);
+            Mockito.when(serializationService.toData(wanConsumer)).thenReturn(wanConsumerData);
+            Mockito.when(serializationService.toObject(wanConsumerData)).thenReturn(wanConsumer);
+            expected.setImplementation(wanConsumer);
+        } else {
+            expected.setClassName(TEST_CLASS_NAME);
+        }
+
         expected.setProperties(mockProperties());
         expected.setPersistWanReplicatedData(true);
 
@@ -131,10 +155,28 @@ public class WanReplicationConfigTransformerTest {
     }
 
     @Test
-    public void testWanCustomPublisherConfigCustom() {
+    public void testWanCustomPublisherConfigCustomClassName() {
+        testWanCustomPublisherConfigCustom(false);
+    }
+
+    @Test
+    public void testWanCustomPublisherConfigCustomImplementation() {
+        testWanCustomPublisherConfigCustom(true);
+    }
+
+    private void testWanCustomPublisherConfigCustom(boolean useImplementation) {
         WanCustomPublisherConfig expected = new WanCustomPublisherConfig();
         expected.setPublisherId("my-publisher-id");
-        expected.setClassName(TEST_CLASS_NAME);
+
+        if (useImplementation) {
+            Data wanPublisherData = Mockito.mock(Data.class);
+            WanPublisher wanPublisher = Mockito.mock(WanPublisher.class);
+            Mockito.when(serializationService.toData(wanPublisher)).thenReturn(wanPublisherData);
+            Mockito.when(serializationService.toObject(wanPublisherData)).thenReturn(wanPublisher);
+            expected.setImplementation(wanPublisher);
+        } else {
+            expected.setClassName(TEST_CLASS_NAME);
+        }
         expected.setProperties(mockProperties());
         WanCustomPublisherConfigHolder holder = transformer.toHolder(expected);
         WanCustomPublisherConfig actual = transformer.toConfig(holder);
@@ -144,56 +186,19 @@ public class WanReplicationConfigTransformerTest {
     @Test
     public void testWanBatchPublisherConfigDefault() {
         WanBatchPublisherConfig expected = new WanBatchPublisherConfig();
-        mockDiscoverProviderConfig(expected);
         WanBatchPublisherConfigHolder holder = transformer.toHolder(expected);
         WanBatchPublisherConfig actual = transformer.toConfig(holder);
         assertWanBatchPublisherEqual(expected, actual);
     }
 
     @Test
-    public void testWanBatchPublisherConfigCustom() {
-        WanBatchPublisherConfig expected = new WanBatchPublisherConfig();
-        expected.setClusterName(UUID.randomUUID().toString());
-        expected.setPublisherId(UUID.randomUUID().toString());
-        expected.setProperties(mockProperties());
-        expected.setClassName(TEST_CLASS_NAME);
-        expected.setInitialPublisherState(WanPublisherState.PAUSED);
-        expected.setEndpoint("my-endpoint");
-        expected.setIdleMinParkNs(1_00L);
-        expected.setIdleMaxParkNs(1_000L);
-        expected.setUseEndpointPrivateAddress(true);
-        expected.setMaxTargetEndpoints(10);
-        expected.setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE);
-        expected.setQueueCapacity(10_000);
-        expected.setBatchSize(50);
-        expected.setBatchMaxDelayMillis(100);
-        expected.setResponseTimeoutMillis(5_000);
-        expected.setQueueFullBehavior(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE);
-        expected.setDiscoveryPeriodSeconds(1);
-        expected.setMaxConcurrentInvocations(5);
-        expected.setTargetEndpoints("a,b,c");
+    public void testWanBatchPublisherConfigCustomClassName() {
+        testWanBatchPublisherConfigCustom(false);
+    }
 
-        Map<String, String> cloudProperties = new HashMap<>();
-        cloudProperties.put("cloud-key", "cloud-value");
-        AwsConfig awsConfig = new AwsConfig("aws-test", true, true, cloudProperties);
-        GcpConfig gcpConfig = new GcpConfig("gcp-test", true, true, cloudProperties);
-        AzureConfig azureConfig = new AzureConfig("azure-test", true, true, cloudProperties);
-        KubernetesConfig k8sConfig = new KubernetesConfig("k8s-test", true, true, cloudProperties);
-        EurekaConfig eurekaConfig = new EurekaConfig("eureka-test", true, true, cloudProperties);
-        expected.setAwsConfig(awsConfig);
-        expected.setGcpConfig(gcpConfig);
-        expected.setAzureConfig(azureConfig);
-        expected.setKubernetesConfig(k8sConfig);
-        expected.setEurekaConfig(eurekaConfig);
-        WanSyncConfig wanSyncConfig = new WanSyncConfig();
-        wanSyncConfig.setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
-        expected.setSyncConfig(wanSyncConfig);
-
-        mockDiscoverProviderConfig(expected);
-
-        WanBatchPublisherConfigHolder holder = transformer.toHolder(expected);
-        WanBatchPublisherConfig actual = transformer.toConfig(holder);
-        assertWanBatchPublisherEqual(expected, actual);
+    @Test
+    public void testWanBatchPublisherConfigWithImplementation() {
+        testWanBatchPublisherConfigCustom(true);
     }
 
     private static void assertWanBatchPublisherEqual(WanBatchPublisherConfig expected, WanBatchPublisherConfig actual) {
@@ -222,14 +227,74 @@ public class WanReplicationConfigTransformerTest {
         assertEquals(expected.getKubernetesConfig(), actual.getKubernetesConfig());
         assertEquals(expected.getEurekaConfig(), actual.getEurekaConfig());
 
+        assertEquals(expected.getDiscoveryConfig().getNodeFilterClass(), actual.getDiscoveryConfig().getNodeFilterClass());
+        assertEquals(expected.getDiscoveryConfig().getNodeFilter(), actual.getDiscoveryConfig().getNodeFilter());
+        assertEquals(expected.getDiscoveryConfig().getDiscoveryServiceProvider(), actual.getDiscoveryConfig().getDiscoveryServiceProvider());
+
         assertEquals(expected.getDiscoveryConfig(), actual.getDiscoveryConfig());
         assertEquals(expected.getSyncConfig(), actual.getSyncConfig());
     }
 
-    private void mockDiscoverProviderConfig(WanBatchPublisherConfig config) {
-        Data discoProvidersConfigData = Mockito.mock(Data.class);
-        Mockito.when(serializationService.toData(config.getDiscoveryConfig())).thenReturn(discoProvidersConfigData);
-        Mockito.when(serializationService.toObject(discoProvidersConfigData)).thenReturn(config.getDiscoveryConfig());
-    }
+    private void testWanBatchPublisherConfigCustom(boolean useImplementation) {
+        WanBatchPublisherConfig expected = new WanBatchPublisherConfig();
+        expected.setClusterName(UUID.randomUUID().toString());
+        expected.setPublisherId(UUID.randomUUID().toString());
+        expected.setProperties(mockProperties());
 
+        if (useImplementation) {
+            Data wanPublisherData = Mockito.mock(Data.class);
+            WanPublisher wanPublisher = Mockito.mock(WanPublisher.class);
+            Mockito.when(serializationService.toData(wanPublisher)).thenReturn(wanPublisherData);
+            Mockito.when(serializationService.toObject(wanPublisherData)).thenReturn(wanPublisher);
+            expected.setImplementation(wanPublisher);
+        } else {
+            expected.setClassName(TEST_CLASS_NAME);
+        }
+
+
+        expected.setInitialPublisherState(WanPublisherState.PAUSED);
+        expected.setEndpoint("my-endpoint");
+        expected.setIdleMinParkNs(1_00L);
+        expected.setIdleMaxParkNs(1_000L);
+        expected.setUseEndpointPrivateAddress(true);
+        expected.setMaxTargetEndpoints(10);
+        expected.setAcknowledgeType(WanAcknowledgeType.ACK_ON_OPERATION_COMPLETE);
+        expected.setQueueCapacity(10_000);
+        expected.setBatchSize(50);
+        expected.setBatchMaxDelayMillis(100);
+        expected.setResponseTimeoutMillis(5_000);
+        expected.setQueueFullBehavior(WanQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE);
+        expected.setDiscoveryPeriodSeconds(1);
+        expected.setMaxConcurrentInvocations(5);
+        expected.setTargetEndpoints("a,b,c");
+        expected.setSnapshotEnabled(true);
+
+        Map<String, String> cloudProperties = new HashMap<>();
+        cloudProperties.put("cloud-key", "cloud-value");
+        AwsConfig awsConfig = new AwsConfig("aws-test", true, true, cloudProperties);
+        GcpConfig gcpConfig = new GcpConfig("gcp-test", true, true, cloudProperties);
+        AzureConfig azureConfig = new AzureConfig("azure-test", true, true, cloudProperties);
+        KubernetesConfig k8sConfig = new KubernetesConfig("k8s-test", true, true, cloudProperties);
+        EurekaConfig eurekaConfig = new EurekaConfig("eureka-test", true, true, cloudProperties);
+        expected.setAwsConfig(awsConfig);
+        expected.setGcpConfig(gcpConfig);
+        expected.setAzureConfig(azureConfig);
+        expected.setKubernetesConfig(k8sConfig);
+        expected.setEurekaConfig(eurekaConfig);
+        WanSyncConfig wanSyncConfig = new WanSyncConfig();
+        wanSyncConfig.setConsistencyCheckStrategy(ConsistencyCheckStrategy.MERKLE_TREES);
+        expected.setSyncConfig(wanSyncConfig);
+
+        DiscoveryConfig discoveryConfig = new DiscoveryConfig();
+        DiscoveryStrategyConfig discoveryStrategyConfig1 = new DiscoveryStrategyConfig(TEST_CLASS_NAME + "1");
+        DiscoveryStrategyConfig discoveryStrategyConfig2 = new DiscoveryStrategyConfig(TEST_CLASS_NAME + "2");
+        discoveryConfig.setDiscoveryStrategyConfigs(List.of(discoveryStrategyConfig1, discoveryStrategyConfig2));
+        discoveryConfig.setNodeFilterClass(TEST_CLASS_NAME + "Filter");
+        expected.setDiscoveryConfig(discoveryConfig);
+
+        WanBatchPublisherConfigHolder holder = transformer.toHolder(expected);
+        WanBatchPublisherConfig actual = transformer.toConfig(holder);
+
+        assertWanBatchPublisherEqual(expected, actual);
+    }
 }

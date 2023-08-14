@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("0c8952b153fc0b8da2d7720efff10d35")
+@Generated("8a8181c51107acd00a29f78e3f4c2d00")
 public final class WanBatchPublisherConfigHolderCodec {
     private static final int SNAPSHOT_ENABLED_FIELD_OFFSET = 0;
     private static final int INITIAL_PUBLISHER_STATE_FIELD_OFFSET = SNAPSHOT_ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -78,7 +78,7 @@ public final class WanBatchPublisherConfigHolderCodec {
         AzureConfigCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getAzureConfig());
         KubernetesConfigCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getKubernetesConfig());
         EurekaConfigCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getEurekaConfig());
-        DataCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getDiscoveryConfig());
+        DiscoveryConfigCodec.encode(clientMessage, wanBatchPublisherConfigHolder.getDiscoveryConfig());
         CodecUtil.encodeNullable(clientMessage, wanBatchPublisherConfigHolder.getEndpoint(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
@@ -116,7 +116,7 @@ public final class WanBatchPublisherConfigHolderCodec {
         com.hazelcast.config.AzureConfig azureConfig = AzureConfigCodec.decode(iterator);
         com.hazelcast.config.KubernetesConfig kubernetesConfig = KubernetesConfigCodec.decode(iterator);
         com.hazelcast.config.EurekaConfig eurekaConfig = EurekaConfigCodec.decode(iterator);
-        com.hazelcast.internal.serialization.Data discoveryConfig = DataCodec.decode(iterator);
+        com.hazelcast.client.impl.protocol.codec.holder.DiscoveryConfigHolder discoveryConfig = DiscoveryConfigCodec.decode(iterator);
         java.lang.String endpoint = CodecUtil.decodeNullable(iterator, StringCodec::decode);
 
         fastForwardToEndFrame(iterator);
