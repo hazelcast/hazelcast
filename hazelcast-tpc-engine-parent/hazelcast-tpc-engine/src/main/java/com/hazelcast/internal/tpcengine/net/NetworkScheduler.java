@@ -34,6 +34,10 @@ public interface NetworkScheduler<S extends AsyncSocket> {
      * the future.
      *
      * @param socket the AsyncSocket to schedule.
+     * @throws IllegalStateException if the scheduler exceeds the limit of
+     *                               sockets it can schedule. This should not
+     *                               happen because the NetworkScheduler should
+     *                               be sized based on the socketLimit.
      */
     void schedule(S socket);
 
