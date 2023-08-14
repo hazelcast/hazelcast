@@ -36,19 +36,20 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  */
 public final class DeadlineScheduler {
 
+    // the current size of the runQueue.
     private int runQueueSize;
+    // the maximum number of items in the run Queue.
     private final int runQueueLimit;
     // -1 indicates that there is no task in the deadline scheduler.
     private long earliestDeadlineNanos = -1;
-
     // The DeadlineTasks are ordered by their deadline. So smallest deadline first.
     private final PriorityQueue<DeadlineTask> runQueue;
 
     /**
-     * Creates a new scheduler with the given capacity.
+     * Creates a new scheduler with the given runQueue limit.
      *
-     * @param runQueueLimit the capacity of the run queue
-     * @throws IllegalArgumentException when the capacity is smaller than 1.
+     * @param runQueueLimit the limit on the number of items in the runQueue.
+     * @throws IllegalArgumentException when the runQueueLimit is smaller than 1.
      */
     public DeadlineScheduler(int runQueueLimit) {
         this.runQueueLimit = checkPositive(runQueueLimit, "runQueueLimit");
@@ -75,10 +76,11 @@ public final class DeadlineScheduler {
     public boolean offer(DeadlineTask task) {
         assert task.deadlineNanos >= 0;
 
-        if (!runQueue.offer(task)) {
+        if (runQueueSize == runQueueLimit) {
             return false;
         }
 
+        runQueue.offer(task);
         runQueueSize++;
 
         if (task.deadlineNanos < earliestDeadlineNanos) {
@@ -120,7 +122,7 @@ public final class DeadlineScheduler {
             runQueue.poll();
             runQueueSize--;
 
-            // offer the task to its task group.
+            // offer the task to its taskQueue.
             // this will trigger the taskQueue to schedule itself if needed.
 
             // todo: return value is ignored.
