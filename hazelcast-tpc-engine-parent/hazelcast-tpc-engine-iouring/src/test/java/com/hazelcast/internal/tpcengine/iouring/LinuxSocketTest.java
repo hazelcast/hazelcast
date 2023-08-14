@@ -16,10 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.internal.tpcengine.PortFreeRule;
 import com.hazelcast.internal.tpcengine.TpcTestSupport;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -37,9 +35,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class LinuxSocketTest {
-
-    @Rule
-    public final PortFreeRule portFreeRule = new PortFreeRule(5000);
 
     private ServerSocket serverSocket;
     private LinuxSocket socket;
