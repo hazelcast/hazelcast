@@ -798,23 +798,25 @@ public abstract class Reactor implements Executor {
         public ThreadAffinity threadAffinity;
 
         /**
-         * Sets the ThreadFactory used to create the Thread that runs the {@link Reactor}.
+         * Sets the ThreadFactory used to create the Thread that runs the
+         * {@link Reactor}.
          */
         public ThreadFactory threadFactory;
 
         /**
          * Sets the name of the thread. If configured, the thread name is set
-         * after the thread is created. If not configured, the thread name provided
-         * by the ThreadFactory is used.
+         * after the thread is created. If not configured, the thread name
+         * provided by the ThreadFactory is used.
          */
         public String threadName;
 
         /**
-         * Sets the spin policy. If spin is true, the reactor will spin on the run queue if there are no
-         * tasks to run. If spin is false, the reactor will park the thread if there are no tasks to run.
+         * Sets the spin policy. If spin is true, the reactor will spin on the
+         * run queue if there are no tasks to run. If spin is false, the reactor
+         * will park the thread if there are no tasks to run.
          * <p/>
-         * In the future we want to have better policies than only spinning. For example, see
-         * BackoffIdleStrategy
+         * In the future we want to have better policies than only spinning. For
+         * example, see BackoffIdleStrategy
          */
         public boolean spin;
 
@@ -830,12 +832,12 @@ public abstract class Reactor implements Executor {
         public TpcEngine engine;
 
         /**
-         * The maximum amount of time a task is allowed to run before being considered stalling
-         * the reactor.
+         * The maximum amount of time a task is allowed to run before being
+         * considered stalling the reactor.
          * <p/>
-         * Setting this value too low will lead to a lot of noise (false positives). Setting
-         * this value too high will lead to not detecting the stalls on the reactor (false
-         * negatives).
+         * Setting this value too low will lead to a lot of noise (false
+         * positives). Setting this value too high will lead to not detecting
+         * the stalls on the reactor (false negatives).
          */
         public long stallThresholdNanos;
 
@@ -871,18 +873,19 @@ public abstract class Reactor implements Executor {
         public int runQueueLimit;
 
         /**
-         * Sets the total amount of time that can be divided over the taskqueues in the
-         * {@link Scheduler}. It depends on the scheduler implementation how
+         * Sets the total amount of time that can be divided over the taskqueues
+         * in the {@link Scheduler}. It depends on the scheduler implementation how
          * this is interpreted.
          */
         public long targetLatencyNanos;
 
         /**
-         * Sets the minimum amount of time a taskqueue is guaranteed to run (unless the
-         * taskgroup decided to stop/yield).
+         * Sets the minimum amount of time a taskqueue is guaranteed to run
+         * (unless the taskgroup decided to stop/yield).
          * <p>
-         * Setting this value too low could lead to excessive context switching. Setting
-         * this value too high could lead to unresponsiveness (increased latency).
+         * Setting this value too low could lead to excessive context switching.
+         * Setting this value too high could lead to unresponsiveness (increased
+         * latency).
          */
         public long minGranularityNanos;
 
@@ -962,8 +965,9 @@ public abstract class Reactor implements Executor {
          * @param type the reactor type.
          * @return the created builder.
          * @throws NullPointerException if type is null.
-         * @throws RuntimeException     if the IO_URING reactor is requested but the class is
-         *                              not found or there are other problems.
+         * @throws RuntimeException     if the IO_URING reactor is requested but
+         *                              the class is not found or there are other
+         *                              problems.
          */
         public static Builder newReactorBuilder(ReactorType type) {
             checkNotNull(type, "type");
@@ -1017,8 +1021,10 @@ public abstract class Reactor implements Executor {
             if (defaultTaskQueueBuilder == null) {
                 defaultTaskQueueBuilder = new TaskQueue.Builder();
                 defaultTaskQueueBuilder.name = "default";
-                defaultTaskQueueBuilder.outside = new MpscArrayQueue<>(DEFAULT_OUTSIDE_TASK_QUEUE_LIMIT);
-                defaultTaskQueueBuilder.inside = new CircularQueue<>(DEFAULT_INSIDE_TASK_QUEUE_LIMIT);
+                defaultTaskQueueBuilder.outside
+                        = new MpscArrayQueue<>(DEFAULT_OUTSIDE_TASK_QUEUE_LIMIT);
+                defaultTaskQueueBuilder.inside
+                        = new CircularQueue<>(DEFAULT_INSIDE_TASK_QUEUE_LIMIT);
             }
 
             if (stallHandler == null) {
