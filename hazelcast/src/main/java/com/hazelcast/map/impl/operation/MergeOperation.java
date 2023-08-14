@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.operation.steps.MergeOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.MapMergeResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.Indexes;
@@ -37,8 +38,10 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -72,6 +75,7 @@ public class MergeOperation extends MapOperation
 
     private transient List<Data> invalidationKeys;
     private transient boolean hasMergedValues;
+    private transient BitSet nonWanReplicatedKeys;
 
     private List backupPairs;
 
@@ -136,6 +140,10 @@ public class MergeOperation extends MapOperation
 
         if (hasInvalidation) {
             invalidationKeys = new ArrayList<>(mergingEntries.size());
+        }
+
+        if (hasWanReplication && hasBackups) {
+            nonWanReplicatedKeys = new BitSet(mergingEntries.size());
         }
 
         // This marking is needed because otherwise after split-brain heal, we can
@@ -211,7 +219,8 @@ public class MergeOperation extends MapOperation
         Data dataKey = getNodeEngine().toData(mergingEntry.getRawKey());
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
-        if (recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance())) {
+        MapMergeResponse response = recordStore.merge(mergingEntry, mergePolicy, getCallerProvenance());
+        if (response.isMergeApplied()) {
             hasMergedValues = true;
 
             Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));
@@ -221,8 +230,14 @@ public class MergeOperation extends MapOperation
                 mapEventPublisher.publishEvent(getCallerAddress(), name, MERGED, dataKey, oldValue, dataValue);
             }
 
+            // Don't WAN replicate merge events where values don't change
             if (hasWanReplication) {
-                publishWanUpdate(dataKey, dataValue);
+                if (response != MapMergeResponse.RECORDS_ARE_EQUAL) {
+                    publishWanUpdate(dataKey, dataValue);
+                } else if (hasBackups) {
+                    // Mark this dataKey so we don't WAN replicate via backups
+                    nonWanReplicatedKeys.set(backupPairs.size() / 2);
+                }
             }
 
             if (hasInvalidation) {
@@ -283,8 +298,13 @@ public class MergeOperation extends MapOperation
 
     @Override
     public Operation getBackupOperation() {
+        // We need a fresh BitSet (where applicable) that is indexed to the list of elements
+        //  that will actually be backed up in this operation.
+        BitSet localNonWanReplicatedKeys = nonWanReplicatedKeys != null && !nonWanReplicatedKeys.isEmpty()
+                ? new BitSet(backupPairs.size()) : null;
         return new PutAllBackupOperation(name,
-                toBackupListByRemovingEvictedRecords(), disableWanReplicationEvent);
+                toBackupListByRemovingEvictedRecords(localNonWanReplicatedKeys), localNonWanReplicatedKeys,
+                disableWanReplicationEvent);
     }
 
     /**
@@ -292,12 +312,19 @@ public class MergeOperation extends MapOperation
      * they have been merged. We are re-checking
      * backup pair list to eliminate evicted entries.
      *
+     * @param localNonWanReplicatedKeys used to show which keys
+     *                                  should NOT be replicated
+     *                                  over WAN, or else null if
+     *                                  all keys should be
+     *
      * @return list of existing records which can
-     * safely be transferred to backup replica.
+     * safely be transferred to the backup replica.
      */
     @Nonnull
-    private List toBackupListByRemovingEvictedRecords() {
+    @SuppressWarnings("checkstyle:magicnumber")
+    private List toBackupListByRemovingEvictedRecords(@Nullable BitSet localNonWanReplicatedKeys) {
         List toBackupList = new ArrayList(backupPairs.size());
+        final boolean hasNonWanReplicatedKeys = localNonWanReplicatedKeys != null;
         for (int i = 0; i < backupPairs.size(); i += 2) {
             Data dataKey = ((Data) backupPairs.get(i));
             Record record = recordStore.getRecord(dataKey);
@@ -306,6 +333,9 @@ public class MergeOperation extends MapOperation
                 toBackupList.add(backupPairs.get(i + 1));
                 toBackupList.add(record);
                 toBackupList.add(recordStore.getExpirySystem().getExpiryMetadata(dataKey));
+                if (hasNonWanReplicatedKeys && nonWanReplicatedKeys.get(i / 2)) {
+                    localNonWanReplicatedKeys.set((toBackupList.size() - 4) / 4);
+                }
             }
         }
         return toBackupList;
