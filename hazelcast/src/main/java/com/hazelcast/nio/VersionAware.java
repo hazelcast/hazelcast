@@ -29,7 +29,7 @@ import com.hazelcast.version.Version;
 public interface VersionAware {
 
     /**
-     * @return the version or {@code Version.UNKNOWN} if version is unknown to the object
+     * @return the version or {@link Version#UNKNOWN} if version is unknown to the object
      */
     Version getVersion();
 
