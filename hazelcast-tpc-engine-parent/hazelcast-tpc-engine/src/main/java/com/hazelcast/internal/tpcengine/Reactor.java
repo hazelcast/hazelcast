@@ -106,7 +106,6 @@ public abstract class Reactor implements Executor {
     protected final ReactorResources<AsyncSocket> sockets;
     protected final ReactorResources<AsyncServerSocket> serverSockets;
     protected final ReactorResources<AsyncFile> files;
-    @SuppressWarnings("java:S1845")
     protected volatile State state = NEW;
     protected final Metrics metrics = new Metrics();
 
@@ -140,7 +139,7 @@ public abstract class Reactor implements Executor {
         // There is a happens-before edge between writing to the eventloopFuture and
         // the join. So at this point we can safely read the fields that have been
         // set in the constructor of the eventloop.
-        this.defaultTaskQueue = eventloop.defaultTaskQueueHandle.queue;
+        this.defaultTaskQueue = eventloop.defaultTaskQueue;
         this.wakeupNeeded = eventloop.wakeupNeeded;
     }
 
@@ -383,7 +382,6 @@ public abstract class Reactor implements Executor {
      */
     public abstract void wakeup();
 
-    // todo: task queue id?
     @Override
     public void execute(Runnable command) {
         if (!offer(command)) {
@@ -461,7 +459,7 @@ public abstract class Reactor implements Executor {
      * @throws NullPointerException if task is null.
      */
     public final boolean offer(Runnable task) {
-        return offer(task, eventloop.defaultTaskQueueHandle);
+        return defaultTaskQueue.offer(task);
     }
 
     /**
@@ -474,27 +472,7 @@ public abstract class Reactor implements Executor {
      * @throws NullPointerException if task is null.
      */
     public final boolean offer(Object task) {
-        return offer(task, eventloop.defaultTaskQueueHandle);
-    }
-
-    public final boolean offer(Object task, TaskQueue.Handle handle) {
-        checkNotNull(task, "task");
-        checkNotNull(handle, "handle");
-
-        //todo: is running
-        if (handle.queue.eventloop != eventloop) {
-            throw new IllegalArgumentException();
-        }
-
-        if (Thread.currentThread() == eventloopThread) {
-            // todo: only set when there is a inside queue
-            return handle.queue.offerInside(task);
-        } else if (handle.queue.offerOutside(task)) {
-            wakeup();
-            return true;
-        } else {
-            return false;
-        }
+        return defaultTaskQueue.offer(task);
     }
 
     @Override

@@ -259,6 +259,26 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         return Long.compare(this.virtualRuntimeNanos, that.virtualRuntimeNanos);
     }
 
+    /**
+     * Offers a task.
+     *
+     * @param task the task to offer.
+     * @return true if the task was successfully offered, false otherwise.
+     */
+    public boolean offer(Object task) {
+        checkNotNull(task, "task");
+
+        if (Thread.currentThread() == eventloop.eventloopThread) {
+            // todo: only set when there is a inside queue
+            return offerInside(task);
+        } else if (offerOutside(task)) {
+            eventloop.reactor.wakeup();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public String toString() {
         return "TaskQueue{"
@@ -318,41 +338,9 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     }
 
     /**
-     * A handle to a {@link TaskQueue}. A TaskQueue should not be directly
-     * accessed and the interactions like destruction, changing priorities,
-     * adding tasks etc, should be done through the TaskQueueHandle.
-     */
-    @SuppressWarnings({"checkstyle:VisibilityModifier"})
-    public static class Handle {
-        // todo: the visibility should be reduced.
-        public final TaskQueue queue;
-        private final Metrics metrics;
-
-        public Handle(TaskQueue queue, Metrics metrics) {
-            this.queue = checkNotNull(queue, "queue");
-            this.metrics = checkNotNull(metrics, "metrics");
-        }
-
-        /**
-         * Returns the TaskQueueMetrics associated with the TaskQueue this
-         * handle is referring to.
-         *
-         * @return the metrics.
-         */
-        public Metrics metrics() {
-            return metrics;
-        }
-
-        @Override
-        public String toString() {
-            return queue.name;
-        }
-    }
-
-    /**
      * A {@link Builder} is used to configure and create a {@link TaskQueue}.
      */
-    public static final class Builder extends AbstractBuilder<Handle> {
+    public static final class Builder extends AbstractBuilder<TaskQueue> {
 
         public static final int MIN_NICE = -20;
         public static final int MAX_NICE = 20;
@@ -456,7 +444,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         }
 
         @Override
-        protected Handle construct() {
+        protected TaskQueue construct() {
             TaskQueue taskQueue = new TaskQueue();
             taskQueue.startNanos = epochNanos();
             taskQueue.inside = inside;
@@ -481,7 +469,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             }
 
             eventloop.scheduler.taskQueues.add(taskQueue);
-            return new Handle(taskQueue, taskQueue.metrics);
+            return taskQueue;
         }
     }
 }

@@ -44,7 +44,6 @@ public class SchedulingBenchmark {
 
     public int runtimeSeconds = 20;
     public int tasksPerTaskGroupCnt = 1;
-    public boolean useEventloopDirectly = true;
     public ReactorType reactorType = ReactorType.NIO;
     public boolean useTask = true;
     public int clockSampleInterval = 1;
@@ -83,23 +82,23 @@ public class SchedulingBenchmark {
             Reactor reactor = reactors[reactorIndex];
             final PaddedAtomicLong counter = csCounters[reactorIndex];
             reactor.execute(() -> {
-                List<TaskQueue.Handle> handles = new ArrayList<>();
+                List<TaskQueue> taskQueues = new ArrayList<>();
                 if (taskGroupCnt == 0) {
-                    handles.add(reactor.eventloop().defaultTaskQueueHandle());
+                    taskQueues.add(reactor.eventloop().defaultTaskQueue());
                 } else {
                     for (int k = 0; k < taskGroupCnt; k++) {
-                        handles.add(taskGroupFactory.apply(reactor.eventloop()));
+                        taskQueues.add(taskGroupFactory.apply(reactor.eventloop()));
                     }
                 }
 
-                for (TaskQueue.Handle handle : handles) {
+                for (TaskQueue taskQueue : taskQueues) {
                     for (int k = 0; k < tasksPerTaskGroupCnt; k++) {
                         if (useTask) {
-                            RunnableJob task = new RunnableJob(reactor, handle, useEventloopDirectly, counter);
-                            reactor.offer(task, handle);
+                            RunnableJob task = new RunnableJob(taskQueue, counter);
+                            taskQueue.offer(task);
                         } else {
                             TaskJob task = new TaskJob(counter);
-                            reactor.offer(task, handle);
+                            taskQueue.offer(task);
                         }
                     }
                 }
@@ -142,7 +141,6 @@ public class SchedulingBenchmark {
         System.out.println("randomNiceLevel:" + randomNiceLevel);
         System.out.println("use completely fair scheduler:" + cfs);
         System.out.println("affinity:" + affinity);
-        System.out.println("useEventloopDirectly:" + useEventloopDirectly);
         System.out.println("useTask:" + useTask);
     }
 
@@ -170,7 +168,7 @@ public class SchedulingBenchmark {
         return reactors;
     }
 
-    public final Function<Eventloop, TaskQueue.Handle> taskGroupFactory = eventloop -> {
+    public final Function<Eventloop, TaskQueue> taskGroupFactory = eventloop -> {
         int nice = randomNiceLevel
                 ? random.nextInt(MAX_NICE - MIN_NICE + 1) + MIN_NICE
                 : 0;
@@ -183,20 +181,11 @@ public class SchedulingBenchmark {
     };
 
     private class RunnableJob implements Runnable {
-        private final Eventloop eventloop;
-        private final boolean useEventloopDirectly;
-        private final Reactor reactor;
-        private final TaskQueue.Handle taskGroupHandle;
+        private final TaskQueue taskQueue;
         private final PaddedAtomicLong counter;
 
-        public RunnableJob(Reactor reactor,
-                           TaskQueue.Handle taskGroupHandle,
-                           boolean useEventloopDirectly,
-                           PaddedAtomicLong counter) {
-            this.reactor = reactor;
-            this.eventloop = reactor.eventloop();
-            this.taskGroupHandle = taskGroupHandle;
-            this.useEventloopDirectly = useEventloopDirectly;
+        public RunnableJob(TaskQueue taskQueue, PaddedAtomicLong counter) {
+            this.taskQueue = taskQueue;
             this.counter = counter;
         }
 
@@ -207,11 +196,7 @@ public class SchedulingBenchmark {
             }
 
             counter.lazySet(counter.get() + 1);
-            if (useEventloopDirectly) {
-                eventloop.offer(this, taskGroupHandle);
-            } else {
-                reactor.offer(this, taskGroupHandle);
-            }
+            taskQueue.offer(this);
         }
     }
 

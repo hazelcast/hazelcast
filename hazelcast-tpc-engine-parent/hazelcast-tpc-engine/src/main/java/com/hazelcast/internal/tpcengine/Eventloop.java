@@ -63,7 +63,7 @@ public abstract class Eventloop {
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final PromiseAllocator promiseAllocator;
     protected final IntPromiseAllocator intPromiseAllocator;
-    protected final TaskQueue.Handle defaultTaskQueueHandle;
+    protected final TaskQueue defaultTaskQueue;
     protected final Reactor.Metrics metrics;
     protected final long minGranularityNanos;
     protected final NetworkScheduler networkScheduler;
@@ -98,7 +98,7 @@ public abstract class Eventloop {
 
         TaskQueue.Builder defaultTaskQueueBuilder = builder.reactorBuilder.defaultTaskQueueBuilder;
         defaultTaskQueueBuilder.eventloop = this;
-        this.defaultTaskQueueHandle = defaultTaskQueueBuilder.build();
+        this.defaultTaskQueue = defaultTaskQueueBuilder.build();
     }
 
     /**
@@ -133,12 +133,12 @@ public abstract class Eventloop {
     }
 
     /**
-     * Gets the {@link TaskQueue.Handle} for the default {@link TaskQueue}.
+     * Gets the default {@link TaskQueue}.
      *
      * @return the handle for the default {@link TaskQueue}.
      */
-    public final TaskQueue.Handle defaultTaskQueueHandle() {
-        return defaultTaskQueueHandle;
+    public final TaskQueue defaultTaskQueue() {
+        return defaultTaskQueue;
     }
 
     /**
@@ -161,19 +161,7 @@ public abstract class Eventloop {
     }
 
     public final boolean offer(Object task) {
-        return offer(task, defaultTaskQueueHandle);
-    }
-
-    public final boolean offer(Object task, TaskQueue.Handle handle) {
-        //checkNotNull(task, "task");
-        //checkNotNull(handle,"handle");
-
-        // TaskQueue taskGroup = handle.queue;
-        //if (taskGroup.eventloop != this) {
-        //    throw new IllegalArgumentException();
-        //}
-        //checkEventloopThread();
-        return handle.queue.offerInside(task);
+        return defaultTaskQueue.offer(task);
     }
 
     /**
@@ -189,17 +177,6 @@ public abstract class Eventloop {
             throw new IllegalThreadStateException("Can only be called from the eventloop thread "
                     + "[" + eventloopThread + "], found [" + currentThread + "].");
         }
-    }
-
-    /**
-     * Gets the {@link TaskQueue} for the given {@link TaskQueue.Handle}.
-     *
-     * @param handle the handle
-     * @return the TaskQueue that belongs to this handle.
-     */
-    public final TaskQueue taskQueue(TaskQueue.Handle handle) {
-        checkOnEventloopThread();
-        return handle.queue;
     }
 
     /**
@@ -427,7 +404,7 @@ public abstract class Eventloop {
     public final boolean schedule(Runnable cmd,
                                   long delay,
                                   TimeUnit unit) {
-        return schedule(cmd, delay, unit, defaultTaskQueueHandle);
+        return schedule(cmd, delay, unit, defaultTaskQueue);
     }
 
     /**
@@ -436,7 +413,7 @@ public abstract class Eventloop {
      * @param cmd    the cmd to execute.
      * @param delay  the delay
      * @param unit   the unit of the delay
-     * @param handle the handle of the TaskQueue the cmd belongs to.
+     * @param taskQueue the handle of the TaskQueue the cmd belongs to.
      * @return true if the cmd was successfully scheduled.
      * @throws NullPointerException     if cmd or unit is null
      * @throws IllegalArgumentException when delay smaller than 0.
@@ -444,15 +421,15 @@ public abstract class Eventloop {
     public final boolean schedule(Runnable cmd,
                                   long delay,
                                   TimeUnit unit,
-                                  TaskQueue.Handle handle) {
+                                  TaskQueue taskQueue) {
         checkNotNull(cmd);
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
-        checkNotNull(handle);
+        checkNotNull(taskQueue);
 
         DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
         task.cmd = cmd;
-        task.taskQueue = handle.queue;
+        task.taskQueue = taskQueue;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
         return deadlineScheduler.offer(task);
     }
@@ -471,16 +448,16 @@ public abstract class Eventloop {
                                                 long initialDelay,
                                                 long delay,
                                                 TimeUnit unit,
-                                                TaskQueue.Handle handle) {
+                                                TaskQueue taskQueue) {
         checkNotNull(cmd);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(delay, "delay");
         checkNotNull(unit);
-        checkNotNull(handle);
+        checkNotNull(taskQueue);
 
         DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
         task.cmd = cmd;
-        task.taskQueue = handle.queue;
+        task.taskQueue = taskQueue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
         task.delayNanos = unit.toNanos(delay);
         return deadlineScheduler.offer(task);
@@ -499,16 +476,16 @@ public abstract class Eventloop {
                                              long initialDelay,
                                              long period,
                                              TimeUnit unit,
-                                             TaskQueue.Handle handle) {
+                                             TaskQueue taskQueue) {
         checkNotNull(cmd);
         checkNotNegative(initialDelay, "initialDelay");
         checkNotNegative(period, "period");
         checkNotNull(unit);
-        checkNotNull(handle);
+        checkNotNull(taskQueue);
 
         DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
         task.cmd = cmd;
-        task.taskQueue = handle.queue;
+        task.taskQueue = taskQueue;
         task.deadlineNanos = toDeadlineNanos(initialDelay, unit);
         task.periodNanos = unit.toNanos(period);
         return deadlineScheduler.offer(task);
@@ -522,7 +499,7 @@ public abstract class Eventloop {
         DeadlineScheduler.DeadlineTask task = new DeadlineScheduler.DeadlineTask(deadlineScheduler);
         task.promise = promise;
         task.deadlineNanos = toDeadlineNanos(delay, unit);
-        task.taskQueue = defaultTaskQueueHandle.queue;
+        task.taskQueue = defaultTaskQueue;
         deadlineScheduler.offer(task);
         return promise;
     }
