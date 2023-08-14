@@ -676,7 +676,7 @@ public abstract class Reactor implements Executor {
     /**
      * A {@link Reactor} builder.
      */
-    @SuppressWarnings({"checkstyle:VisibilityModifier"})
+    @SuppressWarnings({"checkstyle:VisibilityModifier", "checkstyle:DeclarationOrder"})
     public abstract static class Builder extends AbstractBuilder<Reactor> {
 
         public static final String NAME_SCHEDULED_RUN_QUEUE_LIMIT
@@ -708,8 +708,12 @@ public abstract class Reactor implements Executor {
         public static final String NAME_REACTOR_SPIN
                 = "hazelcast.tpc.reactor.spin";
 
-        public static final AtomicInteger THREAD_ID_GENERATOR = new AtomicInteger();
-        public static final AtomicInteger REACTOR_ID_GENERATOR = new AtomicInteger();
+        private static final AtomicInteger THREAD_ID_GENERATOR = new AtomicInteger();
+        private static final AtomicInteger REACTOR_ID_GENERATOR = new AtomicInteger();
+        private static final Constructor<Builder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
+        private static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
+                = "com.hazelcast.internal.tpcengine.iouring.UringReactor$Builder";
+
         public static final int DEFAULT_INSIDE_TASK_QUEUE_LIMIT = 65536;
         public static final int DEFAULT_OUTSIDE_TASK_QUEUE_LIMIT = 65536;
         public static final int DEFAULT_DEADLINE_RUN_QUEUE_LIMIT = 4096;
@@ -728,11 +732,6 @@ public abstract class Reactor implements Executor {
 
         public static final ThreadAffinity DEFAULT_THREAD_AFFINITY
                 = ThreadAffinity.newSystemThreadAffinity(NAME_REACTOR_AFFINITY);
-
-        public static final Constructor<Builder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
-
-        public static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
-                = "com.hazelcast.internal.tpcengine.iouring.UringReactor$Builder";
 
         public static final ThreadFactory DEFAULT_THREAD_FACTORY = r -> {
             Thread thread = new Thread(r);
