@@ -66,6 +66,7 @@ public abstract class Eventloop {
     protected final NetworkScheduler networkScheduler;
     protected final IOBufferAllocator storageAllocator;
     protected final StorageScheduler storageScheduler;
+    protected final Thread eventloopThread;
     protected long taskStartNanos;
     protected final long ioIntervalNanos;
     protected final DeadlineScheduler deadlineScheduler;
@@ -77,6 +78,7 @@ public abstract class Eventloop {
 
     protected Eventloop(Builder builder) {
         this.reactor = builder.reactor;
+        this.eventloopThread = builder.reactor.eventloopThread;
         this.metrics = reactor.metrics;
         this.minGranularityNanos = builder.reactorBuilder.minGranularityNanos;
         this.spin = builder.reactorBuilder.spin;
@@ -163,9 +165,15 @@ public abstract class Eventloop {
         return handle.queue.offerInside(task);
     }
 
-    protected final void ensureEventloopThread() {
-        if (Thread.currentThread() != reactor.eventloopThread) {
-            throw new IllegalStateException();
+    /**
+     * Checks if the current thread is the eventloop thread of this Eventloop.
+     */
+    public final void checkOnEventloopThread() {
+        Thread currentThread = Thread.currentThread();
+
+        if (currentThread != reactor.eventloopThread) {
+            throw new IllegalStateException("Can only be called from the eventloop thread "
+                    + "[" + eventloopThread + "], found [" + currentThread + "]");
         }
     }
 
@@ -176,7 +184,7 @@ public abstract class Eventloop {
      * @return the TaskQueue that belongs to this handle.
      */
     public final TaskQueue taskQueue(TaskQueue.Handle handle) {
-        ensureEventloopThread();
+        checkOnEventloopThread();
         return handle.queue;
     }
 
@@ -187,7 +195,7 @@ public abstract class Eventloop {
      * @throws IllegalStateException if current thread is not the Eventloop thread.
      */
     public final TaskQueue.Builder newTaskQueueBuilder() {
-        ensureEventloopThread();
+        checkOnEventloopThread();
         TaskQueue.Builder taskQueueBuilder = new TaskQueue.Builder();
         taskQueueBuilder.eventloop = this;
         return taskQueueBuilder;
@@ -375,7 +383,6 @@ public abstract class Eventloop {
     }
 
     /**
-     *
      * @return true if work was triggered that requires attention of the eventloop.
      * @throws IOException
      */

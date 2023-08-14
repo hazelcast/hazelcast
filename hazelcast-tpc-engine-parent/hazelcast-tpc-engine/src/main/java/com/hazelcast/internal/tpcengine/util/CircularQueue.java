@@ -186,9 +186,8 @@ public final class CircularQueue<E> extends AbstractQueue<E> {
         } else {
             long h = head;
             int index = (int) (h & mask);
-            E[] array_ = array;
-            E item = array_[index];
-            array_[index] = null;
+            E item = array[index];
+            array[index] = null;
             head = h + 1;
             return item;
         }

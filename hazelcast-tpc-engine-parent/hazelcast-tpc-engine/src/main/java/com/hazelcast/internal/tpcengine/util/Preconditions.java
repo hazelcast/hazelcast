@@ -16,27 +16,11 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
-import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.Reactor;
-
 public final class Preconditions {
 
     public static final int MAX_PORT = 65335;
 
     private Preconditions() {
-    }
-
-    public static void checkOnEventloopThread(Reactor reactor) {
-        Thread eventloopThread = reactor.eventloopThread();
-        Thread currentThread = Thread.currentThread();
-        if (eventloopThread != currentThread) {
-            throw new IllegalStateException("Can only be called from the eventloop thread "
-                    + "[" + eventloopThread + "], found [" + currentThread + "]");
-        }
-    }
-
-    public static void checkOnEventloopThread(Eventloop eventloop) {
-        checkOnEventloopThread(eventloop.reactor());
     }
 
     public static int checkValidPort(int port, String paramName) {

@@ -48,9 +48,9 @@ public final class TpcEngine {
     private final ReactorType reactorType;
 
     /**
-     * Creates an TpcEngine from the given Context.
+     * Creates an TpcEngine from the given builder.
      *
-     * @param engineBuilder the context.
+     * @param engineBuilder the builder.
      * @throws NullPointerException when engineBuilder is <code>null</code>.
      */
     private TpcEngine(Builder engineBuilder) {
@@ -208,7 +208,9 @@ public final class TpcEngine {
         public static final String NAME_REACTOR_COUNT = "hazelcast.tpc.reactor.count";
         public static final String NAME_REACTOR_TYPE = "hazelcast.tpc.reactor.type";
 
-        public int reactorCount = Integer.getInteger(NAME_REACTOR_COUNT, Runtime.getRuntime().availableProcessors());
+        public int reactorCount = Integer.getInteger(
+                NAME_REACTOR_COUNT, Runtime.getRuntime().availableProcessors());
+
         public Consumer<Reactor.Builder> reactorConfigureFn = builder -> {
         };
 

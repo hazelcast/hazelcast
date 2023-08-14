@@ -432,7 +432,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
             checkNotNull(eventloop, "eventloop");
 
-            eventloop.ensureEventloopThread();
+            eventloop.checkOnEventloopThread();
 
             //checkNotNull(processor, "processor");
 
