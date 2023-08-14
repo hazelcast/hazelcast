@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
-public class CfsTaskQueueSchedulerTest {
+public class CompletelyFairSchedulerTest {
 
     public static final long TARGET_LATENCY_NANOS = 100;
     public static final long MIN_GRANULARITY_NANOS = 10;

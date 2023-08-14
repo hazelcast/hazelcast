@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class FcfsTaskQueueSchedulerTest {
+public class FifoSchedulerTest {
 
     public static final long TARGET_LATENCY_NANOS = TimeUnit.MILLISECONDS.toNanos(1);
     public static final long MIN_GRANULARITY_NANOS = TimeUnit.MICROSECONDS.toNanos(100);
