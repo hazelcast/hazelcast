@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import com.hazelcast.internal.tpcengine.util.Option;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

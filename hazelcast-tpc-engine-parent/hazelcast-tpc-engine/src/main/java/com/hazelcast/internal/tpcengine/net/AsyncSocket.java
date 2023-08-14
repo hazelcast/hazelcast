@@ -17,11 +17,11 @@
 package com.hazelcast.internal.tpcengine.net;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.nio.IOVector;
+import com.hazelcast.internal.tpcengine.util.Option;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;

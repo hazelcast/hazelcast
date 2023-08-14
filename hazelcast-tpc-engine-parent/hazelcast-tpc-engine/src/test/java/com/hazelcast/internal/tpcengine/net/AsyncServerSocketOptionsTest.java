@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.net;
 
-import com.hazelcast.internal.tpcengine.Option;
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.util.Option;
 import org.junit.After;
 import org.junit.Test;
 
