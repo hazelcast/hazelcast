@@ -21,6 +21,9 @@ import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
 /**
  * A {@link StallHandler} that writes a log entry when a stall is detected.
+ * <p/>
+ * This is not a great implementation because it can really spam the log files
+ * with violations.
  */
 public final class LoggingStallHandler implements StallHandler {
 
