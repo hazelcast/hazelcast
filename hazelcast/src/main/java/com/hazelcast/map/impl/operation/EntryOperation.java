@@ -254,7 +254,7 @@ public class EntryOperation extends LockAwareOperation
                 .setKey(dataKey)
                 .setCallerProvenance(CallerProvenance.NOT_WAN)
                 .setEntryProcessor(entryProcessor)
-                .setEntryProcessorOffload(offload)
+                .setEntryProcessorOffloadable(offload)
                 .setStaticPutParams(StaticParams.SET_WITH_NO_ACCESS_PARAMS);
     }
 
