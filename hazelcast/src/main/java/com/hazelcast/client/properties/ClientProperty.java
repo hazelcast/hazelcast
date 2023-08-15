@@ -333,7 +333,7 @@ public final class ClientProperty {
      * defines key to partition mapping. Client-side equivalent of member property
      * {@link com.hazelcast.spi.properties.ClusterProperty#PARTITIONING_STRATEGY_CLASS}.
      * <p>
-     * This property does not contain the "client" prefix as has been used on the client with
+     * This property does not contain the "hazelcast.client" prefix as has been used on the client with
      * this property name for over 8 years, so it is maintained for backwards compatibility.
      */
     public static final HazelcastProperty PARTITIONING_STRATEGY_CLASS
