@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.codec.holder;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.Map;
+import java.util.Objects;
 
 public final class DiscoveryStrategyConfigHolder {
     private final String className;
@@ -34,5 +35,22 @@ public final class DiscoveryStrategyConfigHolder {
 
     public Map<String, Data> getProperties() {
         return properties;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        DiscoveryStrategyConfigHolder that = (DiscoveryStrategyConfigHolder) o;
+        return Objects.equals(className, that.className) && Objects.equals(properties, that.properties);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(className, properties);
     }
 }

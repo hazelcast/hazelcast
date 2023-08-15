@@ -24,6 +24,7 @@ import com.hazelcast.config.WanSyncConfig;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.Map;
+import java.util.Objects;
 
 public final class WanBatchPublisherConfigHolder {
     private final String publisherId;
@@ -205,5 +206,40 @@ public final class WanBatchPublisherConfigHolder {
 
     public Map<String, Data> getProperties() {
         return properties;
+    }
+
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WanBatchPublisherConfigHolder that = (WanBatchPublisherConfigHolder) o;
+        return snapshotEnabled == that.snapshotEnabled && initialPublisherState == that.initialPublisherState
+                && queueCapacity == that.queueCapacity && batchSize == that.batchSize
+                && batchMaxDelayMillis == that.batchMaxDelayMillis && responseTimeoutMillis == that.responseTimeoutMillis
+                && queueFullBehavior == that.queueFullBehavior && acknowledgeType == that.acknowledgeType
+                && discoveryPeriodSeconds == that.discoveryPeriodSeconds && maxTargetEndpoints == that.maxTargetEndpoints
+                && maxConcurrentInvocations == that.maxConcurrentInvocations
+                && useEndpointPrivateAddress == that.useEndpointPrivateAddress && idleMinParkNs == that.idleMinParkNs
+                && idleMaxParkNs == that.idleMaxParkNs && Objects.equals(publisherId, that.publisherId) && Objects.equals(
+                className, that.className) && Objects.equals(implementation, that.implementation) && Objects.equals(properties,
+                that.properties) && Objects.equals(clusterName, that.clusterName) && Objects.equals(targetEndpoints,
+                that.targetEndpoints) && Objects.equals(awsConfig, that.awsConfig) && Objects.equals(gcpConfig, that.gcpConfig)
+                && Objects.equals(azureConfig, that.azureConfig) && Objects.equals(kubernetesConfig, that.kubernetesConfig)
+                && Objects.equals(eurekaConfig, that.eurekaConfig) && Objects.equals(discoveryConfig, that.discoveryConfig)
+                && Objects.equals(syncConfig, that.syncConfig) && Objects.equals(endpoint, that.endpoint);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(publisherId, className, implementation, properties, clusterName, snapshotEnabled,
+                initialPublisherState, queueCapacity, batchSize, batchMaxDelayMillis, responseTimeoutMillis, queueFullBehavior,
+                acknowledgeType, discoveryPeriodSeconds, maxTargetEndpoints, maxConcurrentInvocations, useEndpointPrivateAddress,
+                idleMinParkNs, idleMaxParkNs, targetEndpoints, awsConfig, gcpConfig, azureConfig, kubernetesConfig, eurekaConfig,
+                discoveryConfig, syncConfig, endpoint);
     }
 }
