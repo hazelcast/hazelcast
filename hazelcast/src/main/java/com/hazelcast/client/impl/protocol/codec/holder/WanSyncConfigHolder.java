@@ -13,32 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.hazelcast.client.impl.protocol.codec.holder;
 
-package com.hazelcast.config;
+public final class WanSyncConfigHolder {
+    private final byte consistencyCheckStrategy;
 
-import com.hazelcast.internal.config.ConfigDataSerializerHook;
-
-import java.util.Map;
-
-/**
- * Configuration for the GCP Discovery Strategy.
- */
-public class GcpConfig
-        extends AliasedDiscoveryConfig<GcpConfig> {
-    public GcpConfig() {
-        super("gcp");
+    public WanSyncConfigHolder(byte consistencyCheckStrategy) {
+        this.consistencyCheckStrategy = consistencyCheckStrategy;
     }
 
-    public GcpConfig(GcpConfig gcpConfig) {
-        super(gcpConfig);
-    }
-
-    public GcpConfig(String tag, boolean enabled, boolean usePublicIp, Map<String, String> properties) {
-        super(tag, enabled, usePublicIp, properties);
-    }
-
-    @Override
-    public int getClassId() {
-        return ConfigDataSerializerHook.GCP_CONFIG;
+    public byte getConsistencyCheckStrategy() {
+        return consistencyCheckStrategy;
     }
 }

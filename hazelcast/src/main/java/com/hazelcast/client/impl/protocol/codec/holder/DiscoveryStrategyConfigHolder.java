@@ -13,32 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.hazelcast.client.impl.protocol.codec.holder;
 
-package com.hazelcast.config;
-
-import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.serialization.Data;
 
 import java.util.Map;
 
-/**
- * Configuration for the Eureka Discovery Strategy.
- */
-public class EurekaConfig
-        extends AliasedDiscoveryConfig<EurekaConfig> {
-    public EurekaConfig() {
-        super("eureka");
+public final class DiscoveryStrategyConfigHolder {
+    private final String className;
+    private final Map<String, Data> properties;
+
+    public DiscoveryStrategyConfigHolder(String className, Map<String, Data> properties) {
+        this.className = className;
+        this.properties = properties;
     }
 
-    public EurekaConfig(EurekaConfig eurekaConfig) {
-        super(eurekaConfig);
+    public String getClassName() {
+        return className;
     }
 
-    public EurekaConfig(String tag, boolean enabled, boolean usePublicIp, Map<String, String> properties) {
-        super(tag, enabled, usePublicIp, properties);
-    }
-
-    @Override
-    public int getClassId() {
-        return ConfigDataSerializerHook.EUREKA_CONFIG;
+    public Map<String, Data> getProperties() {
+        return properties;
     }
 }
