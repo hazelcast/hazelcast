@@ -21,6 +21,7 @@ import com.hazelcast.cluster.Member;
 import java.util.EventObject;
 import java.util.logging.LogRecord;
 
+@Deprecated
 public class LogEvent extends EventObject {
 
     private final LogRecord logRecord;

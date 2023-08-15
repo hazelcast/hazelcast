@@ -16,5 +16,15 @@
 
 package com.hazelcast.cluster;
 
+/**
+ * This is a super nasty hack to make sure that the LogEvent can be moved to
+ * this module. The LogEvent relies on this interface, so here we have a fake
+ * interface so that the LogEvent can compile. In the main hazelcast module
+ * there is the proper implementation of the Member and in the final jar that
+ * class file will be present and not this one.
+ * <p/>
+ * As soon as the the {@link com.hazelcast.logging.LogEvent} is removed, this
+ * interface can be removed.
+ */
 public interface Member {
 }
