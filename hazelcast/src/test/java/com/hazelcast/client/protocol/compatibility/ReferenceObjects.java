@@ -946,8 +946,7 @@ public class ReferenceObjects {
     public static WanConsumerConfigHolder aWanConsumerConfigHolder =
             new WanConsumerConfigHolder(aBoolean, aString,aData, Map.of(aString, aData));
     public static List<WanCustomPublisherConfigHolder> aListOfWanCustomPublisherConfigsHolders =
-            Collections.singletonList(new WanCustomPublisherConfigHolder("localhost", "localhost", aData,
-                    Map.of("localhost", aData)));
+            Collections.singletonList(new WanCustomPublisherConfigHolder(aString, aString, aData, Map.of(aString, aData)));
     public static List<WanBatchPublisherConfigHolder> aListOfWanBatchPublisherConfigHolders =
             Collections.singletonList(
                     new WanBatchPublisherConfigHolder(
