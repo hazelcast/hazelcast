@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.config.DeltaJobConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
@@ -532,6 +533,9 @@ abstract class SqlPlanImpl extends SqlPlan {
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             SqlPlanImpl.ensureNoTimeout("CREATE JOB", timeout);
+            if (!infiniteRows) {
+                SqlPlanImpl.ensureNoneGuaranteesForBatchJob(jobConfig);
+            }
             return planExecutor.execute(this, arguments);
         }
     }
@@ -1609,6 +1613,12 @@ abstract class SqlPlanImpl extends SqlPlan {
     private static void ensureNoTimeout(String name, long timeout) {
         if (timeout > 0) {
             throw QueryException.error(name + " does not support timeout");
+        }
+    }
+
+    private static void ensureNoneGuaranteesForBatchJob(JobConfig jobConfig) {
+        if (jobConfig.getProcessingGuarantee() != ProcessingGuarantee.NONE) {
+            throw QueryException.error("Only NONE guarantee is allowed for batch job");
         }
     }
 }
