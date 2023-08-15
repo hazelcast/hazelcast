@@ -6841,9 +6841,9 @@ public class MemberCompatibilityTest_2_7 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         DynamicConfigAddWanReplicationConfigCodec.RequestParameters parameters = DynamicConfigAddWanReplicationConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
-        assertTrue(isEqual(, parameters.consumerConfig));
-        assertTrue(isEqual(, parameters.customPublisherConfigs));
-        assertTrue(isEqual(, parameters.batchPublisherConfigs));
+        assertTrue(isEqual(aWanConsumerConfigHolder, parameters.consumerConfig));
+        assertTrue(isEqual(aListOfWanCustomPublisherConfigsHolders, parameters.customPublisherConfigs));
+        assertTrue(isEqual(aListOfWanBatchPublisherConfigHolders, parameters.batchPublisherConfigs));
     }
 
     @Test

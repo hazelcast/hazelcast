@@ -6842,8 +6842,8 @@ public class MemberCompatibilityNullTest_2_7 {
         DynamicConfigAddWanReplicationConfigCodec.RequestParameters parameters = DynamicConfigAddWanReplicationConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
         assertTrue(isEqual(null, parameters.consumerConfig));
-        assertTrue(isEqual(, parameters.customPublisherConfigs));
-        assertTrue(isEqual(, parameters.batchPublisherConfigs));
+        assertTrue(isEqual(aListOfWanCustomPublisherConfigsHolders, parameters.customPublisherConfigs));
+        assertTrue(isEqual(aListOfWanBatchPublisherConfigHolders, parameters.batchPublisherConfigs));
     }
 
     @Test

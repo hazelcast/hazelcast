@@ -23,6 +23,9 @@ import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
 import com.hazelcast.client.impl.protocol.codec.holder.AnchorDataListHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanBatchPublisherConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanConsumerConfigHolder;
+import com.hazelcast.client.impl.protocol.codec.holder.WanCustomPublisherConfigHolder;
 import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder;
@@ -931,4 +934,9 @@ public class ReferenceObjects {
     public static List<PartitioningAttributeConfig> aListOfPartitioningAttributeConfigs = Collections.singletonList(
             new PartitioningAttributeConfig(aString)
     );
+
+    public static WanConsumerConfigHolder aWanConsumerConfigHolder =
+            new WanConsumerConfigHolder(true, null,null, Collections.emptyMap());
+    public static List<WanCustomPublisherConfigHolder> aListOfWanCustomPublisherConfigsHolders = Collections.emptyList();
+    public static List<WanBatchPublisherConfigHolder> aListOfWanBatchPublisherConfigHolders = Collections.emptyList();
 }

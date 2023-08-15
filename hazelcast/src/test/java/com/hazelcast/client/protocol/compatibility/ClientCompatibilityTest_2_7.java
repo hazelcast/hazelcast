@@ -5988,7 +5988,7 @@ public class ClientCompatibilityTest_2_7 {
     @Test
     public void test_DynamicConfigAddWanReplicationConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 759;
-        ClientMessage encoded = DynamicConfigAddWanReplicationConfigCodec.encodeRequest(aString, , , );
+        ClientMessage encoded = DynamicConfigAddWanReplicationConfigCodec.encodeRequest(aString, aWanConsumerConfigHolder, aListOfWanCustomPublisherConfigsHolders, aListOfWanBatchPublisherConfigHolders);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
