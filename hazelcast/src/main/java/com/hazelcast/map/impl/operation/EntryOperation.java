@@ -386,7 +386,7 @@ public class EntryOperation extends LockAwareOperation
         out.writeObject(entryProcessor);
     }
 
-    public Object getOldValueByInMemoryFormat(Object oldValue) {
+    public Data convertOldValueToHeapData(Object oldValue) {
         InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         switch (inMemoryFormat) {
             case NATIVE:
@@ -395,7 +395,7 @@ public class EntryOperation extends LockAwareOperation
                 return getNodeEngine().getSerializationService()
                         .toData(oldValue);
             case BINARY:
-                return oldValue;
+                return (Data) oldValue;
             default:
                 throw new IllegalArgumentException("Unknown in memory format: " + inMemoryFormat);
         }
@@ -406,7 +406,7 @@ public class EntryOperation extends LockAwareOperation
 
         public EntryOperationOffload(Object oldValue) {
             super(EntryOperation.this);
-            this.oldValue = getOldValueByInMemoryFormat(oldValue);
+            this.oldValue = convertOldValueToHeapData(oldValue);
         }
 
         @Override

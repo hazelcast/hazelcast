@@ -59,7 +59,7 @@ public enum EntryOpSteps implements IMapOpStep {
             }
 
             if (state.isEntryProcessorOffloadable()) {
-                updateOldValue(state);
+                updateOldValueByConvertingItToHeapData(state);
                 return EntryOpSteps.RUN_OFFLOADED_ENTRY_PROCESSOR;
             }
             return EntryOpSteps.PROCESS;
@@ -152,7 +152,7 @@ public enum EntryOpSteps implements IMapOpStep {
         @Override
         public Step nextStep(State state) {
             if (state.isEntryProcessorOffloadable()) {
-                updateOldValue(state);
+                updateOldValueByConvertingItToHeapData(state);
                 return EntryOpSteps.RUN_OFFLOADED_ENTRY_PROCESSOR;
             }
             return EntryOpSteps.PROCESS;
@@ -341,12 +341,12 @@ public enum EntryOpSteps implements IMapOpStep {
         }
     };
 
-    private static void updateOldValue(State state) {
-        EntryOperation operation = (EntryOperation) state.getOperation();
-        Object oldValueByInMemoryFormat = operation.getOldValueByInMemoryFormat(state.getOldValue());
-        state.setOldValue(oldValueByInMemoryFormat);
+    EntryOpSteps() {
     }
 
-    EntryOpSteps() {
+    private static void updateOldValueByConvertingItToHeapData(State state) {
+        EntryOperation operation = (EntryOperation) state.getOperation();
+        Object oldValueByInMemoryFormat = operation.convertOldValueToHeapData(state.getOldValue());
+        state.setOldValue(oldValueByInMemoryFormat);
     }
 }
