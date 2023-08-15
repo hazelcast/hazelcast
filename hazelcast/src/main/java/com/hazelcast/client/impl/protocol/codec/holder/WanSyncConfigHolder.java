@@ -20,6 +20,14 @@ import java.util.Objects;
 public final class WanSyncConfigHolder {
     private final byte consistencyCheckStrategy;
 
+    public WanSyncConfigHolder(byte consistencyCheckStrategy) {
+        this.consistencyCheckStrategy = consistencyCheckStrategy;
+    }
+
+    public byte getConsistencyCheckStrategy() {
+        return consistencyCheckStrategy;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -35,13 +43,5 @@ public final class WanSyncConfigHolder {
     @Override
     public int hashCode() {
         return Objects.hash(consistencyCheckStrategy);
-    }
-
-    public WanSyncConfigHolder(byte consistencyCheckStrategy) {
-        this.consistencyCheckStrategy = consistencyCheckStrategy;
-    }
-
-    public byte getConsistencyCheckStrategy() {
-        return consistencyCheckStrategy;
     }
 }

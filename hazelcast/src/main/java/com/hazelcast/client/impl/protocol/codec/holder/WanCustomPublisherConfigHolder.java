@@ -26,24 +26,6 @@ public final class WanCustomPublisherConfigHolder {
     private final Data implementation;
     private final Map<String, Data> properties;
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        WanCustomPublisherConfigHolder holder = (WanCustomPublisherConfigHolder) o;
-        return Objects.equals(publisherId, holder.publisherId) && Objects.equals(className, holder.className) && Objects.equals(
-                implementation, holder.implementation) && Objects.equals(properties, holder.properties);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(publisherId, className, implementation, properties);
-    }
-
     public WanCustomPublisherConfigHolder(String publisherId, String className, Data implementation, Map<String, Data> properties) {
         this.publisherId = publisherId;
         this.className = className;
@@ -65,5 +47,23 @@ public final class WanCustomPublisherConfigHolder {
 
     public Map<String, Data> getProperties() {
         return properties;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WanCustomPublisherConfigHolder holder = (WanCustomPublisherConfigHolder) o;
+        return Objects.equals(publisherId, holder.publisherId) && Objects.equals(className, holder.className) && Objects.equals(
+                implementation, holder.implementation) && Objects.equals(properties, holder.properties);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(publisherId, className, implementation, properties);
     }
 }

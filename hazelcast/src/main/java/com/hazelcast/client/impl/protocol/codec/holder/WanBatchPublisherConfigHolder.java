@@ -208,6 +208,7 @@ public final class WanBatchPublisherConfigHolder {
         return properties;
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public boolean equals(Object o) {
         if (this == o) {

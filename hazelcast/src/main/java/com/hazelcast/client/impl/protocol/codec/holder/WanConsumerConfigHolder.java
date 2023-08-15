@@ -30,7 +30,6 @@ public final class WanConsumerConfigHolder {
     private final Data implementation;
     private final Map<String, Data> properties;
 
-
     public WanConsumerConfigHolder(boolean persistWanReplicatedData,
                                    @Nullable String className,
                                    @Nullable Data implementation,
