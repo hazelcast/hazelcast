@@ -16,6 +16,8 @@
 
 package com.hazelcast.instance;
 
+import javax.annotation.processing.Generated;
+
 /**
  * This class is generated in a build-time from a template stored at
  * src/main/template/com/hazelcast/instance/GeneratedBuildProperties.
@@ -28,9 +30,9 @@ package com.hazelcast.instance;
  * Hazelcast deployed.
  *
  * WARNING: DO NOT CHANGE FIELD NAMES IN THE TEMPLATE.
- * The fields are read via reflection at {@link com.hazelcast.instance.BuildInfoProvider}
  *
  */
+@Generated("com.hazelcast.instance.BuildInfoProvider")
 public final class GeneratedBuildProperties {
     public static final String VERSION = "${project.version}";
     public static final String BUILD = "${timestamp}";
