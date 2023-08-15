@@ -25,6 +25,7 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.ExecutorStats;
@@ -389,6 +390,8 @@ public class EntryOperation extends LockAwareOperation
 
     @Nullable
     public Data convertOldValueToHeapData(Object oldValue) {
+        assert ThreadUtil.isRunningOnPartitionThread();
+
         InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         switch (inMemoryFormat) {
             case NATIVE:
