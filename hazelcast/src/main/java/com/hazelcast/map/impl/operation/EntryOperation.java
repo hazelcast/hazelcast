@@ -50,6 +50,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutRespons
 import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.RejectedExecutionException;
@@ -386,6 +387,7 @@ public class EntryOperation extends LockAwareOperation
         out.writeObject(entryProcessor);
     }
 
+    @Nullable
     public Data convertOldValueToHeapData(Object oldValue) {
         InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         switch (inMemoryFormat) {
