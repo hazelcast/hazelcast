@@ -165,11 +165,6 @@ public class NoLoggerTest extends AbstractLoggerTest {
     }
 
     @Test
-    public void logEvent() {
-        logger.log(LOG_EVENT);
-    }
-
-    @Test
     public void getLevel() {
         assertEquals(Level.OFF, logger.getLevel());
     }

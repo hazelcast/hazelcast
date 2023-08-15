@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.logging;
-
-public interface TpcLoggerFactory {
-
-    TpcLogger getLogger(String name);
-
-    default TpcLogger getLogger(Class clazz) {
-        return getLogger(clazz.getName());
-    }
-}
+/**
+ * <p>This package contains logging functionality for Hazelcast.<br>
+ * Since Hazelcast has a zero dependency policy, Hazelcast provides a logging
+ * abstraction like commons logging, so that different logging frameworks like
+ * log4j, can be hooked in.
+ *
+ * @since 1
+ */
+package com.hazelcast.logging;

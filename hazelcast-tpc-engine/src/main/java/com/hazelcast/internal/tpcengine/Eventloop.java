@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.util.BoundPriorityQueue;
 import com.hazelcast.internal.tpcengine.util.CachedNanoClock;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.NanoClock;
 import com.hazelcast.internal.tpcengine.util.StandardNanoClock;
+import com.hazelcast.logging.ILogger;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.util.PriorityQueue;
@@ -52,7 +52,7 @@ public abstract class Eventloop {
     protected final boolean spin;
     protected final int batchSize;
     protected final ReactorBuilder builder;
-    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    protected final ILogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final NanoClock nanoClock;
     protected final PromiseAllocator promiseAllocator;

@@ -18,10 +18,8 @@ package com.hazelcast.logging;
 
 import com.hazelcast.logging.impl.InternalLogger;
 import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
 
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory {
 
@@ -65,21 +63,6 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
         @Override
         public boolean isLoggable(Level level) {
             return level != Level.OFF && logger.isEnabledFor(toLog4jLevel(level));
-        }
-
-        @Override
-        public void log(LogEvent logEvent) {
-            LogRecord logRecord = logEvent.getLogRecord();
-            Level eventLevel = logRecord.getLevel();
-            if (eventLevel == Level.OFF) {
-                return;
-            }
-            String name = logEvent.getLogRecord().getLoggerName();
-            org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(name);
-            org.apache.log4j.Level level = toLog4jLevel(eventLevel);
-            String message = logRecord.getMessage();
-            Throwable throwable = logRecord.getThrown();
-            logger.callAppenders(new LoggingEvent(name, logger, level, message, throwable));
         }
 
         private static org.apache.log4j.Level toLog4jLevel(Level level) {

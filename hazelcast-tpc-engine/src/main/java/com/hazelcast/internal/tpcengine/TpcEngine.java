@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpcengine;
 
-import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.logging.ILogger;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +37,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 public final class TpcEngine {
 
     final CountDownLatch terminationLatch;
-    private final TpcLogger logger = TpcLoggerLocator.getLogger(TpcEngine.class);
+    private final ILogger logger = TpcLoggerLocator.getLogger(TpcEngine.class);
     private final int reactorCount;
     private final Reactor[] reactors;
     private final AtomicReference<State> state = new AtomicReference<>(NEW);

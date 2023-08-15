@@ -461,6 +461,12 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-utils</artifactId>
+            <version>5.4.0-SNAPSHOT</version>
+        </dependency>
+
         <!-- Needed for TPC -->
         <dependency>
             <groupId>com.hazelcast</groupId>

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpcengine;
 
 
-import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.net.AcceptRequest;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
@@ -27,6 +26,7 @@ import com.hazelcast.internal.tpcengine.net.AsyncSocketBuilder;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
+import com.hazelcast.logging.ILogger;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.util.BitSet;
@@ -71,7 +71,7 @@ public abstract class Reactor implements Executor {
             = newUpdater(Reactor.class, State.class, "state");
 
     protected final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
-    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    protected final ILogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final MpmcArrayQueue externalTaskQueue;
     protected final Eventloop eventloop;
     protected final CircularQueue localTaskQueue;
@@ -224,7 +224,7 @@ public abstract class Reactor implements Executor {
      * @param acceptRequest a wrapper around a lower level socket implemented that needs
      *                      to be accepted.
      * @return the created AsyncSocketBuilder.
-     * @throws NullPointerException if acceptRequest is null.
+     * @throws NullPointerException  if acceptRequest is null.
      * @throws IllegalStateException if the reactor isn't running.
      */
     public abstract AsyncSocketBuilder newAsyncSocketBuilder(AcceptRequest acceptRequest);

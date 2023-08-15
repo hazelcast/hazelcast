@@ -20,9 +20,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <name>hazelcast-tpc-engine</name>
-    <artifactId>hazelcast-tpc-engine</artifactId>
-    <description>The Hazelcast thread per core engine</description>
+    <!--
+    The purpose of this module is to collect support utility functionality that is common
+    to both client and server. The utils module should remain relatively slim; things like
+    networking should be placed in their own modules. With proper modularization we can
+    start to reduce the coupling in the code.
+
+    Functionality that is specific to clients or members should not be moved into this module.
+    -->
+
+    <name>hazelcast-utils</name>
+    <artifactId>hazelcast-utils</artifactId>
+    <description>The Hazelcast commons module.</description>
     <packaging>jar</packaging>
 
     <parent>
@@ -35,9 +44,7 @@
     <properties>
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <jctools.version>4.0.1</jctools.version>
-        <junit.version>4.13.2</junit.version>
-    </properties>
+     </properties>
 
     <build>
         <resources>
@@ -88,24 +95,4 @@
         </plugins>
     </build>
 
-
-    <dependencies>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-utils</artifactId>
-            <version>5.4.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>net.openhft</groupId>
-            <artifactId>affinity</artifactId>
-            <version>3.23.3</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.jctools</groupId>
-            <artifactId>jctools-core</artifactId>
-            <version>${jctools.version}</version>
-        </dependency>
-    </dependencies>
 </project>

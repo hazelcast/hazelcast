@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.AbstractLogger;
-import com.hazelcast.logging.LogEvent;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -95,11 +94,6 @@ public class LocalListenerTest extends HazelcastTestSupport {
             logCollector.add(level);
             logCollector.add(message);
             logCollector.add(thrown);
-        }
-
-        @Override
-        public void log(LogEvent logEvent) {
-            throw new UnsupportedOperationException();
         }
 
         @Override

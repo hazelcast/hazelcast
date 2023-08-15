@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.nio;
 
-import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
+import com.hazelcast.logging.ILogger;
 import org.junit.Test;
 
 import java.lang.reflect.Constructor;
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
 public class SelectorOptimizerTest {
-    private final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
+    private final ILogger logger = TpcLoggerLocator.getLogger(getClass());
 
     @Test
     public void testConstructor() {

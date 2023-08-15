@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.logging;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggerFactory;
+
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,15 +30,15 @@ public final class TpcLoggerLocator {
     }
 
     @SuppressWarnings("java:S112")
-    public static TpcLogger getLogger(Class clazz) {
+    public static ILogger getLogger(Class clazz) {
         Object logger = LOGGER.get();
         if (logger != null) {
-            if (logger instanceof TpcLoggerFactory) {
-                return ((TpcLoggerFactory) logger).getLogger(clazz);
+            if (logger instanceof LoggerFactory) {
+                return ((LoggerFactory) logger).getLogger(clazz.getName());
             } else {
                 Method method = (Method) logger;
                 try {
-                    return (TpcLogger) method.invoke(null, clazz);
+                    return (ILogger) method.invoke(null, clazz);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -43,11 +46,11 @@ public final class TpcLoggerLocator {
         }
 
         try {
-            Class loggerClazz = TpcLogger.class.getClassLoader().loadClass("com.hazelcast.logging.Logger");
+            Class loggerClazz = ILogger.class.getClassLoader().loadClass("com.hazelcast.logging.Logger");
             Method method = loggerClazz.getMethod("getLogger", Class.class);
             LOGGER.compareAndSet(null, method);
         } catch (Exception e) {
-            TpcLoggerFactory loggerFactor = new JulLoggerFactory();
+            LoggerFactory loggerFactor = new JulLoggerFactory();
             LOGGER.compareAndSet(null, loggerFactor);
         }
         return getLogger(clazz);

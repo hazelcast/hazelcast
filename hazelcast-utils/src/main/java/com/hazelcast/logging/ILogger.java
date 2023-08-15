@@ -16,8 +16,6 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.internal.tpcengine.logging.TpcLogger;
-
 import java.util.logging.Level;
 
 /**
@@ -27,7 +25,7 @@ import java.util.logging.Level;
  *
  * @see AbstractLogger
  */
-public interface ILogger extends TpcLogger {
+public interface ILogger {
 
     /**
      * Logs a message at the {@link Level#FINEST} level.
@@ -194,15 +192,6 @@ public interface ILogger extends TpcLogger {
      * @param thrown  the Throwable associated to the message
      */
     void log(Level level, String message, Throwable thrown);
-
-    /**
-     * Logs a LogEvent.
-     *
-     * @param logEvent the logEvent to log
-     * @deprecated Since 5.1, the method is unused
-     */
-    @Deprecated
-    void log(LogEvent logEvent);
 
     /**
      * Gets the logging level.

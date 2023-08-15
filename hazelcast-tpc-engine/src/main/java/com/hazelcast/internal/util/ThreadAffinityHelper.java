@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.util.CloseUtil;
 import com.hazelcast.internal.tpcengine.util.JVM;
 import com.hazelcast.internal.tpcengine.util.OS;
+import com.hazelcast.logging.ILogger;
 import net.openhft.affinity.Affinity;
 
 import java.io.File;
@@ -49,7 +49,7 @@ import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 @SuppressWarnings("java:S1181")
 public final class ThreadAffinityHelper {
     private static final String AFFINITY_LIB_DISABLED = "hazelcast.affinity.lib.disabled";
-    private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(ThreadAffinityHelper.class);
+    private static final ILogger LOGGER = TpcLoggerLocator.getLogger(ThreadAffinityHelper.class);
     private static final boolean USE_HZ_LIB;
 
     private ThreadAffinityHelper() {
