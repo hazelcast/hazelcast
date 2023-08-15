@@ -367,7 +367,7 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     //
 
     public GenericRecordQueryReader reader(Car car) throws IOException {
-        InternalSerializationService ss = (InternalSerializationService) createSerializationService();
+        InternalSerializationService ss = createSerializationService();
         Data data = ss.toData(car);
         return new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
     }
