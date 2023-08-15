@@ -272,9 +272,7 @@ public final class WanReplicationConfigTransformer {
 
     @Nonnull
     WanSyncConfig toConfig(@Nonnull WanSyncConfigHolder holder) {
-        ConsistencyCheckStrategy strategy = holder.getConsistencyCheckStrategy() == 1
-                ? ConsistencyCheckStrategy.MERKLE_TREES
-                : ConsistencyCheckStrategy.NONE;
+        ConsistencyCheckStrategy strategy = ConsistencyCheckStrategy.getById(holder.getConsistencyCheckStrategy());
         WanSyncConfig config = new WanSyncConfig();
         config.setConsistencyCheckStrategy(strategy);
         return config;
