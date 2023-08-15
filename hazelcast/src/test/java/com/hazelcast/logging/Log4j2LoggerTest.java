@@ -105,4 +105,10 @@ public class Log4j2LoggerTest extends AbstractLoggerTest {
         hazelcastLogger.severe(MESSAGE);
         verify(mockLogger, times(1)).logIfEnabled(LOGGER_NAME, ERROR, null, MESSAGE);
     }
+
+    @Test
+    public void logEvent_shouldLogWithCorrectLevel() {
+        hazelcastLogger.log(LOG_EVENT);
+        verify(mockLogger, times(1)).logIfEnabled(LOGGER_NAME, WARN, null, MESSAGE, THROWABLE);
+    }
 }

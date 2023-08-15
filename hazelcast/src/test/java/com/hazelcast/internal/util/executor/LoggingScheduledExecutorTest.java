@@ -17,6 +17,7 @@
 package com.hazelcast.internal.util.executor;
 
 import com.hazelcast.logging.AbstractLogger;
+import com.hazelcast.logging.LogEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -231,6 +232,11 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
             throwableHolder.set(thrown);
             messageHolder.set(message);
             logLevelHolder.set(level);
+        }
+
+        @Override
+        public void log(LogEvent logEvent) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

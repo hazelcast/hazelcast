@@ -274,6 +274,11 @@ public class LoggingServiceImpl implements LoggingService {
         }
 
         @Override
+        public void log(LogEvent logEvent) {
+            handleLogEvent(logEvent);
+        }
+
+        @Override
         public Level getLevel() {
             return logger.getLevel();
         }

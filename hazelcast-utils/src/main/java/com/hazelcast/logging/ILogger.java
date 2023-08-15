@@ -194,6 +194,16 @@ public interface ILogger {
     void log(Level level, String message, Throwable thrown);
 
     /**
+     * Logs a LogEvent.
+     *
+     * @param logEvent the logEvent to log
+     * @deprecated Since 5.1, the method is unused
+     */
+    @Deprecated
+    void log(LogEvent logEvent);
+
+
+    /**
      * Gets the logging level.
      *
      * @return the logging level

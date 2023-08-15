@@ -142,6 +142,10 @@ public class NoLogFactory implements LoggerFactory, InternalLoggerFactory {
         }
 
         @Override
+        public void log(LogEvent logEvent) {
+        }
+
+        @Override
         public Level getLevel() {
             return Level.OFF;
         }

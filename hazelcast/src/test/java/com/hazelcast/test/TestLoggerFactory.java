@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Log4j2Factory;
+import com.hazelcast.logging.LogEvent;
 import com.hazelcast.logging.LoggerFactorySupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.spi.LoggerContext;
@@ -255,6 +256,13 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void log(Level level, String message, Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.log(level, message, thrown);
+            logOnSlowLogging(startNanos);
+        }
+
+        @Override
+        public void log(LogEvent logEvent) {
+            long startNanos = System.nanoTime();
+            delegate.log(logEvent);
             logOnSlowLogging(startNanos);
         }
 

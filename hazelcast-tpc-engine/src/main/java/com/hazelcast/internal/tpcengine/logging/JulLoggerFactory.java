@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine.logging;
 
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LogEvent;
 import com.hazelcast.logging.LoggerFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -168,5 +169,9 @@ public final class JulLoggerFactory implements LoggerFactory {
             logger.log(Level.SEVERE, cause.toString(), cause);
         }
 
+        @Override
+        public void log(LogEvent logEvent) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

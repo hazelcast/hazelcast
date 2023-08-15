@@ -57,6 +57,11 @@ public class StandardLoggerFactory extends LoggerFactorySupport implements Logge
         }
 
         @Override
+        public void log(LogEvent logEvent) {
+            logger.log(logEvent.getLogRecord());
+        }
+
+        @Override
         public Level getLevel() {
             return logger.getLevel();
         }
