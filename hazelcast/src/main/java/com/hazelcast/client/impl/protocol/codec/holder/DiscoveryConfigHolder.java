@@ -18,12 +18,32 @@ package com.hazelcast.client.impl.protocol.codec.holder;
 import com.hazelcast.internal.serialization.Data;
 
 import java.util.List;
+import java.util.Objects;
 
 public final class DiscoveryConfigHolder {
     private final List<DiscoveryStrategyConfigHolder> discoveryStrategyConfigs;
     private final Data discoveryServiceProvider;
     private final Data nodeFilter;
     private final String nodeFilterClass;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        DiscoveryConfigHolder that = (DiscoveryConfigHolder) o;
+        return Objects.equals(discoveryStrategyConfigs, that.discoveryStrategyConfigs) && Objects.equals(discoveryServiceProvider,
+                that.discoveryServiceProvider) && Objects.equals(nodeFilter, that.nodeFilter) && Objects.equals(nodeFilterClass,
+                that.nodeFilterClass);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(discoveryStrategyConfigs, discoveryServiceProvider, nodeFilter, nodeFilterClass);
+    }
 
     public DiscoveryConfigHolder(List<DiscoveryStrategyConfigHolder> discoveryStrategyConfigs, Data discoveryServiceProvider,
                                  Data nodeFilter, String nodeFilterClass) {

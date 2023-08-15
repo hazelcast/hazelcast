@@ -19,6 +19,7 @@ import com.hazelcast.internal.serialization.Data;
 
 import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Holder used to support the client protocol.
@@ -54,5 +55,23 @@ public final class WanConsumerConfigHolder {
 
     public Data getImplementation() {
         return implementation;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WanConsumerConfigHolder that = (WanConsumerConfigHolder) o;
+        return persistWanReplicatedData == that.persistWanReplicatedData && Objects.equals(className, that.className)
+                && Objects.equals(implementation, that.implementation) && Objects.equals(properties, that.properties);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(persistWanReplicatedData, className, implementation, properties);
     }
 }

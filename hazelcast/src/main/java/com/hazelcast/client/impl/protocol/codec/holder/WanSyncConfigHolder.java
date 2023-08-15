@@ -15,8 +15,27 @@
  */
 package com.hazelcast.client.impl.protocol.codec.holder;
 
+import java.util.Objects;
+
 public final class WanSyncConfigHolder {
     private final byte consistencyCheckStrategy;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WanSyncConfigHolder that = (WanSyncConfigHolder) o;
+        return consistencyCheckStrategy == that.consistencyCheckStrategy;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(consistencyCheckStrategy);
+    }
 
     public WanSyncConfigHolder(byte consistencyCheckStrategy) {
         this.consistencyCheckStrategy = consistencyCheckStrategy;
