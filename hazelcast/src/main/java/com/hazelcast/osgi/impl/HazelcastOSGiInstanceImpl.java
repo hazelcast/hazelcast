@@ -28,7 +28,8 @@ import com.hazelcast.osgi.HazelcastOSGiService;
  * as proxy of delegated {@link com.hazelcast.core.HazelcastInstance} for getting from OSGi service.
  */
 @SuppressWarnings({"checkstyle:classfanoutcomplexity"})
-class HazelcastOSGiInstanceImpl extends AbstractHazelcastInstanceProxy
+class HazelcastOSGiInstanceImpl
+        extends AbstractHazelcastInstanceProxy<HazelcastInstance>
         implements HazelcastOSGiInstance {
 
     private final HazelcastOSGiService ownerService;

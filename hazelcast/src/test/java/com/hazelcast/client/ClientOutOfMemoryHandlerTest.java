@@ -48,7 +48,7 @@ public class ClientOutOfMemoryHandlerTest extends HazelcastTestSupport {
         client = hazelcastFactory.newHazelcastClient();
 
         instances = new HazelcastInstance[2];
-        instances[0] = ((HazelcastClientProxy) client).target();
+        instances[0] = ((HazelcastClientProxy) client).getTargetOrNull();
         instances[1] = null;
 
         outOfMemoryHandler = new ClientOutOfMemoryHandler();

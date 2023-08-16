@@ -58,7 +58,7 @@ public class RunScriptOperationTest extends HazelcastTestSupport {
         config.getManagementCenterConfig().setScriptingEnabled(true);
         config.setInstanceName(randomString());
         hz = factory.newHazelcastInstance(config);
-        client = ((HazelcastClientProxy) factory.newHazelcastClient()).target();
+        client = ((HazelcastClientProxy) factory.newHazelcastClient()).getTargetOrNull();
     }
 
     @After

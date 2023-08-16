@@ -501,6 +501,6 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
     }
 
     private HazelcastClientInstanceImpl getClientImpl() {
-        return ((HazelcastClientProxy) client).target();
+        return ((HazelcastClientProxy) client).getTargetOrNull();
     }
 }

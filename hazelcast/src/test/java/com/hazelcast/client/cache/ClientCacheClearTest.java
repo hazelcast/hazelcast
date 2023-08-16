@@ -198,7 +198,7 @@ public class ClientCacheClearTest extends CacheClearTest {
     private void registerInvalidationListener(EventHandler handler, String nameWithPrefix) {
         ListenerMessageCodec listenerCodec = createInvalidationListenerCodec(nameWithPrefix);
         HazelcastClientProxy hzClient = (HazelcastClientProxy) client;
-        final HazelcastClientInstanceImpl clientInstance = hzClient.target();
+        final HazelcastClientInstanceImpl clientInstance = hzClient.getTargetOrNull();
         clientInstance.getListenerService().registerListener(listenerCodec, handler);
     }
 

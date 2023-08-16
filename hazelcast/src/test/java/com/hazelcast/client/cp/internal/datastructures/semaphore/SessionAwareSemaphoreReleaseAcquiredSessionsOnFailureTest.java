@@ -60,7 +60,7 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
         newInstances(3);
         String proxyName = "semaphore@group";
         HazelcastInstance client = ((TestHazelcastFactory) factory).newHazelcastClient();
-        sessionManager = (((HazelcastClientProxy) client).target()).getProxySessionManager();
+        sessionManager = (((HazelcastClientProxy) client).getTargetOrNull()).getProxySessionManager();
         semaphore = (SessionAwareSemaphoreProxy) client.getCPSubsystem().getSemaphore(proxyName);
         groupId = (RaftGroupId) semaphore.getGroupId();
     }

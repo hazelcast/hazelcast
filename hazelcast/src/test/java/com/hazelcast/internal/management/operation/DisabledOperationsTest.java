@@ -54,7 +54,7 @@ public class DisabledOperationsTest {
 
         // scripting and console are disabled by default
         factory.newHazelcastInstance(smallInstanceConfig());
-        client = ((HazelcastClientProxy) factory.newHazelcastClient()).target();
+        client = ((HazelcastClientProxy) factory.newHazelcastClient()).getTargetOrNull();
     }
 
     @After

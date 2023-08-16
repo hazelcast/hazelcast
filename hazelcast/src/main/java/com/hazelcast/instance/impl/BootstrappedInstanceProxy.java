@@ -27,7 +27,8 @@ import java.util.List;
 
 // A special HazelcastInstance that has a BootstrappedJetProxy
 @SuppressWarnings({"checkstyle:methodcount"})
-public final class BootstrappedInstanceProxy extends AbstractHazelcastInstanceProxy {
+public final class BootstrappedInstanceProxy
+        extends AbstractHazelcastInstanceProxy<HazelcastInstance> {
 
     private static final ILogger LOGGER = Logger.getLogger(BootstrappedInstanceProxy.class);
 

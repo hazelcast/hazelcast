@@ -52,7 +52,7 @@ public class TestSpringClientFailoverContext {
     @Test
     public void testBlueGreenClient() {
         HazelcastClientProxy blueGreenClient = applicationContext.getBean("blueGreenClient", HazelcastClientProxy.class);
-        ClientFailoverConfig failoverConfig = blueGreenClient.target().getFailoverConfig();
+        ClientFailoverConfig failoverConfig = blueGreenClient.getTargetOrNull().getFailoverConfig();
         List<ClientConfig> clientConfigs = failoverConfig.getClientConfigs();
         assertEquals(2, clientConfigs.size());
         assertEquals("spring-cluster", clientConfigs.get(0).getClusterName());

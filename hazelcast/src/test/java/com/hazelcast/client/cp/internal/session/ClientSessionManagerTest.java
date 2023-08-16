@@ -126,7 +126,7 @@ public class ClientSessionManagerTest extends AbstractProxySessionManagerTest {
     }
 
     protected AbstractProxySessionManager getSessionManager() {
-        return spy((((HazelcastClientProxy) client).target()).getProxySessionManager());
+        return spy((((HazelcastClientProxy) client).getTargetOrNull()).getProxySessionManager());
     }
 
     private static class SessionProxyImpl extends SessionAwareProxy {

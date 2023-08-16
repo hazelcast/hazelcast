@@ -108,7 +108,7 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
     @Test
     public void testGetSystemPropertiesMessageTask_passing() throws Exception {
         HazelcastInstance client = factory.newHazelcastClient(new ClientConfig(), "222.222.222.222");
-        HazelcastClientInstanceImpl clientImpl = ((HazelcastClientProxy) client).target();
+        HazelcastClientInstanceImpl clientImpl = ((HazelcastClientProxy) client).getTargetOrNull();
         ClientInvocation invocation = new ClientInvocation(
                 clientImpl,
                 MCGetSystemPropertiesCodec.encodeRequest(),
@@ -301,7 +301,7 @@ public class MCTrustedInterfacesTest extends HazelcastTestSupport {
     }
 
     private void assertFailureOnUntrustedInterface(ClientMessage clientMessage) throws Exception {
-        ClientInvocation invocation = new ClientInvocation(((HazelcastClientProxy) client).target(), clientMessage, null);
+        ClientInvocation invocation = new ClientInvocation(((HazelcastClientProxy) client).getTargetOrNull(), clientMessage, null);
         ClientInvocationFuture future = invocation.invoke();
         try {
             future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);

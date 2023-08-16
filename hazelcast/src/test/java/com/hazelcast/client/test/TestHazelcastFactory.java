@@ -75,7 +75,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     public HazelcastInstance newHazelcastClient(ClientConfig config, String sourceIp) {
         if (!mockNetwork) {
             HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
-            registerJvmNameAndPidMetric(((HazelcastClientProxy) client).target());
+            registerJvmNameAndPidMetric(((HazelcastClientProxy) client).getTargetOrNull());
             return client;
         }
 
@@ -86,7 +86,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         ClientConnectionManagerFactory connectionManagerFactory = clientRegistry.createClientServiceFactory(sourceIp);
         AddressProvider addressProvider = createAddressProvider(config);
         HazelcastInstance proxy = HazelcastClientUtil.newHazelcastClient(config, connectionManagerFactory, addressProvider);
-        HazelcastClientInstanceImpl client = ((HazelcastClientProxy) proxy).target();
+        HazelcastClientInstanceImpl client = ((HazelcastClientProxy) proxy).getTargetOrNull();
         registerJvmNameAndPidMetric(client);
         clients.put(client.getName(), client);
         return proxy;

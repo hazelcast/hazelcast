@@ -98,8 +98,8 @@ public final class TestUtil {
             return (HazelcastInstanceImpl) hz;
         } else if (hz instanceof HazelcastInstanceProxy) {
             HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) hz;
-            if (proxy.target() != null) {
-                return proxy.target();
+            if (proxy.getTargetOrNull() != null) {
+                return proxy.getTargetOrNull();
             }
         }
         Class<? extends HazelcastInstance> clazz = hz.getClass();

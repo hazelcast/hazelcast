@@ -81,7 +81,7 @@ public abstract class AbstractHazelcastInstanceProxy<H extends HazelcastInstance
      *
      * @param target the target instance.
      */
-    public void target(H target) {
+    public void setTarget(H target) {
         this.target = target;
     }
 
@@ -90,7 +90,7 @@ public abstract class AbstractHazelcastInstanceProxy<H extends HazelcastInstance
      *
      * @return the target instance.
      */
-    public H target() {
+    public H getTargetOrNull() {
         return target;
     }
 

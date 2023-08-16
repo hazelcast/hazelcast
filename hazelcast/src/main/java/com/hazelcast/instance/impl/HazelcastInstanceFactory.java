@@ -305,7 +305,7 @@ public final class HazelcastInstanceFactory {
             } else {
                 proxy.getLifecycleService().shutdown();
             }
-            proxy.target(null);
+            proxy.setTarget(null);
         }
     }
 
@@ -313,7 +313,7 @@ public final class HazelcastInstanceFactory {
         OutOfMemoryErrorDispatcher.deregisterServer(instance);
         InstanceFuture<HazelcastInstanceProxy> future = INSTANCE_MAP.remove(instance.getName());
         if (future != null && future.isSet()) {
-            future.get().target(null);
+            future.get().setTarget(null);
         }
         if (INSTANCE_MAP.size() == 0) {
             ManagementService.shutdown(instance.getName());

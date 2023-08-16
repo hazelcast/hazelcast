@@ -58,7 +58,7 @@ public class GetMapConfigOperationTest extends HazelcastTestSupport {
         config.addMapConfig(withIndex);
 
         hz = factory.newHazelcastInstance(config);
-        client = ((HazelcastClientProxy) factory.newHazelcastClient()).target();
+        client = ((HazelcastClientProxy) factory.newHazelcastClient()).getTargetOrNull();
     }
 
     @After

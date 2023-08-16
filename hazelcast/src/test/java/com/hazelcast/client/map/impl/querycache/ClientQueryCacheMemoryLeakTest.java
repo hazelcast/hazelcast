@@ -379,7 +379,7 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
     }
 
     private static void assertNoUserListenerLeft(String mapName, HazelcastInstance client) {
-        ProxyManager proxyManager = ((HazelcastClientProxy) client).target().getProxyManager();
+        ProxyManager proxyManager = ((HazelcastClientProxy) client).getTargetOrNull().getProxyManager();
         ClientContext context = proxyManager.getContext();
         ClientQueryCacheContext queryCacheContext = context.getQueryCacheContext();
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();

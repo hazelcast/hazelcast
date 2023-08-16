@@ -33,7 +33,7 @@ public class MCUpdateConfigOperationTest
     public void test()
             throws ExecutionException, InterruptedException {
         ClientInvocation inv = new ClientInvocation(
-                ((HazelcastClientProxy) client).target(),
+                ((HazelcastClientProxy) client).getTargetOrNull(),
                 MCUpdateConfigCodec.encodeRequest(
                         "hazelcast:\n"
                                 + "  map:\n"
