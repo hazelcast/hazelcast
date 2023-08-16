@@ -76,6 +76,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     private String pkExternalName;
     private Serializable predicate;
 
+    @SuppressWarnings("unused")
     public UpdateProcessorSupplier() {
     }
 

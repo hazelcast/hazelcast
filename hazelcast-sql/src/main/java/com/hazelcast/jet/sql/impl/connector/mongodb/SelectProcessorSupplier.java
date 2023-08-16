@@ -77,6 +77,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
     private boolean forceMongoParallelismOne;
     private transient ExpressionEvalContext evalContext;
 
+    @SuppressWarnings("unused")
     public SelectProcessorSupplier() {
     }
 

@@ -43,6 +43,7 @@ import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_COMMIT_RETRY_ST
 import static com.hazelcast.jet.mongodb.MongoSinkBuilder.DEFAULT_TRANSACTION_OPTION;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import static java.util.Collections.singletonList;
 
 /**
@@ -62,6 +63,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
     private String idField;
     private transient SupplierEx<MongoClient> clientSupplier;
 
+    @SuppressWarnings("unused")
     public InsertProcessorSupplier() {
     }
 
@@ -145,7 +147,8 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         out.writeStringArray(paths);
         out.writeObject(writeMode);
         out.writeObject(types);
-        out.writeObject(externalTypes);
+        var typesLocal = externalTypes == null ? new BsonType[0] : externalTypes;
+        out.writeIntArray(stream(typesLocal).mapToInt(BsonType::getValue).toArray());
         out.writeString(dataConnectionName);
         out.writeString(idField);
     }
@@ -158,7 +161,8 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         paths = in.readStringArray();
         writeMode = in.readObject();
         types = in.readObject();
-        externalTypes = in.readObject();
+        int[] extTypes = in.readIntArray();
+        externalTypes = stream(extTypes == null ? new int[0] : extTypes).mapToObj(BsonType::findByValue).toArray(BsonType[]::new);
         dataConnectionName = in.readString();
         idField = in.readString();
     }
