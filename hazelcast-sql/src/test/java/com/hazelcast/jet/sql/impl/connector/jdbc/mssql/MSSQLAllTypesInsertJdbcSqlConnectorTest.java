@@ -23,6 +23,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
+import static org.assertj.core.api.Assumptions.assumeThat;
+
 
 @Category(NightlyTest.class)
 public class MSSQLAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcSqlConnectorTest {
@@ -32,21 +34,25 @@ public class MSSQLAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbcS
         initialize(new MSSQLDatabaseProvider());
     }
 
-
     @Before
     public void setUp() throws Exception {
-        // MSSQL doesn't support BOOLEAN but BIT can be used instead and, uses FLOAT as 8-byte floating point type
+        // MSSQL doesn't support BOOLEAN
+        assumeThat(type).describedAs("BOOLEAN not supported on MSSQL")
+                        .isNotEqualTo("BOOLEAN");
+
+        // MSSQL uses FLOAT as 8-byte floating point type
         // For Float in MSSQL see https://learn.microsoft.com/en-us/sql/t-sql/data-types/float-and-real-transact-sql?view=sql-server-ver16
-        // For BIT in MSSQL see https://learn.microsoft.com/en-us/sql/t-sql/data-types/bit-transact-sql?view=sql-server-ver16
-        // For TIMESTAMP in MSSQL see https://learn.microsoft.com/en-us/previous-versions/sql/sql-server-2005/ms182776(v=sql.90)?redirectedfrom=MSDN
-        // For DATETIMEOFFSET in MSSQL see https://learn.microsoft.com/en-us/sql/t-sql/data-types/datetimeoffset-transact-sql?view=sql-server-ver16
-        if (type.equals("BOOLEAN")) {
-            type = "BIT";
-        } else if (type.equals("DOUBLE")) {
+        if (type.equals("DOUBLE")) {
             type = "FLOAT";
-        } else if (type.equals("TIMESTAMP")) {
+        }
+
+        // For TIMESTAMP in MSSQL see https://learn.microsoft.com/en-us/previous-versions/sql/sql-server-2005/ms182776(v=sql.90)?redirectedfrom=MSDN
+        if (type.equals("TIMESTAMP")) {
             type = "DATETIME";
-        } else if (type.equals("TIMESTAMP WITH TIME ZONE")) {
+        }
+
+        // For DATETIMEOFFSET in MSSQL see https://learn.microsoft.com/en-us/sql/t-sql/data-types/datetimeoffset-transact-sql?view=sql-server-ver16
+        if (type.equals("TIMESTAMP WITH TIME ZONE")) {
             type = "DATETIMEOFFSET";
         }
     }

@@ -160,11 +160,10 @@ public class SelectProcessorSupplier
         getters = in.readObject();
     }
 
-    private Map<String, BiFunctionEx<ResultSet, Integer, Object>> initializeGetters(SqlDialect sqldialect) {
+    private static Map<String, BiFunctionEx<ResultSet, Integer, Object>> initializeGetters(SqlDialect sqldialect) {
         Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = new HashMap<>();
         getters.put("BOOLEAN", ResultSet::getBoolean);
         getters.put("BOOL", ResultSet::getBoolean);
-        getters.put("BIT", ResultSet::getBoolean);
 
         getters.put("TINYINT", ResultSet::getByte);
 
