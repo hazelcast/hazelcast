@@ -162,51 +162,6 @@ public class SelectProcessorSupplier
         parameterPositions = in.readIntArray();
         sqldialect = in.readString();
     }
-    /*
-    private static Map<String, BiFunctionEx<ResultSet, Integer, Object>> initializeGetters(SqlDialect sqldialect) {
-        Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = new HashMap<>();
-        getters.put("BOOLEAN", ResultSet::getBoolean);
-        getters.put("BOOL", ResultSet::getBoolean);
-        getters.put("BIT", ResultSet::getBoolean);
 
-        getters.put("TINYINT", ResultSet::getByte);
-
-        getters.put("SMALLINT", ResultSet::getShort);
-        getters.put("INT2", ResultSet::getShort);
-
-        getters.put("INT", ResultSet::getInt);
-        getters.put("INT4", ResultSet::getInt);
-        getters.put("INTEGER", ResultSet::getInt);
-
-        getters.put("INT8", ResultSet::getLong);
-        getters.put("BIGINT", ResultSet::getLong);
-
-        getters.put("VARCHAR", ResultSet::getString);
-        getters.put("CHARACTER VARYING", ResultSet::getString);
-        getters.put("TEXT", ResultSet::getString);
-
-        getters.put("REAL", ResultSet::getFloat);
-        getters.put("FLOAT4", ResultSet::getFloat);
-
-        getters.put("DOUBLE", ResultSet::getDouble);
-        getters.put("DOUBLE PRECISION", ResultSet::getDouble);
-        getters.put("DECIMAL", ResultSet::getBigDecimal);
-        getters.put("NUMERIC", ResultSet::getBigDecimal);
-
-        getters.put("DATE", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDate.class));
-        getters.put("TIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalTime.class));
-
-        if (sqldialect instanceof MssqlSqlDialect) {
-            getters.put("FLOAT", ResultSet::getDouble);
-            getters.put("DATETIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-            getters.put("DATETIMEOFFSET", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
-        } else {
-            getters.put("FLOAT", ResultSet::getFloat);
-            getters.put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-            getters.put("TIMESTAMP_WITH_TIMEZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
-        }
-        return getters;
-    }
-    */
 }
 
