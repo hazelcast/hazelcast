@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.kafka.impl.HazelcastAvroSerde;
+import com.hazelcast.jet.kafka.impl.AbstractHazelcastAvroSerde;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -152,13 +152,13 @@ public interface SqlConnector {
      * Inline Avro schema for key if {@value #OPTION_KEY_FORMAT} is
      * {@value AVRO_FORMAT}.
      */
-    String OPTION_KEY_AVRO_SCHEMA = HazelcastAvroSerde.OPTION_KEY_AVRO_SCHEMA;
+    String OPTION_KEY_AVRO_SCHEMA = AbstractHazelcastAvroSerde.OPTION_KEY_AVRO_SCHEMA;
 
     /**
      * Inline Avro schema for value if {@value #OPTION_VALUE_FORMAT} is
      * {@value AVRO_FORMAT}.
      */
-    String OPTION_VALUE_AVRO_SCHEMA = HazelcastAvroSerde.OPTION_VALUE_AVRO_SCHEMA;
+    String OPTION_VALUE_AVRO_SCHEMA = AbstractHazelcastAvroSerde.OPTION_VALUE_AVRO_SCHEMA;
 
     /**
      * The class name of the Custom Type's underlying Java Class

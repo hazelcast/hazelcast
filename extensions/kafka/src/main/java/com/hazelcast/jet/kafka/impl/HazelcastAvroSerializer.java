@@ -25,7 +25,7 @@ import org.apache.kafka.common.serialization.Serializer;
 import java.io.ByteArrayOutputStream;
 import java.util.Map;
 
-public class HazelcastAvroSerializer extends HazelcastAvroSerde implements Serializer<Object> {
+public class HazelcastAvroSerializer extends AbstractHazelcastAvroSerde implements Serializer<Object> {
     private final EncoderFactory encoderFactory = EncoderFactory.get();
     private GenericDatumWriter<Object> datumWriter;
 

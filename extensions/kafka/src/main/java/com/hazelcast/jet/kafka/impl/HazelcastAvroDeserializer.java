@@ -24,7 +24,7 @@ import org.apache.kafka.common.serialization.Deserializer;
 
 import java.util.Map;
 
-public class HazelcastAvroDeserializer extends HazelcastAvroSerde implements Deserializer<Object> {
+public class HazelcastAvroDeserializer extends AbstractHazelcastAvroSerde implements Deserializer<Object> {
     private final DecoderFactory decoderFactory = DecoderFactory.get();
     private GenericDatumReader<Object> datumReader;
 

@@ -20,7 +20,7 @@ import org.apache.avro.Schema;
 
 import java.util.Map;
 
-public abstract class HazelcastAvroSerde {
+public abstract class AbstractHazelcastAvroSerde {
     public static final String OPTION_KEY_AVRO_SCHEMA = "keyAvroSchema";
     public static final String OPTION_VALUE_AVRO_SCHEMA = "valueAvroSchema";
 
