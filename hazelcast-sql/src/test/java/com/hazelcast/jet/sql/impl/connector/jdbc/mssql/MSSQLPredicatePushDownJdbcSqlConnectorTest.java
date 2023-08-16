@@ -23,54 +23,20 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-import java.sql.SQLException;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 @Category(NightlyTest.class)
 public class MSSQLPredicatePushDownJdbcSqlConnectorTest extends PredicatePushDownJdbcSqlConnectorTest {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        initializePredicatePushDownTestMSSQL(new MSSQLDatabaseProvider());
+        initializePredicatePushDownTest(new MSSQLDatabaseProvider());
     }
 
     @Before
-    public void setUpForMSSQL() throws Exception {
-        //These statements have syntax incompatible with MSSQL
-        if (query.equals("SELECT name FROM people WHERE a AND b")) {
-            query = "SELECT name FROM people WHERE a = '1' AND b = '1'";
-        } else if (query.equals("SELECT name FROM people WHERE a OR b")) {
-            query = "SELECT name FROM people WHERE a = '1' OR b = '1'";
-        } else if (query.equals("SELECT name FROM people WHERE NOT c")) {
-            query = "SELECT name FROM people WHERE c != '1'";
-        } else if (query.equals("SELECT name FROM people WHERE a IS TRUE")) {
-            query = "SELECT name FROM people WHERE a = '1'";
-        } else if (query.equals("SELECT name FROM people WHERE c IS FALSE")) {
-            query = "SELECT name FROM people WHERE c = '0'";
-        } else if (query.equals("SELECT name FROM people WHERE c IS NOT TRUE")) {
-            query = "SELECT name FROM people WHERE c != '1'";
-        } else if (query.equals("SELECT name FROM people WHERE a IS NOT FALSE")) {
-            query = "SELECT name FROM people WHERE a != '0'";
-        }
-    }
-
-    private static void initializePredicatePushDownTestMSSQL(MSSQLDatabaseProvider databaseProvider) throws SQLException {
-        initialize(databaseProvider);
-
-        tableName = "people";
-
-        createTable(tableName,
-                "id INT PRIMARY KEY",
-                "name VARCHAR(100)",
-                "age INT",
-                "data VARCHAR(100)",
-                "a VARCHAR(100)", "b VARCHAR(100)", "c VARCHAR(100)", "d VARCHAR(100)",
-                "nullable_column VARCHAR(100)",
-                "nullable_column_reverse VARCHAR(100)"
-        );
-
-        executeJdbc("INSERT INTO " + tableName + " VALUES (1, 'John Doe', 30, '{\"value\":42}', 1, 1, 0, " +
-                "1, null, 'not null reverse')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES (2, 'Jane Doe', 35, '{\"value\":0}', 0, 0, 1, " +
-                "1, 'not null', null)");
+    public void checkOperatorsSupported() throws Exception {
+        assumeThat(query)
+                .describedAs("'IS' and 'IS NOT' operators are not supported in MS SQL")
+                .doesNotContain("IS TRUE", "IS FALSE", "IS NOT TRUE", "IS NOT FALSE");
     }
 }

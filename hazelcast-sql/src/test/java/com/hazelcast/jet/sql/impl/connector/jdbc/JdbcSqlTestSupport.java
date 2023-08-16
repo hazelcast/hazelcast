@@ -213,23 +213,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     public static List<Row> jdbcRows(String query, String connectionUrl) {
-        List<Row> rows = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(connectionUrl);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(query);
-            ResultSet resultSet = stmt.getResultSet();
-            while (resultSet.next()) {
-                Object[] values = new Object[resultSet.getMetaData().getColumnCount()];
-                for (int i = 0; i < values.length; i++) {
-                    values[i] = resultSet.getObject(i + 1);
-                }
-                rows.add(new Row(values));
-            }
-            return rows;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        return jdbcRows(query, connectionUrl, null);
     }
 
     public static List<Row> jdbcRows(String query, String connectionUrl, List<Class<?>> columnType) {
@@ -242,7 +226,11 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
             while (resultSet.next()) {
                 Object[] values = new Object[resultSet.getMetaData().getColumnCount()];
                 for (int i = 0; i < values.length; i++) {
-                    values[i] = resultSet.getObject(i + 1, columnType.get(i));
+                    if (columnType == null) {
+                        values[i] = resultSet.getObject(i + 1);
+                    } else {
+                        values[i] = resultSet.getObject(i + 1, columnType.get(i));
+                    }
                 }
                 rows.add(new Row(values));
             }

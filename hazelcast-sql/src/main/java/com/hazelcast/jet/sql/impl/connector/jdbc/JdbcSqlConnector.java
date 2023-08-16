@@ -510,7 +510,6 @@ public class JdbcSqlConnector implements SqlConnector {
         switch (columnTypeName.toUpperCase()) {
             case "BOOLEAN":
             case "BOOL":
-            case "BIT":
                 return QueryDataType.BOOLEAN;
 
             case "VARCHAR":
