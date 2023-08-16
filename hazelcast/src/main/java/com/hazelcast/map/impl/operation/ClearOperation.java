@@ -70,10 +70,9 @@ public class ClearOperation extends MapOperation
 
     @Override
     public void afterRunInternal() {
-        if (recordStore == null) {
-            return;
+        if (mapContainer != null) {
+            invalidateAllKeysInNearCaches();
         }
-        invalidateAllKeysInNearCaches();
         hintMapEvent();
     }
 
