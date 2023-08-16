@@ -2515,6 +2515,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @return an immutable collection clone of the values contained in this map
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
      * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
+     * @since 5.4.0
      */
     Collection<V> localValues();
 
@@ -2538,6 +2539,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
     * @throws QueryResultSizeExceededException if query result size limit is exceeded
     * @throws NullPointerException             if the predicate is {@code null}
     * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
+    * @since 5.4.0
     */
     Collection<V> localValues(@Nonnull Predicate<K, V> predicate);
 
