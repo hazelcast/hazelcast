@@ -51,6 +51,23 @@ public class MSSQLDatabaseProvider implements TestDatabaseProvider {
     }
 
     @Override
+    public String noAuthJdbcUrl() {
+        return container.getJdbcUrl()
+                        .replaceAll(";user=" + user(), "")
+                        .replaceAll(";password=" + password(), "");
+    }
+
+    @Override
+    public String user() {
+        return container.getUsername();
+    }
+
+    @Override
+    public String password() {
+        return container.getPassword();
+    }
+
+    @Override
     public String createSchemaQuery(String schemaName) {
         return "IF NOT EXISTS ("
                 + " SELECT 0 FROM information_schema.schemata WHERE schema_name = '"
