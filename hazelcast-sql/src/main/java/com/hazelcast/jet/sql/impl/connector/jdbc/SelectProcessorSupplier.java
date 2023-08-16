@@ -164,6 +164,7 @@ public class SelectProcessorSupplier
         Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = new HashMap<>();
         getters.put("BOOLEAN", ResultSet::getBoolean);
         getters.put("BOOL", ResultSet::getBoolean);
+        getters.put("BIT", ResultSet::getBoolean);
 
         getters.put("TINYINT", ResultSet::getByte);
 
