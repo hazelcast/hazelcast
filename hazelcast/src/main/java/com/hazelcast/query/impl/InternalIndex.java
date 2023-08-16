@@ -124,4 +124,12 @@ public interface InternalIndex extends Index {
     default List<StepAwareStorage> getStepAwareStorages() {
         return null;
     }
+
+    /**
+     * @return {@code true} if the Index is backed by Tiered Store,
+     * {@code false} otherwise.
+     */
+    default boolean isBackedByTieredStore() {
+        return false;
+    }
 }

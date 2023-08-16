@@ -260,6 +260,14 @@ public class Indexes {
         return stepAwareStorages;
     }
 
+    public boolean isBackedByTieredStore() {
+        return indexes.length > 0 && indexes[0].isBackedByTieredStore();
+    }
+
+    public String getMapName() {
+        return mapName;
+    }
+
     /**
      * Returns all the composite indexes known to this indexes instance.
      */
