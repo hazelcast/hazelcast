@@ -25,6 +25,7 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.ExecutorStats;
@@ -50,6 +51,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutRespons
 import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.RejectedExecutionException;
@@ -254,7 +256,7 @@ public class EntryOperation extends LockAwareOperation
                 .setKey(dataKey)
                 .setCallerProvenance(CallerProvenance.NOT_WAN)
                 .setEntryProcessor(entryProcessor)
-                .setEntryProcessorOffload(offload)
+                .setEntryProcessorOffloadable(offload)
                 .setStaticPutParams(StaticParams.SET_WITH_NO_ACCESS_PARAMS);
     }
 
@@ -386,7 +388,10 @@ public class EntryOperation extends LockAwareOperation
         out.writeObject(entryProcessor);
     }
 
-    public Object getOldValueByInMemoryFormat(Object oldValue) {
+    @Nullable
+    public Data convertOldValueToHeapData(Object oldValue) {
+        assert ThreadUtil.isRunningOnPartitionThread();
+
         InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         switch (inMemoryFormat) {
             case NATIVE:
@@ -395,7 +400,7 @@ public class EntryOperation extends LockAwareOperation
                 return getNodeEngine().getSerializationService()
                         .toData(oldValue);
             case BINARY:
-                return oldValue;
+                return (Data) oldValue;
             default:
                 throw new IllegalArgumentException("Unknown in memory format: " + inMemoryFormat);
         }
@@ -406,7 +411,7 @@ public class EntryOperation extends LockAwareOperation
 
         public EntryOperationOffload(Object oldValue) {
             super(EntryOperation.this);
-            this.oldValue = getOldValueByInMemoryFormat(oldValue);
+            this.oldValue = convertOldValueToHeapData(oldValue);
         }
 
         @Override
