@@ -59,10 +59,11 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
     void appendMatchedClause(StringBuilder sb) {
         sb.append("WHEN MATCHED THEN ");
         sb.append("UPDATE ");
-        sb.append(" SET ");
+        sb.append(" SET");
         Iterator<String> it = jdbcTable.dbFieldNames().iterator();
         while (it.hasNext()) {
             String dbFieldName = it.next();
+            sb.append(' ');
             dialect.quoteIdentifier(sb, dbFieldName);
             sb.append(" = source.");
             dialect.quoteIdentifier(sb, dbFieldName);
@@ -84,7 +85,7 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
             dialect.quoteIdentifier(sb, jdbcTable.getExternalNameList());
             sb.append(".")
                     .append(field)
-                    .append("= source.")
+                    .append(" = source.")
                     .append(field);
             if (i < pkFields.size() - 1) {
                 sb.append(" AND ");
@@ -100,7 +101,33 @@ public class MSSQLUpsertQueryBuilder extends AbstractQueryBuilder {
             sb.append("source.");
             dialect.quoteIdentifier(sb, fieldName);
             if (it.hasNext()) {
-                sb.append(',');
+                sb.append(", ");
+            }
+        }
+        sb.append(')');
+    }
+
+    @Override
+    protected void appendFieldNames(StringBuilder sb, List<String> fieldNames) {
+        sb.append('(');
+        Iterator<String> it = fieldNames.iterator();
+        while (it.hasNext()) {
+            String fieldName = it.next();
+            dialect.quoteIdentifier(sb, fieldName);
+            if (it.hasNext()) {
+                sb.append(", ");
+            }
+        }
+        sb.append(')');
+    }
+
+    @Override
+    protected void appendValues(StringBuilder sb, int count) {
+        sb.append('(');
+        for (int i = 0; i < count; i++) {
+            sb.append('?');
+            if (i < (count - 1)) {
+                sb.append(", ");
             }
         }
         sb.append(')');
