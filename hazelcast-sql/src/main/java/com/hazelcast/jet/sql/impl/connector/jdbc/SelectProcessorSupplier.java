@@ -65,6 +65,7 @@ public class SelectProcessorSupplier
 
     private transient ExpressionEvalContext evalContext;
     private transient volatile BiFunctionEx<ResultSet, Integer, Object>[] valueGetters;
+    private String sqldialect;
 
     @SuppressWarnings("unused")
     public SelectProcessorSupplier() {
@@ -77,13 +78,15 @@ public class SelectProcessorSupplier
         super(dataConnectionName);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
-        this.getters = initializeGetters(dialect);
+        sqldialect = dialect.getClass().getName();
     }
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
         super.init(context);
         evalContext = ExpressionEvalContext.from(context);
+        GettersProvider gettersProvider = new GettersProvider();
+        this.getters = gettersProvider.getGETTERS(sqldialect);
     }
 
     @Nonnull
@@ -149,7 +152,7 @@ public class SelectProcessorSupplier
         out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
-        out.writeObject(getters);
+        out.writeString(sqldialect);
     }
 
     @Override
@@ -157,9 +160,9 @@ public class SelectProcessorSupplier
         dataConnectionName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
-        getters = in.readObject();
+        sqldialect = in.readString();
     }
-
+    /*
     private static Map<String, BiFunctionEx<ResultSet, Integer, Object>> initializeGetters(SqlDialect sqldialect) {
         Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = new HashMap<>();
         getters.put("BOOLEAN", ResultSet::getBoolean);
@@ -204,4 +207,6 @@ public class SelectProcessorSupplier
         }
         return getters;
     }
+    */
 }
+
