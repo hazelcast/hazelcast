@@ -16,11 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.file;
 
+import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.avro.Schema;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,14 @@ import java.util.Map;
 import static org.apache.avro.Schema.Type.NULL;
 
 public final class AvroResolver {
+    public static final Map<Schema.Type, QueryDataType> AVRO_TO_SQL = new DefaultedMap<>(new EnumMap<>(Map.of(
+            Schema.Type.BOOLEAN, QueryDataType.BOOLEAN,
+            Schema.Type.INT, QueryDataType.INT,
+            Schema.Type.LONG, QueryDataType.BIGINT,
+            Schema.Type.FLOAT, QueryDataType.REAL,
+            Schema.Type.DOUBLE, QueryDataType.DOUBLE,
+            Schema.Type.STRING, QueryDataType.VARCHAR
+    )), QueryDataType.OBJECT);
 
     private AvroResolver() { }
 
@@ -39,7 +49,7 @@ public final class AvroResolver {
             String name = schemaField.name();
             // SQL types are nullable by default and NOT NULL is currently unsupported.
             Schema.Type schemaFieldType = unwrapNullableType(schemaField.schema()).getType();
-            QueryDataType type = resolveType(schemaFieldType);
+            QueryDataType type = AVRO_TO_SQL.get(schemaFieldType);
 
             MappingField field = new MappingField(name, type);
             fields.putIfAbsent(field.name(), field);
@@ -63,24 +73,5 @@ public final class AvroResolver {
             }
         }
         return schema;
-    }
-
-    private static QueryDataType resolveType(Schema.Type type) {
-        switch (type) {
-            case BOOLEAN:
-                return QueryDataType.BOOLEAN;
-            case INT:
-                return QueryDataType.INT;
-            case LONG:
-                return QueryDataType.BIGINT;
-            case FLOAT:
-                return QueryDataType.REAL;
-            case DOUBLE:
-                return QueryDataType.DOUBLE;
-            case STRING:
-                return QueryDataType.VARCHAR;
-            default:
-                return QueryDataType.OBJECT;
-        }
     }
 }

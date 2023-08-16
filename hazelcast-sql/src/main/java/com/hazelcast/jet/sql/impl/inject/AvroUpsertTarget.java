@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.internal.util.collection.DefaultedMap;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.avro.Schema;
@@ -28,11 +29,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 
+import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.AVRO_TO_SQL;
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 import static org.apache.avro.Schema.Type.BOOLEAN;
@@ -44,21 +42,20 @@ import static org.apache.avro.Schema.Type.STRING;
 
 @NotThreadSafe
 class AvroUpsertTarget implements UpsertTarget {
-    private static final Map<Class<?>, List<Schema.Type>> CONVERSION_PREFS = Map.of(
-            Byte.class, List.of(INT, LONG, FLOAT, DOUBLE),
-            Short.class, List.of(INT, LONG, FLOAT, DOUBLE),
-            Integer.class, List.of(INT, LONG, DOUBLE, FLOAT),
-            Long.class, List.of(LONG, DOUBLE, INT, FLOAT),
-            Float.class, List.of(FLOAT, DOUBLE, INT, LONG),
-            Double.class, List.of(DOUBLE, FLOAT, LONG, INT),
-            BigDecimal.class, List.of(DOUBLE, FLOAT, LONG, INT)
-    );
-    private static final Map<Schema.Type, Converter> CONVERTERS = Map.of(
-            INT, new Converter(AvroUpsertTarget::canConvertToInt, Number::intValue),
-            LONG, new Converter(AvroUpsertTarget::canConvertToLong, Number::longValue),
-            FLOAT, new Converter(AvroUpsertTarget::canConvertToFloat, Number::floatValue),
-            DOUBLE, new Converter(AvroUpsertTarget::canConvertToDouble, Number::doubleValue)
-    );
+    // In integers and decimals, we try to preserve the precision.
+    // In floating-point numbers, we try to preserve the scale since they can
+    // underflow, i.e. become 0 due to being very small, when converted to an integer.
+    private static final Map<Class<?>, List<Schema.Type>> CONVERSION_PREFS = new DefaultedMap<>(Map.of(
+            Boolean.class, List.of(BOOLEAN, STRING),
+            Byte.class, List.of(INT, LONG, FLOAT, DOUBLE, STRING),
+            Short.class, List.of(INT, LONG, FLOAT, DOUBLE, STRING),
+            Integer.class, List.of(INT, LONG, DOUBLE, STRING, FLOAT),
+            Long.class, List.of(LONG, INT, STRING, DOUBLE, FLOAT),
+            Float.class, List.of(FLOAT, DOUBLE, STRING, INT, LONG),
+            Double.class, List.of(DOUBLE, FLOAT, STRING, LONG, INT),
+            BigDecimal.class, List.of(STRING, LONG, DOUBLE, INT, FLOAT)
+    ), List.of(STRING));
+
     private final Schema schema;
 
     private GenericRecordBuilder record;
@@ -76,110 +73,49 @@ class AvroUpsertTarget implements UpsertTarget {
 
         Schema fieldSchema = schema.getField(path).schema();
         Schema.Type schemaFieldType = unwrapNullableType(fieldSchema).getType();
-        Function<Object, Object> cannotConvert = number -> {
-            throw QueryException.error("Cannot convert " + number + " to " + schemaFieldType + " (field=" + path + ")");
-        };
         switch (schemaFieldType) {
-            case NULL:
-                return value -> record.set(path, value == null ? null : cannotConvert.apply(value));
             case BOOLEAN:
-                return value -> record.set(path, value == null || value instanceof Boolean
-                        ? value : Boolean.parseBoolean((String) value));
             case INT:
-                return value -> record.set(path, value == null ? null : value instanceof Number
-                        ? canConvertToInt(value) ? ((Number) value).intValue() : cannotConvert.apply(value)
-                        : Integer.parseInt((String) value));
             case LONG:
-                return value -> record.set(path, value == null ? null : value instanceof Number
-                        ? canConvertToLong(value) ? ((Number) value).longValue() : cannotConvert.apply(value)
-                        : Long.parseLong((String) value));
             case FLOAT:
-                return value -> record.set(path, value == null ? null : value instanceof Number
-                        ? canConvertToFloat(value) ? ((Number) value).floatValue() : cannotConvert.apply(value)
-                        : Float.parseFloat((String) value));
             case DOUBLE:
-                return value -> record.set(path, value == null ? null : value instanceof Number
-                        ? canConvertToDouble(value) ? ((Number) value).doubleValue() : cannotConvert.apply(value)
-                        : Double.parseDouble((String) value));
             case STRING:
-                return value -> record.set(path, value == null ? null : value.toString());
+                return value -> {
+                    try {
+                        record.set(path, AVRO_TO_SQL.get(schemaFieldType).convert(value));
+                    } catch (QueryException e) {
+                        throw QueryException.error("Cannot convert " + value + " to " + schemaFieldType
+                                + " (field=" + path + ")");
+                    }
+                };
             case UNION:
                 return value -> {
-                    Function<Schema.Type, Boolean> hasType = schemaType ->
-                            fieldSchema.getTypes().stream().anyMatch(schema -> schema.getType() == schemaType);
-                    boolean[] set = {false};
-                    Consumer<Object> setField = v -> {
-                        record.set(path, v);
-                        set[0] = true;
-                    };
-
                     if (value == null) {
-                        setField.accept(null);
-                    } else if (value instanceof Boolean) {
-                        if (hasType.apply(BOOLEAN)) {
-                            setField.accept(value);
-                        }
-                    } else if (value instanceof Number) {
+                        record.set(path, null);
+                        return;
+                    } else {
                         for (Schema.Type target : CONVERSION_PREFS.get(value.getClass())) {
-                            Converter converter = CONVERTERS.get(target);
-                            if (hasType.apply(target) && converter.canConvert(value)) {
-                                setField.accept(converter.convert((Number) value));
-                                break;
+                            if (fieldSchema.getTypes().stream().anyMatch(schema -> schema.getType() == target)) {
+                                try {
+                                    record.set(path, AVRO_TO_SQL.get(target).convert(value));
+                                    return;
+                                } catch (QueryException ignored) { }
                             }
                         }
                     }
-
-                    if (!set[0]) {
-                        if (hasType.apply(STRING)) {
-                            setField.accept(value.toString());
-                        } else {
-                            throw QueryException.error("Not in union " + fieldSchema + ": " + value + " ("
-                                    + value.getClass().getSimpleName() + ") (field=" + path + ")");
-                        }
+                    throw QueryException.error("Not in union " + fieldSchema + ": " + value + " ("
+                            + value.getClass().getSimpleName() + ") (field=" + path + ")");
+                };
+            case NULL:
+                return value -> {
+                    if (value != null) {
+                        throw QueryException.error("Cannot convert " + value + " to NULL (field=" + path + ")");
                     }
+                    record.set(path, null);
                 };
             default:
                 throw QueryException.error("Schema type " + schemaFieldType + " is unsupported (field=" + path + ")");
         }
-    }
-
-    @SuppressWarnings("BooleanExpressionComplexity")
-    private static boolean canConvertToInt(Object value) {
-        return value instanceof Byte || value instanceof Short || value instanceof Integer
-                || (value instanceof Long && (long) value == (int) (long) value)
-                || (value instanceof Float && (float) value == (int) (float) value)
-                || (value instanceof Double && (double) value == (int) (double) value)
-                || (value instanceof BigDecimal && ((BigDecimal) value)
-                        .compareTo(BigDecimal.valueOf(((Number) value).intValue())) == 0);
-    }
-
-    @SuppressWarnings("BooleanExpressionComplexity")
-    private static boolean canConvertToLong(Object value) {
-        return value instanceof Byte || value instanceof Short
-                || value instanceof Integer || value instanceof Long
-                || (value instanceof Float && (float) value == (long) (float) value)
-                || (value instanceof Double && (double) value == (long) (double) value)
-                || (value instanceof BigDecimal && ((BigDecimal) value)
-                        .compareTo(BigDecimal.valueOf(((Number) value).longValue())) == 0);
-    }
-
-    @SuppressWarnings("BooleanExpressionComplexity")
-    private static boolean canConvertToFloat(Object value) {
-        return value instanceof Byte || value instanceof Short || value instanceof Float
-                || (value instanceof Integer && (int) value == (float) (int) value)
-                || (value instanceof Long && (long) value == (float) (long) value)
-                || (value instanceof Double && (double) value == (float) (double) value)
-                || (value instanceof BigDecimal && ((BigDecimal) value)
-                        .compareTo(BigDecimal.valueOf(((Number) value).floatValue())) == 0);
-    }
-
-    @SuppressWarnings("BooleanExpressionComplexity")
-    private static boolean canConvertToDouble(Object value) {
-        return value instanceof Byte || value instanceof Short || value instanceof Integer
-                || value instanceof Float || value instanceof Double
-                || (value instanceof Long && (long) value == (double) (long) value)
-                || (value instanceof BigDecimal && ((BigDecimal) value)
-                        .compareTo(BigDecimal.valueOf(((Number) value).doubleValue())) == 0);
     }
 
     @Override
@@ -192,23 +128,5 @@ class AvroUpsertTarget implements UpsertTarget {
         Record record = this.record.build();
         this.record = null;
         return record;
-    }
-
-    private static class Converter {
-        private final Predicate<Object> tester;
-        private final UnaryOperator<Number> converter;
-
-        Converter(Predicate<Object> tester, UnaryOperator<Number> converter) {
-            this.tester = tester;
-            this.converter = converter;
-        }
-
-        boolean canConvert(Object value) {
-            return tester.test(value);
-        }
-
-        Number convert(Number value) {
-            return converter.apply(value);
-        }
     }
 }
