@@ -17,10 +17,9 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.function.BiFunctionEx;
-import org.apache.calcite.sql.SqlDialect;
+import com.hazelcast.jet.sql.impl.connector.jdbc.mssql.HazelcastMSSQLDialect;
+import com.hazelcast.jet.sql.impl.connector.jdbc.mysql.HazelcastMySqlDialect;
 import org.apache.calcite.sql.dialect.H2SqlDialect;
-import org.apache.calcite.sql.dialect.MssqlSqlDialect;
-import org.apache.calcite.sql.dialect.MysqlSqlDialect;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 
 import java.sql.ResultSet;
@@ -72,42 +71,39 @@ public class GettersProvider {
 
         GETTERSBYDATABASE.put("DEFAULT", GETTERS);
 
-        GETTERSBYDATABASE.put("MICROSOFT SQL SERVER", (HashMap<String, BiFunctionEx<ResultSet, Integer, Object>>) GETTERS.clone());
-        GETTERSBYDATABASE.put("MYSQL", (HashMap<String, BiFunctionEx<ResultSet, Integer, Object>>) GETTERS.clone());
-        GETTERSBYDATABASE.put("POSTGRESQL", (HashMap<String, BiFunctionEx<ResultSet, Integer, Object>>) GETTERS.clone());
-        GETTERSBYDATABASE.put("H2", (HashMap<String, BiFunctionEx<ResultSet, Integer, Object>>) GETTERS.clone());
+        //Mapping for MSSQL
+        Map<String, BiFunctionEx<ResultSet, Integer, Object>> msSql = new HashMap<>(GETTERS);
+        msSql.put("FLOAT", ResultSet::getDouble);
+        msSql.put("DATETIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
+        msSql.put("DATETIMEOFFSET", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
+        GETTERSBYDATABASE.put(HazelcastMSSQLDialect.class.getSimpleName(), msSql);
 
-        GETTERSBYDATABASE.get("MICROSOFT SQL SERVER").put("FLOAT", ResultSet::getDouble);
-        GETTERSBYDATABASE.get("MICROSOFT SQL SERVER").put("DATETIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-        GETTERSBYDATABASE.get("MICROSOFT SQL SERVER").put("DATETIMEOFFSET", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
+        //Mapping for H2, Mysql and Postgre
+        Map<String, BiFunctionEx<ResultSet, Integer, Object>> mySql = new HashMap<>(GETTERS);
+        mySql.put("FLOAT", ResultSet::getFloat);
+        mySql.put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
+        mySql.put("TIMESTAMP_WITH_TIMEZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
+        GETTERSBYDATABASE.put(HazelcastMySqlDialect.class.getSimpleName(), mySql);
 
-        GETTERSBYDATABASE.get("H2").put("FLOAT", ResultSet::getFloat);
-        GETTERSBYDATABASE.get("H2").put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-        GETTERSBYDATABASE.get("H2").put("TIMESTAMP_WITH_TIMEZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
+        GETTERSBYDATABASE.put(PostgresqlSqlDialect.class.getSimpleName(), mySql);
+        GETTERSBYDATABASE.put(H2SqlDialect.class.getSimpleName(), mySql);
 
-        GETTERSBYDATABASE.get("MYSQL").put("FLOAT", ResultSet::getFloat);
-        GETTERSBYDATABASE.get("MYSQL").put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-        GETTERSBYDATABASE.get("MYSQL").put("TIMESTAMP_WITH_TIMEZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
-
-        GETTERSBYDATABASE.get("POSTGRESQL").put("FLOAT", ResultSet::getFloat);
-        GETTERSBYDATABASE.get("POSTGRESQL").put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-        GETTERSBYDATABASE.get("POSTGRESQL").put("TIMESTAMP_WITH_TIMEZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
     }
 
     public GettersProvider() {}
 
     public Map<String, BiFunctionEx<ResultSet, Integer, Object>> getGETTERS(String dialect) {
-        if (dialect.equals("H2")) {
-            return GETTERSBYDATABASE.get("H2");
+        if (dialect.equals(H2SqlDialect.class.getSimpleName())) {
+            return GETTERSBYDATABASE.get(H2SqlDialect.class.getSimpleName());
         }
-        if (dialect.equals("MICROSOFT SQL SERVER")) {
-            return GETTERSBYDATABASE.get("MICROSOFT SQL SERVER");
+        if (dialect.equals(HazelcastMSSQLDialect.class.getSimpleName())) {
+            return GETTERSBYDATABASE.get(HazelcastMSSQLDialect.class.getSimpleName());
         }
-        if (dialect.equals("MYSQL")) {
-            return GETTERSBYDATABASE.get("MYSQL");
+        if (dialect.equals(HazelcastMySqlDialect.class.getSimpleName())) {
+            return GETTERSBYDATABASE.get(HazelcastMySqlDialect.class.getSimpleName());
         }
-        if (dialect.equals("POSTGRESQL")) {
-            return GETTERSBYDATABASE.get("POSTGRESQL");
+        if (dialect.equals(PostgresqlSqlDialect.class.getSimpleName())) {
+            return GETTERSBYDATABASE.get(PostgresqlSqlDialect.class.getSimpleName());
         }
         return GETTERSBYDATABASE.get("DEFAULT");
     }

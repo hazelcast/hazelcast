@@ -78,7 +78,7 @@ public class SelectProcessorSupplier
         super(dataConnectionName);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
-        sqldialect = dialect.getClass().getName();
+        sqldialect = dialect.getClass().getSimpleName();
     }
 
     @Override
