@@ -2,7 +2,6 @@ This document lists the enhancements and fixed issues for Hazelcast Platform 5.3
 
 ## Enhancements
 
-* Added the ability to replicate eviction events over WAN. See [Replicating Map/Cache Evictions](docs.hazelcast.com/platform/latest/wan/tuning#replicating-imap-icache-evictions). [#25039]
 * Updated the Janino dependency version to 3.1.10. [#25094]
 
 ## Fixes 
