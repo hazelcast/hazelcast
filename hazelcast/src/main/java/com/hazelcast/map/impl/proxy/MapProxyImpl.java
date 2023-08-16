@@ -727,6 +727,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return executePredicate(predicate, IterationType.KEY, true, Target.ALL_NODES);
     }
 
+    @Override
+    public Collection<V> localValues() {
+        return localValues(Predicates.alwaysTrue());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Collection<V> localValues(@Nonnull Predicate<K, V> predicate) {
+        return executePredicate(predicate, IterationType.VALUE, false, Target.LOCAL_NODE);
+    }
+
     /**
      * Execute the {@code keySet} operation only on the given {@code
      * partitions}.
