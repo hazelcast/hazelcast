@@ -4,4 +4,3 @@ Contains code formatting setting to produce a consistently-formatted codebase ac
 
 * [Eclipse](./eclipse/README.md)
 * [IntelliJ](./intellij/README.md)
-* [NetBeans](./netbeans/README.md)
