@@ -72,9 +72,9 @@ final class SupportedDatabases {
     }
 
     static boolean isDialectSupported(SqlDialect dialect) {
-        return dialect instanceof MysqlSqlDialect ||
-               dialect instanceof PostgresqlSqlDialect ||
-               dialect instanceof H2SqlDialect ||
-               dialect instanceof MssqlSqlDialect;
+        return dialect instanceof H2SqlDialect ||
+               dialect instanceof MssqlSqlDialect ||
+               dialect instanceof MysqlSqlDialect ||
+               dialect instanceof PostgresqlSqlDialect;
     }
 }

@@ -162,6 +162,4 @@ public class SelectProcessorSupplier
         parameterPositions = in.readIntArray();
         sqldialect = in.readString();
     }
-
 }
-
