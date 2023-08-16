@@ -41,8 +41,8 @@ public class KafkaIntegrationSqlTest extends KafkaSqlTestSupport {
         createMap(mapName);
 
         executeSql("INSERT INTO " + mapName + " VALUES\n" +
-                   "  (1, 'ABCD', 5.5, 10),\n" +
-                   "  (2, 'EFGH', 14, 20);");
+                "  (1, 'ABCD', 5.5, 10),\n" +
+                "  (2, 'EFGH', 14, 20);");
 
         assertMapContents(mapName, Map.of(
                 1, new HazelcastJsonValue("{\"ticker\":\"ABCD\",\"price\":\"5.5\",\"amount\":10}"),
@@ -50,11 +50,9 @@ public class KafkaIntegrationSqlTest extends KafkaSqlTestSupport {
         );
 
         executeSql("CREATE JOB testJob\n" +
-                   "OPTIONS (\n" +
-                   "  'processingGuarantee' = 'exactlyOnce'\n" +
-                   ") AS\n" +
-                   "SINK INTO " + topicName + "\n" +
-                   "SELECT __key, ticker, price, amount FROM " + mapName);
+                "AS\n" +
+                "SINK INTO " + topicName + "\n" +
+                "SELECT __key, ticker, price, amount FROM " + mapName);
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT __key,this FROM " + topicName,
@@ -87,33 +85,33 @@ public class KafkaIntegrationSqlTest extends KafkaSqlTestSupport {
 
     private void createMap(String mapName) {
         executeSql("CREATE OR REPLACE MAPPING " + mapName + " (\n" +
-                   "            __key INT,\n" +
-                   "            ticker VARCHAR,\n" +
-                   "            price DECIMAL,\n" +
-                   "            amount BIGINT)\n" +
-                   "        TYPE IMap\n" +
-                   "        OPTIONS (\n" +
-                   "            'keyFormat'='int',\n" +
-                   "    'valueFormat'='json-flat'\n" +
-                   ");");
+                "            __key INT,\n" +
+                "            ticker VARCHAR,\n" +
+                "            price DECIMAL,\n" +
+                "            amount BIGINT)\n" +
+                "        TYPE IMap\n" +
+                "        OPTIONS (\n" +
+                "            'keyFormat'='int',\n" +
+                "    'valueFormat'='json-flat'\n" +
+                ");");
     }
 
     private void createConfluentKafkaMapping(String topicName) {
         String createMappingQuery =
                 format("CREATE OR REPLACE MAPPING %s (\n" +
-                       "                    __key INT,\n" +
-                       "                    ticker VARCHAR,\n" +
-                       "                    price DECIMAL,\n" +
-                       "                    amount BIGINT)\n" +
-                       "        TYPE Kafka\n" +
-                       "        OPTIONS (\n" +
-                       "            'keyFormat'='int',\n" +
-                       "            'valueFormat' = 'json-flat',\n" +
-                       "            'bootstrap.servers' = '%s',\n" +
-                       "            'auto.offset.reset' = 'earliest',\n" +
-                       "            'session.timeout.ms' = '45000',\n" +
-                       "            'acks' = 'all'\n" +
-                       ");", topicName, kafkaTestSupport.getBrokerConnectionString());
+                        "                    __key INT,\n" +
+                        "                    ticker VARCHAR,\n" +
+                        "                    price DECIMAL,\n" +
+                        "                    amount BIGINT)\n" +
+                        "        TYPE Kafka\n" +
+                        "        OPTIONS (\n" +
+                        "            'keyFormat'='int',\n" +
+                        "            'valueFormat' = 'json-flat',\n" +
+                        "            'bootstrap.servers' = '%s',\n" +
+                        "            'auto.offset.reset' = 'earliest',\n" +
+                        "            'session.timeout.ms' = '45000',\n" +
+                        "            'acks' = 'all'\n" +
+                        ");", topicName, kafkaTestSupport.getBrokerConnectionString());
         executeSql(createMappingQuery);
     }
 
