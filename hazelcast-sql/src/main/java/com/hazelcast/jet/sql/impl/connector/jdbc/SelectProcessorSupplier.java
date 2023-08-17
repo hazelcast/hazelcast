@@ -27,8 +27,6 @@ import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import org.apache.calcite.sql.SqlDialect;
-import org.apache.calcite.sql.dialect.MssqlSqlDialect;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,12 +36,7 @@ import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.ResultSetMetaData;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -58,14 +51,12 @@ public class SelectProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    private Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters;
-
     private String query;
     private int[] parameterPositions;
 
     private transient ExpressionEvalContext evalContext;
     private transient volatile BiFunctionEx<ResultSet, Integer, Object>[] valueGetters;
-    private String sqldialect;
+    private String dialectName;
 
     @SuppressWarnings("unused")
     public SelectProcessorSupplier() {
@@ -74,19 +65,17 @@ public class SelectProcessorSupplier
     public SelectProcessorSupplier(@Nonnull String dataConnectionName,
                                    @Nonnull String query,
                                    @Nonnull int[] parameterPositions,
-                                   SqlDialect dialect) {
+                                   @Nonnull String dialectName) {
         super(dataConnectionName);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
-        sqldialect = dialect.getClass().getSimpleName();
+        this.dialectName = dialectName;
     }
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
         super.init(context);
-        evalContext = ExpressionEvalContext.from(context);
-        GettersProvider gettersProvider = new GettersProvider();
-        this.getters = gettersProvider.getGETTERS(sqldialect);
+        this.evalContext = ExpressionEvalContext.from(context);
     }
 
     @Nonnull
@@ -124,7 +113,6 @@ public class SelectProcessorSupplier
         );
 
         return singleton(processor);
-
     }
 
     private BiFunctionEx<ResultSet, Integer, Object>[] prepareValueGettersFromMetadata(ResultSet rs) throws SQLException {
@@ -133,6 +121,7 @@ public class SelectProcessorSupplier
         BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
         for (int j = 0; j < metaData.getColumnCount(); j++) {
             String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
+            Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = GettersProvider.getGetters(dialectName);
             valueGetters[j] = getters.getOrDefault(
                     type,
                     (resultSet, n) -> rs.getObject(n)
@@ -152,7 +141,7 @@ public class SelectProcessorSupplier
         out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
-        out.writeString(sqldialect);
+        out.writeString(dialectName);
     }
 
     @Override
@@ -160,6 +149,6 @@ public class SelectProcessorSupplier
         dataConnectionName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
-        sqldialect = in.readString();
+        dialectName = in.readString();
     }
 }
