@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.kafka.impl;
+package com.hazelcast.jet.kafka;
 
+import com.hazelcast.jet.kafka.impl.AbstractHazelcastAvroSerde;
 import org.apache.avro.generic.GenericDatumReader;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.kafka.common.errors.SerializationException;
@@ -24,12 +26,22 @@ import org.apache.kafka.common.serialization.Deserializer;
 
 import java.util.Map;
 
-public class HazelcastAvroDeserializer extends AbstractHazelcastAvroSerde implements Deserializer<Object> {
+/**
+ * An Avro deserializer for Kafka. Unlike {@link io.confluent.kafka.serializers.KafkaAvroDeserializer},
+ * this deserializer does not use a schema registry. Instead, it obtains the schema from mapping
+ * options and use it for all messages. Consequently, the messages consumed by this deserializer
+ * must not include a schema id (and also {@linkplain
+ * io.confluent.kafka.serializers.AbstractKafkaSchemaSerDe#MAGIC_BYTE "magic byte"}).
+ *
+ * @see HazelcastKafkaAvroSerializer
+ * @since 5.4
+ */
+public class HazelcastKafkaAvroDeserializer extends AbstractHazelcastAvroSerde implements Deserializer<GenericRecord> {
     private final DecoderFactory decoderFactory = DecoderFactory.get();
-    private GenericDatumReader<Object> datumReader;
+    private GenericDatumReader<GenericRecord> datumReader;
 
     /** Constructor used by Kafka consumer. */
-    public HazelcastAvroDeserializer() { }
+    public HazelcastKafkaAvroDeserializer() { }
 
     @Override
     public void configure(Map<String, ?> configs, boolean isKey) {
@@ -37,7 +49,7 @@ public class HazelcastAvroDeserializer extends AbstractHazelcastAvroSerde implem
     }
 
     @Override
-    public Object deserialize(String topic, byte[] data) {
+    public GenericRecord deserialize(String topic, byte[] data) {
         try {
             BinaryDecoder decoder = decoderFactory.binaryDecoder(data, null);
             return datumReader.read(null, decoder);

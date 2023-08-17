@@ -24,6 +24,8 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static java.util.stream.Collectors.toMap;
+
 /**
  * A map decorator that overrides {@link #get(Object)} to return a default value
  * if the delegated map does not contain the specified key. It differs from
@@ -31,7 +33,7 @@ import java.util.function.Function;
  * <li> forwarding operations that have a default implementation in {@link Map}
  *      to the delegated map, which can increase performance if the delegated
  *      map has a custom implementation, and
- * <li> using {@link #getOrDefault} to implement the new {@code get} behavior.
+ * <li> using {@link #getOrDefault(K, V)} to implement {@link #getOrDefault(K)}.
  */
 public class DefaultedMap<K, V> implements Map<K, V> {
     private final Map<K, V> map;
@@ -42,9 +44,18 @@ public class DefaultedMap<K, V> implements Map<K, V> {
         this.defaultValue = defaultValue;
     }
 
-    @Override
-    public V get(Object key) {
+    public V getOrDefault(Object key) {
         return map.getOrDefault(key, defaultValue);
+    }
+
+    public V getDefaultValue() {
+        return defaultValue;
+    }
+
+    public <K2, V2> DefaultedMap<K2, V2> mapKeysAndValues(Function<K, K2> keyMapper, Function<V, V2> valueMapper) {
+        return new DefaultedMap<>(map.entrySet().stream()
+                        .collect(toMap(e -> keyMapper.apply(e.getKey()), e -> valueMapper.apply(e.getValue()))),
+                valueMapper.apply(defaultValue));
     }
 
     @Override
@@ -65,6 +76,11 @@ public class DefaultedMap<K, V> implements Map<K, V> {
     @Override
     public boolean containsValue(Object value) {
         return map.containsValue(value);
+    }
+
+    @Override
+    public V get(Object key) {
+        return map.get(key);
     }
 
     @Override

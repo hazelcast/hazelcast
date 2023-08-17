@@ -30,14 +30,15 @@ import java.util.Map;
 import static org.apache.avro.Schema.Type.NULL;
 
 public final class AvroResolver {
-    public static final Map<Schema.Type, QueryDataType> AVRO_TO_SQL = new DefaultedMap<>(new EnumMap<>(Map.of(
-            Schema.Type.BOOLEAN, QueryDataType.BOOLEAN,
-            Schema.Type.INT, QueryDataType.INT,
-            Schema.Type.LONG, QueryDataType.BIGINT,
-            Schema.Type.FLOAT, QueryDataType.REAL,
-            Schema.Type.DOUBLE, QueryDataType.DOUBLE,
-            Schema.Type.STRING, QueryDataType.VARCHAR
-    )), QueryDataType.OBJECT);
+    public static final DefaultedMap<Schema.Type, QueryDataType> AVRO_TO_SQL = new DefaultedMap<>(
+            new EnumMap<>(Map.of(
+                    Schema.Type.BOOLEAN, QueryDataType.BOOLEAN,
+                    Schema.Type.INT, QueryDataType.INT,
+                    Schema.Type.LONG, QueryDataType.BIGINT,
+                    Schema.Type.FLOAT, QueryDataType.REAL,
+                    Schema.Type.DOUBLE, QueryDataType.DOUBLE,
+                    Schema.Type.STRING, QueryDataType.VARCHAR
+            )), QueryDataType.OBJECT);
 
     private AvroResolver() { }
 
@@ -49,7 +50,7 @@ public final class AvroResolver {
             String name = schemaField.name();
             // SQL types are nullable by default and NOT NULL is currently unsupported.
             Schema.Type schemaFieldType = unwrapNullableType(schemaField.schema()).getType();
-            QueryDataType type = AVRO_TO_SQL.get(schemaFieldType);
+            QueryDataType type = AVRO_TO_SQL.getOrDefault(schemaFieldType);
 
             MappingField field = new MappingField(name, type);
             fields.putIfAbsent(field.name(), field);

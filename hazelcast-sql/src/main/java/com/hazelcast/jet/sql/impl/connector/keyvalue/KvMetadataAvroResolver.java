@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.sql.impl.extract.AvroQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.AvroUpsertTargetDescriptor;
 import com.hazelcast.sql.impl.QueryException;
@@ -34,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Consumer;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
@@ -45,7 +47,9 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVR
 import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
-import static java.util.Arrays.asList;
+import static com.hazelcast.jet.sql.impl.inject.AvroUpsertTarget.CONVERSION_PREFS;
+import static com.hazelcast.sql.impl.type.converter.Converters.getConverter;
+import static java.util.stream.Collectors.toSet;
 
 public final class KvMetadataAvroResolver implements KvMetadataResolver {
 
@@ -68,6 +72,14 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 .and().doubleType()
                 .and().stringType()
                 .endUnion();
+
+        private static final Map<QueryDataTypeFamily, List<Schema.Type>> CONVERSIONS =
+                CONVERSION_PREFS.entrySet().stream()
+                        .collect(ImmutableMap::<QueryDataTypeFamily, List<Schema.Type>>builder,
+                                 (map, e) -> map.put(getConverter(e.getKey()).getTypeFamily(), e.getValue()),
+                                 ExceptionUtil::combinerUnsupported)
+                        .put(QueryDataTypeFamily.OBJECT, List.of(Schema.Type.UNION, Schema.Type.NULL))
+                        .build();
     }
 
     private KvMetadataAvroResolver() { }
@@ -92,18 +104,16 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
             throw new IllegalArgumentException("Inline schema cannot be used with schema registry");
         }
         Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
+        for (QueryPath path : fieldsByPath.keySet()) {
+            if (path.getPath() == null) {
+                throw QueryException.error("Cannot use the '" + path + "' field with Avro serialization");
+            }
+        }
         if (inlineSchema != null) {
             Schema schema = new Schema.Parser().parse(inlineSchema);
             validate(schema, fieldsByPath);
         }
-        return fieldsByPath.entrySet().stream()
-                .map(entry -> {
-                    QueryPath path = entry.getKey();
-                    if (path.getPath() == null) {
-                        throw QueryException.error("Cannot use the '" + path + "' field with Avro serialization");
-                    }
-                    return entry.getValue();
-                });
+        return fieldsByPath.values().stream();
     }
 
     @Override
@@ -132,7 +142,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
         } else {
             String recordName = options.getOrDefault(
                     isKey ? OPTION_KEY_AVRO_RECORD_NAME : OPTION_VALUE_AVRO_RECORD_NAME, "jet.sql");
-            schema = schema(recordName, fields);
+            schema = resolveSchema(recordName, fields);
         }
         return new KvMetadata(
                 fields,
@@ -142,7 +152,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
     }
 
     // CREATE MAPPING <name> (<fields>) Type Kafka; INSERT INTO <name> ...
-    private Schema schema(String recordName, List<TableField> fields) {
+    private static Schema resolveSchema(String recordName, List<TableField> fields) {
         FieldAssembler<Schema> schema = SchemaBuilder.record(recordName).fields();
         for (TableField field : fields) {
             String path = ((MapTableField) field).getPath().getPath();
@@ -179,71 +189,43 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                     schema = schema.name(path).type(Schemas.OBJECT_SCHEMA).withDefault(null);
                     break;
                 default:
-                    throw new IllegalArgumentException("Unknown type: " + field.getType().getTypeFamily());
+                    throw new IllegalArgumentException("Unsupported type: " + field.getType());
             }
         }
         return schema.endRecord();
     }
 
-    private void validate(Schema schema, Map<QueryPath, MappingField> fieldsByPath) {
+    private static void validate(Schema schema, Map<QueryPath, MappingField> fieldsByPath) {
         if (schema.getType() != Schema.Type.RECORD) {
             throw new IllegalArgumentException("Schema must be an Avro record");
         }
+        Set<String> mappingFields = fieldsByPath.keySet().stream().map(QueryPath::getPath).collect(toSet());
+        for (Schema.Field schemaField : schema.getFields()) {
+            if (!schemaField.schema().isNullable() && !mappingFields.contains(schemaField.name())) {
+                throw new IllegalArgumentException("Mandatory field '" + schemaField.name()
+                        + "' is not mapped to any column");
+            }
+        }
         for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
             String path = entry.getKey().getPath();
-            if (path == null) {
-                continue;
+            QueryDataType mappingFieldType = entry.getValue().type();
+            QueryDataTypeFamily mappingFieldTypeFamily = mappingFieldType.getTypeFamily();
+
+            List<Schema.Type> conversions = Schemas.CONVERSIONS.get(mappingFieldTypeFamily);
+            if (conversions == null) {
+                throw new IllegalArgumentException("Unsupported type: " + mappingFieldType);
             }
+
             Schema.Field schemaField = schema.getField(path);
             if (schemaField == null) {
                 throw new IllegalArgumentException("Field '" + path + "' does not exist in schema");
             }
+
             Schema.Type schemaFieldType = unwrapNullableType(schemaField.schema()).getType();
-            QueryDataTypeFamily mappingFieldType = entry.getValue().type().getTypeFamily();
-            VarargsConsumer<Schema.Type> assertCompatible = types -> {
-                if (!asList(types).contains(schemaFieldType)) {
-                    throw new IllegalArgumentException(schemaFieldType + " schema type is incompatible with "
-                            + mappingFieldType + " mapping type");
-                }
-            };
-            // Logical types are not supported, which require changes in IntegerConverter and LongConverter.
-            switch (mappingFieldType) {
-                case BOOLEAN:
-                    assertCompatible.accept(Schema.Type.BOOLEAN, Schema.Type.STRING);
-                    break;
-                case TINYINT:
-                case SMALLINT:
-                case INTEGER:
-                case BIGINT:
-                case REAL:
-                case DOUBLE:
-                case DECIMAL:
-                    assertCompatible.accept(Schema.Type.INT, Schema.Type.LONG, Schema.Type.FLOAT, Schema.Type.DOUBLE,
-                            Schema.Type.STRING);
-                    break;
-                case TIME:
-                case DATE:
-                case TIMESTAMP:
-                case TIMESTAMP_WITH_TIME_ZONE:
-                    assertCompatible.accept(Schema.Type.STRING);
-                    break;
-                case VARCHAR:
-                    assertCompatible.accept(Schema.Type.INT, Schema.Type.LONG, Schema.Type.FLOAT, Schema.Type.DOUBLE,
-                            Schema.Type.BOOLEAN, Schema.Type.STRING);
-                    break;
-                case OBJECT:
-                    assertCompatible.accept(Schema.Type.UNION, Schema.Type.NULL);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown type: " + mappingFieldType);
+            if (!conversions.contains(schemaFieldType)) {
+                throw new IllegalArgumentException(schemaFieldType + " schema type is incompatible with "
+                        + mappingFieldType + " mapping type");
             }
         }
-    }
-
-    @FunctionalInterface
-    interface VarargsConsumer<T> extends Consumer<T[]> {
-        @Override
-        @SuppressWarnings("unchecked")
-        void accept(T... args);
     }
 }

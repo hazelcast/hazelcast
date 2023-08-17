@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.kafka.impl;
+package com.hazelcast.jet.kafka;
 
+import com.hazelcast.jet.kafka.impl.AbstractHazelcastAvroSerde;
 import org.apache.avro.generic.GenericDatumWriter;
+import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.kafka.common.errors.SerializationException;
@@ -25,12 +27,22 @@ import org.apache.kafka.common.serialization.Serializer;
 import java.io.ByteArrayOutputStream;
 import java.util.Map;
 
-public class HazelcastAvroSerializer extends AbstractHazelcastAvroSerde implements Serializer<Object> {
+/**
+ * An Avro serializer for Kafka. Unlike {@link io.confluent.kafka.serializers.KafkaAvroSerializer},
+ * this serializer does not use a schema registry. Instead, it obtains the schema from mapping
+ * options and use it for all messages. Consequently, the messages produced by this serializer
+ * does not include a schema id (and also {@linkplain
+ * io.confluent.kafka.serializers.AbstractKafkaSchemaSerDe#MAGIC_BYTE "magic byte"}).
+ *
+ * @see HazelcastKafkaAvroDeserializer
+ * @since 5.4
+ */
+public class HazelcastKafkaAvroSerializer extends AbstractHazelcastAvroSerde implements Serializer<GenericRecord> {
     private final EncoderFactory encoderFactory = EncoderFactory.get();
-    private GenericDatumWriter<Object> datumWriter;
+    private GenericDatumWriter<GenericRecord> datumWriter;
 
     /** Constructor used by Kafka producer. */
-    public HazelcastAvroSerializer() { }
+    public HazelcastKafkaAvroSerializer() { }
 
     @Override
     public void configure(Map<String, ?> configs, boolean isKey) {
@@ -38,10 +50,10 @@ public class HazelcastAvroSerializer extends AbstractHazelcastAvroSerde implemen
     }
 
     @Override
-    public byte[] serialize(String topic, Object data) {
+    public byte[] serialize(String topic, GenericRecord record) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             BinaryEncoder encoder = encoderFactory.directBinaryEncoder(out, null);
-            datumWriter.write(data, encoder);
+            datumWriter.write(record, encoder);
             encoder.flush();
             return out.toByteArray();
         } catch (Exception e) {

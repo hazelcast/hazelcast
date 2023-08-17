@@ -22,8 +22,8 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple4;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
-import com.hazelcast.jet.kafka.impl.HazelcastAvroDeserializer;
-import com.hazelcast.jet.kafka.impl.HazelcastAvroSerializer;
+import com.hazelcast.jet.kafka.HazelcastKafkaAvroDeserializer;
+import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -79,8 +79,8 @@ import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroSchemaEvolutionT
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
+import static java.util.Arrays.copyOfRange;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -132,7 +132,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     private SqlMapping mapping;
     private Schema keySchema;
     private Schema valueSchema;
-    private Map<String, String> consumerProperties;
+    private Map<String, String> clientProperties;
 
     @BeforeClass
     public static void initialize() throws Exception {
@@ -146,10 +146,11 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     private SqlMapping kafkaMapping(String name, Schema keySchema, Schema valueSchema) {
         this.keySchema = keySchema;
         this.valueSchema = valueSchema;
-        consumerProperties = useSchemaRegistry
+        clientProperties = useSchemaRegistry
                 ? ImmutableMap.of("schema.registry.url", kafkaTestSupport.getSchemaRegistryURI().toString())
                 : ImmutableMap.of(OPTION_KEY_AVRO_SCHEMA, keySchema.toString(),
                                   OPTION_VALUE_AVRO_SCHEMA, valueSchema.toString());
+        kafkaTestSupport.setProducerProperties(name, clientProperties);
 
         return mapping = new SqlMapping(name, KafkaSqlConnector.TYPE_NAME)
                 .options(OPTION_KEY_FORMAT, AVRO_FORMAT,
@@ -161,37 +162,38 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 .optionsIf(!useSchemaRegistry,
                            OPTION_KEY_AVRO_SCHEMA, keySchema,
                            OPTION_VALUE_AVRO_SCHEMA, valueSchema,
-                           "key.serializer", HazelcastAvroSerializer.class.getCanonicalName(),
-                           "key.deserializer", HazelcastAvroDeserializer.class.getCanonicalName(),
-                           "value.serializer", HazelcastAvroSerializer.class.getCanonicalName(),
-                           "value.deserializer", HazelcastAvroDeserializer.class.getCanonicalName());
+                           "key.serializer", HazelcastKafkaAvroSerializer.class.getCanonicalName(),
+                           "key.deserializer", HazelcastKafkaAvroDeserializer.class.getCanonicalName(),
+                           "value.serializer", HazelcastKafkaAvroSerializer.class.getCanonicalName(),
+                           "value.deserializer", HazelcastKafkaAvroDeserializer.class.getCanonicalName());
     }
 
     @Test
     public void when_inlineSchemaUsedWithSchemaRegistry_then_fail() {
         assumeTrue(useSchemaRegistry);
         assertThatThrownBy(() ->
-                    kafkaMapping("kafka")
-                            .fields("id INT EXTERNAL NAME \"__key.id\"",
-                                    "name VARCHAR")
-                            .options(OPTION_VALUE_AVRO_SCHEMA, NAME_SCHEMA)
-                            .create())
+                kafkaMapping("kafka")
+                        .fields("id INT EXTERNAL NAME \"__key.id\"",
+                                "name VARCHAR")
+                        .options(OPTION_VALUE_AVRO_SCHEMA, NAME_SCHEMA)
+                        .create())
                 .hasMessage("Inline schema cannot be used with schema registry");
     }
 
     @Test
-    public void test_schemaValidation() {
+    public void when_schemaIsNotRecord_then_fail() {
         assumeFalse(useSchemaRegistry);
-
-        // Test non-record schema
         assertThatThrownBy(() ->
                 kafkaMapping("kafka", ID_SCHEMA, Schema.create(Schema.Type.STRING))
                         .fields("id INT EXTERNAL NAME \"__key.id\"",
                                 "name VARCHAR")
                         .create())
                 .hasMessage("Schema must be an Avro record");
+    }
 
-        // Test missing field in schema
+    @Test
+    public void when_schemaHasMissingField_then_fail() {
+        assumeFalse(useSchemaRegistry);
         assertThatThrownBy(() ->
                 kafkaMapping("kafka", ID_SCHEMA, NAME_SCHEMA)
                         .fields("id INT EXTERNAL NAME \"__key.id\"",
@@ -202,14 +204,66 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     @Test
+    public void test_mappingHasMissingOptionalField() {
+        assumeFalse(useSchemaRegistry);
+        String name = createRandomTopic();
+        kafkaMapping(name, ID_SCHEMA, NAME_SSN_SCHEMA)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR")
+                .create();
+
+        insertAndAssertRecord(1, "Alice");
+
+        kafkaTestSupport.produce(name, createRecord(ID_SCHEMA, 2),
+                createRecord(NAME_SSN_SCHEMA, "Bob", 123456789L));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                asList(
+                        new Row(1, "Alice"),
+                        new Row(2, "Bob")
+                )
+        );
+    }
+
+    @Test
+    public void when_mappingHasMissingMandatoryField_then_fail() {
+        assumeFalse(useSchemaRegistry);
+        Schema schema = SchemaBuilder.record("jet.sql").fields()
+                .requiredString("name")
+                .requiredLong("ssn")
+                .endRecord();
+
+        assertThatThrownBy(() ->
+                kafkaMapping("kafka", ID_SCHEMA, schema)
+                        .fields("id INT EXTERNAL NAME \"__key.id\"",
+                                "name VARCHAR")
+                        .create())
+                .hasMessage("Mandatory field 'ssn' is not mapped to any column");
+    }
+
+    @Test
+    public void test_mappingHasDifferentFieldOrder() {
+        assumeFalse(useSchemaRegistry);
+        String name = createRandomTopic();
+        kafkaMapping(name, ID_SCHEMA, NAME_SSN_SCHEMA)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "ssn BIGINT",
+                        "name VARCHAR")
+                .create();
+
+        insertAndAssertRecord(1, 123456789L, "Alice");
+    }
+
+    @Test
     public void test_nonNullField() {
         assumeFalse(useSchemaRegistry);
         String name = createRandomTopic();
-        Schema requiredNameSchema = SchemaBuilder.record("jet.sql").fields()
+        Schema schema = SchemaBuilder.record("jet.sql").fields()
                 .requiredString("name")
                 .endRecord();
 
-        kafkaMapping(name, ID_SCHEMA, requiredNameSchema)
+        kafkaMapping(name, ID_SCHEMA, schema)
                 .fields("id INT EXTERNAL NAME \"__key.id\"",
                         "name VARCHAR")
                 .create();
@@ -233,24 +287,6 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     @Test
-    public void test_nonInclusiveUnion() {
-        assumeFalse(useSchemaRegistry);
-        String name = createRandomTopic();
-        Schema schema = SchemaBuilder.record("jet.sql").fields()
-                .name("info").type().unionOf().nullType().and().booleanType().and().intType().endUnion().nullDefault()
-                .endRecord();
-
-        kafkaMapping(name, ID_SCHEMA, schema)
-                .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "info OBJECT")
-                .create();
-
-        insertAndAssertRecord(1, true);
-        assertThatThrownBy(() -> insertRecord(2, Long.MAX_VALUE)).hasMessageContaining(
-                "Not in union [\"null\",\"boolean\",\"int\"]: " + Long.MAX_VALUE + " (Long) (field=info)");
-    }
-
-    @Test
     public void test_unionWithString() {
         assumeFalse(useSchemaRegistry);
         String name = createRandomTopic();
@@ -269,7 +305,41 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         // as long as it contains (or is) String, the input is converted into String.
         // When reading back, if the column doesn't imply a conversion, like in the
         // case of OBJECT, the converted value is returned as-is, so 42 becomes "42".
-        insertAndAssertRecord(asList(1, 123456789, 42), asList(1, "123456789", "42"), asList(1, 123456789, "42"));
+        insertAndAssertRecord(row(1, 123456789, 42), row(1, "123456789", "42"), row(1, 123456789, "42"));
+    }
+
+    @Test
+    public void test_nonInclusiveUnion() {
+        assumeFalse(useSchemaRegistry);
+        String name = createRandomTopic();
+        Schema schema = SchemaBuilder.record("jet.sql").fields()
+                .name("info").type().unionOf().nullType().and().booleanType().and().intType().endUnion().nullDefault()
+                .endRecord();
+
+        kafkaMapping(name, ID_SCHEMA, schema)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "info OBJECT")
+                .create();
+
+        insertRecord(1, null);
+        insertRecord(2, true);
+        insertRecord(3, "true");
+        insertRecord(4, 42);
+        insertRecord(5, "42");
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " + name,
+                asList(
+                        new Row(1, null),
+                        new Row(2, true),
+                        new Row(3, true),
+                        new Row(4, 42),
+                        new Row(5, 42)
+                )
+        );
+
+        assertThatThrownBy(() -> insertRecord(6, Long.MAX_VALUE)).hasMessageContaining(
+                "Not in union [\"null\",\"boolean\",\"int\"]: " + Long.MAX_VALUE + " (Long) (field=info)");
     }
 
     @Test
@@ -364,10 +434,11 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 SchemaBuilder.record("record").fields().endRecord()));
 
         for (Entry<QueryDataType, String> entry : mappingFieldTypes.entrySet()) {
-            QueryDataTypeFamily mappingFieldType = entry.getKey().getTypeFamily();
+            QueryDataType mappingFieldType = entry.getKey();
+            QueryDataTypeFamily mappingFieldTypeFamily = mappingFieldType.getTypeFamily();
             String sqlFieldType = entry.getValue();
 
-            boolean mappingFieldTypeSupported = conversions.stream().anyMatch(c -> mappingFieldType == c.f0());
+            boolean mappingFieldTypeSupported = conversions.stream().anyMatch(c -> mappingFieldTypeFamily == c.f0());
 
             for (Schema fieldSchema : schemaFieldTypes) {
                 Schema.Type schemaFieldType = fieldSchema.getType();
@@ -382,14 +453,14 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
                 if (mappingFieldTypeSupported) {
                     Tuple2<Object, Object> conversion = conversions.stream()
-                            .filter(c -> mappingFieldType == c.f0() && schemaFieldType == c.f2())
+                            .filter(c -> mappingFieldTypeFamily == c.f0() && schemaFieldType == c.f2())
                             .map(c -> tuple2(c.f1(), c.f3())).findFirst().orElse(null);
                     if (conversion != null) {
                         String name = createRandomTopic();
                         createKafkaMapping.accept(name);
 
                         System.out.println(">> " + mappingFieldType + " <- " + conversion.f1() + ":" + schemaFieldType);
-                        insertAndAssertRecord(asList(1, conversion.f0()), asList(1, conversion.f1()));
+                        insertAndAssertRecord(row(1, conversion.f0()), row(1, conversion.f1()));
                     } else {
                         assertThatThrownBy(() -> createKafkaMapping.accept("kafka"))
                                 .hasMessage(schemaFieldType + " schema type is incompatible with "
@@ -397,7 +468,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                     }
                 } else {
                     assertThatThrownBy(() -> createKafkaMapping.accept("kafka"))
-                            .hasMessage("Unknown type: " + mappingFieldType);
+                            .hasMessage("Unsupported type: " + mappingFieldType);
                 }
             }
         }
@@ -491,7 +562,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + to,
-                singletonList(new Row(
+                List.of(new Row(
                         1,
                         "string",
                         true,
@@ -530,10 +601,10 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
     private void when_explicitTopLevelField_then_fail(String field, String otherField) {
         assertThatThrownBy(() ->
-                    kafkaMapping("kafka", NAME_SCHEMA, NAME_SCHEMA)
-                            .fields(field + " VARCHAR",
-                                    "f VARCHAR EXTERNAL NAME \"" + otherField + ".name\"")
-                            .create())
+                kafkaMapping("kafka", NAME_SCHEMA, NAME_SCHEMA)
+                        .fields(field + " VARCHAR",
+                                "f VARCHAR EXTERNAL NAME \"" + otherField + ".name\"")
+                        .create())
                 .hasMessage("Cannot use the '" + field + "' field with Avro serialization");
     }
 
@@ -546,11 +617,11 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 .create();
 
         assertThatThrownBy(() ->
-                    sqlService.execute("INSERT INTO " + name + "(__key, name) VALUES ('{\"id\":1}', null)"))
+                sqlService.execute("INSERT INTO " + name + "(__key, name) VALUES ('{\"id\":1}', null)"))
                 .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
 
         assertThatThrownBy(() ->
-                    sqlService.execute("INSERT INTO " + name + "(id, this) VALUES (1, '{\"name\":\"foo\"}')"))
+                sqlService.execute("INSERT INTO " + name + "(id, this) VALUES (1, '{\"name\":\"foo\"}')"))
                 .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
     }
 
@@ -566,7 +637,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT __key, this FROM " + name,
-                singletonList(new Row(
+                List.of(new Row(
                         new GenericRecordBuilder(ID_SCHEMA).set("id", 1).build(),
                         new GenericRecordBuilder(NAME_SCHEMA).set("name", "Alice").build()
                 ))
@@ -629,54 +700,61 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
     private void insertRecord(Object... values) {
         sqlService.execute("INSERT INTO " + mapping.name + " VALUES (" +
-                Arrays.stream(values).map(SqlAvroTest::quote).collect(joining(", ")) + ")");
+                Arrays.stream(values).map(SqlAvroTest::toSQL).collect(joining(", ")) + ")");
     }
 
     private void insertAndAssertRecord(Object... values) {
-        List<Object> list = asList(values);
-        insertAndAssertRecord(list, list, list);
+        insertAndAssertRecord(values, values, values);
     }
 
-    private void insertAndAssertRecord(@Nonnull List<Object> sqlValues, @Nonnull List<Object> avroValues) {
+    private void insertAndAssertRecord(@Nonnull Object[] sqlValues, @Nonnull Object[] avroValues) {
         insertAndAssertRecord(sqlValues, avroValues, sqlValues);
     }
 
-    private void insertAndAssertRecord(@Nonnull List<Object> insertValues, @Nonnull List<Object> avroValues,
-                                       @Nonnull List<Object> selectValues) {
-        insertRecord(insertValues.toArray());
+    private void insertAndAssertRecord(@Nonnull Object[] insertValues, @Nonnull Object[] avroValues,
+                                       @Nonnull Object[] selectValues) {
+        insertRecord(insertValues);
 
-        List<String> fields = getExternalFields();
+        String[] fields = getExternalFields();
         kafkaTestSupport.assertTopicContentsEventually(
                 mapping.name,
                 Map.of(
-                        createRecord(keySchema, fields.subList(0, 1), avroValues.subList(0, 1)),
-                        createRecord(valueSchema, fields.subList(1, fields.size()), avroValues.subList(1, fields.size()))
+                        createRecord(keySchema, copyOfRange(fields, 0, 1),
+                                copyOfRange(avroValues, 0, 1)),
+                        createRecord(valueSchema, copyOfRange(fields, 1, fields.length),
+                                copyOfRange(avroValues, 1, fields.length))
                 ),
-                useSchemaRegistry ? KafkaAvroDeserializer.class : HazelcastAvroDeserializer.class,
-                useSchemaRegistry ? KafkaAvroDeserializer.class : HazelcastAvroDeserializer.class,
-                consumerProperties
+                useSchemaRegistry ? KafkaAvroDeserializer.class : HazelcastKafkaAvroDeserializer.class,
+                useSchemaRegistry ? KafkaAvroDeserializer.class : HazelcastKafkaAvroDeserializer.class,
+                clientProperties
         );
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + mapping.name,
-                singletonList(new Row(selectValues.toArray()))
+                List.of(new Row(selectValues))
         );
     }
 
-    private List<String> getExternalFields() {
+    private String[] getExternalFields() {
         return mapping.fields.stream().map(field -> field.endsWith("\"")
                 ? field.substring(field.lastIndexOf('.') + 1, field.length() - 1)
-                : field.substring(0, field.indexOf(' '))).collect(toList());
+                : field.substring(0, field.indexOf(' '))).toArray(String[]::new);
     }
 
-    private static String quote(Object value) {
+    private static String toSQL(Object value) {
         return value == null || value instanceof Boolean || value instanceof Number
                 ? String.valueOf(value) : "'" + value + "'";
     }
 
-    private static GenericRecord createRecord(Schema schema, List<String> fields, List<Object> values) {
-        return IntStream.range(0, fields.size()).collect(() -> new GenericRecordBuilder(schema),
-                (builder, i) -> builder.set(fields.get(i), values.get(i)),
+    private static GenericRecord createRecord(Schema schema, String[] fields, Object[] values) {
+        return IntStream.range(0, fields.length).collect(() -> new GenericRecordBuilder(schema),
+                (record, i) -> record.set(fields[i], values[i]),
                 ExceptionUtil::combinerUnsupported).build();
+    }
+
+    private static GenericRecord createRecord(Schema schema, Object... values) {
+        return createRecord(schema,
+                schema.getFields().stream().map(Schema.Field::name).toArray(String[]::new),
+                values);
     }
 
     @SuppressWarnings("unchecked")

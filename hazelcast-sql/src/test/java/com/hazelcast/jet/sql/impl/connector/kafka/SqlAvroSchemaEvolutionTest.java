@@ -33,6 +33,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
@@ -92,7 +93,10 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
     @Before
     public void before() throws Exception {
         name = createRandomTopic(1);
-        kafkaTestSupport.setSubjectNameStrategy(name, false, subjectNameStrategy);
+        kafkaTestSupport.setProducerProperties(name, Map.of(
+                "schema.registry.url", kafkaTestSupport.getSchemaRegistryURI().toString(),
+                "value.subject.name.strategy", "io.confluent.kafka.serializers.subject." + subjectNameStrategy
+        ));
         topicNameStrategy = subjectNameStrategy.equals("TopicNameStrategy");
         switch (subjectNameStrategy) {
             case "TopicNameStrategy":       valueSubjectName = name + "-value"; break;
