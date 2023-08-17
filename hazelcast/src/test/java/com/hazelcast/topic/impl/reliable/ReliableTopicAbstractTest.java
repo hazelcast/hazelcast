@@ -89,7 +89,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
     public void addRemoveMessageListeners() {
         // Add and remove a lot of listeners without sending a message
         final List<String> objects = new CopyOnWriteArrayList<>();
-        for (int index = 0; index < 100; index ++ ) {
+        for (int index = 0; index < 100; index++) {
             UUID id = topic.addMessageListener(message -> objects.add(message.getMessageObject()));
 
             boolean removed = topic.removeMessageListener(id);
