@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
@@ -184,7 +185,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             throw (HazelcastSerializationException) e;
         }
         throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: "
-                + factoryId
+                + Factory.getName(factoryId)
                 + ", ID: " + id
                 + ", class: '" + className + "'"
                 + ", exception: " + e.getMessage(), e);
