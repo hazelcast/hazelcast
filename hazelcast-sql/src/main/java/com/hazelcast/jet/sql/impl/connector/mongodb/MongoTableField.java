@@ -19,18 +19,23 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.bson.BsonType;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 class MongoTableField extends TableField {
     final String externalName;
     final BsonType externalType;
     final boolean primaryKey;
 
-    MongoTableField(String name, QueryDataType type, String externalName, boolean hidden,
-                    String externalType, boolean primaryKey) {
+    MongoTableField(@Nonnull String name, @Nonnull QueryDataType type, @Nonnull String externalName, boolean hidden,
+                    @Nonnull String externalType, boolean primaryKey) {
         super(name, type, hidden);
+        checkNotNull(externalName, "external name cannot be null");
+        checkNotNull(externalType, "external type cannot be null");
         this.externalName = externalName;
-        this.externalType = externalType == null ? null : BsonType.valueOf(externalType);
+        this.externalType = BsonType.valueOf(externalType);
         this.primaryKey = primaryKey;
     }
 
