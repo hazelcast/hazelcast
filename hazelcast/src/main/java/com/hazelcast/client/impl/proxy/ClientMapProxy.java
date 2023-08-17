@@ -1241,6 +1241,16 @@ public class ClientMapProxy<K, V> extends ClientProxy
         return (Set<K>) new UnmodifiableLazySet(MapKeySetWithPredicateCodec.decodeResponse(response), getSerializationService());
     }
 
+    @Override
+    public Collection<V> localValues() {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
+    @Override
+    public Collection<V> localValues(@Nonnull Predicate<K, V> predicate) {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
+    }
+
     @SuppressWarnings("unchecked")
     private Set keySetWithPagingPredicate(Predicate predicate) {
         PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);

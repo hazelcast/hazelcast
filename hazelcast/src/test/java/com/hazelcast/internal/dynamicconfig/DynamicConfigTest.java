@@ -83,6 +83,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -100,6 +101,7 @@ import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
 import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -129,10 +131,16 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         return members[members.length - 1];
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void testAddWanReplicationConfigIsNotSupported() {
         WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
-        getDriver().getConfig().addWanReplicationConfig(wanReplicationConfig);
+        wanReplicationConfig.setName(name);
+
+        UnsupportedOperationException exception = Assertions.catchThrowableOfType(
+                () -> getDriver().getConfig().addWanReplicationConfig(wanReplicationConfig),
+                UnsupportedOperationException.class);
+        assertNotNull(exception);
+        assertThat(exception).hasMessage("Adding new WAN config is not supported.");
     }
 
     @Test

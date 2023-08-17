@@ -108,7 +108,7 @@ public class PredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "SELECT name FROM people WHERE LOWER(name) = 'john doe'",
                 "SELECT name FROM people WHERE UPPER(name) = 'JOHN DOE'",
 
-                // https://docs.hazelcast.com/hazelcast/5.2/sql/functions-and-operators#hide-nav
+                // https://docs.hazelcast.com/hazelcast/latest/sql/functions-and-operators#hide-nav
                 // Mathematical Functions
                 // String Functions
                 // Trigonometric Functions

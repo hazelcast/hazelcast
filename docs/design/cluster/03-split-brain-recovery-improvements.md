@@ -167,7 +167,7 @@ will be able to proceed.
 Also, we integrated the tcp-ip member list update support to already existing
 config update APIs that are namely `hazelcast/rest/config/update` and
 `hazelcast/rest/config/reload`. See the docs for it
-[here](https://docs.hazelcast.com/hazelcast/5.1/configuration/dynamic-config-update-and-reload)
+[here](https://docs.hazelcast.com/hazelcast/latest/configuration/dynamic-config-update-and-reload)
 
 #### Technical Design
 #### Proposed Solution 1
@@ -197,7 +197,7 @@ we added a property for configuring this period namely
 Provide ways to users to dynamically update the member list of the tcp-ip join
 configuration. We plan to support the ways listed below:
 - via newly introduce REST endpoint:
-- via already existing [configuration reload and update endpoints](https://docs.hazelcast.com/hazelcast/5.1/configuration/dynamic-config-update-and-reload#update) which requires us integrating this configuration element with the dynamic configuration update.
+- via already existing [configuration reload and update endpoints](https://docs.hazelcast.com/hazelcast/latest/configuration/dynamic-config-update-and-reload#update) which requires us integrating this configuration element with the dynamic configuration update.
 
 
 We plan to implement both the first and second solution to solve this issue.

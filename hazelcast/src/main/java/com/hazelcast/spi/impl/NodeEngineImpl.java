@@ -152,6 +152,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.proxyService = new ProxyServiceImpl(this);
             this.serviceManager = new ServiceManagerImpl(this);
             this.executionService = new ExecutionServiceImpl(this);
+            this.tenantControlService = new TenantControlServiceImpl(this);
             this.tpcServerBootstrap = new TpcServerBootstrap(this);
             this.operationService = new OperationServiceImpl(this);
             this.eventService = new EventServiceImpl(this);
@@ -180,7 +181,6 @@ public class NodeEngineImpl implements NodeEngine {
 
             checkMapMergePolicies(node);
 
-            this.tenantControlService = new TenantControlServiceImpl(this);
 
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);

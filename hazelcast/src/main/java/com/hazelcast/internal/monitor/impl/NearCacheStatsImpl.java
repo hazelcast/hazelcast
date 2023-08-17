@@ -97,24 +97,23 @@ public class NearCacheStatsImpl implements NearCacheStats {
         this.creationTime = getNowInMillis();
     }
 
-    public NearCacheStatsImpl(NearCacheStats nearCacheStats) {
-        NearCacheStatsImpl stats = (NearCacheStatsImpl) nearCacheStats;
-        creationTime = stats.creationTime;
-        ownedEntryCount = stats.ownedEntryCount;
-        ownedEntryMemoryCost = stats.ownedEntryMemoryCost;
+    public NearCacheStatsImpl(NearCacheStats stats) {
+        creationTime = stats.getCreationTime();
+        ownedEntryCount = stats.getOwnedEntryCount();
+        ownedEntryMemoryCost = stats.getOwnedEntryMemoryCost();
         setHits(stats.getHits());
         setMisses(stats.getMisses());
-        evictions = stats.evictions;
-        expirations = stats.expirations;
-        invalidations = stats.invalidations;
-        invalidationRequests = stats.invalidationRequests;
+        evictions = stats.getEvictions();
+        expirations = stats.getExpirations();
+        invalidations = stats.getInvalidations();
+        invalidationRequests = stats.getInvalidationRequests();
 
-        persistenceCount = stats.persistenceCount;
-        lastPersistenceTime = stats.lastPersistenceTime;
-        lastPersistenceDuration = stats.lastPersistenceDuration;
-        lastPersistenceWrittenBytes = stats.lastPersistenceWrittenBytes;
-        lastPersistenceKeyCount = stats.lastPersistenceKeyCount;
-        lastPersistenceFailure = stats.lastPersistenceFailure;
+        persistenceCount = stats.getPersistenceCount();
+        lastPersistenceTime = stats.getLastPersistenceTime();
+        lastPersistenceDuration = stats.getLastPersistenceDuration();
+        lastPersistenceWrittenBytes = stats.getLastPersistenceWrittenBytes();
+        lastPersistenceKeyCount = stats.getLastPersistenceKeyCount();
+        lastPersistenceFailure = stats.getLastPersistenceFailure();
     }
 
     @Override
@@ -230,6 +229,7 @@ public class NearCacheStatsImpl implements NearCacheStats {
         INVALIDATIONS.addAndGet(this, delta);
     }
 
+    @Override
     public long getInvalidationRequests() {
         return invalidationRequests;
     }

@@ -56,7 +56,7 @@
         <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.5.0</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
             *.impl:*.impl.*:*.internal:*.internal.*:*.operations:*.proxy:
             com.hazelcast.aws.security:*.handlermigration:*.client.connection.nio:
@@ -161,7 +161,7 @@
         <archunit.version>1.1.0</archunit.version>
         <errorprone.version>2.21.1</errorprone.version>
         <awaitility.version>4.2.0</awaitility.version>
-        <kubernetes-server-mock.version>6.8.0</kubernetes-server-mock.version>
+        <kubernetes-server-mock.version>6.8.1</kubernetes-server-mock.version>
         <hikari.version>4.0.3</hikari.version>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
@@ -174,7 +174,6 @@
         <vmHeapSettings>-Xms512m -Xmx2G</vmHeapSettings>
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
         <hazelcast.module.name>ALL-UNNAMED</hazelcast.module.name>
-        <javaModuleArgs/>
 
         <!-- needed for CheckStyle -->
         <checkstyle.version>8.38</checkstyle.version>
@@ -204,6 +203,8 @@
            open java.base/java.lang
         TimedMemberStateFactoryHelper:
            open java.management/sun.management
+
+        NOTE: There is a slightly different setting for IBM OpenJ9, see the specific profile
         -->
         <javaModuleArgs>
             --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
@@ -211,7 +212,6 @@
             --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
             --add-opens java.base/java.lang=${hazelcast.module.name}
             --add-opens java.management/sun.management=${hazelcast.module.name}
-            --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
             --illegal-access=deny
         </javaModuleArgs>
     </properties>
@@ -496,7 +496,7 @@
                         Version 1.6.1 produces harmless, but noisy warning about missing dependencies.
                         See https://github.com/mojohaus/extra-enforcer-rules/issues/225
                         -->
-                        <version>1.5.1</version>
+                        <version>1.7.0</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -1236,7 +1236,7 @@
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
                         <!-- do not update to 1.6.10, it blocks release process -->
-                        <version>1.6.8</version>
+                        <version>1.6.10</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>release-repository</serverId>
@@ -1513,6 +1513,26 @@
                 <skipTests>true</skipTests>
                 <maven.javadoc.skip>true</maven.javadoc.skip>
                 <maven.source.skip>true</maven.source.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>IBM</id>
+            <activation>
+                <property>
+                    <name>java.vendor</name>
+                    <value>IBM Corporation</value>
+                </property>
+            </activation>
+            <properties>
+                <javaModuleArgs>
+                    --add-exports java.base/jdk.internal.ref=${hazelcast.module.name}
+                    --add-opens jdk.management/com.sun.management.internal=${hazelcast.module.name}
+                    --add-opens java.base/sun.nio.ch=${hazelcast.module.name}
+                    --add-opens java.base/java.lang=${hazelcast.module.name}
+                    --add-opens java.management/sun.management=${hazelcast.module.name}
+                    --add-exports jdk.management/com.ibm.lang.management.internal=${hazelcast.module.name}
+                    --illegal-access=deny
+                </javaModuleArgs>
             </properties>
         </profile>
     </profiles>
@@ -1942,9 +1962,9 @@
                 <version>2.5.0</version>
             </dependency>
             <dependency>
-              <groupId>org.wildfly.openssl</groupId>
-              <artifactId>wildfly-openssl</artifactId>
-              <version>1.1.3.Final</version>
+                <groupId>org.wildfly.openssl</groupId>
+                <artifactId>wildfly-openssl</artifactId>
+                <version>1.1.3.Final</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api-client</groupId>
@@ -2121,7 +2141,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.1.11</version>
+            <version>10.1.12</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
