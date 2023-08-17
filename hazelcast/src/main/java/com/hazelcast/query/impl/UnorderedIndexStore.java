@@ -223,6 +223,10 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
             MultiResultSet results = createMultiResultSet();
             for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
                 Comparable indexedValue = recordMapEntry.getKey();
+                if (indexedValue == AbstractIndex.NULL) {
+                    continue;
+                }
+
                 boolean valid;
                 int result = Comparables.compare(value, indexedValue);
                 switch (comparison) {
