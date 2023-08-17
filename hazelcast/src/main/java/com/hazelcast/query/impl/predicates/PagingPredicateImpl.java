@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -203,7 +204,7 @@ public class PagingPredicateImpl<K, V>
         }
 
         List<QueryableEntry<K, V>> sortedSubList =
-                SortingUtil.getSortedSubList((List) resultList, this, nearestAnchorEntry);
+                (List) SortingUtil.getSortedSubList((List) resultList, this, nearestAnchorEntry);
         return new LinkedHashSet<QueryableEntry<K, V>>(sortedSubList);
     }
 
@@ -214,7 +215,6 @@ public class PagingPredicateImpl<K, V>
      * @param queryContext
      * @return
      */
-    @Override
     public boolean isIndexed(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
             return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
@@ -228,7 +228,6 @@ public class PagingPredicateImpl<K, V>
      * @param mapEntry
      * @return
      */
-    @Override
     public boolean apply(Map.Entry mapEntry) {
         if (predicate != null) {
             return predicate.apply(mapEntry);
@@ -371,7 +370,7 @@ public class PagingPredicateImpl<K, V>
 
     @Override
     public int getFactoryId() {
-        return AbstractPredicate.FACTORY_ID;
+        return Factory.PREDICATE_DS.getDefaultFactoryId();
     }
 
     @Override

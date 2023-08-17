@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -167,7 +168,7 @@ public final class OrPredicate
 
     @Override
     public int getFactoryId() {
-        return AbstractPredicate.FACTORY_ID;
+        return Factory.PREDICATE_DS.getDefaultFactoryId();
     }
 
     @Override
