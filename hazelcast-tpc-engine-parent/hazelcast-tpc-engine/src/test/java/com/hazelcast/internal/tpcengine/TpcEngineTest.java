@@ -20,13 +20,13 @@ package com.hazelcast.internal.tpcengine;
 import org.junit.After;
 import org.junit.Test;
 
-import java.util.concurrent.TimeUnit;
-
 import static com.hazelcast.internal.tpcengine.TpcEngine.State.SHUTDOWN;
 import static com.hazelcast.internal.tpcengine.TpcEngine.State.TERMINATED;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.sleepMillis;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 
@@ -38,7 +38,7 @@ public class TpcEngineTest {
     public void after() throws InterruptedException {
         if (engine != null) {
             engine.shutdown();
-            if (!engine.awaitTermination(10, TimeUnit.SECONDS)) {
+            if (!engine.awaitTermination(10, SECONDS)) {
                 throw new RuntimeException("Failed to await termination due to timeout");
             }
         }
@@ -66,12 +66,35 @@ public class TpcEngineTest {
         assertEquals(TpcEngine.State.RUNNING, engine.state());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void start_whenRunning() {
         engine = new TpcEngine.Builder().build();
         engine.start();
-        engine.start();
+        assertThrows(IllegalStateException.class, () -> engine.start());
     }
+
+    @Test
+    public void start_whenShuttingDown() {
+        engine = new TpcEngine.Builder().build();
+        engine.start();
+        engine.reactor(0).submit(() -> {
+            sleepMillis(1000);
+        });
+        engine.shutdown();
+
+        assertThrows(IllegalStateException.class, () -> engine.start());
+    }
+
+    @Test
+    public void start_whenWhenTerminated() throws InterruptedException {
+        engine = new TpcEngine.Builder().build();
+        engine.start();
+        engine.shutdown();
+        assertTrue(engine.awaitTermination(30, SECONDS));
+
+        assertThrows(IllegalStateException.class, () -> engine.start());
+    }
+
 
     // ================= shut down =======================
 
@@ -91,7 +114,7 @@ public class TpcEngineTest {
         });
         engine.shutdown();
         assertEquals(SHUTDOWN, engine.state());
-        assertTrue(engine.awaitTermination(5, TimeUnit.SECONDS));
+        assertTrue(engine.awaitTermination(5, SECONDS));
         assertEquals(TERMINATED, engine.state());
     }
 
@@ -106,7 +129,7 @@ public class TpcEngineTest {
 
         engine.shutdown();
         assertEquals(SHUTDOWN, engine.state());
-        assertTrue(engine.awaitTermination(5, TimeUnit.SECONDS));
+        assertTrue(engine.awaitTermination(5, SECONDS));
         assertEquals(TERMINATED, engine.state());
     }
 

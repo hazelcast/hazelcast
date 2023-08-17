@@ -323,11 +323,13 @@ public abstract class Reactor implements Executor {
      * <p/>
      * This method is thread-safe.
      *
+     * @return this
      * @throws IllegalStateException if the reactor isn't in NEW state.
      */
     public Reactor start() {
         if (!STATE.compareAndSet(Reactor.this, NEW, RUNNING)) {
-            throw new IllegalStateException("Can't start reactor, invalid state:" + state);
+            throw new IllegalStateException(
+                    "Can't start Reactor, not in NEW state. Current state" + state + ".");
         }
         startLatch.countDown();
         return this;
@@ -703,7 +705,7 @@ public abstract class Reactor implements Executor {
 
         private static final AtomicInteger THREAD_ID_GENERATOR = new AtomicInteger();
         private static final AtomicInteger REACTOR_ID_GENERATOR = new AtomicInteger();
-        private static final Constructor<Builder> IO_URING_REACTOR_BUILDER_CONSTRUCTOR;
+        private static final Constructor<Builder> URING_REACTOR_BUILDER_CONSTRUCTOR;
         private static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
                 = "com.hazelcast.internal.tpcengine.iouring.UringReactor$Builder";
 
@@ -743,7 +745,7 @@ public abstract class Reactor implements Executor {
             } catch (NoSuchMethodException e) {
                 throw new Error(e);
             } finally {
-                IO_URING_REACTOR_BUILDER_CONSTRUCTOR = constructor;
+                URING_REACTOR_BUILDER_CONSTRUCTOR = constructor;
             }
         }
 
@@ -969,14 +971,16 @@ public abstract class Reactor implements Executor {
                 case NIO:
                     return new NioReactor.Builder();
                 case IOURING:
-                    if (IO_URING_REACTOR_BUILDER_CONSTRUCTOR == null) {
+                    if (URING_REACTOR_BUILDER_CONSTRUCTOR == null) {
                         throw new IllegalStateException(
                                 "class " + IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME + " is not found");
                     }
 
                     try {
-                        return IO_URING_REACTOR_BUILDER_CONSTRUCTOR.newInstance();
+                        return URING_REACTOR_BUILDER_CONSTRUCTOR.newInstance();
                     } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                        // unless someone messed with the constructor of the
+                        // IOUring.Builder, this can never happen
                         throw new RuntimeException(e);
                     }
                 default:

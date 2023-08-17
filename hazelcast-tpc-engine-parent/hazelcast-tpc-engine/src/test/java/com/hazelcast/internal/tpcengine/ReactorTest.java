@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.Reactor.State.NEW;
 import static com.hazelcast.internal.tpcengine.Reactor.State.RUNNING;
@@ -53,7 +54,14 @@ public abstract class ReactorTest {
     public abstract Reactor.Builder newReactorBuilder();
 
     public Reactor newReactor() {
+        return newReactor(null);
+    }
+
+    public Reactor newReactor(Consumer<Reactor.Builder> configFn) {
         Reactor.Builder reactorBuilder = newReactorBuilder();
+        if (configFn != null) {
+            configFn.accept(reactorBuilder);
+        }
         Reactor reactor = reactorBuilder.build();
         reactors.add(reactor);
         return reactor;
@@ -64,9 +72,33 @@ public abstract class ReactorTest {
     }
 
     @Test
-    public void test_context() {
+    public void testConstruction() {
         Reactor reactor = newReactor();
+
+        assertNotNull(reactor.sockets());
+        assertEquals(0, reactor.sockets().size());
+
+        assertNotNull(reactor.serverSockets());
+        assertEquals(0, reactor.serverSockets().size());
+
+        assertNotNull(reactor.files());
+        assertEquals(0, reactor.files().size());
+
+        assertNotNull(reactor.taskQueues());
+        assertEquals(1, reactor.taskQueues().size());
+
+        assertNotNull(reactor.metrics());
+
         assertNotNull(reactor.context());
+        assertEquals(getType(), reactor.type());
+    }
+
+    @Test
+    public void testReactorName() {
+        String reactorName = "reactor-banana";
+        Reactor reactor = newReactor(builder -> builder.reactorName = reactorName);
+
+        assertEquals(reactorName, reactor.name());
     }
 
     @Test

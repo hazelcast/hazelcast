@@ -116,32 +116,24 @@ public final class TpcEngine {
      * <p/>
      * This method is thread-safe.
      *
-     * @throws IllegalStateException if the Reactor is shutdown or terminated.
+     * @throws IllegalStateException if the Reactor is not in the NEW state.
      */
-    public TpcEngine start() {
-        logger.info("Starting " + reactorCount + " reactors of type [" + reactorType() + "]");
-
-        for (; ; ) {
-            State oldState = state.get();
-            if (oldState != NEW) {
-                throw new IllegalStateException("Can't start TpcEngine, it isn't in NEW state.");
-            }
-
-            if (state.compareAndSet(oldState, RUNNING)) {
-                break;
-            }
+    public void start() {
+        if (!state.compareAndSet(NEW, RUNNING)) {
+            throw new IllegalStateException(
+                    "Can't start TpcEngine, not in NEW state. Current state" + state + ".");
         }
+
+        logger.info("Starting " + reactorCount + " reactors of type [" + reactorType() + "]");
 
         for (Reactor reactor : reactors) {
             reactor.start();
         }
-
-        return this;
     }
 
     /**
-     * Shuts down the TpcEngine. If the TpcEngine is already shutdown or terminated,
-     * the call is ignored.
+     * Shuts down the TpcEngine by shutting down all the {@link Reactor} instances.
+     * If the TpcEngine is already shutdown or terminated, the call is ignored.
      * <p/>
      * This method is thread-safe.
      */
@@ -154,16 +146,16 @@ public final class TpcEngine {
                     if (!state.compareAndSet(oldState, SHUTDOWN)) {
                         continue;
                     }
-                    break;
+
+                    for (Reactor reactor : reactors) {
+                        reactor.shutdown();
+                    }
+                    return;
                 case SHUTDOWN:
                 case TERMINATED:
                     return;
                 default:
                     throw new IllegalStateException();
-            }
-
-            for (Reactor reactor : reactors) {
-                reactor.shutdown();
             }
         }
     }
@@ -173,10 +165,12 @@ public final class TpcEngine {
      * <p/>
      * This method is thread-safe.
      *
-     * @param timeout the timeout. If the timeout is 0, then this call will not wait.
+     * @param timeout the timeout. If the timeout is 0 or smaller, then this call
+     *                will not wait.
      * @param unit    the TimeUnit
-     * @return <code>true</code> if the TpcEngine is terminated.
-     * @throws InterruptedException if the calling thread got interrupted while waiting.
+     * @return <code>true</code> if the TpcEngine is terminated, false otherwise.
+     * @throws InterruptedException if the calling thread got interrupted while
+     *                              waiting.
      * @throws NullPointerException if unit is <code>null</code>.
      */
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
@@ -200,7 +194,7 @@ public final class TpcEngine {
     }
 
     /**
-     * The Builder for the the {@link TpcEngine}.
+     * The Builder for the {@link TpcEngine}.
      */
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static final class Builder extends AbstractBuilder<TpcEngine> {
@@ -225,12 +219,7 @@ public final class TpcEngine {
             checkNotNull(reactorConfigureFn, "reactorConfigureFn");
         }
 
-        /**
-         * Builds a single TpcEngine instance.
-         *
-         * @return the created instance.
-         * @throws IllegalStateException if a TpcEngine already has already been built.
-         */
+        @Override
         protected TpcEngine construct() {
             return new TpcEngine(this);
         }
