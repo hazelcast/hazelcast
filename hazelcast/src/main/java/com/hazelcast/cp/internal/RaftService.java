@@ -234,8 +234,10 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                     REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS, REMOVE_MISSING_MEMBER_TASK_PERIOD_SECONDS, SECONDS);
         }
 
-        MetricsRegistry metricsRegistry = this.nodeEngine.getMetricsRegistry();
-        metricsRegistry.scheduleAtFixedRate(new PublishNodeMetricsTask(), metricsPeriod, SECONDS, ProbeLevel.INFO);
+        if (metricsPeriod > 0) {
+            MetricsRegistry metricsRegistry = this.nodeEngine.getMetricsRegistry();
+            metricsRegistry.scheduleAtFixedRate(new PublishNodeMetricsTask(), metricsPeriod, SECONDS, ProbeLevel.INFO);
+        }
     }
 
     @Override

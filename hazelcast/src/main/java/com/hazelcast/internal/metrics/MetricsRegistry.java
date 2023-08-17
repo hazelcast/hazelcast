@@ -285,6 +285,7 @@ public interface MetricsRegistry {
      * @param probeLevel the ProbeLevel publisher it publishing on. This is needed to prevent scheduling
      *                   publishers if their probe level isn't sufficient.
      * @throws NullPointerException if publisher or timeUnit is null.
+     * @throws IllegalArgumentException if period is less than or equal to 0.
      * @return the ScheduledFuture that can be used to cancel the task, or null if nothing got scheduled.
      */
     ScheduledFuture<?> scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit, ProbeLevel probeLevel);
