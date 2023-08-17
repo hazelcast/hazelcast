@@ -18,6 +18,8 @@ package com.hazelcast.query.impl;
 
 import java.util.Comparator;
 
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
+
 /**
  * Provides utilities which compare and canonicalize {@link Comparable}
  * instances.
@@ -87,6 +89,10 @@ public final class Comparables {
 
         if (lhs instanceof Number && rhs instanceof Number) {
             return Numbers.compare(lhs, rhs);
+        }
+
+        if (rhs == NULL) {
+            return -rhs.compareTo(lhs);
         }
 
         return lhs.compareTo(rhs);

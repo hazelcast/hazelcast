@@ -28,6 +28,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.query.impl.AbstractIndex.NULL;
+
 /**
  * Store indexes out of turn.
  */
@@ -223,7 +225,7 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
             MultiResultSet results = createMultiResultSet();
             for (Map.Entry<Comparable, Map<Data, QueryableEntry>> recordMapEntry : recordMap.entrySet()) {
                 Comparable indexedValue = recordMapEntry.getKey();
-                if (indexedValue == AbstractIndex.NULL) {
+                if (indexedValue == NULL) {
                     continue;
                 }
 
