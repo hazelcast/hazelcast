@@ -17,15 +17,12 @@
 package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.UTIL_COLLECTION_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.UTIL_COLLECTION_DS_FACTORY_ID;
 
 public class UtilCollectionSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(UTIL_COLLECTION_DS_FACTORY, UTIL_COLLECTION_DS_FACTORY_ID);
+    public static final int F_ID = Factory.UTIL_COLLECTION_DS.getFactoryId();
 
     public static final int PARTITION_ID_SET = 1;
     public static final int IMMUTABLE_PARTITION_ID_SET = 2;

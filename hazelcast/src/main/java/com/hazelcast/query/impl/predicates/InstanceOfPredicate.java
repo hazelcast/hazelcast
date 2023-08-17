@@ -17,17 +17,16 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
 import java.util.Map;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 
 /**
  * Predicate version of `instaceof` operator from Java.
@@ -79,7 +78,7 @@ public class InstanceOfPredicate
 
     @Override
     public int getFactoryId() {
-        return PREDICATE_DS_FACTORY_ID;
+        return Factory.PREDICATE_DS.getDefaultFactoryId();
     }
 
     @Override

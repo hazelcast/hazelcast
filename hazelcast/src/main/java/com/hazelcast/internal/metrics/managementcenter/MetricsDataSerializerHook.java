@@ -17,16 +17,14 @@
 package com.hazelcast.internal.metrics.managementcenter;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.METRICS_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.METRICS_DS_FACTORY_ID;
 
 public final class MetricsDataSerializerHook implements DataSerializerHook {
 
-    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(METRICS_DS_FACTORY, METRICS_DS_FACTORY_ID);
+    public static final int FACTORY_ID = com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory.METRICS_DS
+            .getFactoryId();
 
     static final int READ_METRICS = 1;
 

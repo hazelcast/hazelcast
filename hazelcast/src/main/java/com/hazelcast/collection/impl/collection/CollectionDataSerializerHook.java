@@ -60,17 +60,14 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemov
 import com.hazelcast.collection.impl.txnqueue.QueueTransactionLogRecord;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.util.ConstructorFunction;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY_ID;
-
 public class CollectionDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(COLLECTION_DS_FACTORY, COLLECTION_DS_FACTORY_ID);
+    public static final int F_ID = Factory.COLLECTION_DS.getFactoryId();
 
     public static final int COLLECTION_ADD = 1;
     public static final int COLLECTION_ADD_BACKUP = 2;

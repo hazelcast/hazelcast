@@ -21,16 +21,13 @@ import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.executor.impl.operations.ShutdownOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.EXECUTOR_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.EXECUTOR_DS_FACTORY_ID;
-
 public class ExecutorDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(EXECUTOR_DS_FACTORY, EXECUTOR_DS_FACTORY_ID);
+    public static final int F_ID = Factory.EXECUTOR_DS.getFactoryId();
 
     public static final int CALLABLE_TASK = 0;
     public static final int MEMBER_CALLABLE_TASK = 1;

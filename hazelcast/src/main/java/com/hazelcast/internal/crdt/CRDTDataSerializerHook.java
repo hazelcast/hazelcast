@@ -22,19 +22,16 @@ import com.hazelcast.internal.crdt.pncounter.operations.AddOperation;
 import com.hazelcast.internal.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.internal.crdt.pncounter.operations.GetOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PN_COUNTER_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PN_COUNTER_DS_FACTORY_ID;
 
 /**
  * Serialization constants for all CRDT related objects
  */
 public final class CRDTDataSerializerHook implements DataSerializerHook {
     /** The CRDT (de)serializer factory ID */
-    public static final int F_ID = FactoryIdHelper.getFactoryId(PN_COUNTER_DS_FACTORY, PN_COUNTER_DS_FACTORY_ID);
+    public static final int F_ID = Factory.PN_COUNTER_DS.getFactoryId();
     /** The (de)serialization constant for a PNCounter replication operation */
     public static final int PN_COUNTER_REPLICATION = 1;
     /** The (de)serialization constant for a PNCounter implementation */

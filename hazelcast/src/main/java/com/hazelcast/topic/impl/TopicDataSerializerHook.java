@@ -17,17 +17,14 @@
 package com.hazelcast.topic.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TOPIC_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TOPIC_DS_FACTORY_ID;
-
 public final class TopicDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(TOPIC_DS_FACTORY, TOPIC_DS_FACTORY_ID);
+    public static final int F_ID = Factory.TOPIC_DS.getFactoryId();
 
     public static final int PUBLISH = 0;
     public static final int TOPIC_EVENT = 1;

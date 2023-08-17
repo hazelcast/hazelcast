@@ -81,13 +81,10 @@ import com.hazelcast.internal.dynamicconfig.AddDynamicConfigOperation;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigPreJoinOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CONFIG_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CONFIG_DS_FACTORY_ID;
 
 /**
  * DataSerializerHook for com.hazelcast.config classes
@@ -95,7 +92,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CONFIG_D
 @SuppressWarnings("checkstyle:javadocvariable")
 public final class ConfigDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(CONFIG_DS_FACTORY, CONFIG_DS_FACTORY_ID);
+    public static final int F_ID = Factory.CONFIG_DS.getFactoryId();
 
     public static final int WAN_REPLICATION_CONFIG = 0;
     public static final int WAN_CUSTOM_PUBLISHER_CONFIG = 1;

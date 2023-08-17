@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -34,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
 import static com.hazelcast.query.impl.Indexes.SKIP_PARTITIONS_COUNT_CHECK;
 import static com.hazelcast.query.impl.predicates.PredicateUtils.estimatedSizeOf;
 
@@ -192,7 +192,7 @@ public final class AndPredicate
 
     @Override
     public int getFactoryId() {
-        return PREDICATE_DS_FACTORY_ID;
+        return Factory.PREDICATE_DS.getDefaultFactoryId();
     }
 
     @Override

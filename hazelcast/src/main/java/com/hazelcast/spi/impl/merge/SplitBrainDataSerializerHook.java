@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -32,9 +32,6 @@ import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.internal.util.ConstructorFunction;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_DS_FACTORY_ID;
-
 /**
  * Contains all the ID hooks for {@link IdentifiedDataSerializable} classes used by the split-brain framework.
  * <p>
@@ -46,7 +43,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BR
 @SuppressWarnings("checkstyle:javadocvariable")
 public final class SplitBrainDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(SPLIT_BRAIN_DS_FACTORY, SPLIT_BRAIN_DS_FACTORY_ID);
+    public static final int F_ID = Factory.SPLIT_BRAIN_DS.getFactoryId();
 
     public static final int COLLECTION_MERGING_VALUE = 0;
     public static final int QUEUE_MERGING_VALUE = 1;

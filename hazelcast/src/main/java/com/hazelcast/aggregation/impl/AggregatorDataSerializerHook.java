@@ -18,17 +18,14 @@ package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.util.ConstructorFunction;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.AGGREGATOR_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.AGGREGATOR_DS_FACTORY_ID;
-
 public final class AggregatorDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(AGGREGATOR_DS_FACTORY, AGGREGATOR_DS_FACTORY_ID);
+    public static final int F_ID = Factory.AGGREGATOR_DS.getFactoryId();
 
     public static final int BIG_DECIMAL_AVG = 0;
     public static final int BIG_DECIMAL_SUM = 1;

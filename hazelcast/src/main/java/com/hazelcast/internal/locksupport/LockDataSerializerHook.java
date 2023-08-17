@@ -24,15 +24,12 @@ import com.hazelcast.internal.locksupport.operations.UnlockBackupOperation;
 import com.hazelcast.internal.locksupport.operations.UnlockIfLeaseExpiredOperation;
 import com.hazelcast.internal.locksupport.operations.UnlockOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.LOCK_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.LOCK_DS_FACTORY_ID;
 
 public final class LockDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(LOCK_DS_FACTORY, LOCK_DS_FACTORY_ID);
+    public static final int F_ID = Factory.LOCK_DS.getFactoryId();
 
     public static final int LOCK_RESOURCE = 0;
     public static final int LOCK_STORE = 1;

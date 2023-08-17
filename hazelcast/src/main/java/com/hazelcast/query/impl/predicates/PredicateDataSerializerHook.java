@@ -18,19 +18,16 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.internal.util.ConstructorFunction;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
-
 public class PredicateDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(PREDICATE_DS_FACTORY, PREDICATE_DS_FACTORY_ID);
+    public static final int F_ID = Factory.PREDICATE_DS.getFactoryId();
 
     public static final int SQL_PREDICATE = 0;
     public static final int AND_PREDICATE = 1;

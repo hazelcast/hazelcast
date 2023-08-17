@@ -17,7 +17,7 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskBackupOperation;
@@ -42,13 +42,10 @@ import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncBackupStateOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY_ID;
-
 public class ScheduledExecutorDataSerializerHook
         implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(SCHEDULED_EXECUTOR_DS_FACTORY, SCHEDULED_EXECUTOR_DS_FACTORY_ID);
+    public static final int F_ID = Factory.SCHEDULED_EXECUTOR_DS.getFactoryId();
 
     public static final int TASK_HANDLER = 1;
     public static final int TASK_DESCRIPTOR = 2;

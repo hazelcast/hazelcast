@@ -18,21 +18,18 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.expression.RowValue;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SQL_DS_FACTORY_ID;
 
 /**
  * Serialization hook for SQL classes.
  */
 public class SqlDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(SQL_DS_FACTORY, SQL_DS_FACTORY_ID);
+    public static final int F_ID = Factory.SQL_DS.getFactoryId();
 
     public static final int QUERY_DATA_TYPE = 0;
     public static final int QUERY_ID = 1;

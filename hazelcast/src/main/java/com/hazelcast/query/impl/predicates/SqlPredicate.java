@@ -16,7 +16,15 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
+import static com.hazelcast.query.Predicates.between;
+import static com.hazelcast.query.Predicates.equal;
+import static com.hazelcast.query.Predicates.ilike;
+import static com.hazelcast.query.Predicates.like;
+import static com.hazelcast.query.Predicates.regex;
+
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.util.collection.ArrayUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,14 +41,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
-import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
-import static com.hazelcast.query.Predicates.between;
-import static com.hazelcast.query.Predicates.equal;
-import static com.hazelcast.query.Predicates.ilike;
-import static com.hazelcast.query.Predicates.like;
-import static com.hazelcast.query.Predicates.regex;
 
 /**
  * This class contains methods related to conversion of 'sql' query to predicate.
@@ -400,7 +400,7 @@ public class SqlPredicate
 
     @Override
     public int getFactoryId() {
-        return PREDICATE_DS_FACTORY_ID;
+        return Factory.PREDICATE_DS.getDefaultFactoryId();
     }
 
     @Override

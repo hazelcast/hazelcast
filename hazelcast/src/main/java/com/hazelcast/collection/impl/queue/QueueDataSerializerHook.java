@@ -59,20 +59,17 @@ import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackBackupOperat
 import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.util.ConstructorFunction;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY_ID;
 
 /**
  * A {@link DataSerializerHook} for the queue operations and support structures.
  */
 public final class QueueDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(QUEUE_DS_FACTORY, QUEUE_DS_FACTORY_ID);
+    public static final int F_ID = Factory.QUEUE_DS.getFactoryId();
 
     public static final int OFFER = 0;
     public static final int POLL = 1;

@@ -18,21 +18,18 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.cache.impl.wan.WanCacheEntryView;
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.map.impl.wan.WanMapRemoveEvent;
 import com.hazelcast.map.impl.wan.WanMapAddOrUpdateEvent;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.WAN_REPLICATION_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.WAN_REPLICATION_DS_FACTORY_ID;
 
 /**
  * {@link com.hazelcast.internal.serialization.DataSerializerHook} implementation for Wan Replication classes
  */
 public class WanDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(WAN_REPLICATION_DS_FACTORY, WAN_REPLICATION_DS_FACTORY_ID);
+    public static final int F_ID = Factory.WAN_REPLICATION_DS.getFactoryId();
 
     public static final int MAP_REPLICATION_UPDATE = 0;
     public static final int MAP_REPLICATION_REMOVE = 1;

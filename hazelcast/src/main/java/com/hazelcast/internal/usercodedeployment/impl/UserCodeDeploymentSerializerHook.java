@@ -18,19 +18,15 @@ package com.hazelcast.internal.usercodedeployment.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.usercodedeployment.impl.operation.ClassDataFinderOperation;
 import com.hazelcast.internal.usercodedeployment.impl.operation.DeployClassesOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.util.ConstructorFunction;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.USER_CODE_DEPLOYMENT_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.USER_CODE_DEPLOYMENT_DS_FACTORY_ID;
-
 public class UserCodeDeploymentSerializerHook implements DataSerializerHook {
-    public static final int F_ID = FactoryIdHelper.getFactoryId(USER_CODE_DEPLOYMENT_DS_FACTORY,
-            USER_CODE_DEPLOYMENT_DS_FACTORY_ID);
+    public static final int F_ID = Factory.USER_CODE_DEPLOYMENT_DS.getFactoryId();
 
     public static final int CLASS_DATA = 0;
     public static final int CLASS_DATA_FINDER_OP = 1;

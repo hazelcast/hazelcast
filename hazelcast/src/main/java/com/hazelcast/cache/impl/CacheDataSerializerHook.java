@@ -74,13 +74,10 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.internal.management.operation.GetCacheEntryViewEntryProcessor;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CACHE_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CACHE_DS_FACTORY_ID;
 
 /**
  * {@link CacheDataSerializerHook} contains all the ID hooks for {@link IdentifiedDataSerializable} classes used
@@ -91,7 +88,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CACHE_DS
 public final class CacheDataSerializerHook
         implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(CACHE_DS_FACTORY, CACHE_DS_FACTORY_ID);
+    public static final int F_ID = Factory.CACHE_DS.getFactoryId();
     public static final short GET = 1;
     public static final short CONTAINS_KEY = 2;
     public static final short PUT = 3;

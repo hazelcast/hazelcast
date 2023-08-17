@@ -17,7 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.transaction.impl.operations.BroadcastTxRollbackOperation;
@@ -39,12 +39,9 @@ import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionBackupOp
 import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionOperation;
 import com.hazelcast.transaction.impl.xa.operations.XaReplicationOperation;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY_ID;
-
 public final class TransactionDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(TRANSACTION_DS_FACTORY, TRANSACTION_DS_FACTORY_ID);
+    public static final int F_ID = Factory.TRANSACTION_DS.getFactoryId();
 
     public static final int CREATE_TX_BACKUP_LOG = 0;
     public static final int BROADCAST_TX_ROLLBACK = 1;

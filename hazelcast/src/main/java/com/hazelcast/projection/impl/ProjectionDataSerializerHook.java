@@ -18,17 +18,14 @@ package com.hazelcast.projection.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.util.ConstructorFunction;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PROJECTION_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PROJECTION_DS_FACTORY_ID;
-
 public final class ProjectionDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(PROJECTION_DS_FACTORY, PROJECTION_DS_FACTORY_ID);
+    public static final int F_ID = Factory.PROJECTION_DS.getFactoryId();
 
     public static final int SINGLE_ATTRIBUTE = 0;
     public static final int MULTI_ATTRIBUTE = 1;

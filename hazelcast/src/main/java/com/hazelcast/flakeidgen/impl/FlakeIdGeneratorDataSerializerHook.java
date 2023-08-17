@@ -17,16 +17,13 @@
 package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.FLAKE_ID_GENERATOR_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.FLAKE_ID_GENERATOR_DS_FACTORY_ID;
-
 public final class FlakeIdGeneratorDataSerializerHook implements DataSerializerHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FLAKE_ID_GENERATOR_DS_FACTORY, FLAKE_ID_GENERATOR_DS_FACTORY_ID);
+    static final int F_ID = Factory.FLAKE_ID_GENERATOR_DS.getFactoryId();
 
     static final int NEW_ID_BATCH_OPERATION = 0;
 

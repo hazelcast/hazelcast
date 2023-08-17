@@ -20,19 +20,16 @@ import com.hazelcast.internal.ascii.memcache.MemcacheEntry;
 import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.util.ConstructorFunction;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TEXT_PROTOCOLS_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TEXT_PROTOCOLS_DS_FACTORY_ID;
 
 /**
  * DataSerializerHook for memcache &amp; REST protocol support classes
  */
 public final class TextProtocolsDataSerializerHook implements DataSerializerHook {
-    public static final int F_ID = FactoryIdHelper.getFactoryId(TEXT_PROTOCOLS_DS_FACTORY, TEXT_PROTOCOLS_DS_FACTORY_ID);
+    public static final int F_ID = Factory.TEXT_PROTOCOLS_DS.getFactoryId();
 
     public static final int MEMCACHE_ENTRY = 0;
     public static final int REST_VALUE = 1;

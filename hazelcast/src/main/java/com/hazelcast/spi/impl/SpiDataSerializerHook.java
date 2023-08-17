@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -46,12 +46,9 @@ import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperatio
 import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlReplicationOperation;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY_ID;
-
 public final class SpiDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(SPI_DS_FACTORY, SPI_DS_FACTORY_ID);
+    public static final int F_ID = Factory.SPI_DS.getFactoryId();
 
     public static final int NORMAL_RESPONSE = 0;
     public static final int BACKUP = 1;

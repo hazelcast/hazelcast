@@ -18,154 +18,94 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.logging.Logger;
 
+import java.util.Arrays;
+
 public final class FactoryIdHelper {
+    public enum Factory {
+        SPI_DS("hazelcast.serialization.ds.spi", -1),
+        PARTITION_DS("hazelcast.serialization.ds.partition", -2),
+        CLIENT_DS("hazelcast.serialization.ds.client", -3),
+        MAP_DS("hazelcast.serialization.ds.map", -4),
+        QUEUE_DS("hazelcast.serialization.ds.queue", -5),
+        MULTIMAP_DS("hazelcast.serialization.ds.multimap", -6),
+        EXECUTOR_DS("hazelcast.serialization.ds.executor", -7),
+        LOCK_DS("hazelcast.serialization.ds.lock", -8),
+        TOPIC_DS("hazelcast.serialization.ds.topic", -9),
+        TRANSACTION_DS("hazelcast.serialization.ds.transaction", -10),
+        COLLECTION_DS("hazelcast.serialization.ds.collection", -11),
+        REPLICATED_MAP_DS("hazelcast.serialization.ds.replicated_map", -12),
+        CACHE_DS("hazelcast.serialization.ds.cache", -13),
+        HIDENSITY_CACHE_DS("hazelcast.serialization.ds.hidensity.cache", -14),
+        ENTERPRISE_CACHE_DS("hazelcast.serialization.ds.enterprise.cache", -15),
+        ENTERPRISE_WAN_REPLICATION_DS("hazelcast.serialization.ds.enterprise.wan_replication", -16),
+        RINGBUFFER_DS("hazelcast.serialization.ds.ringbuffer", -17),
+        ENTERPRISE_MAP_DS("hazelcast.serialization.ds.enterprise.map", -18),
+        HIBERNATE_DS("hazelcast.serialization.ds.hibernate"),
+        WEB_DS("hazelcast.serialization.ds.web"),
+        WAN_REPLICATION_DS("hazelcast.serialization.ds.wan_replication", -19),
+        PREDICATE_DS("hazelcast.serialization.ds.predicate", -20),
+        CARDINALITY_ESTIMATOR_DS("hazelcast.serialization.ds.cardinality_estimator", -21),
+        DURABLE_EXECUTOR_DS("hazelcast.serialization.ds.durable.executor", -22),
+        ENTERPRISE_HOTRESTART_CLUSTER_DS("hazelcast.serialization.ds.spi.hotrestart.cluster", -23),
+        MANAGEMENT_DS("hazelcast.serialization.ds.management", -24),
+        TEXT_PROTOCOLS_DS("hazelcast.serialization.ds.text.protocols", -25),
+        ENTERPRISE_HOTRESTART_BACKUP_DS("hazelcast.serialization.ds.spi.hotrestart.backup", -26),
+        SCHEDULED_EXECUTOR_DS("hazelcast.serialization.ds.scheduled.executor", -27),
+        USER_CODE_DEPLOYMENT_DS("hazelcast.serialization.ds.user.code.deployment", -28),
+        AGGREGATOR_DS("hazelcast.serialization.ds.aggregator", -29),
+        PROJECTION_DS("hazelcast.serialization.ds.projection", -30),
+        CONFIG_DS("hazelcast.serialization.ds.config", -31),
+        ENTERPRISE_SECURITY_DS("hazelcast.serialization.ds.security", -32),
+        EVENT_JOURNAL_DS("hazelcast.serialization.ds.event_journal", -33),
+        FLAKE_ID_GENERATOR_DS("hazelcast.serialization.ds.flake_id_generator", -34),
+        SPLIT_BRAIN_DS("hazelcast.serialization.ds.split_brain", -35),
+        PN_COUNTER_DS("hazelcast.serialization.ds.pn_counter", -36),
+        METRICS_DS("hazelcast.serialization.metrics", -37),
+        SQL_DS("hazelcast.serialization.sql", -38),
+        JSON_DS("hazelcast.serialization.json", -39),
+        UTIL_COLLECTION_DS("hazelcast.serialization.util.collection", -40),
+        JET_SQL_DS("hazelcast.serialization.jet.sql", -41),
+        SCHEMA_DS("hazelcast.serialization.schema", -42),
+        ENTERPRISE_PARTITION_DS("hazelcast.serialization.ds.enterprise.partition", -43),
+        BASIC_FUNCTIONS_DS("hazelcast.serialization.lambda", -44);
 
-    public static final String SPI_DS_FACTORY = "hazelcast.serialization.ds.spi";
-    public static final int SPI_DS_FACTORY_ID = -1;
+        private final String prop;
+        /** factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)... */
+        private final int defaultFactoryId;
 
-    public static final String PARTITION_DS_FACTORY = "hazelcast.serialization.ds.partition";
-    public static final int PARTITION_DS_FACTORY_ID = -2;
+        Factory(final String prop, final int defaultFactoryId) {
+            this.prop = prop;
+            this.defaultFactoryId = defaultFactoryId;
+        }
 
-    public static final String CLIENT_DS_FACTORY = "hazelcast.serialization.ds.client";
-    public static final int CLIENT_DS_FACTORY_ID = -3;
+        Factory(final String prop) {
+            this(prop, 0);
+        }
 
-    public static final String MAP_DS_FACTORY = "hazelcast.serialization.ds.map";
-    public static final int MAP_DS_FACTORY_ID = -4;
+        public int getDefaultFactoryId() {
+            return defaultFactoryId;
+        }
 
-    public static final String QUEUE_DS_FACTORY = "hazelcast.serialization.ds.queue";
-    public static final int QUEUE_DS_FACTORY_ID = -5;
+        public int getFactoryId() {
+            return FactoryIdHelper.getFactoryId(prop, defaultFactoryId);
+        }
 
-    public static final String MULTIMAP_DS_FACTORY = "hazelcast.serialization.ds.multimap";
-    public static final int MULTIMAP_DS_FACTORY_ID = -6;
-
-    public static final String EXECUTOR_DS_FACTORY = "hazelcast.serialization.ds.executor";
-    public static final int EXECUTOR_DS_FACTORY_ID = -7;
-
-    public static final String LOCK_DS_FACTORY = "hazelcast.serialization.ds.lock";
-    public static final int LOCK_DS_FACTORY_ID = -8;
-
-    public static final String TOPIC_DS_FACTORY = "hazelcast.serialization.ds.topic";
-    public static final int TOPIC_DS_FACTORY_ID = -9;
-
-    public static final String TRANSACTION_DS_FACTORY = "hazelcast.serialization.ds.transaction";
-    public static final int TRANSACTION_DS_FACTORY_ID = -10;
-
-    public static final String COLLECTION_DS_FACTORY = "hazelcast.serialization.ds.collection";
-    public static final int COLLECTION_DS_FACTORY_ID = -11;
-
-    public static final String REPLICATED_MAP_DS_FACTORY = "hazelcast.serialization.ds.replicated_map";
-    public static final int REPLICATED_MAP_DS_FACTORY_ID = -12;
-
-    public static final String CACHE_DS_FACTORY = "hazelcast.serialization.ds.cache";
-    public static final int CACHE_DS_FACTORY_ID = -13;
-
-    public static final String HIDENSITY_CACHE_DS_FACTORY = "hazelcast.serialization.ds.hidensity.cache";
-    public static final int HIDENSITY_CACHE_DS_FACTORY_ID = -14;
-
-    public static final String ENTERPRISE_CACHE_DS_FACTORY = "hazelcast.serialization.ds.enterprise.cache";
-    public static final int ENTERPRISE_CACHE_DS_FACTORY_ID = -15;
-
-    public static final String ENTERPRISE_WAN_REPLICATION_DS_FACTORY = "hazelcast.serialization.ds.enterprise.wan_replication";
-    public static final int ENTERPRISE_WAN_REPLICATION_DS_FACTORY_ID = -16;
-
-    public static final String RINGBUFFER_DS_FACTORY = "hazelcast.serialization.ds.ringbuffer";
-    public static final int RINGBUFFER_DS_FACTORY_ID = -17;
-
-    public static final String ENTERPRISE_MAP_DS_FACTORY = "hazelcast.serialization.ds.enterprise.map";
-    public static final int ENTERPRISE_MAP_DS_FACTORY_ID = -18;
-
-    public static final String HIBERNATE_DS_FACTORY = "hazelcast.serialization.ds.hibernate";
-    public static final String WEB_DS_FACTORY = "hazelcast.serialization.ds.web";
-
-    public static final String WAN_REPLICATION_DS_FACTORY = "hazelcast.serialization.ds.wan_replication";
-    public static final int WAN_REPLICATION_DS_FACTORY_ID = -19;
-
-    public static final String PREDICATE_DS_FACTORY = "hazelcast.serialization.ds.predicate";
-    public static final int PREDICATE_DS_FACTORY_ID = -20;
-
-    public static final String CARDINALITY_ESTIMATOR_DS_FACTORY = "hazelcast.serialization.ds.cardinality_estimator";
-    public static final int CARDINALITY_ESTIMATOR_DS_FACTORY_ID = -21;
-
-    public static final String DURABLE_EXECUTOR_DS_FACTORY = "hazelcast.serialization.ds.durable.executor";
-    public static final int DURABLE_EXECUTOR_DS_FACTORY_ID = -22;
-
-    public static final String ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY = "hazelcast.serialization.ds.spi.hotrestart.cluster";
-    public static final int ENTERPRISE_HOTRESTART_CLUSTER_DS_FACTORY_ID = -23;
-
-    public static final String MANAGEMENT_DS_FACTORY = "hazelcast.serialization.ds.management";
-    public static final int MANAGEMENT_DS_FACTORY_ID = -24;
-
-    public static final String TEXT_PROTOCOLS_DS_FACTORY = "hazelcast.serialization.ds.text.protocols";
-    public static final int TEXT_PROTOCOLS_DS_FACTORY_ID = -25;
-
-    public static final String ENTERPRISE_HOTRESTART_BACKUP_DS_FACTORY = "hazelcast.serialization.ds.spi.hotrestart.backup";
-    public static final int ENTERPRISE_HOTRESTART_BACKUP_DS_FACTORY_ID = -26;
-
-    public static final String SCHEDULED_EXECUTOR_DS_FACTORY = "hazelcast.serialization.ds.scheduled.executor";
-    public static final int SCHEDULED_EXECUTOR_DS_FACTORY_ID = -27;
-
-    public static final String USER_CODE_DEPLOYMENT_DS_FACTORY = "hazelcast.serialization.ds.user.code.deployment";
-    public static final int USER_CODE_DEPLOYMENT_DS_FACTORY_ID = -28;
-
-    public static final String AGGREGATOR_DS_FACTORY = "hazelcast.serialization.ds.aggregator";
-    public static final int AGGREGATOR_DS_FACTORY_ID = -29;
-
-    public static final String PROJECTION_DS_FACTORY = "hazelcast.serialization.ds.projection";
-    public static final int PROJECTION_DS_FACTORY_ID = -30;
-
-    public static final String CONFIG_DS_FACTORY = "hazelcast.serialization.ds.config";
-    public static final int CONFIG_DS_FACTORY_ID = -31;
-
-    public static final String ENTERPRISE_SECURITY_DS_FACTORY = "hazelcast.serialization.ds.security";
-    public static final int ENTERPRISE_SECURITY_DS_FACTORY_ID = -32;
-
-    public static final String EVENT_JOURNAL_DS_FACTORY = "hazelcast.serialization.ds.event_journal";
-    public static final int EVENT_JOURNAL_DS_FACTORY_ID = -33;
-
-    public static final String FLAKE_ID_GENERATOR_DS_FACTORY = "hazelcast.serialization.ds.flake_id_generator";
-    public static final int FLAKE_ID_GENERATOR_DS_FACTORY_ID = -34;
-
-    public static final String SPLIT_BRAIN_DS_FACTORY = "hazelcast.serialization.ds.split_brain";
-    public static final int SPLIT_BRAIN_DS_FACTORY_ID = -35;
-
-    public static final String PN_COUNTER_DS_FACTORY = "hazelcast.serialization.ds.pn_counter";
-    public static final int PN_COUNTER_DS_FACTORY_ID = -36;
-
-    public static final String METRICS_DS_FACTORY = "hazelcast.serialization.metrics";
-    public static final int METRICS_DS_FACTORY_ID = -37;
-
-    public static final String SQL_DS_FACTORY = "hazelcast.serialization.sql";
-    public static final int SQL_DS_FACTORY_ID = -38;
-
-    public static final String JSON_DS_FACTORY = "hazelcast.serialization.json";
-    public static final int JSON_DS_FACTORY_ID = -39;
-
-    public static final String UTIL_COLLECTION_DS_FACTORY = "hazelcast.serialization.util.collection";
-    public static final int UTIL_COLLECTION_DS_FACTORY_ID = -40;
-
-    public static final String JET_SQL_DS_FACTORY = "hazelcast.serialization.jet.sql";
-    public static final int JET_SQL_DS_FACTORY_ID = -41;
-
-    public static final String SCHEMA_DS_FACTORY = "hazelcast.serialization.schema";
-    public static final int SCHEMA_DS_FACTORY_ID = -42;
-
-    public static final String ENTERPRISE_PARTITION_DS_FACTORY = "hazelcast.serialization.ds.enterprise.partition";
-    public static final int ENTERPRISE_PARTITION_DS_FACTORY_ID = -43;
-
-    public static final String BASIC_FUNCTIONS_DS_FACTORY = "hazelcast.serialization.lambda";
-    public static final int BASIC_FUNCTIONS_DS_FACTORY_ID = -44;
-
-    // factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)...
+        /** @return the {@link toString} of the {@link Factory} indexed by {@code factoryId}, else the {@code factoryId} */
+        public static String getName(final int factoryId) {
+            return Arrays.stream(values()).filter(factory -> factory.getFactoryId() == factoryId).map(Factory::toString)
+                    .findAny().orElseGet(() -> String.valueOf(factoryId));
+        }
+    }
 
     private FactoryIdHelper() {
     }
 
-    public static int getFactoryId(String prop, int defaultId) {
+    public static int getFactoryId(final String prop, final int defaultId) {
         final String value = System.getProperty(prop);
         if (value != null) {
             try {
                 return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
+            } catch (final NumberFormatException e) {
                 Logger.getLogger(FactoryIdHelper.class).finest("Parameter for property prop could not be parsed", e);
             }
         }

@@ -17,12 +17,9 @@
 package com.hazelcast.internal.journal;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.EVENT_JOURNAL_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.EVENT_JOURNAL_DS_FACTORY_ID;
 
 /**
  * Data serializer hook for common classes related to the {@link EventJournal}. Data structure specific
@@ -32,7 +29,7 @@ public final class EventJournalDataSerializerHook implements DataSerializerHook 
     /**
      * Factory ID for the event journal {@link IdentifiedDataSerializable} classes
      */
-    public static final int F_ID = FactoryIdHelper.getFactoryId(EVENT_JOURNAL_DS_FACTORY, EVENT_JOURNAL_DS_FACTORY_ID);
+    public static final int F_ID = Factory.EVENT_JOURNAL_DS.getFactoryId();
 
     /**
      * Type ID for the {@link EventJournalInitialSubscriberState} class
