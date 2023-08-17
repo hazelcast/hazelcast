@@ -47,7 +47,6 @@ import static com.hazelcast.query.impl.predicates.PredicateUtils.isNull;
  */
 @BinaryInterface
 public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, IdentifiedDataSerializable {
-    public static final int FACTORY_ID = Factory.PREDICATE_DS.getDefaultFactoryId();
 
     String attributeName;
 
@@ -176,15 +175,7 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
 
     @Override
     public int getFactoryId() {
-<<<<<<< Upstream, based on master
-<<<<<<< Upstream, based on master
-        return FACTORY_ID;
-=======
         return Factory.PREDICATE_DS.getDefaultFactoryId();
->>>>>>> ef9d1ec Refactor FactoryIdHelper as enum
-=======
-        return FACTORY_ID;
->>>>>>> b7eb62c Make `getFactoryId()` result final
     }
 
     @Override

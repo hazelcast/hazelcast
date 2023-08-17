@@ -17,13 +17,7 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
-<<<<<<< Upstream, based on master
-<<<<<<< Upstream, based on master
-=======
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
->>>>>>> ef9d1ec Refactor FactoryIdHelper as enum
-=======
->>>>>>> 6d4c5cb Checkstyle
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -99,15 +93,7 @@ public final class NotPredicate
 
     @Override
     public int getFactoryId() {
-<<<<<<< Upstream, based on master
-<<<<<<< Upstream, based on master
-        return AbstractPredicate.FACTORY_ID;
-=======
         return Factory.PREDICATE_DS.getDefaultFactoryId();
->>>>>>> ef9d1ec Refactor FactoryIdHelper as enum
-=======
-        return AbstractPredicate.FACTORY_ID;
->>>>>>> b7eb62c Make `getFactoryId()` result final
     }
 
     @Override
