@@ -44,14 +44,6 @@ public class TpcEngineBuilderTest {
         builder.reactorCount = -1;
         assertThrows(IllegalArgumentException.class, () -> builder.conclude());
     }
-//
-//    @Test
-//    public void test_setReactorCount_whenAlreadyBuilt() {
-//        TpcEngine.Context builder = new TpcEngine.Context();
-//        builder.build();
-//
-//        assertThrows(IllegalStateException.class, () -> builder.setReactorCount(0));
-//    }
 
     @Test
     public void test_build() {

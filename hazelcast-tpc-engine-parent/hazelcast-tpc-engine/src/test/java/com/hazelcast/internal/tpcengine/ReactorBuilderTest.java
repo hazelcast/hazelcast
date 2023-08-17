@@ -16,42 +16,67 @@
 
 package com.hazelcast.internal.tpcengine;
 
+import org.junit.After;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
+
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertTrueEventually;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
+import static java.util.Collections.synchronizedList;
+import static org.junit.Assert.assertEquals;
+
 public abstract class ReactorBuilderTest {
+
+    private final List<Reactor> reactors = new ArrayList<>();
+
+    @After
+    public void after() throws InterruptedException {
+        terminateAll(reactors);
+    }
 
     public abstract Reactor.Builder newReactorBuilder();
 
-//    @Test
-//    public void test_setReactorName_whenNull() {
-//        Reactor.Builder builder = newReactorContext();
-//
-//        assertThrows(NullPointerException.class, () -> builder.setReactorName(null));
-//    }
-//
-//    @Test
-//    public void test_setReactorName_whenAlreadyBuilt() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.build();
-//        assertThrows(IllegalStateException.class, () -> builder.setReactorName("banana"));
-//    }
-//
-//    @Test
-//    public void test_setReactorName() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.setReactorName("banana");
-//        Reactor reactor = builder.build();
-//        assertEquals("banana", reactor.name());
-//        assertEquals("banana", reactor.toString());
-//    }
-//
-//    @Test
-//    public void test_build_whenAlreadyBuilt() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.build();
-//
-//        assertThrows(IllegalStateException.class, () -> builder.build());
-//    }
-//
-//
+
+    @Test
+    public void test_reactorName_whenNull() {
+        Reactor.Builder builder = newReactorBuilder();
+        builder.reactorName = null;
+
+        int nextId = Reactor.Builder.REACTOR_ID_GENERATOR.get();
+
+        Reactor reactor = builder.build();
+        assertEquals("Reactor-" + nextId, reactor.name());
+    }
+
+    @Test
+    public void test_reactorName_whenNotNull() {
+        Reactor.Builder builder = newReactorBuilder();
+        String name = "banana";
+        builder.reactorName = name;
+
+        Reactor reactor = builder.build();
+        assertEquals(name, reactor.name());
+    }
+
+    @Test
+    public void test_initFn_whenNotNull() {
+        Reactor.Builder builder = newReactorBuilder();
+
+        List<Reactor> found = synchronizedList(new ArrayList<>());
+        Consumer<Reactor> initFn = found::add;
+        builder.initFn = initFn;
+
+        Reactor reactor = builder.build();
+        reactors.add(reactor);
+        reactor.start();
+
+        assertTrueEventually(() -> assertEquals(Collections.singletonList(reactor), found));
+    }
+
 //    @Test
 //    public void test_setStallHandler_whenNull() {
 //        Reactor.Builder builder = newReactorContext();
@@ -64,20 +89,6 @@ public abstract class ReactorBuilderTest {
 //        Reactor.Builder builder = newReactorContext();
 //        builder.build();
 //        assertThrows(IllegalStateException.class, () -> builder.setStallHandler(new LoggingStallHandler()));
-//    }
-//
-//
-//    @Test
-//    public void test_setInitFn_whenNull() {
-//        Reactor.Builder builder = newReactorContext();
-//        assertThrows(NullPointerException.class, () -> builder.setInitFn(null));
-//    }
-//
-//    @Test
-//    public void test_setInitFn_whenAlreadyBuilt() {
-//        Reactor.Builder builder = newReactorContext();
-//        builder.build();
-//        assertThrows(IllegalStateException.class, () -> builder.setInitFn(mock(Consumer.class)));
 //    }
 //
 //    @Test

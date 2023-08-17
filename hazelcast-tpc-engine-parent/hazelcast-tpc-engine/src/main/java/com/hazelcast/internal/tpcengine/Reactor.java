@@ -704,7 +704,7 @@ public abstract class Reactor implements Executor {
                 = "hazelcast.tpc.reactor.spin";
 
         private static final AtomicInteger THREAD_ID_GENERATOR = new AtomicInteger();
-        private static final AtomicInteger REACTOR_ID_GENERATOR = new AtomicInteger();
+        static final AtomicInteger REACTOR_ID_GENERATOR = new AtomicInteger();
         private static final Constructor<Builder> URING_REACTOR_BUILDER_CONSTRUCTOR;
         private static final String IOURING_IOURING_REACTOR_BUILDER_CLASS_NAME
                 = "com.hazelcast.internal.tpcengine.iouring.UringReactor$Builder";

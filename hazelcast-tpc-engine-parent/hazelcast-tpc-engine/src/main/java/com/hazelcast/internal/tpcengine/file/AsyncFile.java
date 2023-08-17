@@ -236,14 +236,6 @@ public abstract class AsyncFile {
         throw new UnsupportedOperationException();
     }
 
-    public final void writeBarrier() {
-        throw new UnsupportedOperationException();
-    }
-
-    public final void writeWriteBarrier() {
-        throw new UnsupportedOperationException();
-    }
-
     public final IntPromise fdatasync() {
         IntPromise promise = promiseAllocator.allocate();
         StorageRequest request = scheduler.allocate();
