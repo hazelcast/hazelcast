@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.LazyDefiningSpecificMemberPms;
@@ -106,15 +106,12 @@ import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
 import java.util.Map;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.JET_SQL_DS_FACTORY_ID;
-
 /**
  * Serialization hook for Jet SQL engine classes.
  */
 public class JetSqlSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(JET_SQL_DS_FACTORY, JET_SQL_DS_FACTORY_ID);
+    public static final int F_ID = Factory.JET_SQL_DS.getFactoryId();
 
     public static final int JSON_QUERY = 0;
     public static final int JSON_PARSE = 1;
