@@ -91,6 +91,7 @@ public class UnparseTest extends SqlTestSupport {
 
     private static OptimizerContext createContext() {
         return OptimizerContext.create(
+                instance(),
                 new SqlCatalog(emptyList()),
                 emptyList(),
                 emptyList(),

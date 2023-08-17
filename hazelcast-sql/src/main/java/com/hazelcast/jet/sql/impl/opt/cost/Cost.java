@@ -40,6 +40,15 @@ public class Cost implements RelOptCost {
     public static final Cost HUGE = new Cost(Double.MAX_VALUE / 100, Double.MAX_VALUE / 100, Double.MAX_VALUE / 100);
     public static final Cost INFINITY = new Cost(Double.MAX_VALUE, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
 
+    /**
+     * Multiplier to display hash table building actions:
+     * - row hash computation;
+     * - probe hash table;
+     * - worst case scenario : walk through hash chain and compare with each element (assessed as 3 ops in average);
+     * - add the hash to the bucket.
+     */
+    public static final double HASH_JOIN_MULTIPLIER = 6;
+
     private final double rows;
     private final double cpu;
     private final double network;

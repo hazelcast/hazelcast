@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Statistic;
 
@@ -56,7 +58,7 @@ public final class HazelcastSchemaUtils {
      *
      * @return Top-level schema.
      */
-    public static HazelcastSchema createRootSchema(SqlCatalog catalog) {
+    public static HazelcastSchema createRootSchema(HazelcastInstance hz, SqlCatalog catalog) {
         // Create schemas.
         Map<String, Schema> schemaMap = new HashMap<>();
 
@@ -68,11 +70,9 @@ public final class HazelcastSchemaUtils {
             for (Map.Entry<String, Table> tableEntry : currentSchemaEntry.getValue().entrySet()) {
                 String tableName = tableEntry.getKey();
                 Table table = tableEntry.getValue();
-
-                HazelcastTable convertedTable = new HazelcastTable(
-                        table,
-                        createTableStatistic(table)
-                );
+                HazelcastTable convertedTable = table instanceof PartitionedMapTable
+                        ? new HazelcastTable(table, hz)
+                        : new HazelcastTable(table, createTableStatistic(table));
 
                 schemaTables.put(tableName, convertedTable);
             }

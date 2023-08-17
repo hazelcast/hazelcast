@@ -314,12 +314,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < level; i++) {
-                builder.append("  ");
-            }
-            builder.append(node);
-            return builder.toString();
+            return "  ".repeat(Math.max(0, level)) + node;
         }
 
         @Override

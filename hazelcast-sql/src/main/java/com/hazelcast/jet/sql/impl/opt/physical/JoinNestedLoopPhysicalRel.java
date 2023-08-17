@@ -22,16 +22,20 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinInfo;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.util.ImmutableIntList;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -107,6 +111,35 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
     @Override
     public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onNestedLoopJoin(this);
+    }
+
+    /**
+     * Copied from {@link org.apache.calcite.rel.core.Correlate#computeSelfCost(RelOptPlanner, RelMetadataQuery)}
+     */
+    @Override
+    @Nullable
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        double rowCount = mq.getRowCount(this);
+
+        final double rightRowCount = right.estimateRowCount(mq);
+        final double leftRowCount = left.estimateRowCount(mq);
+        if (Double.isInfinite(leftRowCount) || Double.isInfinite(rightRowCount)) {
+            return planner.getCostFactory().makeInfiniteCost();
+        }
+
+        Double restartCount = mq.getRowCount(getLeft());
+        if (restartCount == null) {
+            return planner.getCostFactory().makeInfiniteCost();
+        }
+        // RelMetadataQuery.getCumulativeCost(getRight()); does not work for
+        // RelSubset, so we ask planner to cost-estimate right relation
+        RelOptCost rightCost = planner.getCost(getRight(), mq);
+        if (rightCost == null) {
+            return planner.getCostFactory().makeInfiniteCost();
+        }
+        RelOptCost rescanCost = rightCost.multiplyBy(Math.max(1.0, restartCount - 1));
+
+        return planner.getCostFactory().makeCost(rowCount + leftRowCount, 0, 0).plus(rescanCost);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdPrunability;
@@ -107,6 +108,7 @@ public final class OptimizerContext {
      * @return Context.
      */
     public static OptimizerContext create(
+            HazelcastInstance hz,
             SqlCatalog schema,
             List<List<String>> searchPaths,
             List<Object> arguments,
@@ -114,7 +116,7 @@ public final class OptimizerContext {
             IMapResolver iMapResolver
     ) {
         // Resolve tables.
-        HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
+        HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(hz, schema);
 
         return create(rootSchema, searchPaths, arguments, memberCount, iMapResolver);
     }

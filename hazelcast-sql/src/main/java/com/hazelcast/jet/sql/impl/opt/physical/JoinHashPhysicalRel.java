@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.opt.cost.Cost;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -28,7 +29,6 @@ import org.apache.calcite.rex.RexNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class JoinHashPhysicalRel extends JoinPhysicalRel {
-    private static final double COST_FACTOR = 1.1;
 
     JoinHashPhysicalRel(
             RelOptCluster cluster,
@@ -61,6 +61,12 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
     @Override
     @Nullable
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return super.computeSelfCost(planner, mq).multiplyBy(COST_FACTOR);
+        double leftRowCount = mq.getRowCount(getLeft());
+        double rightRowCount = mq.getRowCount(getRight());
+        double rowCount = leftRowCount + rightRowCount;
+
+        double cpu = Cost.HASH_JOIN_MULTIPLIER * leftRowCount + /* TODO: selectivity */ rightRowCount;
+
+        return planner.getCostFactory().makeCost(rowCount, cpu, 0.);
     }
 }

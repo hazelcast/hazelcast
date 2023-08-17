@@ -206,6 +206,7 @@ public class ParserOperationsTest extends SqlTestSupport {
         List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(emptyList(), tableResolvers);
 
         return OptimizerContext.create(
+                instance(),
                 new SqlCatalog(tableResolvers),
                 searchPaths,
                 emptyList(),
