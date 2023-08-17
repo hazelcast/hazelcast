@@ -497,6 +497,8 @@ public final class Linux {
         }
     }
 
+    public static native void remove(String pathname);
+
     public static native int errno();
 
     /**

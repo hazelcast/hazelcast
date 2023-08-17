@@ -144,9 +144,9 @@ public abstract class AsyncFile {
     /**
      * Deletes the AsyncFile.
      *
-     * @return
+     * @throws java.io.UncheckedIOException
      */
-    public abstract IntPromise delete();
+    public abstract void delete();
 
     /**
      * Executes a nop asynchronously. This method exists purely for benchmarking
@@ -165,8 +165,6 @@ public abstract class AsyncFile {
         if (request == null) {
             return failOnOverload(promise);
         }
-        metrics.incNops();
-
         request.opcode = STR_REQ_OP_NOP;
         request.promise = promise;
         request.file = this;
@@ -491,6 +489,10 @@ public abstract class AsyncFile {
             return (long) NOPS.getOpaque(this);
         }
 
+        /**
+         * Increases the number of nop operations that have been successfully
+         * performed on the file by one.
+         */
         public void incNops() {
             NOPS.setOpaque(this, (long) NOPS.getOpaque(this) + 1);
         }

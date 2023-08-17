@@ -24,7 +24,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertSuccessEventually;
 import static com.hazelcast.internal.tpcengine.file.AsyncFile.O_CREAT;
@@ -56,62 +58,9 @@ public abstract class AsyncFileTest {
     }
 
     @Test
-    public void test_1B() {
-        run(1);
-    }
-
-    @Test
-    public void test_2B() {
-        run(2);
-    }
-
-    @Test
-    public void test_1KB() {
-        run(1024);
-    }
-
-    @Test
-    public void test_2KB() {
-        run(2048);
-    }
-
-    @Test
-    public void test_4KB() {
-        run(4096);
-    }
-
-    @Test
-    public void test_8KB() {
-        run(8192);
-    }
-
-    @Test
-    public void test_64KB() {
-        run(64 * 1024);
-    }
-
-    @Test
-    public void test_128KB() {
-        run(128 * 1024);
-    }
-
-    @Test
-    public void test_256KB() {
-        run(256 * 1024);
-    }
-
-    @Test
-    public void test_512KB() {
-        run(512 * 1024);
-    }
-
-    @Test
-    public void test_1MB() {
-        run(1024 * 1024);
-    }
-
-    public void run(int size) {
-        CompletableFuture<Long> future = new CompletableFuture<Long>();
+    public void test_size() {
+        CompletableFuture<Long> future = new CompletableFuture<>();
+        int size = 1039;
         File tmpFile = randomTmpFile(size);
 
         Runnable task = () -> {
@@ -129,7 +78,33 @@ public abstract class AsyncFileTest {
         reactor.offer(task);
 
         assertSuccessEventually(future);
-        assertEquals(new Long(size), future.join());
+        assertEquals(Long.valueOf(size), future.join());
+    }
+
+    @Test
+    public void test_delete() {
+        CompletableFuture<Integer> future = new CompletableFuture<>();
+        int size = 1039;
+        File tmpFile = randomTmpFile(size);
+
+        Runnable task = () -> {
+            AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
+
+            file.open(O_RDONLY, PERMISSIONS_ALL).then((integer, throwable) -> {
+                try {
+                    file.delete();
+                    future.complete(0);
+                } catch (Throwable t) {
+                    future.completeExceptionally(t);
+                }
+            });
+
+        };
+        reactor.offer(task);
+
+        assertSuccessEventually(future);
+        assertFalse(tmpFile.exists());
+        assertEquals(Integer.valueOf(0), future.join());
     }
 
 //    @Test
@@ -218,24 +193,21 @@ public abstract class AsyncFileTest {
 //    }
 
     @Test
-    public void testWrite() {
+    public void testNop() throws ExecutionException, InterruptedException {
         File tmpFile = randomTmpFile();
 
         CompletableFuture future = new CompletableFuture();
+        CompletableFuture<AsyncFile> fileFuture = new CompletableFuture<>();
 
         Runnable task = () -> {
             AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
-            IOBuffer buffer = reactor.eventloop().storageAllocator().allocate(pageSize());
-            for (int k = 0; k < buffer.capacity() / 2; k++) {
-                buffer.writeChar('a');
-            }
-            buffer.flip();
+            fileFuture.complete(file);
 
             file.open(O_WRONLY | O_CREAT, PERMISSIONS_ALL).then((integer, throwable1) -> {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);
                 } else {
-                    file.pwrite(0, 20, buffer).then((result, throwable2) -> {
+                    file.nop().then((result, throwable2) -> {
                         if (throwable2 != null) {
                             future.completeExceptionally(throwable2);
                         } else {
@@ -254,25 +226,96 @@ public abstract class AsyncFileTest {
         reactor.offer(task);
 
         assertSuccessEventually(future);
+        AsyncFile file = fileFuture.get();
+
+        AsyncFile.Metrics metrics = file.metrics();
+        assertEquals(1, metrics.nops());
+        assertEquals(0, metrics.fsyncs());
+        assertEquals(0, metrics.fdatasyncs());
+        assertEquals(0, metrics.reads());
+        assertEquals(0, metrics.bytesRead());
+        assertEquals(0, metrics.writes());
+        assertEquals(0, metrics.bytesWritten());
+    }
+
+
+    @Test
+    public void testWrite() throws ExecutionException, InterruptedException {
+        File tmpFile = randomTmpFile();
+
+        CompletableFuture future = new CompletableFuture();
+        CompletableFuture<AsyncFile> fileFuture = new CompletableFuture<>();
+
+        IOBuffer buffer = reactor.eventloop().storageAllocator().allocate(pageSize());
+        Random random = new Random();
+        for (int k = 0; k < buffer.capacity(); k++) {
+            buffer.writeByte((byte) random.nextInt());
+        }
+        buffer.flip();
+
+        Runnable task = () -> {
+            AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
+            fileFuture.complete(file);
+
+
+            file.open(O_WRONLY | O_CREAT, PERMISSIONS_ALL).then((integer, throwable1) -> {
+                if (throwable1 != null) {
+                    future.completeExceptionally(throwable1);
+                } else {
+                    file.pwrite(0, buffer.remaining(), buffer).then((result, throwable2) -> {
+                        if (throwable2 != null) {
+                            future.completeExceptionally(throwable2);
+                        } else {
+                            file.close().then((integer1, throwable3) -> {
+                                if (throwable3 != null) {
+                                    future.completeExceptionally(throwable3);
+                                } else {
+                                    future.complete(null);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        };
+        reactor.offer(task);
+
+        assertSuccessEventually(future);
+        AsyncFile file = fileFuture.get();
+
+        AsyncFile.Metrics metrics = file.metrics();
+        assertEquals(0, metrics.nops());
+        assertEquals(0, metrics.fsyncs());
+        assertEquals(0, metrics.fdatasyncs());
+        assertEquals(0, metrics.reads());
+        assertEquals(0, metrics.bytesRead());
+        assertEquals(1, metrics.writes());
+        assertEquals(buffer.capacity(), metrics.bytesWritten());
     }
 
     @Test
-    public void testRead() {
+    public void testRead() throws ExecutionException, InterruptedException {
+        int pageSize = pageSize();
+
         File tmpFile = randomTmpFile();
-        FileTestSupport.write(tmpFile, "1234");
+        byte[] bytes = new byte[4 * pageSize];
+        new Random().nextBytes(bytes);
+        FileTestSupport.write(tmpFile, new String(bytes));
 
         CompletableFuture future = new CompletableFuture();
+        CompletableFuture<AsyncFile> fileFuture = new CompletableFuture<>();
         Runnable task = () -> {
             Eventloop eventloop = reactor.eventloop();
-            IOBuffer buffer = eventloop.storageAllocator().allocate(pageSize());
+            IOBuffer buffer = eventloop.storageAllocator().allocate(pageSize);
             AsyncFile file = eventloop.newAsyncFile(tmpFile.getAbsolutePath());
+            fileFuture.complete(file);
 
             file.open(O_RDONLY, PERMISSIONS_ALL).then((result1, throwable1) -> {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);
                 } else {
 
-                    file.pread(0, 4096, buffer).then((result2, throwable2) -> {
+                    file.pread(0, buffer.remaining(), buffer).then((result2, throwable2) -> {
                         if (throwable2 != null) {
                             future.completeExceptionally(throwable2);
                         } else {
@@ -286,5 +329,14 @@ public abstract class AsyncFileTest {
         reactor.offer(task);
 
         assertSuccessEventually(future);
+        AsyncFile file = fileFuture.get();
+        AsyncFile.Metrics metrics = file.metrics();
+        assertEquals(0, metrics.nops());
+        assertEquals(0, metrics.fsyncs());
+        assertEquals(0, metrics.fdatasyncs());
+        assertEquals(1, metrics.reads());
+        assertEquals(pageSize, metrics.bytesRead());
+        assertEquals(0, metrics.writes());
+        assertEquals(0, metrics.bytesWritten());
     }
 }

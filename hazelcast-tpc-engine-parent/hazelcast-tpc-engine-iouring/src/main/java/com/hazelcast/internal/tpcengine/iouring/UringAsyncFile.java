@@ -20,7 +20,6 @@ package com.hazelcast.internal.tpcengine.iouring;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
-import com.hazelcast.internal.tpcengine.util.IntPromise;
 
 /**
  * io_uring implementation of the {@link AsyncFile}.
@@ -35,8 +34,8 @@ public final class UringAsyncFile extends AsyncFile {
     }
 
     @Override
-    public IntPromise delete() {
-        throw new RuntimeException("Not yet implemented");
+    public void delete() {
+        Linux.remove(path());
     }
 
     @Override

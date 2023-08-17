@@ -53,6 +53,15 @@ Java_com_hazelcast_internal_tpcengine_iouring_Linux_open(JNIEnv* env, jclass thi
     return open(path, (int)flags, (mode_t)mode);
 }
 
+JNIEXPORT void JNICALL
+Java_com_hazelcast_internal_tpcengine_iouring_Linux_remove(JNIEnv* env, jclass this_class, jstring pathname) {
+    const char* path = (*env)->GetStringUTFChars(env, pathname, NULL);
+    int res = remove(path);
+    if (res == -1) {
+         throw_io_exception(env, "remove", errno);
+         return;
+    }
+}
 
 JNIEXPORT jint JNICALL
 Java_com_hazelcast_internal_tpcengine_iouring_Linux_close(JNIEnv* env, jclass this_class, jint fd) {

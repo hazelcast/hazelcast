@@ -19,10 +19,10 @@ package com.hazelcast.internal.tpcengine.nio;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.file.AsyncFile;
 import com.hazelcast.internal.tpcengine.file.StorageScheduler;
-import com.hazelcast.internal.tpcengine.util.IntPromise;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.channels.AsynchronousFileChannel;
 
 public class NioAsyncFile extends AsyncFile {
@@ -44,14 +44,10 @@ public class NioAsyncFile extends AsyncFile {
     }
 
     @Override
-    public IntPromise delete() {
+    public void delete() {
         File file = new File(path());
-        IntPromise promise = promiseAllocator.allocate();
-        if (file.delete()) {
-            promise.complete(0);
-        } else {
-            promise.completeExceptionally(new IOException("Failed to delete [" + path() + "]"));
+        if (!file.delete()) {
+            throw new UncheckedIOException(new IOException("Failed to delete file:" + path()));
         }
-        return promise;
     }
 }
