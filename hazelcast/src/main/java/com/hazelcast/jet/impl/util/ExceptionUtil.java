@@ -52,12 +52,13 @@ import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.JET_EXCEPTIONS_RANGE_START;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 
 public final class ExceptionUtil {
-
     private static final List<Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory>> EXCEPTIONS = Arrays.asList(
             tuple3(JET_EXCEPTIONS_RANGE_START, JetException.class, JetException::new),
             tuple3(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class, TopologyChangedException::new),
@@ -190,6 +191,14 @@ public final class ExceptionUtil {
     @Nonnull
     public static <T extends Throwable> RuntimeException sneakyThrow(@Nonnull Throwable t) throws T {
         throw (T) t;
+    }
+
+    /**
+     * A {@linkplain Stream#collect(Supplier, BiConsumer, BiConsumer) combiner} that throws an
+     * {@link UnsupportedOperationException}. It is useful when parallel stream is not supported.
+     */
+    public static <T> void combinerUnsupported(T ignored, T ignored2) {
+        throw new UnsupportedOperationException("parallelStream() is not supported");
     }
 
     @Nonnull

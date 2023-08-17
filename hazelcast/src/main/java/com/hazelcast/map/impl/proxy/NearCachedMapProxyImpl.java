@@ -389,6 +389,16 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
+    protected InternalCompletableFuture<Data> deleteAsyncInternal(Object key) {
+        key = toNearCacheKeyWithStrategy(key);
+        try {
+            return super.deleteAsyncInternal(key);
+        } finally {
+            invalidateNearCache(key);
+        }
+    }
+
+    @Override
     protected boolean containsKeyInternal(Object key) {
         key = toNearCacheKeyWithStrategy(key);
         Object cachedValue = getCachedValue(key, false);

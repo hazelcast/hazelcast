@@ -785,6 +785,15 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(originalConfig, generatedConfig);
     }
 
+    @Test
+    public void testNetworkCloud() {
+        ClientCloudConfig originalConfig = new ClientCloudConfig().setEnabled(true)
+                .setDiscoveryToken("pAB2kwCdHKbGpFBNd9iO9AmnYBiQa7rz8yfGW25iHEHRvoRWSN");
+        clientConfig.getNetworkConfig().setCloudConfig(originalConfig);
+        ClientCloudConfig generatedConfig = newConfigViaGenerator().getNetworkConfig().getCloudConfig();
+        assertEquals(originalConfig, generatedConfig);
+    }
+
     private ClientConfig newConfigViaGenerator() {
         String xml = ClientConfigXmlGenerator.generate(clientConfig, DEBUG ? 5 : -1);
         debug(xml);

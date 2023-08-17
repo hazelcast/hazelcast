@@ -24,6 +24,7 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 import java.sql.Connection;
@@ -38,6 +39,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.dataconnection.impl.DataConnectionTestUtil.configureJdbcDataConnection;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertOrdered;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,6 +54,10 @@ public abstract class ReadJdbcPPropertiesTest extends SimpleTestInClusterSupport
     private static String dbConnectionUrl;
     private static List<Entry<Integer, String>> tableContents;
 
+    @BeforeClass
+    public static void beforeClassCheckDocker() {
+        assumeDockerEnabled();
+    }
 
     protected static void initializeBeforeClass(TestDatabaseProvider testDatabaseProvider, String... args) throws SQLException {
         databaseProvider = testDatabaseProvider;

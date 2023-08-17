@@ -1034,8 +1034,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public Object updateMemory(Record record, Data key, Object oldValue, Object newValue,
-                             boolean changeExpiryOnUpdate, long ttl, long maxIdle,
-                             long expiryTime, long now, boolean backup) {
+                               boolean changeExpiryOnUpdate, long ttl, long maxIdle,
+                               long expiryTime, long now, boolean backup) {
         storage.updateRecordValue(key, record, newValue);
         if (changeExpiryOnUpdate) {
             expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
@@ -1076,9 +1076,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     @SuppressWarnings("unchecked")
-    public boolean merge(MapMergeTypes<Object, Object> mergingEntry,
-                         SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
-                         CallerProvenance provenance) {
+    public MapMergeResponse merge(MapMergeTypes<Object, Object> mergingEntry,
+                               SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
+                               CallerProvenance provenance) {
         checkIfLoaded();
         long now = getNow();
 
@@ -1093,12 +1093,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue == null) {
-                return false;
+                return MapMergeResponse.NO_MERGE_APPLIED;
             }
             boolean persist = persistenceEnabledFor(provenance);
             Record newRecord = putNewRecord(key, null, newValue, UNSET, UNSET, UNSET, now,
                     null, ADDED, persist, false);
             mergeRecordExpiration(key, newRecord, mergingEntry, now);
+            return MapMergeResponse.RECORD_CREATED;
         } else {
             oldValue = record.getValue();
             ExpiryMetadata expiryMetadata = expirySystem.getExpiryMetadata(key);
@@ -1112,20 +1113,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 }
                 onStore(record);
                 removeRecord0(key, record, false);
-                return true;
+                return MapMergeResponse.RECORD_REMOVED;
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
-                mergeRecordExpiration(key, record, mergingEntry, now);
-                return true;
+                if (mergeRecordExpiration(key, record, mergingEntry, now)) {
+                    return MapMergeResponse.RECORD_EXPIRY_UPDATED;
+                }
+                return MapMergeResponse.RECORDS_ARE_EQUAL;
             }
 
             boolean persist = persistenceEnabledFor(provenance);
             updateRecord(record, key, oldValue, newValue, true, UNSET, UNSET, UNSET,
                     now, null, persist, true, false);
+            return MapMergeResponse.RECORD_UPDATED;
         }
-
-        return true;
     }
 
     @Override
@@ -1447,13 +1449,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         ArrayList<Data> keys = new ArrayList<>();
         ArrayList<Record> records = new ArrayList<>();
         // we don't remove locked keys. These are clearable records.
-        forEach(new BiConsumer<Data, Record>() {
+        forEach(new BiConsumer<>() {
             final Set<Data> lockedKeySet = lockStore.getLockedKeys();
 
             @Override
             public void accept(Data dataKey, Record record) {
                 if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                    keys.add(dataKey);
+                    keys.add(isTieredStorageEnabled() ? toHeapData(dataKey) : dataKey);
                     records.add(record);
                 }
 
@@ -1464,7 +1466,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return evictBulk(keys, records, backup);
     }
 
-    // TODO optimize when no mapdatastore
+    // TODO optimize when no map-datastore
     @Override
     public int clear(boolean backup) {
         checkIfLoaded();
@@ -1472,13 +1474,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         ArrayList<Data> keys = new ArrayList<>();
         ArrayList<Record> records = new ArrayList<>();
         // we don't remove locked keys. These are clearable records.
-        forEach(new BiConsumer<Data, Record>() {
+        forEach(new BiConsumer<>() {
             final Set<Data> lockedKeySet = lockStore.getLockedKeys();
 
             @Override
             public void accept(Data dataKey, Record record) {
                 if (lockedKeySet != null && !lockedKeySet.contains(dataKey)) {
-                    keys.add(dataKey);
+                    keys.add(isTieredStorageEnabled() ? toHeapData(dataKey) : dataKey);
                     records.add(record);
                 }
 
@@ -1585,5 +1587,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Set<MapOperation> getOffloadedOperations() {
         return offloadedOperations;
+    }
+
+    @Override
+    public boolean isTieredStorageEnabled() {
+        return mapContainer.getMapConfig().getTieredStoreConfig().isEnabled();
     }
 }

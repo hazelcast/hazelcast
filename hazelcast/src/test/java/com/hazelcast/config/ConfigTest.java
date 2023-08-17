@@ -38,6 +38,7 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Properties;
 
+import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.instance.ProtocolType.WAN;
 import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
@@ -339,6 +340,21 @@ public class ConfigTest extends HazelcastTestSupport {
         assertEquals(deviceConfig, config.getDeviceConfig(DeviceConfig.class, deviceName));
 
         assertThrows(ClassCastException.class, () -> config.getDeviceConfig(LocalDeviceConfig.class, deviceName));
+    }
+
+    @Test
+    public void testDefaultDeviceRemovedWhenDeviceConfigured() {
+        String deviceName = randomName();
+        DeviceConfig deviceConfig = new LocalDeviceConfig().setName(deviceName);
+        assertNotNull(DEFAULT_DEVICE_NAME);
+
+        config.addDeviceConfig(deviceConfig);
+
+        assertNull(config.getDeviceConfig(randomName()));
+        assertEquals(deviceConfig, config.getDeviceConfig(deviceName));
+        assertEquals(deviceConfig, config.getDeviceConfig(LocalDeviceConfig.class, deviceName));
+
+        assertNull(config.getDeviceConfig(DEFAULT_DEVICE_NAME));
     }
 
     private static String getSimpleXmlConfigStr(String ...tagAndVal) {

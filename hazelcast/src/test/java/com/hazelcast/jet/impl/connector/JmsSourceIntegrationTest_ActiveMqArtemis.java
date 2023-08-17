@@ -25,7 +25,7 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 
-import javax.jms.ConnectionFactory;
+import jakarta.jms.ConnectionFactory;
 
 @Ignore // ignored due to https://issues.apache.org/jira/browse/ARTEMIS-2735
 @Category({QuickTest.class, ParallelJVMTest.class})

@@ -201,11 +201,9 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
 
     public static List<Row> jdbcRows(String query, String connectionUrl) {
         List<Row> rows = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(connectionUrl);
-             Statement stmt = conn.createStatement()
-        ) {
-            stmt.execute(query);
-            ResultSet resultSet = stmt.getResultSet();
+        try (Connection connection = DriverManager.getConnection(connectionUrl);
+             Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
             while (resultSet.next()) {
                 Object[] values = new Object[resultSet.getMetaData().getColumnCount()];
                 for (int i = 0; i < values.length; i++) {
@@ -214,8 +212,8 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                 rows.add(new Row(values));
             }
             return rows;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        } catch (SQLException sqlException) {
+            throw new RuntimeException(sqlException);
         }
     }
 }

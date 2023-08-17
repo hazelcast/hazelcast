@@ -18,9 +18,11 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,7 +31,7 @@ import org.mockito.Mock;
 
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static org.mockito.Mockito.verify;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -45,15 +47,22 @@ public class CompositeMetricsCollectorTest {
 
     private CompositeMetricsCollector compositeCollector;
 
+    private AutoCloseable openMocks;
+
     @Before
     public void setUp() {
-        initMocks(this);
+        openMocks = openMocks(this);
         compositeCollector = new CompositeMetricsCollector(collectorMock1, collectorMock2);
 
         metricsDescriptor = DEFAULT_DESCRIPTOR_SUPPLIER
                 .get()
                 .withPrefix("test")
                 .withMetric("metric");
+    }
+
+    @After
+    public void cleanUp() {
+        MockUtil.closeMocks(openMocks);
     }
 
     @Test
