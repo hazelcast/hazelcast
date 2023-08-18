@@ -25,7 +25,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.AggregateCombineByKeyPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.JoinHashPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.JoinNestedLoopPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SortPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
@@ -221,7 +221,7 @@ public class RelPrunabilityTest extends OptimizerTestSupport {
         ).getPhysical();
 
         assertPlan(root, plan(
-                planRow(0, JoinHashPhysicalRel.class),
+                planRow(0, JoinNestedLoopPhysicalRel.class),
                 planRow(1, FullScanPhysicalRel.class),
                 planRow(1, FullScanPhysicalRel.class)
         ));
