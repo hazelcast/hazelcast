@@ -144,6 +144,15 @@ It is a trade-off between potential performance gains and functionality support 
 but the next chapter describes how we optimize scan process: scan processors partition pruning.
 It closes this performance gap for `partitioned` edge case.
 
+Overall, the algorithm looks like:
+
+1. If we don't receive required partitions, just assign partitions to all members in cluster.
+2. If we have received, perform DAG analysis.
+3. Find all members that are owners of partitions with data required for the job (`dataPartitions`).
+4. Add members that have explicit routing (`Edge.distributeTo`) if not yet added. Members found after
+   this step are all members that are needed to execute the job (`required members`).
+5. Assign additional partitions, which do not store data but are needed for (mainly routing) reasons to required members.
+
 ### Scan partition pruning
 
 Key principle of scan partition pruning is that specialized processor meta supplier which will spawn scan processors
