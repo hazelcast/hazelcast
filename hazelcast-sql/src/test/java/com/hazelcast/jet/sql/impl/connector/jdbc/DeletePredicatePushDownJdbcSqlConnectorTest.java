@@ -35,7 +35,7 @@ public class DeletePredicatePushDownJdbcSqlConnectorTest extends JdbcSqlTestSupp
     public void setUp() throws Exception {
         tableName = randomTableName();
 
-        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR", "age INT", "data VARCHAR");
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT", "data VARCHAR(100)");
         executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', 0, '{\"value\":42}')");
         executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', 1, '{\"value\":42}')");
         execute(

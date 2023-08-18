@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.mssql;
+package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
-import com.hazelcast.jet.sql.impl.connector.jdbc.SinkJdbcSqlConnectorTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.DeletePredicatePushDownJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class MSSQLSinkIntoJdbcSqlConnectorTest extends SinkJdbcSqlConnectorTest {
+public class MySQLDeletePredicatePushDownJdbcSqlConnectorTest extends DeletePredicatePushDownJdbcSqlConnectorTest {
 
     @BeforeClass
     public static void beforeClass() {
-        //There is no arm64 image for mssql server
-        assumeNoArm64Architecture();
-        initialize(new MSSQLDatabaseProvider());
+        initialize(new MySQLDatabaseProvider());
     }
+
 }

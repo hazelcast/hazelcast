@@ -16,19 +16,27 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.mssql;
 
-import com.hazelcast.jet.sql.impl.connector.jdbc.SinkJdbcSqlConnectorTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.PredicatePushDownJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
+import static org.assertj.core.api.Assumptions.assumeThat;
+
 @Category(NightlyTest.class)
-public class MSSQLSinkIntoJdbcSqlConnectorTest extends SinkJdbcSqlConnectorTest {
+public class MSSQLPredicatePushDownJdbcSqlConnectorTest extends PredicatePushDownJdbcSqlConnectorTest {
 
     @BeforeClass
-    public static void beforeClass() {
-        //There is no arm64 image for mssql server
-        assumeNoArm64Architecture();
-        initialize(new MSSQLDatabaseProvider());
+    public static void beforeClass() throws Exception {
+        initializePredicatePushDownTest(new MSSQLDatabaseProvider());
+    }
+
+    @Before
+    public void checkOperatorsSupported() throws Exception {
+        assumeThat(query)
+                .describedAs("'IS' and 'IS NOT' operators are not supported in MS SQL")
+                .doesNotContain("IS TRUE", "IS FALSE", "IS NOT TRUE", "IS NOT FALSE");
     }
 }
