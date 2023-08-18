@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.map.index;
 
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
@@ -37,6 +39,7 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
@@ -51,6 +54,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.and;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.eq;
@@ -124,7 +128,35 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         checkBothColumns();
     }
 
-    // Test helpers
+    @Test
+    public void testDisjunctionSameValue() {
+        // Test for index scans with disjunctions that match the same row.
+        // SQL query must not return duplicate rows in such case.
+
+        // WHERE f1=? or f1=?
+        check(query("field1=? or field1=?", f1.valueFrom(), f1.valueFrom()),
+                c_notHashComposite(),
+                eq(f1.valueFrom())
+        );
+    }
+
+    @Test
+    @Ignore("Disjunction index scan is currently supported only for equality predicates")
+    public void testDisjunctionOverlappingRange() {
+        // WHERE f1=? or (f1>=? and f1<=?) with eq value belonging to range
+        check(query("field1=? or (field1>=? and field1<=?)", f1.valueFrom(), f1.valueFrom(), f1.valueTo()),
+                c_notHashComposite(),
+                and(gte(f1.valueFrom()), lte(f1.valueTo()))
+        );
+
+        // this query might not use index also due to selectivity of predicates
+        check(query("field1>=? or field1<=?", f1.valueFrom(), f1.valueTo()),
+                c_notHashComposite(),
+                or(gte(f1.valueFrom()), lte(f1.valueTo()))
+        );
+    }
+
+        // Test helpers
 
     private void checkFirstColumn() {
         // WHERE f1 IS NULL
@@ -467,10 +499,11 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         int runId = runIdGen++;
         checkPlan(expectedUseIndex, sql);
 
-        Set<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
+        // SQL might return duplicates, expectedMapKeys never contains duplicates
+        Multiset<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
         Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);
 
-        if (!sqlKeys.equals(expectedMapKeys)) {
+        if (!sqlKeys.equals(HashMultiset.create(expectedMapKeys))) {
             failOnDifference(
                     runId,
                     sql,
@@ -489,7 +522,7 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
             int runId,
             String sql,
             List<Object> params,
-            Set<Integer> first,
+            Multiset<Integer> first,
             Set<Integer> second,
             String mainMessage,
             String firstCaption,
@@ -501,7 +534,12 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         firstOnly.removeAll(second);
         secondOnly.removeAll(first);
 
-        assertTrue(!firstOnly.isEmpty() || !secondOnly.isEmpty());
+        List<Integer> duplicates = first.entrySet().stream()
+                .filter(e -> e.getCount() > 1)
+                .map(Multiset.Entry::getElement)
+                .collect(Collectors.toList());
+
+        assertTrue(!firstOnly.isEmpty() || !secondOnly.isEmpty() || !duplicates.isEmpty());
 
         StringBuilder message = new StringBuilder();
 
@@ -522,6 +560,14 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
 
             for (Integer key : secondOnly) {
                 message.append("\t\t" + key + " -> " + map.get(key) + "\n");
+            }
+        }
+
+        if (!duplicates.isEmpty()) {
+            message.append("\tduplicated " + firstCaption + ":\n");
+
+            for (Integer key : duplicates) {
+                message.append("\t\t" + key + " occurred " + first.count(key) + " times\n");
             }
         }
 
@@ -624,14 +670,14 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         return "SELECT __key FROM " + mapName + " WHERE " + condition;
     }
 
-    private Set<Integer> sqlKeys(boolean withIndex, String sql, List<Object> params) {
+    private Multiset<Integer> sqlKeys(boolean withIndex, String sql, List<Object> params) {
         SqlStatement query = new SqlStatement(sql);
 
         if (!params.isEmpty()) {
             query.setParameters(params);
         }
 
-        Set<Integer> keys = new HashSet<>();
+        Multiset<Integer> keys = HashMultiset.create();
 
         try (SqlResult result = instance().getSql().execute(query)) {
             for (SqlRow row : result) {
