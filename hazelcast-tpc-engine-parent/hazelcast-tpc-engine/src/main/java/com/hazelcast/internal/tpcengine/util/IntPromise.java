@@ -100,7 +100,10 @@ public class IntPromise {
         this.state = STATE_COMPLETED_EXCEPTIONALLY;
         this.throwable = throwable;
 
-        for (IntBiConsumer<Throwable> consumer : consumers) {
+        int size = consumers.size();
+        for (int k = 0; k < size; k++) {
+            IntBiConsumer consumer = consumers.get(k);
+
             // todo: this should be scheduled as a task
             try {
                 consumer.accept(0, throwable);
@@ -131,7 +134,10 @@ public class IntPromise {
         this.state = STATE_COMPLETED_NORMALLY;
         this.value = value;
 
-        for (IntBiConsumer<Throwable> consumer : consumers) {
+        int size = consumers.size();
+        for (int k = 0; k < size; k++) {
+            IntBiConsumer consumer = consumers.get(k);
+
             // todo: this should be scheduled as a task
             try {
                 consumer.accept(value, null);

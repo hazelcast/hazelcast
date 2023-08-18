@@ -101,7 +101,9 @@ public class Promise<E> {
         this.value = value;
         this.exceptional = true;
 
-        for (BiConsumer<E, Throwable> consumer : consumers) {
+        int size = consumers.size();
+        for (int k = 0; k < size; k++) {
+            BiConsumer<E, Throwable> consumer = consumers.get(k);
             try {
                 consumer.accept(null, value);
             } catch (Exception e) {
@@ -131,7 +133,9 @@ public class Promise<E> {
         this.value = value;
         this.exceptional = false;
 
-        for (BiConsumer<E, Throwable> consumer : consumers) {
+        int size = consumers.size();
+        for (int k = 0; k < size; k++) {
+            BiConsumer<E, Throwable> consumer = consumers.get(k);
             try {
                 consumer.accept(value, null);
             } catch (Exception e) {

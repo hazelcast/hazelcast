@@ -124,17 +124,17 @@ public class StorageBenchmark {
 
     public static void main(String[] args) {
         StorageBenchmark benchmark = new StorageBenchmark();
-        benchmark.runtimeSeconds = 20;
-        benchmark.affinity = "1,2,3";
+        benchmark.runtimeSeconds = 120;
+        benchmark.affinity = "1";
         benchmark.numJobs = 1;
-        benchmark.iodepth = 64;
+        benchmark.iodepth = 100;
         benchmark.fileSize = 4 * 1024 * 1024L;
         benchmark.bs = 4 * 1024;
         benchmark.directories.add("/home/pveentjer");
         //benchmark.directories.add("/mnt/benchdrive1");
         //benchmark.directories.add("/mnt/benchdrive2");
         //benchmark.directories.add("/mnt/benchdrive3");
-        benchmark.readwrite = READWRITE_READ;
+        benchmark.readwrite = READWRITE_NOP;
         benchmark.deleteFilesOnExit = true;
         benchmark.direct = true;
         benchmark.spin = false;
