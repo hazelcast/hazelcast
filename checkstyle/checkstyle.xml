@@ -119,7 +119,7 @@
         <!-- Only for methods on public APIs we agreed to have JavaDoc. -->
         <!-- TODO: figure out how to do that -->
         <!--<module name="JavadocMethod">-->
-        <!--<property name="scope" value="public"/>-->
+        <!--<property name="accessModifiers" value="public"/>-->
         <!--<property name="allowMissingParamTags" value="true"/>-->
         <!--</module>-->
         <module name="JavadocType">
