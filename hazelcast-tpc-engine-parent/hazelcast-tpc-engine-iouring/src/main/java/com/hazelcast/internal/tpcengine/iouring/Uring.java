@@ -26,7 +26,7 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
  * https://github.com/axboe/liburing/issues/536
  * https://tchaloupka.github.io/during/during.io_uring.RegisterOpCode.html
  * https://nick-black.com/dankwiki/index.php/Io_uring
- *
+ * <p>
  * TODO:
  * IORING_SETUP_SINGLE_ISSUER
  */
@@ -182,6 +182,7 @@ public final class Uring implements AutoCloseable {
     public static final int IORING_RECVSEND_POLL_FIRST = 1 << 0;
     public static final int IORING_RECV_MULTISHOT = 1 << 1;
     public static final int IORING_RECVSEND_FIXED_BUF = 1 << 2;
+    final int entries;
     long ringAddr;
     int ringFd;
     int enterRingFd;
@@ -195,12 +196,14 @@ public final class Uring implements AutoCloseable {
     // https://man.archlinux.org/man/io_uring.7.en
 
     /**
-     * Creates a new IoUring with the given number of entries.
+     * Creates a new Uring with the given number of entries.
      *
      * @param entries the number of entries in the ring.
      * @throws IllegalArgumentException when entries smaller than 1
      */
     public Uring(int entries, int flags) {
+        // todo: we need to fix entries so that it is power of 2.
+
         checkPositive(entries, "entries must be larger than 0");
         checkNotNegative(flags, "flags can't be smaller than 0");
         if ((flags & IORING_SETUP_SQE128) != 0) {
@@ -210,9 +213,10 @@ public final class Uring implements AutoCloseable {
             throw new IllegalArgumentException("IORING_SETUP_CQE32 can't be set");
         }
 
+        this.entries = entries;
         init(entries, flags);
         sq = new SubmissionQueue(this);
-        cq = new CompletionQueue(this);
+        cq = new CompletionQueue(this, entries);
         sq.init(ringAddr);
         cq.init(ringAddr);
     }

@@ -107,11 +107,11 @@ public final class UringAsyncSocket extends AsyncSocket {
     @Override
     protected void start0() {
         CompletionQueue cq = uring.cq();
-        writeHandler.userdata = cq.nextPermanentHandlerId();
-        cq.register(writeHandler.userdata, writeHandler);
+        writeHandler.handlerId = cq.nextHandlerId();
+        cq.register(writeHandler.handlerId, writeHandler);
 
-        readHandler.userdata = cq.nextPermanentHandlerId();
-        cq.register(readHandler.userdata, readHandler);
+        readHandler.handlerId = cq.nextHandlerId();
+        cq.register(readHandler.handlerId, readHandler);
 
         if (!clientSide) {
             readHandler.addRequest();
@@ -189,7 +189,7 @@ public final class UringAsyncSocket extends AsyncSocket {
         private final Metrics metrics;
         private final NetworkScheduler networkScheduler;
         private final ByteBuffer sndByteBuffer;
-        private long userdata;
+        private int handlerId;
         private boolean writerClean = true;
 
         WriteHandler(UringAsyncSocket.Builder builder, UringAsyncSocket socket) {
@@ -255,7 +255,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                     UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, addressOf(buffer) + buffer.position());
                     UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, buffer.remaining());
                     UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, handlerId);
                 } else {
                     UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_WRITEV);
                     UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
@@ -265,7 +265,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                     UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, ioVector.addr());
                     UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, ioVector.cnt());
                     UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+                    UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, handlerId);
                 }
             } catch (Exception e) {
                 socket.close("Closing socket due to write problem.", e);
@@ -326,7 +326,7 @@ public final class UringAsyncSocket extends AsyncSocket {
         private final Reader reader;
         private final UringEventloop eventloop;
         private final long rcvBuffAddress;
-        private long userdata;
+        private int handlerId;
 
         private ReadHandler(UringAsyncSocket.Builder builder, UringAsyncSocket socket) {
             this.socket = socket;
@@ -364,7 +364,7 @@ public final class UringAsyncSocket extends AsyncSocket {
             UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, address);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, length);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, handlerId);
         }
 
         @Override

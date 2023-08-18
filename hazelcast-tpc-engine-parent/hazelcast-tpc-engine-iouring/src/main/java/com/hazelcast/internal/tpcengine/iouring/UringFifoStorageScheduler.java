@@ -23,21 +23,11 @@ import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
-import com.hazelcast.internal.tpcengine.util.SlabAllocator;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
 import java.nio.charset.StandardCharsets;
 
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_FSYNC_DATASYNC;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_CLOSE;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_FALLOCATE;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_FSYNC;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_NOP;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_OPENAT;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITE;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_flags;
@@ -48,6 +38,15 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQ
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_FSYNC_DATASYNC;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_CLOSE;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_FALLOCATE;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_FSYNC;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_NOP;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_OPENAT;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITE;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
 import static java.lang.Math.min;
 
@@ -81,7 +80,8 @@ public class UringFifoStorageScheduler implements StorageScheduler {
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final IOBufferAllocator pathAllocator;
     private final StringBuilder msgBuilder = new StringBuilder();
-    private final SlabAllocator<UringStorageRequest> requestAllocator;
+    private final UringStorageRequest[] requestsPool;
+    private int requestsPoolNextAvailableIndex;
     private final CircularQueue<UringStorageRequest> stagingQueue;
     private final SubmissionQueue submissionQueue;
     private final CompletionQueue completionQueue;
@@ -92,16 +92,37 @@ public class UringFifoStorageScheduler implements StorageScheduler {
                                      int submitLimit,
                                      int pendingLimit) {
         this.submitLimit = submitLimit;
-        this.requestAllocator = new SlabAllocator<>(pendingLimit, UringStorageRequest::new);
         this.pathAllocator = new NonConcurrentIOBufferAllocator(512, true);
         this.stagingQueue = new CircularQueue<>(pendingLimit);
         this.submissionQueue = uring.sq();
         this.completionQueue = uring.cq();
+
+        // All storage requests are preregistered on the completion queue. They
+        // never need to unregister. Removing that overhead.
+
+        // todo:
+        this.requestsPool = new UringStorageRequest[pendingLimit];
+        for (int k = 0; k < requestsPool.length; k++) {
+            UringStorageRequest req = new UringStorageRequest();
+            req.handlerId = completionQueue.nextHandlerId();
+            completionQueue.register(req.handlerId, req);
+            requestsPool[k] = req;
+        }
+        this.requestsPoolNextAvailableIndex = requestsPool.length - 1;
     }
 
     @Override
     public StorageRequest allocate() {
-        return requestAllocator.allocate();
+        if (requestsPoolNextAvailableIndex == -1) {
+            return null;
+        } else {
+            UringStorageRequest req = requestsPool[requestsPoolNextAvailableIndex];
+            // the item doesn't need to be nulled. It saves a write barrier and
+            // it won't cause a memory leak since the number of request is fixed
+            // and eventually all requests will return to the pool.
+            requestsPoolNextAvailableIndex--;
+            return req;
+        }
     }
 
     @Override
@@ -114,18 +135,17 @@ public class UringFifoStorageScheduler implements StorageScheduler {
     @Override
     public boolean tick() {
         // Submits as many staged requests as allowed to the submission queue.
-        int c = min(submitLimit - submitCount, stagingQueue.size());
+        int toSubmit = min(submitLimit - submitCount, stagingQueue.size());
 
-        for (int k = 0; k < c; k++) {
+        for (int k = 0; k < toSubmit; k++) {
             UringStorageRequest req = stagingQueue.poll();
             int sqIndex = submissionQueue.nextIndex();
             if (sqIndex < 0) {
                 throw new IllegalStateException("No space in submission queue");
             }
             this.submitCount++;
-            long userdata = completionQueue.nextTmpHandlerId();
-            completionQueue.register(userdata, req);
-            req.writeSqe(sqIndex, userdata);
+
+            req.writeSqe(sqIndex);
         }
 
         // Completion events are processed in the eventloop, so we
@@ -136,7 +156,9 @@ public class UringFifoStorageScheduler implements StorageScheduler {
 
     final class UringStorageRequest extends StorageRequest implements CompletionHandler {
 
-        void writeSqe(int sqIndex, long userdata) {
+        private int handlerId;
+
+        void writeSqe(int sqIndex) {
             long sqeAddr = submissionQueue.sqesAddr + sqIndex * SIZEOF_SQE;
             byte sqe_opcode;
             int sqe_fd = 0;
@@ -198,7 +220,7 @@ public class UringFifoStorageScheduler implements StorageScheduler {
             UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, sqe_addr);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, sqe_len);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, sqe_rw_flags);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, handlerId);
         }
 
         IOBuffer pathAsIOBuffer() {
@@ -267,7 +289,10 @@ public class UringFifoStorageScheduler implements StorageScheduler {
             buffer = null;
             file = null;
             promise = null;
-            requestAllocator.free(this);
+
+            // return the request to the pool
+            requestsPoolNextAvailableIndex++;
+            requestsPool[requestsPoolNextAvailableIndex] = this;
         }
 
         private void handleError(int res) {

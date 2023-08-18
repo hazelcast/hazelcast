@@ -124,7 +124,7 @@ public class StorageBenchmark {
 
     public static void main(String[] args) {
         StorageBenchmark benchmark = new StorageBenchmark();
-        benchmark.runtimeSeconds = 1020;
+        benchmark.runtimeSeconds = 600;
         benchmark.affinity = "1";
         benchmark.numJobs = 1;
         benchmark.iodepth = 100;
@@ -706,10 +706,41 @@ public class StorageBenchmark {
                     double nopsThp = ((nops - lastMetrics.nops) * 1000d) / durationMs;
                     sb.append("[nops=");
                     sb.append(FormatUtil.humanReadableCountSI(nopsThp));
-
                     sb.append("/s ");
-                    sb.append(metrics.nops);
+                    sb.append(nops);
                     sb.append("]");
+                }
+
+                long contextSwitchCount = metrics.contextSwitchCount;
+                if (contextSwitchCount > 0) {
+                    double thp = ((contextSwitchCount - lastMetrics.contextSwitchCount) * 1000d) / durationMs;
+                    sb.append("[cs=");
+                    sb.append(FormatUtil.humanReadableCountSI(thp));
+                    sb.append("/s]");
+                }
+
+                long taskProcessCount = metrics.taskProcessCount;
+                if (taskProcessCount > 0) {
+                    double thp = ((taskProcessCount - lastMetrics.taskProcessCount) * 1000d) / durationMs;
+                    sb.append("[tasks=");
+                    sb.append(FormatUtil.humanReadableCountSI(thp));
+                    sb.append("/s]");
+                }
+
+                long ioSchedulerTicks = metrics.ioSchedulerTicks;
+                if (ioSchedulerTicks > 0) {
+                    double thp = ((ioSchedulerTicks - lastMetrics.ioSchedulerTicks) * 1000d) / durationMs;
+                    sb.append("[ioticks=");
+                    sb.append(FormatUtil.humanReadableCountSI(thp));
+                    sb.append("/s]");
+                }
+
+                long parkCount = metrics.parkCount;
+                if (ioSchedulerTicks > 0) {
+                    double thp = ((parkCount - lastMetrics.parkCount) * 1000d) / durationMs;
+                    sb.append("[parks=");
+                    sb.append(FormatUtil.humanReadableCountSI(thp));
+                    sb.append("/s]");
                 }
 
                 System.out.println(sb);
@@ -724,6 +755,8 @@ public class StorageBenchmark {
     }
 
     private static class Metrics {
+        public long ioSchedulerTicks;
+        public long parkCount;
         private long reads;
         private long writes;
         private long fsyncs;
@@ -731,6 +764,8 @@ public class StorageBenchmark {
         private long fdatasyncs;
         private long bytesRead;
         private long bytesWritten;
+        private long taskProcessCount;
+        private long contextSwitchCount;
 
         private long ops() {
             return reads + writes + fsyncs + fdatasyncs + nops;
@@ -744,6 +779,10 @@ public class StorageBenchmark {
             fdatasyncs = 0;
             bytesRead = 0;
             bytesWritten = 0;
+            taskProcessCount = 0;
+            contextSwitchCount = 0;
+            parkCount = 0;
+            ioSchedulerTicks = 0;
         }
     }
 
@@ -751,6 +790,11 @@ public class StorageBenchmark {
         target.clear();
 
         for (Reactor reactor : reactors) {
+            Reactor.Metrics reactorMetrics = reactor.metrics();
+            target.taskProcessCount += reactorMetrics.taskProcessCount();
+            target.contextSwitchCount += reactorMetrics.contextSwitchCount();
+            target.ioSchedulerTicks += reactorMetrics.ioSchedulerTicks();
+            target.parkCount += reactorMetrics.parkCount();
             reactor.files().foreach(f -> {
                 AsyncFile.Metrics metrics = f.metrics();
                 target.reads += metrics.reads();

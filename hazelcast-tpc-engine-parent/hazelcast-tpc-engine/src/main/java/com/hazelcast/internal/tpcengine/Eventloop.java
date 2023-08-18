@@ -288,7 +288,7 @@ public abstract class Eventloop {
                 long timeoutNanos = earliestDeadlineNanos == -1
                         ? Long.MAX_VALUE
                         : max(0, earliestDeadlineNanos - nowNanos);
-
+                metrics.incParkCount();
                 park(timeoutNanos);
 
                 // todo: we should only need to update the clock if real parking happened
@@ -340,6 +340,7 @@ public abstract class Eventloop {
                 // first we are going to do an ioSchedulerTick and then we are
                 // going to do a park.
                 if (nowNanos >= ioDeadlineNanos) {
+                    metrics.incIoSchedulerTicks();
                     ioSchedulerTick();
                     nowNanos = epochNanos();
                     ioDeadlineNanos = nowNanos + ioIntervalNanos;

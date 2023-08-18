@@ -17,11 +17,11 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
-import com.hazelcast.internal.tpcengine.util.Option;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.net.AbstractAsyncSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncServerSocket;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
+import com.hazelcast.internal.tpcengine.util.Option;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -31,7 +31,6 @@ import java.net.SocketAddress;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_ACCEPT;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_CLOEXEC;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_NONBLOCK;
 import static com.hazelcast.internal.tpcengine.iouring.LinuxSocket.AF_INET;
@@ -45,6 +44,7 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQ
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_ACCEPT;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
@@ -115,8 +115,8 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     @Override
     protected void start0() {
         CompletionQueue cq = uring.cq();
-        acceptHandler.userdata = cq.nextPermanentHandlerId();
-        cq.register(acceptHandler.userdata, acceptHandler);
+        acceptHandler.handlerId = cq.nextHandlerId();
+        cq.register(acceptHandler.handlerId, acceptHandler);
         acceptHandler.addRequest();
     }
 
@@ -130,7 +130,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         private final TpcLogger logger;
         private final Consumer<AbstractAsyncSocket.AcceptRequest> acceptFn;
         private final CompletionQueue completionQueue;
-        private long userdata;
+        private int handlerId;
         private boolean closed;
 
         private AcceptHandler(Builder builder, UringAsyncServerSocket socket) {
@@ -158,7 +158,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
             UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, acceptMemory.addr);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, SOCK_NONBLOCK | SOCK_CLOEXEC);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, userdata);
+            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, handlerId);
         }
 
         @Override
@@ -207,7 +207,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
                 socket.close(null, e);
             } finally {
                 if (closed) {
-                    completionQueue.unregister(userdata);
+                    completionQueue.unregister((int) userdata);
                 }
             }
         }

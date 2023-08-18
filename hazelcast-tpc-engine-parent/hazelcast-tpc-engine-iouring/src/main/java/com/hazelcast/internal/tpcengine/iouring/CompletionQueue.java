@@ -18,7 +18,6 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpcengine.util.LongObjectHashMap;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -73,12 +72,18 @@ public final class CompletionQueue {
     private final TpcLogger logger = TpcLoggerLocator.getLogger(CompletionQueue.class);
     private final Uring uring;
 
-    private long permanentHandlerIdGenerator = 1;
-    private long tmpHandlerIdGenerator = -1;
-    private final LongObjectHashMap<CompletionHandler> handlers = new LongObjectHashMap<>(4096);
+    private final CompletionHandler[] handlers;
+    private final int[] freeHandlers;
+    private int freeHandlersIndex;
 
-    CompletionQueue(Uring uring) {
+    CompletionQueue(Uring uring, int handlerCount) {
         this.uring = uring;
+        this.handlers = new CompletionHandler[handlerCount];
+        this.freeHandlers = new int[handlerCount];
+        for (int k = 0; k < handlerCount; k++) {
+            freeHandlers[k] = k;
+        }
+        this.freeHandlersIndex = handlerCount - 1;
     }
 
     static UncheckedIOException newCQEFailedException(String msg, String syscall, int opcode, int errnum) {
@@ -90,27 +95,15 @@ public final class CompletionQueue {
     }
 
     /**
-     * Gets the next handler id for a permanent CompletionHandler. A permanent
-     * handler stays registered after receiving a completion event.
-     * <p/>
-     * This value is monotonic increasing and the first value returned is 1.
+     * Gets the next handler id. The handler id is typically used as user_data so that the
+     * appropriate handler can be found based on the user_data in the cqe.
      *
      * @return the next handler id.
      */
-    public long nextPermanentHandlerId() {
-        return permanentHandlerIdGenerator++;
-    }
-
-    /**
-     * Gets the next handler id for a temporary handler. A temporary handler is
-     * automatically removed after receiving the completion event.
-     * <p>
-     * This value is monotonic decreasing and the first value returned is -1.
-     *
-     * @return the next handler id.
-     */
-    public long nextTmpHandlerId() {
-        return tmpHandlerIdGenerator--;
+    public int nextHandlerId() {
+        int handlerIndex = freeHandlers[freeHandlersIndex];
+        freeHandlersIndex--;
+        return handlerIndex;
     }
 
     /**
@@ -118,8 +111,10 @@ public final class CompletionQueue {
      *
      * @param handlerId the id of the CompletionHandler to remove.
      */
-    public void unregister(long handlerId) {
-        handlers.remove(handlerId);
+    public void unregister(int handlerId) {
+        handlers[handlerId] = null;
+        freeHandlersIndex++;
+        freeHandlers[freeHandlersIndex] = handlerId;
     }
 
     /**
@@ -128,8 +123,8 @@ public final class CompletionQueue {
      * @param handlerId the id to register the CompletionHandler on.
      * @param handler   the CompletionHandler to register.
      */
-    public void register(long handlerId, CompletionHandler handler) {
-        handlers.put(handlerId, handler);
+    public void register(int handlerId, CompletionHandler handler) {
+        handlers[handlerId] = handler;
     }
 
     /**
@@ -206,10 +201,11 @@ public final class CompletionQueue {
             int res = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_RES);
             int flags = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_FLAGS);
 
-            CompletionHandler handler = userdata >= 0
-                    ? handlers.get(userdata)
-                    : handlers.remove(userdata);
+            if (userdata > Integer.MAX_VALUE) {
+                throw new Error();
+            }
 
+            CompletionHandler handler = handlers[(int) userdata];
             if (handler == null) {
                 logger.warning("no handler found for: " + userdata);
             } else {

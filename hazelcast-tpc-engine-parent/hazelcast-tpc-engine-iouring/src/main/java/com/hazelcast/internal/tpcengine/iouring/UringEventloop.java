@@ -57,12 +57,12 @@ public final class UringEventloop extends Eventloop {
         this.completionQueue = uring.cq();
 
         this.eventFdHandler = new EventFdHandler();
-        eventFdHandler.userdata = completionQueue.nextPermanentHandlerId();
-        completionQueue.register(eventFdHandler.userdata, eventFdHandler);
+        eventFdHandler.handlerId = completionQueue.nextHandlerId();
+        completionQueue.register(eventFdHandler.handlerId, eventFdHandler);
 
         this.timeoutHandler = new TimeoutHandler();
-        timeoutHandler.userdata = completionQueue.nextPermanentHandlerId();
-        completionQueue.register(timeoutHandler.userdata, timeoutHandler);
+        timeoutHandler.handlerId = completionQueue.nextHandlerId();
+        completionQueue.register(timeoutHandler.handlerId, timeoutHandler);
     }
 
     public NetworkScheduler networkScheduler() {
@@ -144,7 +144,7 @@ public final class UringEventloop extends Eventloop {
     final class EventFdHandler implements CompletionHandler, AutoCloseable {
         final EventFd eventFd = new EventFd();
         private final long readBufAddr = UNSAFE.allocateMemory(SIZEOF_LONG);
-        private long userdata;
+        private int handlerId;
 
         private void addRequest() {
             submissionQueue.add(IORING_OP_READ,
@@ -154,7 +154,7 @@ public final class UringEventloop extends Eventloop {
                     readBufAddr,
                     SIZEOF_LONG,
                     0,
-                    userdata);
+                    handlerId);
         }
 
         @Override
@@ -170,7 +170,7 @@ public final class UringEventloop extends Eventloop {
     }
 
     private class TimeoutHandler implements CompletionHandler, AutoCloseable {
-        private long userdata;
+        private int handlerId;
         private final long addr = UNSAFE.allocateMemory(SIZEOF_KERNEL_TIMESPEC);
 
         @Override
@@ -202,7 +202,7 @@ public final class UringEventloop extends Eventloop {
                     addr,
                     1,
                     0,
-                    userdata);
+                    handlerId);
         }
 
         @Override
@@ -232,9 +232,13 @@ public final class UringEventloop extends Eventloop {
                 int entries
                         // 1 for reading and 1 for writing
                         = reactorBuilder.socketsLimit * 2
-                        + reactorBuilder.serverSocketsLimit
                         // every server socket needs 1 entry
-                        + reactorBuilder.storageSubmitLimit
+                        + reactorBuilder.serverSocketsLimit
+                        // all storage requests are preregistered; so even though we don't submit
+                        // the requests, the completion queue needs to have at least that number
+                        // of slots in the handler array.
+                        // this logic needs to be fixed.
+                        + reactorBuilder.storagePendingLimit
                         // eventFd
                         + 1
                         // timeout

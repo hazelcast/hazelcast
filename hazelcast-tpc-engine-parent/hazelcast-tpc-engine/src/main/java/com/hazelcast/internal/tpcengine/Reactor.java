@@ -605,9 +605,15 @@ public abstract class Reactor implements Executor {
         private static final VarHandle CPU_TIME_NANOS;
         private static final VarHandle CONTEXT_SWITCH_COUNT;
 
+        private static final VarHandle PARK_COUNT;
+        private static final VarHandle IO_SCHEDULER_TICKS;
+
         private volatile long taskCompletedCount;
         private volatile long cpuTimeNanos;
         private volatile long contextSwitchCount;
+        private volatile long parkCount;
+        private volatile long ioSchedulerTicks;
+
         private final long startTimeNanos = EpochClock.INSTANCE.epochNanos();
 
         static {
@@ -616,6 +622,8 @@ public abstract class Reactor implements Executor {
                 TASKS_PROCESSED_COUNT = l.findVarHandle(Metrics.class, "taskCompletedCount", long.class);
                 CPU_TIME_NANOS = l.findVarHandle(Metrics.class, "cpuTimeNanos", long.class);
                 CONTEXT_SWITCH_COUNT = l.findVarHandle(Metrics.class, "contextSwitchCount", long.class);
+                PARK_COUNT = l.findVarHandle(Metrics.class, "parkCount", long.class);
+                IO_SCHEDULER_TICKS = l.findVarHandle(Metrics.class, "ioSchedulerTicks", long.class);
             } catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
             }
@@ -641,6 +649,22 @@ public abstract class Reactor implements Executor {
          */
         public void incTasksProcessedCount(int delta) {
             TASKS_PROCESSED_COUNT.setOpaque(this, (long) TASKS_PROCESSED_COUNT.getOpaque(this) + delta);
+        }
+
+        public long ioSchedulerTicks() {
+            return (long) IO_SCHEDULER_TICKS.getOpaque(this);
+        }
+
+        public void incIoSchedulerTicks() {
+            IO_SCHEDULER_TICKS.setOpaque(this, (long) IO_SCHEDULER_TICKS.getOpaque(this) + 1);
+        }
+
+        public long parkCount() {
+            return (long) PARK_COUNT.getOpaque(this);
+        }
+
+        public void incParkCount() {
+            PARK_COUNT.setOpaque(this, (long) PARK_COUNT.getOpaque(this) + 1);
         }
 
         public long cpuTimeNanos() {
