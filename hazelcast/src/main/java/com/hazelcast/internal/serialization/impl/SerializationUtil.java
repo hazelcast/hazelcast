@@ -77,7 +77,7 @@ public final class SerializationUtil {
         if (!(object instanceof Serializable)) {
             throw new IllegalArgumentException('"' + objectName + "\" must implement Serializable");
         }
-        try (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
+        try (ObjectOutputStream os = new ObjectOutputStream(OutputStream.nullOutputStream())) {
             os.writeObject(object);
         } catch (NotSerializableException | InvalidClassException e) {
             throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
@@ -458,13 +458,6 @@ public final class SerializationUtil {
                 return Boolean.TRUE;
             default:
                 throw new IllegalStateException("Unexpected value " + b + " while reading nullable boolean.");
-        }
-    }
-
-    private static class NullOutputStream extends OutputStream {
-        @Override
-        public void write(int b) {
-            // do nothing
         }
     }
 }

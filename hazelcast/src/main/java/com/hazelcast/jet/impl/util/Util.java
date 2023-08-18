@@ -240,7 +240,7 @@ public final class Util {
         if (!(object instanceof Serializable)) {
             throw new IllegalArgumentException('"' + objectName + "\" must implement Serializable");
         }
-        try (ObjectOutputStream os = new ObjectOutputStream(new NullOutputStream())) {
+        try (ObjectOutputStream os = new ObjectOutputStream(OutputStream.nullOutputStream())) {
             os.writeObject(object);
         } catch (NotSerializableException | InvalidClassException e) {
             throw new IllegalArgumentException("\"" + objectName + "\" must be serializable", e);
@@ -346,13 +346,6 @@ public final class Util {
             res[i] = j;
         }
         return res;
-    }
-
-    private static class NullOutputStream extends OutputStream {
-        @Override
-        public void write(int b) {
-            // do nothing
-        }
     }
 
     public static String jobNameAndExecutionId(String jobName, long executionId) {
