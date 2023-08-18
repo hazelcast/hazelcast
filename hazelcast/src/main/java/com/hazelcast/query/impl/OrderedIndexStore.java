@@ -179,16 +179,16 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         switch (comparison) {
             case LESS:
                 if (descending) {
-                    navigableMap = navigableMap.tailMap(searchedValue, false);
+                    navigableMap = navigableMap.subMap(searchedValue, false, NULL, false);
                 } else {
-                    navigableMap = navigableMap.headMap(searchedValue, false);
+                    navigableMap = navigableMap.subMap(NULL, false, searchedValue, false);
                 }
                 break;
             case LESS_OR_EQUAL:
                 if (descending) {
-                    navigableMap = navigableMap.tailMap(searchedValue, true);
+                    navigableMap = navigableMap.subMap(searchedValue, true, NULL, false);
                 } else {
-                    navigableMap = navigableMap.headMap(searchedValue, true);
+                    navigableMap = navigableMap.subMap(NULL, false, searchedValue, true);
                 }
                 break;
             case GREATER:
