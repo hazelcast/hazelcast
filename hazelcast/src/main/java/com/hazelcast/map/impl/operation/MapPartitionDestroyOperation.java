@@ -19,31 +19,39 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
-import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 /**
  * Operation to destroy the map data on the partition thread
  */
-public class MapPartitionDestroyOperation extends AbstractLocalOperation
+public class MapPartitionDestroyOperation extends AbstractMapLocalOperation
         implements PartitionAwareOperation, AllowedDuringPassiveState {
+
     private final PartitionContainer partitionContainer;
     private final MapContainer mapContainer;
 
-    public MapPartitionDestroyOperation(PartitionContainer container, MapContainer mapContainer) {
-        this.partitionContainer = container;
+    public MapPartitionDestroyOperation(PartitionContainer partitionContainer,
+                                        MapContainer mapContainer) {
+        super(mapContainer.getName());
+        this.createRecordStoreOnDemand = false;
+        this.partitionContainer = partitionContainer;
         this.mapContainer = mapContainer;
-        setPartitionId(partitionContainer.getPartitionId());
     }
 
     @Override
-    public void run() {
+    protected void runInternal() {
         partitionContainer.destroyMap(mapContainer);
     }
 
     @Override
     public boolean validatesTarget() {
         return false;
+    }
+
+    @Override
+    public TenantControl getTenantControl() {
+        return TenantControl.NOOP_TENANT_CONTROL;
     }
 }

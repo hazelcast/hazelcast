@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -31,7 +28,6 @@ import org.apache.calcite.rex.RexNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 public class JoinHashPhysicalRel extends JoinPhysicalRel {
-
     private static final double COST_FACTOR = 1.1;
 
     JoinHashPhysicalRel(
@@ -43,21 +39,6 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
             JoinRelType joinType
     ) {
         super(cluster, traitSet, left, right, condition, joinType);
-    }
-
-    public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
-        int[] leftKeys = analyzeCondition().leftKeys.toIntArray();
-        int[] rightKeys = analyzeCondition().rightKeys.toIntArray();
-
-        Expression<Boolean> nonEquiCondition = filter(
-                schema(parameterMetadata),
-                analyzeCondition().getRemaining(getCluster().getRexBuilder()),
-                parameterMetadata
-        );
-
-        Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
-
-        return new JetJoinInfo(getJoinType(), leftKeys, rightKeys, nonEquiCondition, condition);
     }
 
     @Override
@@ -80,7 +61,6 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
     @Override
     @Nullable
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return super.computeSelfCost(planner, mq)
-                .multiplyBy(COST_FACTOR);
+        return super.computeSelfCost(planner, mq).multiplyBy(COST_FACTOR);
     }
 }

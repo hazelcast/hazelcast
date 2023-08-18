@@ -133,9 +133,10 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
-     * Returns {@code true} if the {@link #init(Context)} method of this
-     * instance is cooperative. If it's not, the call to the {@code init()}
-     * method is off-loaded to another thread.
+     * Returns {@code true} if both the {@link #init(Context)} and {@link
+     * #get(List)} methods of this instance are cooperative. If they are not,
+     * the call to the {@code init()} and {@code get()} method is off-loaded to
+     * another thread.
      *
      * @since 5.2
      */
@@ -189,9 +190,9 @@ public interface ProcessorMetaSupplier extends Serializable {
      *
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion.
-     *              Note that it might not be the actual error that caused the job
-     *              to fail - it can be several other exceptions. We only guarantee
-     *              that it's non-null if the job didn't complete successfully.
+     *                           Note that it might not be the actual error that caused the job
+     *                           to fail - it can be several other exceptions. We only guarantee
+     *                           that it's non-null if the job didn't complete successfully.
      * @see #isReusable()
      */
     default void close(@Nullable Throwable error) throws Exception {
@@ -845,6 +846,7 @@ public interface ProcessorMetaSupplier extends Serializable {
          * Returns the partition assignment used by this job. This is the
          * assignment partitioned edges will use and the assignment processors
          * dealing with Hazelcast data structures should use.
+         * Each mapped partitions id array must be sorted.
          */
         Map<Address, int[]> partitionAssignment();
 

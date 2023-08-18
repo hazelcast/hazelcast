@@ -19,8 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
-import com.hazelcast.map.impl.operation.steps.UtilSteps;
-import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
@@ -71,11 +69,6 @@ public class MapFetchEntriesOperation extends MapOperation implements ReadonlyOp
         for (int i = 0; i < pointersCount; i++) {
             pointers[i] = new IterationPointer(in.readInt(), in.readInt());
         }
-    }
-
-    @Override
-    public Step getStartingStep() {
-        return UtilSteps.DIRECT_RUN_STEP;
     }
 
     @Override

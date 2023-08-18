@@ -32,16 +32,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
+import java.sql.ResultSetMetaData;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -56,49 +51,12 @@ public class SelectProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
         implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    private static final Map<String, BiFunctionEx<ResultSet, Integer, Object>> GETTERS = new HashMap<>();
-
-    static {
-        GETTERS.put("BOOLEAN", ResultSet::getBoolean);
-        GETTERS.put("BOOL", ResultSet::getBoolean);
-        GETTERS.put("BIT", ResultSet::getBoolean);
-
-        GETTERS.put("TINYINT", ResultSet::getByte);
-
-        GETTERS.put("SMALLINT", ResultSet::getShort);
-        GETTERS.put("INT2", ResultSet::getShort);
-
-        GETTERS.put("INT", ResultSet::getInt);
-        GETTERS.put("INT4", ResultSet::getInt);
-        GETTERS.put("INTEGER", ResultSet::getInt);
-
-        GETTERS.put("INT8", ResultSet::getLong);
-        GETTERS.put("BIGINT", ResultSet::getLong);
-
-        GETTERS.put("VARCHAR", ResultSet::getString);
-        GETTERS.put("CHARACTER VARYING", ResultSet::getString);
-        GETTERS.put("TEXT", ResultSet::getString);
-
-        GETTERS.put("REAL", ResultSet::getFloat);
-        GETTERS.put("FLOAT", ResultSet::getFloat);
-        GETTERS.put("FLOAT4", ResultSet::getFloat);
-
-        GETTERS.put("DOUBLE", ResultSet::getDouble);
-        GETTERS.put("DOUBLE PRECISION", ResultSet::getDouble);
-        GETTERS.put("DECIMAL", ResultSet::getBigDecimal);
-        GETTERS.put("NUMERIC", ResultSet::getBigDecimal);
-
-        GETTERS.put("DATE", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDate.class));
-        GETTERS.put("TIME", (rs, columnIndex) -> rs.getObject(columnIndex, LocalTime.class));
-        GETTERS.put("TIMESTAMP", (rs, columnIndex) -> rs.getObject(columnIndex, LocalDateTime.class));
-        GETTERS.put("TIMESTAMP_WITH_TIMEZONE", (rs, columnIndex) -> rs.getObject(columnIndex, OffsetDateTime.class));
-    }
-
     private String query;
     private int[] parameterPositions;
 
     private transient ExpressionEvalContext evalContext;
     private transient volatile BiFunctionEx<ResultSet, Integer, Object>[] valueGetters;
+    private String dialectName;
 
     @SuppressWarnings("unused")
     public SelectProcessorSupplier() {
@@ -106,16 +64,18 @@ public class SelectProcessorSupplier
 
     public SelectProcessorSupplier(@Nonnull String dataConnectionName,
                                    @Nonnull String query,
-                                   @Nonnull int[] parameterPositions) {
+                                   @Nonnull int[] parameterPositions,
+                                   @Nonnull String dialectName) {
         super(dataConnectionName);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
+        this.dialectName = dialectName;
     }
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
         super.init(context);
-        evalContext = ExpressionEvalContext.from(context);
+        this.evalContext = ExpressionEvalContext.from(context);
     }
 
     @Nonnull
@@ -153,7 +113,6 @@ public class SelectProcessorSupplier
         );
 
         return singleton(processor);
-
     }
 
     private BiFunctionEx<ResultSet, Integer, Object>[] prepareValueGettersFromMetadata(ResultSet rs) throws SQLException {
@@ -162,7 +121,8 @@ public class SelectProcessorSupplier
         BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
         for (int j = 0; j < metaData.getColumnCount(); j++) {
             String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
-            valueGetters[j] = GETTERS.getOrDefault(
+            Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = GettersProvider.getGetters(dialectName);
+            valueGetters[j] = getters.getOrDefault(
                     type,
                     (resultSet, n) -> rs.getObject(n)
             );
@@ -181,6 +141,7 @@ public class SelectProcessorSupplier
         out.writeString(dataConnectionName);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
+        out.writeString(dialectName);
     }
 
     @Override
@@ -188,5 +149,6 @@ public class SelectProcessorSupplier
         dataConnectionName = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
+        dialectName = in.readString();
     }
 }

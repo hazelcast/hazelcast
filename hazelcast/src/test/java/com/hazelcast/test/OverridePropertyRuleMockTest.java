@@ -18,10 +18,12 @@ package com.hazelcast.test;
 
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.MockedStatic;
 
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
@@ -36,6 +38,8 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OverridePropertyRuleMockTest {
 
+    private static MockedStatic<OtherClass> mockedStatic;
+
     @Rule
     public OverridePropertyRule overridePropertyRule = set("hazelcast.custom.system.property", "5");
     @Rule
@@ -43,7 +47,12 @@ public class OverridePropertyRuleMockTest {
 
     @BeforeClass
     public static void setUp() {
-        mockStatic(OtherClass.class);
+        mockedStatic = mockStatic(OtherClass.class);
+    }
+
+    @AfterClass
+    public static void cleanUpMocks() {
+        mockedStatic.close();
     }
 
     @Test

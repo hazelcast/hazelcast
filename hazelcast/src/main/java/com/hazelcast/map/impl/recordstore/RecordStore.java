@@ -274,11 +274,11 @@ public interface RecordStore<R extends Record> {
      * @param mergingEntry the {@link MapMergeTypes} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @param provenance   origin of call to this method.
-     * @return {@code true} if merge is applied, otherwise {@code false}
+     * @return the {@link MapMergeResponse} indicating the result of the merge
      */
-    boolean merge(MapMergeTypes<Object, Object> mergingEntry,
-                  SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
-                  CallerProvenance provenance);
+    MapMergeResponse merge(MapMergeTypes<Object, Object> mergingEntry,
+                                SplitBrainMergePolicy<Object, MapMergeTypes<Object, Object>, Object> mergePolicy,
+                                CallerProvenance provenance);
 
     R getRecord(Data key);
 
@@ -677,4 +677,6 @@ public interface RecordStore<R extends Record> {
     void decMapStoreOffloadedOperationsCount();
 
     long getMapStoreOffloadedOperationsCount();
+
+    boolean isTieredStorageEnabled();
 }

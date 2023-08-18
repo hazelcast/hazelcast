@@ -151,7 +151,7 @@
 
     <xs:complexType name="hazelcast-cloud">
         <xs:all>
-            <xs:element name="discovery-token" type="xs:string"/>
+            <xs:element name="discovery-token" type="xs:string" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
     </xs:complexType>

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Portions Copyright (c) 2020, MicroRaft.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +19,7 @@ package com.hazelcast.cp.internal.raft.impl.state;
 
 import com.hazelcast.internal.util.Clock;
 
+import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 /**
@@ -28,13 +30,18 @@ import static java.lang.Math.min;
  * (initialized to leader's {@code lastLogIndex + 1})</li>
  * <li>{@code matchIndex}: index of highest log entry known to be replicated
  * on server (initialized to 0, increases monotonically)</li>
- * <li>{@code appendRequestBackoff}: a boolean flag indicating that leader is still
- * waiting for a response to the last sent append request</li>
+ * <li>{@code backoffRound}: denotes the current round in the ongoing backoff period</li>
+ * <li>{@code nextBackoffPower}: used for calculating how many rounds will be used in the next backoff period</li>
+ * <li>{@code appendRequestAckTimestamp}: the timestamp of the last append entries or install snapshot response</li>
+ * <li>{@code flowControlSequenceNumber}: the flow control sequence number sent to the follower in the last append
+ * entries or install snapshot request</li>
  * </ul>
  */
 public class FollowerState {
 
-    private static final int MAX_BACKOFF_ROUND = 20;
+    static final int MIN_BACKOFF_ROUNDS = 4;
+
+    static final int MAX_BACKOFF_ROUND = 20;
 
     private long matchIndex;
 
@@ -45,6 +52,8 @@ public class FollowerState {
     private int nextBackoffPower;
 
     private long appendRequestAckTimestamp;
+
+    private long flowControlSequenceNumber;
 
     FollowerState(long matchIndex, long nextIndex) {
         this.matchIndex = matchIndex;
@@ -88,20 +97,25 @@ public class FollowerState {
     }
 
     /**
-     * Sets the flag for append request backoff. A new append request will not be sent
-     * to this follower either until it sends an append response or a backoff timeout occurs.
+     * Starts a new request backoff period. No new append entries or install
+     * snapshot request will be sent to this follower either until it sends a
+     * response or the backoff timeout elapses.
+     * <p>
+     * Returns the flow control sequence number to be put into the append entries or
+     * install snapshot request which is to be sent to the follower.
      */
-    public void setAppendRequestBackoff() {
+    public long setAppendRequestBackoff() {
+        assert backoffRound == 0 : "backoff round: " + backoffRound;
         backoffRound = nextBackoffRound();
-        nextBackoffPower++;
+        return ++flowControlSequenceNumber;
     }
 
     private int nextBackoffRound() {
-        return min(1 << nextBackoffPower, MAX_BACKOFF_ROUND);
+        return min(max((1 << (nextBackoffPower++)) * MIN_BACKOFF_ROUNDS, MIN_BACKOFF_ROUNDS), MAX_BACKOFF_ROUND);
     }
 
     /**
-     * Sets the flag for append request backoff to max value.
+     * Sets the flag for append/install snapshot request backoff to max value.
      */
     public void setMaxAppendRequestBackoff() {
         backoffRound = MAX_BACKOFF_ROUND;
@@ -113,17 +127,38 @@ public class FollowerState {
      * @return true if round number reaches to {@code 0}, false otherwise
      */
     public boolean completeAppendRequestBackoffRound() {
+        assert backoffRound > 0;
         return --backoffRound == 0;
     }
 
     /**
-     * Clears the flag for the append request backoff
-     * and updates the timestamp of append entries response
+     * Updates the timestamp of the last received append entries or install snapshot
+     * response. In addition, if the received flow control sequence number is equal
+     * to the last sent flow sequence number, the internal request backoff state is
+     * also reset.
      */
-    public void appendRequestAckReceived() {
+    public boolean appendRequestAckReceived(long flowControlSequenceNumber) {
+        appendRequestAckTimestamp = Clock.currentTimeMillis();
+        boolean success = this.flowControlSequenceNumber == flowControlSequenceNumber;
+
+        // TODO RU_COMPAT_5_3 added for Version 5.3 compatibility. Should be removed at Version 5.5
+        if (flowControlSequenceNumber == -1) {
+            success = true;
+        }
+
+        if (success) {
+            resetRequestBackoff();
+        }
+
+        return success;
+    }
+
+    /**
+     * Resets the request backoff state.
+     */
+    public void resetRequestBackoff() {
         backoffRound = 0;
         nextBackoffPower = 0;
-        appendRequestAckTimestamp = Clock.currentTimeMillis();
     }
 
     /**
@@ -133,9 +168,18 @@ public class FollowerState {
         return appendRequestAckTimestamp;
     }
 
+    int backoffRound() {
+        return backoffRound;
+    }
+
+    public long flowControlSequenceNumber() {
+        return flowControlSequenceNumber;
+    }
+
     @Override
     public String toString() {
         return "FollowerState{" + "matchIndex=" + matchIndex + ", nextIndex=" + nextIndex + ", backoffRound=" + backoffRound
-                + ", nextBackoffPower=" + nextBackoffPower + ", appendRequestAckTime=" + appendRequestAckTimestamp + '}';
+                + ", nextBackoffPower=" + nextBackoffPower + ", appendRequestAckTime=" + appendRequestAckTimestamp
+                + ", flowControlSequenceNumber=" + flowControlSequenceNumber + '}';
     }
 }

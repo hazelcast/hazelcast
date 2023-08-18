@@ -157,6 +157,7 @@ public final class ClientConfigXmlGenerator {
         socketOptions(gen, network.getSocketOptions());
         socketInterceptor(gen, network.getSocketInterceptorConfig());
         ssl(gen, network.getSSLConfig());
+        cloud(gen, network.getCloudConfig());
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(network));
         autoDetection(gen, network.getAutoDetectionConfig());
         discovery(gen, network.getDiscoveryConfig());
@@ -517,6 +518,12 @@ public final class ClientConfigXmlGenerator {
                 .node("class-name", classNameOrImplClass(socketInterceptor.getClassName(),
                         socketInterceptor.getImplementation()))
                 .appendProperties(socketInterceptor.getProperties())
+                .close();
+    }
+
+    private static void cloud(XmlGenerator gen, ClientCloudConfig cloudConfig) {
+        gen.open("hazelcast-cloud", "enabled", cloudConfig.isEnabled())
+                .node("discovery-token", cloudConfig.getDiscoveryToken())
                 .close();
     }
 

@@ -35,6 +35,11 @@
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]cluster[\\/]fd[\\/]PhiAccrualFailureDetector"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]instance[\\/]impl[\\/]MobyNames"/>
 
+    <!--  Suppress checking of copyright notice, adapted from the MicroRaft project  -->
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]raft[\\/]impl[\\/]state[\\/]FollowerState"/>
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]raft[\\/]impl[\\/]state[\\/]FollowerStateTest"/>
+    <suppress checks="Header" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]raft[\\/]impl[\\/]SlowFollowerBackoffTest"/>
+
     <!--  Suppress checking of copyright notice, adapted from Agrona project  -->
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]HashUtil"/>
     <suppress checks="Header" files="com[\\/]hazelcast[\\/]internal[\\/]util[\\/]QuickMath"/>

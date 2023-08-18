@@ -741,6 +741,11 @@ abstract class MapProxySupport<K, V>
         return invokeOperationAsync(key, operationProvider.createRemoveOperation(name, keyData));
     }
 
+    protected InternalCompletableFuture<Data> deleteAsyncInternal(Object key) {
+        Data keyData = toDataWithStrategy(key);
+        return invokeOperationAsync(key, operationProvider.createDeleteOperation(name, keyData, false));
+    }
+
     protected boolean containsKeyInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
         MapOperation containsKeyOperation = operationProvider.createContainsKeyOperation(name, keyData);

@@ -65,7 +65,7 @@ public abstract class OperationRunner {
      * timed out or has run successfully
      * @throws Exception if there was an exception raised while processing the packet
      */
-    public abstract boolean run(Packet packet) throws Exception;
+    public abstract void run(Packet packet) throws Exception;
 
     public abstract void run(Runnable task);
 
@@ -73,11 +73,8 @@ public abstract class OperationRunner {
      * Runs the provided operation.
      *
      * @param task the operation to execute
-     * @return {@code true} if this operation was not executed and should be retried at a later time,
-     * {@code false} if the operation should not be retried, either because it
-     * timed out or has run successfully
      */
-    public abstract boolean run(Operation task);
+    public abstract void run(Operation task);
 
     /**
      * Returns the current task that is executing. This value could be null
