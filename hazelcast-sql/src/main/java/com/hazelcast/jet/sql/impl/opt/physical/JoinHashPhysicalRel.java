@@ -58,6 +58,18 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
         return new JoinHashPhysicalRel(getCluster(), traitSet, left, right, conditionExpr, joinType);
     }
 
+    /**
+     * Cost calculation of Hash Join relation. It does not rely on children cost.
+     * <p>
+     * Hash Join algorithm is more advanced join algorithm, where it builds a hash table for left row set, and then
+     * compare each row from the right side
+     * Speaking of cost estimation, we are accounting the next properties:
+     * - row count is estimating ans L + R, because we traverse both sides once per JOIN.
+     * - same for CPU cost estimation multiplied by cost to build a hash table and left and right rows comparison.
+     * <p>
+     * The perfect assumption also must include memory (what is important in case of hash table) and IO cost estimation,
+     * as well as a selectivity for a right row set.
+     */
     @Override
     @Nullable
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
@@ -65,7 +77,11 @@ public class JoinHashPhysicalRel extends JoinPhysicalRel {
         double rightRowCount = mq.getRowCount(getRight());
         double rowCount = leftRowCount + rightRowCount;
 
-        double cpu = Cost.HASH_JOIN_MULTIPLIER * leftRowCount + /* TODO: selectivity */ rightRowCount;
+        // TODO: introduce selectivity estimator, but ATM we taking the worst case scenario : selectivity = 1.0.
+        double cpu = Cost.HASH_JOIN_MULTIPLIER
+                * leftRowCount
+                + /* TODO: selectivity */ rightRowCount
+                * Cost.JOIN_ROW_CMP_MULTIPLIER;
 
         return planner.getCostFactory().makeCost(rowCount, cpu, 0.);
     }

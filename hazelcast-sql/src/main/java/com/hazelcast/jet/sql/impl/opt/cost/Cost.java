@@ -42,12 +42,18 @@ public class Cost implements RelOptCost {
 
     /**
      * Multiplier to display hash table building actions:
-     * - row hash computation;
-     * - probe hash table;
-     * - worst case scenario : walk through hash chain and compare with each element (assessed as 3 ops in average);
-     * - add the hash to the bucket.
+     * - row hash computation;          (estimate - 3 ops, the process itself is heavier from CPU ops POV)
+     * - probe hash table;              (estimate - 1 op)
+     * - walk through hash chain        (estimate - 1 op, assuming hash collision may happen)
+     * - and compare with each element; (estimate - 1 op, assuming hash collision may happen)
+     * - add the k-v to the table.      (estimate - 1 op).
      */
-    public static final double HASH_JOIN_MULTIPLIER = 6;
+    public static final double HASH_JOIN_MULTIPLIER = 7;
+
+    /**
+     * Multiplier to display row comparison
+     */
+    public static final double JOIN_ROW_CMP_MULTIPLIER = 2;
 
     private final double rows;
     private final double cpu;

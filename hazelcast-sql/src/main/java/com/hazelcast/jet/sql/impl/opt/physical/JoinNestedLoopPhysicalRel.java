@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.cost.Cost;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import org.apache.calcite.plan.RelOptCluster;
@@ -114,32 +115,33 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
     }
 
     /**
-     * Copied from {@link org.apache.calcite.rel.core.Correlate#computeSelfCost(RelOptPlanner, RelMetadataQuery)}
+     * Cost calculation of Nested Loop Join relation.
+     * NLJ algorithm is simple algorithm, where for each left row we are traversing right row set.
+     * Speaking of cost estimation, we are accounting the next properties:
+     * - row count is estimating ans L * R, because for each left row we're probing full right row set;
+     * - same for CPU cost estimation multiplied by cost of row comparison.
+     * The perfect assumption also must include memory and IO cost estimation, and also
+     * a selectivity for a right row set.
      */
     @Override
     @Nullable
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        double rowCount = mq.getRowCount(this);
-
-        final double rightRowCount = right.estimateRowCount(mq);
-        final double leftRowCount = left.estimateRowCount(mq);
+        final double leftRowCount = mq.getRowCount(left);
+        final double rightRowCount = mq.getRowCount(right);
         if (Double.isInfinite(leftRowCount) || Double.isInfinite(rightRowCount)) {
             return planner.getCostFactory().makeInfiniteCost();
         }
 
-        Double restartCount = mq.getRowCount(getLeft());
-        if (restartCount == null) {
-            return planner.getCostFactory().makeInfiniteCost();
-        }
-        // RelMetadataQuery.getCumulativeCost(getRight()); does not work for
-        // RelSubset, so we ask planner to cost-estimate right relation
         RelOptCost rightCost = planner.getCost(getRight(), mq);
         if (rightCost == null) {
             return planner.getCostFactory().makeInfiniteCost();
         }
-        RelOptCost rescanCost = rightCost.multiplyBy(Math.max(1.0, restartCount - 1));
 
-        return planner.getCostFactory().makeCost(rowCount + leftRowCount, 0, 0).plus(rescanCost);
+        // TODO: introduce selectivity estimator, but ATM we taking the worst case scenario : selectivity = 1.0.
+        double rowsEstimate = leftRowCount * /* TODO: selectivity */ rightRowCount;
+        double cpuEstimate = Math.max(1.0, rowsEstimate - 1) * Cost.JOIN_ROW_CMP_MULTIPLIER;
+
+        return planner.getCostFactory().makeCost(rowsEstimate, cpuEstimate, 0);
     }
 
     @Override
