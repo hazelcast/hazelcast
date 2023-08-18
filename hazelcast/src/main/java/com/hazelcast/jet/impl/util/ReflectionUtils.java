@@ -175,7 +175,7 @@ public final class ReflectionUtils {
     private static Method findPropertyAccessor(
             @Nonnull Class<?> clazz,
             @Nonnull String propertyName,
-            @Nonnull String ...prefixes
+            @Nonnull String... prefixes
     ) {
         final Set<String> accessorNames = stream(prefixes)
                 .map(prefix -> prefix + toUpperCase(propertyName.charAt(0)) + propertyName.substring(1))

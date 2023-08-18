@@ -151,7 +151,7 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
         checkEquals(f, deserialized, true);
     }
 
-    private void check(String sql, Integer expectedResult, Object ...parameters) {
+    private void check(String sql, Integer expectedResult, Object... parameters) {
         List<SqlRow> rows =  execute(sql, parameters);
         assertEquals("size", 1, rows.size());
         SqlRow row = rows.get(0);
