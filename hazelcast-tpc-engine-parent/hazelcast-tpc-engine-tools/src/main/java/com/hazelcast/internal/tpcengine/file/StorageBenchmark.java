@@ -124,7 +124,7 @@ public class StorageBenchmark {
 
     public static void main(String[] args) {
         StorageBenchmark benchmark = new StorageBenchmark();
-        benchmark.runtimeSeconds = 120;
+        benchmark.runtimeSeconds = 1020;
         benchmark.affinity = "1";
         benchmark.numJobs = 1;
         benchmark.iodepth = 100;
@@ -635,8 +635,16 @@ public class StorageBenchmark {
                 long durationMs = nowMs - lastMs;
                 collect(metrics);
 
-                double completed = (100f * (nowMs - startMs)) / runtimeMs;
-                sb.append("  [");
+                long completedMs = TimeUnit.MILLISECONDS.toSeconds(nowMs - startMs);
+                long completedMinutes = completedMs / 60;
+                long completedSeconds = completedMs % 60;
+
+                double completed = (100f * completedMs) / runtimeMs;
+                sb.append("  [done ");
+                sb.append(completedMinutes);
+                sb.append("m:");
+                sb.append(completedSeconds);
+                sb.append("s ");
                 sb.append(String.format("%,.3f", completed));
                 sb.append("%]");
 

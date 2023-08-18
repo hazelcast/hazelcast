@@ -46,12 +46,12 @@ import org.jctools.util.PaddedAtomicLong;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.tpcengine.FormatUtil.humanReadableCountSI;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_INT;
 import static java.lang.Math.min;
 import static java.lang.System.currentTimeMillis;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -369,12 +369,20 @@ public class EchoBenchmark_Netty {
                 Thread.sleep(SECONDS.toMillis(1));
                 long nowMs = System.currentTimeMillis();
 
-                double completed = (100f * (nowMs - startMs)) / runtimeMs;
-                sb.append("  [");
+                long completedMs = MILLISECONDS.toSeconds(nowMs - startMs);
+                long completedMinutes = completedMs / 60;
+                long completedSeconds = completedMs % 60;
+
+                double completed = (100f * completedMs) / runtimeMs;
+                sb.append("  [done ");
+                sb.append(completedMinutes);
+                sb.append("m:");
+                sb.append(completedSeconds);
+                sb.append("s ");
                 sb.append(String.format("%,.3f", completed));
                 sb.append("%]");
 
-                long eta = TimeUnit.MILLISECONDS.toSeconds(endMs - nowMs);
+                long eta = MILLISECONDS.toSeconds(endMs - nowMs);
                 long etaMinutes = eta / 60;
                 long etaSeconds = eta % 60;
                 sb.append("[eta ");
