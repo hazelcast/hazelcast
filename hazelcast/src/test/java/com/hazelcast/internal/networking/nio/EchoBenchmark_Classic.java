@@ -383,7 +383,7 @@ public class EchoBenchmark_Classic {
                 long completedSeconds = completedMs % 60;
 
                 double completed = (100f * completedMs) / runtimeMs;
-                sb.append("  [done ");
+                sb.append("  [progr ");
                 sb.append(completedMinutes);
                 sb.append("m:");
                 sb.append(completedSeconds);
