@@ -125,7 +125,7 @@ public final class SubmissionQueue {
             long oldLocalHead = localHead;
             // refresh the local head because it could be stale.
             localHead = acquireHead();
-            if (oldLocalHead == localHead) {
+            if (oldLocalHead + Integer.MIN_VALUE == localHead + Integer.MIN_VALUE) {
                 // there really is no space.
                 return -1;
             }
@@ -147,7 +147,7 @@ public final class SubmissionQueue {
                          long offset,
                          long userData) {
         //System.out.println("writeSqe:" + index);
-        long sqeAddr = sqesAddr + index * SIZEOF_SQE;
+        long sqeAddr = sqesAddr + (long) index * SIZEOF_SQE;
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, opcode);
         UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) flags);
         UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);

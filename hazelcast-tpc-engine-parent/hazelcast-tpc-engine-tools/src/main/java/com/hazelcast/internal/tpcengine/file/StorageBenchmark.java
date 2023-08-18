@@ -706,7 +706,10 @@ public class StorageBenchmark {
                     double nopsThp = ((nops - lastMetrics.nops) * 1000d) / durationMs;
                     sb.append("[nops=");
                     sb.append(FormatUtil.humanReadableCountSI(nopsThp));
-                    sb.append("/s]");
+
+                    sb.append("/s ");
+                    sb.append(metrics.nops);
+                    sb.append("]");
                 }
 
                 System.out.println(sb);

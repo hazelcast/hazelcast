@@ -62,8 +62,7 @@ public final class CompletionQueue {
     public static final int OFFSET_CQE_FLAGS = 12;
     public static final int CQE_SIZE = 16;
 
-    public int localHead;
-    public int localTail;
+    public int head;
 
     public long headAddr;
     public long tailAddr;
@@ -139,13 +138,7 @@ public final class CompletionQueue {
      * @return true if there are any completion events, false otherwise.
      */
     public boolean hasCompletions() {
-        if (localHead != localTail) {
-            return true;
-        }
-
-        localTail = UNSAFE.getIntVolatile(null, tailAddr);
-        //System.out.println("hasCompletions count:"+(tail-head));
-        return localHead != localTail;
+        return head != UNSAFE.getIntVolatile(null, tailAddr);
     }
 
     /**
@@ -160,11 +153,12 @@ public final class CompletionQueue {
      */
     public int process(CompletionHandler completionHandler) {
         // acquire load.
-        localTail = UNSAFE.getIntVolatile(null, tailAddr);
+        int tail = UNSAFE.getIntVolatile(null, tailAddr);
+        int readyCnt = tail - head;
 
         int processed = 0;
-        while (localHead < localTail) {
-            int cqeIndex = localHead & ringMask;
+        for (int k = 0; k < readyCnt; k++) {
+            int cqeIndex = head & ringMask;
             long cqeAddress = cqesAddr + (long) cqeIndex * CQE_SIZE;
 
             long userdata = UNSAFE.getLong(null, cqeAddress + OFFSET_CQE_USERDATA);
@@ -178,14 +172,14 @@ public final class CompletionQueue {
                         + flags + " userdata:" + userdata, e);
             }
 
-            localHead++;
+            head++;
             processed++;
         }
 
         //System.out.println("Cq::process processed:"+processed);
 
         // release-store.
-        UNSAFE.putOrderedInt(null, headAddr, localHead);
+        UNSAFE.putOrderedInt(null, headAddr, head);
         return processed;
     }
 
@@ -199,11 +193,13 @@ public final class CompletionQueue {
      */
     public int process() {
         // acquire load.
-        localTail = UNSAFE.getIntVolatile(null, tailAddr);
+        int tail = UNSAFE.getIntVolatile(null, tailAddr);
 
+        int readyCnt = tail - head;
         int processed = 0;
-        while (localHead < localTail) {
-            int cqeIndex = localHead & ringMask;
+
+        for (int k = 0; k < readyCnt; k++) {
+            int cqeIndex = head & ringMask;
             long cqeAddress = cqesAddr + (long) cqeIndex * CQE_SIZE;
 
             long userdata = UNSAFE.getLong(null, cqeAddress + OFFSET_CQE_USERDATA);
@@ -225,12 +221,12 @@ public final class CompletionQueue {
                 }
             }
 
-            localHead++;
+            head++;
             processed++;
         }
 
         // release-store.
-        UNSAFE.putOrderedInt(null, headAddr, localHead);
+        UNSAFE.putOrderedInt(null, headAddr, head);
         return processed;
     }
 

@@ -137,8 +137,8 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
             sq.offer(IORING_OP_SEND, 0, 0, socket.fd(), sendBuffAddr, sndBuff.remaining(), 0, USERDATA_OP_WRITE);
             sq.offer(IORING_OP_RECV, 0, 0, socket.fd(), recvBuffAddr, recvBuff.remaining(), 0, USERDATA_OP_READ);
 
-            int localTail = cq.localTail;
-            int localHead = cq.localHead;
+            int localTail = 0; //cq.localTail;
+            int localHead = cq.head;
             final long tailAddr = cq.tailAddr;
             final int ringMask = cq.ringMask;
             final long cqesAddr = cq.cqesAddr;
@@ -241,8 +241,8 @@ public class EchoBenchmark_Naked_IOUring_Unfolded {
 
             sq.offer(IORING_OP_ACCEPT, 0, SOCK_NONBLOCK | SOCK_CLOEXEC, serverSocket.fd(), acceptMemory.addr, 0, acceptMemory.lenAddr, acceptHandler.id);
 
-            int localTail = cq.localTail;
-            int localHead = cq.localHead;
+            int localTail = 0;;//cq.localTail;
+            int localHead = cq.head;
             final long tailAddr = cq.tailAddr;
             final int ringMask = cq.ringMask;
             final long cqesAddr = cq.cqesAddr;
