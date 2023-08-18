@@ -24,7 +24,7 @@ which becomes noticeable in very small batch jobs and/or large clusters.
 - Member pruning - prevent cluster members which to not own requested data from being involved in job execution
 - Processor pruning - eliminate redundant stage processors creation.
 - Scan partition pruning - extract partition condition and select only required partition to be read
-  by scanning processors (`SpecificPartitionsImapReaderPms`).
+  by scanning processor meta suppliers (`SpecificPartitionsImapReaderPms` which spawns `ReadMapOrCacheP`).
 
 ## Goals
 
@@ -132,7 +132,8 @@ We are interested on it for two cases:
 - support `allToOne` edge : all edges are directed to one member and partitioned by single key.
   These partitions and members (if multiple) are also a subjects to be included into the DAG result.
   Main motivation here is that most of the queries highly likely will have `allToOne` to forward
-  scanned data to the coordinator, and we want to calculate it in proper place in less error-prone way.
+  scanned data to the coordinator, and we want to calculate it in proper place to include the coordinator
+  and include appropriate partition in the job.
 
 - general `partitioned` edge support to unlock support of operations like aggregations. DAG analysis result
   will include boolean flag, which determines if we need preserve all partitions in the cluster.
