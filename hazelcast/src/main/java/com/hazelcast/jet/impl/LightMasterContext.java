@@ -170,7 +170,7 @@ public final class LightMasterContext {
                     Set<MemberInfo> participants = planMap.keySet();
 
                     coordinationService.jobInvocationObservers.forEach(obs ->
-                            obs.onJobInvocation(jobId, participants, dag, jobConfig));
+                            obs.onLightJobInvocation(jobId, participants, dag, jobConfig));
 
                     Function<ExecutionPlan, Operation> operationCtor = plan -> {
                         Data serializedPlan = nodeEngine.getSerializationService().toData(plan);

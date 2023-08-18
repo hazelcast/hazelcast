@@ -159,7 +159,7 @@ public class PlanExecutor {
     private final HazelcastInstance hazelcastInstance;
     private final NodeEngine nodeEngine;
     private final QueryResultRegistry resultRegistry;
-    private final List<PreJobInvocationObserver> preJobInvocationObservers = new ArrayList<>();
+    private final List<SqlJobInvocationObserver> sqlJobInvocationObservers = new ArrayList<>();
 
     private final ILogger logger;
 
@@ -531,7 +531,7 @@ public class PlanExecutor {
         Object oldValue = resultRegistry.store(jobId, queryResultProducer);
         assert oldValue == null : oldValue;
         try {
-            preJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
+            sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
             Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
             job.getFuture().whenComplete((r, t) -> {
                 // make sure the queryResultProducer is cleaned up after the job completes. This normally
@@ -564,6 +564,7 @@ public class PlanExecutor {
                 .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows())
                 .setTimeoutMillis(timeout);
 
+        sqlJobInvocationObservers.forEach(observer -> observer.onJobInvocation(plan.getDag(), jobConfig));
         Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
         job.join();
 
@@ -813,8 +814,8 @@ public class PlanExecutor {
     }
 
     // package-private for test purposes
-    void registerJobInvocationObserver(PreJobInvocationObserver jobInvocationObserver) {
-        preJobInvocationObservers.add(jobInvocationObserver);
+    void registerJobInvocationObserver(SqlJobInvocationObserver jobInvocationObserver) {
+        sqlJobInvocationObservers.add(jobInvocationObserver);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

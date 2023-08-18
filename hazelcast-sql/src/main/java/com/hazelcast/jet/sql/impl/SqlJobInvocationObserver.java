@@ -19,6 +19,10 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 
-public interface PreJobInvocationObserver {
+/**
+ * Jet job metadata observer used primarily for testing.
+ * It is invoked exactly before {@link PlanExecutor} submits light job.
+ */
+public interface SqlJobInvocationObserver {
     void onJobInvocation(DAG dag, JobConfig config);
 }

@@ -63,14 +63,14 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
     protected SqlServiceImpl sqlService;
     protected PlanExecutor planExecutor;
     protected JobCoordinationService jobCoordinationService;
-    protected PreJobInvocationObserverImpl preJobInvocationObserver;
+    protected SqlJobInvocationObserverImpl preJobInvocationObserver;
     protected JobInvocationObserverImpl jobInvocationObserver;
 
 
     @Before
     public void setUp() throws Exception {
         nodeEngine = getNodeEngineImpl(instance());
-        preJobInvocationObserver = new PreJobInvocationObserverImpl();
+        preJobInvocationObserver = new SqlJobInvocationObserverImpl();
         jobInvocationObserver = new JobInvocationObserverImpl();
         sqlService = (SqlServiceImpl) instance().getSql();
         planExecutor = sqlService.getOptimizer().getPlanExecutor();
@@ -123,7 +123,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         return actualRows;
     }
 
-    protected static class PreJobInvocationObserverImpl implements PreJobInvocationObserver {
+    protected static class SqlJobInvocationObserverImpl implements SqlJobInvocationObserver {
         public DAG dag;
         public JobConfig jobConfig;
 
@@ -141,7 +141,7 @@ public abstract class SqlEndToEndTestSupport extends SqlTestSupport {
         public JobConfig jobConfig;
 
         @Override
-        public void onJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig) {
+        public void onLightJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig) {
             this.jobId = jobId;
             this.members = members;
             this.dag = dag;

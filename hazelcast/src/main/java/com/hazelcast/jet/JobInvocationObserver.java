@@ -19,10 +19,18 @@ package com.hazelcast.jet;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 
 import java.util.Set;
 
+/**
+ * Jet job metadata observer used primarily for testing.
+ * It is invoked exactly before {@link InitExecutionOperation} for light jobs
+ * in {@link com.hazelcast.jet.impl.LightMasterContext#createContext}.
+ * <p>
+ * Important note: right now it executes *only* for light jobs.
+ */
 public interface JobInvocationObserver {
 
-    void onJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig);
+    void onLightJobInvocation(long jobId, Set<MemberInfo> members, DAG dag, JobConfig jobConfig);
 }
