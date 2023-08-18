@@ -133,7 +133,7 @@ public class TaskDefinition<V>
         out.writeLong(period);
         out.writeString(unit.name());
         // RU_COMPAT_5_3
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) {
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
             out.writeBoolean(autoDisposable);
         }
     }
@@ -148,7 +148,7 @@ public class TaskDefinition<V>
         period = in.readLong();
         unit = TimeUnit.valueOf(in.readString());
         // RU_COMPAT_5_3
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) {
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
             autoDisposable = in.readBoolean();
         }
     }
