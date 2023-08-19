@@ -73,6 +73,8 @@ public final class CompletionQueue {
     private final Uring uring;
 
     private final CompletionHandler[] handlers;
+    // an array that shows which positions in the handlers array are
+    // not used.
     private final int[] freeHandlers;
     private int freeHandlersIndex;
 
@@ -83,7 +85,6 @@ public final class CompletionQueue {
         for (int k = 0; k < handlerCount; k++) {
             freeHandlers[k] = k;
         }
-        this.freeHandlersIndex = handlerCount - 1;
     }
 
     static UncheckedIOException newCQEFailedException(String msg, String syscall, int opcode, int errnum) {
@@ -101,20 +102,9 @@ public final class CompletionQueue {
      * @return the next handler id.
      */
     public int nextHandlerId() {
-        int handlerIndex = freeHandlers[freeHandlersIndex];
-        freeHandlersIndex--;
-        return handlerIndex;
-    }
-
-    /**
-     * Unregisters the CompletionHandler with the given handlerId.
-     *
-     * @param handlerId the id of the CompletionHandler to remove.
-     */
-    public void unregister(int handlerId) {
-        handlers[handlerId] = null;
+        int handlerId = freeHandlers[freeHandlersIndex];
         freeHandlersIndex++;
-        freeHandlers[freeHandlersIndex] = handlerId;
+        return handlerId;
     }
 
     /**
@@ -126,6 +116,18 @@ public final class CompletionQueue {
     public void register(int handlerId, CompletionHandler handler) {
         handlers[handlerId] = handler;
     }
+
+    /**
+     * Unregisters the CompletionHandler with the given handlerId.
+     *
+     * @param handlerId the id of the CompletionHandler to remove.
+     */
+    public void unregister(int handlerId) {
+        handlers[handlerId] = null;
+        freeHandlersIndex--;
+        freeHandlers[freeHandlersIndex] = handlerId;
+    }
+
 
     /**
      * Checks if there are any completion events.
@@ -200,10 +202,6 @@ public final class CompletionQueue {
             long userdata = UNSAFE.getLong(null, cqeAddress + OFFSET_CQE_USERDATA);
             int res = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_RES);
             int flags = UNSAFE.getInt(null, cqeAddress + OFFSET_CQE_FLAGS);
-
-            if (userdata > Integer.MAX_VALUE) {
-                throw new Error();
-            }
 
             CompletionHandler handler = handlers[(int) userdata];
             if (handler == null) {

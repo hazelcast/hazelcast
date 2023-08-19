@@ -22,7 +22,6 @@ import com.hazelcast.internal.tpcengine.file.StorageScheduler;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpcengine.iobuffer.NonConcurrentIOBufferAllocator;
-import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -48,7 +47,9 @@ import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
+import static com.hazelcast.internal.tpcengine.util.BitUtil.nextPowerOfTwo;
 import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 import static java.lang.Math.min;
 
 
@@ -83,8 +84,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
     private final StringBuilder msgBuilder = new StringBuilder();
     private final UringStorageRequest[] pool;
     private final int poolCapacity;
-    private int allocIndex;
-    private final CircularQueue<UringStorageRequest> stagingQueue;
+    private int poolAllocIndex;
+    private final StagingQueue stagingQueue;
     private final SubmissionQueue submissionQueue;
     private final CompletionQueue completionQueue;
     private final int submitLimit;
@@ -95,7 +96,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
                                      int pendingLimit) {
         this.submitLimit = submitLimit;
         this.pathAllocator = new NonConcurrentIOBufferAllocator(512, true);
-        this.stagingQueue = new CircularQueue<>(pendingLimit);
+        this.stagingQueue = new StagingQueue(pendingLimit);
         this.submissionQueue = uring.sq();
         this.completionQueue = uring.cq();
 
@@ -113,16 +114,16 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
 
     @Override
     public StorageRequest allocate() {
-        if (allocIndex == poolCapacity - 1) {
+        if (poolAllocIndex == poolCapacity - 1) {
             return null;
         }
 
-        UringStorageRequest req = pool[allocIndex];
+        UringStorageRequest req = pool[poolAllocIndex];
         // the slot in the pool doesn't need to be nulled. It saves a write
         // barrier and it won't cause a memory leak since the number of request
         // is fixed and eventually all requests will return to the pool and we
         // don't take any choices on the nullability of the slot.
-        allocIndex++;
+        poolAllocIndex++;
         return req;
     }
 
@@ -136,10 +137,13 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
     @Override
     public boolean tick() {
         // Submits as many staged requests as allowed to the submission queue.
-        int toSubmit = min(submitLimit - submitCount, stagingQueue.size());
-
+        final StagingQueue stagingQueue = this.stagingQueue;
+        final int toSubmit = min(submitLimit - submitCount, stagingQueue.size());
+        final UringStorageRequest[] array = stagingQueue.array;
+        final int mask = stagingQueue.mask;
         for (int k = 0; k < toSubmit; k++) {
-            UringStorageRequest req = stagingQueue.poll();
+            UringStorageRequest req = array[(int) (stagingQueue.head & mask)];
+            stagingQueue.head++;
             int sqIndex = submissionQueue.nextIndex();
             if (sqIndex < 0) {
                 throw new IllegalStateException("No space in submission queue");
@@ -291,8 +295,8 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
             callback = null;
 
             // return the request to the pool
-            allocIndex--;
-            pool[allocIndex] = this;
+            poolAllocIndex--;
+            pool[poolAllocIndex] = this;
         }
 
         private void handleError(int res) {
@@ -358,6 +362,37 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
                     + ", rwFlags=" + rwFlags
                     + ", buf=" + (buffer == null ? "null" : buffer.toDebugString())
                     + "}";
+        }
+    }
+
+    private static final class StagingQueue {
+        private final UringStorageRequest[] array;
+        private final int mask;
+        private final int capacity;
+        private long head;
+        private long tail = -1;
+
+        private StagingQueue(int capacity) {
+            int fixedCapacity = nextPowerOfTwo(checkPositive(capacity, "capacity"));
+            this.capacity = fixedCapacity;
+            this.array = new UringStorageRequest[capacity];
+            this.mask = fixedCapacity - 1;
+        }
+
+        private boolean offer(UringStorageRequest req) {
+            if (tail - head + 1 == capacity) {
+                return false;
+            }
+
+            long t = tail + 1;
+            int index = (int) (t & mask);
+            array[index] = req;
+            tail = t;
+            return true;
+        }
+
+        private int size() {
+            return (int) (tail - head + 1);
         }
     }
 }
