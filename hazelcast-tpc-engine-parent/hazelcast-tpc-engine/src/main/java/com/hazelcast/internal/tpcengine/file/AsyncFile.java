@@ -144,9 +144,6 @@ public abstract class AsyncFile {
      */
     public abstract void delete();
 
-
-    // do we need a promise at all or just a callback interface?
-
     /**
      * Executes a nop asynchronously. This method exists purely for benchmarking
      * purposes and is made for the IORING_OP_NOP.
@@ -172,7 +169,6 @@ public abstract class AsyncFile {
 
         scheduler.schedule(req);
     }
-
 
     /**
      * Submits an fsync. The sync isn't ordered with respect to any concurrent
