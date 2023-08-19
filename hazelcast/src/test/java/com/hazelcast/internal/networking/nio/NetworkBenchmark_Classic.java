@@ -67,7 +67,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * an apples vs oranges comparison because with 2 reactors you have only 2 threads
  * and with classic networking you get 4.
  */
-public class EchoBenchmark_Classic {
+public class NetworkBenchmark_Classic {
     public int runtimeSeconds = 3000;
     public int payloadSize = 0;
     public int concurrency = 1000;
@@ -88,7 +88,7 @@ public class EchoBenchmark_Classic {
     private final List<NioChannel> channels = new CopyOnWriteArrayList<>();
 
     public static void main(String[] args) throws Exception {
-        EchoBenchmark_Classic benchmark = new EchoBenchmark_Classic();
+        NetworkBenchmark_Classic benchmark = new NetworkBenchmark_Classic();
         benchmark.run();
     }
 

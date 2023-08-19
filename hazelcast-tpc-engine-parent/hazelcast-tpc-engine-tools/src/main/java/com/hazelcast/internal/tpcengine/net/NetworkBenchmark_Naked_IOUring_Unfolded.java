@@ -56,7 +56,7 @@ import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
  * Good read:
  * https://www.alibabacloud.com/blog/599544
  */
-public class EchoBenchmark_Naked_IOUring_Unfolded {
+public class NetworkBenchmark_Naked_IOUring_Unfolded {
 
     public static final long iterations = 400_000_000;
     public static final String cpuAffinityClient = "0";

@@ -26,7 +26,7 @@ import static com.hazelcast.internal.tpcengine.CliUtils.printHelp;
 import static com.hazelcast.internal.tpcengine.GitInfo.getBuildTime;
 import static com.hazelcast.internal.tpcengine.GitInfo.getCommitIdAbbrev;
 
-public class EchoBenchmarkCli {
+public class NetworkBenchmarkCli {
 
     private final OptionParser parser = new OptionParser();
 
@@ -53,7 +53,7 @@ public class EchoBenchmarkCli {
             .defaultsTo(1);
 
     public static void main(String[] args) throws Exception {
-        EchoBenchmarkCli cli = new EchoBenchmarkCli();
+        NetworkBenchmarkCli cli = new NetworkBenchmarkCli();
         cli.run(args);
     }
 
@@ -71,7 +71,7 @@ public class EchoBenchmarkCli {
             return;
         }
 
-        EchoBenchmark benchmark = new EchoBenchmark();
+        NetworkBenchmark benchmark = new NetworkBenchmark();
         String runtime = options.valueOf(runtimeSpec);
         if (!runtime.endsWith("s")) {
             System.out.println("Runtime needs to end with 's'");

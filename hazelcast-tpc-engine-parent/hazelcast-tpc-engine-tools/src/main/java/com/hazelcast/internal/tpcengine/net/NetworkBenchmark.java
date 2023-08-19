@@ -62,7 +62,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Good read:
  * https://www.alibabacloud.com/blog/599544
  */
-public class EchoBenchmark {
+public class NetworkBenchmark {
 
     // Properties of the benchmark
     public int runtimeSeconds = 30;
@@ -90,23 +90,23 @@ public class EchoBenchmark {
 
     // private to the benchmark
     private volatile boolean stop;
-    private PaddedAtomicLong[] echoCounters;
+    private PaddedAtomicLong[] counters;
     private List<Reactor> clientReactors;
     private List<Reactor> serverReactors;
     private List<Reactor> reactors = new ArrayList<>();
     private List<AsyncServerSocket> serverSockets;
 
     public static void main(String[] args) throws InterruptedException {
-        EchoBenchmark benchmark = new EchoBenchmark();
+        NetworkBenchmark benchmark = new NetworkBenchmark();
         benchmark.run();
     }
 
     public void run() throws InterruptedException {
         printConfig();
 
-        echoCounters = new PaddedAtomicLong[clientReactorCount];
-        for (int k = 0; k < echoCounters.length; k++) {
-            echoCounters[k] = new PaddedAtomicLong();
+        counters = new PaddedAtomicLong[clientReactorCount];
+        for (int k = 0; k < counters.length; k++) {
+            counters[k] = new PaddedAtomicLong();
         }
 
         clientReactors = newClientReactors();
@@ -152,10 +152,10 @@ public class EchoBenchmark {
     }
 
     private void printResults(long startMillis) {
-        long count = sum(echoCounters);
+        long count = sum(counters);
         long duration = currentTimeMillis() - startMillis;
         System.out.println("Duration " + duration + " ms");
-        System.out.println("Throughput:" + (count * 1000f / duration) + " echo/second");
+        System.out.println("Throughput:" + (count * 1000f / duration) + " packets/second");
     }
 
     private void printConfig() {
@@ -235,14 +235,14 @@ public class EchoBenchmark {
         for (int k = 0; k < connections; k++) {
             Reactor clientReactor = clientReactors.get(k % clientReactorCount);
 
-            PaddedAtomicLong echoCounter = echoCounters[k % clientReactorCount];
+            PaddedAtomicLong counter = counters[k % clientReactorCount];
             AsyncServerSocket serverSocket = serverSockets.get(k % serverReactorCount);
 
             AsyncSocket.Builder socketBuilder = clientReactor.newAsyncSocketBuilder();
             socketBuilder.options.set(TCP_NODELAY, tcpNoDelay);
             socketBuilder.options.set(SO_SNDBUF, socketBufferSize);
             socketBuilder.options.set(SO_RCVBUF, socketBufferSize);
-            socketBuilder.reader = new EchoSocketReader(echoCounter);
+            socketBuilder.reader = new EchoSocketReader(counter);
             AsyncSocket socket = socketBuilder.build();
             socket.start();
             socket.connect(serverSocket.getLocalAddress()).join();
@@ -282,13 +282,13 @@ public class EchoBenchmark {
     private class EchoSocketReader extends AsyncSocket.Reader {
         private static final int SIZEOF_HEADER = SIZEOF_INT;
 
-        private final PaddedAtomicLong echoCounter;
+        private final PaddedAtomicLong counter;
         private IOBuffer response;
         private int payloadSize;
         private final IOBufferAllocator responseAllocator;
 
-        public EchoSocketReader(PaddedAtomicLong echoCounter) {
-            this.echoCounter = echoCounter;
+        public EchoSocketReader(PaddedAtomicLong counter) {
+            this.counter = counter;
             this.payloadSize = -1;
             this.responseAllocator = responsePooling
                     ? new NonConcurrentIOBufferAllocator(SIZEOF_HEADER, useDirectByteBuffers)
@@ -328,8 +328,8 @@ public class EchoBenchmark {
                 }
                 response.flip();
 
-                if (echoCounter != null) {
-                    echoCounter.lazySet(echoCounter.get() + 1);
+                if (counter != null) {
+                    counter.lazySet(counter.get() + 1);
                 }
 
                 boolean offered = insideWrite
@@ -394,11 +394,11 @@ public class EchoBenchmark {
                 sb.append(etaSeconds);
                 sb.append("s]");
 
-                long diff = metrics.echos - lastMetrics.echos;
+                long diff = metrics.count - lastMetrics.count;
                 long durationMs = nowMs - lastMs;
-                double echoThp = ((diff) * 1000d) / durationMs;
+                double thp = ((diff) * 1000d) / durationMs;
                 sb.append("[thp=");
-                sb.append(humanReadableCountSI(echoThp));
+                sb.append(humanReadableCountSI(thp));
                 sb.append("/s]");
 
                 long reads = metrics.reads;
@@ -438,7 +438,7 @@ public class EchoBenchmark {
     private void collect(Metrics target) {
         target.clear();
 
-        target.echos = sum(echoCounters);
+        target.count = sum(counters);
 
         for (Reactor reactor : reactors) {
             reactor.sockets().foreach(s -> {
@@ -456,14 +456,14 @@ public class EchoBenchmark {
         private long writes;
         private long bytesRead;
         private long bytesWritten;
-        private long echos;
+        private long count;
 
         private void clear() {
             reads = 0;
             writes = 0;
             bytesRead = 0;
             bytesWritten = 0;
-            echos = 0;
+            count = 0;
         }
     }
 }

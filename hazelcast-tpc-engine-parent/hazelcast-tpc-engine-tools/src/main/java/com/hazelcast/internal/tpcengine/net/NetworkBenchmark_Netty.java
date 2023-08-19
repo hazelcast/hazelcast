@@ -60,7 +60,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * --add-opens java.base/sun.nio.ch=ALL-UNNAMED
  */
-public class EchoBenchmark_Netty {
+public class NetworkBenchmark_Netty {
     public enum Type {
         NIO,
         EPOLL,
@@ -85,7 +85,7 @@ public class EchoBenchmark_Netty {
     private final CountDownLatch countDownLatch = new CountDownLatch(connections);
 
     public static void main(String[] args) throws InterruptedException {
-        EchoBenchmark_Netty benchmark = new EchoBenchmark_Netty();
+        NetworkBenchmark_Netty benchmark = new NetworkBenchmark_Netty();
         benchmark.run();
     }
 
