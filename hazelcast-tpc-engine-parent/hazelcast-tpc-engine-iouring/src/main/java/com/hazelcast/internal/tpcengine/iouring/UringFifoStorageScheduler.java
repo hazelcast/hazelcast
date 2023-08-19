@@ -82,6 +82,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
     private final IOBufferAllocator pathAllocator;
     private final StringBuilder msgBuilder = new StringBuilder();
     private final UringStorageRequest[] pool;
+    private final int poolCapacity;
     private int allocIndex;
     private final CircularQueue<UringStorageRequest> stagingQueue;
     private final SubmissionQueue submissionQueue;
@@ -100,29 +101,28 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
 
         // All storage requests are preregistered on the completion queue. They
         // never need to unregister. Removing that overhead.
-
-        this.pool = new UringStorageRequest[pendingLimit];
+        this.poolCapacity = pendingLimit;
+        this.pool = new UringStorageRequest[poolCapacity];
         for (int k = 0; k < pool.length; k++) {
             UringStorageRequest req = new UringStorageRequest();
             req.handlerId = completionQueue.nextHandlerId();
             completionQueue.register(req.handlerId, req);
             pool[k] = req;
         }
-        //todo: pool should take from beginning; not end.
-        this.allocIndex = pool.length - 1;
     }
 
     @Override
     public StorageRequest allocate() {
-        if (allocIndex == -1) {
+        if (allocIndex == poolCapacity - 1) {
             return null;
         }
 
         UringStorageRequest req = pool[allocIndex];
-        // the item doesn't need to be nulled. It saves a write barrier and
-        // it won't cause a memory leak since the number of request is fixed
-        // and eventually all requests will return to the pool.
-        allocIndex--;
+        // the slot in the pool doesn't need to be nulled. It saves a write
+        // barrier and it won't cause a memory leak since the number of request
+        // is fixed and eventually all requests will return to the pool and we
+        // don't take any choices on the nullability of the slot.
+        allocIndex++;
         return req;
     }
 
@@ -291,7 +291,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
             callback = null;
 
             // return the request to the pool
-            allocIndex++;
+            allocIndex--;
             pool[allocIndex] = this;
         }
 
