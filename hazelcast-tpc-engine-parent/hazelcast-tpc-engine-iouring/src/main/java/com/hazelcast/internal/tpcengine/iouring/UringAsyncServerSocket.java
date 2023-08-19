@@ -117,7 +117,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         CompletionQueue cq = uring.cq();
         acceptHandler.handlerId = cq.nextHandlerId();
         cq.register(acceptHandler.handlerId, acceptHandler);
-        acceptHandler.addRequest();
+        acceptHandler.prepareSqe();
     }
 
     private static final class AcceptHandler implements CompletionHandler {
@@ -143,13 +143,13 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
             this.logger = builder.logger;
         }
 
-        private void addRequest() {
-            int index = submissionQueue.nextIndex();
-            if (index < 0) {
+        private void prepareSqe() {
+            int sqeIndex = submissionQueue.nextIndex();
+            if (sqeIndex < 0) {
                 throw new IllegalStateException("No space in submission queue");
             }
 
-            long sqeAddr = submissionQueue.sqesAddr + index * SIZEOF_SQE;
+            long sqeAddr = submissionQueue.sqesAddr + sqeIndex * SIZEOF_SQE;
             UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_ACCEPT);
             UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
             UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
@@ -169,7 +169,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
                     metrics.incAccepted();
 
                     // re-register for more accepts.
-                    addRequest();
+                    prepareSqe();
 
                     SocketAddress address = LinuxSocket.toInetSocketAddress(
                             acceptMemory.addr,

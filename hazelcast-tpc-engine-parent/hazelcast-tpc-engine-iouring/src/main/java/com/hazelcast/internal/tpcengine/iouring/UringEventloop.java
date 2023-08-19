@@ -78,7 +78,7 @@ public final class UringEventloop extends Eventloop {
     @Override
     public void beforeRun() {
         super.beforeRun();
-        eventFdHandler.addRequest();
+        eventFdHandler.prepareSqe();
     }
 
     @Override
@@ -100,7 +100,7 @@ public final class UringEventloop extends Eventloop {
                 submissionQueue.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {
-                    timeoutHandler.addRequest(timeoutNanos);
+                    timeoutHandler.prepareSqe(timeoutNanos);
                 }
 
                 submissionQueue.submitAndWait();
@@ -146,7 +146,7 @@ public final class UringEventloop extends Eventloop {
         private final long readBufAddr = UNSAFE.allocateMemory(SIZEOF_LONG);
         private int handlerId;
 
-        private void addRequest() {
+        private void prepareSqe() {
             submissionQueue.add(IORING_OP_READ,
                     0,
                     0,
@@ -165,7 +165,7 @@ public final class UringEventloop extends Eventloop {
 
         @Override
         public void completeRequest(int res, int flags, long userdata) {
-            addRequest();
+            prepareSqe();
         }
     }
 
@@ -185,7 +185,8 @@ public final class UringEventloop extends Eventloop {
         // timeout command is still scheduled. If another timeout is scheduled,
         // then you have 2 timeouts in the uring and both share the same
         // timeoutSpecAddr.
-        private void addRequest(long timeoutNanos) {
+        // Perhaps it isn't a problem if the timeout data is copied by io_uring.
+        private void prepareSqe(long timeoutNanos) {
             if (timeoutNanos <= 0) {
                 UNSAFE.putLong(addr, 0);
                 UNSAFE.putLong(addr + SIZEOF_LONG, 0);

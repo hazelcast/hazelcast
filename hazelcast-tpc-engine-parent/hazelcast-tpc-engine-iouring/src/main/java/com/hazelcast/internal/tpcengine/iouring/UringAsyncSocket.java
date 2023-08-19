@@ -114,7 +114,7 @@ public final class UringAsyncSocket extends AsyncSocket {
         cq.register(readHandler.handlerId, readHandler);
 
         if (!clientSide) {
-            readHandler.addRequest();
+            readHandler.prepareSqe();
         }
 
         resetFlushed();
@@ -159,7 +159,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                     logger.info("Connected from " + localAddress + "->" + remoteAddress);
                 }
 
-                reactor.offer(readHandler::addRequest);
+                reactor.offer(readHandler::prepareSqe);
 
                 future.complete(null);
             } else {
@@ -180,7 +180,7 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         private final IOBuffer sndBuffer;
         private final AtomicReference<Thread> flushThread;
-        private final SubmissionQueue sq;
+        private final SubmissionQueue submissionQueue;
         private final IOVector ioVector;
         private final LinuxSocket linuxSocket;
         private final Writer writer;
@@ -195,7 +195,7 @@ public final class UringAsyncSocket extends AsyncSocket {
         WriteHandler(UringAsyncSocket.Builder builder, UringAsyncSocket socket) {
             this.socket = socket;
             this.flushThread = socket.flushThread;
-            this.sq = builder.uring.sq();
+            this.submissionQueue = builder.uring.sq();
             this.ioVector = builder.ioVector;
             this.linuxSocket = builder.linuxSocket;
             this.writer = builder.writer;
@@ -219,18 +219,18 @@ public final class UringAsyncSocket extends AsyncSocket {
             }
         }
 
-        public void addRequest() {
+        public void prepareSqe() {
             try {
                 if (flushThread.get() == null) {
                     throw new IllegalStateException("Channel should be in scheduled state");
                 }
 
-                int index = sq.nextIndex();
-                if (index < 0) {
+                int sqeIndex = submissionQueue.nextIndex();
+                if (sqeIndex < 0) {
                     throw new IllegalStateException("No space in submission queue");
                 }
 
-                long sqeAddr = sq.sqesAddr + ((long) index * SIZEOF_SQE);
+                long sqeAddr = submissionQueue.sqesAddr + ((long) sqeIndex * SIZEOF_SQE);
 
                 if (writer == null) {
                     ioVector.populate(writeQueue);
@@ -339,8 +339,7 @@ public final class UringAsyncSocket extends AsyncSocket {
             this.rcvBuffAddress = addressOf(rcvBuff);
         }
 
-        // todo: boolean return
-        private void addRequest() {
+        private void prepareSqe() {
             int pos = rcvBuff.position();
             long address = rcvBuffAddress + pos;
             int length = rcvBuff.remaining();
@@ -391,7 +390,7 @@ public final class UringAsyncSocket extends AsyncSocket {
                     compactOrClear(rcvBuff);
 
                     // we want to read more data
-                    addRequest();
+                    prepareSqe();
                 } else if (res == 0) {
                     // 0 indicates end of stream.
                     // https://man7.org/linux/man-pages/man2/recv.2.html

@@ -145,7 +145,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
                 throw new IllegalStateException("No space in submission queue");
             }
             this.submitCount++;
-            req.writeSqe(sqIndex);
+            req.prepareSqe(sqIndex);
         }
 
         // Completion events are processed in the eventloop, so we
@@ -158,7 +158,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
 
         private int handlerId;
 
-        void writeSqe(int sqIndex) {
+        void prepareSqe(int sqIndex) {
             long sqeAddr = submissionQueue.sqesAddr + sqIndex * SIZEOF_SQE;
             byte sqe_opcode;
             int sqe_fd = 0;
