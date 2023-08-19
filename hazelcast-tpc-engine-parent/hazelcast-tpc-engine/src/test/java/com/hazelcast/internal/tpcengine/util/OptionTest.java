@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine;
+package com.hazelcast.internal.tpcengine.util;
 
-import com.hazelcast.internal.tpcengine.util.Option;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
