@@ -86,13 +86,13 @@ public final class UringEventloop extends Eventloop {
         networkScheduler.tick();
         storageScheduler.tick();
 
-        boolean completions = false;
+        boolean skipPark = spin || timeoutNanos == 0;
         if (completionQueue.hasCompletions()) {
-            completions = true;
+            skipPark |= true;
             completionQueue.process();
         }
 
-        if (spin || timeoutNanos == 0 || completions) {
+        if (skipPark) {
             submissionQueue.submit();
         } else {
             wakeupNeeded.set(true);
@@ -243,8 +243,7 @@ public final class UringEventloop extends Eventloop {
                         // eventFd
                         + 1
                         // timeout
-                        + 1
-                        ;
+                        + 1;
                 this.uring = new Uring(nextPowerOfTwo(entries), reactorBuilder.setupFlags);
             }
 
