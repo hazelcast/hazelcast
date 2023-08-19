@@ -7,7 +7,7 @@ description: Job snapshots should survive single node crash in any case
 
 Jet uses snapshots to restore job state after various events including node failure and cluster topology changes.
 However, snapshot data is written to `IMap` which is AP data structure, prone to data loss in 
-[specific circumstances](https://docs.hazelcast.com/hazelcast/5.2/architecture/data-partitioning#best-effort-consistency).
+[specific circumstances](https://docs.hazelcast.com/hazelcast/latest/architecture/data-partitioning#best-effort-consistency).
 If this happens during snapshot, snapshot may [become corrupted](https://github.com/hazelcast/hazelcast/issues/18675).
 
 Snapshot should be safe in case of single node misbehavior or failure.

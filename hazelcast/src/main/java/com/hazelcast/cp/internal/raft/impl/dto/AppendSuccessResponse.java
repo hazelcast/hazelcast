@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.io.EOFException;
 import java.io.IOException;
 
 /**
@@ -40,15 +41,18 @@ public class AppendSuccessResponse implements IdentifiedDataSerializable {
     private int term;
     private long lastLogIndex;
     private long queryRound;
+    private long flowControlSequenceNumber;
 
     public AppendSuccessResponse() {
     }
 
-    public AppendSuccessResponse(RaftEndpoint follower, int term, long lastLogIndex, long queryRound) {
+    public AppendSuccessResponse(RaftEndpoint follower, int term, long lastLogIndex, long queryRound,
+                                 long flowControlSequenceNumber) {
         this.follower = follower;
         this.term = term;
         this.lastLogIndex = lastLogIndex;
         this.queryRound = queryRound;
+        this.flowControlSequenceNumber = flowControlSequenceNumber;
     }
 
     public RaftEndpoint follower() {
@@ -67,6 +71,10 @@ public class AppendSuccessResponse implements IdentifiedDataSerializable {
         return queryRound;
     }
 
+    public long flowControlSequenceNumber() {
+        return flowControlSequenceNumber;
+    }
+
     @Override
     public int getFactoryId() {
         return RaftDataSerializerHook.F_ID;
@@ -83,6 +91,7 @@ public class AppendSuccessResponse implements IdentifiedDataSerializable {
         out.writeObject(follower);
         out.writeLong(lastLogIndex);
         out.writeLong(queryRound);
+        out.writeLong(flowControlSequenceNumber);
     }
 
     @Override
@@ -91,12 +100,18 @@ public class AppendSuccessResponse implements IdentifiedDataSerializable {
         follower = in.readObject();
         lastLogIndex = in.readLong();
         queryRound = in.readLong();
+        try {
+            flowControlSequenceNumber = in.readLong();
+            // TODO RU_COMPAT_5_3 added for Version 5.3 compatibility. Should be removed at Version 5.5
+        } catch (EOFException e) {
+            flowControlSequenceNumber = -1;
+        }
     }
 
     @Override
     public String toString() {
         return "AppendSuccessResponse{" + "follower=" + follower + ", term=" + term  + ", lastLogIndex="
-                + lastLogIndex + ", queryRound=" + queryRound + '}';
+                + lastLogIndex + ", queryRound=" + queryRound + ", flowControlSequenceNumber=" + flowControlSequenceNumber + '}';
     }
 
 }

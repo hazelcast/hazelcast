@@ -16,24 +16,20 @@
 
 package com.hazelcast.jet.kafka.impl;
 
-import org.apache.kafka.clients.admin.Admin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
-import java.util.Properties;
-
 class DockerizedKafkaTestSupport extends KafkaTestSupport {
-
     private static final String TEST_KAFKA_VERSION = System.getProperty("test.kafka.version", "7.4.0");
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerizedKafkaTestSupport.class);
 
     private KafkaContainer kafkaContainer;
 
-    public void createKafkaCluster() throws IOException {
+    @Override
+    protected String createKafkaCluster0() {
         kafkaContainer = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:" + TEST_KAFKA_VERSION))
                 .withEmbeddedZookeeper()
                 .withLogConsumer(new Slf4jLogConsumer(LOGGER))
@@ -43,26 +39,14 @@ class DockerizedKafkaTestSupport extends KafkaTestSupport {
                     "while [ ! -f /testcontainers_start.sh ]; do sleep 0.1; done; sleep 0.5; /testcontainers_start.sh");
         kafkaContainer.start();
 
-        brokerConnectionString = kafkaContainer.getBootstrapServers();
-        Properties props = new Properties();
-        props.setProperty("bootstrap.servers", brokerConnectionString);
-        admin = Admin.create(props);
+        return kafkaContainer.getBootstrapServers();
     }
 
-    public void shutdownKafkaCluster() {
+    @Override
+    protected void shutdownKafkaCluster0() {
         if (kafkaContainer != null) {
             kafkaContainer.stop();
-            if (admin != null) {
-                admin.close();
-            }
-            if (producer != null) {
-                producer.close();
-            }
-            producer = null;
-            admin = null;
             kafkaContainer = null;
-            brokerConnectionString = null;
         }
     }
-
 }

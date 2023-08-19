@@ -59,7 +59,7 @@ public class TpcIntegrationTest extends HazelcastTestSupport {
     @Test
     public void testMap() {
         System.setProperty(TPC_ENABLED.getName(), "true");
-        System.setProperty(TpcEngine.Builder.NAME_REACTOR_TYPE, "iouring");
+        System.setProperty(TpcEngine.Builder.NAME_REACTOR_TYPE, "nio");
         System.setProperty(TPC_EVENTLOOP_COUNT.getName(), "1");
         server = Hazelcast.newHazelcastInstance();
 

@@ -26,7 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.testcontainers.containers.RabbitMQContainer;
 
-import javax.jms.ConnectionFactory;
+import jakarta.jms.ConnectionFactory;
 
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 

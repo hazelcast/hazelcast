@@ -138,31 +138,17 @@ public abstract class OperationThread extends HazelcastManagedThread
                 continue;
             }
 
-            int status = process(task);
-            switch (status) {
-                case TASK_BLOCKED:
-                    throw new UnsupportedOperationException("TASK_BLOCKING not supported for task " + task);
-                case TASK_COMPLETED:
-                    completedTotalCount.inc();
-                    break;
-                case TASK_YIELD:
-                    // retry later if not ready
-                    queue.add(task, priority);
-                    break;
-                default:
-                    throw new IllegalStateException("Unhandled status " + status);
-            }
+            process(task);
         }
     }
 
     @Override
     public int process(Object task) {
         try {
-            boolean yield = false;
             if (task.getClass() == Packet.class) {
-                yield = process((Packet) task);
+                process((Packet) task);
             } else if (task instanceof Operation) {
-                yield = process((Operation) task);
+                process((Operation) task);
             } else if (task instanceof PartitionSpecificRunnable) {
                 process((PartitionSpecificRunnable) task);
             } else if (task instanceof Runnable) {
@@ -172,7 +158,9 @@ public abstract class OperationThread extends HazelcastManagedThread
             } else {
                 throw new IllegalStateException("Unhandled task:" + task);
             }
-            return yield ? TASK_YIELD : TASK_COMPLETED;
+
+            completedTotalCount.inc();
+            return TASK_COMPLETED;
         } catch (Throwable t) {
             errorCount.inc();
             inspectOutOfMemoryError(t);
@@ -191,37 +179,21 @@ public abstract class OperationThread extends HazelcastManagedThread
      * {@code false} if the operation should not be retried, either because it
      * timed out or has run successfully
      */
-    private boolean process(Operation operation) {
+    private void process(Operation operation) {
         currentRunner = operationRunner(operation.getPartitionId());
-        try {
-            if (currentRunner.run(operation)) {
-                return true;
-            } else {
-                completedOperationCount.inc();
-                return false;
-            }
-        } finally {
-            operation.clearThreadContext();
-        }
+        currentRunner.run(operation);
     }
 
     /**
      * Processes/executes the provided packet.
      *
      * @param packet the packet to execute
-     * @return {@code true} if this packet was not executed and should be retried at a later time,
-     * {@code false} if the packet should not be retried, either because it
-     * timed out or has run successfully
      * @throws Exception if there was an exception raised while processing the packet
      */
-    private boolean process(Packet packet) throws Exception {
+    private void process(Packet packet) throws Exception {
         currentRunner = operationRunner(packet.getPartitionId());
-        if (currentRunner.run(packet)) {
-            return true;
-        } else {
-            completedPacketCount.inc();
-            return false;
-        }
+        currentRunner.run(packet);
+        completedPacketCount.inc();
     }
 
     private void process(PartitionSpecificRunnable runnable) {
@@ -244,9 +216,7 @@ public abstract class OperationThread extends HazelcastManagedThread
 
         try {
             if (task instanceof Operation) {
-                if (process((Operation) task)) {
-                    queue.add(task, false);
-                }
+                process((Operation) task);
             } else if (task instanceof Runnable) {
                 process((Runnable) task);
             } else {

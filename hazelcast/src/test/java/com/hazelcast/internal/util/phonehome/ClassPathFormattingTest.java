@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 
 public class ClassPathFormattingTest {
 
-    private static String path(String ...fileNames) {
+    private static String path(String... fileNames) {
         return File.separator + join(File.separator, fileNames);
     }
 

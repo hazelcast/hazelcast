@@ -141,7 +141,7 @@
         <dependency>
             <groupId>com.microsoft.sqlserver</groupId>
             <artifactId>mssql-jdbc</artifactId>
-            <version>12.3.1.jre8-preview</version>
+            <version>12.4.0.jre8-preview</version>
             <scope>test</scope>
         </dependency>
         <!--MariaDB-->

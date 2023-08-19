@@ -22,6 +22,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
@@ -56,7 +57,8 @@ public class AwaitMapFlushOperation
 
     @Override
     public void innerBeforeRun() throws Exception {
-        super.innerBeforeRun();
+        // No need registration for tstore
+        // This op has an empty runInternal
 
         MapDataStore mapDataStore = recordStore.getMapDataStore();
         if (!(mapDataStore instanceof WriteBehindStore)) {
@@ -67,8 +69,21 @@ public class AwaitMapFlushOperation
     }
 
     @Override
+    public void afterRunFinal() {
+        // No need de-registration for tstore
+        // This op has an empty runInternal
+    }
+
+    @Override
     protected void runInternal() {
         // NOP
+    }
+
+    @Override
+    public Step getStartingStep() {
+        // keep starting step as null to prevent
+        // this operation running with StepRunner
+        return null;
     }
 
     @Override

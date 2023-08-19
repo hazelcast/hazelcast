@@ -127,13 +127,14 @@ public class HealthMonitor {
     private final class HealthMonitorThread extends Thread {
 
         private final int delaySeconds;
-        private boolean performanceLogHint;
+        private boolean showPerformanceLogHint;
 
         private HealthMonitorThread(int delaySeconds) {
             super(createThreadName(node.hazelcastInstance.getName(), "HealthMonitor"));
             setDaemon(true);
             this.delaySeconds = delaySeconds;
-            this.performanceLogHint = node.getProperties().getBoolean(Diagnostics.ENABLED);
+            // Show the hint if diagnostics are disabled; if already enabled, don't show it
+            this.showPerformanceLogHint = !node.getProperties().getBoolean(Diagnostics.ENABLED);
         }
 
         @Override
@@ -174,15 +175,15 @@ public class HealthMonitor {
         }
 
         private void logDiagnosticsHint() {
-            if (!performanceLogHint) {
+            if (!showPerformanceLogHint) {
                 return;
             }
 
             // we only log the hint once
-            performanceLogHint = false;
+            showPerformanceLogHint = false;
 
             logger.info(format("The HealthMonitor has detected a high load on the system. For more detailed information,%n"
-                    + "enable the Diagnostics by adding the property -D%s=true", Diagnostics.ENABLED));
+                    + "enable Diagnostics by adding the property -D%s=true", Diagnostics.ENABLED));
         }
     }
 

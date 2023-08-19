@@ -431,17 +431,19 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
     }
 
     private String getConfirmedFlushLsn() throws SQLException {
-        try (Connection connection = getConnection(postgres)) {
-            PreparedStatement preparedStatement = connection.prepareStatement(
-                    "select * from pg_replication_slots where slot_name = ? and database = ?");
+        try (Connection connection = getConnection(postgres);
+             PreparedStatement preparedStatement = connection.prepareStatement(
+                     "select * from pg_replication_slots where slot_name = ? and database = ?")) {
             preparedStatement.setString(1, REPLICATION_SLOT_NAME);
             preparedStatement.setString(2, DATABASE_NAME);
-            ResultSet rs = preparedStatement.executeQuery();
-            if (rs.next()) {
-                return rs.getString("confirmed_flush_lsn");
-            } else {
-                fail("No replication slot info available");
-                return null;
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getString("confirmed_flush_lsn");
+                } else {
+                    fail("No replication slot info available");
+                    return null;
+                }
             }
         }
     }

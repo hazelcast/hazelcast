@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 
+import java.util.Map;
+
 /**
  * Configuration for the Azure Discovery Strategy.
  */
@@ -29,6 +31,10 @@ public class AzureConfig
 
     public AzureConfig(AzureConfig azureConfig) {
         super(azureConfig);
+    }
+
+    public AzureConfig(String tag, boolean enabled, boolean usePublicIp, Map<String, String> properties) {
+        super(tag, enabled, usePublicIp, properties);
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Properties;
@@ -88,6 +89,7 @@ public final class Preconditions {
      * @return the argument that was tested.
      * @throws java.lang.NullPointerException if argument is null
      */
+    @Nonnull
     public static <T> T checkNotNull(T argument) {
         if (argument == null) {
             throw new NullPointerException();

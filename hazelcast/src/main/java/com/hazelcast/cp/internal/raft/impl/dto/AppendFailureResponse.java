@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.io.EOFException;
 import java.io.IOException;
 
 /**
@@ -39,14 +40,17 @@ public class AppendFailureResponse implements IdentifiedDataSerializable {
     private RaftEndpoint follower;
     private int term;
     private long expectedNextIndex;
+    private long flowControlSequenceNumber;
 
     public AppendFailureResponse() {
     }
 
-    public AppendFailureResponse(RaftEndpoint follower, int term, long expectedNextIndex) {
+    public AppendFailureResponse(RaftEndpoint follower, int term, long expectedNextIndex,
+                                 long flowControlSequenceNumber) {
         this.follower = follower;
         this.term = term;
         this.expectedNextIndex = expectedNextIndex;
+        this.flowControlSequenceNumber = flowControlSequenceNumber;
     }
 
     public RaftEndpoint follower() {
@@ -59,6 +63,10 @@ public class AppendFailureResponse implements IdentifiedDataSerializable {
 
     public long expectedNextIndex() {
         return expectedNextIndex;
+    }
+
+    public long flowControlSequenceNumber() {
+        return flowControlSequenceNumber;
     }
 
     @Override
@@ -76,6 +84,7 @@ public class AppendFailureResponse implements IdentifiedDataSerializable {
         out.writeInt(term);
         out.writeObject(follower);
         out.writeLong(expectedNextIndex);
+        out.writeLong(flowControlSequenceNumber);
     }
 
     @Override
@@ -83,12 +92,18 @@ public class AppendFailureResponse implements IdentifiedDataSerializable {
         term = in.readInt();
         follower = in.readObject();
         expectedNextIndex = in.readLong();
+        try {
+            flowControlSequenceNumber = in.readLong();
+            // TODO RU_COMPAT_5_3 added for Version 5.3 compatibility. Should be removed at Version 5.5
+        } catch (EOFException e) {
+            flowControlSequenceNumber = -1;
+        }
     }
 
     @Override
     public String toString() {
         return "AppendFailureResponse{" + "follower=" + follower + ", term=" + term + ", expectedNextIndex="
-                + expectedNextIndex + '}';
+                + expectedNextIndex + ", flowControlSequenceNumber=" + flowControlSequenceNumber + '}';
     }
 
 }
