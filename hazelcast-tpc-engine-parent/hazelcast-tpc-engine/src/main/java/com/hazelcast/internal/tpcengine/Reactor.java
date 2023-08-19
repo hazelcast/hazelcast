@@ -779,7 +779,12 @@ public abstract class Reactor implements Executor {
         public final ReactorType type;
 
         /**
-         * The limit on the number of outstanding storage requests.
+         * The limit on the number of outstanding storage requests that are
+         * within the storage scheduler. First requests are staged in the
+         * storage scheduler until the  scheduled picks up a batch and submits
+         * this batch to be actually processed by the OS.
+         *
+         * This number should be equal or larger than the storageSubmitLimit.
          */
         public int storagePendingLimit;
 

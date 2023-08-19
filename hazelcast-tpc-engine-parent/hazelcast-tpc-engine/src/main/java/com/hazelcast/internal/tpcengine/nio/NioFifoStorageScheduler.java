@@ -92,7 +92,7 @@ public class NioFifoStorageScheduler implements StorageScheduler {
      *                     for processing; so are actually being offered to the
      *                     executor for processing).
      * @param pendingLimit the limit on the number of storage request pending;
-     *                     so are either stages or submitted.
+     *                     so are either staged or submitted.
      */
     public NioFifoStorageScheduler(NioReactor reactor,
                                    Executor executor,
@@ -334,7 +334,6 @@ public class NioFifoStorageScheduler implements StorageScheduler {
                 throw new IllegalStateException("Unknown opcode: " + req.opcode);
         }
     }
-
 
     public static final class NioStorageRequest extends StorageRequest {
         // only modify these 3 fields in io threads
