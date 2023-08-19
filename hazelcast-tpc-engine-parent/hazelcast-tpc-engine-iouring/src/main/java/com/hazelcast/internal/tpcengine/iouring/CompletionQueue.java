@@ -128,7 +128,6 @@ public final class CompletionQueue {
         freeHandlers[freeHandlersIndex] = handlerId;
     }
 
-
     /**
      * Checks if there are any completion events.
      *
