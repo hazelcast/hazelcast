@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpcengine.file;
 
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpcengine.util.IntPromise;
+import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
 
 /**
  * Represents a request to file like a read or write.
@@ -59,5 +59,5 @@ public class StorageRequest {
     public byte opcode;
     public int flags;
     public int rwFlags;
-    public IntPromise promise;
+    public IntBiConsumer<Throwable> callback;
 }

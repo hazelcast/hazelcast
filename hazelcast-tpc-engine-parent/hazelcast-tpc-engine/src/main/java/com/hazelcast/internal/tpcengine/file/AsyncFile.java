@@ -18,8 +18,7 @@ package com.hazelcast.internal.tpcengine.file;
 
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpcengine.util.IntPromise;
-import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
+import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -74,12 +73,10 @@ public abstract class AsyncFile {
 
     // todo: should be made private and using a varhandle it should be modified
     public int fd = -1;
-    protected final IntPromiseAllocator promiseAllocator;
-    private final Metrics metrics = new Metrics();
-    //private final Eventloop eventloop;
-    private final String path;
-    private final StorageScheduler scheduler;
-    private final Eventloop eventloop;
+    protected final Metrics metrics = new Metrics();
+    protected final String path;
+    protected final StorageScheduler scheduler;
+    protected final Eventloop eventloop;
 
     // todo: Using path as a string forces creating litter.
 
@@ -94,10 +91,9 @@ public abstract class AsyncFile {
     public AsyncFile(String path, Eventloop eventloop, StorageScheduler scheduler) {
         this.path = path;
         this.eventloop = eventloop;
-        this.promiseAllocator = eventloop.intPromiseAllocator();
         this.scheduler = scheduler;
 
-        // todo: deal with
+        // todo: deal with rejection
         this.eventloop.reactor().files().add(this);
     }
 
@@ -148,6 +144,9 @@ public abstract class AsyncFile {
      */
     public abstract void delete();
 
+
+    // do we need a promise at all or just a callback interface?
+
     /**
      * Executes a nop asynchronously. This method exists purely for benchmarking
      * purposes and is made for the IORING_OP_NOP.
@@ -156,31 +155,22 @@ public abstract class AsyncFile {
      * <p/>
      * The state of the file is irrelevant to this method.
      *
-     * @return a future.
+     * @param callback the callback to call on completion.
+     * @throws NullPointerException if callback is <code>null</code>.
      */
-    public final IntPromise nop() {
-        IntPromise promise = promiseAllocator.allocate();
+    public final void nop(IntBiConsumer<Throwable> callback) {
+        checkNotNull(callback, "promise");
 
-        StorageRequest request = scheduler.allocate();
-        if (request == null) {
-            return failOnOverload(promise);
+        StorageRequest req = scheduler.allocate();
+        if (req == null) {
+            throw new RuntimeException();
         }
-        request.opcode = STR_REQ_OP_NOP;
-        request.promise = promise;
-        request.file = this;
 
-        scheduler.schedule(request);
-        return promise;
-    }
+        req.opcode = STR_REQ_OP_NOP;
+        req.callback = callback;
+        req.file = this;
 
-
-    private static IntPromise failOnOverload(IntPromise promise) {
-
-//        promise.completeWithIOException(
-//                "Overload. Max concurrent operations " + maxConcurrent + " dev: [" + dev.path() + "]", null);
-
-        promise.completeWithIOException("No free BlockRequests available ", null);
-        return promise;
+        scheduler.schedule(req);
     }
 
 
@@ -200,101 +190,82 @@ public abstract class AsyncFile {
      * pages. The problem is that the changes never made it to disk, so that
      * fsync is useless. For more information see: https://danluu.com/fsyncgate/
      *
-     * @return
+     * @param callback the callback to call on completion.
+     * @throws NullPointerException if callback is <code>null</code>.
      */
-    public final IntPromise fsync() {
-        IntPromise promise = promiseAllocator.allocate();
-        StorageRequest request = scheduler.allocate();
-        if (request == null) {
-            return failOnOverload(promise);
+    public final void fsync(IntBiConsumer<Throwable> callback) {
+        checkNotNull(callback, "callback");
+
+        StorageRequest req = scheduler.allocate();
+        if (req == null) {
+            throw new RuntimeException();
         }
 
-        request.opcode = STR_REQ_OP_FSYNC;
-        request.file = this;
-        request.promise = promise;
-        scheduler.schedule(request);
-        return promise;
+        req.opcode = STR_REQ_OP_FSYNC;
+        req.file = this;
+        req.callback = callback;
+        scheduler.schedule(req);
     }
 
-    /**
-     * Waits for all prior writes to complete before issuing the fsync. So all
-     * earlier writes will be ordered before this fsync but later writes will
-     * not be ordered with respect to this fsync.
-     * <p>
-     * todo: probably better to add flag for fdata sync instead of making it a method.
-     * <p>
-     * todo: perhaps better to have different barriers?
-     * 1) no ordering
-     * 2) earlier writes | fsync
-     * 3) earlier writes | fsync | later writes
-     *
-     * @return
-     */
-    public final IntPromise barrierFsync() {
-        throw new UnsupportedOperationException();
-    }
+    public final void fdatasync(IntBiConsumer<Throwable> callback) {
+        checkNotNull(callback, "callback");
 
-    public final IntPromise fdatasync() {
-        IntPromise promise = promiseAllocator.allocate();
-        StorageRequest request = scheduler.allocate();
-        if (request == null) {
-            return failOnOverload(promise);
+        StorageRequest req = scheduler.allocate();
+        if (req == null) {
+            throw new RuntimeException();
         }
 
-        request.opcode = STR_REQ_OP_FDATASYNC;
-        request.file = this;
-        request.promise = promise;
-        scheduler.schedule(request);
-        return promise;
+        req.opcode = STR_REQ_OP_FDATASYNC;
+        req.file = this;
+        req.callback = callback;
+        scheduler.schedule(req);
     }
 
-    public final IntPromise fallocate(int mode, long offset, long length) {
+    public final void fallocate(IntBiConsumer<Throwable> callback, int mode, long offset, long length) {
+        checkNotNull(callback, "callback");
         checkNotNegative(offset, "offset");
         checkNotNegative(length, "length");
 
-        IntPromise promise = promiseAllocator.allocate();
-        StorageRequest request = scheduler.allocate();
-        if (request == null) {
-            return failOnOverload(promise);
+        StorageRequest req = scheduler.allocate();
+        if (req == null) {
+            throw new RuntimeException();
         }
 
-        request.opcode = STR_REQ_OP_FALLOCATE;
-        request.file = this;
-        request.promise = promise;
+        req.opcode = STR_REQ_OP_FALLOCATE;
+        req.file = this;
+        req.callback = callback;
         // The address field is used to store the length of the allocation
         //request.addr = length;
         // the length field is used to store the mode of the allocation
-        request.length = mode;
-        request.rwFlags = mode;
-        request.offset = offset;
-        scheduler.schedule(request);
-        return promise;
+        req.length = mode;
+        req.rwFlags = mode;
+        req.offset = offset;
+        scheduler.schedule(req);
     }
 
     /**
      * Opens the file with the given flags and permissions.
      *
+     * @param callback    the callback to call on completion.
      * @param flags       the flags
      * @param permissions the permissions
-     * @return IntPromise with the result of opening this file.
+     * @throws NullPointerException if callback is <code>null</code>.
      */
-    public IntPromise open(int flags, int permissions) {
-        IntPromise promise = promiseAllocator.allocate();
+    public void open(IntBiConsumer<Throwable> callback, int flags, int permissions) {
+        checkNotNull(callback, "callback");
 
-        StorageRequest request = scheduler.allocate();
-        if (request == null) {
-            return failOnOverload(promise);
+        StorageRequest req = scheduler.allocate();
+        if (req == null) {
+            throw new RuntimeException();
         }
 
+        req.opcode = STR_REQ_OP_OPEN;
+        req.callback = callback;
+        req.file = this;
+        req.flags = flags;
+        req.permissions = permissions;
 
-        request.opcode = STR_REQ_OP_OPEN;
-        request.promise = promise;
-        request.file = this;
-        request.flags = flags;
-        request.permissions = permissions;
-
-        scheduler.schedule(request);
-        return promise;
+        scheduler.schedule(req);
     }
 
     /**
@@ -304,62 +275,61 @@ public abstract class AsyncFile {
      * <p/>
      * Just like the linux close, no sync guarantees are provided.
      *
-     * @return a Promise holding the result of the close.
+     * @param callback the callback to call on completion.
+     * @throws NullPointerException if callback is <code>null</code>.
      */
-    public IntPromise close() {
+    public void close(IntBiConsumer<Throwable> callback) {
+        checkNotNull(callback, "callback");
+
         eventloop.reactor().files().remove(this);
 
-        IntPromise promise = promiseAllocator.allocate();
         if (fd == -1) {
-            promise.complete(0);
-            return promise;
+            callback.accept(0, null);
+            return;
         }
 
-        StorageRequest request = scheduler.allocate();
-        if (request == null) {
-            return failOnOverload(promise);
+        StorageRequest req = scheduler.allocate();
+        if (req == null) {
+            throw new RuntimeException();
         }
 
-        request.opcode = STR_REQ_OP_CLOSE;
-        request.file = this;
-        request.promise = promise;
+        req.opcode = STR_REQ_OP_CLOSE;
+        req.file = this;
+        req.callback = callback;
 
-        scheduler.schedule(request);
-        return promise;
+        scheduler.schedule(req);
     }
 
     /**
      * Reads data from a file from some offset.
      * <p/>
      *
-     * @param offset the offset within the file
-     * @param length the number of bytes to read.
-     * @param dst    the IOBuffer to read the data into.
-     * @return a Promise with the response code of the request.
+     * @param callback the callback to call on completion.
+     * @param offset   the offset within the file
+     * @param length   the number of bytes to read.
+     * @param dst      the IOBuffer to read the data into.
+     * @throws NullPointerException if callback is <code>null</code>.
      * @see Eventloop#storageAllocator()
      */
-    public final IntPromise pread(long offset, int length, IOBuffer dst) {
+    public final void pread(IntBiConsumer<Throwable> callback, long offset, int length, IOBuffer dst) {
+        checkNotNull(callback, "callback");
         checkNotNegative(offset, "offset");
         checkNotNegative(length, "length");
         checkNotNull(dst, "dst");
 
-        IntPromise promise = promiseAllocator.allocate();
-
-        StorageRequest request = scheduler.allocate();
-        if (request == null) {
-            return failOnOverload(promise);
+        StorageRequest req = scheduler.allocate();
+        if (req == null) {
+            throw new RuntimeException();
         }
 
-        request.opcode = STR_REQ_OP_READ;
-        request.file = this;
-        request.promise = promise;
-        request.buffer = dst;
-        request.length = length;
-        request.offset = offset;
+        req.opcode = STR_REQ_OP_READ;
+        req.file = this;
+        req.callback = callback;
+        req.buffer = dst;
+        req.length = length;
+        req.offset = offset;
 
-        scheduler.schedule(request);
-
-        return promise;
+        scheduler.schedule(req);
     }
 
     /**
@@ -383,34 +353,33 @@ public abstract class AsyncFile {
      * and completing it (on the page cache) and the actual write to disk. And
      * these problems can bubble up at the fsync.
      *
-     * @param offset the offset within the file.
-     * @param length the number of bytes to write
-     * @param src    the IOBuffer to read the data from.
-     * @return a Promise with the response code of the request.
+     * @param callback the callback to call on completion.
+     * @param offset   the offset within the file.
+     * @param length   the number of bytes to write
+     * @param src      the IOBuffer to read the data from.
+     * @throws NullPointerException if callback is <code>null</code>.
      * @see Eventloop#storageAllocator()
      */
-    public final IntPromise pwrite(long offset, int length, IOBuffer src) {
+    public final void pwrite(IntBiConsumer<Throwable> callback, long offset, int length, IOBuffer src) {
+        checkNotNull(callback, "callback");
         checkNotNegative(offset, "offset");
         checkNotNegative(length, "length");
         checkNotNull(src, "src");
 
-        IntPromise promise = promiseAllocator.allocate();
-        StorageRequest request = scheduler.allocate();
-        if (request == null) {
-            return failOnOverload(promise);
+        StorageRequest req = scheduler.allocate();
+        if (req == null) {
+            throw new RuntimeException();
         }
 
-        request.opcode = STR_REQ_OP_WRITE;
-        request.file = this;
-        request.promise = promise;
-        request.buffer = src;
-        request.length = length;
-        request.offset = offset;
+        req.opcode = STR_REQ_OP_WRITE;
+        req.file = this;
+        req.callback = callback;
+        req.buffer = src;
+        req.length = length;
+        req.offset = offset;
 
-        scheduler.schedule(request);
-        return promise;
+        scheduler.schedule(req);
     }
-
 
     @Override
     public final String toString() {

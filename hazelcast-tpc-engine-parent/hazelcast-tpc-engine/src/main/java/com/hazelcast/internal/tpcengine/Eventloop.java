@@ -25,6 +25,7 @@ import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
 import com.hazelcast.internal.tpcengine.util.EpochClock;
+import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.Promise;
 import com.hazelcast.internal.tpcengine.util.PromiseAllocator;
@@ -107,7 +108,7 @@ public abstract class Eventloop {
      * Eventloop instance.
      *
      * @return the Eventloop or null if the current thread isn't the
-     *          eventloop thread.
+     * eventloop thread.
      */
     public static Eventloop getThreadLocalEventloop() {
         return EVENTLOOP_THREAD_LOCAL.get();
@@ -240,7 +241,9 @@ public abstract class Eventloop {
      * Is called from the reactor thread.
      */
     protected void destroy() throws Exception {
-        reactor.files().foreach(AsyncFile::close);
+        reactor.files().foreach(file -> {
+            file.close(new IntPromise(Eventloop.this));
+        });
         reactor.sockets().foreach(socket -> socket.close("Reactor is shutting down", null));
         reactor.serverSockets().foreach(serverSocket -> serverSocket.close("Reactor is shutting down", null));
     }
@@ -411,9 +414,9 @@ public abstract class Eventloop {
     /**
      * Schedules a one shot action with the given delay.
      *
-     * @param cmd    the cmd to execute.
-     * @param delay  the delay
-     * @param unit   the unit of the delay
+     * @param cmd       the cmd to execute.
+     * @param delay     the delay
+     * @param unit      the unit of the delay
      * @param taskQueue the handle of the TaskQueue the cmd belongs to.
      * @return true if the cmd was successfully scheduled.
      * @throws NullPointerException     if cmd or unit is null

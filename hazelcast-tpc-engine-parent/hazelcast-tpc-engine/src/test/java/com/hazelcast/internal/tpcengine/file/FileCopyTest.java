@@ -20,6 +20,7 @@ import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
+import com.hazelcast.internal.tpcengine.util.IntPromise;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -130,12 +131,16 @@ public abstract class FileCopyTest {
             AsyncFile src = eventloop.newAsyncFile(srcTmpFile.getAbsolutePath());
             AsyncFile dst = eventloop.newAsyncFile(dstTmpFile.getAbsolutePath());
 
-            src.open(O_RDONLY, PERMISSIONS_ALL).then((r1, throwable) -> {
+            IntPromise srcOpenPromise = new IntPromise(reactor.eventloop());
+            src.open(srcOpenPromise, O_RDONLY, PERMISSIONS_ALL);
+            srcOpenPromise.then((r1, throwable) -> {
                 if (throwable != null) {
                     future.completeExceptionally(throwable);
                 }
 
-                dst.open(O_WRONLY | O_CREAT, PERMISSIONS_ALL).then((r2, throwable2) -> {
+                IntPromise dstOpenPromise = new IntPromise(eventloop);
+                dst.open(dstOpenPromise, O_WRONLY | O_CREAT, PERMISSIONS_ALL);
+                dstOpenPromise.then((r2, throwable2) -> {
                     if (throwable2 != null) {
                         future.completeExceptionally(throwable2);
                     }
@@ -172,11 +177,13 @@ public abstract class FileCopyTest {
 
         @Override
         public void run() {
+            IntPromise promise = new IntPromise(reactor.eventloop());
             if (read) {
-                src.pread(block * pageSize(), buffer.remaining(), buffer).then(this);
+                src.pread(promise, block * pageSize(), buffer.remaining(), buffer);
             } else {
-                dst.pwrite(bytesWritten, bytesToWrite, buffer).then(this);
+                dst.pwrite(promise, bytesWritten, bytesToWrite, buffer);
             }
+            promise.then(this);
         }
 
         @Override
@@ -192,12 +199,14 @@ public abstract class FileCopyTest {
                 bytesToWrite = res;
                 run();
             } else {
-                 buffer.clearOrCompact();
+                buffer.clearOrCompact();
                 read = true;
                 bytesWritten += res;
                 if (bytesWritten == src.size()) {
                     // we we are at the end
-                    dst.close().then((integer1, throwable1) -> {
+                    IntPromise closePromise = new IntPromise(reactor.eventloop());
+                    dst.close(closePromise);
+                    closePromise.then((integer1, throwable1) -> {
                         if (throwable1 != null) {
                             future.completeExceptionally(throwable1);
                             return;

@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpcengine.file;
 import com.hazelcast.internal.tpcengine.Eventloop;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpcengine.util.IntPromise;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,7 +67,9 @@ public abstract class AsyncFileTest {
         Runnable task = () -> {
             AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
 
-            file.open(O_RDONLY, PERMISSIONS_ALL).then((integer, throwable) -> {
+            IntPromise openPromise = new IntPromise(reactor.eventloop());
+            file.open(openPromise, O_RDONLY, PERMISSIONS_ALL);
+            openPromise.then((integer, throwable) -> {
                 if (throwable != null) {
                     future.completeExceptionally(throwable);
                 }
@@ -90,7 +93,9 @@ public abstract class AsyncFileTest {
         Runnable task = () -> {
             AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
 
-            file.open(O_RDONLY, PERMISSIONS_ALL).then((integer, throwable) -> {
+            IntPromise openPromise = new IntPromise(reactor.eventloop());
+            file.open(openPromise, O_RDONLY, PERMISSIONS_ALL);
+            openPromise.then((integer, throwable) -> {
                 try {
                     file.delete();
                     future.complete(0);
@@ -140,7 +145,9 @@ public abstract class AsyncFileTest {
 
             assertFalse(new File(file.path()).exists());
 
-            file.open(O_WRONLY | O_CREAT, PERMISSIONS_ALL).then((integer, throwable) -> {
+            IntPromise openPromise = new IntPromise(reactor.eventloop());
+            file.open(openPromise, O_WRONLY | O_CREAT, PERMISSIONS_ALL);
+            openPromise.then((integer, throwable) -> {
                 if (throwable != null) {
                     future.completeExceptionally(throwable);
                 } else {
@@ -203,15 +210,21 @@ public abstract class AsyncFileTest {
             AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
             fileFuture.complete(file);
 
-            file.open(O_WRONLY | O_CREAT, PERMISSIONS_ALL).then((integer, throwable1) -> {
+            IntPromise openPromise = new IntPromise(reactor.eventloop());
+            file.open(openPromise, O_WRONLY | O_CREAT, PERMISSIONS_ALL);
+            openPromise.then((integer, throwable1) -> {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);
                 } else {
-                    file.nop().then((result, throwable2) -> {
+                    IntPromise nopPromise = new IntPromise(reactor.eventloop());
+                    file.nop(nopPromise);
+                    nopPromise.then((result, throwable2) -> {
                         if (throwable2 != null) {
                             future.completeExceptionally(throwable2);
                         } else {
-                            file.close().then((integer1, throwable3) -> {
+                            IntPromise closePromise = new IntPromise(reactor.eventloop());
+                            file.close(closePromise);
+                            closePromise.then((integer1, throwable3) -> {
                                 if (throwable3 != null) {
                                     future.completeExceptionally(throwable3);
                                 } else {
@@ -257,16 +270,21 @@ public abstract class AsyncFileTest {
             AsyncFile file = reactor.eventloop().newAsyncFile(tmpFile.getAbsolutePath());
             fileFuture.complete(file);
 
-
-            file.open(O_WRONLY | O_CREAT, PERMISSIONS_ALL).then((integer, throwable1) -> {
+            IntPromise openPromise = new IntPromise(reactor.eventloop());
+            file.open(openPromise, O_WRONLY | O_CREAT, PERMISSIONS_ALL);
+            openPromise.then((integer, throwable1) -> {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);
                 } else {
-                    file.pwrite(0, buffer.remaining(), buffer).then((result, throwable2) -> {
+                    IntPromise writePromise = new IntPromise(reactor.eventloop());
+                    file.pwrite(writePromise, 0, buffer.remaining(), buffer);
+                    writePromise.then((result, throwable2) -> {
                         if (throwable2 != null) {
                             future.completeExceptionally(throwable2);
                         } else {
-                            file.close().then((integer1, throwable3) -> {
+                            IntPromise closePromise = new IntPromise(reactor.eventloop());
+                            file.close(closePromise);
+                            closePromise.then((integer1, throwable3) -> {
                                 if (throwable3 != null) {
                                     future.completeExceptionally(throwable3);
                                 } else {
@@ -310,12 +328,15 @@ public abstract class AsyncFileTest {
             AsyncFile file = eventloop.newAsyncFile(tmpFile.getAbsolutePath());
             fileFuture.complete(file);
 
-            file.open(O_RDONLY, PERMISSIONS_ALL).then((result1, throwable1) -> {
+            IntPromise openPromise = new IntPromise(reactor.eventloop());
+            file.open(openPromise, O_RDONLY, PERMISSIONS_ALL);
+            openPromise.then((result1, throwable1) -> {
                 if (throwable1 != null) {
                     future.completeExceptionally(throwable1);
                 } else {
-
-                    file.pread(0, buffer.remaining(), buffer).then((result2, throwable2) -> {
+                    IntPromise readPromise = new IntPromise(reactor.eventloop());
+                    file.pread(readPromise, 0, buffer.remaining(), buffer);
+                    readPromise.then((result2, throwable2) -> {
                         if (throwable2 != null) {
                             future.completeExceptionally(throwable2);
                         } else {

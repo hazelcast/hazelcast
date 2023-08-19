@@ -281,12 +281,12 @@ public class NioFifoStorageScheduler implements StorageScheduler {
 
     void complete(NioStorageRequest req) {
         if (req.exc != null) {
-            req.promise.completeExceptionally(req.exc);
+            req.callback.accept(-1, req.exc);
         } else {
             if (req.opcode == STR_REQ_OP_OPEN) {
                 req.getFile().channel = req.channel;
             }
-            req.promise.complete(req.result);
+            req.callback.accept(req.result, null);
             updateMetrics(req);
         }
 
@@ -298,7 +298,7 @@ public class NioFifoStorageScheduler implements StorageScheduler {
         req.permissions = 0;
         req.buffer = null;
         req.file = null;
-        req.promise = null;
+        req.callback = null;
         req.result = 0;
         req.exc = null;
         requestAllocator.free(req);

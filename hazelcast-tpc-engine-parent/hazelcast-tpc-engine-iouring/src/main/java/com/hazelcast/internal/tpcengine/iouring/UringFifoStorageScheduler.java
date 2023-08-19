@@ -48,6 +48,7 @@ import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITE;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.util.BitUtil.SIZEOF_CHAR;
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIOException;
 import static java.lang.Math.min;
 
 
@@ -73,15 +74,15 @@ import static java.lang.Math.min;
         "checkstyle:MemberName",
         "checkstyle:LocalVariableName",
         "checkstyle:MagicNumber"})
-public class UringFifoStorageScheduler implements StorageScheduler {
+public final class UringFifoStorageScheduler implements StorageScheduler {
 
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     // To prevent intermediate string litter for every IOException the msgBuilder is recycled.
     private final IOBufferAllocator pathAllocator;
     private final StringBuilder msgBuilder = new StringBuilder();
-    private final UringStorageRequest[] requestsPool;
-    private int requestsPoolNextAvailableIndex;
+    private final UringStorageRequest[] pool;
+    private int allocIndex;
     private final CircularQueue<UringStorageRequest> stagingQueue;
     private final SubmissionQueue submissionQueue;
     private final CompletionQueue completionQueue;
@@ -100,29 +101,29 @@ public class UringFifoStorageScheduler implements StorageScheduler {
         // All storage requests are preregistered on the completion queue. They
         // never need to unregister. Removing that overhead.
 
-        // todo:
-        this.requestsPool = new UringStorageRequest[pendingLimit];
-        for (int k = 0; k < requestsPool.length; k++) {
+        this.pool = new UringStorageRequest[pendingLimit];
+        for (int k = 0; k < pool.length; k++) {
             UringStorageRequest req = new UringStorageRequest();
             req.handlerId = completionQueue.nextHandlerId();
             completionQueue.register(req.handlerId, req);
-            requestsPool[k] = req;
+            pool[k] = req;
         }
-        this.requestsPoolNextAvailableIndex = requestsPool.length - 1;
+        //todo: pool should take from beginning; not end.
+        this.allocIndex = pool.length - 1;
     }
 
     @Override
     public StorageRequest allocate() {
-        if (requestsPoolNextAvailableIndex == -1) {
+        if (allocIndex == -1) {
             return null;
-        } else {
-            UringStorageRequest req = requestsPool[requestsPoolNextAvailableIndex];
-            // the item doesn't need to be nulled. It saves a write barrier and
-            // it won't cause a memory leak since the number of request is fixed
-            // and eventually all requests will return to the pool.
-            requestsPoolNextAvailableIndex--;
-            return req;
         }
+
+        UringStorageRequest req = pool[allocIndex];
+        // the item doesn't need to be nulled. It saves a write barrier and
+        // it won't cause a memory leak since the number of request is fixed
+        // and eventually all requests will return to the pool.
+        allocIndex--;
+        return req;
     }
 
     @Override
@@ -144,7 +145,6 @@ public class UringFifoStorageScheduler implements StorageScheduler {
                 throw new IllegalStateException("No space in submission queue");
             }
             this.submitCount++;
-
             req.writeSqe(sqIndex);
         }
 
@@ -275,7 +275,7 @@ public class UringFifoStorageScheduler implements StorageScheduler {
                         throw new IllegalStateException("Unknown opcode: " + opcode);
                 }
 
-                promise.complete(res);
+                callback.accept(res, null);
             } else {
                 handleError(res);
             }
@@ -288,11 +288,11 @@ public class UringFifoStorageScheduler implements StorageScheduler {
             permissions = 0;
             buffer = null;
             file = null;
-            promise = null;
+            callback = null;
 
             // return the request to the pool
-            requestsPoolNextAvailableIndex++;
-            requestsPool[requestsPoolNextAvailableIndex] = this;
+            allocIndex++;
+            pool[allocIndex] = this;
         }
 
         private void handleError(int res) {
@@ -342,7 +342,8 @@ public class UringFifoStorageScheduler implements StorageScheduler {
                 msgBuilder.append(" See ").append(manUrl).append(" for more details. ");
             }
 
-            promise.completeWithIOException(msgBuilder.toString(), null);
+            String msg = msgBuilder.toString();
+            callback.accept(res, newUncheckedIOException(msg, null));
         }
 
         @Override

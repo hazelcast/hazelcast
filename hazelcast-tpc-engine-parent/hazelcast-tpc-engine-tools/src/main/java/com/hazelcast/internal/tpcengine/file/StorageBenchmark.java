@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpcengine.file;
 import com.hazelcast.internal.tpcengine.FormatUtil;
 import com.hazelcast.internal.tpcengine.Reactor;
 import com.hazelcast.internal.tpcengine.ReactorType;
+import com.hazelcast.internal.tpcengine.TpcTestSupport;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.util.IntBiConsumer;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
@@ -174,7 +175,9 @@ public class StorageBenchmark {
                             openFlags |= O_DIRECT;
                         }
 
-                        file.open(openFlags, PERMISSIONS_ALL).then((integer, throwable) -> {
+                        IntPromise openPromise = new IntPromise(reactor.eventloop());
+                        file.open(openPromise,openFlags, PERMISSIONS_ALL);
+                        openPromise.then((integer, throwable) -> {
                             if (throwable != null) {
                                 throwable.printStackTrace();
                                 System.exit(1);
@@ -299,17 +302,20 @@ public class StorageBenchmark {
                 fileIndex = 0;
             }
 
-            IntPromise p;
             switch (readwrite) {
                 case READWRITE_NOP: {
-                    p = file.nop();
+                    file.nop(this);
                 }
                 break;
                 case READWRITE_WRITE: {
                     if (syncInterval > 0) {
                         if (syncCounter == 0) {
                             syncCounter = syncInterval;
-                            p = fdatasync ? file.fdatasync() : file.fsync();
+                            if (fdatasync) {
+                                file.fdatasync(this);
+                            } else {
+                                file.fsync(this);
+                            }
                             break;
                         } else {
                             syncCounter--;
@@ -322,7 +328,7 @@ public class StorageBenchmark {
                         block = 0;
                     }
                     writeBuffer.position(0);
-                    p = file.pwrite(offset, bs, writeBuffer);
+                    file.pwrite(this, offset, bs, writeBuffer);
                 }
                 break;
                 case READWRITE_READ: {
@@ -333,14 +339,18 @@ public class StorageBenchmark {
                     }
 
                     readBuffer.position(0);
-                    p = file.pread(offset, bs, readBuffer);
+                    file.pread(this, offset, bs, readBuffer);
                 }
                 break;
                 case READWRITE_RANDWRITE: {
                     if (syncInterval > 0) {
                         if (syncCounter == 0) {
                             syncCounter = syncInterval;
-                            p = fdatasync ? file.fdatasync() : file.fsync();
+                            if (fdatasync) {
+                                file.fdatasync(this);
+                            } else {
+                                file.fsync(this);
+                            }
                             break;
                         } else {
                             syncCounter--;
@@ -350,21 +360,19 @@ public class StorageBenchmark {
                     long nextBlock = nextLong(random, blockCount);
                     long offset = nextBlock * bs;
                     writeBuffer.position(0);
-                    p = file.pwrite(offset, bs, writeBuffer);
+                    file.pwrite(this, offset, bs, writeBuffer);
                 }
                 break;
                 case READWRITE_RANDREAD: {
                     long nextBlock = nextLong(random, blockCount);
                     long offset = nextBlock * bs;
                     readBuffer.position(0);
-                    p = file.pread(offset, bs, readBuffer);
+                    file.pread(this, offset, bs, readBuffer);
                 }
                 break;
                 default:
                     throw new RuntimeException("Unknown workload");
             }
-
-            p.then(this).releaseOnComplete();
         }
 
         @Override
@@ -402,7 +410,9 @@ public class StorageBenchmark {
                     int openFlags = O_RDWR | O_NOATIME | O_DIRECT | O_CREAT;
 
                     long startMs = System.currentTimeMillis();
-                    file.open(openFlags, PERMISSIONS_ALL).then((integer, throwable) -> {
+                    IntPromise openPromise = new IntPromise(reactor.eventloop());
+                    file.open(openPromise, openFlags, PERMISSIONS_ALL);
+                    openPromise.then((integer, throwable) -> {
                         if (throwable != null) {
                             throwable.printStackTrace();
                             System.exit(1);
@@ -433,15 +443,7 @@ public class StorageBenchmark {
         System.out.println("Teardown: starting");
 
         try {
-            for (Reactor reactor : reactors) {
-                reactor.shutdown();
-            }
-
-            for (Reactor reactor : reactors) {
-                if (!reactor.awaitTermination(5, SECONDS)) {
-                    throw new RuntimeException("Reactor " + reactor + " failed to terminate");
-                }
-            }
+            TpcTestSupport.terminateAll(reactors);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -465,6 +467,7 @@ public class StorageBenchmark {
     private class InitFileTask implements Runnable, IntBiConsumer<Throwable> {
         private final long startBlock;
         private final long endBlock;
+        private final Reactor reactor;
         public AtomicInteger completed;
         public long startMs;
         private AsyncFile file;
@@ -476,6 +479,7 @@ public class StorageBenchmark {
 
         public InitFileTask(Reactor reactor, int ioTaskIndex, int iodepth) {
             // Setting up the buffer
+            this.reactor = reactor;
             this.buffer = reactor.eventloop().storageAllocator().allocate(StorageBenchmark.this.bs);
             for (int c = 0; c < buffer.capacity() / 2; c++) {
                 buffer.writeChar('c');
@@ -495,8 +499,8 @@ public class StorageBenchmark {
         public void run() {
             long offset = block * blockSize;
             block++;
-            IntPromise p = file.pwrite(offset, blockSize, buffer);
-            p.then(this).releaseOnComplete();
+
+            file.pwrite(this, offset, blockSize, buffer);
         }
 
         @Override
@@ -508,7 +512,9 @@ public class StorageBenchmark {
 
             if (block == endBlock) {
                 if (completed.decrementAndGet() == 0) {
-                    file.close().then((integer, throwable1) -> {
+                    IntPromise closePromise = new IntPromise(reactor.eventloop());
+                    file.close(closePromise);
+                    closePromise.then((integer, throwable1) -> {
                         if (throwable1 != null) {
                             throwable1.printStackTrace();
                             System.exit(1);

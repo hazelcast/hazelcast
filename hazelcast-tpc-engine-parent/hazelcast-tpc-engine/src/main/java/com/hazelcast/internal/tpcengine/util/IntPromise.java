@@ -26,11 +26,11 @@ import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.newUncheckedIO
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
- * A {@link Promise} that can be completed with an int value. The advantage is that it doesn't create
- * litter.
+ * A {@link Promise} that can be completed with an int value. The advantage is
+ * that it doesn't create litter for the int-value.
  */
 @SuppressWarnings("checkstyle:VisibilityModifier")
-public class IntPromise {
+public class IntPromise implements IntBiConsumer<Throwable> {
     private static final TpcLogger LOGGER = TpcLoggerLocator.getLogger(IntPromise.class);
 
     private static final int STATE_PENDING = 0;
@@ -81,6 +81,15 @@ public class IntPromise {
 
         if (state != STATE_PENDING) {
             release();
+        }
+    }
+
+    @Override
+    public void accept(int v, Throwable throwable) {
+        if (throwable == null) {
+            complete(v);
+        } else {
+            completeExceptionally(throwable);
         }
     }
 
@@ -176,6 +185,13 @@ public class IntPromise {
             throw new IllegalStateException();
         }
         refCount++;
+    }
+
+    public void clear() {
+        state = STATE_PENDING;
+        refCount = 1;
+        consumers.clear();
+        releaseOnComplete = false;
     }
 
     public void release() {
