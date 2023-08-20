@@ -34,7 +34,7 @@ import static java.lang.Math.max;
 /**
  * A TaskQueue is the unit of scheduling within the eventloop. Each eventloop
  * has a default TaskQueue. But it is also possible to create additional
- * TaskQueues. For example when you have tasks from clients, but also long
+ * TaskQueues. For example when you have tasks for clients, but also long
  * running tasks from e.g. some compaction process, you could give the clients
  * and the compaction process their own taskQueues. If no clients are busy,
  * the compaction process can get all resources. But when clients need to CPU,
