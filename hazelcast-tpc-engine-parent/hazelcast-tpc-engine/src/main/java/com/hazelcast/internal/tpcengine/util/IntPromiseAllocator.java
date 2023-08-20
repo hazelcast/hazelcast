@@ -31,9 +31,15 @@ public final class IntPromiseAllocator {
     public IntPromiseAllocator(Eventloop eventloop, int capacity) {
         this.eventloop = checkNotNull(eventloop);
         this.array = new IntPromise[capacity];
+        for (int k = 0; k < capacity; k++) {
+            IntPromise promise = new IntPromise(eventloop);
+            promise.allocator = this;
+            array[k] = promise;
+        }
+        this.index = capacity - 1;
     }
 
-    public int size() {
+    public int available() {
         return index + 1;
     }
 

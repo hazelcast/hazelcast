@@ -17,19 +17,17 @@
 package com.hazelcast.internal.tpcengine.util;
 
 import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.TpcTestSupport;
 import com.hazelcast.internal.tpcengine.nio.NioReactor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.assertOpenEventually;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -42,38 +40,12 @@ public class PromiseTest {
     @Before
     public void before() {
         reactor = new NioReactor.Builder().build().start();
-
         promiseAllocator = new PromiseAllocator(reactor.eventloop(), 1024);
     }
 
     @After
     public void after() throws InterruptedException {
-        if (reactor != null) {
-            reactor.shutdown();
-            assertTrue(reactor.awaitTermination(5, TimeUnit.SECONDS));
-        }
-    }
-
-    @Test
-    public void test_pooling() {
-        Promise promise = new Promise(reactor.eventloop());
-
-        promise.allocator = promiseAllocator;
-
-        assertEquals(1, promise.refCount);
-        assertEquals(0, promiseAllocator.size());
-
-        promise.acquire();
-        assertEquals(2, promise.refCount);
-        assertEquals(0, promiseAllocator.size());
-
-        promise.release();
-        assertEquals(1, promise.refCount);
-        assertEquals(0, promiseAllocator.size());
-
-        promise.release();
-        assertFalse(promise.isDone());
-        assertEquals(1, promiseAllocator.size());
+        TpcTestSupport.terminate(reactor);
     }
 
     @Test
