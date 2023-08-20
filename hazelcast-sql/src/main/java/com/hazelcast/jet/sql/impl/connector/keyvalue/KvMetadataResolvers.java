@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.schema.TypeUtils.enrichMappingFieldType;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
@@ -54,7 +55,8 @@ public class KvMetadataResolvers {
     // A string of characters (excluding a `.`), optionally prefixed with "__key." or "this."
     private static final Pattern EXT_NAME_PATTERN = Pattern.compile("((" + KEY + "|" + VALUE + ")\\.)?[^.]+");
     private static final Set<String> NESTED_FIELDS_SUPPORTED_FORMATS = new HashSet<>(Set.of(
-            SqlConnector.JAVA_FORMAT, SqlConnector.PORTABLE_FORMAT, SqlConnector.COMPACT_FORMAT));
+            SqlConnector.JAVA_FORMAT, SqlConnector.PORTABLE_FORMAT,
+            SqlConnector.COMPACT_FORMAT, SqlConnector.AVRO_FORMAT));
 
     private final Map<String, KvMetadataResolver> keyResolvers;
     private final Map<String, KvMetadataResolver> valueResolvers;
@@ -113,24 +115,24 @@ public class KvMetadataResolvers {
             }
         }
 
+        final String keyFormat = getFormat(options, true);
+        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(keyFormat)) {
+            extractFields(userFields, true).values().forEach(mappingField ->
+                    enrichMappingFieldType(true, mappingField, ss, relationsStorage, options));
+        }
+
+        final String valueFormat = getFormat(options, false);
+        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(valueFormat)) {
+            extractFields(userFields, false).values().forEach(mappingField ->
+                    enrichMappingFieldType(false, mappingField, ss, relationsStorage, options));
+        }
+
         Stream<MappingField> keyFields = findMetadataResolver(options, true)
                 .resolveAndValidateFields(true, userFields, options, ss)
                 .filter(field -> !field.name().equals(KEY) || field.externalName().equals(KEY));
         Stream<MappingField> valueFields = findMetadataResolver(options, false)
                 .resolveAndValidateFields(false, userFields, options, ss)
                 .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE));
-
-        final String keyFormat = getFormat(options, true);
-        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(keyFormat)) {
-            keyFields = keyFields.peek(mappingField ->
-                    enrichMappingFieldType(true, mappingField, ss, relationsStorage, options));
-        }
-
-        final String valueFormat = getFormat(options, false);
-        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(valueFormat)) {
-            valueFields = valueFields.peek(mappingField ->
-                    enrichMappingFieldType(false, mappingField, ss, relationsStorage, options));
-        }
 
         Map<String, MappingField> fields = concat(keyFields, valueFields)
                 .collect(LinkedHashMap::new, (map, field) -> map.putIfAbsent(field.name(), field), Map::putAll);

@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.extract.AvroQueryTarget;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.getters.EvictableGetterCache;
@@ -25,6 +26,7 @@ import com.hazelcast.query.impl.getters.GetterCache;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.avro.generic.GenericRecord;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,10 +34,10 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * An expression backing the DOT operator for extracting field from a struct type.
  * <p>
- * {@code ref.field} - extracts `field` from `ref`.
+ * {@code ref.field} extracts {@code field} from {@code ref}.
  */
 public class FieldAccessExpression<T> implements Expression<T> {
-    // FAE can be potentially used for many sub-classes of the base class, but it will always use same getter
+    // FAE can be potentially used for many subclasses of the base class, but it will always use same getter
     private static final int MAX_CLASS_COUNT = 10;
     private static final int MAX_GETTER_PER_CLASS_COUNT = 1;
 
@@ -76,33 +78,29 @@ public class FieldAccessExpression<T> implements Expression<T> {
     @Override
     public T eval(final Row row, final ExpressionEvalContext context, boolean useLazyDeserialization) {
         // Use lazy deserialization for nested queries. Only the last access should be eager.
-        final Object res = ref.eval(row, context, true);
-        if (res == null) {
+        final Object result = ref.eval(row, context, true);
+        if (result == null) {
             return null;
         }
 
-        if (isPrimitive(res.getClass())) {
+        if (isPrimitive(result.getClass())) {
             throw QueryException.error("Field Access expression can not be applied to primitive types");
         }
 
-        if (getterCache.get() == null) {
-            getterCache.compareAndSet(null, new EvictableGetterCache(
-                    MAX_CLASS_COUNT,
-                    MAX_GETTER_PER_CLASS_COUNT,
-                    GetterCache.EVICTABLE_CACHE_EVICTION_PERCENTAGE,
-                    false
-            ));
-        }
+        getterCache.compareAndSet(null, new EvictableGetterCache(
+                MAX_CLASS_COUNT,
+                MAX_GETTER_PER_CLASS_COUNT,
+                GetterCache.EVICTABLE_CACHE_EVICTION_PERCENTAGE,
+                false
+        ));
 
-        // defensive check, should never happen
-        final GetterCache cache = getterCache.get();
-        assert cache != null : "GetterCache should never be null";
-
-        final Extractors extractors = Extractors.newBuilder(context.getSerializationService())
-                .setGetterCacheSupplier(() -> cache)
-                .build();
         try {
-            return (T) type.convert(extractors.extract(res, name, useLazyDeserialization));
+            Object value = result instanceof GenericRecord
+                    ? AvroQueryTarget.extractValue((GenericRecord) result, name)
+                    : Extractors.newBuilder(context.getSerializationService())
+                            .setGetterCacheSupplier(getterCache::get)
+                            .build().extract(result, name, useLazyDeserialization);
+            return (T) type.convert(value);
         } catch (Exception e) {
             throw QueryException.error("Failed to extract field");
         }

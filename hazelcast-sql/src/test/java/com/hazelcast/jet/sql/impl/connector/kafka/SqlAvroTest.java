@@ -18,14 +18,18 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple4;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroDeserializer;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
+import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -33,7 +37,6 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
-import org.apache.avro.SchemaBuilder.FieldAssembler;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -62,8 +65,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -73,10 +74,14 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_RECORD_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroSchemaEvolutionTest.NAME_SSN_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.optionalField;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.copyOfRange;
@@ -129,13 +134,16 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     @Parameter
     public boolean useSchemaRegistry;
 
-    private SqlMapping mapping;
+    private static RelationsStorage relationsStorage;
+    private Type mapping;
     private Schema keySchema;
     private Schema valueSchema;
     private Map<String, String> clientProperties;
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void setup() throws Exception {
+        setup(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
+        relationsStorage = sqlServiceImpl(instance()).getOptimizer().relationsStorage();
         createSchemaRegistry();
     }
 
@@ -152,7 +160,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                                   OPTION_VALUE_AVRO_SCHEMA, valueSchema.toString());
         kafkaTestSupport.setProducerProperties(name, clientProperties);
 
-        return mapping = new SqlMapping(name, KafkaSqlConnector.class)
+        return new KafkaMapping(name)
                 .options(OPTION_KEY_FORMAT, AVRO_FORMAT,
                          OPTION_VALUE_FORMAT, AVRO_FORMAT,
                          "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
@@ -162,6 +170,39 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 .optionsIf(!useSchemaRegistry,
                            OPTION_KEY_AVRO_SCHEMA, keySchema,
                            OPTION_VALUE_AVRO_SCHEMA, valueSchema);
+    }
+
+    @Test
+    public void test_nestedField() {
+        String name = createRandomTopic();
+        new SqlType("Organization").fields("id INT", "name VARCHAR").create();
+
+        Schema orgSchema = SchemaBuilder.record("Organization").fields()
+                .optionalInt("id")
+                .optionalString("name")
+                .endRecord();
+        Schema personSchema = SchemaBuilder.record("Person").fields()
+                .optionalString("name")
+                .name("organization").type().optional().type(orgSchema)
+                .endRecord();
+
+        kafkaMapping(name, ID_SCHEMA, personSchema)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR",
+                        "organization Organization")
+                .optionsIf(useSchemaRegistry,
+                           OPTION_VALUE_AVRO_RECORD_NAME, "Person")
+                .create();
+
+        insertAndAssertRecord(
+                row(1, "Alice", row(1, "Umbrella Corporation")),
+                row(1, "Alice", row(1, "Umbrella Corporation")),
+                row(1, "Alice", createRecord(orgSchema, 1, "Umbrella Corporation")));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT name, (organization).name FROM " + name,
+                List.of(new Row("Alice", "Umbrella Corporation"))
+        );
     }
 
     @Test
@@ -200,42 +241,74 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     @Test
-    public void test_mappingHasMissingOptionalField() {
+    public void test_mappingAndTypeHasMissingOptionalField() {
         assumeFalse(useSchemaRegistry);
         String name = createRandomTopic();
-        kafkaMapping(name, ID_SCHEMA, NAME_SSN_SCHEMA)
+        new SqlType("Parent").fields("name VARCHAR", "phone VARCHAR").create();
+
+        Schema parentSchema = SchemaBuilder.record("Parent").fields()
+                .requiredString("name")
+                .optionalString("address")
+                .requiredString("phone")
+                .endRecord();
+        Schema studentSchema = SchemaBuilder.record("Student").fields()
+                .requiredString("name")
+                .optionalLong("ssn")
+                .name("parent").type(parentSchema).noDefault()
+                .endRecord();
+
+        kafkaMapping(name, ID_SCHEMA, studentSchema)
                 .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR")
+                        "name VARCHAR",
+                        "parent Parent")
                 .create();
 
-        insertAndAssertRecord(1, "Alice");
+        insertAndAssertRecord(
+                row(1, "Alice", row("Bob", "(111) 111-1111")),
+                row(1, "Alice", row("Bob", "(111) 111-1111")),
+                row(1, "Alice", createRecord(parentSchema, "Bob", null, "(111) 111-1111")));
 
-        kafkaTestSupport.produce(name, createRecord(ID_SCHEMA, 2),
-                createRecord(NAME_SSN_SCHEMA, "Bob", 123456789L));
+        kafkaTestSupport.produce(name, createRecord(ID_SCHEMA, 3),
+                createRecord(studentSchema, "Dave", 123456789L,
+                        row("Erin", "Insignificant St. 34", "(999) 999-9999")));
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM " + name,
+                "SELECT name, (parent).name, (parent).phone FROM " + name,
                 asList(
-                        new Row(1, "Alice"),
-                        new Row(2, "Bob")
+                        new Row("Alice", "Bob", "(111) 111-1111"),
+                        new Row("Dave", "Erin", "(999) 999-9999")
                 )
         );
     }
 
     @Test
-    public void when_mappingHasMissingMandatoryField_then_fail() {
+    public void when_mappingOrTypeHasMissingMandatoryField_then_fail() {
         assumeFalse(useSchemaRegistry);
-        Schema schema = SchemaBuilder.record("jet.sql").fields()
+        new SqlType("Parent").fields("name VARCHAR").create();
+
+        Schema parentSchema = SchemaBuilder.record("Parent").fields()
                 .requiredString("name")
-                .requiredLong("ssn")
+                .requiredString("phone")
+                .endRecord();
+        Schema studentSchema = SchemaBuilder.record("Student").fields()
+                .requiredString("name")
+                .name("parent").type(parentSchema).noDefault()
                 .endRecord();
 
         assertThatThrownBy(() ->
-                kafkaMapping("kafka", ID_SCHEMA, schema)
+                kafkaMapping("kafka", ID_SCHEMA, studentSchema)
                         .fields("id INT EXTERNAL NAME \"__key.id\"",
                                 "name VARCHAR")
                         .create())
-                .hasMessage("Mandatory field 'ssn' is not mapped to any column");
+                .hasMessage("Mandatory field 'parent' is not mapped to any column");
+
+        assertThatThrownBy(() ->
+                kafkaMapping("kafka", ID_SCHEMA, studentSchema)
+                        .fields("id INT EXTERNAL NAME \"__key.id\"",
+                                "name VARCHAR",
+                                "parent Parent")
+                        .create())
+                .hasMessage("Mandatory field 'phone' is not mapped to any column");
     }
 
     @Test
@@ -713,14 +786,13 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                                        @Nonnull Object[] selectValues) {
         insertRecord(insertValues);
 
-        String[] fields = getExternalFields();
         kafkaTestSupport.assertTopicContentsEventually(
                 mapping.name,
                 Map.of(
-                        createRecord(keySchema, copyOfRange(fields, 0, 1),
+                        createRecord(keySchema, copyOfRange(mapping.fields, 0, 1),
                                 copyOfRange(avroValues, 0, 1)),
-                        createRecord(valueSchema, copyOfRange(fields, 1, fields.length),
-                                copyOfRange(avroValues, 1, fields.length))
+                        createRecord(valueSchema, copyOfRange(mapping.fields, 1, mapping.fields.length),
+                                copyOfRange(avroValues, 1, mapping.fields.length))
                 ),
                 useSchemaRegistry ? KafkaAvroDeserializer.class : HazelcastKafkaAvroDeserializer.class,
                 useSchemaRegistry ? KafkaAvroDeserializer.class : HazelcastKafkaAvroDeserializer.class,
@@ -732,27 +804,28 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         );
     }
 
-    private String[] getExternalFields() {
-        return mapping.fields.stream().map(field -> field.endsWith("\"")
-                ? field.substring(field.lastIndexOf('.') + 1, field.length() - 1)
-                : field.substring(0, field.indexOf(' '))).toArray(String[]::new);
-    }
-
     private static String toSQL(Object value) {
+        if (value instanceof Object[]) {
+            return "(" + Arrays.stream((Object[]) value).map(SqlAvroTest::toSQL).collect(joining(", ")) + ")";
+        }
         return value == null || value instanceof Boolean || value instanceof Number
                 ? String.valueOf(value) : "'" + value + "'";
     }
 
-    private static GenericRecord createRecord(Schema schema, String[] fields, Object[] values) {
-        return IntStream.range(0, fields.length).collect(() -> new GenericRecordBuilder(schema),
-                (record, i) -> record.set(fields[i], values[i]),
-                ExceptionUtil::notParallelizable).build();
+    private static GenericRecord createRecord(Schema schema, Field[] fields, Object[] values) {
+        GenericRecordBuilder record = new GenericRecordBuilder(schema);
+        for (int i = 0; i < fields.length; i++) {
+            Schema.Field field = schema.getField(fields[i].name);
+            Schema fieldSchema = unwrapNullableType(field.schema());
+            record.set(field, fieldSchema.getType() == Schema.Type.RECORD
+                    ? createRecord(fieldSchema, fields[i].type.fields, (Object[]) values[i])
+                    : values[i]);
+        }
+        return record.build();
     }
 
     private static GenericRecord createRecord(Schema schema, Object... values) {
-        return createRecord(schema,
-                schema.getFields().stream().map(Schema.Field::name).toArray(String[]::new),
-                values);
+        return createRecord(schema, new Type(schema).fields, values);
     }
 
     @SuppressWarnings("unchecked")
@@ -763,9 +836,57 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 .collect(toList());
     }
 
-    private static UnaryOperator<FieldAssembler<Schema>> optionalField(String name, Schema schema) {
-        return schema.isNullable()
-                ? builder -> builder.name(name).type(schema).withDefault(null)
-                : builder -> builder.name(name).type().optional().type(schema);
+    /** Generates a type tree on creation. */
+    private class KafkaMapping extends SqlMapping {
+        KafkaMapping(String name) {
+            super(name, KafkaSqlConnector.class);
+        }
+
+        @Override
+        protected void create(HazelcastInstance instance, boolean replace, boolean ifNotExists) {
+            super.create(instance, replace, ifNotExists);
+            mapping = new Type(relationsStorage.getMapping(name));
+        }
+    }
+
+    private static class Type {
+        final String name;
+        final Field[] fields;
+
+        Type(Mapping mapping) {
+            name = mapping.name();
+            fields = mapping.fields().stream().map(Field::new).toArray(Field[]::new);
+        }
+
+        Type(QueryDataType type) {
+            name = type.getObjectTypeName();
+            fields = type.getObjectFields().stream().map(Field::new).toArray(Field[]::new);
+        }
+
+        Type(Schema schema) {
+            name = schema.getName();
+            fields = schema.getType() == Schema.Type.RECORD
+                    ? schema.getFields().stream().map(Field::new).toArray(Field[]::new) : null;
+        }
+    }
+
+    private static class Field {
+        final String name;
+        final Type type;
+
+        Field(MappingField field) {
+            name = field.plainExternalName();
+            type = new Type(field.type());
+        }
+
+        Field(QueryDataTypeField field) {
+            name = field.getName();
+            type = new Type(field.getDataType());
+        }
+
+        Field(Schema.Field field) {
+            name = field.name();
+            type = new Type(field.schema());
+        }
     }
 }

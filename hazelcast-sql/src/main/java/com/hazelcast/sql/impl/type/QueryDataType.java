@@ -69,6 +69,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final int OBJECT_TYPE_KIND_JAVA = TypeKind.JAVA.value();
     public static final int OBJECT_TYPE_KIND_PORTABLE = TypeKind.PORTABLE.value();
     public static final int OBJECT_TYPE_KIND_COMPACT = TypeKind.COMPACT.value();
+    public static final int OBJECT_TYPE_KIND_AVRO = TypeKind.AVRO.value();
 
     public static final QueryDataType VARCHAR = new QueryDataType(StringConverter.INSTANCE);
     public static final QueryDataType VARCHAR_CHARACTER = new QueryDataType(CharacterConverter.INSTANCE);
