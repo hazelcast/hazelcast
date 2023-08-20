@@ -16,11 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import io.confluent.kafka.schemaregistry.rest.SchemaRegistryConfig;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -29,6 +34,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.util.Properties;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
@@ -40,7 +46,11 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
 
     @BeforeClass
     public static void setup() throws Exception {
-        initialize(1, null);
+        setup(1, null);
+    }
+
+    protected static void setup(int memberCount, Config config) throws Exception {
+        initialize(memberCount, config);
         sqlService = instance().getSql();
 
         kafkaTestSupport = KafkaTestSupport.create();
@@ -50,10 +60,10 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
     protected static void createSchemaRegistry() throws Exception {
         Properties properties = new Properties();
         properties.put("listeners", "http://0.0.0.0:0");
-        properties.put(SchemaRegistryConfig.KAFKASTORE_BOOTSTRAP_SERVERS_CONFIG, kafkaTestSupport.getBrokerConnectionString());
-        //When Kafka is under load the schema registry may give
-        //io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException: Register operation timed out; error code: 50002
-        //Because the default timeout is 500 ms. Use a bigger timeout value to avoid it
+        properties.put(SchemaRegistryConfig.KAFKASTORE_BOOTSTRAP_SERVERS_CONFIG,
+                kafkaTestSupport.getBrokerConnectionString());
+        // We increase the timeout (default is 500 ms) because when Kafka is under load,
+        // the schema registry may give "RestClientException: Register operation timed out".
         properties.put(SchemaRegistryConfig.KAFKASTORE_TIMEOUT_CONFIG, "5000");
         SchemaRegistryConfig config = new SchemaRegistryConfig(properties);
         kafkaTestSupport.createSchemaRegistry(config);
@@ -71,6 +81,18 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
         String topicName = "t_" + randomString().replace('-', '_');
         kafkaTestSupport.createTopic(topicName, partitionCount);
         return topicName;
+    }
+
+    public static GenericRecord createRecord(Schema schema, String[] fields, Object[] values) {
+        return IntStream.range(0, fields.length).collect(() -> new GenericRecordBuilder(schema),
+                (record, i) -> record.set(fields[i], values[i]),
+                ExceptionUtil::notParallelizable).build();
+    }
+
+    public static GenericRecord createRecord(Schema schema, Object... values) {
+        return createRecord(schema,
+                schema.getFields().stream().map(Schema.Field::name).toArray(String[]::new),
+                values);
     }
 
     protected static void createSqlKafkaDataConnection(String dlName, boolean isShared, String options) {
@@ -115,25 +137,6 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
                         + "'bootstrap.servers' = '%s', "
                         + "'auto.offset.reset' = 'earliest') ",
                 kafkaTestSupport.getBrokerConnectionString());
-    }
-
-    protected static String constructDataConnectionOptions(
-            Class<?> keySerializerClazz,
-            Class<?> keyDeserializerClazz,
-            Class<?> valueSerializerClazz,
-            Class<?> valueDeserializerClazz) {
-        return String.format("OPTIONS ( " +
-                        "'bootstrap.servers' = '%s', " +
-                        "'key.serializer' = '%s', " +
-                        "'key.deserializer' = '%s', " +
-                        "'value.serializer' = '%s', " +
-                        "'value.deserializer' = '%s', " +
-                        "'auto.offset.reset' = 'earliest') ",
-                kafkaTestSupport.getBrokerConnectionString(),
-                keySerializerClazz.getCanonicalName(),
-                keyDeserializerClazz.getCanonicalName(),
-                valueSerializerClazz.getCanonicalName(),
-                valueDeserializerClazz.getCanonicalName());
     }
 
     protected static String constructMappingOptions(String keyFormat, String valueFormat) {

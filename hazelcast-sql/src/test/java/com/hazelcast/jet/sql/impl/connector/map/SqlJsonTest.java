@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -29,106 +28,95 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.Map;
 
-import static com.hazelcast.jet.core.TestUtil.createMap;
+import static com.hazelcast.jet.pipeline.file.JsonFileFormat.FORMAT_JSON;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static java.lang.String.format;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.time.ZoneOffset.UTC;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlJsonTest extends SqlTestSupport {
-
     private static SqlService sqlService;
 
     @BeforeClass
-    public static void setUpClass() {
-        initialize(1, null);
+    public static void setup() {
+        initialize(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
         sqlService = instance().getSql();
+    }
+
+    private static SqlMapping jsonMapping(String name) {
+        return new SqlMapping(name, IMapSqlConnector.class)
+                .options(OPTION_KEY_FORMAT, JSON_FLAT_FORMAT,
+                         OPTION_VALUE_FORMAT, JSON_FLAT_FORMAT);
     }
 
     @Test
     public void test_nulls() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "id INT EXTERNAL NAME \"__key.id\""
-                + ", name VARCHAR EXTERNAL NAME \"this.name\""
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ")"
-        );
+        jsonMapping(name)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR EXTERNAL NAME \"this.name\"")
+                .create();
 
         assertMapEventually(
                 name,
                 "SINK INTO " + name + " VALUES (null, null)",
-                createMap(new HazelcastJsonValue("{\"id\":null}"), new HazelcastJsonValue("{\"name\":null}"))
+                Map.of(new HazelcastJsonValue("{\"id\":null}"), new HazelcastJsonValue("{\"name\":null}"))
         );
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row(null, null))
+                List.of(new Row(null, null))
         );
     }
 
     @Test
     public void test_fieldsMapping() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "key_name VARCHAR EXTERNAL NAME \"__key.name\""
-                + ", value_name VARCHAR EXTERNAL NAME \"this.name\""
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ")"
-        );
+        jsonMapping(name)
+                .fields("key_name VARCHAR EXTERNAL NAME \"__key.name\"",
+                        "value_name VARCHAR EXTERNAL NAME \"this.name\"")
+                .create();
 
         assertMapEventually(
                 name,
                 "SINK INTO " + name + " (value_name, key_name) VALUES ('Bob', 'Alice')",
-                createMap(new HazelcastJsonValue("{\"name\":\"Alice\"}"), new HazelcastJsonValue("{\"name\":\"Bob\"}"))
+                Map.of(new HazelcastJsonValue("{\"name\":\"Alice\"}"), new HazelcastJsonValue("{\"name\":\"Bob\"}"))
         );
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row("Alice", "Bob"))
+                List.of(new Row("Alice", "Bob"))
         );
     }
 
     @Test
     public void test_schemaEvolution() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "__key INT"
-                + ", name VARCHAR"
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ")"
-        );
+        new SqlMapping(name, IMapSqlConnector.class)
+                .fields("__key INT",
+                        "name VARCHAR")
+                .options(OPTION_KEY_FORMAT, JAVA_FORMAT,
+                         OPTION_KEY_CLASS, Integer.class.getName(),
+                         OPTION_VALUE_FORMAT, JSON_FLAT_FORMAT)
+                .create();
 
         // insert initial record
         sqlService.execute("SINK INTO " + name + " VALUES (13, 'Alice')");
 
         // alter schema
-        sqlService.execute("CREATE OR REPLACE MAPPING " + name + " ("
-                + "__key INT"
-                + ", name VARCHAR"
-                + ", ssn BIGINT"
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ")"
-        );
+        new SqlMapping(name, IMapSqlConnector.class)
+                .fields("__key INT",
+                        "name VARCHAR",
+                        "ssn BIGINT")
+                .options(OPTION_KEY_FORMAT, JAVA_FORMAT,
+                         OPTION_KEY_CLASS, Integer.class.getName(),
+                         OPTION_VALUE_FORMAT, JSON_FLAT_FORMAT)
+                .createOrReplace();
 
         // insert record against new schema
         sqlService.execute("SINK INTO " + name + " VALUES (69, 'Bob', 123456789)");
@@ -136,7 +124,7 @@ public class SqlJsonTest extends SqlTestSupport {
         // assert both - initial & evolved - records are correctly read
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                asList(
+                List.of(
                         new Row(13, "Alice", null),
                         new Row(69, "Bob", 123456789L)
                 )
@@ -149,35 +137,30 @@ public class SqlJsonTest extends SqlTestSupport {
         TestAllTypesSqlConnector.create(sqlService, from);
 
         String to = randomName();
-        sqlService.execute("CREATE MAPPING " + to + " ("
-                + "id VARCHAR EXTERNAL NAME \"__key.id\""
-                + ", string VARCHAR"
-                + ", \"boolean\" BOOLEAN"
-                + ", byte TINYINT"
-                + ", short SMALLINT"
-                + ", \"int\" INT"
-                + ", long BIGINT"
-                + ", \"float\" REAL"
-                + ", \"double\" DOUBLE"
-                + ", \"decimal\" DECIMAL"
-                + ", \"time\" TIME"
-                + ", \"date\" DATE"
-                + ", \"timestamp\" TIMESTAMP"
-                + ", timestampTz TIMESTAMP WITH TIME ZONE"
-                + ", object OBJECT"
-                + ", map OBJECT"
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ")"
-        );
+        jsonMapping(to)
+                .fields("id VARCHAR EXTERNAL NAME \"__key.id\"",
+                        "string VARCHAR",
+                        "\"boolean\" BOOLEAN",
+                        "byte TINYINT",
+                        "short SMALLINT",
+                        "\"int\" INT",
+                        "long BIGINT",
+                        "\"float\" REAL",
+                        "\"double\" DOUBLE",
+                        "\"decimal\" DECIMAL",
+                        "\"time\" TIME",
+                        "\"date\" DATE",
+                        "\"timestamp\" TIMESTAMP",
+                        "timestampTz TIMESTAMP WITH TIME ZONE",
+                        "object OBJECT",
+                        "map OBJECT")
+                .create();
 
         sqlService.execute("SINK INTO " + to + " SELECT '1', f.* FROM " + from + " f");
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + to,
-                singletonList(new Row(
+                List.of(new Row(
                         "1",
                         "string",
                         true,
@@ -211,60 +194,43 @@ public class SqlJsonTest extends SqlTestSupport {
     private void when_explicitTopLevelField_then_fail(String field, String otherField) {
         String name = randomName();
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING " + name + " ("
-                        + field + " VARCHAR"
-                        + ", f VARCHAR EXTERNAL NAME \"" + otherField + ".f\""
-                        + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ("
-                        + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                        + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                        + ")"
-                ))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessage("Cannot use the '" + field + "' field with JSON serialization");
+                jsonMapping(name)
+                        .fields(field + " VARCHAR",
+                                "f VARCHAR EXTERNAL NAME \"" + otherField + ".f\"")
+                        .create())
+                .hasMessage("Cannot use '" + field + "' field with JSON serialization");
     }
 
     @Test
     public void test_writingToTopLevel() {
         String mapName = randomName();
-        sqlService.execute("CREATE MAPPING " + mapName + "("
-                + "id INT EXTERNAL NAME \"__key.id\""
-                + ", name VARCHAR"
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ")"
-        );
+        jsonMapping(mapName)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR")
+                .create();
 
         assertThatThrownBy(() ->
-                sqlService.execute("SINK INTO " + mapName + "(__key, name) VALUES('{\"id\":1}', null)"))
-                .isInstanceOf(HazelcastSqlException.class)
+                sqlService.execute("SINK INTO " + mapName + "(__key, name) VALUES ('{\"id\":1}', null)"))
                 .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
 
         assertThatThrownBy(() ->
-                sqlService.execute("SINK INTO " + mapName + "(id, this) VALUES(1, '{\"name\":\"foo\"}')"))
-                .isInstanceOf(HazelcastSqlException.class)
+                sqlService.execute("SINK INTO " + mapName + "(id, this) VALUES (1, '{\"name\":\"foo\"}')"))
                 .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
     }
 
     @Test
     public void test_topLevelFieldExtraction() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "id INT EXTERNAL NAME \"__key.id\""
-                + ", name VARCHAR EXTERNAL NAME \"this.name\""
-                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
-                + ")"
-        );
+        jsonMapping(name)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR EXTERNAL NAME \"this.name\"")
+                .create();
+
         sqlService.execute("SINK INTO " + name + " VALUES (1, 'Alice')");
 
         assertRowsAnyOrder(
                 "SELECT __key, this FROM " + name,
-                singletonList(new Row(
+                List.of(new Row(
                         new HazelcastJsonValue("{\"id\":1}"),
                         new HazelcastJsonValue("{\"name\":\"Alice\"}")
                 ))
@@ -274,18 +240,16 @@ public class SqlJsonTest extends SqlTestSupport {
     @Test
     public void test_jsonType() {
         String name = randomName();
-        String createSql = format("CREATE MAPPING %s TYPE %s ", name, IMapSqlConnector.TYPE_NAME)
-                + "OPTIONS ( "
-                + format("'%s' = 'json'", OPTION_KEY_FORMAT)
-                + format(", '%s' = 'json'", OPTION_VALUE_FORMAT)
-                + ")";
-
-        sqlService.execute(createSql);
+        new SqlMapping(name, IMapSqlConnector.class)
+                .options(OPTION_KEY_FORMAT, FORMAT_JSON,
+                         OPTION_VALUE_FORMAT, FORMAT_JSON)
+                .create();
 
         sqlService.execute("SINK INTO " + name + " VALUES (CAST('[1,2,3]' AS JSON), CAST('[4,5,6]' AS JSON))");
+
         assertRowsAnyOrder(
                 "SELECT __key, this FROM " + name,
-                singletonList(new Row(
+                List.of(new Row(
                         new HazelcastJsonValue("[1,2,3]"),
                         new HazelcastJsonValue("[4,5,6]")
                 ))

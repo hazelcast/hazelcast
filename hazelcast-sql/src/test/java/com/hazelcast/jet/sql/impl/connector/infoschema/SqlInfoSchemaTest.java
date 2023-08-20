@@ -28,8 +28,11 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
@@ -41,7 +44,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for the {@code information_schema}.
  */
 public class SqlInfoSchemaTest extends SqlTestSupport {
-
     private static final String LE = System.lineSeparator();
 
     private static SqlService sqlService;
@@ -53,7 +55,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     private final String mappingExternalName = "my_map";
 
     @BeforeClass
-    public static void setUpClass() {
+    public static void initialize() {
         Config config = smallInstanceConfig()
                 .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
         initialize(1, config);
@@ -61,36 +63,34 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     }
 
     @Before
-    public void setUp() {
-        sqlService.execute(
-                "CREATE MAPPING " + mappingName + " EXTERNAL NAME " + mappingExternalName + "("
-                        + "__key INT"
-                        + ", __value VARCHAR EXTERNAL NAME \"this.value\""
-                        + ") TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
-                        + "OPTIONS (\n"
-                        + '\'' + OPTION_KEY_FORMAT + "'='int'\n"
-                        + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'\n"
-                        + ", '" + OPTION_VALUE_CLASS + "'='" + Value.class.getName() + "'\n"
-                        + ")");
-        sqlService.execute("CREATE VIEW " + viewName + " AS SELECT * FROM " + mappingName);
-        sqlService.execute("CREATE TYPE " + firstTypeName + "("
-                + "id BIGINT, "
-                + "name VARCHAR,"
-                + "created TIMESTAMP WITH TIME ZONE,"
-                + "balance DOUBLE"
-                + ") OPTIONS ("
-                + "'format'='compact',"
-                + "'compactTypeName'='" + firstTypeName + "'"
-                + ")");
+    public void setup() {
+         new SqlMapping(mappingName, IMapSqlConnector.class)
+                 .externalName(mappingExternalName)
+                 .fields("__key INT",
+                         "__value VARCHAR EXTERNAL NAME \"this.value\"")
+                 .options(OPTION_KEY_FORMAT, "int",
+                          OPTION_VALUE_FORMAT, JAVA_FORMAT,
+                          OPTION_VALUE_CLASS, Value.class.getName())
+                 .create();
 
-        sqlService.execute("CREATE TYPE " + secondTypeName + "("
-                + "id BIGINT, "
-                + "name VARCHAR, "
-                + "other " + firstTypeName
-                + ") OPTIONS ("
-                + "'format'='compact',"
-                + "'compactTypeName'='" + firstTypeName + "'"
-                + ")");
+        sqlService.execute("CREATE VIEW " + viewName + " AS SELECT * FROM " + mappingName);
+
+        new SqlType(firstTypeName)
+                .fields("id BIGINT",
+                        "name VARCHAR",
+                        "created TIMESTAMP WITH TIME ZONE",
+                        "balance DOUBLE")
+                .options(OPTION_FORMAT, COMPACT_FORMAT,
+                         OPTION_TYPE_COMPACT_TYPE_NAME, firstTypeName)
+                .create();
+
+        new SqlType(secondTypeName)
+                .fields("id BIGINT",
+                        "name VARCHAR",
+                        "other " + firstTypeName)
+                .options(OPTION_FORMAT, COMPACT_FORMAT,
+                         OPTION_TYPE_COMPACT_TYPE_NAME, secondTypeName)
+                .create();
     }
 
     @Test

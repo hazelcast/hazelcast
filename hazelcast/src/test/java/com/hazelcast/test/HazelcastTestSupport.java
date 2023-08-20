@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.google.common.collect.Lists;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
@@ -98,6 +99,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -111,13 +113,14 @@ import static org.junit.Assume.assumeTrue;
 /**
  * Base class for Hazelcast tests which provides a big number of convenient test methods.
  * <p>
- * Has built-in support for {@link TestHazelcastInstanceFactory}, {@link JitterRule} and {@link DumpBuildInfoOnFailureRule}.
+ * Has built-in support for {@link TestHazelcastInstanceFactory}, {@link JitterRule} and
+ * {@link DumpBuildInfoOnFailureRule}.
  * <p>
- * Tests which are be extended in Hazelcast Enterprise, should use {@link #getConfig()} instead of {@code new Config()},
- * so the Enterprise test can override this method to return a config with a {@link com.hazelcast.config.NativeMemoryConfig}.
+ * Tests which are be extended in Hazelcast Enterprise, should use {@link #getConfig()}
+ * instead of {@code new Config()}, so the Enterprise test can override this method to
+ * return a config with a {@link com.hazelcast.config.NativeMemoryConfig}.
  */
 public abstract class HazelcastTestSupport {
-
     public static final String JAVA_VENDOR = System.getProperty("java.vendor");
 
     public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
@@ -126,7 +129,8 @@ public abstract class HazelcastTestSupport {
     public static final int ASSERT_COMPLETES_STALL_TOLERANCE;
     public static final String PERSISTENT_MEMORY_DIRECTORIES;
 
-    private static final String COMPAT_HZ_INSTANCE_FACTORY = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
+    private static final String COMPAT_HZ_INSTANCE_FACTORY =
+            "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
     private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
 
@@ -153,31 +157,6 @@ public abstract class HazelcastTestSupport {
         PERSISTENT_MEMORY_DIRECTORIES = pmemDirectories != null ? pmemDirectories : "/tmp/pmem0,/tmp/pmem1";
         ClusterProperty.METRICS_COLLECTION_FREQUENCY.setSystemProperty("1");
         ClusterProperty.METRICS_DEBUG.setSystemProperty("true");
-    }
-
-    protected static <T> boolean containsIn(T item1, Collection<T> collection, Comparator<T> comparator) {
-        for (T item2 : collection) {
-            if (comparator.compare(item1, item2) == 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual) {
-        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
-                expected.size(), actual.size());
-        assertContainsAll(expected, actual);
-    }
-
-    protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual, Comparator<T> comparator) {
-        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
-                expected.size(), actual.size());
-        for (T item : expected) {
-            if (!containsIn(item, actual, comparator)) {
-                throw new AssertionError("Actual collection does not contain the item " + item);
-            }
-        }
     }
 
     @After
@@ -365,6 +344,22 @@ public abstract class HazelcastTestSupport {
         }).start();
     }
 
+    protected static <T> boolean containsIn(T item1, Collection<T> collection, Comparator<T> comparator) {
+        for (T item2 : collection) {
+            if (comparator.compare(item1, item2) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the cartesian product of the specified lists.
+     */
+    public static List<Object[]> parameters(List<?>... lists) {
+        return Lists.cartesianProduct(lists).stream().map(List::toArray).collect(toList());
+    }
+
     // ###########################
     // ########## sleep ##########
     // ###########################
@@ -416,7 +411,8 @@ public abstract class HazelcastTestSupport {
             }
         } else {
             long absSleepTime = Math.abs(sleepTime);
-            LOGGER.warning("There is no time left to sleep. We are beyond the desired end of sleep by " + absSleepTime + "ms");
+            LOGGER.warning("There is no time left to sleep. We are beyond the desired end of sleep by "
+                    + absSleepTime + "ms");
         }
     }
 
@@ -425,8 +421,9 @@ public abstract class HazelcastTestSupport {
      * <p>
      * If stop is changed to true while sleeping, the calls returns before waiting the full sleeping period.
      * <p>
-     * This method is very useful for stress tests that run for a certain amount of time. But if one of the stress tests
-     * runs into a failure, the test should be aborted immediately. This is done by letting the thread set stop to true.
+     * This method is very useful for stress tests that run for a certain amount of time. But if one of the
+     * stress tests runs into a failure, the test should be aborted immediately. This is done by letting the
+     * thread set stop to true.
      *
      * @param stop            an {@link AtomicBoolean} to stop the sleep method
      * @param durationSeconds sleep duration in seconds
@@ -684,7 +681,8 @@ public abstract class HazelcastTestSupport {
         }
         Set<Member> members = cluster.getMembers();
         if (members.size() < 2) {
-            throw new UnsupportedOperationException("Cluster has only one member, you can not generate a `not owned key`");
+            throw new UnsupportedOperationException(
+                    "Cluster has only one member, you can not generate a `not owned key`");
         }
     }
 
@@ -887,19 +885,22 @@ public abstract class HazelcastTestSupport {
             assertMessage.append(" but was: ");
             formatClassAndValue(assertMessage, actual, actualString);
         } else {
-            assertMessage.append("expected: <").append(expectedString).append("> but was: <").append(actualString).append(">");
+            assertMessage.append("expected: <").append(expectedString)
+                    .append("> but was: <").append(actualString).append(">");
         }
         return assertMessage.toString();
     }
 
     private static void formatClassAndValue(StringBuilder message, Object value, String valueString) {
-        message.append((value == null) ? "null" : value.getClass().getName()).append("<").append(valueString).append(">");
+        message.append((value == null) ? "null" : value.getClass().getName())
+                .append("<").append(valueString).append(">");
     }
 
     @SuppressWarnings("unchecked")
     public static <E> E assertInstanceOf(Class<E> expected, Object actual) {
         assertNotNull(actual);
-        assertTrue(actual + " is not an instanceof " + expected.getName(), expected.isAssignableFrom(actual.getClass()));
+        assertTrue(actual + " is not an instanceof " + expected.getName(),
+                expected.isAssignableFrom(actual.getClass()));
         return (E) actual;
     }
 
@@ -929,6 +930,22 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual) {
+        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
+                expected.size(), actual.size());
+        assertContainsAll(expected, actual);
+    }
+
+    protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual, Comparator<T> comparator) {
+        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
+                expected.size(), actual.size());
+        for (T item : expected) {
+            if (!containsIn(item, actual, comparator)) {
+                throw new AssertionError("Actual collection does not contain the item " + item);
+            }
+        }
+    }
+
     public static void assertIterableEquals(Iterable<?> actual, Object... expected) {
         List<Object> actualList = new ArrayList<>();
         for (Object object : actual) {
@@ -953,16 +970,18 @@ public abstract class HazelcastTestSupport {
         assertSizeEventually(expectedSize, collection, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void assertSizeEventually(final int expectedSize, final Collection<?> collection, long timeoutSeconds) {
-        assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:" + collection, expectedSize,
-                collection.size()), timeoutSeconds);
+    public static void assertSizeEventually(final int expectedSize, final Collection<?> collection,
+                                            long timeoutSeconds) {
+        assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:"
+                        + collection, expectedSize, collection.size()), timeoutSeconds);
     }
 
     public static void assertSizeEventually(int expectedSize, Supplier<Collection<?>> collectionSupplier) {
         assertSizeEventually(expectedSize, collectionSupplier, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void assertSizeEventually(int expectedSize, Supplier<Collection<?>> collectionSupplier, long timeoutSeconds) {
+    public static void assertSizeEventually(int expectedSize, Supplier<Collection<?>> collectionSupplier,
+                                            long timeoutSeconds) {
         assertTrueEventually(() -> assertEquals("the size of the collection is not correct: found-content:"
                         + collectionSupplier.get(), expectedSize, collectionSupplier.get().size()),
                 timeoutSeconds);
@@ -973,7 +992,8 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertSizeEventually(final int expectedSize, final Map<?, ?> map, long timeoutSeconds) {
-        assertTrueEventually(() -> assertEquals("the size of the map is not correct", expectedSize, map.size()), timeoutSeconds);
+        assertTrueEventually(() -> assertEquals("the size of the map is not correct", expectedSize, map.size()),
+                timeoutSeconds);
     }
 
     public static <E> void assertEqualsEventually(final FutureTask<E> task, final E expected) {
@@ -1002,8 +1022,7 @@ public abstract class HazelcastTestSupport {
     }
 
     private static int getClusterSize(HazelcastInstance instance) {
-        Set<Member> members = instance.getCluster().getMembers();
-        return members == null ? 0 : members.size();
+        return instance.getCluster().getMembers().size();
     }
 
     public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance... instances) {
@@ -1039,7 +1058,8 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static void assertMasterAddressEventually(final Address masterAddress, final HazelcastInstance... instances) {
+    public static void assertMasterAddressEventually(final Address masterAddress,
+                                                     final HazelcastInstance... instances) {
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
                 assertMasterAddress(masterAddress, instance);
@@ -1054,7 +1074,8 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static void assertClusterStateEventually(final ClusterState expectedState, final HazelcastInstance... instances) {
+    public static void assertClusterStateEventually(final ClusterState expectedState,
+                                                    final HazelcastInstance... instances) {
         assertTrueEventually(() -> assertClusterState(expectedState, instances));
     }
 
@@ -1082,25 +1103,25 @@ public abstract class HazelcastTestSupport {
         assertOpenEventually(message, new CountdownLatchAdapter(latch), timeoutSeconds);
     }
 
-    public static void assertOpenEventually(String message, Latch latch, long timeoutSeconds) {
+    private static void assertOpenEventually(String message, Latch latch, long timeoutSeconds) {
         try {
             boolean completed = latch.await(timeoutSeconds, SECONDS);
             if (message == null) {
-                assertTrue(format("CountDownLatch failed to complete within %d seconds, count left: %d", timeoutSeconds,
-                        latch.getCount()), completed);
+                assertTrue(format("CountDownLatch failed to complete within %d seconds, count left: %d",
+                        timeoutSeconds, latch.getCount()), completed);
             } else {
-                assertTrue(format("%s, failed to complete within %d seconds, count left: %d", message, timeoutSeconds,
-                        latch.getCount()), completed);
+                assertTrue(format("%s, failed to complete within %d seconds, count left: %d", message,
+                        timeoutSeconds, latch.getCount()), completed);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void assertCountEventually(final String message, final int expectedCount, final CountDownLatch latch,
-                                             long timeoutInSeconds) {
+    public static void assertCountEventually(final String message, final int expectedCount,
+                                             final CountDownLatch latch, long timeoutInSeconds) {
         assertTrueEventually(() -> {
-            for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+            for (int i = 0; i < 2; i++) { // recheck to see if it hasn't changed
                 if (latch.getCount() != expectedCount) {
                     throw new AssertionError("Latch count has not been met. " + message);
                 }
@@ -1109,10 +1130,10 @@ public abstract class HazelcastTestSupport {
         }, timeoutInSeconds);
     }
 
-    public static void assertAtomicEventually(final String message, final int expectedValue, final AtomicInteger atomic,
-                                              int timeoutInSeconds) {
+    public static void assertAtomicEventually(final String message, final int expectedValue,
+                                              final AtomicInteger atomic, int timeoutInSeconds) {
         assertTrueEventually(() -> {
-            for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+            for (int i = 0; i < 2; i++) { // recheck to see if it hasn't changed
                 if (atomic.get() != expectedValue) {
                     throw new AssertionError("Atomic value has not been met. " + message);
                 }
@@ -1121,10 +1142,10 @@ public abstract class HazelcastTestSupport {
         }, timeoutInSeconds);
     }
 
-    public static void assertAtomicEventually(final String message, final boolean expectedValue, final AtomicBoolean atomic,
-                                              int timeoutInSeconds) {
+    public static void assertAtomicEventually(final String message, final boolean expectedValue,
+                                              final AtomicBoolean atomic, int timeoutInSeconds) {
         assertTrueEventually(() -> {
-            for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+            for (int i = 0; i < 2; i++) { // recheck to see if it hasn't changed
                 if (atomic.get() != expectedValue) {
                     throw new AssertionError("Atomic value has not been met. " + message);
                 }
@@ -1144,7 +1165,7 @@ public abstract class HazelcastTestSupport {
             } catch (Exception e) {
                 throw rethrow(e);
             }
-            // Don't wait if there is not next iteration
+            // Don't wait if there is no next iteration
             if ((i + 1) <= durationSeconds) {
                 sleepSeconds(1);
             }
@@ -1243,8 +1264,8 @@ public abstract class HazelcastTestSupport {
 
                 // if the task exceeded stall tolerance, we fail and log the history of the progress changes
                 if (toleranceExceeded && !progressMade) {
-                    StringBuilder sb = new StringBuilder("Stall tolerance " + stallToleranceSeconds + " seconds has been "
-                            + "exceeded without completing the task. Track of progress:\n");
+                    StringBuilder sb = new StringBuilder("Stall tolerance " + stallToleranceSeconds
+                            + " seconds has been exceeded without completing the task. Track of progress:\n");
                     for (TaskProgress historicProgress : progresses) {
                         long elapsedMillis = historicProgress.timestamp() - taskStartTimestamp;
                         String elapsedMillisPadded = String.format("%1$5s", elapsedMillis);
@@ -1255,7 +1276,8 @@ public abstract class HazelcastTestSupport {
                     }
                     LOGGER.severe(sb.toString());
                     fail("Stall tolerance " + stallToleranceSeconds
-                            + " seconds has been exceeded without completing the task. " + (message != null ? message : ""));
+                            + " seconds has been exceeded without completing the task. "
+                            + (message != null ? message : ""));
                 }
 
                 sleepMillis(sleepMillis);
@@ -1270,7 +1292,6 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertFalseEventually(AssertTask task, long timeoutSeconds) {
-        AssertionError error = null;
         // we are going to check five times a second
         int sleepMillis = 200;
         long iterations = timeoutSeconds * 5;
@@ -1309,7 +1330,7 @@ public abstract class HazelcastTestSupport {
 
     /**
      * This method executes the normal assertEquals with expected and actual values.
-     * In addition it formats the given string with those values to provide a good assert message.
+     * In addition, it formats the given string with those values to provide a good assert message.
      *
      * @param message  assert message which is formatted with expected and actual values
      * @param expected expected value which is used for assert
@@ -1321,7 +1342,7 @@ public abstract class HazelcastTestSupport {
 
     /**
      * This method executes the normal assertNotEquals with expected and actual values.
-     * In addition it formats the given string with those values to provide a good assert message.
+     * In addition, it formats the given string with those values to provide a good assert message.
      *
      * @param message  assert message which is formatted with expected and actual values
      * @param expected expected value which is used for assert
@@ -1335,12 +1356,14 @@ public abstract class HazelcastTestSupport {
      * Assert that {@code actualValue >= lowerBound && actualValue <= upperBound}.
      */
     public static void assertBetween(String label, long actualValue, long lowerBound, long upperBound) {
-        assertTrue(format("Expected '%s' to be between %d and %d, but was %d", label, lowerBound, upperBound, actualValue),
+        assertTrue(format("Expected '%s' to be between %d and %d, but was %d",
+                        label, lowerBound, upperBound, actualValue),
                 actualValue >= lowerBound && actualValue <= upperBound);
     }
 
     public static void assertGreaterOrEquals(String label, long actualValue, long lowerBound) {
-        assertTrue(format("Expected '%s' to be greater than or equal to %d, but was %d", label, lowerBound, actualValue),
+        assertTrue(format("Expected '%s' to be greater than or equal to %d, but was %d",
+                        label, lowerBound, actualValue),
                 actualValue >= lowerBound);
     }
 
@@ -1402,7 +1425,8 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertThatIsNotMultithreadedTest() {
-        assertFalse("Test cannot run with parallel runner", Thread.currentThread() instanceof MultithreadedTestRunnerThread);
+        assertFalse("Test cannot run with parallel runner",
+                Thread.currentThread() instanceof MultithreadedTestRunnerThread);
     }
 
     // ###################################
@@ -1548,16 +1572,16 @@ public abstract class HazelcastTestSupport {
     }
 
     /**
-     * Throws {@link AssumptionViolatedException} if two new Objects have the same hashCode (e.g. when running tests
-     * with static hashCode ({@code -XX:hashCode=2}).
+     * Throws {@link AssumptionViolatedException} if two new Objects have the same hashCode,
+     * e.g. when running tests with static hashCode ({@code -XX:hashCode=2}).
      */
     public static void assumeDifferentHashCodes() {
         assumeTrue("Hash codes are equal for different objects", EXPECT_DIFFERENT_HASHCODES);
     }
 
     /**
-     * Throws {@link AssumptionViolatedException} if the given {@link InternalSerializationService} is not configured
-     * with the assumed {@link ByteOrder}.
+     * Throws {@link AssumptionViolatedException} if the given {@link InternalSerializationService}
+     * is not configured with the assumed {@link ByteOrder}.
      *
      * @param serializationService the {@link InternalSerializationService} to check
      * @param assumedByteOrder     the assumed {@link ByteOrder}
@@ -1572,7 +1596,7 @@ public abstract class HazelcastTestSupport {
     /**
      * Walk the stack trace and execute the provided {@code BiConsumer} on each {@code StackTraceElement}
      * encountered while walking the stack trace.
-     *
+     * <p>
      * The {@code BiConsumer} expects {@code StackTraceElement, List<V>} arguments; any
      * result from the {@code BiConsumer} should be added to the {@code results} list which is
      * returned as the result of this method.

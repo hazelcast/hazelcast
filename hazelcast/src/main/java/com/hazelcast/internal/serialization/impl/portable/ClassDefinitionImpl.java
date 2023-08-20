@@ -34,21 +34,19 @@ import static com.hazelcast.internal.serialization.SerializableByConvention.Reas
 
 @SerializableByConvention(PUBLIC_API)
 public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
-
     private int factoryId;
     private int classId;
     private int version;
     private Map<String, FieldDefinition> fieldDefinitionsMap;
 
     @SuppressWarnings("unused")
-    private ClassDefinitionImpl() {
-    }
+    private ClassDefinitionImpl() { }
 
     public ClassDefinitionImpl(int factoryId, int classId, int version) {
         this.factoryId = factoryId;
         this.classId = classId;
         this.version = version;
-        this.fieldDefinitionsMap = new LinkedHashMap<>();
+        fieldDefinitionsMap = new LinkedHashMap<>();
     }
 
     public void addFieldDef(FieldDefinitionImpl fd) {
@@ -152,16 +150,10 @@ public class ClassDefinitionImpl implements ClassDefinition, DataSerializable {
             return false;
         }
         ClassDefinitionImpl that = (ClassDefinitionImpl) o;
-        if (factoryId != that.factoryId) {
-            return false;
-        }
-        if (classId != that.classId) {
-            return false;
-        }
-        if (version != that.version) {
-            return false;
-        }
-        return fieldDefinitionsMap.equals(that.fieldDefinitionsMap);
+        return factoryId == that.factoryId
+                && classId == that.classId
+                && version == that.version
+                && fieldDefinitionsMap.equals(that.fieldDefinitionsMap);
     }
 
     @Override

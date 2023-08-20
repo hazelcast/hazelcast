@@ -78,11 +78,11 @@ public final class QueryUtil {
 
             EntryObject object;
             if (rightPath.isKey()) {
-                object = rightPath.isTop()
+                object = rightPath.isTopLevel()
                         ? entryObject.key()
                         : entryObject.key().get(rightPath.getPath());
             } else {
-                object = rightPath.isTop()
+                object = rightPath.isTopLevel()
                         ? entryObject.get(rightPath.toString())
                         : entryObject.get(QueryPath.VALUE).get(rightPath.getPath());
             }

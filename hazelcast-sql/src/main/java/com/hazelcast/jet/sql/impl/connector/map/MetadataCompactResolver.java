@@ -16,10 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaWriter;
+import com.hazelcast.internal.util.collection.DefaultedMap;
+import com.hazelcast.internal.util.collection.DefaultedMap.DefaultedMapBuilder;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
@@ -34,6 +37,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -46,11 +50,28 @@ import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.e
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 
 final class MetadataCompactResolver implements KvMetadataResolver {
-
     static final MetadataCompactResolver INSTANCE = new MetadataCompactResolver();
 
-    private MetadataCompactResolver() {
-    }
+    private static final DefaultedMap<QueryDataTypeFamily, FieldKind> SQL_TO_COMPACT = new DefaultedMapBuilder<>(
+            new EnumMap<>(ImmutableMap.<QueryDataTypeFamily, FieldKind>builder()
+                    .put(QueryDataTypeFamily.BOOLEAN, FieldKind.NULLABLE_BOOLEAN)
+                    .put(QueryDataTypeFamily.TINYINT, FieldKind.NULLABLE_INT8)
+                    .put(QueryDataTypeFamily.SMALLINT, FieldKind.NULLABLE_INT16)
+                    .put(QueryDataTypeFamily.INTEGER, FieldKind.NULLABLE_INT32)
+                    .put(QueryDataTypeFamily.BIGINT, FieldKind.NULLABLE_INT64)
+                    .put(QueryDataTypeFamily.REAL, FieldKind.NULLABLE_FLOAT32)
+                    .put(QueryDataTypeFamily.DOUBLE, FieldKind.NULLABLE_FLOAT64)
+                    .put(QueryDataTypeFamily.DECIMAL, FieldKind.DECIMAL)
+                    .put(QueryDataTypeFamily.VARCHAR, FieldKind.STRING)
+                    .put(QueryDataTypeFamily.TIME, FieldKind.TIME)
+                    .put(QueryDataTypeFamily.DATE, FieldKind.DATE)
+                    .put(QueryDataTypeFamily.TIMESTAMP, FieldKind.TIMESTAMP)
+                    .put(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE, FieldKind.TIMESTAMP_WITH_TIMEZONE)
+                    .put(QueryDataTypeFamily.OBJECT, FieldKind.COMPACT)
+                    .build()))
+            .orElseThrow(type -> new IllegalArgumentException("Compact format does not allow " + type + " data type"));
+
+    private MetadataCompactResolver() { }
 
     @Override
     public Stream<String> supportedFormats() {
@@ -75,11 +96,11 @@ final class MetadataCompactResolver implements KvMetadataResolver {
             throw QueryException.error("Unable to resolve table metadata. Missing '" + typeNameProperty + "' option");
         }
 
-        Map<QueryPath, MappingField> fields = extractFields(userFields, isKey);
-        return fields.entrySet().stream()
+        Map<QueryPath, MappingField> fieldsByPath = extractFields(userFields, isKey);
+        return fieldsByPath.entrySet().stream()
                 .map(entry -> {
                     QueryPath path = entry.getKey();
-                    if (path.getPath() == null) {
+                    if (path.isTopLevel()) {
                         throw QueryException.error("Cannot use the '" + path + "' field with Compact serialization");
                     }
                     QueryDataType type = entry.getValue().type();
@@ -122,48 +143,9 @@ final class MetadataCompactResolver implements KvMetadataResolver {
     }
 
     private Schema resolveSchema(String typeName, Map<QueryPath, MappingField> fields) {
-        SchemaWriter schemaWriter = new SchemaWriter(typeName);
-        for (Entry<QueryPath, MappingField> entry : fields.entrySet()) {
-            String name = entry.getKey().getPath();
-            QueryDataType type = entry.getValue().type();
-            schemaWriter.addField(new FieldDescriptor(name, resolveToCompactKind(type.getTypeFamily())));
-        }
-        return schemaWriter.build();
-    }
-
-    @SuppressWarnings("checkstyle:ReturnCount")
-    private static FieldKind resolveToCompactKind(QueryDataTypeFamily type) {
-        switch (type) {
-            case BOOLEAN:
-                return FieldKind.NULLABLE_BOOLEAN;
-            case TINYINT:
-                return FieldKind.NULLABLE_INT8;
-            case SMALLINT:
-                return FieldKind.NULLABLE_INT16;
-            case INTEGER:
-                return FieldKind.NULLABLE_INT32;
-            case BIGINT:
-                return FieldKind.NULLABLE_INT64;
-            case REAL:
-                return FieldKind.NULLABLE_FLOAT32;
-            case DOUBLE:
-                return FieldKind.NULLABLE_FLOAT64;
-            case DECIMAL:
-                return FieldKind.DECIMAL;
-            case VARCHAR:
-                return FieldKind.STRING;
-            case TIME:
-                return FieldKind.TIME;
-            case DATE:
-                return FieldKind.DATE;
-            case TIMESTAMP:
-                return FieldKind.TIMESTAMP;
-            case TIMESTAMP_WITH_TIME_ZONE:
-                return FieldKind.TIMESTAMP_WITH_TIMEZONE;
-            case OBJECT:
-                return FieldKind.COMPACT;
-            default:
-                throw new IllegalArgumentException("Compact format does not allow " + type + " data type");
-        }
+        SchemaWriter schema = new SchemaWriter(typeName);
+        fields.forEach((path, field) -> schema.addField(new FieldDescriptor(path.getPath(),
+                SQL_TO_COMPACT.getOrDefault(field.type().getTypeFamily()))));
+        return schema.build();
     }
 }

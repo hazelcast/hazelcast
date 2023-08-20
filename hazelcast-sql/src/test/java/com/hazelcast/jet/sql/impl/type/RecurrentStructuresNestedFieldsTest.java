@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
@@ -25,6 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.function.Consumer;
 
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -40,6 +40,14 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         initializeWithClient(2, config, null);
     }
 
+    private static void createJavaMapping(String name, Class<?> valueClass, String... valueFields) {
+        BasicNestedFieldsTest.createJavaMapping(client(), name, valueClass, valueFields);
+    }
+
+    private static void createJavaType(String name, Class<?> typeClass, String... fields) {
+        BasicNestedFieldsTest.createJavaType(client(), name, typeClass, fields);
+    }
+
     @Test
     public void test_cyclicTypeUpsertsValidationError() {
         createJavaType("FCA", FullyConnectedA.class, "name VARCHAR", "b FCB", "c FCC");
@@ -53,37 +61,18 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
                 "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
         createJavaMapping("tableD", DualPathGraph.class, "this DualGraph");
 
-        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableA VALUES (1, ?)"))
-                .isInstanceOf(HazelcastException.class)
+        Consumer<String> assertNotSupported = sql -> assertThatThrownBy(() -> client().getSql().execute(sql))
                 .hasMessageContaining("Upserts are not supported for cyclic data type columns");
 
-        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableB VALUES (1, ?)"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+        assertNotSupported.accept("INSERT INTO tableA VALUES (1, ?)");
+        assertNotSupported.accept("INSERT INTO tableB VALUES (1, ?)");
+        assertNotSupported.accept("INSERT INTO tableC VALUES (1, ?)");
+        assertNotSupported.accept("INSERT INTO tableD VALUES (1, ?)");
 
-        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableC VALUES (1, ?)"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
-
-        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableD VALUES (1, ?)"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
-
-        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableA SET this = ? WHERE __key = 1"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
-
-        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableB SET this = ? WHERE __key = 1"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
-
-        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableC SET this = ? WHERE __key = 1"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
-
-        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableD SET this = ? WHERE __key = 1"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+        assertNotSupported.accept("UPDATE tableA SET this = ? WHERE __key = 1");
+        assertNotSupported.accept("UPDATE tableB SET this = ? WHERE __key = 1");
+        assertNotSupported.accept("UPDATE tableC SET this = ? WHERE __key = 1");
+        assertNotSupported.accept("UPDATE tableD SET this = ? WHERE __key = 1");
     }
 
     @Test
@@ -202,14 +191,6 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
                         + " FROM test",
                 rows(8, "A1", "A2", "A3", "A4", "A5", "A1", "A4", "A3"));
 
-    }
-
-    private void createJavaType(String name, Class<?> typeClass, String... columns) {
-        BasicNestedFieldsTest.createJavaType(client(), name, typeClass, columns);
-    }
-
-    private void createJavaMapping(String name, Class<?> javaClass, String... columns) {
-        BasicNestedFieldsTest.createJavaMapping(client(), name, javaClass, columns);
     }
 
     public static class FullyConnectedA implements Serializable {

@@ -18,11 +18,12 @@ package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.impl.portable.DeserializedPortableGenericRecord;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -32,12 +33,22 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class PortableNestedFieldsTest extends SqlTestSupport {
+
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig()
@@ -70,7 +81,6 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
                 .addStringField("name")
                 .addPortableField("organization", organizationType)
                 .build();
-
         serializationConfig.addClassDefinition(userType);
 
         ClassDefinition userType2 = new ClassDefinitionBuilder(1, 5)
@@ -78,15 +88,52 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
                 .addStringField("name")
                 .addPortableField("organizationAndLong", organizationAndLongType)
                 .build();
-
         serializationConfig.addClassDefinition(userType2);
+
         initialize(2, config);
+    }
+
+    static void setupPortableTypesForNestedQuery(HazelcastInstance instance) {
+        createPortableType(instance, "Office", 1, 3);
+        createPortableType(instance, "Organization", 1, 2);
+
+        createPortableMapping(instance, "test", 1, 1, "id BIGINT", "name VARCHAR", "organization Organization");
+    }
+
+    static void createPortableMapping(HazelcastInstance instance, String name, int factoryId, int classId,
+                                      String... valueFields) {
+        new SqlMapping(name, IMapSqlConnector.class)
+                .fields("__key BIGINT")
+                .fields(valueFields)
+                .options(OPTION_KEY_FORMAT, "bigint",
+                         OPTION_VALUE_FORMAT, PORTABLE_FORMAT,
+                         OPTION_VALUE_FACTORY_ID, factoryId,
+                         OPTION_VALUE_CLASS_ID, classId)
+                .create(instance);
+    }
+
+    static void createPortableType(HazelcastInstance instance, String name, int factoryId, int classId,
+                                   String... fields) {
+        new SqlType(name)
+                .fields(fields)
+                .options(OPTION_FORMAT, PORTABLE_FORMAT,
+                         OPTION_TYPE_PORTABLE_FACTORY_ID, factoryId,
+                         OPTION_TYPE_PORTABLE_CLASS_ID, classId)
+                .create(instance);
+    }
+
+    private static void createPortableType(String name, int factoryId, int classId, String... fields) {
+        createPortableType(instance(), name, factoryId, classId, fields);
+    }
+
+    private static SqlResult execute(String sql) {
+        return instance().getSql().execute(sql);
     }
 
     @Test
     public void test_basicQuerying() {
         setupPortableTypesForNestedQuery(instance());
-        instance().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
+        execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
 
         assertRowsAnyOrder("SELECT (organization).name FROM test", rows(1, "organization1"));
         assertRowsAnyOrder("SELECT (organization).office.name FROM test", rows(1, "office1"));
@@ -94,28 +141,16 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_nestedPortablesAreReturnedAsDeserialized() {
-        instance().getSql().execute("CREATE TYPE Office OPTIONS "
-                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='3', 'portableClassVersion'='0')");
-        instance().getSql().execute("CREATE TYPE Organization OPTIONS "
-                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='2', 'portableClassVersion'='0')");
-        instance().getSql().execute("CREATE TYPE OrganizationAndLong OPTIONS "
-                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='4', 'portableClassVersion'='0')");
+        createPortableType("Office", 1, 3);
+        createPortableType("Organization", 1, 2, "id BIGINT", "name VARCHAR", "office Office");
+        createPortableType("OrganizationAndLong", 1, 4, "id BIGINT", "l BIGINT", "organization Organization");
 
-        instance().getSql().execute("CREATE MAPPING test ("
-                + "__key BIGINT, "
-                + "id BIGINT, "
-                + "name VARCHAR, "
-                + "organizationAndLong OrganizationAndLong "
-                + ") TYPE IMap "
-                + "OPTIONS ("
-                + "'keyFormat'='bigint', "
-                + "'valueFormat'='portable', "
-                + "'valuePortableFactoryId'='1', "
-                + "'valuePortableClassId'='5')");
+        createPortableMapping(instance(), "test", 1, 5,
+                "id BIGINT", "name VARCHAR", "organizationAndLong OrganizationAndLong");
 
-        instance().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 1, (1, 'organization1', (1, 'office1'))))");
+        execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 1, (1, 'organization1', (1, 'office1'))))");
 
-        SqlResult result = instance().getSql().execute("SELECT (organizationAndLong).organization.office FROM test");
+        SqlResult result = execute("SELECT (organizationAndLong).organization.office FROM test");
         ArrayList<SqlRow> rows = new ArrayList<>();
         for (SqlRow row : result) {
             rows.add(row);
@@ -126,17 +161,14 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void when_unknownClassDef_noColumns_then_fail() {
-        assertThatThrownBy(() -> instance().getSql().execute("CREATE TYPE Foo " +
-                        "OPTIONS('format'='portable', 'portableFactoryId'='42', 'portableClassId'='43')"))
-                .isInstanceOf(HazelcastSqlException.class)
+        assertThatThrownBy(() -> createPortableType("Foo", 42, 43))
                 .hasMessage("The given FactoryID/ClassID/Version combination not known to the member. You need" +
                         " to provide column list for this type");
     }
 
     @Test
     public void test_unknownClassDef_givenColumns() {
-        instance().getSql().execute("CREATE TYPE Foo (column1 INT, column2 VARCHAR) " +
-                "OPTIONS('format'='portable', 'portableFactoryId'='44', 'portableClassId'='45')");
-        // we test that the above command doesn't fail.
+        assertThatCode(() -> createPortableType("Foo", 44, 45, "column1 INT", "column2 VARCHAR"))
+                .doesNotThrowAnyException();
     }
 }

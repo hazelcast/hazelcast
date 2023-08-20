@@ -18,10 +18,10 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple4;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroDeserializer;
 import com.hazelcast.jet.kafka.HazelcastKafkaAvroSerializer;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
@@ -34,7 +34,6 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.SchemaBuilder.FieldAssembler;
-import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -57,13 +56,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -78,11 +75,9 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroSchemaEvolutionTest.NAME_SSN_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
 import static java.time.ZoneOffset.UTC;
-import static java.util.Arrays.asList;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -123,13 +118,13 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
     @Parameters(name = "useSchemaRegistry=[{0}]")
     public static Iterable<Object> parameters() {
-        return asList(false, true);
+        return List.of(false, true);
     }
 
     @Parameter
     public boolean useSchemaRegistry;
 
-    private SqlMapping mapping;
+    private Type mapping;
     private Schema keySchema;
     private Schema valueSchema;
     private Map<String, String> clientProperties;
@@ -152,7 +147,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                                   OPTION_VALUE_AVRO_SCHEMA, valueSchema.toString());
         kafkaTestSupport.setProducerProperties(name, clientProperties);
 
-        return mapping = new SqlMapping(name, KafkaSqlConnector.TYPE_NAME)
+        return new KafkaMapping(name)
                 .options(OPTION_KEY_FORMAT, AVRO_FORMAT,
                          OPTION_VALUE_FORMAT, AVRO_FORMAT,
                          "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
@@ -215,7 +210,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
-                asList(
+                List.of(
                         new Row(1, "Alice"),
                         new Row(2, "Bob")
                 )
@@ -325,7 +320,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
-                asList(
+                List.of(
                         new Row(1, null),
                         new Row(2, true),
                         new Row(3, true),
@@ -371,7 +366,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 List.of(tuple2(QueryDataTypeFamily.REAL, 1F),
                         tuple2(QueryDataTypeFamily.DOUBLE, 1D)),
                 List.of(tuple2(Schema.Type.STRING, "1.0"))));
-        conversions.addAll(asList(
+        conversions.addAll(List.of(
                 tuple4(QueryDataTypeFamily.TIME, LocalTime.of(12, 23, 34), Schema.Type.STRING, "12:23:34"),
                 tuple4(QueryDataTypeFamily.DATE, LocalDate.of(2020, 4, 15), Schema.Type.STRING, "2020-04-15"),
                 tuple4(QueryDataTypeFamily.TIMESTAMP, LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
@@ -421,7 +416,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 Schema.Type.NULL,
                 Schema.Type.BYTES
         ).forEach(type -> schemaFieldTypes.add(Schema.create(type)));
-        schemaFieldTypes.addAll(asList(
+        schemaFieldTypes.addAll(List.of(
                 OBJECT_SCHEMA, // Schema.Type.UNION
                 SchemaBuilder.array().items(Schema.create(Schema.Type.INT)),
                 SchemaBuilder.map().values(Schema.create(Schema.Type.INT)),
@@ -516,7 +511,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         // assert both - initial & evolved - records are correctly read
         Runnable assertRecords = () -> assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
-                asList(
+                List.of(
                         new Row(13, "Alice", null),
                         new Row(69, "Bob", 123456789L)
                 )
@@ -697,8 +692,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     private void insertRecord(Object... values) {
-        sqlService.execute("INSERT INTO " + mapping.name + " VALUES (" +
-                Arrays.stream(values).map(SqlAvroTest::toSQL).collect(joining(", ")) + ")");
+        insertLiterals(instance(), mapping.name, values);
     }
 
     private void insertAndAssertRecord(Object... values) {
@@ -713,14 +707,13 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                                        @Nonnull Object[] selectValues) {
         insertRecord(insertValues);
 
-        String[] fields = getExternalFields();
         kafkaTestSupport.assertTopicContentsEventually(
                 mapping.name,
                 Map.of(
-                        createRecord(keySchema, copyOfRange(fields, 0, 1),
+                        createRecord(keySchema, copyOfRange(mapping.fields, 0, 1),
                                 copyOfRange(avroValues, 0, 1)),
-                        createRecord(valueSchema, copyOfRange(fields, 1, fields.length),
-                                copyOfRange(avroValues, 1, fields.length))
+                        createRecord(valueSchema, copyOfRange(mapping.fields, 1, mapping.fields.length),
+                                copyOfRange(avroValues, 1, mapping.fields.length))
                 ),
                 useSchemaRegistry ? KafkaAvroDeserializer.class : HazelcastKafkaAvroDeserializer.class,
                 useSchemaRegistry ? KafkaAvroDeserializer.class : HazelcastKafkaAvroDeserializer.class,
@@ -730,29 +723,6 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 "SELECT * FROM " + mapping.name,
                 List.of(new Row(selectValues))
         );
-    }
-
-    private String[] getExternalFields() {
-        return mapping.fields.stream().map(field -> field.endsWith("\"")
-                ? field.substring(field.lastIndexOf('.') + 1, field.length() - 1)
-                : field.substring(0, field.indexOf(' '))).toArray(String[]::new);
-    }
-
-    private static String toSQL(Object value) {
-        return value == null || value instanceof Boolean || value instanceof Number
-                ? String.valueOf(value) : "'" + value + "'";
-    }
-
-    private static GenericRecord createRecord(Schema schema, String[] fields, Object[] values) {
-        return IntStream.range(0, fields.length).collect(() -> new GenericRecordBuilder(schema),
-                (record, i) -> record.set(fields[i], values[i]),
-                ExceptionUtil::combinerUnsupported).build();
-    }
-
-    private static GenericRecord createRecord(Schema schema, Object... values) {
-        return createRecord(schema,
-                schema.getFields().stream().map(Schema.Field::name).toArray(String[]::new),
-                values);
     }
 
     @SuppressWarnings("unchecked")
@@ -767,5 +737,18 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         return schema.isNullable()
                 ? builder -> builder.name(name).type(schema).withDefault(null)
                 : builder -> builder.name(name).type().optional().type(schema);
+    }
+
+    /** Generates a type tree on creation. */
+    private class KafkaMapping extends SqlMapping {
+        KafkaMapping(String name) {
+            super(name, KafkaSqlConnector.class);
+        }
+
+        @Override
+        protected void create(HazelcastInstance instance, boolean replace, boolean ifNotExists) {
+            super.create(instance, replace, ifNotExists);
+            mapping = toTypeTree();
+        }
     }
 }

@@ -20,8 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -29,17 +27,22 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_JAVA_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_VERSION;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
-import static java.lang.String.format;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -58,43 +61,60 @@ public class NestedTypesDDLTest extends SqlTestSupport {
         storage = sqlServiceImpl(instance()).getOptimizer().relationsStorage();
     }
 
+    private static SqlType newJavaType(String name, Class<?> typeClass) {
+        return new SqlType(name)
+                .options(OPTION_FORMAT, JAVA_FORMAT,
+                         OPTION_TYPE_JAVA_CLASS, typeClass.getName());
+    }
+
+    private static SqlType newPortableType(String name, int factoryId, int classId) {
+        return new SqlType(name)
+                .options(OPTION_FORMAT, PORTABLE_FORMAT,
+                         OPTION_TYPE_PORTABLE_FACTORY_ID, factoryId,
+                         OPTION_TYPE_PORTABLE_CLASS_ID, classId);
+    }
+
+    private static SqlType newCompactType(String name, String compactTypeName) {
+        return new SqlType(name)
+                .options(OPTION_FORMAT, COMPACT_FORMAT,
+                         OPTION_TYPE_COMPACT_TYPE_NAME, compactTypeName);
+    }
+
     @Test
     public void test_createTypeIsNotDuplicatedByDefault() {
-        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
-        assertThatThrownBy(() -> instance().getSql()
-                .execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName())))
-                .isInstanceOf(HazelcastSqlException.class)
+        newJavaType("FirstType", FirstType.class).create();
+        assertThatThrownBy(() -> newJavaType("FirstType", SecondType.class).create())
                 .hasMessage("Type already exists: FirstType");
         assertEquals(FirstType.class.getName(), storage.getType("FirstType").getJavaClassName());
     }
 
     @Test
     public void test_replaceType() {
-        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
-        execute(format("CREATE OR REPLACE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName()));
+        newJavaType("FirstType", FirstType.class).create();
+        newJavaType("FirstType", SecondType.class).createOrReplace();
 
         assertEquals(SecondType.class.getName(), storage.getType("FirstType").getJavaClassName());
     }
 
     @Test
     public void test_createIfNotExists() {
-        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
-        execute(format("CREATE TYPE IF NOT EXISTS FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName()));
+        newJavaType("FirstType", FirstType.class).create();
+        newJavaType("FirstType", SecondType.class).createIfNotExists();
 
         assertEquals(FirstType.class.getName(), storage.getType("FirstType").getJavaClassName());
     }
 
     @Test
     public void test_showTypes() {
-        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
-        execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName()));
+        newJavaType("FirstType", FirstType.class).create();
+        newJavaType("SecondType", SecondType.class).create();
+
         assertRowsAnyOrder("SHOW TYPES", rows(1, "FirstType", "SecondType"));
     }
 
     @Test
     public void test_dropNonexistentType() {
         assertThatThrownBy(() -> execute("DROP TYPE Foo"))
-                .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("Type does not exist: Foo");
 
         execute("DROP TYPE IF EXISTS Foo");
@@ -102,79 +122,77 @@ public class NestedTypesDDLTest extends SqlTestSupport {
 
     @Test
     public void test_createTwoTypesForSameJavaClass() {
-        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
-        execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+        newJavaType("FirstType", FirstType.class).create();
+        assertThatCode(() -> newJavaType("SecondType", FirstType.class).create())
+                .doesNotThrowAnyException();
     }
 
     @Test
     public void test_createTwoTypesForSamePortableClass() {
-        execute("CREATE TYPE FirstType(a INT, b INT) OPTIONS ('format'='portable','portableFactoryId'='123','portableClassId'='456')");
-        execute("CREATE TYPE SecondType(c VARCHAR, d VARCHAR) OPTIONS ('format'='portable','portableFactoryId'='123','portableClassId'='456')");
+        newPortableType("FirstType", 123, 456).fields("a INT", "b INT").create();
+        newPortableType("SecondType", 123, 456).fields("c VARCHAR", "d VARCHAR").create();
 
-        try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + "m(" +
-                "e varchar" +
-                ")" + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-                + ", '" + OPTION_KEY_CLASS + "'='" + Long.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + 123 + '\''
-                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + 456 + '\''
-                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + 0 + '\''
-                + ")"
-        )) {
-            assertThat(result.updateCount()).isEqualTo(0);
-        }
+        assertThatCode(() ->
+                new SqlMapping("m", IMapSqlConnector.class)
+                        .fields("e varchar")
+                        .options(OPTION_KEY_FORMAT, JAVA_FORMAT,
+                                 OPTION_KEY_CLASS, Long.class.getName(),
+                                 OPTION_VALUE_FORMAT, PORTABLE_FORMAT,
+                                 OPTION_VALUE_FACTORY_ID, 123,
+                                 OPTION_VALUE_CLASS_ID, 456,
+                                 OPTION_VALUE_CLASS_VERSION, 0)
+                        .createOrReplace())
+                .doesNotThrowAnyException();
     }
 
     @Test
     public void test_createTwoTypesForSameCompactClass() {
-        execute("CREATE TYPE FirstType(a int, b varchar) OPTIONS ('format'='compact','compactTypeName'='foo')");
-        execute("CREATE TYPE SecondType(a int, b varchar) OPTIONS ('format'='compact','compactTypeName'='foo')");
+        newCompactType("FirstType", "foo").fields("a int", "b varchar").create();
+        assertThatCode(() -> newCompactType("SecondType", "foo").fields("a int", "b varchar").create())
+                .doesNotThrowAnyException();
     }
 
     @Test
     public void when_javaClassUnknown_then_fail() {
         assertThatThrownBy(() ->
-                execute("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='foo')"))
+                new SqlType("FirstType")
+                        .options(OPTION_FORMAT, JAVA_FORMAT,
+                                 OPTION_TYPE_JAVA_CLASS, "foo")
+                        .create())
                 .hasRootCauseMessage("foo")
                 .hasRootCauseInstanceOf(ClassNotFoundException.class);
     }
 
     @Test
     public void when_portableClassDefNotKnown_then_requireFields() {
-        assertThatThrownBy(() ->
-                execute("CREATE TYPE FirstType OPTIONS ('format'='portable','portableFactoryId'='123','portableClassId'='456')"))
+        assertThatThrownBy(() -> newPortableType("FirstType", 123, 456).create())
                 .hasMessage("The given FactoryID/ClassID/Version combination not known to the member. You need to provide column list for this type");
     }
 
     @Test
     public void when_compactTypeNoColumns_then_fail() {
-        assertThatThrownBy(() ->
-                execute("CREATE TYPE FirstType OPTIONS ('format'='compact','compactTypeName'='foo')"))
+        assertThatThrownBy(() -> newCompactType("FirstType", "foo").create())
                 .hasMessage("Column list is required to create Compact-based Types");
     }
 
     @Test
     public void test_failOnDuplicateColumnName() {
-        assertThatThrownBy(() -> execute("CREATE TYPE TestType (id BIGINT, id BIGINT) "
-                + "OPTIONS ('format'='compact', 'compactTypeName'='TestType')"))
-                .isInstanceOf(HazelcastSqlException.class)
+        assertThatThrownBy(() -> newCompactType("TestType", "TestType").fields("id BIGINT", "id BIGINT").create())
                 .hasMessageContaining("Column 'id' specified more than once");
     }
 
     @Test
     public void test_failOnReplaceAndIfNotExists() {
         assertThatThrownBy(() -> execute("CREATE OR REPLACE TYPE IF NOT EXISTS TestType (id BIGINT, name VARCHAR) "
-                + "OPTIONS ('format'='compact', 'compactTypeName'='TestType')"))
-                .isInstanceOf(HazelcastSqlException.class)
+                + "OPTIONS ("
+                + "'" + OPTION_FORMAT + "'='" + COMPACT_FORMAT + "',"
+                + "'" + OPTION_TYPE_COMPACT_TYPE_NAME + "'='TestType')"))
                 .hasMessageContaining("OR REPLACE in conjunction with IF NOT EXISTS not supported");
     }
 
     @Test
     public void test_fullyQualifiedTypeName() {
-        execute(format("CREATE TYPE hazelcast.public.FirstType OPTIONS ('format'='java','javaClass'='%s')",
-                FirstType.class.getName()));
+        newJavaType("hazelcast.public.FirstType", FirstType.class).create();
         assertNotNull(storage.getType("FirstType"));
 
         execute("DROP TYPE hazelcast.public.FirstType");
@@ -183,25 +201,20 @@ public class NestedTypesDDLTest extends SqlTestSupport {
 
     @Test
     public void test_failOnNonPublicSchemaType() {
-        assertThatThrownBy(() -> execute("CREATE TYPE information_schema.TestType (id BIGINT, name VARCHAR) "
-                + "OPTIONS ('format'='compact', 'compactTypeName'='TestType')"))
-                .isInstanceOf(HazelcastSqlException.class)
+        assertThatThrownBy(() -> newCompactType("information_schema.TestType", "TestType").create())
                 .hasMessageContaining("The type must be created in the \"public\" schema");
         assertNull(storage.getType("TestType"));
 
-        execute(format("CREATE TYPE hazelcast.public.TestType OPTIONS ('format'='java','javaClass'='%s')",
-                FirstType.class.getName()));
+        newJavaType("hazelcast.public.TestType", FirstType.class).create();
         assertThatThrownBy(() -> execute("DROP TYPE information_schema.TestType"))
-                .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Type does not exist: information_schema.TestType");
         assertNotNull(storage.getType("TestType"));
     }
 
     @Test
     public void test_failOnDuplicateOptions() {
-        assertThatThrownBy(() -> execute("CREATE TYPE TestType (id BIGINT, name VARCHAR) "
+        assertThatThrownBy(() -> execute("CREATE TYPE TestType "
                 + "OPTIONS ('format'='compact', 'compactTypeName'='TestType', 'compactTypeName'='TestType2')"))
-                .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Option 'compactTypeName' specified more than once");
     }
 

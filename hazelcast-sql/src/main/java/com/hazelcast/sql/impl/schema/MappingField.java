@@ -89,11 +89,19 @@ public class MappingField implements IdentifiedDataSerializable {
     }
 
     /**
-     * The external name of a field. For example, in case of IMap or Kafka,
+     * The external name of the field. For example, in case of IMap or Kafka,
      * it always starts with `__key` or `this`.
      */
     public String externalName() {
         return (String) properties.get(EXTERNAL_NAME);
+    }
+
+    /**
+     * The external name of the field without `__key` or `this` prefix.
+     */
+    public String plainExternalName() {
+        String name = externalName();
+        return name.substring(name.indexOf('.') + 1);
     }
 
     @Nonnull

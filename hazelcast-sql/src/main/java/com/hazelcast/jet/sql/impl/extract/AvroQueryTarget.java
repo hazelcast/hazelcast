@@ -27,7 +27,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 @NotThreadSafe
 public class AvroQueryTarget implements QueryTarget {
-
     private GenericRecord record;
 
     @Override

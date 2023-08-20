@@ -95,14 +95,14 @@ final class FileUtil {
                     .name("object").type().nullable().record("object").fields().endRecord().noDefault()
                     .endRecord()),
                 (builder, field) -> builder.set(field, AVRO_RECORD.get(field.pos())),
-                ExceptionUtil::combinerUnsupported
+                ExceptionUtil::notParallelizable
             ).build();
 
     static final Record AVRO_NULL_RECORD =
             AVRO_NULLABLE_RECORD.getSchema().getFields().stream().collect(
                     () -> new GenericRecordBuilder(AVRO_NULLABLE_RECORD.getSchema()),
                     (builder, field) -> builder.set(field, null),
-                    ExceptionUtil::combinerUnsupported
+                    ExceptionUtil::notParallelizable
             ).build();
 
     private static final Record PARQUET_RECORD =

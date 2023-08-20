@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.PortableId;
 import com.hazelcast.sql.impl.FieldsUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -37,9 +37,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.sql.impl.connector.map.MetadataPortableResolver.PORTABLE_TO_SQL;
+
 public final class TypesUtils {
-    private TypesUtils() {
-    }
+    private TypesUtils() { }
 
     public static QueryDataType convertTypeToQueryDataType(final Type rootType, final RelationsStorage relationsStorage) {
         return convertTypeToQueryDataTypeInt(rootType.name(), rootType, relationsStorage, new HashMap<>());
@@ -72,14 +73,11 @@ public final class TypesUtils {
                                 .filter(t -> t.getPortableClassId().equals(portableField.getClassId()))
                                 .filter(t -> t.getPortableVersion().equals(portableField.getVersion()))
                                 .findFirst()
-                                .orElseThrow(() -> QueryException.error("Type with Portable IDs " + encodePortableId(
-                                                portableField.getFactoryId(),
-                                                portableField.getClassId(),
-                                                portableField.getVersion()
-                                ) + " does not exist.")));
+                                .orElseThrow(() -> QueryException.error("Type with Portable IDs "
+                                        + portableField.getPortableId() + " does not exist.")));
 
             } else {
-                queryDataType = resolvePortableFieldType(portableField.getType());
+                queryDataType = PORTABLE_TO_SQL.getOrDefault(portableField.getType());
             }
 
             typeField.setQueryDataType(queryDataType);
@@ -90,80 +88,21 @@ public final class TypesUtils {
         return type;
     }
 
-    @SuppressWarnings("checkstyle:ReturnCount")
-    public static QueryDataType resolvePortableFieldType(FieldType fieldType) {
-        switch (fieldType) {
-            case BOOLEAN:
-                return QueryDataType.BOOLEAN;
-            case BYTE:
-                return QueryDataType.TINYINT;
-            case SHORT:
-                return QueryDataType.SMALLINT;
-            case INT:
-                return QueryDataType.INT;
-            case LONG:
-                return QueryDataType.BIGINT;
-            case FLOAT:
-                return QueryDataType.REAL;
-            case DOUBLE:
-                return QueryDataType.DOUBLE;
-            case DECIMAL:
-                return QueryDataType.DECIMAL;
-            case CHAR:
-                return QueryDataType.VARCHAR_CHARACTER;
-            case UTF:
-                return QueryDataType.VARCHAR;
-            case TIME:
-                return QueryDataType.TIME;
-            case DATE:
-                return QueryDataType.DATE;
-            case TIMESTAMP:
-                return QueryDataType.TIMESTAMP;
-            case TIMESTAMP_WITH_TIMEZONE:
-                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
-            case PORTABLE:
-            default:
-                return QueryDataType.OBJECT;
-        }
-    }
-
-    public static QueryDataType toQueryDataTypeRef(final Type type) {
-        final QueryDataType queryDataType;
+    public static QueryDataType toQueryDataTypeRef(Type type) {
         switch (type.getKind()) {
             case JAVA:
-                queryDataType = new QueryDataType(type.name(), QueryDataType.OBJECT_TYPE_KIND_JAVA);
-                queryDataType.setObjectTypeMetadata(type.getJavaClassName());
-                return queryDataType;
+                return new QueryDataType(type.name(), TypeKind.JAVA, type.getJavaClassName());
             case PORTABLE:
-                queryDataType = new QueryDataType(type.name(), QueryDataType.OBJECT_TYPE_KIND_PORTABLE);
-                queryDataType.setObjectTypeMetadata(encodePortableId(
+                return new QueryDataType(type.name(), TypeKind.PORTABLE, new PortableId(
                         type.getPortableFactoryId(),
                         type.getPortableClassId(),
                         type.getPortableVersion()
-                ));
-                return queryDataType;
+                ).toString());
             case COMPACT:
-                queryDataType = new QueryDataType(type.name(), QueryDataType.OBJECT_TYPE_KIND_COMPACT);
-                queryDataType.setObjectTypeMetadata(type.getCompactTypeName());
-                return queryDataType;
+                return new QueryDataType(type.name(), TypeKind.COMPACT, type.getCompactTypeName());
             default:
                 throw new UnsupportedOperationException("Not implemented yet.");
         }
-    }
-
-    public static String encodePortableId(final int factoryId, final int classId, final int version) {
-        return factoryId + ":" + classId + ":" + version;
-    }
-
-    public static Tuple3<Integer, Integer, Integer> decodePortableId(final String encoded) {
-        final String[] components = encoded.split(":");
-        assert components.length == 3 : "Number of Portable ID components should always be 3";
-
-        return Tuple3.tuple3(
-                Integer.parseInt(components[0]),
-                Integer.parseInt(components[1]),
-                Integer.parseInt(components[2])
-        );
     }
 
     public static Type convertJavaClassToType(

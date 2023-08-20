@@ -22,14 +22,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.PortableId;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
 @SerializableByConvention(PUBLIC_API)
 public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
-
     private int index;
     private String fieldName;
     private FieldType type;
@@ -38,8 +39,7 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
     private int version;
 
     @SuppressWarnings("unused")
-    private FieldDefinitionImpl() {
-    }
+    private FieldDefinitionImpl() { }
 
     public FieldDefinitionImpl(int index, String fieldName, FieldType type, int version) {
         this(index, fieldName, type, 0, 0, version);
@@ -52,6 +52,10 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
         this.factoryId = factoryId;
         this.classId = classId;
         this.version = version;
+    }
+
+    public FieldDefinitionImpl(int index, String fieldName, FieldType type, PortableId portableId) {
+        this(index, fieldName, type, portableId.getFactoryId(), portableId.getClassId(), portableId.getVersion());
     }
 
     @Override
@@ -113,35 +117,18 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         FieldDefinitionImpl that = (FieldDefinitionImpl) o;
-        if (index != that.index) {
-            return false;
-        }
-        if (factoryId != that.factoryId) {
-            return false;
-        }
-        if (classId != that.classId) {
-            return false;
-        }
-        if (version != that.version) {
-            return false;
-        }
-        if (fieldName != null ? !fieldName.equals(that.fieldName) : that.fieldName != null) {
-            return false;
-        }
-        return type == that.type;
+        return index == that.index
+                && Objects.equals(fieldName, that.fieldName)
+                && type == that.type
+                && factoryId == that.factoryId
+                && classId == that.classId
+                && version == that.version;
     }
 
     @Override
     public int hashCode() {
-        int result = index;
-        result = 31 * result + (fieldName != null ? fieldName.hashCode() : 0);
-        result = 31 * result + (type != null ? type.hashCode() : 0);
-        result = 31 * result + factoryId;
-        result = 31 * result + classId;
-        result = 31 * result + version;
-        return result;
+        return Objects.hash(index, fieldName, type, factoryId, classId, version);
     }
 
     @Override

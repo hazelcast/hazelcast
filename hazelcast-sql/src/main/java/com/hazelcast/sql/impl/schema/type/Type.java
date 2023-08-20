@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.schema.type;
 
-import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -52,8 +51,7 @@ public class Type implements Serializable, SqlCatalogObject {
     private Integer portableVersion;
     private List<TypeField> fields;
 
-    public Type() {
-    }
+    public Type() { }
 
     @Override
     public String name() {
@@ -122,19 +120,19 @@ public class Type implements Serializable, SqlCatalogObject {
 
     public Map<String, String> options() {
         if (javaClassName != null) {
-            return ImmutableMap.of(
+            return Map.of(
                     "format", "java",
                     "javaClass", javaClassName);
         }
 
         if (compactTypeName != null) {
-            return ImmutableMap.of(
+            return Map.of(
                     "format", "compact",
                     "compactTypeName", compactTypeName);
         }
 
         if (portableFactoryId != null) {
-            return ImmutableMap.of(
+            return Map.of(
                     "format", "portable",
                     "portableFactoryId", String.valueOf(portableFactoryId),
                     "portableClassId", String.valueOf(portableClassId),
@@ -212,8 +210,7 @@ public class Type implements Serializable, SqlCatalogObject {
         private String name;
         private QueryDataType queryDataType;
 
-        public TypeField() {
-        }
+        public TypeField() { }
 
         public TypeField(final String name, final QueryDataType queryDataType) {
             this.name = name;
@@ -246,13 +243,13 @@ public class Type implements Serializable, SqlCatalogObject {
         @Override
         public void readData(final ObjectDataInput in) throws IOException {
             this.name = in.readString();
-            final int converterId = in.readInt();
-            final String typeName = in.readString();
-            final Converter converter = Converters.getConverter(converterId);
+            int converterId = in.readInt();
+            String typeName = in.readString();
+            Converter converter = Converters.getConverter(converterId);
 
             // TODO: is this the correct type kind? (NONE). Maybe worth writing it too.
-            this.queryDataType = converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
-                    && ((typeName != null && !typeName.isEmpty()))
+            this.queryDataType = converter.getTypeFamily() == QueryDataTypeFamily.OBJECT
+                            && typeName != null && !typeName.isEmpty()
                     ? new QueryDataType(typeName)
                     : QueryDataTypeUtils.resolveTypeForClass(converter.getValueClass());
         }
