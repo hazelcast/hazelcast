@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataType.QueryDataTypeField;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import org.apache.avro.Schema;
 
 import java.util.HashMap;
 import java.util.List;
@@ -39,9 +40,13 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.COMPACT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.AVRO_TO_SQL;
+import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.inlineSchema;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver.loadClass;
 import static com.hazelcast.jet.sql.impl.connector.map.MetadataCompactResolver.compactTypeName;
 import static com.hazelcast.jet.sql.impl.connector.map.MetadataPortableResolver.PORTABLE_TO_SQL;
@@ -63,6 +68,8 @@ public final class TypeUtils {
                 return new CompactEnricher(relationsStorage);
             case JAVA_FORMAT:
                 return new JavaEnricher(relationsStorage);
+            case AVRO_FORMAT:
+                return new AvroEnricher(relationsStorage);
             default:
                 throw QueryException.error("Unsupported type format: " + format);
         }
@@ -185,6 +192,48 @@ public final class TypeUtils {
 
         private static boolean isUserClass(Class<?> clazz) {
             return !clazz.isPrimitive() && !clazz.getPackage().getName().startsWith("java.");
+        }
+    }
+
+    private static class AvroEnricher extends FieldEnricher<Schema, Schema> {
+        AvroEnricher(RelationsStorage relationsStorage) {
+            super(TypeKind.AVRO, relationsStorage);
+        }
+
+        @Override
+        protected String getTypeMetadata(Schema schema) {
+            // Used only for debugging purposes since AvroUpsertTarget has already a reference to the schema.
+            return schema != null ? schema.toString() : null;
+        }
+
+        @Override
+        protected Schema getSchema(Schema schema) {
+            return schema;
+        }
+
+        @Override
+        protected List<TypeField> resolveFields(Schema schema) {
+            if (schema == null) {
+                throw QueryException.error(
+                        "Either a column list or an inline schema is required to create Avro-based types");
+            }
+            return schema.getFields().stream().map(field -> {
+                Schema fieldSchema = unwrapNullableType(field.schema());
+                if (fieldSchema.getType() == Schema.Type.RECORD) {
+                    throw QueryException.error("Column list is required to create nested fields");
+                }
+                return new TypeField(field.name(), AVRO_TO_SQL.getOrDefault(fieldSchema.getType()));
+            }).collect(toList());
+        }
+
+        @Override
+        protected Schema getFieldSchemaId(Schema schema, String fieldName, String fieldTypeName) {
+            return schema != null ? unwrapNullableType(schema.getField(fieldName).schema()) : null;
+        }
+
+        @Override
+        protected Schema getSchemaId(Map<String, String> options, Boolean isKey) {
+            return inlineSchema(options, isKey);
         }
     }
 

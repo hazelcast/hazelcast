@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.schema;
 
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -106,8 +107,12 @@ public class Mapping implements SqlCatalogObject, Versioned {
         return Collections.unmodifiableList(mappingFields);
     }
 
+    /**
+     * Returned options are modifiable because {@linkplain KvMetadataResolver#getSchemaId
+     * type options can override mapping options}.
+     */
     public Map<String, String> options() {
-        return Collections.unmodifiableMap(options);
+        return options;
     }
 
     @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
@@ -34,10 +33,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.util.Properties;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.file.AvroResolver.unwrapNullableType;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class KafkaSqlTestSupport extends SqlTestSupport {
@@ -83,16 +82,24 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
         return topicName;
     }
 
-    public static GenericRecord createRecord(Schema schema, String[] fields, Object[] values) {
-        return IntStream.range(0, fields.length).collect(() -> new GenericRecordBuilder(schema),
-                (record, i) -> record.set(fields[i], values[i]),
-                ExceptionUtil::notParallelizable).build();
+    public static GenericRecord createRecord(Schema schema, Type.Field[] fields, Object[] values) {
+        GenericRecordBuilder record = new GenericRecordBuilder(schema);
+        for (int i = 0; i < fields.length; i++) {
+            Schema.Field field = schema.getField(fields[i].name);
+            if (values[i] == null) {
+                record.set(field, null);
+            } else {
+                Schema fieldSchema = unwrapNullableType(field.schema());
+                record.set(field, fieldSchema.getType() == Schema.Type.RECORD
+                        ? createRecord(fieldSchema, fields[i].type.fields, (Object[]) values[i])
+                        : values[i]);
+            }
+        }
+        return record.build();
     }
 
     public static GenericRecord createRecord(Schema schema, Object... values) {
-        return createRecord(schema,
-                schema.getFields().stream().map(Schema.Field::name).toArray(String[]::new),
-                values);
+        return createRecord(schema, new Type(schema).fields, values);
     }
 
     protected static void createSqlKafkaDataConnection(String dlName, boolean isShared, String options) {

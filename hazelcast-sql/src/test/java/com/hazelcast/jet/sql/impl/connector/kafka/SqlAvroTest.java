@@ -33,7 +33,6 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
-import org.apache.avro.SchemaBuilder.FieldAssembler;
 import org.apache.avro.generic.GenericRecordBuilder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -60,7 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
@@ -70,10 +68,13 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_RECORD_NAME;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_AVRO_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.kafka.SqlAvroSchemaEvolutionTest.NAME_SSN_SCHEMA;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.Schemas.OBJECT_SCHEMA;
+import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver.optionalField;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Collections.emptyMap;
@@ -130,7 +131,8 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     private Map<String, String> clientProperties;
 
     @BeforeClass
-    public static void initialize() throws Exception {
+    public static void setup() throws Exception {
+        setup(1, smallInstanceConfig().setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true"));
         createSchemaRegistry();
     }
 
@@ -157,6 +159,39 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                 .optionsIf(!useSchemaRegistry,
                            OPTION_KEY_AVRO_SCHEMA, keySchema,
                            OPTION_VALUE_AVRO_SCHEMA, valueSchema);
+    }
+
+    @Test
+    public void test_nestedField() {
+        String name = createRandomTopic();
+        new SqlType("Organization").fields("id INT", "name VARCHAR").create();
+
+        Schema orgSchema = SchemaBuilder.record("Organization").fields()
+                .optionalInt("id")
+                .optionalString("name")
+                .endRecord();
+        Schema personSchema = SchemaBuilder.record("Person").fields()
+                .optionalString("name")
+                .name("organization").type().optional().type(orgSchema)
+                .endRecord();
+
+        kafkaMapping(name, ID_SCHEMA, personSchema)
+                .fields("id INT EXTERNAL NAME \"__key.id\"",
+                        "name VARCHAR",
+                        "organization Organization")
+                .optionsIf(useSchemaRegistry,
+                           OPTION_VALUE_AVRO_RECORD_NAME, "Person")
+                .create();
+
+        insertAndAssertRecord(
+                row(1, "Alice", row(1, "Umbrella Corporation")),
+                row(1, "Alice", row(1, "Umbrella Corporation")),
+                row(1, "Alice", createRecord(orgSchema, 1, "Umbrella Corporation")));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT name, (organization).name FROM " + name,
+                List.of(new Row("Alice", "Umbrella Corporation"))
+        );
     }
 
     @Test
@@ -195,42 +230,74 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     }
 
     @Test
-    public void test_mappingHasMissingOptionalField() {
+    public void test_mappingAndTypeHasMissingOptionalField() {
         assumeFalse(useSchemaRegistry);
         String name = createRandomTopic();
-        kafkaMapping(name, ID_SCHEMA, NAME_SSN_SCHEMA)
+        new SqlType("Parent").fields("name VARCHAR", "phone VARCHAR").create();
+
+        Schema parentSchema = SchemaBuilder.record("Parent").fields()
+                .requiredString("name")
+                .optionalString("address")
+                .requiredString("phone")
+                .endRecord();
+        Schema studentSchema = SchemaBuilder.record("Student").fields()
+                .requiredString("name")
+                .optionalLong("ssn")
+                .name("parent").type(parentSchema).noDefault()
+                .endRecord();
+
+        kafkaMapping(name, ID_SCHEMA, studentSchema)
                 .fields("id INT EXTERNAL NAME \"__key.id\"",
-                        "name VARCHAR")
+                        "name VARCHAR",
+                        "parent Parent")
                 .create();
 
-        insertAndAssertRecord(1, "Alice");
+        insertAndAssertRecord(
+                row(1, "Alice", row("Bob", "(111) 111-1111")),
+                row(1, "Alice", row("Bob", "(111) 111-1111")),
+                row(1, "Alice", createRecord(parentSchema, "Bob", null, "(111) 111-1111")));
 
-        kafkaTestSupport.produce(name, createRecord(ID_SCHEMA, 2),
-                createRecord(NAME_SSN_SCHEMA, "Bob", 123456789L));
+        kafkaTestSupport.produce(name, createRecord(ID_SCHEMA, 3),
+                createRecord(studentSchema, "Dave", 123456789L,
+                        row("Erin", "Insignificant St. 34", "(999) 999-9999")));
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM " + name,
+                "SELECT name, (parent).name, (parent).phone FROM " + name,
                 List.of(
-                        new Row(1, "Alice"),
-                        new Row(2, "Bob")
+                        new Row("Alice", "Bob", "(111) 111-1111"),
+                        new Row("Dave", "Erin", "(999) 999-9999")
                 )
         );
     }
 
     @Test
-    public void when_mappingHasMissingMandatoryField_then_fail() {
+    public void when_mappingOrTypeHasMissingMandatoryField_then_fail() {
         assumeFalse(useSchemaRegistry);
-        Schema schema = SchemaBuilder.record("jet.sql").fields()
+        new SqlType("Parent").fields("name VARCHAR").create();
+
+        Schema parentSchema = SchemaBuilder.record("Parent").fields()
                 .requiredString("name")
-                .requiredLong("ssn")
+                .requiredString("phone")
+                .endRecord();
+        Schema studentSchema = SchemaBuilder.record("Student").fields()
+                .requiredString("name")
+                .name("parent").type(parentSchema).noDefault()
                 .endRecord();
 
         assertThatThrownBy(() ->
-                kafkaMapping("kafka", ID_SCHEMA, schema)
+                kafkaMapping("kafka", ID_SCHEMA, studentSchema)
                         .fields("id INT EXTERNAL NAME \"__key.id\"",
                                 "name VARCHAR")
                         .create())
-                .hasMessage("Mandatory field 'ssn' is not mapped to any column");
+                .hasMessage("Mandatory field 'parent' is not mapped to any column");
+
+        assertThatThrownBy(() ->
+                kafkaMapping("kafka", ID_SCHEMA, studentSchema)
+                        .fields("id INT EXTERNAL NAME \"__key.id\"",
+                                "name VARCHAR",
+                                "parent Parent")
+                        .create())
+                .hasMessage("Mandatory field 'phone' is not mapped to any column");
     }
 
     @Test
@@ -731,12 +798,6 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
         return Lists.cartesianProduct(list1, list2).stream()
                 .map(t -> tuple4((T1) t.get(0).f0(), (T2) t.get(0).f1(), (T3) t.get(1).f0(), (T4) t.get(1).f1()))
                 .collect(toList());
-    }
-
-    private static UnaryOperator<FieldAssembler<Schema>> optionalField(String name, Schema schema) {
-        return schema.isNullable()
-                ? builder -> builder.name(name).type(schema).withDefault(null)
-                : builder -> builder.name(name).type().optional().type(schema);
     }
 
     /** Generates a type tree on creation. */

@@ -56,7 +56,8 @@ public class KvMetadataResolvers {
     // A string of characters (excluding a `.`), optionally prefixed with "__key." or "this."
     private static final Pattern EXT_NAME_PATTERN = Pattern.compile("((" + KEY + "|" + VALUE + ")\\.)?[^.]+");
     private static final Set<String> NESTED_FIELDS_SUPPORTED_FORMATS = new HashSet<>(Set.of(
-            SqlConnector.JAVA_FORMAT, SqlConnector.PORTABLE_FORMAT, SqlConnector.COMPACT_FORMAT));
+            SqlConnector.JAVA_FORMAT, SqlConnector.PORTABLE_FORMAT,
+            SqlConnector.COMPACT_FORMAT, SqlConnector.AVRO_FORMAT));
 
     private final Map<String, KvMetadataResolver> keyResolvers;
     private final Map<String, KvMetadataResolver> valueResolvers;

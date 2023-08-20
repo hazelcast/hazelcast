@@ -48,7 +48,7 @@ public class AvroQueryTarget implements QueryTarget {
         return () -> type.convert(extractValue(record, path));
     }
 
-    private static Object extractValue(GenericRecord record, String path) {
+    public static Object extractValue(GenericRecord record, String path) {
         if (!record.hasField(path)) {
             return null;
         }

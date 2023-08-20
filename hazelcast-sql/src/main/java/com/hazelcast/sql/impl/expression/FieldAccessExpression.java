@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.extract.AvroQueryTarget;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.getters.EvictableGetterCache;
@@ -25,6 +26,7 @@ import com.hazelcast.query.impl.getters.GetterCache;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.avro.generic.GenericRecord;
 
 import java.io.IOException;
 
@@ -93,9 +95,11 @@ public class FieldAccessExpression<T> implements Expression<T> {
         }
 
         try {
-            Object value = Extractors.newBuilder(context.getSerializationService())
-                    .setGetterCacheSupplier(() -> getterCache)
-                    .build().extract(result, name, useLazyDeserialization);
+            Object value = result instanceof GenericRecord
+                    ? AvroQueryTarget.extractValue((GenericRecord) result, name)
+                    : Extractors.newBuilder(context.getSerializationService())
+                            .setGetterCacheSupplier(() -> getterCache)
+                            .build().extract(result, name, useLazyDeserialization);
             return (T) type.convert(value);
         } catch (Exception e) {
             throw QueryException.error("Failed to extract field");
