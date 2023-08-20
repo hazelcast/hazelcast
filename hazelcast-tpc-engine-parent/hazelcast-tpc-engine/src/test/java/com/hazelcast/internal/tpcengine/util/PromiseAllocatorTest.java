@@ -22,6 +22,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminate;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,6 +44,31 @@ public class PromiseAllocatorTest {
     @After
     public void after() throws InterruptedException {
         terminate(reactor);
+    }
+
+    @Test
+    public void testConstruction() {
+        assertEquals(capacity, promiseAllocator.available());
+    }
+
+    @Test
+    public void test_allocate_release_all() {
+        List<Promise> promises = new ArrayList<>();
+        int available = capacity;
+        for (int k = 0; k < capacity; k++) {
+            assertEquals(available, promiseAllocator.available());
+            promises.add(promiseAllocator.allocate());
+            available--;
+        }
+
+        assertEquals(0, promiseAllocator.available());
+
+        for (int k = 0; k < capacity; k++) {
+            Promise promise = promises.get(k);
+            promiseAllocator.free(promise);
+            available++;
+            assertEquals(available, promiseAllocator.available());
+        }
     }
 
     @Test

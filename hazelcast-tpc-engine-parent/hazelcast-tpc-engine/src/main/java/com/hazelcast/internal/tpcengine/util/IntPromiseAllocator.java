@@ -20,31 +20,33 @@ package com.hazelcast.internal.tpcengine.util;
 import com.hazelcast.internal.tpcengine.Eventloop;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 @SuppressWarnings("rawtypes")
 public final class IntPromiseAllocator {
 
     private final Eventloop eventloop;
     private final IntPromise[] array;
-    private int index = -1;
+    private final int capacity;
+    private int index;
 
     public IntPromiseAllocator(Eventloop eventloop, int capacity) {
         this.eventloop = checkNotNull(eventloop);
+        this.capacity = checkPositive(capacity, "capacity");
         this.array = new IntPromise[capacity];
         for (int k = 0; k < capacity; k++) {
             IntPromise promise = new IntPromise(eventloop);
             promise.allocator = this;
             array[k] = promise;
         }
-        this.index = capacity - 1;
     }
 
     public int available() {
-        return index + 1;
+        return capacity - index;
     }
 
     public IntPromise allocate() {
-        if (index == -1) {
+        if (index == capacity) {
             IntPromise promise = new IntPromise(eventloop);
             promise.allocator = this;
             return promise;
@@ -52,7 +54,7 @@ public final class IntPromiseAllocator {
 
         IntPromise promise = array[index];
         array[index] = null;
-        index--;
+        index++;
         promise.refCount = 1;
         return promise;
     }
@@ -60,8 +62,8 @@ public final class IntPromiseAllocator {
     void free(IntPromise e) {
         checkNotNull(e);
 
-        if (index < array.length - 1) {
-            index++;
+        if (index > 0) {
+            index--;
             array[index] = e;
         }
     }
