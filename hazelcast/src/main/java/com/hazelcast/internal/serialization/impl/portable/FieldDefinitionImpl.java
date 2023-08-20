@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.PortableId;
 
 import java.io.IOException;
 
@@ -52,6 +53,10 @@ public class FieldDefinitionImpl implements FieldDefinition, DataSerializable {
         this.factoryId = factoryId;
         this.classId = classId;
         this.version = version;
+    }
+
+    public FieldDefinitionImpl(int index, String fieldName, FieldType type, PortableId portableId) {
+        this(index, fieldName, type, portableId.getFactoryId(), portableId.getClassId(), portableId.getVersion());
     }
 
     @Override

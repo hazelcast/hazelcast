@@ -106,7 +106,7 @@ public class SqlAvroSchemaEvolutionTest extends KafkaSqlTestSupport {
     }
 
     private SqlMapping kafkaMapping() {
-        return new SqlMapping(name, KafkaSqlConnector.TYPE_NAME).options(
+        return new SqlMapping(name, KafkaSqlConnector.class).options(
                 OPTION_KEY_FORMAT, AVRO_FORMAT,
                 OPTION_VALUE_FORMAT, AVRO_FORMAT,
                 "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),

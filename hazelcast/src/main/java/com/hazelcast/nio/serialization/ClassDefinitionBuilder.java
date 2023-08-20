@@ -70,6 +70,10 @@ public final class ClassDefinitionBuilder {
         this.version = version;
     }
 
+    public ClassDefinitionBuilder(PortableId portableId) {
+        this(portableId.getFactoryId(), portableId.getClassId(), portableId.getVersion());
+    }
+
     /**
      * @param fieldName name of the field that will be added to this class definition
      * @return itself for chaining

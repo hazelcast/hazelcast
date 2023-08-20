@@ -28,6 +28,9 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -68,6 +71,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -91,7 +95,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FAC
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
-import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
@@ -119,52 +122,6 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
             SUPPORT_LOGGER.info("Removing " + planCache.size() + " cached plans in SqlTestSupport.@After");
             planCache.clear();
         }
-    }
-
-    public static void setupCompactTypesForNestedQuery(HazelcastInstance instance) {
-        instance.getSql().execute("CREATE TYPE Office ("
-                + "id BIGINT, "
-                + "name VARCHAR "
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='OfficeCompactType')");
-
-        instance.getSql().execute("CREATE TYPE Organization ("
-                + "id BIGINT, "
-                + "name VARCHAR, "
-                + "office Office"
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='OrganizationCompactType')");
-
-        instance.getSql().execute(
-                "CREATE MAPPING test ("
-                        + "__key BIGINT,"
-                        + "id BIGINT, "
-                        + "name VARCHAR, "
-                        + "organization Organization"
-                        + ")"
-                        + "TYPE IMap "
-                        + "OPTIONS ("
-                        + "'keyFormat'='bigint',"
-                        + "'valueFormat'='compact',"
-                        + "'valueCompactTypeName'='UserCompactType'"
-                        + ")");
-    }
-
-    public static void setupPortableTypesForNestedQuery(HazelcastInstance instance) {
-        instance.getSql().execute("CREATE TYPE Office OPTIONS "
-                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='3', 'portableClassVersion'='0')");
-        instance.getSql().execute("CREATE TYPE Organization OPTIONS "
-                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='2', 'portableClassVersion'='0')");
-
-        instance.getSql().execute("CREATE MAPPING test ("
-                + "__key BIGINT, "
-                + "id BIGINT, "
-                + "name VARCHAR, "
-                + "organization Organization "
-                + ") TYPE IMap "
-                + "OPTIONS ("
-                + "'keyFormat'='bigint', "
-                + "'valueFormat'='portable', "
-                + "'valuePortableFactoryId'='1', "
-                + "'valuePortableClassId'='1')");
     }
 
     /**
@@ -533,14 +490,6 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         createMapping(instance(), name, keyClass, valueClass);
     }
 
-    public static void createType(String name, Class<?> clazz) {
-        createType(instance(), name, clazz);
-    }
-
-    public static void createType(HazelcastInstance instance, String name, Class<?> clazz) {
-        instance.getSql().execute(format("CREATE TYPE \"%s\" OPTIONS ('format'='java', 'javaClass'='%s')", name, clazz.getName()));
-    }
-
     /**
      * Create an IMap mapping with the given {@code name} that uses
      * java serialization for both key and value with the given classes.
@@ -832,50 +781,117 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return values;
     }
 
-    public static class SqlMapping {
-        public final String name;
+    public static class SqlMapping extends SqlStructure<SqlMapping> {
+        private static final Map<Class<? extends SqlConnector>, String> TYPES = Map.of(
+                FileSqlConnector.class, FileSqlConnector.TYPE_NAME,
+                IMapSqlConnector.class, IMapSqlConnector.TYPE_NAME,
+                KafkaSqlConnector.class, KafkaSqlConnector.TYPE_NAME
+        );
+        public String externalName;
         public final String type;
-        public final List<String> fields = new ArrayList<>();
-        public final Map<Object, Object> options = new HashMap<>();
 
-        public SqlMapping(String name, String type) {
-            this.name = name;
-            this.type = type;
+        public SqlMapping(String name, Class<? extends SqlConnector> connector) {
+            super(name);
+            type = "TYPE " + TYPES.get(connector);
         }
 
-        public SqlMapping fields(String... fields) {
-            this.fields.addAll(asList(fields));
+        public SqlMapping(String name, String dataConnection) {
+            super(name);
+            type = "DATA CONNECTION " + dataConnection;
+        }
+
+        public SqlMapping externalName(String externalName) {
+            this.externalName = externalName;
             return this;
         }
 
-        public SqlMapping options(Object... options) {
+        @Override
+        protected void create(HazelcastInstance instance, boolean replace, boolean ifNotExists) {
+            instance.getSql().execute("CREATE " + (replace ? "OR REPLACE " : "") + "MAPPING "
+                    + (ifNotExists ? "IF NOT EXISTS " : "") + name + " "
+                    + (externalName != null ? "EXTERNAL NAME " + externalName + " " : "")
+                    + (fields.isEmpty() ? "" : "(" + String.join(", ", fields) + ") ")
+                    + type + " OPTIONS (" + options.entrySet().stream()
+                            .map(e -> "'" + e.getKey() + "'='" + e.getValue() + "'").collect(joining(", "))
+                    + ")");
+        }
+    }
+
+    public static class SqlType extends SqlStructure<SqlType> {
+        public SqlType(String name) {
+            super(name);
+        }
+
+        @Override
+        protected void create(HazelcastInstance instance, boolean replace, boolean ifNotExists) {
+            instance.getSql().execute("CREATE " + (replace ? "OR REPLACE " : "") + "TYPE "
+                    + (ifNotExists ? "IF NOT EXISTS " : "") + name
+                    + (fields.isEmpty() ? "" : " (" + String.join(", ", fields) + ")")
+                    + (options.isEmpty() ? "" : " OPTIONS (" + options.entrySet().stream()
+                            .map(e -> "'" + e.getKey() + "'='" + e.getValue() + "'").collect(joining(", "))
+                    + ")"));
+        }
+    }
+
+    private abstract static class SqlStructure<T extends SqlStructure<T>> {
+        public final String name;
+        public final List<String> fields = new ArrayList<>();
+        public final Map<Object, Object> options = new LinkedHashMap<>();
+
+        SqlStructure(String name) {
+            this.name = name;
+        }
+
+        public T fields(String... fields) {
+            this.fields.addAll(asList(fields));
+            return me();
+        }
+
+        public T fieldsIf(boolean condition, String... fields) {
+            return condition ? fields(fields) : me();
+        }
+
+        public T options(Object... options) {
             for (int i = 0; i < options.length / 2; i++) {
                 this.options.put(options[2 * i], options[2 * i + 1]);
             }
-            return this;
+            return me();
         }
 
-        public SqlMapping optionsIf(boolean condition, Object... options) {
-            return condition ? options(options) : this;
+        public T optionsIf(boolean condition, Object... options) {
+            return condition ? options(options) : me();
+        }
+
+        @SuppressWarnings("unchecked")
+        private T me() {
+            return (T) this;
         }
 
         public void create() {
-            create(instance(), false);
+            create(instance());
+        }
+
+        public void create(HazelcastInstance instance) {
+            create(instance, false, false);
         }
 
         public void createOrReplace() {
-            create(instance(), true);
+            createOrReplace(instance());
         }
 
-        protected void create(HazelcastInstance instance, boolean replace) {
-            instance.getSql().execute("CREATE " + (replace ? "OR REPLACE " : "") + "MAPPING " + name
-                    + (fields.isEmpty() ? " " : "(" + String.join(",", fields) + ") ")
-                    + "TYPE " + type + " "
-                    + "OPTIONS (" + options.entrySet().stream()
-                            .map(e -> "'" + e.getKey() + "'='" + e.getValue() + "'").collect(joining(","))
-                    + ")"
-            );
+        public void createOrReplace(HazelcastInstance instance) {
+            create(instance, true, false);
         }
+
+        public void createIfNotExists() {
+            createIfNotExists(instance());
+        }
+
+        public void createIfNotExists(HazelcastInstance instance) {
+            create(instance, false, true);
+        }
+
+        protected abstract void create(HazelcastInstance instance, boolean replace, boolean ifNotExists);
     }
 
     /**

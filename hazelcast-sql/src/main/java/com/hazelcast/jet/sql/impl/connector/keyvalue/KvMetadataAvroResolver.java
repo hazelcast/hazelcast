@@ -77,7 +77,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                 CONVERSION_PREFS.entrySet().stream()
                         .collect(ImmutableMap::<QueryDataTypeFamily, List<Schema.Type>>builder,
                                  (map, e) -> map.put(getConverter(e.getKey()).getTypeFamily(), e.getValue()),
-                                 ExceptionUtil::combinerUnsupported)
+                                 ExceptionUtil::notParallelizable)
                         .put(QueryDataTypeFamily.OBJECT, List.of(Schema.Type.UNION, Schema.Type.NULL))
                         .build();
     }

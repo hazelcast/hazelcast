@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
@@ -40,7 +41,11 @@ public abstract class KafkaSqlTestSupport extends SqlTestSupport {
 
     @BeforeClass
     public static void setup() throws Exception {
-        initialize(1, null);
+        setup(1, null);
+    }
+
+    protected static void setup(int memberCount, Config config) throws Exception {
+        initialize(memberCount, config);
         sqlService = instance().getSql();
 
         kafkaTestSupport = KafkaTestSupport.create();

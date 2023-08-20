@@ -16,39 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
-import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.sql.SqlService;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.io.IOException;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SqlPlanCacheTest extends SqlTestSupport {
-
+public class SqlPlanCacheTest extends KafkaSqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 4;
-
-    private static KafkaTestSupport kafkaTestSupport;
-
-    private static SqlService sqlService;
-
-    @BeforeClass
-    public static void setUpClass() throws IOException {
-        initialize(1, null);
-        sqlService = instance().getSql();
-
-        kafkaTestSupport = KafkaTestSupport.create();
-        kafkaTestSupport.createKafkaCluster();
-    }
-
-    @AfterClass
-    public static void tearDownClass() {
-        kafkaTestSupport.shutdownKafkaCluster();
-    }
 
     @Test
     public void test_tableName() {
@@ -113,24 +87,15 @@ public class SqlPlanCacheTest extends SqlTestSupport {
     }
 
     private static String createRandomTopic() {
-        String topicName = randomName();
-        kafkaTestSupport.createTopic(topicName, INITIAL_PARTITION_COUNT);
-        return topicName;
+        return createRandomTopic(INITIAL_PARTITION_COUNT);
     }
 
-    private static void createMapping(
-            String tableName,
-            String topicName,
-            String valueFormat,
-            String offset
-    ) {
-        sqlService.execute("CREATE OR REPLACE MAPPING " + tableName + " EXTERNAL NAME " + topicName + ' '
-                + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_VALUE_FORMAT + "'='" + valueFormat + '\''
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'auto.offset.reset'='" + offset + '\''
-                + ")"
-        );
+    private static void createMapping(String tableName, String topicName, String valueFormat, String offset) {
+        new SqlMapping(tableName, KafkaSqlConnector.class)
+                .externalName(topicName)
+                .options(OPTION_VALUE_FORMAT, valueFormat,
+                         "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
+                         "auto.offset.reset", offset)
+                .createOrReplace();
     }
 }

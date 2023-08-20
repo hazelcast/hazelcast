@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableId;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -67,6 +68,11 @@ public final class PortableContextImpl implements PortableContext {
     @Override
     public ClassDefinition lookupClassDefinition(int factoryId, int classId, int version) {
         return getClassDefContext(factoryId).lookup(classId, version);
+    }
+
+    @Override
+    public ClassDefinition lookupClassDefinition(PortableId portableId) {
+        return lookupClassDefinition(portableId.getFactoryId(), portableId.getClassId(), portableId.getVersion());
     }
 
     @Override

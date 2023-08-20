@@ -152,7 +152,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
                                   OPTION_VALUE_AVRO_SCHEMA, valueSchema.toString());
         kafkaTestSupport.setProducerProperties(name, clientProperties);
 
-        return mapping = new SqlMapping(name, KafkaSqlConnector.TYPE_NAME)
+        return mapping = new SqlMapping(name, KafkaSqlConnector.class)
                 .options(OPTION_KEY_FORMAT, AVRO_FORMAT,
                          OPTION_VALUE_FORMAT, AVRO_FORMAT,
                          "bootstrap.servers", kafkaTestSupport.getBrokerConnectionString(),
@@ -746,7 +746,7 @@ public class SqlAvroTest extends KafkaSqlTestSupport {
     private static GenericRecord createRecord(Schema schema, String[] fields, Object[] values) {
         return IntStream.range(0, fields.length).collect(() -> new GenericRecordBuilder(schema),
                 (record, i) -> record.set(fields[i], values[i]),
-                ExceptionUtil::combinerUnsupported).build();
+                ExceptionUtil::notParallelizable).build();
     }
 
     private static GenericRecord createRecord(Schema schema, Object... values) {
