@@ -24,7 +24,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.tpcengine.Eventloop;
-import com.hazelcast.internal.tpcengine.TaskProcessor;
+import com.hazelcast.internal.tpcengine.TaskRunner;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
@@ -59,7 +59,7 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  */
 @ExcludedMetricTargets(MANAGEMENT_CENTER)
 public abstract class OperationThread extends HazelcastManagedThread
-        implements StaticMetricsProvider, TaskProcessor {
+        implements StaticMetricsProvider, TaskRunner {
 
     final int threadId;
     final OperationQueue queue;
@@ -138,12 +138,12 @@ public abstract class OperationThread extends HazelcastManagedThread
                 continue;
             }
 
-            process(task);
+            run(task);
         }
     }
 
     @Override
-    public int process(Object task) {
+    public int run(Object task) {
         try {
             if (task.getClass() == Packet.class) {
                 process((Packet) task);

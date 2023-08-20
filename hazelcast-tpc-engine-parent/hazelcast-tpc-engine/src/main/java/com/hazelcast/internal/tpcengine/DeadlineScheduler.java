@@ -62,7 +62,7 @@ public final class DeadlineScheduler {
      *
      * @return the epoch time in nanos of the earliest deadline.
      */
-    public long earliestDeadlineNanos() {
+    public long earliestDeadlineNs() {
         return earliestDeadlineNanos;
     }
 

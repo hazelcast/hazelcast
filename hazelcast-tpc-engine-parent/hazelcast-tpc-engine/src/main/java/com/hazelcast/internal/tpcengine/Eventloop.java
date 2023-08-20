@@ -24,7 +24,6 @@ import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 import com.hazelcast.internal.tpcengine.util.AbstractBuilder;
-import com.hazelcast.internal.tpcengine.util.EpochClock;
 import com.hazelcast.internal.tpcengine.util.IntPromise;
 import com.hazelcast.internal.tpcengine.util.IntPromiseAllocator;
 import com.hazelcast.internal.tpcengine.util.Promise;
@@ -34,7 +33,6 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.tpcengine.TaskQueue.RUN_STATE_BLOCKED;
 import static com.hazelcast.internal.tpcengine.util.EpochClock.epochNanos;
 import static com.hazelcast.internal.tpcengine.util.OS.pageSize;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
@@ -66,25 +64,21 @@ public abstract class Eventloop {
     protected final IntPromiseAllocator intPromiseAllocator;
     protected final TaskQueue defaultTaskQueue;
     protected final Reactor.Metrics metrics;
-    protected final long minGranularityNanos;
     protected final NetworkScheduler networkScheduler;
     protected final IOBufferAllocator storageAllocator;
     protected final StorageScheduler storageScheduler;
     protected final Thread eventloopThread;
-    protected long taskStartNanos;
-    protected final long ioIntervalNanos;
+    protected final TaskQueue.RunContext runContext;
     protected final DeadlineScheduler deadlineScheduler;
-    protected final long stallThresholdNanos;
     protected final Scheduler scheduler;
     protected final StallHandler stallHandler;
-    protected long taskDeadlineNanos;
     protected boolean stop;
 
+    @SuppressWarnings({"checkstyle:ExecutableStatementCount"})
     protected Eventloop(Builder builder) {
         this.reactor = builder.reactor;
         this.eventloopThread = builder.reactor.eventloopThread;
         this.metrics = reactor.metrics;
-        this.minGranularityNanos = builder.reactorBuilder.minGranularityNanos;
         this.spin = builder.reactorBuilder.spin;
         this.deadlineScheduler = builder.deadlineScheduler;
         this.networkScheduler = builder.networkScheduler;
@@ -93,13 +87,21 @@ public abstract class Eventloop {
         this.storageAllocator = builder.storageAllocator;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
         this.intPromiseAllocator = new IntPromiseAllocator(this, INITIAL_PROMISE_ALLOCATOR_CAPACITY);
-        this.stallThresholdNanos = builder.reactorBuilder.stallThresholdNanos;
-        this.ioIntervalNanos = builder.reactorBuilder.ioIntervalNanos;
         this.stallHandler = builder.reactorBuilder.stallHandler;
 
         TaskQueue.Builder defaultTaskQueueBuilder = builder.reactorBuilder.defaultTaskQueueBuilder;
         defaultTaskQueueBuilder.eventloop = this;
         this.defaultTaskQueue = defaultTaskQueueBuilder.build();
+
+        this.runContext = new TaskQueue.RunContext();
+        runContext.stallHandler = stallHandler;
+        runContext.scheduler = scheduler;
+        runContext.stallThresholdNanos = builder.reactorBuilder.stallThresholdNanos;
+        runContext.minGranularityNanos = builder.reactorBuilder.minGranularityNanos;
+        runContext.ioIntervalNanos = builder.reactorBuilder.ioIntervalNanos;
+        runContext.reactorMetrics = reactor.metrics;
+        runContext.scheduler = scheduler;
+        runContext.eventloop = this;
     }
 
     /**
@@ -130,7 +132,7 @@ public abstract class Eventloop {
      * @return the current epoch time in nanos of when the active task started.
      */
     public final long taskStartNanos() {
-        return taskStartNanos;
+        return runContext.taskStartNanos;
     }
 
     /**
@@ -143,22 +145,30 @@ public abstract class Eventloop {
     }
 
     /**
-     * This method should be called by the current task to check if it should yield.
+     * Checks if the current task should yield. The value is undefined if this is
+     * called outside running a task.
      * <p/>
      * So if there is some long running tasks, it periodically checks this method.
      * As long as it returns false, it can keep running. When true is returned, the
      * task should yield (see {@link Task#process()} for more details) and the task
      * will be scheduled again at some point in the future.
      * <p/>
-     * This method is pretty expensive due to the overhead of {@link System#nanoTime()} which
-     * is roughly between 15/30 nanoseconds. So you want to prevent calling this method too
-     * often because you will loose a lot of performance. But if you don't call it often enough,
-     * you can into problems because you could end up stalling the reactor. So it is a tradeoff.
+     * This method is pretty expensive due to the overhead of
+     * {@link System#nanoTime()} which is roughly between 15/30 nanoseconds. So
+     * you want to prevent calling this method too often because you will loose
+     * a lot of performance. But if you don't call it often enough, you can into
+     * problems because you could end up stalling the reactor and this can lead to
+     * I/O performance problems and starvation/latency problems for other tasks.
+     * So it is a tradeoff.
      *
      * @return true if the caller should yield, false otherwise.
      */
     public final boolean shouldYield() {
-        return epochNanos() > taskDeadlineNanos;
+        long nowNanos = epochNanos();
+        // since we paid for getting the time, lets update the time int the
+        // runContext.
+        runContext.nowNanos = nowNanos;
+        return nowNanos > runContext.taskDeadlineNanos;
     }
 
     public final boolean offer(Object task) {
@@ -235,6 +245,66 @@ public abstract class Eventloop {
      */
     public abstract AsyncFile newAsyncFile(String path);
 
+
+    protected void beforeRun() {
+    }
+
+    /**
+     * Runs the actual eventloop.
+     * <p/>
+     * Is called from the reactor thread.
+     * <p>
+     *
+     * @throws Exception if something fails while running the eventloop.
+     *                   The reactor terminates when this happens.
+     */
+    public final void run() throws Exception {
+        final TaskQueue.RunContext runContext = this.runContext;
+        final DeadlineScheduler deadlineScheduler = this.deadlineScheduler;
+        final Scheduler scheduler = this.scheduler;
+        final Reactor.Metrics metrics = this.metrics;
+        boolean timeUpdateNeeded = true;
+
+        runContext.nowNanos = epochNanos();
+        runContext.ioDeadlineNanos = runContext.nowNanos + runContext.ioIntervalNanos;
+        while (!stop) {
+            deadlineScheduler.tick(runContext.nowNanos);
+
+            scheduler.scheduleOutsideBlocked();
+
+            TaskQueue taskQueue = scheduler.pickNext();
+            if (taskQueue == null) {
+                // There is no work and therefor we need to park.
+                long earliestDeadlineNs = deadlineScheduler.earliestDeadlineNs();
+                long timeoutNs = earliestDeadlineNs == -1
+                        ? Long.MAX_VALUE
+                        : max(0, earliestDeadlineNs - runContext.nowNanos);
+                metrics.incParkCount();
+                park(timeoutNs);
+
+                // after a park we have to guarantee that the nowNanos is up to data.
+                runContext.nowNanos = epochNanos();
+                // and we need to update the ioDeadline
+                runContext.ioDeadlineNanos = runContext.nowNanos + runContext.ioIntervalNanos;
+                // since we just update the time, no need to obtain
+                // it again whe the next taskQueue runs.
+                timeUpdateNeeded = false;
+            } else {
+                // before a task group is run, its nowNanos needs to be up to date.
+                // this is either done here or after the park.
+                if (timeUpdateNeeded) {
+                    runContext.nowNanos = epochNanos();
+                }
+
+                taskQueue.run(runContext);
+                // after a task group completes we need to ensure that the time gets
+                // updated unless a park is going to happen, because that will also
+                // update the time.
+                timeUpdateNeeded = true;
+            }
+        }
+    }
+
     /**
      * Destroys the resources of this Eventloop. Is called after the {@link #run()}.
      * <p>
@@ -249,134 +319,6 @@ public abstract class Eventloop {
     }
 
     /**
-     * Override this method to execute some logic before the {@link #run()} method is called.
-     * When you override it, make sure you call {@code super.beforeRun()}.
-     */
-    protected void beforeRun() {
-        this.taskStartNanos = epochNanos();
-    }
-
-    /**
-     * Runs the actual eventloop.
-     * <p/>
-     * Is called from the reactor thread.
-     * <p>
-     * {@link EpochClock#epochNanos()} is pretty expensive (+/-25ns) due to {@link System#nanoTime()}. For
-     * every task processed we do not want to call the {@link EpochClock#epochNanos()} more than once because
-     * the clock already dominates the context switch time.
-     *
-     * @throws Exception if something fails while running the eventloop. The reactor
-     *                   terminates when this happens.
-     */
-    @SuppressWarnings({"checkstyle:NPathComplexity",
-            "checkstyle:MethodLength",
-            "checkstyle:CyclomaticComplexity",
-            "checkstyle:InnerAssignment",
-            "checkstyle:MagicNumber"})
-    public final void run() throws Exception {
-        //System.out.println("eventloop.run");
-        long nowNanos = epochNanos();
-        long ioDeadlineNanos = nowNanos + ioIntervalNanos;
-
-        while (!stop) {
-            deadlineScheduler.tick(nowNanos);
-
-            scheduler.scheduleOutsideBlocked();
-
-            TaskQueue taskQueue = scheduler.pickNext();
-            if (taskQueue == null) {
-                // There is no work and therefor we need to park.
-
-                long earliestDeadlineNanos = deadlineScheduler.earliestDeadlineNanos();
-                long timeoutNanos = earliestDeadlineNanos == -1
-                        ? Long.MAX_VALUE
-                        : max(0, earliestDeadlineNanos - nowNanos);
-                metrics.incParkCount();
-                park(timeoutNanos);
-
-                // todo: we should only need to update the clock if real parking happened
-                // and not when work was detected
-                nowNanos = epochNanos();
-                ioDeadlineNanos = nowNanos + ioIntervalNanos;
-                continue;
-            }
-
-            final long taskQueueDeadlineNanos = nowNanos + scheduler.timeSliceNanosActive();
-            // The time the taskGroup has spend on the CPU.
-            long taskGroupCpuTimeNanos = 0;
-            int taskCount = 0;
-            boolean taskQueueEmpty = false;
-            // This forces immediate time measurement of the first task.
-            int clockSampleRound = 1;
-            // Process the tasks in a queue as long as the deadline is not exceeded.
-            while (nowNanos <= taskQueueDeadlineNanos) {
-                if (!taskQueue.next()) {
-                    taskQueueEmpty = true;
-                    // queue is empty, we are done.
-                    break;
-                }
-
-                taskStartNanos = nowNanos;
-                taskDeadlineNanos = nowNanos + minGranularityNanos;
-
-                taskQueue.run();
-                taskCount++;
-
-                if (clockSampleRound == 1) {
-                    nowNanos = epochNanos();
-                    clockSampleRound = taskQueue.clockSampleInterval;
-                } else {
-                    clockSampleRound--;
-                }
-
-                long taskEndNanos = nowNanos;
-                // make sure that a task always progresses the time.
-                long taskCpuTimeNanos = Math.max(taskStartNanos - taskEndNanos, 1);
-                taskGroupCpuTimeNanos += taskCpuTimeNanos;
-
-                if (taskCpuTimeNanos > stallThresholdNanos) {
-                    stallHandler.onStall(reactor, taskQueue, taskQueue.task, taskStartNanos, taskCpuTimeNanos);
-                }
-
-                // todo:
-                // what if this is the last task of the last task queue; then
-                // first we are going to do an ioSchedulerTick and then we are
-                // going to do a park.
-                if (nowNanos >= ioDeadlineNanos) {
-                    metrics.incIoSchedulerTicks();
-                    ioSchedulerTick();
-                    nowNanos = epochNanos();
-                    ioDeadlineNanos = nowNanos + ioIntervalNanos;
-                }
-
-                taskQueue.task = null;
-            }
-
-            scheduler.updateActive(taskGroupCpuTimeNanos);
-            metrics.incTasksProcessedCount(taskCount);
-            metrics.incCpuTimeNanos(taskGroupCpuTimeNanos);
-            metrics.incContextSwitchCount();
-
-            if (taskQueueEmpty || taskQueue.isEmpty()) {
-                // the taskQueue has been fully drained.
-                scheduler.dequeueActive();
-
-                taskQueue.runState = RUN_STATE_BLOCKED;
-                taskQueue.blockedCount++;
-
-                if (taskQueue.outside != null) {
-                    // we also need to add it to the shared taskQueues so the eventloop will
-                    // see any items that are written to outside queues.
-                    scheduler.addOutsideBlocked(taskQueue);
-                }
-            } else {
-                // Task queue wasn't fully drained.
-                scheduler.yieldActive();
-            }
-        }
-    }
-
-    /**
      * @return true if work was triggered that requires attention of the eventloop.
      * @throws IOException
      */
@@ -385,8 +327,6 @@ public abstract class Eventloop {
     /**
      * Parks the eventloop thread until there is work. So either there are
      * I/O events or some tasks that require processing.
-     * <p>
-     * todo: rename park to 'select' and ioScheduler tick to 'selectNow'?
      *
      * @param timeoutNanos the timeout in nanos. 0 means no timeout.
      *                     Long.MAX_VALUE means wait forever. a timeout
@@ -405,9 +345,7 @@ public abstract class Eventloop {
      * @throws NullPointerException     if cmd or unit is null.
      * @throws IllegalArgumentException when delay smaller than 0.
      */
-    public final boolean schedule(Runnable cmd,
-                                  long delay,
-                                  TimeUnit unit) {
+    public final boolean schedule(Runnable cmd, long delay, TimeUnit unit) {
         return schedule(cmd, delay, unit, defaultTaskQueue);
     }
 

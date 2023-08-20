@@ -43,7 +43,7 @@ public class FormatUtil {
         }
 
         if (-1000 < count && count < 1000) {
-            return String.valueOf(count);
+            return String.format("%.2f", count);
         }
         CharacterIterator ci = new StringCharacterIterator("kMGTPE");
         while (count <= -999_950 || count >= 999_950) {

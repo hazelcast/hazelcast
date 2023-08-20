@@ -17,10 +17,10 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * A {@link TaskQueue} can be configured with a {@link TaskProcessor} which will process
+ * A {@link TaskQueue} can be configured with a {@link TaskRunner} which will process
  * every task issued to that TaskQueue.
  */
-public interface TaskProcessor {
+public interface TaskRunner {
 
     // Indicates that the task is yielding; so there is more work to do but the thread is willing to
     // give up the CPU to let other tasks run.
@@ -43,5 +43,5 @@ public interface TaskProcessor {
      * @param task the task.
      * @return the task state.
      */
-    int process(Object task) throws Exception;
+    int run(Object task) throws Exception;
 }

@@ -19,9 +19,9 @@ package com.hazelcast.internal.tpcengine;
 import com.hazelcast.internal.tpcengine.logging.TpcLogger;
 import com.hazelcast.internal.tpcengine.logging.TpcLoggerLocator;
 
-import static com.hazelcast.internal.tpcengine.TaskProcessor.TASK_BLOCKED;
-import static com.hazelcast.internal.tpcengine.TaskProcessor.TASK_COMPLETED;
-import static com.hazelcast.internal.tpcengine.TaskProcessor.TASK_YIELD;
+import static com.hazelcast.internal.tpcengine.TaskRunner.TASK_BLOCKED;
+import static com.hazelcast.internal.tpcengine.TaskRunner.TASK_COMPLETED;
+import static com.hazelcast.internal.tpcengine.TaskRunner.TASK_YIELD;
 
 /**
  * A Task that gets executed on the {@link Eventloop}. When a task runs, it can

@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.internal.tpcengine.CompletelyFairScheduler.niceToWeight;
 import static com.hazelcast.internal.tpcengine.util.EpochClock.epochNanos;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static java.lang.Math.max;
 
 /**
  * A TaskQueue is the unit of scheduling within the eventloop. Each eventloop
@@ -98,7 +99,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // any Task on the queue will also be processed according to the contract
     // of the task. anything else is offered to the taskFactory to be wrapped
     // inside a task.
-    TaskProcessor processor;
+    TaskRunner taskRunner;
     // The eventloop this TaskQueue belongs to.
     Eventloop eventloop;
     // The scheduler that processed the TaskQueue.
@@ -131,7 +132,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     final Metrics metrics = new Metrics();
     //the weight is only used by the CfsTaskQueueScheduler.
     int weight = 1;
-    Object task;
+    Object activeTask;
 
     boolean isEmpty() {
         return (inside != null && inside.isEmpty()) && (outside != null && outside.isEmpty());
@@ -142,36 +143,36 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     }
 
     /**
-     * Selects the next task from the queues.
+     * Picks the next active tasks from the inside/outside queues.
      *
      * @return true if there was a task, false otherwise.
      */
-    boolean next() {
+    boolean pickActiveTask() {
         switch (pollState) {
             case POLL_INSIDE_ONLY:
-                task = inside.poll();
+                activeTask = inside.poll();
                 break;
             case POLL_OUTSIDE_ONLY:
-                task = outside.poll();
+                activeTask = outside.poll();
                 break;
             case POLL_OUTSIDE_FIRST:
-                task = outside.poll();
-                if (task != null) {
+                activeTask = outside.poll();
+                if (activeTask != null) {
                     pollState = POLL_INSIDE_FIRST;
                 } else {
-                    task = inside.poll();
-                    if (task == null) {
+                    activeTask = inside.poll();
+                    if (activeTask == null) {
                         pollState = POLL_INSIDE_FIRST;
                     }
                 }
                 break;
             case POLL_INSIDE_FIRST:
-                task = inside.poll();
-                if (task != null) {
+                activeTask = inside.poll();
+                if (activeTask != null) {
                     pollState = POLL_OUTSIDE_FIRST;
                 } else {
-                    task = outside.poll();
-                    if (task == null) {
+                    activeTask = outside.poll();
+                    if (activeTask == null) {
                         pollState = POLL_OUTSIDE_FIRST;
                     }
                 }
@@ -180,32 +181,126 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 throw new IllegalStateException("Unknown pollState:" + pollState);
         }
 
-        return task != null;
+        return activeTask != null;
     }
 
     /**
-     * Polls for a single Runnable. If only the inside queue is set, a poll is
-     * done from the inside queue. If only a outside queue is set, a poll is done
-     * from the outside queue. If both inside and outside queue are set, then a round
-     * robin poll is done over these 2 queues.
-     *
-     * @return the Runnable that is next or <code>null</code> if this TaskQueue
-     * has no more tasks to execute.
+     * Runs the active task.
      */
-    void run() {
-        assert task != null;
+    void runActiveTask() {
+        assert activeTask != null;
 
         try {
-            if (processor != null) {
-                processor.process(task);
+            //
+            if (taskRunner != null) {
+                taskRunner.run(activeTask);
             } else {
-                ((Runnable) task).run();
+                ((Runnable) activeTask).run();
             }
         } catch (Exception e) {
             // todo: exception handling needs to improve.
             e.printStackTrace();
         } finally {
             tasksProcessed++;
+        }
+    }
+
+    static class RunContext {
+        Eventloop eventloop;
+        Reactor.Metrics reactorMetrics;
+        Scheduler scheduler;
+        StallHandler stallHandler;
+        long minGranularityNanos;
+        long stallThresholdNanos;
+
+        // the last measured epoch time in nanos.
+        // {@link EpochClock#epochNanos()} is pretty expensive (+/-25ns)
+        // due to {@link System#nanoTime()}. For every task processed we do
+        // not want to call the {@link EpochClock#epochNanos()} more than
+        // once because the clock already dominates the context switch time.
+        long nowNanos;
+        // epoch time in nanos when the current task from the taskGroup started.
+        long ioIntervalNanos;
+        // the epoch time in nano seconds the next ioSchedulerTick needs to run
+        long ioDeadlineNanos;
+        // the epoch time in nanos the current task started. If no task is running,
+        // this value is undefined.
+        long taskStartNanos;
+        // the deadline in time for tasks in the current taskGroup. So no further
+        // task should be run and the taskGroup should yield (or complete).
+        long taskDeadlineNanos;
+    }
+
+    @SuppressWarnings({"checkstyle:NPathComplexity",
+            "checkstyle:MethodLength"})
+    void run(RunContext context) throws Exception {
+        context.taskDeadlineNanos = context.nowNanos + scheduler.timeSliceNanosActive();
+
+        // The time the taskGroup has spend on the CPU.
+        long cpuTimeNanos = 0;
+        int taskProcessedCount = 0;
+        boolean taskQueueEmpty = false;
+        // This forces immediate time measurement of the first task.
+        int clockSampleRound = 1;
+        // Process the tasks in a queue as long as the deadline is not exceeded.
+
+        while (context.nowNanos <= context.taskDeadlineNanos) {
+            if (!pickActiveTask()) {
+                taskQueueEmpty = true;
+                // queue is empty, we are done.
+                break;
+            }
+
+            context.taskStartNanos = context.nowNanos;
+            runActiveTask();
+            taskProcessedCount++;
+
+            if (clockSampleRound == 1) {
+                context.nowNanos = epochNanos();
+                clockSampleRound = clockSampleInterval;
+            } else {
+                clockSampleRound--;
+            }
+
+            long taskEndNanos = context.nowNanos;
+            // make sure that a task always progresses the time.
+            long taskCpuTimeNanos = max(context.taskStartNanos - taskEndNanos, 1);
+            cpuTimeNanos += taskCpuTimeNanos;
+
+            if (taskCpuTimeNanos > context.stallThresholdNanos) {
+                context.stallHandler.onStall(
+                        eventloop.reactor, this, activeTask, context.taskStartNanos, taskCpuTimeNanos);
+            }
+            activeTask = null;
+
+            if (context.nowNanos >= context.ioDeadlineNanos) {
+                // periodically we need to tick the io schedulers.
+                eventloop.ioSchedulerTick();
+                context.reactorMetrics.incIoSchedulerTicks();
+                context.nowNanos = epochNanos();
+                context.ioDeadlineNanos = context.nowNanos + context.ioIntervalNanos;
+            }
+        }
+
+        scheduler.updateActive(cpuTimeNanos);
+        metrics.incTasksProcessedCount(taskProcessedCount);
+        metrics.incCpuTimeNanos(cpuTimeNanos);
+        context.reactorMetrics.incContextSwitchCount();
+
+        if (taskQueueEmpty || isEmpty()) {
+            // the taskQueue has been fully drained.
+            scheduler.dequeueActive();
+            runState = RUN_STATE_BLOCKED;
+            blockedCount++;
+            if (outside != null) {
+                // we also need to add it to the shared taskQueues so the
+                // eventloop will see any items that are written to outside
+                // queue.
+                scheduler.addOutsideBlocked(this);
+            }
+        } else {
+            // Task queue wasn't fully drained, so the taskQueue is going to yield.
+            scheduler.yieldActive();
         }
     }
 
@@ -411,10 +506,11 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         public int clockSampleInterval = 1;
 
         /**
-         * Sets the {@link TaskProcessor} that will be used to process tasks from
-         * {@link TaskQueue}.
+         * Sets the {@link TaskRunner} that will be used to run tasks from
+         * {@link TaskQueue}. So here you can application specific logic how
+         * you to run the tasks.
          */
-        public TaskProcessor processor;
+        public TaskRunner taskRunner;
 
         @Override
         protected void conclude() {
@@ -459,7 +555,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 taskQueue.pollState = POLL_OUTSIDE_FIRST;
             }
             taskQueue.clockSampleInterval = clockSampleInterval;
-            taskQueue.processor = processor;
+            taskQueue.taskRunner = taskRunner;
             taskQueue.name = name;
             taskQueue.eventloop = eventloop;
             taskQueue.scheduler = eventloop.scheduler;

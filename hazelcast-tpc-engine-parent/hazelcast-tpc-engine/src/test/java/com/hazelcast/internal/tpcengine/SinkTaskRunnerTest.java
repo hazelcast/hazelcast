@@ -16,19 +16,16 @@
 
 package com.hazelcast.internal.tpcengine;
 
-/**
- * A {@link TaskProcessor} that does nothing.
- */
-public class SinkTaskProcessor implements TaskProcessor {
+import org.junit.Test;
 
-    public static final SinkTaskProcessor INSTANCE = new SinkTaskProcessor();
+import static org.junit.Assert.assertEquals;
 
-    @Override
-    public int process(Object task) {
-        return TASK_COMPLETED;
+public class SinkTaskRunnerTest {
+
+    @Test
+    public void test() {
+        SinkTaskRunner runner = new SinkTaskRunner();
+        assertEquals(TaskRunner.TASK_COMPLETED, runner.run("banana"));
     }
 
-    @Override
-    public void init(Eventloop eventloop) {
-    }
 }

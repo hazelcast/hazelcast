@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpcengine;
 
 
+import com.hazelcast.internal.tpcengine.net.NetworkBenchmark;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.jctools.util.PaddedAtomicLong;
@@ -46,6 +47,9 @@ public class SchedulingBenchmark {
     public int tasksPerTaskGroupCnt = 1;
     public ReactorType reactorType = ReactorType.NIO;
     public boolean useTask = true;
+    // this will force every task context switch from one task to the next
+    // task in the same task group, to measure time. So effectively it is
+    // maximum pressure on the clock.
     public int clockSampleInterval = 1;
     public int taskGroupCnt = 1;
     public boolean randomNiceLevel = false;
@@ -210,11 +214,11 @@ public class SchedulingBenchmark {
         @Override
         public int process() {
             if (stop) {
-                return TaskProcessor.TASK_COMPLETED;
+                return TaskRunner.TASK_COMPLETED;
             }
 
             counter.lazySet(counter.get() + 1);
-            return TaskProcessor.TASK_YIELD;
+            return TaskRunner.TASK_YIELD;
         }
     }
 
@@ -237,11 +241,16 @@ public class SchedulingBenchmark {
             long runtimeMs = SECONDS.toMillis(runtimeSeconds);
             long startMs = currentTimeMillis();
             long endMs = startMs + runtimeMs;
+            long lastMs = startMs;
+            Metrics lastMetrics = new Metrics();
+            Metrics metrics = new Metrics();
+
             StringBuffer sb = new StringBuffer();
-            long last = 0;
+
             while (currentTimeMillis() < endMs) {
                 Thread.sleep(SECONDS.toMillis(1));
-                long nowMs = System.currentTimeMillis();
+                long nowMs = currentTimeMillis();
+                collect(metrics);
 
                 long completedMs = MILLISECONDS.toSeconds(nowMs - startMs);
                 long completedMinutes = completedMs / 60;
@@ -265,16 +274,24 @@ public class SchedulingBenchmark {
                 sb.append(etaSeconds);
                 sb.append("s]");
 
-                long total = sum(csCounters);
-                long diff = total - last;
-                last = total;
+                long diff = metrics.cs - lastMetrics.cs;
 
                 sb.append("[thp=");
                 sb.append(humanReadableCountSI(diff));
                 sb.append("/s]");
 
+                sb.append("[lat=");
+                double latencyNs = (SECONDS.toNanos(1) * 1d) / diff;
+                sb.append(humanReadableCountSI(latencyNs));
+                sb.append(" ns]");
+
                 System.out.println(sb);
                 sb.setLength(0);
+
+                Metrics tmp = lastMetrics;
+                lastMetrics = metrics;
+                metrics = tmp;
+                lastMs = nowMs;
             }
         }
     }
@@ -285,5 +302,19 @@ public class SchedulingBenchmark {
             sum += c.get();
         }
         return sum;
+    }
+
+    private static class Metrics {
+        private long cs;
+
+        private void clear() {
+            cs = 0;
+        }
+    }
+
+    private void collect(Metrics target) {
+        target.clear();
+
+        target.cs = sum(csCounters);
     }
 }
