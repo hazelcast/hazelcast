@@ -24,6 +24,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.StaticMetricsProvider;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.tpcengine.Eventloop;
+import com.hazelcast.internal.tpcengine.Task;
 import com.hazelcast.internal.tpcengine.TaskRunner;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
@@ -128,7 +129,14 @@ public abstract class OperationThread extends HazelcastManagedThread
         }
     }
 
-    @SuppressWarnings("java:S112")
+    /**
+     * Process the items from the queue in a loop or blocks if there is no work.
+     * This method is called when Hazelcast is running in classic mode. When
+     * Hazelcast is running in TPC mode, the Eventloop takes care of running the
+     * loop.
+     *
+     * @throws Exception
+     */
     protected void loop() throws Exception {
         while (!shutdown) {
             Object task;
@@ -160,15 +168,21 @@ public abstract class OperationThread extends HazelcastManagedThread
             }
 
             completedTotalCount.inc();
-            return TASK_COMPLETED;
+            return Task.RUN_COMPLETED;
         } catch (Throwable t) {
             errorCount.inc();
             inspectOutOfMemoryError(t);
             logger.severe("Failed to process: " + task + " on: " + getName(), t);
-            return TASK_COMPLETED;
+            return Task.RUN_COMPLETED;
         } finally {
             currentRunner = null;
         }
+    }
+
+    @Override
+    public int handleError(Object task, Throwable cause) {
+        logger.severe("Failed to execute task " + task, cause);
+        return Task.RUN_COMPLETED;
     }
 
     /**

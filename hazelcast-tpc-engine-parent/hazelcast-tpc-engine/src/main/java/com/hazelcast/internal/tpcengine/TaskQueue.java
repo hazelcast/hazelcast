@@ -24,6 +24,9 @@ import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.tpcengine.CompletelyFairScheduler.niceToWeight;
+import static com.hazelcast.internal.tpcengine.Task.RUN_BLOCKED;
+import static com.hazelcast.internal.tpcengine.Task.RUN_COMPLETED;
+import static com.hazelcast.internal.tpcengine.Task.RUN_YIELD;
 import static com.hazelcast.internal.tpcengine.util.EpochClock.epochNanos;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 import static java.lang.Math.max;
@@ -75,13 +78,13 @@ import static java.lang.Math.max;
 @SuppressWarnings({"checkstyle:VisibilityModifier"})
 public final class TaskQueue implements Comparable<TaskQueue> {
 
-    public static final int POLL_INSIDE_ONLY = 1;
-    public static final int POLL_OUTSIDE_ONLY = 2;
-    public static final int POLL_INSIDE_FIRST = 3;
-    public static final int POLL_OUTSIDE_FIRST = 4;
+    static final int POLL_INSIDE_ONLY = 1;
+    static final int POLL_OUTSIDE_ONLY = 2;
+    static final int POLL_INSIDE_FIRST = 3;
+    static final int POLL_OUTSIDE_FIRST = 4;
 
-    public static final int RUN_STATE_RUNNING = 1;
-    public static final int RUN_STATE_BLOCKED = 2;
+    static final int RUN_STATE_RUNNING = 1;
+    static final int RUN_STATE_BLOCKED = 2;
 
     int pollState;
 
@@ -95,6 +98,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // the queue for tasks offered outside of the eventloop
     Queue<Object> outside;
 
+    Queue<Object> polledFrom;
     // any runnable on the queue will be processed as is.
     // any Task on the queue will also be processed according to the contract
     // of the task. anything else is offered to the taskFactory to be wrapped
@@ -115,7 +119,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     // the tree, the vruntime is always updated to the min_vruntime. So the vruntime
     // isn't the actual amount of time spend on the CPU
     long virtualRuntimeNanos;
-    long tasksProcessed;
+    long taskRunCount;
     // the number of times this taskQueue has been blocked
     long blockedCount;
     // the number of times this taskQueue has been context switched.
@@ -156,10 +160,12 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 activeTask = outside.poll();
                 break;
             case POLL_OUTSIDE_FIRST:
+                polledFrom = outside;
                 activeTask = outside.poll();
                 if (activeTask != null) {
                     pollState = POLL_INSIDE_FIRST;
                 } else {
+                    polledFrom = inside;
                     activeTask = inside.poll();
                     if (activeTask == null) {
                         pollState = POLL_INSIDE_FIRST;
@@ -167,10 +173,12 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 }
                 break;
             case POLL_INSIDE_FIRST:
+                polledFrom = inside;
                 activeTask = inside.poll();
                 if (activeTask != null) {
                     pollState = POLL_OUTSIDE_FIRST;
                 } else {
+                    polledFrom = outside;
                     activeTask = outside.poll();
                     if (activeTask == null) {
                         pollState = POLL_OUTSIDE_FIRST;
@@ -182,27 +190,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         }
 
         return activeTask != null;
-    }
-
-    /**
-     * Runs the active task.
-     */
-    void runActiveTask() {
-        assert activeTask != null;
-
-        try {
-            //
-            if (taskRunner != null) {
-                taskRunner.run(activeTask);
-            } else {
-                ((Runnable) activeTask).run();
-            }
-        } catch (Exception e) {
-            // todo: exception handling needs to improve.
-            e.printStackTrace();
-        } finally {
-            tasksProcessed++;
-        }
     }
 
     static class RunContext {
@@ -238,7 +225,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
         // The time the taskGroup has spend on the CPU.
         long cpuTimeNanos = 0;
-        int taskProcessedCount = 0;
+        //  int taskProcessedCount = 0;
         boolean taskQueueEmpty = false;
         // This forces immediate time measurement of the first task.
         int clockSampleRound = 1;
@@ -252,8 +239,9 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             }
 
             context.taskStartNanos = context.nowNanos;
+
             runActiveTask();
-            taskProcessedCount++;
+            taskRunCount++;
 
             if (clockSampleRound == 1) {
                 context.nowNanos = epochNanos();
@@ -283,7 +271,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         }
 
         scheduler.updateActive(cpuTimeNanos);
-        metrics.incTasksProcessedCount(taskProcessedCount);
+        metrics.incTasksRunCount(taskRunCount);
         metrics.incCpuTimeNanos(cpuTimeNanos);
         context.reactorMetrics.incContextSwitchCount();
 
@@ -301,6 +289,28 @@ public final class TaskQueue implements Comparable<TaskQueue> {
         } else {
             // Task queue wasn't fully drained, so the taskQueue is going to yield.
             scheduler.yieldActive();
+        }
+    }
+
+    private void runActiveTask() {
+        int runResult;
+        try {
+            runResult = taskRunner.run(activeTask);
+        } catch (Throwable e) {
+            runResult = taskRunner.handleError(activeTask, e);
+        }
+
+        switch (runResult) {
+            case RUN_BLOCKED:
+                break;
+            case RUN_YIELD:
+                // todo: return
+                polledFrom.offer(activeTask);
+                break;
+            case RUN_COMPLETED:
+                break;
+            default:
+                throw new IllegalStateException();
         }
     }
 
@@ -385,7 +395,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
                 + ", weight=" + weight
                 + ", sumExecRuntimeNanos=" + actualRuntimeNanos
                 + ", vruntimeNanos=" + virtualRuntimeNanos
-                + ", tasksProcessed=" + tasksProcessed
+                + ", tasksProcessed=" + taskRunCount
                 + ", blockedCount=" + blockedCount
                 + ", contextSwitchCount=" + contextSwitchCount
                 + ", startNanos=" + startNanos
@@ -421,7 +431,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             return (long) TASKS_PROCESSED_COUNT.getOpaque(this);
         }
 
-        public void incTasksProcessedCount(int delta) {
+        public void incTasksRunCount(long delta) {
             TASKS_PROCESSED_COUNT.setOpaque(this, (long) TASKS_PROCESSED_COUNT.getOpaque(this) + delta);
         }
 
@@ -520,8 +530,6 @@ public final class TaskQueue implements Comparable<TaskQueue> {
 
             eventloop.checkOnEventloopThread();
 
-            //checkNotNull(processor, "processor");
-
             if (nice < MIN_NICE) {
                 throw new IllegalArgumentException("nice can't be smaller than " + MIN_NICE);
             } else if (nice > MAX_NICE) {
@@ -539,6 +547,10 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             if (name == null) {
                 name = "taskqueue-" + ID.incrementAndGet();
             }
+
+            if (taskRunner == null) {
+                taskRunner = DefaultTaskRunner.INSTANCE;
+            }
         }
 
         @Override
@@ -549,8 +561,10 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             taskQueue.outside = outside;
             if (inside == null) {
                 taskQueue.pollState = POLL_OUTSIDE_ONLY;
+                taskQueue.polledFrom = outside;
             } else if (outside == null) {
                 taskQueue.pollState = POLL_INSIDE_ONLY;
+                taskQueue.polledFrom = inside;
             } else {
                 taskQueue.pollState = POLL_OUTSIDE_FIRST;
             }

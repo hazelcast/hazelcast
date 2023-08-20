@@ -17,31 +17,37 @@
 package com.hazelcast.internal.tpcengine;
 
 /**
- * A {@link TaskQueue} can be configured with a {@link TaskRunner} which will process
- * every task issued to that TaskQueue.
+ * Every {@link TaskQueue} has a {@link TaskRunner} which will run tasks
+ * issued to that TaskQueue.
+ * <p/>
+ * The TaskRunner also controls the error handling behavior using the
+ * {@link #handleError(Object, Throwable)} method.
  */
 public interface TaskRunner {
 
-    // Indicates that the task is yielding; so there is more work to do but the thread is willing to
-    // give up the CPU to let other tasks run.
-    int TASK_YIELD = 2;
-    // Indicates that the task has completed and doesn't need to be reinserted into the {@link TaskQueue}.
-    int TASK_COMPLETED = 0;
-    // Indicates that the task is blocked and can be removed from the run queue of the scheduler.
-    int TASK_BLOCKED = 1;
-
     /**
-     * Initializes the TaskFactory with the given eventloop.
+     * Initializes the TaskRunner with the given {@link Eventloop}.
      *
-     * @param eventloop the Eventloop this TaskFactory belongs to.
+     * @param eventloop the Eventloop this TaskRunner belongs to.
      */
     void init(Eventloop eventloop);
 
     /**
-     * Process a single task.
+     * Process a single task. It depends on the TaskRunner implementation which
+     * type of tasks it can run.
      *
      * @param task the task.
-     * @return the task state.
+     * @return the task state. See {@link Task}.
      */
-    int run(Object task) throws Exception;
+    int run(Object task) throws Throwable;
+
+    /**
+     * Handles the throwable thrown by the {@link #run(Object)}. If you don't
+     * want to handle the cause, rethrow it. But this will effectively mean that
+     * the reactor is going to be terminated.
+     *
+     * @param cause
+     * @return the run state of the task.
+     */
+    int handleError(Object task, Throwable cause);
 }

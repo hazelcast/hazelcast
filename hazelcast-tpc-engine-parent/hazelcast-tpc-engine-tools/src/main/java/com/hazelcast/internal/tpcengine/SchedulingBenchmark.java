@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpcengine;
 
 
-import com.hazelcast.internal.tpcengine.net.NetworkBenchmark;
 import com.hazelcast.internal.tpcengine.util.CircularQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
 import org.jctools.util.PaddedAtomicLong;
@@ -101,7 +100,7 @@ public class SchedulingBenchmark {
                             RunnableJob task = new RunnableJob(taskQueue, counter);
                             taskQueue.offer(task);
                         } else {
-                            TaskJob task = new TaskJob(counter);
+                            SchedulingTask task = new SchedulingTask(counter);
                             taskQueue.offer(task);
                         }
                     }
@@ -204,21 +203,21 @@ public class SchedulingBenchmark {
         }
     }
 
-    private class TaskJob extends Task {
+    private class SchedulingTask extends Task {
         private final PaddedAtomicLong counter;
 
-        private TaskJob(PaddedAtomicLong counter) {
+        private SchedulingTask(PaddedAtomicLong counter) {
             this.counter = counter;
         }
 
         @Override
-        public int process() {
+        public int run() {
             if (stop) {
-                return TaskRunner.TASK_COMPLETED;
+                return RUN_COMPLETED;
             }
 
             counter.lazySet(counter.get() + 1);
-            return TaskRunner.TASK_YIELD;
+            return RUN_YIELD;
         }
     }
 

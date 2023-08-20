@@ -150,7 +150,7 @@ public abstract class Eventloop {
      * <p/>
      * So if there is some long running tasks, it periodically checks this method.
      * As long as it returns false, it can keep running. When true is returned, the
-     * task should yield (see {@link Task#process()} for more details) and the task
+     * task should yield (see {@link Task#run()} for more details) and the task
      * will be scheduled again at some point in the future.
      * <p/>
      * This method is pretty expensive due to the overhead of
