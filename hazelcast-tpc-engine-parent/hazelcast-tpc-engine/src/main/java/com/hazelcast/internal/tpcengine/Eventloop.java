@@ -274,12 +274,14 @@ public abstract class Eventloop {
 
             TaskQueue taskQueue = scheduler.pickNext();
             if (taskQueue == null) {
+                long epochNanosBeforePark = epochNanos();
+                runContext.nowNanos = epochNanosBeforePark;
+
                 // There is no work and therefor we need to park.
                 long earliestDeadlineNs = deadlineScheduler.earliestDeadlineNs();
                 long timeoutNs = earliestDeadlineNs == -1
                         ? Long.MAX_VALUE
                         : max(0, earliestDeadlineNs - runContext.nowNanos);
-                metrics.incParkCount();
                 park(timeoutNs);
 
                 // after a park we have to guarantee that the nowNanos is up to data.
@@ -289,6 +291,9 @@ public abstract class Eventloop {
                 // since we just update the time, no need to obtain
                 // it again whe the next taskQueue runs.
                 timeUpdateNeeded = false;
+
+                metrics.incParkCount();
+                metrics.incParkTimeNanos(runContext.nowNanos - epochNanosBeforePark);
             } else {
                 // before a task group is run, its nowNanos needs to be up to date.
                 // this is either done here or after the park.

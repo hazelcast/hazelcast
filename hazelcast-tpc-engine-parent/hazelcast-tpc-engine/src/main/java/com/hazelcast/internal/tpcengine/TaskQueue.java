@@ -221,6 +221,8 @@ public final class TaskQueue implements Comparable<TaskQueue> {
     @SuppressWarnings({"checkstyle:NPathComplexity",
             "checkstyle:MethodLength"})
     void run(RunContext context) throws Exception {
+        final Reactor.Metrics reactorMetrics = context.reactorMetrics;
+
         context.taskDeadlineNanos = context.nowNanos + scheduler.timeSliceNanosActive();
 
         // The time the taskGroup has spend on the CPU.
@@ -241,6 +243,7 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             context.taskStartNanos = context.nowNanos;
 
             runActiveTask();
+            reactorMetrics.incTaskCsCount();
             taskRunCount++;
 
             if (clockSampleRound == 1) {
@@ -264,16 +267,16 @@ public final class TaskQueue implements Comparable<TaskQueue> {
             if (context.nowNanos >= context.ioDeadlineNanos) {
                 // periodically we need to tick the io schedulers.
                 eventloop.ioSchedulerTick();
-                context.reactorMetrics.incIoSchedulerTicks();
+                reactorMetrics.incIoSchedulerTicks();
                 context.nowNanos = epochNanos();
                 context.ioDeadlineNanos = context.nowNanos + context.ioIntervalNanos;
             }
         }
 
         scheduler.updateActive(cpuTimeNanos);
-        metrics.incTasksRunCount(taskRunCount);
+        metrics.incTaskCsCount(taskRunCount);
         metrics.incCpuTimeNanos(cpuTimeNanos);
-        context.reactorMetrics.incContextSwitchCount();
+        reactorMetrics.incTaskQueueCsCount();
 
         if (taskQueueEmpty || isEmpty()) {
             // the taskQueue has been fully drained.
@@ -411,28 +414,28 @@ public final class TaskQueue implements Comparable<TaskQueue> {
      * read by any thread.
      */
     public static final class Metrics {
-        private static final VarHandle TASKS_PROCESSED_COUNT;
+        private static final VarHandle TASK_CS_COUNT;
         private static final VarHandle CPU_TIME_NANOS;
 
-        private volatile long taskCompletedCount;
+        private volatile long taskCsCount;
         private volatile long cpuTimeNanos;
 
         static {
             try {
                 MethodHandles.Lookup l = MethodHandles.lookup();
-                TASKS_PROCESSED_COUNT = l.findVarHandle(Metrics.class, "taskCompletedCount", long.class);
+                TASK_CS_COUNT = l.findVarHandle(Metrics.class, "taskCsCount", long.class);
                 CPU_TIME_NANOS = l.findVarHandle(Metrics.class, "cpuTimeNanos", long.class);
             } catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
             }
         }
 
-        public long taskProcessCount() {
-            return (long) TASKS_PROCESSED_COUNT.getOpaque(this);
+        public long taskCsCount() {
+            return (long) TASK_CS_COUNT.getOpaque(this);
         }
 
-        public void incTasksRunCount(long delta) {
-            TASKS_PROCESSED_COUNT.setOpaque(this, (long) TASKS_PROCESSED_COUNT.getOpaque(this) + delta);
+        public void incTaskCsCount(long delta) {
+            TASK_CS_COUNT.setOpaque(this, (long) TASK_CS_COUNT.getOpaque(this) + delta);
         }
 
         public long cpuTimeNanos() {

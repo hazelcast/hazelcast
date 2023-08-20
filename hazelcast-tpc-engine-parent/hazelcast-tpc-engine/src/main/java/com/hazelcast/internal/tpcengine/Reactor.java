@@ -528,48 +528,44 @@ public abstract class Reactor implements Executor {
         @Override
         public void run() {
             try {
+                configureThreadAffinity();
+
+                Eventloop eventloop0 = newEventloop(reactorBuilder);
+                future.complete(eventloop0);
+
+                startLatch.await();
                 try {
-                    configureThreadAffinity();
-                    Eventloop eventloop0 = newEventloop(reactorBuilder);
-                    future.complete(eventloop0);
+                    // it could be that the thread wakes up due to termination.
+                    // So we need to check the state first before running.
+                    if (state == RUNNING) {
+                        Eventloop.EVENTLOOP_THREAD_LOCAL.set(eventloop0);
+                        eventloop0.beforeRun();
 
-                    startLatch.await();
-                    try {
-                        // it could be that the thread wakes up due to termination.
-                        // So we need to check the state first before running.
-                        if (state == RUNNING) {
-                            Eventloop.EVENTLOOP_THREAD_LOCAL.set(eventloop0);
-                            eventloop0.beforeRun();
-
-                            if (initFn != null) {
-                                initFn.accept(Reactor.this);
-                            }
-
-                            eventloop0.run();
+                        if (initFn != null) {
+                            initFn.accept(Reactor.this);
                         }
-                    } finally {
-                        eventloop0.destroy();
-                        Eventloop.EVENTLOOP_THREAD_LOCAL.remove();
+
+                        eventloop0.run();
                     }
-                } catch (Throwable e) {
-                    future.completeExceptionally(e);
-                    logger.severe(e);
                 } finally {
-                    state = TERMINATED;
-
-                    terminationLatch.countDown();
-
-                    if (engine != null) {
-                        engine.notifyReactorTerminated();
-                    }
-
-                    if (logger.isInfoEnabled()) {
-                        logger.info(Thread.currentThread().getName() + " terminated.");
-                    }
+                    eventloop0.destroy();
+                    Eventloop.EVENTLOOP_THREAD_LOCAL.remove();
                 }
             } catch (Throwable e) {
-                // log whatever wasn't caught so that we don't swallow throwables.
+                future.completeExceptionally(e);
                 logger.severe(e);
+            } finally {
+                state = TERMINATED;
+
+                terminationLatch.countDown();
+
+                if (engine != null) {
+                    engine.notifyReactorTerminated();
+                }
+
+                if (logger.isInfoEnabled()) {
+                    logger.info(Thread.currentThread().getName() + " terminated.");
+                }
             }
         }
 
@@ -601,28 +597,32 @@ public abstract class Reactor implements Executor {
      */
     public static final class Metrics {
 
-        private static final VarHandle TASKS_PROCESSED_COUNT;
         private static final VarHandle CPU_TIME_NANOS;
-        private static final VarHandle CONTEXT_SWITCH_COUNT;
-
+        private static final VarHandle TASK_QUEUE_CS_SWITCH_COUNT;
+        private static final VarHandle TASK_CS_SWITCH_COUNT;
+        private static final VarHandle PARK_TIME_NANOS;
         private static final VarHandle PARK_COUNT;
         private static final VarHandle IO_SCHEDULER_TICKS;
 
         private volatile long taskCompletedCount;
         private volatile long cpuTimeNanos;
-        private volatile long contextSwitchCount;
+        private volatile long taskQueueCsCount;
+        private volatile long taskCsCount;
         private volatile long parkCount;
+        private volatile long parkTimeNanos;
         private volatile long ioSchedulerTicks;
 
         private final long startTimeNanos = EpochClock.INSTANCE.epochNanos();
 
+
         static {
             try {
                 MethodHandles.Lookup l = MethodHandles.lookup();
-                TASKS_PROCESSED_COUNT = l.findVarHandle(Metrics.class, "taskCompletedCount", long.class);
                 CPU_TIME_NANOS = l.findVarHandle(Metrics.class, "cpuTimeNanos", long.class);
-                CONTEXT_SWITCH_COUNT = l.findVarHandle(Metrics.class, "contextSwitchCount", long.class);
+                TASK_QUEUE_CS_SWITCH_COUNT = l.findVarHandle(Metrics.class, "taskQueueCsCount", long.class);
+                TASK_CS_SWITCH_COUNT = l.findVarHandle(Metrics.class, "taskCsCount", long.class);
                 PARK_COUNT = l.findVarHandle(Metrics.class, "parkCount", long.class);
+                PARK_TIME_NANOS = l.findVarHandle(Metrics.class, "parkTimeNanos", long.class);
                 IO_SCHEDULER_TICKS = l.findVarHandle(Metrics.class, "ioSchedulerTicks", long.class);
             } catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
@@ -631,24 +631,6 @@ public abstract class Reactor implements Executor {
 
         public long startTimeNanos() {
             return startTimeNanos;
-        }
-
-        /**
-         * Returns the number of tasks that have run on the Reactor.
-         *
-         * @return the number of tasks.
-         */
-        public long taskProcessCount() {
-            return (long) TASKS_PROCESSED_COUNT.getOpaque(this);
-        }
-
-        /**
-         * Increases the number of tasks that have run on the Reactor.
-         *
-         * @param delta the increment
-         */
-        public void incTasksProcessedCount(int delta) {
-            TASKS_PROCESSED_COUNT.setOpaque(this, (long) TASKS_PROCESSED_COUNT.getOpaque(this) + delta);
         }
 
         public long ioSchedulerTicks() {
@@ -675,20 +657,36 @@ public abstract class Reactor implements Executor {
             CPU_TIME_NANOS.setOpaque(this, (long) CPU_TIME_NANOS.getOpaque(this) + delta);
         }
 
+        public long parkTimeNanos() {
+            return (long) PARK_TIME_NANOS.getOpaque(this);
+        }
+
+        public void incParkTimeNanos(long delta) {
+            PARK_TIME_NANOS.setOpaque(this, (long) PARK_TIME_NANOS.getOpaque(this) + delta);
+        }
+
         /**
          * Returns the number of task context switches the Reactor has performed.
          *
          * @return the number of task context switches.
          */
-        public long contextSwitchCount() {
-            return (long) CONTEXT_SWITCH_COUNT.getOpaque(this);
+        public long taskQueueCsSwitchCount() {
+            return (long) TASK_QUEUE_CS_SWITCH_COUNT.getOpaque(this);
         }
 
         /**
          * Increases the number of task context switches the Reactor has performed by 1.
          */
-        public void incContextSwitchCount() {
-            CONTEXT_SWITCH_COUNT.setOpaque(this, (long) CONTEXT_SWITCH_COUNT.getOpaque(this) + 1);
+        public void incTaskQueueCsCount() {
+            TASK_QUEUE_CS_SWITCH_COUNT.setOpaque(this, (long) TASK_QUEUE_CS_SWITCH_COUNT.getOpaque(this) + 1);
+        }
+
+        public long taskCsSwitchCount() {
+            return (long) TASK_CS_SWITCH_COUNT.getOpaque(this);
+        }
+
+        public void incTaskCsCount() {
+            TASK_CS_SWITCH_COUNT.setOpaque(this, (long) TASK_CS_SWITCH_COUNT.getOpaque(this) + 1);
         }
     }
 
@@ -783,7 +781,7 @@ public abstract class Reactor implements Executor {
          * within the storage scheduler. First requests are staged in the
          * storage scheduler until the  scheduled picks up a batch and submits
          * this batch to be actually processed by the OS.
-         *
+         * <p>
          * This number should be equal or larger than the storageSubmitLimit.
          */
         public int storagePendingLimit;
