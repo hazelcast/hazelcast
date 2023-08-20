@@ -16,19 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
-import com.google.common.collect.ImmutableSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.RelationsStorage;
-import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.schema.type.TypeKind;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,12 +37,10 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.schema.TypeUtils.enrichMappingFieldType;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PREFIX;
-import static com.hazelcast.sql.impl.schema.type.TypeKind.COMPACT;
-import static com.hazelcast.sql.impl.schema.type.TypeKind.JAVA;
-import static com.hazelcast.sql.impl.schema.type.TypeKind.PORTABLE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
@@ -57,7 +53,8 @@ public class KvMetadataResolvers {
 
     // A string of characters (excluding a `.`), optionally prefixed with "__key." or "this."
     private static final Pattern EXT_NAME_PATTERN = Pattern.compile("((" + KEY + "|" + VALUE + ")\\.)?[^.]+");
-    private static final Set<TypeKind> NESTED_FIELDS_SUPPORTED_FORMATS = ImmutableSet.of(JAVA, PORTABLE, COMPACT);
+    private static final Set<String> NESTED_FIELDS_SUPPORTED_FORMATS = new HashSet<>(Set.of(
+            SqlConnector.JAVA_FORMAT, SqlConnector.PORTABLE_FORMAT, SqlConnector.COMPACT_FORMAT));
 
     private final Map<String, KvMetadataResolver> keyResolvers;
     private final Map<String, KvMetadataResolver> valueResolvers;
@@ -123,16 +120,16 @@ public class KvMetadataResolvers {
                 .resolveAndValidateFields(false, userFields, options, ss)
                 .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE));
 
-        final TypeKind keyKind = TypesUtils.formatToTypeKind(getFormat(options, true));
-        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(keyKind)) {
-            keyFields = keyFields
-                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(keyKind, mappingField, relationsStorage));
+        final String keyFormat = getFormat(options, true);
+        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(keyFormat)) {
+            keyFields = keyFields.peek(mappingField ->
+                    enrichMappingFieldType(true, mappingField, ss, relationsStorage, options));
         }
 
-        final TypeKind valueKind = TypesUtils.formatToTypeKind(getFormat(options, false));
-        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(valueKind)) {
-            valueFields = valueFields
-                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(valueKind, mappingField, relationsStorage));
+        final String valueFormat = getFormat(options, false);
+        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(valueFormat)) {
+            valueFields = valueFields.peek(mappingField ->
+                    enrichMappingFieldType(false, mappingField, ss, relationsStorage, options));
         }
 
         Map<String, MappingField> fields = concat(keyFields, valueFields)

@@ -77,12 +77,6 @@ public class GetDdlTest extends SqlTestSupport {
         String createTypeQuery = "CREATE OR REPLACE TYPE \"hazelcast\".\"public\".\"t\" (" + LE +
                 "  \"a\" INTEGER," + LE +
                 "  \"b\" INTEGER" + LE +
-                ")" + LE +
-                "OPTIONS (" + LE +
-                "  'format'='portable'," + LE +
-                "  'portableFactoryId'='1'," + LE +
-                "  'portableClassId'='3'," + LE +
-                "  'portableClassVersion'='0'" + LE +
                 ")";
 
         instance().getSql().execute(createTypeQuery);

@@ -41,10 +41,8 @@ import java.util.Map;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_TYPE_JAVA_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
@@ -264,11 +262,7 @@ public class SqlPojoTest extends KafkaSqlTestSupport {
 
     @Test
     public void test_customType() {
-        new SqlType("person_type")
-                .options(OPTION_FORMAT, JAVA_FORMAT,
-                         OPTION_TYPE_JAVA_CLASS, Person.class.getName())
-                .create();
-
+        new SqlType("person_type").create();
         kafkaMapping("m", Integer.class, ClzWithPerson.class,
                         IntegerSerializer.class, IntegerDeserializer.class,
                         JavaSerializer.class, JavaDeserializer.class)
