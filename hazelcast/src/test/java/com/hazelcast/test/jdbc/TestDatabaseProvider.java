@@ -85,4 +85,8 @@ public interface TestDatabaseProvider {
                      .map(part -> '\"' + part.replaceAll("\"", "\"\"") + '\"')
                      .collect(joining("."));
     };
+
+    default String createSchemaQuery(String schemaName) {
+        return "CREATE SCHEMA IF NOT EXISTS " + schemaName;
+    }
 }

@@ -38,10 +38,10 @@ import java.util.Map;
 public interface Storage<K, R> {
 
     /**
-     * @return true if compaction for tiered
-     * store is enabled, false otherwise.
+     * @return true if current configuration of this {@link Storage}
+     * supports executions as a chain of {@link Step} , false otherwise.
      */
-    default boolean isPartitionCompactorEnabled() {
+    default boolean supportsSteppedRun() {
         return false;
     }
 

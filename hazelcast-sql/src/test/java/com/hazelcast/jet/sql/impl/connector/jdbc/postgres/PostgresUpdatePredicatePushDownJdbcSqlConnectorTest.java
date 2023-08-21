@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.jdbc.mssql;
+package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
-import com.hazelcast.jet.sql.impl.connector.jdbc.SinkJdbcSqlConnectorTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.UpdatePredicatePushDownJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.jdbc.MSSQLDatabaseProvider;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class MSSQLSinkIntoJdbcSqlConnectorTest extends SinkJdbcSqlConnectorTest {
+public class PostgresUpdatePredicatePushDownJdbcSqlConnectorTest extends UpdatePredicatePushDownJdbcSqlConnectorTest {
 
     @BeforeClass
     public static void beforeClass() {
-        //There is no arm64 image for mssql server
-        assumeNoArm64Architecture();
-        initialize(new MSSQLDatabaseProvider());
+        initialize(new PostgresDatabaseProvider());
     }
+
 }
