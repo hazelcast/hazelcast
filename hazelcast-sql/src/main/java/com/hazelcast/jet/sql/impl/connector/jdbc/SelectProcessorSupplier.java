@@ -121,6 +121,7 @@ public class SelectProcessorSupplier
         BiFunctionEx<ResultSet, Integer, Object>[] valueGetters = new BiFunctionEx[metaData.getColumnCount()];
         for (int j = 0; j < metaData.getColumnCount(); j++) {
             String type = metaData.getColumnTypeName(j + 1).toUpperCase(Locale.ROOT);
+            type = isNumberTypeCheck(metaData, type, j);
             Map<String, BiFunctionEx<ResultSet, Integer, Object>> getters = GettersProvider.getGetters(dialectName);
             valueGetters[j] = getters.getOrDefault(
                     type,
@@ -150,5 +151,18 @@ public class SelectProcessorSupplier
         query = in.readString();
         parameterPositions = in.readIntArray();
         dialectName = in.readString();
+    }
+
+    private String isNumberTypeCheck(ResultSetMetaData metaData, String type, int column) throws SQLException {
+        if (type.equals("NUMBER")) {
+            int precision = metaData.getPrecision(column + 1);
+            int scale = metaData.getScale(column + 1);
+            if (precision == 63 && scale == -127) {
+                return "REAL";
+            } else if (precision == 38 && scale == 0) {
+                return "INT";
+            }
+        }
+        return type;
     }
 }

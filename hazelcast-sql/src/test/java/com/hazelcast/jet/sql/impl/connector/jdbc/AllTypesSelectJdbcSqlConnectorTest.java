@@ -84,12 +84,28 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void selectRowWithAllTypes() throws Exception {
-        String tableName = randomTableName();
+        String tableName = generateTableName();
 
-        createTable(tableName, "table_column " + type);
+        createTable_(tableName);
         executeJdbc("INSERT INTO " + tableName + " VALUES(" + value + ")");
 
         String mappingName = "mapping_" + randomName();
+        executeMapping(mappingName, tableName);
+
+        assertRowsAnyOrder("SELECT * FROM " + mappingName, new Row(expected));
+
+        assertRowsMethod(mappingName);
+    }
+
+    protected String generateTableName(){
+        return randomTableName();
+    }
+
+    protected void createTable_(String tableName) throws Exception{
+        createTable(tableName, "table_column " + type);
+    }
+
+    protected void executeMapping(String mappingName, String tableName) {
         execute("CREATE MAPPING " + mappingName
                 + " EXTERNAL NAME " + tableName
                 + " ("
@@ -97,13 +113,12 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + ") "
                 + "DATA CONNECTION " + TEST_DATABASE_REF
         );
+    }
 
-        assertRowsAnyOrder("SELECT * FROM " + mappingName, new Row(expected));
-
+    protected void assertRowsMethod(String mappingName){
         assertRowsAnyOrder("SELECT * FROM " + mappingName + " WHERE table_column = ?",
                 newArrayList(expected),
                 new Row(expected)
         );
     }
-
 }

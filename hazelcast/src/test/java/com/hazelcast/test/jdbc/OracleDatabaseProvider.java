@@ -18,12 +18,6 @@ package com.hazelcast.test.jdbc;
 
 import org.testcontainers.containers.OracleContainer;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
-import static com.hazelcast.internal.util.Preconditions.checkState;
-
 public class OracleDatabaseProvider implements TestDatabaseProvider {
 
     private static final int LOGIN_TIMEOUT = 120;
@@ -42,16 +36,7 @@ public class OracleDatabaseProvider implements TestDatabaseProvider {
         return jdbcUrl;
     }
 
-    /*
-    private void waitForDb(String jdbcUrl, String username, String password, int timeout) {
-        DriverManager.setLoginTimeout(timeout);
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, username, password)) {
-            checkState(!conn.isClosed(), "at this point the connection should be open");
-        } catch (SQLException e) {
-            throw new RuntimeException("error while starting database", e);
-        }
-    }
-    */
+
     @Override
     public String noAuthJdbcUrl() {
         return container.getJdbcUrl()
