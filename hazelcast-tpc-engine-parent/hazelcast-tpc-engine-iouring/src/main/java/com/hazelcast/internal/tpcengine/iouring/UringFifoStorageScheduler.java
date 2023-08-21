@@ -59,10 +59,14 @@ import static java.lang.Math.min;
  * <p/>
  * There are 3 important queues:
  * <ol>
- *     <li>stagingQueue: this is the queue where scheduled request initially
- *     end up.</li>
- *     <li>submissionQueue: on every scheduled tick, requests from the staging
- *     queue are moved to the submission queue.</li>
+ *     <li>
+ *          stagingQueue: this is the queue where scheduled request initially
+ *          end up.
+ *     </li>
+ *     <li>
+ *         submissionQueue: on every scheduled tick, requests from the staging
+ *         queue are moved to the submission queue.
+ *     </li>
  *     <li>
  *         completionQueue: once io_uring has completed the requests, the
  *         completed requests end up at the completion queue. The completionQueue
@@ -136,7 +140,7 @@ public final class UringFifoStorageScheduler implements StorageScheduler {
 
     @Override
     public boolean tick() {
-        // Submits as many staged requests as allowed to the submission queue.
+        // prepare as many staged requests as allowed in the submission queue.
         final StagingQueue stagingQueue = this.stagingQueue;
         final int toSubmit = min(submitLimit - submitCount, stagingQueue.size());
         final UringStorageRequest[] array = stagingQueue.array;
