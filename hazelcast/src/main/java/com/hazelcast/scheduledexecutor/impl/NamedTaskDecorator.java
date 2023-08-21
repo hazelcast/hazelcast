@@ -58,6 +58,7 @@ public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
+        // RU_COMPAT_5_3
         if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
             super.writeData(out);
             out.writeString(name);
@@ -70,6 +71,7 @@ public class NamedTaskDecorator<V> extends AbstractTaskDecorator<V>
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
+        // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
             super.readData(in);
             name = in.readString();
