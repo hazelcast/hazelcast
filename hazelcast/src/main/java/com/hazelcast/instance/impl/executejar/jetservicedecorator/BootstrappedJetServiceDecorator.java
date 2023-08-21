@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl;
+package com.hazelcast.instance.impl.executejar.jetservicedecorator;
 
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
@@ -42,25 +42,27 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This class is a stateful proxy that delegates calls to given JetService.
- * The state is about running a jet job
+ * This class is a decorator that delegates most of the calls to given JetService.
+ * Implementors of this class provides a strategy pattern to access ExecuteJobParameters to launch a new jet job
  */
 @SuppressWarnings({"checkstyle:methodcount"})
-public abstract class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
+public abstract class BootstrappedJetServiceDecorator<M> extends AbstractJetInstance<M> {
 
-    private static final ILogger LOGGER = Logger.getLogger(BootstrappedJetProxy.class);
+    private static final ILogger LOGGER = Logger.getLogger(BootstrappedJetServiceDecorator.class);
 
     private final AbstractJetInstance<M> jetInstance;
 
-    protected BootstrappedJetProxy(@Nonnull JetService jetService) {
+    protected BootstrappedJetServiceDecorator(@Nonnull JetService jetService) {
         super(((AbstractJetInstance) jetService).getHazelcastInstance());
         this.jetInstance = (AbstractJetInstance<M>) jetService;
     }
 
     public abstract boolean hasExecuteJobParameters();
 
+    // The strategy to get ExecuteJobParameters on client and member side
     public abstract ExecuteJobParameters getExecuteJobParameters();
 
+    // The strategy to set ExecuteJobParameters on client and member side
     public abstract void setExecuteJobParameters(ExecuteJobParameters executeJobParameters);
 
     public void removeExecuteJobParameters() {

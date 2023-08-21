@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance.impl.executejar;
 
-import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
+import com.hazelcast.instance.impl.executejar.instancedecorator.BootstrappedInstanceDecorator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -39,7 +39,7 @@ public class MemberExecuteJar {
      * <p>
      * The startup of the job is not awaited
      */
-    public void executeJar(@Nonnull BootstrappedInstanceProxy instanceProxy,
+    public void executeJar(@Nonnull BootstrappedInstanceDecorator instanceProxy,
                            ExecuteJobParameters executeJobParameters,
                            @Nullable String mainClassName,
                            @Nonnull List<String> args
@@ -61,7 +61,7 @@ public class MemberExecuteJar {
         }
     }
 
-    void invokeMain(BootstrappedInstanceProxy instanceProxy, ExecuteJobParameters executeJobParameters,
+    void invokeMain(BootstrappedInstanceDecorator instanceProxy, ExecuteJobParameters executeJobParameters,
                     Method mainMethod, List<String> args)
             throws IllegalAccessException, InvocationTargetException {
         try {

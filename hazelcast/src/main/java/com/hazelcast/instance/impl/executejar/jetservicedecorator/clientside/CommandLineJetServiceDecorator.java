@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl.executejar;
+package com.hazelcast.instance.impl.executejar.jetservicedecorator.clientside;
 
-import com.hazelcast.instance.impl.BootstrappedJetProxy;
+import com.hazelcast.instance.impl.executejar.jetservicedecorator.BootstrappedJetServiceDecorator;
+import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.jet.JetService;
 
 import javax.annotation.Nonnull;
 
 /**
- * The state is about running a jet job, and it stored in a local member
+ * This class uses a member field to return an ExecuteJobParameters object.
  */
-public class CommandLineJetProxy<M> extends BootstrappedJetProxy<M> {
+public class CommandLineJetServiceDecorator<M> extends BootstrappedJetServiceDecorator<M> {
 
     private ExecuteJobParameters executeJobParameters;
 
-    public CommandLineJetProxy(@Nonnull JetService jetService) {
+    public CommandLineJetServiceDecorator(@Nonnull JetService jetService) {
         super(jetService);
     }
 

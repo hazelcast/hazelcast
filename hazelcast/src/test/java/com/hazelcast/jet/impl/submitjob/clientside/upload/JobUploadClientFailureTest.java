@@ -61,12 +61,17 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doAnswer;
 
+// Tests to upload jar to member
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class JobUploadClientFailureTest extends JetTestSupport {
 
+    // The newJob() is called from main thread
     private static final String SIMPLE_JAR = "simplejob-1.0.0.jar";
+
+    // The newJob() is called from another thread
     private static final String PARALLEL_JAR = "paralleljob-1.0.0.jar";
+    private static final String JOINING_JAR = "joiningjob-1.0.0.jar";
     private static final String NO_MANIFEST_SIMPLE_JAR = "nomanifestsimplejob-1.0.0.jar";
 
     @After
@@ -190,6 +195,8 @@ public class JobUploadClientFailureTest extends JetTestSupport {
 
         JetClientInstanceImpl jetService = getClientJetService();
 
+        // upload the jar to member and call and within the jar start the job from another thread
+        // It fails because member uses ThreadLocal to find ExecuteJobParameters
         SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
                 .setJarPath(getParalleJarPath())
                 .setJobName("parallel_job");
@@ -399,6 +406,9 @@ public class JobUploadClientFailureTest extends JetTestSupport {
         return getPath(PARALLEL_JAR);
     }
 
+    public static Path getJoiningJarPath() {
+        return getPath(JOINING_JAR);
+    }
     static Path copyJar(String newJarPath) throws IOException {
         // Copy as new jar
         Path jarPath = getJarPath();

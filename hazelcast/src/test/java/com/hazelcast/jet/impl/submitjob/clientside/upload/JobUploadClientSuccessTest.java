@@ -56,11 +56,13 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.containsName;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.getJarPath;
+import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.getJoiningJarPath;
 import static com.hazelcast.jet.impl.submitjob.clientside.upload.JobUploadClientFailureTest.jarDoesNotExistInTempDirectory;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
 
+// Tests to upload jar to member
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class JobUploadClientSuccessTest extends JetTestSupport {
@@ -85,6 +87,19 @@ public class JobUploadClientSuccessTest extends JetTestSupport {
 
         SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
                 .setJarPath(getJarPath());
+
+        jetService.submitJobFromJar(submitJobParameters);
+
+        assertJobIsRunning(jetService);
+    }
+
+    @Test
+    public void test_jarUpload_whenJobIsJoining() throws IOException {
+        createCluster();
+        JetClientInstanceImpl jetService = getClientJetService();
+
+        SubmitJobParameters submitJobParameters = SubmitJobParameters.withJarOnClient()
+                .setJarPath(getJoiningJarPath());
 
         jetService.submitJobFromJar(submitJobParameters);
 

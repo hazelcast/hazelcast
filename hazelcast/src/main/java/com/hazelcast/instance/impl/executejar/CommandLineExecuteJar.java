@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance.impl.executejar;
 
-import com.hazelcast.instance.impl.BootstrappedInstanceProxy;
+import com.hazelcast.instance.impl.executejar.instancedecorator.BootstrappedInstanceDecorator;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
@@ -60,12 +60,12 @@ public class CommandLineExecuteJar {
      * The startup of the job is awaited for some period of time before this method returns.
      * Then the HZ client is closed
      */
-    public void executeJar(@Nonnull ResettableSingleton<BootstrappedInstanceProxy> singleton,
+    public void executeJar(@Nonnull ResettableSingleton<BootstrappedInstanceDecorator> singleton,
                            ExecuteJobParameters executeJobParameters,
                            @Nullable String mainClassName,
                            @Nonnull List<String> args
     ) throws IOException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
-        BootstrappedInstanceProxy instanceProxy = singleton.remembered();
+        BootstrappedInstanceDecorator instanceDecorator = singleton.remembered();
         boolean exit = false;
         try {
             String jarPath = executeJobParameters.getJarPath();
@@ -80,10 +80,10 @@ public class CommandLineExecuteJar {
 
                 LOGGER.info("Found mainClassName :\"" + mainClassName + "\" and main method");
 
-                invokeMain(instanceProxy, executeJobParameters, mainMethod, args);
+                invokeMain(instanceDecorator, executeJobParameters, mainMethod, args);
             }
             // Wait for the job to start
-            awaitJobsStartedByJar(instanceProxy);
+            awaitJobsStartedByJar(instanceDecorator);
 
         } catch (JetException exception) {
             // Only JetException causes exit code. Other exceptions such as ClassNotFound etc. are ignored
@@ -94,7 +94,7 @@ public class CommandLineExecuteJar {
             throw exception;
         } finally {
             try {
-                instanceProxy.shutdown();
+                instanceDecorator.shutdown();
             } catch (Exception exception) {
                 LOGGER.log(Level.SEVERE, "Shutdown failed with:", exception);
             }
@@ -105,7 +105,7 @@ public class CommandLineExecuteJar {
         }
     }
 
-    private void invokeMain(BootstrappedInstanceProxy instanceProxy, ExecuteJobParameters executeJobParameters,
+    private void invokeMain(BootstrappedInstanceDecorator instanceProxy, ExecuteJobParameters executeJobParameters,
                             Method mainMethod, List<String> args)
             throws IllegalAccessException, InvocationTargetException {
         try {
@@ -120,7 +120,7 @@ public class CommandLineExecuteJar {
         }
     }
 
-    private void awaitJobsStartedByJar(BootstrappedInstanceProxy instanceProxy) {
+    private void awaitJobsStartedByJar(BootstrappedInstanceDecorator instanceProxy) {
         List<Job> submittedJobs = instanceProxy.getSubmittedJobs();
         if (submittedJobs.isEmpty()) {
             LOGGER.severe("The JAR didn't submit any jobs.");

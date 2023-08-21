@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance.impl;
+package com.hazelcast.instance.impl.executejar.instancedecorator;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.client.ClientService;
@@ -34,6 +34,7 @@ import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.instance.impl.executejar.jetservicedecorator.BootstrappedJetServiceDecorator;
 import com.hazelcast.instance.impl.executejar.ExecuteJobParameters;
 import com.hazelcast.jet.Job;
 import com.hazelcast.logging.ILogger;
@@ -62,17 +63,17 @@ import java.util.concurrent.ConcurrentMap;
 
 // A special HazelcastInstance that has a BootstrappedJetProxy
 @SuppressWarnings({"checkstyle:methodcount"})
-public final class BootstrappedInstanceProxy implements HazelcastInstance {
+public final class BootstrappedInstanceDecorator implements HazelcastInstance {
 
-    private static final ILogger LOGGER = Logger.getLogger(BootstrappedInstanceProxy.class);
+    private static final ILogger LOGGER = Logger.getLogger(BootstrappedInstanceDecorator.class);
 
     private final HazelcastInstance instance;
 
-    private final BootstrappedJetProxy jetProxy;
+    private final BootstrappedJetServiceDecorator jetProxy;
 
     private boolean shutDownAllowed = true;
 
-    BootstrappedInstanceProxy(HazelcastInstance instance, BootstrappedJetProxy jetProxy) {
+    BootstrappedInstanceDecorator(HazelcastInstance instance, BootstrappedJetServiceDecorator jetProxy) {
         this.instance = instance;
         this.jetProxy = jetProxy;
     }
@@ -82,7 +83,7 @@ public final class BootstrappedInstanceProxy implements HazelcastInstance {
         return executeJobParameters.getSubmittedJobs();
     }
 
-    public BootstrappedInstanceProxy setShutDownAllowed(boolean shutDownAllowed) {
+    public BootstrappedInstanceDecorator setShutDownAllowed(boolean shutDownAllowed) {
         this.shutDownAllowed = shutDownAllowed;
         return this;
     }
@@ -312,7 +313,7 @@ public final class BootstrappedInstanceProxy implements HazelcastInstance {
 
     @Nonnull
     @Override
-    public BootstrappedJetProxy getJet() {
+    public BootstrappedJetServiceDecorator getJet() {
         return jetProxy;
     }
 
