@@ -516,6 +516,7 @@ public class JdbcSqlConnector implements SqlConnector {
             case "VARCHAR":
             case "CHARACTER VARYING":
             case "TEXT":
+            case "VARCHAR2":
                 return QueryDataType.VARCHAR;
 
             case "TINYINT":
@@ -528,6 +529,7 @@ public class JdbcSqlConnector implements SqlConnector {
             case "INT":
             case "INT4":
             case "INTEGER":
+            case "NUMBER":
                 return QueryDataType.INT;
 
             case "INT8":
@@ -556,10 +558,12 @@ public class JdbcSqlConnector implements SqlConnector {
 
             case "TIMESTAMP":
             case "DATETIME":
+            case "TIMESTAMP(6)":
                 return QueryDataType.TIMESTAMP;
 
             case "TIMESTAMP WITH TIME ZONE":
             case "DATETIMEOFFSET":
+            case "TIMESTAMP(6) WITH TIME ZONE":
                 return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
 
             default:

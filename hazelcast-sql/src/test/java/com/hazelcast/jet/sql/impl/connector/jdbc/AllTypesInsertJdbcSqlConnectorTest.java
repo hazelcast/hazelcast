@@ -38,6 +38,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
+import java.util.Locale;
 
 import static org.assertj.core.util.Lists.newArrayList;
 import static java.util.Arrays.asList;
@@ -91,18 +92,11 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void insertRowWithAllTypes() throws Exception {
-        String tableName = randomTableName();
-        createTable(tableName, "id INT", "table_column " + type);
+        String tableName = generateTableName();
+        createTable_(tableName);
 
         String mappingName = "mapping_" + randomName();
-        execute("CREATE MAPPING " + mappingName
-                + " EXTERNAL NAME " + tableName
-                + " ("
-                + "id INT, "
-                + "table_column " + mappingType
-                + ") "
-                + "DATA CONNECTION " + TEST_DATABASE_REF
-        );
+        executeMapping(mappingName, tableName);
 
         execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
         execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
@@ -111,6 +105,25 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 newArrayList(Integer.class, jdbcValue.getClass()),
                 new Row(0, jdbcValue),
                 new Row(1, jdbcValue)
+        );
+    }
+
+    protected String generateTableName(){
+        return randomTableName();
+    }
+
+    protected void createTable_(String tableName) throws Exception{
+        createTable(tableName, "id INT", "table_column " + type);
+    }
+
+    protected void executeMapping(String mappingName, String tableName){
+        execute("CREATE MAPPING " + mappingName
+                + " EXTERNAL NAME " + tableName
+                + " ("
+                + "id INT, "
+                + "table_column " + mappingType
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
         );
     }
 

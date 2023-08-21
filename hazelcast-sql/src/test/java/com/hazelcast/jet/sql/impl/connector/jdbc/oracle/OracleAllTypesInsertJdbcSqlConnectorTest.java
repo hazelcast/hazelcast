@@ -23,6 +23,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
+import java.util.Locale;
+
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 @Category(NightlyTest.class)
@@ -33,6 +35,27 @@ public class OracleAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJdbc
         initialize(new OracleDatabaseProvider());
     }
 
+    @Override
+    protected String generateTableName(){
+        return randomTableName().toUpperCase(Locale.ROOT);
+    }
+
+    @Override
+    protected void createTable_(String tableName) throws Exception{
+        createTable(tableName, "ID INT", "TABLE_COLUMN " + type);
+    }
+
+    @Override
+    protected void executeMapping(String mappingName, String tableName){
+        execute("CREATE MAPPING " + mappingName
+                + " EXTERNAL NAME " + tableName
+                + " ("
+                + "ID INT, "
+                + "TABLE_COLUMN " + mappingType
+                + ") "
+                + "DATA CONNECTION " + TEST_DATABASE_REF
+        );
+    }
     /*
     @Before
     public void setUp() throws Exception {
