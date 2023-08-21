@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPowerOf2;
 
 /**
  * The JNI wrapper around an io_uring instance.
@@ -199,13 +200,13 @@ public final class Uring implements AutoCloseable {
      * Creates a new Uring with the given number of entries.
      *
      * @param entries the number of entries in the ring.
-     * @throws IllegalArgumentException when entries smaller than 1
+     * @throws IllegalArgumentException when entries smaller than 1 or not a power of 2.
      */
     public Uring(int entries, int flags) {
-        // todo: we need to fix entries so that it is power of 2.
+        checkPositive(entries, "entries");
+        checkPowerOf2(entries, "entries");
+        checkNotNegative(flags, "flags");
 
-        checkPositive(entries, "entries must be larger than 0");
-        checkNotNegative(flags, "flags can't be smaller than 0");
         if ((flags & IORING_SETUP_SQE128) != 0) {
             throw new IllegalArgumentException("IORING_SETUP_SQE128 can't be set");
         }

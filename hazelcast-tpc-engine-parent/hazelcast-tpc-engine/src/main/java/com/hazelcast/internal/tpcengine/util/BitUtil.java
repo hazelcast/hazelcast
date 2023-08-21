@@ -66,4 +66,8 @@ public final class BitUtil {
         return 1 << (32 - Integer.numberOfLeadingZeros(value - 1));
     }
 
+    public static boolean isPowerOfTwo(long x) {
+        return (x & (x - 1)) == 0;
+    }
+
 }

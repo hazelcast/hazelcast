@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
+import static com.hazelcast.internal.tpcengine.util.BitUtil.isPowerOfTwo;
+
 public final class Preconditions {
 
     public static final int MAX_PORT = 65335;
@@ -95,6 +97,20 @@ public final class Preconditions {
     public static int checkNotNegative(int value, String paramName) {
         if (value < 0) {
             throw new IllegalArgumentException(paramName + " is " + value + " but must be >= 0");
+        }
+        return value;
+    }
+
+    /**
+     * Tests if value is a power of 2.
+     *
+     * @param value
+     * @param paramName
+     * @return
+     */
+    public static int checkPowerOf2(int value, String paramName) {
+        if (!isPowerOfTwo(value)) {
+            throw new IllegalArgumentException(paramName + " is " + value + " but must be a power of 2.");
         }
         return value;
     }

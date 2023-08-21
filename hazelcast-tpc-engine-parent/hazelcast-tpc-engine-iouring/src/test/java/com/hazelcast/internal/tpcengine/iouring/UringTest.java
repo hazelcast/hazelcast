@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpcengine.iouring;
 import org.junit.After;
 import org.junit.Test;
 
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class UringTest {
@@ -32,11 +33,15 @@ public class UringTest {
         }
     }
 
+    @Test
+    public void test_constructor_whenEntriesNotPowerOf2() {
+        assertThrows(IllegalArgumentException.class, () -> new Uring(5, 0));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void test_constructor_withZeroEntries() {
         new Uring(0, 0);
     }
-
 
     @Test(expected = IllegalArgumentException.class)
     public void test_constructor_withNegativeEntries() {
