@@ -69,17 +69,17 @@ public final class BootstrappedInstanceDecorator implements HazelcastInstance {
 
     private final HazelcastInstance instance;
 
-    private final BootstrappedJetServiceDecorator jetProxy;
+    private final BootstrappedJetServiceDecorator jetServiceDecorator;
 
     private boolean shutDownAllowed = true;
 
-    BootstrappedInstanceDecorator(HazelcastInstance instance, BootstrappedJetServiceDecorator jetProxy) {
+    BootstrappedInstanceDecorator(HazelcastInstance instance, BootstrappedJetServiceDecorator jetServiceDecorator) {
         this.instance = instance;
-        this.jetProxy = jetProxy;
+        this.jetServiceDecorator = jetServiceDecorator;
     }
 
     public List<Job> getSubmittedJobs() {
-        ExecuteJobParameters executeJobParameters = jetProxy.getExecuteJobParameters();
+        ExecuteJobParameters executeJobParameters = jetServiceDecorator.getExecuteJobParameters();
         return executeJobParameters.getSubmittedJobs();
     }
 
@@ -89,11 +89,11 @@ public final class BootstrappedInstanceDecorator implements HazelcastInstance {
     }
 
     public void setExecuteJobParameters(ExecuteJobParameters executeJobParameters) {
-        jetProxy.setExecuteJobParameters(executeJobParameters);
+        jetServiceDecorator.setExecuteJobParameters(executeJobParameters);
     }
 
     public void removeExecuteJobParameters() {
-        jetProxy.removeExecuteJobParameters();
+        jetServiceDecorator.removeExecuteJobParameters();
     }
 
     @Nonnull
@@ -314,7 +314,7 @@ public final class BootstrappedInstanceDecorator implements HazelcastInstance {
     @Nonnull
     @Override
     public BootstrappedJetServiceDecorator getJet() {
-        return jetProxy;
+        return jetServiceDecorator;
     }
 
     @Override

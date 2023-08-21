@@ -105,23 +105,23 @@ public class CommandLineExecuteJar {
         }
     }
 
-    private void invokeMain(BootstrappedInstanceDecorator instanceProxy, ExecuteJobParameters executeJobParameters,
+    private void invokeMain(BootstrappedInstanceDecorator instanceDecorator, ExecuteJobParameters executeJobParameters,
                             Method mainMethod, List<String> args)
             throws IllegalAccessException, InvocationTargetException {
         try {
-            instanceProxy.setExecuteJobParameters(executeJobParameters);
+            instanceDecorator.setExecuteJobParameters(executeJobParameters);
 
             String[] jobArgs = args.toArray(new String[0]);
 
             // upcast args to Object, so it's passed as a single array-typed argument
             mainMethod.invoke(null, (Object) jobArgs);
         } finally {
-            instanceProxy.removeExecuteJobParameters();
+            instanceDecorator.removeExecuteJobParameters();
         }
     }
 
-    private void awaitJobsStartedByJar(BootstrappedInstanceDecorator instanceProxy) {
-        List<Job> submittedJobs = instanceProxy.getSubmittedJobs();
+    private void awaitJobsStartedByJar(BootstrappedInstanceDecorator instanceDecorator) {
+        List<Job> submittedJobs = instanceDecorator.getSubmittedJobs();
         if (submittedJobs.isEmpty()) {
             LOGGER.severe("The JAR didn't submit any jobs.");
             return;
