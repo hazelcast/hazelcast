@@ -86,14 +86,18 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
         Config config = getConfig();
         config.setProperty(PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
-        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
-        config.getMapConfig(noStatsMapName).setStatisticsEnabled(false);
+        addMapConfigs(config);
         config.getMetricsConfig().setEnabled(false);
 
         instance = createInstance(config);
         map = instance.getMap(mapName);
         noStatsMap = instance.getMap(noStatsMapName);
         queryTypes = initQueryTypes();
+    }
+
+    protected void addMapConfigs(Config config) {
+        config.getMapConfig(mapName).setInMemoryFormat(inMemoryFormat);
+        config.getMapConfig(noStatsMapName).setStatisticsEnabled(false);
     }
 
     @Override
@@ -707,7 +711,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         }
     }
 
-    protected static void addIndex(IMap map, String attribute, boolean ordered) {
+    protected void addIndex(IMap map, String attribute, boolean ordered) {
         IndexConfig config = new IndexConfig(ordered ? IndexType.SORTED : IndexType.HASH, attribute).setName(attribute);
 
         map.addIndex(config);
