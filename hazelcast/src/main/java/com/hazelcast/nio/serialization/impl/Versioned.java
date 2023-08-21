@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
  * Marker interface that enables marking a {@link DataSerializable} or {@link IdentifiedDataSerializable} class for versioning.
  * <p>
  * If the serializer supports versioning it will act accordingly to its implementation.
- * 
+ *
  * @see Version
  */
 public interface Versioned {
