@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.net;
+package com.hazelcast.internal.tpcengine.nio;
 
-import java.nio.ByteBuffer;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.ReactorCreateDestroyTest;
 
+public class NioReactorCreateDestroyTest
+        extends ReactorCreateDestroyTest {
 
-/**
- * A {@link AsyncSocket.Reader} that disposes any bytes on the src buffer.
- */
-public class DevNullAsyncSocketReader extends AsyncSocket.Reader {
     @Override
-    public void onRead(ByteBuffer src) {
-        src.position(src.limit());
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
     }
 }

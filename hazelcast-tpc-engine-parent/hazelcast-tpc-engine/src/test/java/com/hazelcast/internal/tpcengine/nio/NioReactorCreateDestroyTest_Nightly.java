@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.net;
+package com.hazelcast.internal.tpcengine.nio;
 
-import java.nio.ByteBuffer;
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
+@Category(NightlyTest.class)
+public class NioReactorCreateDestroyTest_Nightly
+        extends NioReactorCreateDestroyTest {
 
-/**
- * A {@link AsyncSocket.Reader} that disposes any bytes on the src buffer.
- */
-public class DevNullAsyncSocketReader extends AsyncSocket.Reader {
-    @Override
-    public void onRead(ByteBuffer src) {
-        src.position(src.limit());
+    public NioReactorCreateDestroyTest_Nightly() {
+        iterations = 1_000_000L;
     }
 }

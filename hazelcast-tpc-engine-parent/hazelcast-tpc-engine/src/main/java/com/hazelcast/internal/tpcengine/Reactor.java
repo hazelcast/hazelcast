@@ -530,11 +530,12 @@ public abstract class Reactor implements Executor {
             try {
                 configureThreadAffinity();
 
-                Eventloop eventloop0 = newEventloop(reactorBuilder);
-                future.complete(eventloop0);
-
-                startLatch.await();
+                Eventloop eventloop0 = null;
                 try {
+                    eventloop0 = newEventloop(reactorBuilder);
+                    future.complete(eventloop0);
+
+                    startLatch.await();
                     // it could be that the thread wakes up due to termination.
                     // So we need to check the state first before running.
                     if (state == RUNNING) {
@@ -548,7 +549,9 @@ public abstract class Reactor implements Executor {
                         eventloop0.run();
                     }
                 } finally {
-                    eventloop0.destroy();
+                    if (eventloop0 != null) {
+                        eventloop0.destroy();
+                    }
                     Eventloop.EVENTLOOP_THREAD_LOCAL.remove();
                 }
             } catch (Throwable e) {

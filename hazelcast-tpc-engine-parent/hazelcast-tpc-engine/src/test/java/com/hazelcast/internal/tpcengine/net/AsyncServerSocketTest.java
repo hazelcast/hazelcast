@@ -369,4 +369,48 @@ public abstract class AsyncServerSocketTest {
 
         assertEquals(0, reactor.sockets().size());
     }
+
+    @Test
+    public void test_reactor_closeBeforeBound() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+            AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
+            socketBuilder.reader = new DevNullAsyncSocketReader();
+            AsyncSocket socket = socketBuilder.build();
+            socket.start();
+        };
+
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
+
+        assertEquals(0, reactor.sockets().size());
+
+        serverSocket.start();
+
+        serverSocket.close();
+
+        assertEquals(0, reactor.sockets().size());
+        assertTrue(serverSocket.isClosed());
+    }
+
+    @Test
+    public void test_reactor_closeBeforeStart() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+            AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
+            socketBuilder.reader = new DevNullAsyncSocketReader();
+            AsyncSocket socket = socketBuilder.build();
+            socket.start();
+        };
+
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
+
+        serverSocket.close();
+
+        assertEquals(0, reactor.sockets().size());
+        assertTrue(serverSocket.isClosed());
+    }
 }
