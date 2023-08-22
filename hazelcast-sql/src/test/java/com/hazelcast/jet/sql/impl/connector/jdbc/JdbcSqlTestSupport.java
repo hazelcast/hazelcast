@@ -101,11 +101,20 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
      * Creates table with id INT, name VARCHAR columns
      */
     public static void createTable(String tableName) throws SQLException {
-        createTable(tableName, "\"id\" INT PRIMARY KEY", "\"name\" VARCHAR(100)");
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)");
     }
 
     public static void createTable(String tableName, String... columns) throws SQLException {
-        executeJdbc("CREATE TABLE \"" + tableName + "\" (" + String.join(", ", columns) + ")");
+        String[] cols = new String[columns.length];
+        for (int i = 0; i < columns.length; i++) {
+            int endOfField = columns[i].indexOf(' ');
+            if (!columns[i].substring(0, endOfField).equals("PRIMARY")) {
+                cols[i] ="\"" + columns[i].substring(0, endOfField) + "\"" + columns[i].substring(endOfField);
+            } else {
+                cols[i] = columns[i];
+            }
+        }
+        executeJdbc("CREATE TABLE \"" + tableName + "\" (" + String.join(", ", cols) + ")");
     }
 
     public static void executeJdbc(String sql) throws SQLException {
