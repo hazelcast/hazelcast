@@ -454,7 +454,6 @@ class KubernetesClient {
             Map<String, Integer> publicPorts = new HashMap<>();
             Map<String, String> cachedNodePublicIps = new HashMap<>();
 
-
             for (Map.Entry<EndpointAddress, String> serviceEntry : services.entrySet()) {
                 EndpointAddress privateAddress = serviceEntry.getKey();
                 String service = serviceEntry.getValue();
@@ -480,9 +479,8 @@ class KubernetesClient {
                     publicPorts.put(privateAddress.getIp(), nodePort);
                     // Log warning only once.
                     if (!isNodePortWarningAlreadyLogged && exposeExternallyMode == ExposeExternallyMode.ENABLED) {
-                        LOGGER.warning(
-                                "Using NodePort service type for public addresses may lead to connection issues from outside of "
-                                        + "the Kubernetes cluster. Ensure external accessibility of the NodePort IPs.");
+                        LOGGER.warning("Using NodePort service type for public addresses may lead to connection issues from "
+                                + "outside of the Kubernetes cluster. Ensure external accessibility of the NodePort IPs.");
                         isNodePortWarningAlreadyLogged = true;
                     }
                 }
@@ -497,9 +495,8 @@ class KubernetesClient {
             LOGGER.finest(e);
             // Log warning only once.
             if (!isNoPublicIpAlreadyLogged) {
-                LOGGER.warning(
-                        "Cannot fetch public IPs of Hazelcast Member PODs, you won't be able to use Hazelcast Smart Client from "
-                                + "outside of the Kubernetes network");
+                LOGGER.warning("Cannot fetch public IPs of Hazelcast Member PODs, you won't be able to use "
+                        + "Hazelcast Smart Client from outside of the Kubernetes network");
                 isNoPublicIpAlreadyLogged = true;
             }
             return endpoints;
