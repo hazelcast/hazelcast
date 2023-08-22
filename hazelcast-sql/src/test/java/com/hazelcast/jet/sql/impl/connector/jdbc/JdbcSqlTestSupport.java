@@ -101,11 +101,11 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
      * Creates table with id INT, name VARCHAR columns
      */
     public static void createTable(String tableName) throws SQLException {
-        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)");
+        createTable(tableName, "\"id\" INT PRIMARY KEY", "\"name\" VARCHAR(100)");
     }
 
     public static void createTable(String tableName, String... columns) throws SQLException {
-        executeJdbc("CREATE TABLE " + tableName + " (" + String.join(", ", columns) + ")");
+        executeJdbc("CREATE TABLE \"" + tableName + "\" (" + String.join(", ", columns) + ")");
     }
 
     public static void executeJdbc(String sql) throws SQLException {
@@ -196,11 +196,11 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     protected static List<Row> jdbcRowsTable(String tableName) {
-        return jdbcRows("SELECT * FROM " + tableName);
+        return jdbcRows("SELECT * FROM \"" + tableName + "\"");
     }
 
     protected static List<Row> jdbcRowsTable(String tableName, List<Class<?>> columnType) {
-        return jdbcRows("SELECT * FROM " + tableName, columnType);
+        return jdbcRows("SELECT * FROM \"" + tableName + "\"", columnType);
     }
 
     @Nonnull
