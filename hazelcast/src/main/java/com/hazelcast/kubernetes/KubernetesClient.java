@@ -97,6 +97,7 @@ class KubernetesClient {
 
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
+    private boolean isNodePortWarningAlreadyLogged;
 
     KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
                      String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
@@ -477,6 +478,13 @@ class KubernetesClient {
                     }
                     publicIps.put(privateAddress.getIp(), nodePublicAddress);
                     publicPorts.put(privateAddress.getIp(), nodePort);
+                    // Log warning only once.
+                    if (!isNodePortWarningAlreadyLogged && exposeExternallyMode == ExposeExternallyMode.ENABLED) {
+                        LOGGER.warning(
+                                "Using NodePort service type for public addresses may lead to connection issues from outside of " +
+                                        "the Kubernetes cluster. Ensure external accessibility of the NodePort IPs.");
+                        isNodePortWarningAlreadyLogged = true;
+                    }
                 }
             }
 
