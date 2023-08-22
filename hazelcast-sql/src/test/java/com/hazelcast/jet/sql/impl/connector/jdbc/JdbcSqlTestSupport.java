@@ -104,6 +104,9 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(100)");
     }
 
+    /**
+     * Quotes the field names and creates a table, Can be used with PRIMARY KEY.
+     */
     public static void createTable(String tableName, String... columns) throws SQLException {
         String[] cols = new String[columns.length];
         for (int i = 0; i < columns.length; i++) {
