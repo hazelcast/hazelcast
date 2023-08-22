@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -49,9 +50,10 @@ import static com.hazelcast.map.impl.record.Record.UNSET;
  * Used to reduce the number of remote invocations
  * of an {@link IMap#putAll(Map)} or {@link IMap#setAll(Map)} call.
  */
+// RU_COMPAT_5_3 "implements Versioned" can be removed in 5.5
 public class PutAllOperation extends MapOperation
         implements PartitionAwareOperation, BackupAwareOperation,
-        MutatingOperation {
+        MutatingOperation, Versioned {
 
     private transient int currentIndex;
     private MapEntries mapEntries;
