@@ -85,7 +85,6 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         noStatsMapName = mapName + "_no_stats";
 
         Config config = getConfig();
-        config.setProperty(PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
         addMapConfigs(config);
         config.getMetricsConfig().setEnabled(false);
 
@@ -102,7 +101,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        return smallInstanceConfig();
+        return smallInstanceConfig().setProperty(PARTITION_COUNT.getName(), Integer.toString(PARTITIONS));
     }
 
     protected HazelcastInstance createInstance(Config config) {

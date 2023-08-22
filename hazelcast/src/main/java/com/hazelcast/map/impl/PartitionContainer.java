@@ -177,10 +177,13 @@ public class PartitionContainer {
         mapContainer.onBeforeDestroy();
 
         String name = mapContainer.getName();
-        RecordStore recordStore = maps.remove(name);
+        RecordStore recordStore = maps.get(name);
         if (recordStore != null) {
             // this call also clears and disposes Indexes for that partition
             recordStore.destroy();
+            // Remove record store from the maps after destroy since it could be accessed by
+            // mutation observers.
+            maps.remove(name);
         } else {
             // It can be that, map is used only for locking,
             // because of that RecordStore is not created.
