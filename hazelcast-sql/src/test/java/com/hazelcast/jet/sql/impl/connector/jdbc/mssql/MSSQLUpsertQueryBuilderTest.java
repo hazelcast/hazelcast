@@ -61,7 +61,7 @@ public class MSSQLUpsertQueryBuilderTest {
         StringBuilder sb = new StringBuilder();
         builder.appendMergeClause(sb);
         String mergeClause = sb.toString();
-        assertThat(mergeClause).isEqualTo("MERGE [table1] USING (VALUES (?, ?)) AS source ([field1], [field2]) ON [table1].pk1 = source.pk1 AND [table1].pk2 = source.pk2");
+        assertThat(mergeClause).isEqualTo("MERGE [table1] USING (VALUES (?, ?)) AS source ([field1], [field2]) ON [table1].[pk1] = source.[pk1] AND [table1].[pk2] = source.[pk2]");
     }
 
     @Test
@@ -82,7 +82,7 @@ public class MSSQLUpsertQueryBuilderTest {
 
         String matchedClause = sb.toString();
         assertThat(matchedClause).isEqualTo(
-                "WHEN MATCHED THEN UPDATE  SET [field1] = source.[field1], [field2] = source.[field2] "
+                "WHEN MATCHED THEN UPDATE SET [field1] = source.[field1], [field2] = source.[field2] "
                         + "WHEN NOT MATCHED THEN INSERT ([field1], [field2]) VALUES(source.[field1], source.[field2]);");
     }
 
@@ -91,8 +91,8 @@ public class MSSQLUpsertQueryBuilderTest {
         MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
         String result = builder.query();
         assertThat(result).isEqualTo(
-                "MERGE [table1] USING (VALUES (?, ?)) AS source ([field1], [field2]) ON [table1].pk1 = source.pk1 AND [table1].pk2 = source.pk2 "
-                        + "WHEN MATCHED THEN UPDATE  SET [field1] = source.[field1], [field2] = source.[field2] "
+                "MERGE [table1] USING (VALUES (?, ?)) AS source ([field1], [field2]) ON [table1].[pk1] = source.[pk1] AND [table1].[pk2] = source.[pk2] "
+                        + "WHEN MATCHED THEN UPDATE SET [field1] = source.[field1], [field2] = source.[field2] "
                         + "WHEN NOT MATCHED THEN INSERT ([field1], [field2]) VALUES(source.[field1], source.[field2]);"
         );
     }
