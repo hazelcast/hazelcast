@@ -481,8 +481,8 @@ class KubernetesClient {
                     // Log warning only once.
                     if (!isNodePortWarningAlreadyLogged && exposeExternallyMode == ExposeExternallyMode.ENABLED) {
                         LOGGER.warning(
-                                "Using NodePort service type for public addresses may lead to connection issues from outside " +
-                                        "of the Kubernetes cluster. Ensure external accessibility of the NodePort IPs.");
+                                "Using NodePort service type for public addresses may lead to connection issues from outside of "
+                                        + "the Kubernetes cluster. Ensure external accessibility of the NodePort IPs.");
                         isNodePortWarningAlreadyLogged = true;
                     }
                 }
