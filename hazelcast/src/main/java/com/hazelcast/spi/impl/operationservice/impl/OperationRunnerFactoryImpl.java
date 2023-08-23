@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.internal.util.LatencyDistribution;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
+import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlServiceImpl;
 
 import java.util.concurrent.ConcurrentMap;
 
@@ -28,28 +29,46 @@ import static com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl.A
 class OperationRunnerFactoryImpl implements OperationRunnerFactory {
     private final ConcurrentMap<Class, LatencyDistribution> opLatencyDistributions;
     private final OperationServiceImpl operationService;
+    private final boolean tenantControlEnabled;
     private int genericId;
 
     OperationRunnerFactoryImpl(OperationServiceImpl operationService) {
         this.operationService = operationService;
         this.opLatencyDistributions = operationService.opLatencyDistributions;
+        TenantControlServiceImpl tenantControlService = operationService.nodeEngine.getTenantControlService();
+        this.tenantControlEnabled = tenantControlService.isTenantControlEnabled();
     }
 
     @Override
     public OperationRunner createAdHocRunner() {
-        return new OperationRunnerImpl(operationService, AD_HOC_PARTITION_ID,
-                0, null, opLatencyDistributions);
+        if (tenantControlEnabled) {
+            return new TenantAwareOperationRunnerImpl(operationService, AD_HOC_PARTITION_ID,
+                    0, null, opLatencyDistributions);
+        } else {
+            return new OperationRunnerImpl(operationService, AD_HOC_PARTITION_ID,
+                    0, null, opLatencyDistributions);
+        }
     }
 
     @Override
     public OperationRunner createPartitionRunner(int partitionId) {
-        return new OperationRunnerImpl(operationService, partitionId, 0,
-                operationService.failedBackupsCount, opLatencyDistributions);
+        if (tenantControlEnabled) {
+            return new TenantAwareOperationRunnerImpl(operationService, partitionId, 0,
+                    operationService.failedBackupsCount, opLatencyDistributions);
+        } else {
+            return new OperationRunnerImpl(operationService, partitionId, 0,
+                    operationService.failedBackupsCount, opLatencyDistributions);
+        }
     }
 
     @Override
     public OperationRunner createGenericRunner() {
-        return new OperationRunnerImpl(operationService, GENERIC_PARTITION_ID,
-                genericId++, null, opLatencyDistributions);
+        if (tenantControlEnabled) {
+            return new TenantAwareOperationRunnerImpl(operationService, GENERIC_PARTITION_ID,
+                    genericId++, null, opLatencyDistributions);
+        } else {
+            return new OperationRunnerImpl(operationService, GENERIC_PARTITION_ID,
+                    genericId++, null, opLatencyDistributions);
+        }
     }
 }

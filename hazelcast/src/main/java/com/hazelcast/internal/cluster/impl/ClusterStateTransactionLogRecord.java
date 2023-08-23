@@ -26,6 +26,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.TargetAwareTransactionLogRecord;
 
@@ -38,7 +39,8 @@ import java.util.UUID;
  * @see ClusterState
  * @see Cluster#changeClusterState(ClusterState, com.hazelcast.transaction.TransactionOptions)
  */
-public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord {
+// RU_COMPAT_5_3 "implements Versioned" can be removed in 5.5
+public class ClusterStateTransactionLogRecord implements TargetAwareTransactionLogRecord, Versioned {
 
     ClusterStateChange stateChange;
     Address initiator;

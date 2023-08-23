@@ -35,6 +35,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -336,6 +337,24 @@ public final class ConfigSearch {
             @Override
             public Map<String, DataConnectionConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getDataConnectionConfigs();
+            }
+        });
+
+        CONFIG_SUPPLIERS.put(WanReplicationConfig.class, new ConfigSupplier<WanReplicationConfig>() {
+            @Override
+            public WanReplicationConfig getDynamicConfig(@Nonnull ConfigurationService configurationService,
+                                                         @Nonnull String name) {
+                return configurationService.findWanReplicationConfig(name);
+            }
+
+            @Override
+            public WanReplicationConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
+                return staticConfig.getWanReplicationConfig(name);
+            }
+
+            @Override
+            public Map<String, WanReplicationConfig> getStaticConfigs(@Nonnull Config staticConfig) {
+                return staticConfig.getWanReplicationConfigs();
             }
         });
     }

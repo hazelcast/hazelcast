@@ -33,10 +33,13 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeN
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Configuration of an index. Hazelcast support two types of indexes: sorted index and hash index.
+ * Configuration of an index. Hazelcast support three types of indexes: sorted index, hash index
+ * and bitmap index.
  * Sorted indexes could be used with equality and range predicates and have logarithmic search time.
  * Hash indexes could be used with equality predicates and have constant search time assuming the hash
  * function of the indexed field disperses the elements properly.
+ * Bitmap indexes are similar to hash index. They are able to achieve a much higher memory efficiency
+ * for low cardinality attributes at the cost of reduced query performance.
  * <p>
  * Index could be created on one or more attributes.
  *

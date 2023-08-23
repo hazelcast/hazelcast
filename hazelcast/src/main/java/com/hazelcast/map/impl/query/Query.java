@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -36,7 +37,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 /**
  * Object representing a Query together with all possible co-variants: like a predicate, iterationType, etc.
  */
-public class Query implements IdentifiedDataSerializable {
+// RU_COMPAT_5_3 "implements Versioned" can be removed in 5.5
+public class Query implements IdentifiedDataSerializable, Versioned {
 
     private String mapName;
     private Predicate predicate;
