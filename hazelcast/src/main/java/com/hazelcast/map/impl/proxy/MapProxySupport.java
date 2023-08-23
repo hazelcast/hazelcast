@@ -169,6 +169,7 @@ abstract class MapProxySupport<K, V>
 
     /**
      * Defines the batch size for operations of {@link IMap#putAll(Map)} and {@link IMap#setAll(Map)} calls.
+     * This setting is ignored for async variants of those methods.
      * <p>
      * A value of {@code 0} disables the batching and will send a single operation per member with all map entries.
      * <p>
@@ -1022,7 +1023,7 @@ abstract class MapProxySupport<K, V>
                     long currentSize = ++counterPerMember[partitionId].value;
                     if (currentSize % putAllBatchSize == 0) {
                         List<Integer> partitions = memberPartitionsMap.get(addresses[partitionId]);
-                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition, triggerMapLoader)
+                        invokePutAllOperation(addresses[partitionId], partitions, entriesPerPartition, true, triggerMapLoader)
                                 .get();
                     }
                 }
@@ -1050,7 +1051,7 @@ abstract class MapProxySupport<K, V>
                 }
             };
             for (Entry<Address, List<Integer>> entry : memberPartitionsMap.entrySet()) {
-                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition, triggerMapLoader)
+                invokePutAllOperation(entry.getKey(), entry.getValue(), entriesPerPartition, useBatching, triggerMapLoader)
                         .whenCompleteAsync(callback, ConcurrencyUtil.getDefaultAsyncExecutor());
             }
             // if executing in sync mode, block for the responses
@@ -1067,6 +1068,7 @@ abstract class MapProxySupport<K, V>
             Address address,
             List<Integer> memberPartitions,
             MapEntries[] entriesPerPartition,
+            boolean useBatching,
             boolean triggerMapLoader
     ) {
         int size = memberPartitions.size();
@@ -1091,7 +1093,7 @@ abstract class MapProxySupport<K, V>
         long totalSize = 0;
         for (int partitionId : partitions) {
             int batchSize = entriesPerPartition[partitionId].size();
-            assert (putAllBatchSize == 0 || batchSize <= putAllBatchSize);
+            assert !useBatching || putAllBatchSize == 0 || batchSize <= putAllBatchSize;
             entries[index++] = entriesPerPartition[partitionId];
             totalSize += batchSize;
             entriesPerPartition[partitionId] = null;
