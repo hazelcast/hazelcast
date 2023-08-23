@@ -291,7 +291,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
 
         Builder() {
             // to conclude.
-            this.linuxSocket = LinuxSocket.openTcpIpv4Socket();
+            this.linuxSocket = LinuxSocket.createTcpIpv4Socket();
             linuxSocket.setBlocking(true);
             this.options = new UringOptions(linuxSocket);
         }

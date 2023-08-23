@@ -87,7 +87,7 @@ public class NetworkBenchmark_Naked_IOUring {
         private long receiveBufferAddress;
         private ByteBuffer sendBuffer;
         private long sendBufferAddress;
-        final LinuxSocket socket = LinuxSocket.openTcpIpv4Socket();
+        final LinuxSocket socket = LinuxSocket.createTcpIpv4Socket();
         final CompletionHandler handler = new CompletionHandler();
         private Uring uring;
         private SubmissionQueue sq;
@@ -221,7 +221,7 @@ public class NetworkBenchmark_Naked_IOUring {
         Uring uring;
         SubmissionQueue sq;
         CompletionQueue cq;
-        final LinuxSocket serverSocket = LinuxSocket.openTcpIpv4Socket();
+        final LinuxSocket serverSocket = LinuxSocket.createTcpIpv4Socket();
         final AcceptMemory acceptMemory = new AcceptMemory();
 
 

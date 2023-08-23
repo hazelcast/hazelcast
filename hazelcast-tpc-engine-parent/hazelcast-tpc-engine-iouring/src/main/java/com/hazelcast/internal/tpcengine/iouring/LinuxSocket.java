@@ -62,7 +62,12 @@ public final class LinuxSocket implements AutoCloseable {
         this.addressFamily = addressFamily;
     }
 
-    public static LinuxSocket openTcpIpv4Socket() {
+    /**
+     * Creates a non blocking TCP/IPv4 socket.
+     *
+     * @return the created LinuxSocket.
+     */
+    public static LinuxSocket createTcpIpv4Socket() {
         int family = AF_INET;
         int res = socket(family, SOCK_STREAM | SOCK_NONBLOCK, 0);
         if (res < 0) {
