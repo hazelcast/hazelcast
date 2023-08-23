@@ -58,7 +58,7 @@ public final class LinuxSocket implements AutoCloseable {
         int family = AF_INET;
         int res = socket(family, SOCK_STREAM | SOCK_NONBLOCK, 0);
         if (res < 0) {
-            throw newSysCallFailedException("Failed to open a socket.", "open(2)", -res);
+            throw newSysCallFailedException("Failed to create a socket.", "socket(2)", -res);
         }
         return new LinuxSocket(res, family);
     }
