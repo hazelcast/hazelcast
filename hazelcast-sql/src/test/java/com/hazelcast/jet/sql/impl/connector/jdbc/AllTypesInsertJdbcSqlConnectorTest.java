@@ -92,31 +92,10 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void insertRowWithAllTypes() throws Exception {
-        String tableName = generateTableName();
-        createTable_(tableName);
+        String tableName = randomTableName();
+        createTable(quote(tableName), quote("id") + " INT", quote("table_column") + type);
 
         String mappingName = "mapping_" + randomName();
-        executeMapping(mappingName, tableName);
-
-        execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
-        execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
-
-        assertJdbcRowsAnyOrder(tableName,
-                newArrayList(Integer.class, jdbcValue.getClass()),
-                new Row(0, jdbcValue),
-                new Row(1, jdbcValue)
-        );
-    }
-
-    protected String generateTableName(){
-        return randomTableName();
-    }
-
-    protected void createTable_(String tableName) throws Exception{
-        createTable(tableName, "id INT", "table_column " + type);
-    }
-
-    protected void executeMapping(String mappingName, String tableName){
         execute("CREATE MAPPING " + mappingName
                 + " EXTERNAL NAME " + tableName
                 + " ("
@@ -125,7 +104,14 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + ") "
                 + "DATA CONNECTION " + TEST_DATABASE_REF
         );
+
+        execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
+        execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
+
+        assertJdbcRowsAnyOrder(quote(tableName),
+                newArrayList(Integer.class, jdbcValue.getClass()),
+                new Row(0, jdbcValue),
+                new Row(1, jdbcValue)
+        );
     }
-
-
 }

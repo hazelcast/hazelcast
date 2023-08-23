@@ -36,34 +36,6 @@ public class OracleAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbc
         initialize(new OracleDatabaseProvider());
     }
 
-    @Override
-    protected String generateTableName(){
-        return randomTableName().toUpperCase(Locale.ROOT);
-    }
-
-    @Override
-    protected void createTable_(String tableName) throws Exception{
-        createTable(tableName, "TABLE_COLUMN " + type);
-    }
-
-    @Override
-    protected void executeMapping(String mappingName, String tableName) {
-        execute("CREATE MAPPING " + mappingName
-                + " EXTERNAL NAME " + tableName
-                + " ("
-                + "TABLE_COLUMN " + mappingType
-                + ") "
-                + "DATA CONNECTION " + TEST_DATABASE_REF
-        );
-    }
-
-    @Override
-    protected void assertRowsMethod(String mappingName){
-        assertRowsAnyOrder("SELECT * FROM " + mappingName + " WHERE TABLE_COLUMN = ?",
-                newArrayList(expected),
-                new Row(expected)
-        );
-    }
     /*
     @Before
     public void setUp() throws Exception {
