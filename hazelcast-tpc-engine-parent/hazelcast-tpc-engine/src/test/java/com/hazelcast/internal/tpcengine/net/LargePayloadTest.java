@@ -438,6 +438,7 @@ public abstract class LargePayloadTest {
     private AsyncServerSocket newServer(boolean useWriter) {
         AsyncServerSocket.Builder serverSocketBuilder = serverReactor.newAsyncServerSocketBuilder();
         serverSocketBuilder.options.set(SO_RCVBUF, SOCKET_BUFFER_SIZE);
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = serverReactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.options.set(TCP_NODELAY, true);
@@ -452,7 +453,6 @@ public abstract class LargePayloadTest {
         };
         AsyncServerSocket serverSocket = serverSocketBuilder.build();
         // Bind on any available port.
-        serverSocket.bind(new InetSocketAddress("127.0.0.1", 0));
         serverSocket.start();
         return serverSocket;
     }

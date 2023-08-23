@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.tpcengine.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertFalse;
@@ -47,9 +48,67 @@ public abstract class AsyncServerSocketBuilderTest {
     }
 
     @Test
-    public void test_whenAcceptConsumerNotSet() {
+    public void test_whenBacklogNegative() {
         Reactor reactor = newReactor();
         AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
+        serverSocketBuilder.backlog = -1;
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+        };
+
+        assertThrows(IllegalArgumentException.class, () -> serverSocketBuilder.build());
+    }
+
+    @Test
+    public void test_whenBacklogZero() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
+        serverSocketBuilder.backlog = 0;
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+        };
+
+        AsyncServerSocket serverSocket = serverSocketBuilder.build();
+    }
+
+
+    @Test
+    public void test_whenBindAddressAndBindAddressGeneratorAreNull() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.backlog = 1;
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+        };
+
+        assertThrows(IllegalArgumentException.class, () -> serverSocketBuilder.build());
+    }
+
+    @Test
+    public void test_whenBindAddressAndBindAddressGeneratorAreNotNull() {
+        Reactor reactor = newReactor();
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.backlog = 1;
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
+        serverSocketBuilder.bindAddressGenerator = new Supplier<SocketAddress>() {
+            @Override
+            public SocketAddress get() {
+                return new InetSocketAddress("127.0.0.1", 0);
+            }
+        };
+        serverSocketBuilder.acceptFn = acceptRequest -> {
+        };
+
+        assertThrows(IllegalArgumentException.class, () -> serverSocketBuilder.build());
+    }
+
+    @Test
+    public void test_whenAcceptConsumerNotSet() {
+        Reactor reactor = newReactor();
+
+        AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.backlog = 1;
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
+
         assertThrows(NullPointerException.class, serverSocketBuilder::build);
     }
 
@@ -64,8 +123,10 @@ public abstract class AsyncServerSocketBuilderTest {
     @Test
     public void test_whenSuccess() {
         Reactor reactor = newReactor();
+        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 0);
 
         AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.bindAddress = serverAddress;
         serverSocketBuilder.acceptFn = acceptRequest -> {
             AsyncSocket.Builder socketBuilder = reactor.newAsyncSocketBuilder(acceptRequest);
             socketBuilder.reader = new DevNullAsyncSocketReader();
@@ -74,8 +135,6 @@ public abstract class AsyncServerSocketBuilderTest {
         };
 
         AsyncServerSocket serverSocket = serverSocketBuilder.build();
-        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 0);
-        serverSocket.bind(serverAddress);
         serverSocket.start();
 
         assertFalse(serverSocket.isClosed());

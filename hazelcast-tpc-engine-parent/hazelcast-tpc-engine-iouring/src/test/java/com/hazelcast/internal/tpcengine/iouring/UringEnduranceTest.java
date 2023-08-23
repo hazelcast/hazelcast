@@ -58,8 +58,8 @@ public class UringEnduranceTest {
     @Before
     public void before() {
         uring = new Uring(nextPowerOfTwo(concurrency), 0);
-        sq = uring.sq();
-        cq = uring.cq();
+        sq = uring.submissionQueue();
+        cq = uring.completionQueue();
         completionHandler = new NopCompletionHandler();
         monitorThread = new MonitorThread();
         monitorThread.start();
@@ -88,9 +88,7 @@ public class UringEnduranceTest {
         for (long round = 0; round < rounds; round++) {
             // offer the requests.
             for (int l = 0; l < concurrency; l++) {
-                if (!sq.offer(Uring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, handlerId)) {
-                    fail("failed to offer nop");
-                }
+                sq.prepare(Uring.IORING_OP_NOP, 0, 0, 0, 0, 0, 0, handlerId);
             }
 
             // submit them to the uring; uring will immediately complete them
@@ -141,7 +139,7 @@ public class UringEnduranceTest {
         private long errors;
 
         @Override
-        public void completeRequest(int res, int flags, long userdata) {
+        public void complete(int res, int flags, long userdata) {
             completions++;
             count.lazySet(count.get() + 1);
 

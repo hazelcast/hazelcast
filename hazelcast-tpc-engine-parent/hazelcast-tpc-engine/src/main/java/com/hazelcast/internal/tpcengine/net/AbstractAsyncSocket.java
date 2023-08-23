@@ -137,6 +137,7 @@ public abstract class AbstractAsyncSocket implements Closeable {
     @SuppressWarnings("java:S3776")
     public final void close(String reason, Throwable cause) {
         if (!state.compareAndSet(State.OPEN, State.CLOSING)) {
+            System.out.println(this+" ignoring close since already closing");
             return;
         }
 

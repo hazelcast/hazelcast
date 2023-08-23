@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.tpcengine.util;
 
+import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
+
 /**
  * <p/>
  * A builder contains the parameters injected into some object. Using the
@@ -57,7 +60,7 @@ package com.hazelcast.internal.tpcengine.util;
  * <p/>
  * Instances of the AbstractBuilder are not threadsafe.
  */
-public abstract class AbstractBuilder<E> {
+public abstract class AbstractBuilder<E> implements AutoCloseable {
 
     private boolean built;
 
@@ -83,6 +86,16 @@ public abstract class AbstractBuilder<E> {
     protected abstract E construct();
 
     /**
+     * Is called automatically when either the {@link #conclude()} or {@link #construct()}
+     * fails and gives the chance to cleanup resources like sockets etc.
+     *
+     * @throws Exception
+     */
+    @Override
+    public void close() throws Exception {
+    }
+
+    /**
      * Creates the object.
      * <p/>
      * Should only be called once.
@@ -96,7 +109,13 @@ public abstract class AbstractBuilder<E> {
             throw new IllegalStateException(this + " is already built.");
         }
         built = true;
-        conclude();
-        return construct();
+
+        try {
+            conclude();
+            return construct();
+        } catch (Throwable t) {
+            closeQuietly(this);
+            throw sneakyThrow(t);
+        }
     }
 }

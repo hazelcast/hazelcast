@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.experimental.categories.Category;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.net.RpcTest;
 
-@Category(NightlyTest.class)
-public class UringLargePayloadTest_Nightly extends UringLargePayloadTest {
+public class Uring_RpcTest extends RpcTest {
 
-    public UringLargePayloadTest_Nightly() {
-        iterations = 20000;
+    @Override
+    public Reactor.Builder newReactorBuilder() {
+        return new UringReactor.Builder();
     }
 }

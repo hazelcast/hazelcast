@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.iouring;
+package com.hazelcast.internal.tpcengine.nio;
 
-import org.junit.Test;
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
 
-public class UringLibraryTest {
+@Category(NightlyTest.class)
+public class Nio_LargeVariablePayloadTest_Nightly
+        extends Nio_LargeVariablePayloadTest {
 
-    @Test
-    public void test() {
-        assumeTrue(UringLibrary.isAvailable());
-
-        // ensure that we can actually load the Uring.
-        Uring uring = new Uring(16, 0);
-        assertNotNull(uring.submissionQueue());
-        assertNotNull(uring.completionQueue());
+    public Nio_LargeVariablePayloadTest_Nightly() {
+        iterations = 2000;
+        testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
     }
 }

@@ -34,6 +34,11 @@ public final class Linux {
 
     public static final int SIZEOF_KERNEL_TIMESPEC = 16;
     public static final int SIZEOF_SOCKADDR_STORAGE = 128;
+    public static final int SIZEOF_SOCKADDR_IN = 16;
+    public static final int SOCKADDR_IN_OFFSETOF_SIN_PORT = 2;
+    public static final int SOCKADDR_IN_OFFSETOF_SIN_FAMILY = 0;
+    public static final int SOCKADDR_IN_OFFSETOF_SIN_ADDR = 4;
+    public static final int IN_ADDRESS_OFFSETOF_S_ADDR = 0;
     // assuming 64 bit Linux
     public static final int SIZEOF_IOVEC = 16;
 

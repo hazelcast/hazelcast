@@ -21,6 +21,7 @@ import com.hazelcast.internal.tpcengine.util.Option;
 import org.junit.After;
 import org.junit.Test;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +56,7 @@ public abstract class AsyncServerSocketOptionsTest {
         reactor.start();
 
         AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+        serverSocketBuilder.bindAddress = new InetSocketAddress("127.0.0.1", 0);
         serverSocketBuilder.acceptFn = acceptRequest -> {
         };
 

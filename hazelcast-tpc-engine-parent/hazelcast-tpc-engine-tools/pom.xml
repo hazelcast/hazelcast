@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <name>hazelcast-tpc-engine-tools</name>
     <artifactId>hazelcast-tpc-engine-tools</artifactId>
-    <description>The Hazelcast thread-per-core engine: Various tools including benchmark tools</description>
+    <description>The Hazelcast Thread-Per-Core engine: Various tools including benchmark tools</description>
     <packaging>jar</packaging>
 
     <parent>
@@ -32,6 +32,8 @@
         </resources>
 
         <plugins>
+
+            <!-- Needed so we can show some build info from the benchmark tools -->
             <plugin>
                 <groupId>pl.project13.maven</groupId>
                 <artifactId>git-commit-id-plugin</artifactId>
@@ -61,6 +63,8 @@
                 </configuration>
             </plugin>
 
+            <!-- we want a big far jar so we can easily upload it and benchmark it to
+                 a remote system. Similar to what you do with JMH -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>

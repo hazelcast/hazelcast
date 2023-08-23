@@ -27,26 +27,23 @@ import sun.misc.Unsafe;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.BindException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_SERVER_SOCKET;
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
-import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_CLOEXEC;
-import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_NONBLOCK;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.toUserdata;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.EINVAL;
+import static com.hazelcast.internal.tpcengine.iouring.Linux.strerror;
 import static com.hazelcast.internal.tpcengine.iouring.LinuxSocket.AF_INET;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_flags;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_ioprio;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_len;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_off;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_opcode;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
-import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_ACCEPT;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_CLOSE;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_SHUTDOWN;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.opcodeToString;
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
-import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.tpcengine.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
 
 /**
@@ -56,159 +53,208 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
 
     private final LinuxSocket linuxSocket;
-    private final AcceptHandler acceptHandler;
+    private final Handler handler;
     private final Uring uring;
-    private boolean bind;
 
-    private UringAsyncServerSocket(Builder builder) {
-        super(builder);
+    private UringAsyncServerSocket(Builder builder) throws RuntimeException {
+        super(builder, builder.localAddress, builder.localPort);
         this.uring = builder.uring;
         this.linuxSocket = builder.linuxSocket;
-        this.acceptHandler = new AcceptHandler(builder, this);
-    }
-
-    @Override
-    public int getLocalPort() {
-        if (bind) {
-            return linuxSocket.getLocalAddress().getPort();
-        } else {
-            return -1;
-        }
-    }
-
-    @Override
-    protected SocketAddress getLocalAddress0() {
-        if (bind) {
-            return linuxSocket.getLocalAddress();
-        } else {
-            return null;
-        }
+        this.handler = new Handler(builder, this);
     }
 
     @Override
     protected void close0() throws IOException {
-        super.close0();
-        linuxSocket.close();
-
-        reactor.offer(() -> {
-            acceptHandler.closed = true;
-        });
+        if (Thread.currentThread() == eventloopThread) {
+            close00();
+        } else {
+            // todo: handle this situation.
+            reactor.offer(() -> {
+                close00();
+            });
+        }
     }
 
-    @Override
-    public void bind(SocketAddress localAddress, int backlog) {
-        checkNotNull(localAddress, "localAddress");
-        checkNotNegative(backlog, "backlog");
-
-        try {
-            boolean blocking = linuxSocket.isBlocking();
-            linuxSocket.setBlocking(true);
-            linuxSocket.bind(localAddress);
-            linuxSocket.listen(backlog);
-            linuxSocket.setBlocking(blocking);
-            bind = true;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+    // Guaranteed to run from the eventloop thread.
+    private void close00() {
+        if (started) {
+            handler.prepareShutdown();
+        } else {
+            linuxSocket.close();
         }
     }
 
     @Override
-    protected void start0() {
-        CompletionQueue cq = uring.cq();
-        acceptHandler.handlerId = cq.nextHandlerId();
-        cq.register(acceptHandler.handlerId, acceptHandler);
-        acceptHandler.prepareSqe();
+    protected void start00() {
+        uring.completionQueue().register(handler);
+        handler.prepareAccept();
     }
 
-    private static final class AcceptHandler implements CompletionHandler {
+    @SuppressWarnings({"checkstyle:MemberName"})
+    static final class Handler {
 
         private final UringAsyncServerSocket socket;
-        private final SubmissionQueue submissionQueue;
         private final LinuxSocket linuxSocket;
+        private final SubmissionQueue submissionQueue;
+        private final CompletionQueue completionQueue;
         private final AcceptMemory acceptMemory = new AcceptMemory();
         private final Metrics metrics;
         private final TpcLogger logger;
         private final Consumer<AbstractAsyncSocket.AcceptRequest> acceptFn;
-        private final CompletionQueue completionQueue;
-        private int handlerId;
-        private boolean closed;
+        private boolean closing;
+        private int pending = 0;
+        int handlerIndex;
 
-        private AcceptHandler(Builder builder, UringAsyncServerSocket socket) {
+        private Handler(Builder builder, UringAsyncServerSocket socket) {
             this.socket = socket;
-            this.completionQueue = builder.uring.cq();
+            this.completionQueue = builder.uring.completionQueue();
             this.acceptFn = builder.acceptFn;
             this.metrics = builder.metrics;
             this.linuxSocket = builder.linuxSocket;
-            this.submissionQueue = builder.uring.sq();
+            this.submissionQueue = builder.uring.submissionQueue();
             this.logger = builder.logger;
         }
 
-        private void prepareSqe() {
-            int sqeIndex = submissionQueue.nextIndex();
-            if (sqeIndex < 0) {
-                throw new IllegalStateException("No space in submission queue");
-            }
+        private void prepareAccept() {
+            try {
+                if (closing) {
+                    return;
+                }
 
-            long sqeAddr = submissionQueue.sqesAddr + sqeIndex * SIZEOF_SQE;
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_opcode, IORING_OP_ACCEPT);
-            UNSAFE.putByte(sqeAddr + OFFSET_SQE_flags, (byte) 0);
-            UNSAFE.putShort(sqeAddr + OFFSET_SQE_ioprio, (short) 0);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_fd, linuxSocket.fd());
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, acceptMemory.lenAddr);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, acceptMemory.addr);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, SOCK_NONBLOCK | SOCK_CLOEXEC);
-            UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, handlerId);
+                long userdata = toUserdata(TYPE_SERVER_SOCKET, IORING_OP_ACCEPT, handlerIndex);
+                submissionQueue.prepareAccept(
+                        linuxSocket.fd(), acceptMemory.addr, acceptMemory.lenAddr, userdata);
+                pending++;
+            } catch (Exception e) {
+                socket.close("Failed to prepare accept.", e);
+            }
         }
 
-        @Override
-        public void completeRequest(int res, int flags, long userdata) {
+        private void completeAccept(int res) {
+            if (res >= 0) {
+                int fd = res;
+                metrics.incAccepted();
+
+                prepareAccept();
+
+                SocketAddress address = LinuxSocket.toInetSocketAddress(
+                        acceptMemory.addr,
+                        acceptMemory.lenAddr);
+
+                if (logger.isInfoEnabled()) {
+                    logger.info(socket + " new connected accepted: " + address);
+                }
+
+                // todo: ugly that AF_INET is hard configured.
+                // We should use the address to determine the type
+                LinuxSocket linuxSocket = new LinuxSocket(fd, AF_INET);
+                linuxSocket.setBlocking(false);
+
+                AbstractAsyncSocket.AcceptRequest acceptRequest = new AcceptRequest(linuxSocket);
+                try {
+                    acceptFn.accept(acceptRequest);
+                } catch (Throwable throwable) {
+                    if (logger.isWarningEnabled()) {
+                        logger.warning(socket + " rejected: " + linuxSocket.getRemoteAddress()
+                                + "->" + linuxSocket.getLocalAddress()
+                                + " due to unhandled throwable.", throwable);
+                    }
+
+                    closeQuietly(acceptRequest);
+
+                    if (!(throwable instanceof Exception)) {
+                        // Anything that isn't an exception should be propaged because we can't
+                        // handle it here.
+                        throw sneakyThrow(throwable);
+                    }
+                }
+            } else if (res == -EINVAL) {
+                // when the socket is closing, a shutdown is send first to cancel the
+                // accept operation and and we get an EINVAL. Otherwise we need to
+                // propagate the error because there must be something wrong with the
+                // accept request.
+
+                if (!closing) {
+                    throw newCQEFailedException(
+                            "Failed to accept a socket.", "accept(2)", IORING_OP_ACCEPT, -res);
+                }
+            } else {
+                throw newCQEFailedException(
+                        "Failed to accept a socket.", "accept(2)", IORING_OP_ACCEPT, -res);
+            }
+        }
+
+        private void prepareShutdown() {
             try {
-                if (res >= 0) {
-                    int fd = res;
-                    metrics.incAccepted();
+                if (closing) {
+                    return;
+                }
+                closing = true;
 
-                    // re-register for more accepts.
-                    prepareSqe();
+                long userdata = toUserdata(TYPE_SERVER_SOCKET, IORING_OP_SHUTDOWN, handlerIndex);
+                submissionQueue.prepareShutdown(linuxSocket.fd(), userdata);
+                pending++;
+            } catch (Exception e) {
+                socket.close("Failed to prepare shutdown", e);
+            }
+        }
 
-                    SocketAddress address = LinuxSocket.toInetSocketAddress(
-                            acceptMemory.addr,
-                            acceptMemory.lenAddr);
+        private void completeShutdown(int res) {
+            if (res != 0) {
+                System.out.println("Shutdown of socket failed with " + strerror(-res));
+                //todo: EAGAIN and all that
+            }
 
-                    if (logger.isInfoEnabled()) {
-                        logger.info(socket + " new connected accepted: " + address);
-                    }
+            // the shutdown completed, now we go in close the socket.
+            prepareClose();
+        }
 
-                    // todo: ugly that AF_INET is hard configured.
-                    // We should use the address to determine the type
-                    LinuxSocket linuxSocket = new LinuxSocket(fd, AF_INET);
-                    AbstractAsyncSocket.AcceptRequest acceptRequest = new AcceptRequest(linuxSocket);
-                    try {
-                        acceptFn.accept(acceptRequest);
-                    } catch (Throwable t) {
+        private void prepareClose() {
+            try {
+                long userdata = toUserdata(TYPE_SERVER_SOCKET, IORING_OP_CLOSE, handlerIndex);
+                submissionQueue.prepareClose(linuxSocket.fd(), userdata);
+                pending++;
+            } catch (Exception e) {
+                socket.close("Failed to prepare close", e);
+            }
+        }
 
-                        // todo: logging mismatch between this and NioAsyncServersocket.
-                        logger.severe(t);
+        private void completeClose(int res) {
+            if (res != 0) {
+                System.out.println("Closing of socket failed with " + strerror(-res));
+                //todo: EAGAIN and all that
+            }
+            // we don't need to do anything here. The last pending
+            // request that returns will trigger the actual close
+        }
 
-                        // If for whatever reason the socket isn't consumed, we need
-                        // to properly close the socket. Otherwise the socket remains
-                        // under a CLOSE_WAIT state and the port doesn't get released.
-                        closeQuietly(acceptRequest);
+        public void complete(byte opcode, int res) {
+            try {
+                //System.out.println(socket + " complete :" + opcodeToString(opcode) + " res:" + res);
+                switch (opcode) {
+                    case IORING_OP_ACCEPT:
+                        completeAccept(res);
+                        break;
+                    case IORING_OP_SHUTDOWN:
+                        completeShutdown(res);
+                        break;
+                    case IORING_OP_CLOSE:
+                        completeClose(res);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unhandled opcode:" + opcodeToString(opcode));
+                }
 
-                        if (logger.isWarningEnabled()) {
-                            logger.warning("Closing socket " + address + "->" + socket.getLocalAddress());
-                        }
-                    }
-                } else {
-                    throw newCQEFailedException("Failed to accept a socket.", "accept(2)", IORING_OP_ACCEPT, -res);
+                pending--;
+
+                if (closing && pending == 0) {
+                    // if the socket is closing and this is the last request to
+                    // complete, we can do deregister the resources.
+                    completionQueue.unregister(this);
+                    socket.reactor.serverSockets().remove(socket);
                 }
             } catch (Exception e) {
-                // todo: do we want to close the server socket on error of a handler??
                 socket.close(null, e);
-            } finally {
-                if (closed) {
-                    completionQueue.unregister((int) userdata);
-                }
             }
         }
     }
@@ -286,22 +332,65 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     @SuppressWarnings({"checkstyle:VisibilityModifier"})
     public static class Builder extends AsyncServerSocket.Builder {
 
-        public final LinuxSocket linuxSocket;
+        public LinuxSocket linuxSocket;
         public Uring uring;
+        private InetSocketAddress localAddress;
+        private int localPort;
 
-        Builder() {
-            // to conclude.
-            this.linuxSocket = LinuxSocket.openTcpIpv4Socket();
-            linuxSocket.setBlocking(true);
+        public Builder(){
+            this.linuxSocket = LinuxSocket.createNonBlockingTcpIpv4Socket();
             this.options = new UringOptions(linuxSocket);
+        }
+
+        @Override
+        public void close() throws Exception {
+            closeQuietly(linuxSocket);
         }
 
         @Override
         protected void conclude() {
             super.conclude();
 
-            checkNotNull(linuxSocket, "nativeSocket");
             checkNotNull(uring, "uring");
+
+            if (linuxSocket.isBlocking()) {
+                throw new IllegalArgumentException("The linux socket should be non blocking");
+            }
+
+            if (bindAddress != null) {
+                try {
+                    linuxSocket.bind(bindAddress);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            } else {
+                int attempts = 0;
+                for (; ; ) {
+                    SocketAddress address = bindAddressGenerator.get();
+                    if (address == null) {
+                        throw new UncheckedIOException(
+                                new BindException(
+                                        "Failed to find an address to bind to after " + attempts + " attempts."));
+                    }
+                    attempts++;
+                    try {
+                        linuxSocket.bind(address);
+                        break;
+                    } catch (BindException e) {
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            }
+
+            try {
+                linuxSocket.listen(backlog);
+            } catch (Throwable e) {
+                throw sneakyThrow(e);
+            }
+
+            this.localAddress = linuxSocket.getLocalAddress();
+            this.localPort = linuxSocket.getLocalAddress().getPort();
         }
 
         @Override

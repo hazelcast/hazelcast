@@ -48,7 +48,7 @@ public final class UringFifoNetworkScheduler implements NetworkScheduler<UringAs
                 break;
             }
 
-            socket.writeHandler.prepareSqe();
+            socket.handler.prepareWrite();
         }
 
         //todo

@@ -17,6 +17,8 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -28,8 +30,6 @@ import static com.hazelcast.internal.tpcengine.util.Preconditions.checkPositive;
 
 /**
  * A JNI wrapper around a Linux Socket.
- * <p>
- * This class is not thread-safe.
  */
 @SuppressWarnings({"checkstyle:LineLength", "checkstyle:MethodCount"})
 public final class LinuxSocket implements AutoCloseable {
@@ -37,24 +37,37 @@ public final class LinuxSocket implements AutoCloseable {
     static {
         UringLibrary.ensureAvailable();
         initNative();
+
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            CLOSED = l.findVarHandle(LinuxSocket.class, "closed", boolean.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
     }
 
     // https://students.mimuw.edu.pl/SO/Linux/Kod/include/linux/socket.h.html
     public static final int AF_INET = 2;
     public static final int AF_INET6 = 10;
     public static final int SOCK_STREAM = 1;
-    //public static final int SIZEOF_SOCKADDR_STORAGE;
+
+    private static final VarHandle CLOSED;
 
     private final int fd;
-    private boolean closed;
+    private volatile boolean closed;
     private final int addressFamily;
 
     public LinuxSocket(int fd, int addressFamily) {
-        this.fd = fd;
+        this.fd = checkPositive(fd, "fd");
         this.addressFamily = addressFamily;
     }
 
-    public static LinuxSocket openTcpIpv4Socket() {
+    /**
+     * Creates a non blocking TCP/IPv4 socket.
+     *
+     * @return the created LinuxSocket.
+     */
+    public static LinuxSocket createNonBlockingTcpIpv4Socket() {
         int family = AF_INET;
         int res = socket(family, SOCK_STREAM | SOCK_NONBLOCK, 0);
         if (res < 0) {
@@ -65,6 +78,9 @@ public final class LinuxSocket implements AutoCloseable {
 
     private static native void initNative();
 
+    /**
+     * https://man7.org/linux/man-pages/man2/listen.2.html
+     */
     private static native void listen(int sockfd, int backlog);
 
     /**
@@ -80,8 +96,14 @@ public final class LinuxSocket implements AutoCloseable {
     // todo: fix names
     public static native InetSocketAddress toInetSocketAddress(long ptr, long length);
 
+    /**
+     * https://man7.org/linux/man-pages/man2/bind.2.html
+     */
     private static native int bind(int socketfd, byte[] address, int port) throws IOException;
 
+    /**
+     * https://man7.org/linux/man-pages/man2/connect.2.html
+     */
     private static native void connect(int socketfd, byte[] address, int port, int family);
 
     private static native void setBlocking(int fd, boolean blocking);
@@ -131,7 +153,6 @@ public final class LinuxSocket implements AutoCloseable {
     private static native void setSoLinger(int socketFd, int soLinger) throws IOException;
 
     private static native int getSoLinger(int socketFd) throws IOException;
-
 
     public int getAddressFamily() {
         return addressFamily;
@@ -289,15 +310,56 @@ public final class LinuxSocket implements AutoCloseable {
         }
     }
 
+    /**
+     * https://man7.org/linux/man-pages/man2/listen.2.html
+     */
     public void listen(int backlog) {
         listen(fd, backlog);
     }
 
+    /**
+     * Checks if the socket is closed.
+     * <p/>
+     * This method is thread-safe.
+     *
+     * @return
+     */
+    public boolean isClosed() {
+        return closed;
+    }
+
+    /**
+     * Tries to set the closed flag on the socket.
+     * <p/>
+     * This method is thread-safe.
+     * <p/>
+     * The reason this method exists, is to close the socket with IORING_OP_CLOSE
+     * instead of {@link #close()}.
+     *
+     * @return true if the marking was a success, false otherwise.
+     */
+    public boolean trySetClosed() {
+        return CLOSED.compareAndSet(this, false, true);
+    }
+
+    /**
+     * Closes the socket if it isn't already closed. If already closed,
+     * the call is ignored.
+     * <p>
+     * On success, close(2) is called:
+     * https://man7.org/linux/man-pages/man2/close.2.html
+     * <p>
+     * This method is thread-safe.
+     */
+    @Override
     public void close() {
-        if (closed) {
-            return;
+        if (trySetClosed()) {
+            Linux.close(fd);
         }
-        closed = true;
-        Linux.close(fd);
+    }
+
+    @Override
+    public String toString() {
+        return "LinuxSocket(fd=" + fd + ")";
     }
 }

@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpcengine.iouring;
+package com.hazelcast.internal.tpcengine.nio;
 
-import org.junit.Test;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.net.AsyncSocket_CreateDestroyTest;
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+@Category(NightlyTest.class)
+public class NioAsyncSocket_CreateDestroyTest_Nightly
+        extends AsyncSocket_CreateDestroyTest {
 
-public class UringLibraryTest {
-
-    @Test
-    public void test() {
-        assumeTrue(UringLibrary.isAvailable());
-
-        // ensure that we can actually load the Uring.
-        Uring uring = new Uring(16, 0);
-        assertNotNull(uring.submissionQueue());
-        assertNotNull(uring.completionQueue());
+    @Override
+    public Reactor.Builder newReactorBuilder() {
+        return new NioReactor.Builder();
     }
 }

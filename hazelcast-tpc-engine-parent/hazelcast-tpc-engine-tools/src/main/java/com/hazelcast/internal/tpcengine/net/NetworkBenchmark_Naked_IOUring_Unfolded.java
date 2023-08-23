@@ -117,9 +117,9 @@ public class NetworkBenchmark_Naked_IOUring_Unfolded {
             if (registerRingFd) {
                 uring.registerRingFd();
             }
-            final SubmissionQueue sq = uring.sq();
-            final CompletionQueue cq = uring.cq();
-            final LinuxSocket socket = LinuxSocket.openTcpIpv4Socket();
+            final SubmissionQueue sq = uring.submissionQueue();
+            final CompletionQueue cq = uring.completionQueue();
+            final LinuxSocket socket = LinuxSocket.createTcpIpv4Socket();
             socket.setTcpNoDelay(true);
             socket.connect(address);
             System.out.println("Connected");
@@ -134,8 +134,8 @@ public class NetworkBenchmark_Naked_IOUring_Unfolded {
 
             //System.out.println("sndBuff.remaining");
 
-            sq.offer(IORING_OP_SEND, 0, 0, socket.fd(), sendBuffAddr, sndBuff.remaining(), 0, USERDATA_OP_WRITE);
-            sq.offer(IORING_OP_RECV, 0, 0, socket.fd(), recvBuffAddr, recvBuff.remaining(), 0, USERDATA_OP_READ);
+            sq.prepare(IORING_OP_SEND, 0, 0, socket.fd(), sendBuffAddr, sndBuff.remaining(), 0, USERDATA_OP_WRITE);
+            sq.prepare(IORING_OP_RECV, 0, 0, socket.fd(), recvBuffAddr, recvBuff.remaining(), 0, USERDATA_OP_READ);
 
             int localTail = 0; //cq.localTail;
             int localHead = cq.head;
@@ -178,9 +178,9 @@ public class NetworkBenchmark_Naked_IOUring_Unfolded {
                         sndBuff.putLong(round - 1);
                         sndBuff.flip();
 
-                        sq.offer(IORING_OP_SEND, 0, 0, socket.fd(), sendBuffAddr, sndBuff.remaining(), 0, USERDATA_OP_WRITE);
+                        sq.prepare(IORING_OP_SEND, 0, 0, socket.fd(), sendBuffAddr, sndBuff.remaining(), 0, USERDATA_OP_WRITE);
 
-                        sq.offer(IORING_OP_RECV, 0, 0, socket.fd(), recvBuffAddr, recvBuff.remaining(), 0, USERDATA_OP_READ);
+                        sq.prepare(IORING_OP_RECV, 0, 0, socket.fd(), recvBuffAddr, recvBuff.remaining(), 0, USERDATA_OP_READ);
                     } else if (userdata == USERDATA_OP_WRITE) {
                         //System.out.println("Client wrote " + res + " bytes");
                         //sndBuff.position(sndBuff.position() + res);
@@ -223,9 +223,9 @@ public class NetworkBenchmark_Naked_IOUring_Unfolded {
             if (registerRingFd) {
                 uring.registerRingFd();
             }
-            final SubmissionQueue sq = uring.sq();
-            final CompletionQueue cq = uring.cq();
-            final LinuxSocket serverSocket = LinuxSocket.openTcpIpv4Socket();
+            final SubmissionQueue sq = uring.submissionQueue();
+            final CompletionQueue cq = uring.completionQueue();
+            final LinuxSocket serverSocket = LinuxSocket.createTcpIpv4Socket();
             final AcceptMemory acceptMemory = new AcceptMemory();
 
             serverSocket.setReusePort(true);
@@ -239,7 +239,7 @@ public class NetworkBenchmark_Naked_IOUring_Unfolded {
             handlers[acceptHandler.id] = acceptHandler;
             handlerIdGenerator++;
 
-            sq.offer(IORING_OP_ACCEPT, 0, SOCK_NONBLOCK | SOCK_CLOEXEC, serverSocket.fd(), acceptMemory.addr, 0, acceptMemory.lenAddr, acceptHandler.id);
+            sq.prepare(IORING_OP_ACCEPT, 0, SOCK_NONBLOCK | SOCK_CLOEXEC, serverSocket.fd(), acceptMemory.addr, 0, acceptMemory.lenAddr, acceptHandler.id);
 
             int localTail = 0;;//cq.localTail;
             int localHead = cq.head;
@@ -271,7 +271,7 @@ public class NetworkBenchmark_Naked_IOUring_Unfolded {
                         LinuxSocket clientSocket = new LinuxSocket(res, AF_INET);
                         clientSocket.setTcpNoDelay(true);
 
-                        sq.offer(IORING_OP_ACCEPT, 0, SOCK_NONBLOCK | SOCK_CLOEXEC, serverSocket.fd(), acceptMemory.addr, 0, acceptMemory.lenAddr, handler.id);
+                        sq.prepare(IORING_OP_ACCEPT, 0, SOCK_NONBLOCK | SOCK_CLOEXEC, serverSocket.fd(), acceptMemory.addr, 0, acceptMemory.lenAddr, handler.id);
                         //System.out.println("Connection established " + clientSocket.getLocalAddress() + "->" + clientSocket.getRemoteAddress());
 
                         Handler readHandler = new Handler();
@@ -294,7 +294,7 @@ public class NetworkBenchmark_Naked_IOUring_Unfolded {
                         writeHandler.socketFd = clientSocket.fd();
                         handlers[writeHandler.id] = writeHandler;
 
-                        sq.offer(IORING_OP_RECV, 0, 0, readHandler.socketFd, readHandler.buffAddr, readHandler.buff.remaining(), 0, readHandler.id);
+                        sq.prepare(IORING_OP_RECV, 0, 0, readHandler.socketFd, readHandler.buffAddr, readHandler.buff.remaining(), 0, readHandler.id);
                     } else if (handler.op == IORING_OP_RECV) {
                         //System.out.println("Server Read " + res + " bytes");
                         Handler readHandler = handler;
@@ -308,8 +308,8 @@ public class NetworkBenchmark_Naked_IOUring_Unfolded {
                         writeHandler.buff.putLong(round);
                         writeHandler.buff.flip();
 
-                        sq.offer(IORING_OP_RECV, 0, 0, readHandler.socketFd, readHandler.buffAddr, readHandler.buff.remaining(), 0, readHandler.id);
-                        sq.offer(IORING_OP_SEND, 0, 0, writeHandler.socketFd, writeHandler.buffAddr, writeHandler.buff.remaining(), 0, writeHandler.id);
+                        sq.prepare(IORING_OP_RECV, 0, 0, readHandler.socketFd, readHandler.buffAddr, readHandler.buff.remaining(), 0, readHandler.id);
+                        sq.prepare(IORING_OP_SEND, 0, 0, writeHandler.socketFd, writeHandler.buffAddr, writeHandler.buff.remaining(), 0, writeHandler.id);
                         //SocketData asyncSocket = userdataArray[(int) userdata];
 
                     } else if (handler.op == IORING_OP_SEND) {

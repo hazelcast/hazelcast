@@ -87,7 +87,7 @@ public class NetworkBenchmark_Naked_IOUring {
         private long receiveBufferAddress;
         private ByteBuffer sendBuffer;
         private long sendBufferAddress;
-        final LinuxSocket socket = LinuxSocket.openTcpIpv4Socket();
+        final LinuxSocket socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         final CompletionHandler handler = new CompletionHandler();
         private Uring uring;
         private SubmissionQueue sq;
@@ -100,8 +100,8 @@ public class NetworkBenchmark_Naked_IOUring {
         @Override
         public void run() {
             uring = new Uring(4096, iouringSetupFlags);
-            sq = uring.sq();
-            cq = uring.cq();
+            sq = uring.submissionQueue();
+            cq = uring.completionQueue();
 
             try {
                 ThreadAffinity threadAffinity = cpuAffinityClient == null ? null : new ThreadAffinity(cpuAffinityClient);
@@ -124,7 +124,7 @@ public class NetworkBenchmark_Naked_IOUring {
 
                 //System.out.println("sendBuffer.remaining");
 
-                sq.offer(
+                sq.prepare(
                         IORING_OP_SEND,                // op
                         0,                              // flags
                         0,                              // rw-flags
@@ -135,7 +135,7 @@ public class NetworkBenchmark_Naked_IOUring {
                         USERDATA_OP_WRITE               // userdata
                 );
 
-                sq.offer(
+                sq.prepare(
                         IORING_OP_RECV,                     // op
                         0,                                  // flags
                         0,                                  // rw-flags
@@ -161,7 +161,7 @@ public class NetworkBenchmark_Naked_IOUring {
         private class CompletionHandler implements com.hazelcast.internal.tpcengine.iouring.CompletionHandler {
 
             @Override
-            public void completeRequest(int res, int flags, long userdata) {
+            public void complete(int res, int flags, long userdata) {
                 if (res < 0) {
                     throw new UncheckedIOException(new IOException(strerror(-res)));
                 }
@@ -183,7 +183,7 @@ public class NetworkBenchmark_Naked_IOUring {
                     sendBuffer.putLong(round - 1);
                     sendBuffer.flip();
 
-                    sq.offer(
+                    sq.prepare(
                             IORING_OP_SEND,                // op
                             0,                              // flags
                             0,                              // rw-flags
@@ -194,7 +194,7 @@ public class NetworkBenchmark_Naked_IOUring {
                             USERDATA_OP_WRITE               // userdata
                     );
 
-                    sq.offer(
+                    sq.prepare(
                             IORING_OP_RECV,                     // op
                             0,                                  // flags
                             0,                                  // rw-flags
@@ -221,15 +221,15 @@ public class NetworkBenchmark_Naked_IOUring {
         Uring uring;
         SubmissionQueue sq;
         CompletionQueue cq;
-        final LinuxSocket serverSocket = LinuxSocket.openTcpIpv4Socket();
+        final LinuxSocket serverSocket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         final AcceptMemory acceptMemory = new AcceptMemory();
 
 
         @Override
         public void run() {
             uring = new Uring(4096, iouringSetupFlags);
-            sq = uring.sq();
-            cq = uring.cq();
+            sq = uring.submissionQueue();
+            cq = uring.completionQueue();
             try {
                 ThreadAffinity threadAffinity = cpuAffinityServer == null ? null : new ThreadAffinity(cpuAffinityServer);
                 if (threadAffinity != null) {
@@ -248,7 +248,7 @@ public class NetworkBenchmark_Naked_IOUring {
                 handlers[acceptHandler.id] = acceptHandler;
                 handlerIdGenerator++;
 
-                sq.offer(
+                sq.prepare(
                         IORING_OP_ACCEPT,
                         0,
                         SOCK_NONBLOCK | SOCK_CLOEXEC,
@@ -274,7 +274,7 @@ public class NetworkBenchmark_Naked_IOUring {
         private class CompletionHandler implements com.hazelcast.internal.tpcengine.iouring.CompletionHandler {
 
             @Override
-            public void completeRequest(int res, int flags, long userdata_id) {
+            public void complete(int res, int flags, long userdata_id) {
                 try {
                     if (res < 0) {
                         throw new UncheckedIOException(new IOException(strerror(-res)));
@@ -286,7 +286,7 @@ public class NetworkBenchmark_Naked_IOUring {
                         LinuxSocket clientSocket = new LinuxSocket(res, AF_INET);
                         clientSocket.setTcpNoDelay(true);
 
-                        sq.offer(
+                        sq.prepare(
                                 IORING_OP_ACCEPT,
                                 0,
                                 SOCK_NONBLOCK | SOCK_CLOEXEC,
@@ -317,7 +317,7 @@ public class NetworkBenchmark_Naked_IOUring {
                         handlers[writeHandler.id] = writeHandler;
 
 
-                        sq.offer(
+                        sq.prepare(
                                 IORING_OP_RECV,                         // op
                                 0,                                      // flags
                                 0,                                      // rw-flags
@@ -342,7 +342,7 @@ public class NetworkBenchmark_Naked_IOUring {
                         writeHandler.buffer.putLong(round);
                         writeHandler.buffer.flip();
 
-                        sq.offer(
+                        sq.prepare(
                                 IORING_OP_RECV,                         // op
                                 0,                                      // flags
                                 0,                                      // rw-flags
@@ -353,7 +353,7 @@ public class NetworkBenchmark_Naked_IOUring {
                                 handler.id                     // userdata
                         );
 
-                        sq.offer(
+                        sq.prepare(
                                 IORING_OP_SEND,                            // op
                                 0,                                          // flags
                                 0,                                          // rw-flags

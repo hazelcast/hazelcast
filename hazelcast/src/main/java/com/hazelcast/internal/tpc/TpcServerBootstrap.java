@@ -35,15 +35,19 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.impl.TpcPartitionOperationThread;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import org.jctools.util.PaddedAtomicLong;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
@@ -204,6 +208,7 @@ public class TpcServerBootstrap {
             Reactor reactor = tpcEngine.reactor(k);
 
             AsyncServerSocket.Builder serverSocketBuilder = reactor.newAsyncServerSocketBuilder();
+            serverSocketBuilder.bindAddressGenerator = new BindAddressGenerator(port, limit);
             // for window scaling to work, this property needs to be set
             serverSocketBuilder.options.set(SO_RCVBUF, socketConfig.getReceiveBufferSizeKB() * KILO_BYTE);
             serverSocketBuilder.acceptFn = acceptRequest -> {
@@ -219,8 +224,8 @@ public class TpcServerBootstrap {
                 socket.start();
             };
             AsyncServerSocket serverSocket = serverSocketBuilder.build();
+            port = serverSocket.getLocalPort();
             serverSockets.add(serverSocket);
-            port = bind(serverSocket, port, limit);
             serverSocket.start();
         }
     }
@@ -269,24 +274,29 @@ public class TpcServerBootstrap {
         }
     }
 
-    private int bind(AsyncServerSocket serverSocket, int port, int limit) {
-        while (port < limit) {
+    private class BindAddressGenerator implements Supplier<SocketAddress>{
+        private int port;
+        private int limit;
+
+        public BindAddressGenerator(int port, int limit) {
+            this.port = port;
+            this.limit = limit;
+        }
+
+        @Override
+        public SocketAddress get() {
             try {
-                serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
-                return port + 1;
-            } catch (UncheckedIOException e) {
-                if (e.getCause() instanceof BindException) {
-                    // this port is occupied probably by another hz member, try another one
-                    port += tpcEngine.reactorCount();
-                } else {
-                    throw e;
+                if (port >= limit) {
+                    return null;
                 }
-            } catch (UnknownHostException e) {
+
+                SocketAddress address = new InetSocketAddress(thisAddress.getInetAddress(), port);
+                port++;
+                return address;
+            } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         }
-
-        throw new HazelcastException("Could not find a free port in the TPC socket port range.");
     }
 
     public void shutdown() {

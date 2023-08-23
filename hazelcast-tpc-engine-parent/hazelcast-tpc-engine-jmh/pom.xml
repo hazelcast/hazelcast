@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <name>hazelcast-tpc-engine-jmh</name>
     <artifactId>hazelcast-tpc-engine-jmh</artifactId>
-    <description>The Hazelcast thread-per-core engine: JMH benchmarks</description>
+    <description>The Hazelcast Thread-Per-Core engine: JMH benchmarks</description>
     <packaging>jar</packaging>
 
     <parent>
@@ -19,7 +19,7 @@
         <checkstyle.skip>true</checkstyle.skip>
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-
+        <jctools.version>4.0.1</jctools.version>
         <jmh.version>1.36</jmh.version>
         <uberjar.name>benchmarks</uberjar.name>
     </properties>

@@ -22,5 +22,5 @@ package com.hazelcast.internal.tpcengine.iouring;
  */
 public interface CompletionHandler {
 
-    void completeRequest(int res, int flags, long userdata);
+    void complete(int res, int flags, long userdata);
 }

@@ -19,14 +19,11 @@ package com.hazelcast.internal.tpcengine.nio;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.experimental.categories.Category;
 
-import static com.hazelcast.internal.tpcengine.TpcTestSupport.ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
-
 @Category(NightlyTest.class)
-public class NioLargeVariablePayloadTest_Nightly
-        extends NioLargeVariablePayloadTest {
+public class NioAsyncServerSocket_CreateDestroyTest_Nightly
+        extends NioAsyncServerSocket_CreateDestroyTest {
 
-    public NioLargeVariablePayloadTest_Nightly() {
-        iterations = 2000;
-        testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT_NIGHTLY;
+    public NioAsyncServerSocket_CreateDestroyTest_Nightly() {
+        iterations = 1_000_000L;
     }
 }

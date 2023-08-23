@@ -41,14 +41,14 @@ public final class EventFd implements AutoCloseable {
      * Writes a value to this EventFd.
      * <p/>
      * This will trigger a wakeup to any call waiting for a write on this EventFd.
+     * <p/>
+     * See {@link https://linux.die.net/man/3/eventfd_write} for more info.
      *
      * @param value a value.
+     * @return the res. Use the {@link Linux#errno()} to get the error number.
      */
-    public void write(long value) {
-        int res = Linux.eventfd_write(fd, value);
-        if (res == -1) {
-            throw newSysCallFailedException("Failed to write to eventfd.", "eventfd_write(2)", -res);
-        }
+    public int write(long value) {
+        return Linux.eventfd_write(fd, value);
     }
 
     /**

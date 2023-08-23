@@ -22,6 +22,10 @@ import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_EVENT_FD;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_GENERIC;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.TYPE_TIMEOUT;
+import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.toUserdata;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.SIZEOF_KERNEL_TIMESPEC;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_READ;
 import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_TIMEOUT;
@@ -53,16 +57,14 @@ public final class UringEventloop extends Eventloop {
             uring.registerRingFd();
         }
 
-        this.submissionQueue = uring.sq();
-        this.completionQueue = uring.cq();
+        this.submissionQueue = uring.submissionQueue();
+        this.completionQueue = uring.completionQueue();
 
         this.eventFdHandler = new EventFdHandler();
-        eventFdHandler.handlerId = completionQueue.nextHandlerId();
-        completionQueue.register(eventFdHandler.handlerId, eventFdHandler);
+        completionQueue.register(eventFdHandler);
 
         this.timeoutHandler = new TimeoutHandler();
-        timeoutHandler.handlerId = completionQueue.nextHandlerId();
-        completionQueue.register(timeoutHandler.handlerId, timeoutHandler);
+        completionQueue.register(timeoutHandler);
     }
 
     public NetworkScheduler networkScheduler() {
@@ -78,7 +80,7 @@ public final class UringEventloop extends Eventloop {
     @Override
     public void beforeRun() {
         super.beforeRun();
-        eventFdHandler.prepareSqe();
+        eventFdHandler.prepareRead();
     }
 
     @Override
@@ -100,7 +102,7 @@ public final class UringEventloop extends Eventloop {
                 submissionQueue.submit();
             } else {
                 if (timeoutNanos != Long.MAX_VALUE) {
-                    timeoutHandler.prepareSqe(timeoutNanos);
+                    timeoutHandler.prepareTimeout(timeoutNanos);
                 }
 
                 submissionQueue.submitAndWait();
@@ -141,20 +143,13 @@ public final class UringEventloop extends Eventloop {
         closeQuietly(timeoutHandler);
     }
 
-    final class EventFdHandler implements CompletionHandler, AutoCloseable {
+    final class EventFdHandler implements AutoCloseable {
         final EventFd eventFd = new EventFd();
         private final long readBufAddr = UNSAFE.allocateMemory(SIZEOF_LONG);
-        private int handlerId;
 
-        private void prepareSqe() {
-            submissionQueue.add(IORING_OP_READ,
-                    0,
-                    0,
-                    eventFd.fd(),
-                    readBufAddr,
-                    SIZEOF_LONG,
-                    0,
-                    handlerId);
+        private void prepareRead() {
+            long userdata = toUserdata(TYPE_EVENT_FD, IORING_OP_READ, 0);
+            submissionQueue.prepareRead(eventFd.fd(), readBufAddr, SIZEOF_LONG, userdata);
         }
 
         @Override
@@ -163,14 +158,17 @@ public final class UringEventloop extends Eventloop {
             UNSAFE.freeMemory(readBufAddr);
         }
 
-        @Override
-        public void completeRequest(int res, int flags, long userdata) {
-            prepareSqe();
+        void complete(byte opcode, int res) {
+            // todo: negative res..
+            try {
+                prepareRead();
+            } catch (Exception e) {
+                logger.warning("Failed to prepare EventFd", e);
+            }
         }
     }
 
-    private class TimeoutHandler implements CompletionHandler, AutoCloseable {
-        private int handlerId;
+    class TimeoutHandler implements AutoCloseable {
         private final long addr = UNSAFE.allocateMemory(SIZEOF_KERNEL_TIMESPEC);
 
         @Override
@@ -186,7 +184,7 @@ public final class UringEventloop extends Eventloop {
         // then you have 2 timeouts in the uring and both share the same
         // timeoutSpecAddr.
         // Perhaps it isn't a problem if the timeout data is copied by io_uring.
-        private void prepareSqe(long timeoutNanos) {
+        private void prepareTimeout(long timeoutNanos) {
             if (timeoutNanos <= 0) {
                 UNSAFE.putLong(addr, 0);
                 UNSAFE.putLong(addr + SIZEOF_LONG, 0);
@@ -195,19 +193,12 @@ public final class UringEventloop extends Eventloop {
                 UNSAFE.putLong(addr, seconds);
                 UNSAFE.putLong(addr + SIZEOF_LONG, timeoutNanos - seconds * NS_PER_SECOND);
             }
-
-            submissionQueue.add(IORING_OP_TIMEOUT,
-                    0,
-                    0,
-                    -1,
-                    addr,
-                    1,
-                    0,
-                    handlerId);
+            long userdata = toUserdata(TYPE_TIMEOUT, IORING_OP_TIMEOUT, 0);
+            submissionQueue.prepareTimeout(addr, userdata);
         }
 
-        @Override
-        public void completeRequest(int res, int flags, long userdata) {
+        void complete(byte opcode, int res) {
+            // todo: negative res..
         }
     }
 
@@ -231,10 +222,10 @@ public final class UringEventloop extends Eventloop {
 
                 // The uring can be sized correctly based on the information we have.
                 int entries
-                        // 1 for reading and 1 for writing
-                        = reactorBuilder.socketsLimit * 2
-                        // every server socket needs 1 entry
-                        + reactorBuilder.serverSocketsLimit
+                        // 1 for reading and 1 for writing and 1 for close
+                        = reactorBuilder.socketsLimit * 3
+                        // every server socket needs 1 entry for accept and 1 for close
+                        + reactorBuilder.serverSocketsLimit * 2
                         // all storage requests are preregistered; so even though we don't submit
                         // the requests, the completion queue needs to have at least that number
                         // of slots in the handler array.

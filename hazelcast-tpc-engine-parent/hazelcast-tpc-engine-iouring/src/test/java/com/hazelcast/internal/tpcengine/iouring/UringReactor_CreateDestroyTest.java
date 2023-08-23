@@ -16,14 +16,15 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.experimental.categories.Category;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.Reactor_CreateDestroyTest;
+import org.junit.Ignore;
 
-@Category(NightlyTest.class)
-public class UringReactorCreateDestroyTest_Nightly
-        extends UringReactorCreateDestroyTest {
+public class UringReactor_CreateDestroyTest
+        extends Reactor_CreateDestroyTest {
 
-    public UringReactorCreateDestroyTest_Nightly() {
-        iterations = 1_000_000L;
+    @Override
+    public Reactor.Builder newReactorBuilder() {
+        return new UringReactor.Builder();
     }
 }

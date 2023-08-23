@@ -16,20 +16,15 @@
 
 package com.hazelcast.internal.tpcengine.iouring;
 
-import org.junit.Test;
+import com.hazelcast.internal.tpcengine.Reactor;
+import com.hazelcast.internal.tpcengine.net.AsyncServerSocket_CreateDestroyTest;
+import org.junit.Ignore;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+public class UringAsyncServerSocket_CreateDestroyTest
+        extends AsyncServerSocket_CreateDestroyTest {
 
-public class UringLibraryTest {
-
-    @Test
-    public void test() {
-        assumeTrue(UringLibrary.isAvailable());
-
-        // ensure that we can actually load the Uring.
-        Uring uring = new Uring(16, 0);
-        assertNotNull(uring.submissionQueue());
-        assertNotNull(uring.completionQueue());
+    @Override
+    public Reactor.Builder newReactorBuilder() {
+        return new UringReactor.Builder();
     }
 }

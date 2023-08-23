@@ -19,8 +19,6 @@ package com.hazelcast.internal.tpcengine;
 import com.hazelcast.internal.tpcengine.util.ExceptionUtil;
 import org.junit.Test;
 
-import java.util.function.Consumer;
-
 /**
  * A test that verifies that a reactor can be created and destroyed many
  * times after each other. The NioReactor should be fine since the resources
@@ -31,22 +29,24 @@ import java.util.function.Consumer;
  * There are short running tests for the regular tests, and there are also nightly
  * version that run much longer.
  */
-public abstract class ReactorCreateDestroyTest {
+public abstract class Reactor_CreateDestroyTest {
 
     protected long iterations = 1000;
 
     public abstract Reactor.Builder newReactorBuilder();
 
     public Reactor newReactor() {
-        return newReactor(null);
-    }
-
-    public Reactor newReactor(Consumer<Reactor.Builder> configFn) {
-        Reactor.Builder reactorBuilder = newReactorBuilder();
-        if (configFn != null) {
-            configFn.accept(reactorBuilder);
-        }
-        Reactor reactor = reactorBuilder.build();
+        Reactor.Builder builder = newReactorBuilder();
+        // Make sure that we create a uring instance that doesn't
+        // have a lot of capacity. This will flush out problems faster.
+        // And this also creates just a little bit of space for listeners
+        // in the completion queue. Exposing problems faster.
+        builder.socketsLimit = 1;
+        builder.fileLimit = 1;
+        builder.storagePendingLimit = 1;
+        builder.storageSubmitLimit = 1;
+        builder.serverSocketsLimit = 1;
+        Reactor reactor = builder.build();
         return reactor;
     }
 
