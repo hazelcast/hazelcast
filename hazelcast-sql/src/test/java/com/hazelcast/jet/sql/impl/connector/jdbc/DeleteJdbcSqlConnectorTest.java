@@ -21,8 +21,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-
 import static org.assertj.core.util.Lists.newArrayList;
 
 public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
