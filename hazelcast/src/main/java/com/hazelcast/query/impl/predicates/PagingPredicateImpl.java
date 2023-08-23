@@ -373,10 +373,14 @@ public class PagingPredicateImpl<K, V>
     @Override
     public int getFactoryId() {
 <<<<<<< Upstream, based on master
+<<<<<<< Upstream, based on master
         return AbstractPredicate.FACTORY_ID;
 =======
         return Factory.PREDICATE_DS.getDefaultFactoryId();
 >>>>>>> ef9d1ec Refactor FactoryIdHelper as enum
+=======
+        return AbstractPredicate.FACTORY_ID;
+>>>>>>> b7eb62c Make `getFactoryId()` result final
     }
 
     @Override
