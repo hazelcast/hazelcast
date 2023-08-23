@@ -113,6 +113,7 @@
         <kotlin.version>1.9.0</kotlin.version>
         <reload4j.version>1.2.25</reload4j.version>
         <log4j2.version>2.20.0</log4j2.version>
+        <mssql.version>12.4.0.jre11</mssql.version>
         <mysql.connector.version>8.1.0</mysql.connector.version>
         <netty.version>4.1.96.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
@@ -1844,6 +1845,11 @@
                 <groupId>com.google.api.grpc</groupId>
                 <artifactId>proto-google-common-protos</artifactId>
                 <version>2.23.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.microsoft.sqlserver</groupId>
+                <artifactId>mssql-jdbc</artifactId>
+                <version>${mssql.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>
