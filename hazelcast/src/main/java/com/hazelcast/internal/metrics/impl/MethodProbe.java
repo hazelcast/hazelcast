@@ -23,6 +23,9 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.util.counters.Counter;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
@@ -46,23 +49,27 @@ import static java.lang.String.format;
 abstract class MethodProbe implements ProbeFunction {
 
     private static final Object[] EMPTY_ARGS = new Object[0];
+    private static final Lookup LOOKUP = MethodHandles.lookup();
 
-    final Method method;
+    final MethodHandle method;
     final CachedProbe probe;
     final int type;
     final SourceMetadata sourceMetadata;
     final String probeName;
 
     MethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
-        this.method = method;
-        this.probe = new CachedProbe(probe);
-        this.type = type;
-        this.sourceMetadata = sourceMetadata;
-        this.probeName = probe.name();
-        assert probeName != null;
-        assert probeName.length() > 0;
-        method.setAccessible(true);
-
+        try {
+            method.setAccessible(true);
+            this.method = LOOKUP.unreflect(method);
+            this.probe = new CachedProbe(probe);
+            this.type = type;
+            this.sourceMetadata = sourceMetadata;
+            this.probeName = probe.name();
+            assert probeName != null;
+            assert probeName.length() > 0;
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
@@ -108,26 +115,34 @@ abstract class MethodProbe implements ProbeFunction {
 
         @Override
         public long get(S source) throws Exception {
-            switch (type) {
-                case TYPE_PRIMITIVE_LONG:
-                    return ((Number) method.invoke(source, EMPTY_ARGS)).longValue();
-                case TYPE_LONG_NUMBER:
-                    Number longNumber = (Number) method.invoke(source, EMPTY_ARGS);
-                    return longNumber == null ? 0 : longNumber.longValue();
-                case TYPE_MAP:
-                    Map<?, ?> map = (Map<?, ?>) method.invoke(source, EMPTY_ARGS);
-                    return map == null ? 0 : map.size();
-                case TYPE_COLLECTION:
-                    Collection<?> collection = (Collection<?>) method.invoke(source, EMPTY_ARGS);
-                    return collection == null ? 0 : collection.size();
-                case TYPE_COUNTER:
-                    Counter counter = (Counter) method.invoke(source, EMPTY_ARGS);
-                    return counter == null ? 0 : counter.get();
-                case TYPE_SEMAPHORE:
-                    Semaphore semaphore = (Semaphore) method.invoke(source, EMPTY_ARGS);
-                    return semaphore == null ? 0 : semaphore.availablePermits();
-                default:
-                    throw new IllegalStateException("Unrecognized type:" + type);
+            try {
+                switch (type) {
+                    case TYPE_PRIMITIVE_LONG:
+                        return (long) method.invoke(source);
+                    case TYPE_LONG_NUMBER:
+                        Number longNumber = (Number) method.invoke(source);
+                        return longNumber == null ? 0 : longNumber.longValue();
+                    case TYPE_MAP:
+                        Map<?, ?> map = (Map<?, ?>) method.invoke(source);
+                        return map == null ? 0 : map.size();
+                    case TYPE_COLLECTION:
+                        Collection<?> collection = (Collection<?>) method.invoke(source);
+                        return collection == null ? 0 : collection.size();
+                    case TYPE_COUNTER:
+                        Counter counter = (Counter) method.invoke(source);
+                        return counter == null ? 0 : counter.get();
+                    case TYPE_SEMAPHORE:
+                        Semaphore semaphore = (Semaphore) method.invoke(source);
+                        return semaphore == null ? 0 : semaphore.availablePermits();
+                    default:
+                        throw new IllegalStateException("Unrecognized type: " + type);
+                }
+            } catch (Throwable t) {
+                if (t instanceof Exception) {
+                    throw (Exception) t;
+                } else {
+                    throw new RuntimeException(t);
+                }
             }
         }
     }
@@ -140,14 +155,23 @@ abstract class MethodProbe implements ProbeFunction {
 
         @Override
         public double get(S source) throws Exception {
-            switch (type) {
-                case TYPE_DOUBLE_PRIMITIVE:
-                case TYPE_DOUBLE_NUMBER:
-                    Number result = (Number) method.invoke(source, EMPTY_ARGS);
-                    return result == null ? 0 : result.doubleValue();
-                default:
-                    throw new IllegalStateException("Unrecognized type:" + type);
+            try {
+                switch (type) {
+                    case TYPE_DOUBLE_PRIMITIVE:
+                        return (double) method.invoke(source);
+                    case TYPE_DOUBLE_NUMBER:
+                        Number result = (Number) method.invoke(source);
+                        return result == null ? 0 : result.doubleValue();
+                    default:
+                        throw new IllegalStateException("Unrecognized type: " + type);
+                }
+            } catch (Throwable t) {
+                if (t instanceof Exception) {
+                    throw (Exception) t;
+                } else {
+                    throw new RuntimeException(t);
+                }
             }
         }
-    }
+}
 }
