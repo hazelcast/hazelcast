@@ -204,7 +204,7 @@ public class PagingPredicateImpl<K, V>
         }
 
         List<QueryableEntry<K, V>> sortedSubList =
-                (List) SortingUtil.getSortedSubList((List) resultList, this, nearestAnchorEntry);
+                SortingUtil.getSortedSubList((List) resultList, this, nearestAnchorEntry);
         return new LinkedHashSet<QueryableEntry<K, V>>(sortedSubList);
     }
 
@@ -215,6 +215,7 @@ public class PagingPredicateImpl<K, V>
      * @param queryContext
      * @return
      */
+    @Override
     public boolean isIndexed(QueryContext queryContext) {
         if (predicate instanceof IndexAwarePredicate) {
             return ((IndexAwarePredicate) predicate).isIndexed(queryContext);
@@ -228,6 +229,7 @@ public class PagingPredicateImpl<K, V>
      * @param mapEntry
      * @return
      */
+    @Override
     public boolean apply(Map.Entry mapEntry) {
         if (predicate != null) {
             return predicate.apply(mapEntry);
@@ -370,7 +372,7 @@ public class PagingPredicateImpl<K, V>
 
     @Override
     public int getFactoryId() {
-        return Factory.PREDICATE_DS.getDefaultFactoryId();
+        return AbstractPredicate.FACTORY_ID;
     }
 
     @Override
