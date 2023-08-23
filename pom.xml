@@ -76,7 +76,7 @@
         <maven.deploy.plugin.version>3.1.1</maven.deploy.plugin.version>
 
         <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>3.3.0</maven.checkstyle.plugin.version>
+        <maven.checkheckstyle.plugin.version>3.3.0</maven.checkheckstyle.plugin.version>
         <maven.jacoco.plugin.version>0.8.10</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>3.1.2</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
@@ -176,7 +176,7 @@
         <hazelcast.module.name>ALL-UNNAMED</hazelcast.module.name>
 
         <!-- needed for CheckStyle -->
-        <checkstyle.version>10.12.1</checkstyle.version>
+        <checkstyle.version>10.12.2</checkstyle.version>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
