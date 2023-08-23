@@ -21,6 +21,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.ArrayList;
+
+import static org.assertj.core.util.Lists.newArrayList;
+
 public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     protected String tableName;
@@ -54,7 +58,9 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("DELETE FROM " + tableName + " WHERE id = 0");
 
-        assertJdbcRowsAnyOrder(tableName, new Row(1, "name-1"));
+        assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class),
+                new Row(1, "name-1"));
     }
 
     @Test
@@ -71,7 +77,9 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("DELETE FROM " + tableName + " WHERE person_id = 0");
 
-        assertJdbcRowsAnyOrder(tableName, new Row(1, "name-1"));
+        assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class),
+                new Row(1, "name-1"));
     }
 
     @Test
@@ -82,7 +90,9 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("DELETE FROM " + tableName + " WHERE name = 'name-0'");
 
-        assertJdbcRowsAnyOrder(tableName, new Row(1, "name-1"));
+        assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class),
+                new Row(1, "name-1"));
     }
 
     @Test
@@ -99,7 +109,9 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("DELETE FROM " + tableName + " WHERE fullName = 'name-0'");
 
-        assertJdbcRowsAnyOrder(tableName, new Row(1, "name-1"));
+        assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, String.class),
+                new Row(1, "name-1"));
     }
 
     @Test
@@ -133,6 +145,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("DELETE FROM " + tableName + " WHERE id = 0 AND id2 = 1");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(Integer.class, Integer.class, String.class),
                 new Row(0, 0, "name-0"),
                 new Row(1, 0, "name-1")
         );
@@ -154,6 +167,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         execute("DELETE FROM " + tableName + " WHERE id = 0");
 
         assertJdbcRowsAnyOrder(tableName,
+                newArrayList(String.class, Integer.class),
                 new Row("name-1", 1)
         );
     }
