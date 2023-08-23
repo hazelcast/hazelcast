@@ -17,7 +17,6 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.internal.util.SortingUtil;
 import com.hazelcast.nio.ObjectDataInput;
