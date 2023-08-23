@@ -24,7 +24,6 @@ import static com.hazelcast.query.Predicates.like;
 import static com.hazelcast.query.Predicates.regex;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper.Factory;
 import com.hazelcast.internal.util.collection.ArrayUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
