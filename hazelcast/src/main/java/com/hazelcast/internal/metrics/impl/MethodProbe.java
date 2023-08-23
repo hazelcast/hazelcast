@@ -47,8 +47,6 @@ import static java.lang.String.format;
  * A MethodProbe is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
  */
 abstract class MethodProbe implements ProbeFunction {
-
-    private static final Object[] EMPTY_ARGS = new Object[0];
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
     final MethodHandle method;
@@ -107,8 +105,8 @@ abstract class MethodProbe implements ProbeFunction {
         }
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     static class LongMethodProbe<S> extends MethodProbe implements LongProbeFunction<S> {
-
         LongMethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
             super(method, probe, type, sourceMetadata);
         }
@@ -148,7 +146,6 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     static class DoubleMethodProbe<S> extends MethodProbe implements DoubleProbeFunction<S> {
-
         DoubleMethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
             super(method, probe, type, sourceMetadata);
         }
@@ -158,7 +155,6 @@ abstract class MethodProbe implements ProbeFunction {
             try {
                 switch (type) {
                     case TYPE_DOUBLE_PRIMITIVE:
-                        return (double) method.invoke(source);
                     case TYPE_DOUBLE_NUMBER:
                         Number result = (Number) method.invoke(source);
                         return result == null ? 0 : result.doubleValue();
@@ -173,5 +169,5 @@ abstract class MethodProbe implements ProbeFunction {
                 }
             }
         }
-}
+    }
 }
