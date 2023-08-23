@@ -314,6 +314,16 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void cloud() {
+        ClientCloudConfig clientCloudConfig = new ClientCloudConfig()
+                .setEnabled(true)
+                .setDiscoveryToken("some-discovery-token");
+        clientConfig.getNetworkConfig().setCloudConfig(clientCloudConfig);
+        ClientConfig actual = newConfigViaGenerator();
+        assertThat(actual.getNetworkConfig().getCloudConfig()).isEqualTo(clientCloudConfig);
+    }
+
+    @Test
     public void credentialsFactory() {
         Properties props = new Properties();
         props.setProperty("foo", "bar");
