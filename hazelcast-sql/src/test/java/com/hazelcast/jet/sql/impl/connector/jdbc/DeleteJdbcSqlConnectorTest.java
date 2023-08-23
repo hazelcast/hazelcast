@@ -39,32 +39,32 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromTable() throws Exception {
-        createTable(tableName);
-        insertItems(tableName, 2);
+        createTableWithQuotation(quote(tableName));
+        insertItems(quote(tableName), 2);
         createMapping(tableName);
 
         execute("DELETE FROM " + tableName);
 
-        assertJdbcRowsAnyOrder(tableName);
+        assertJdbcRowsAnyOrder(quote(tableName));
     }
 
     @Test
     public void deleteFromTableWhereId() throws Exception {
-        createTable(tableName);
-        insertItems(tableName, 2);
+        createTableWithQuotation(quote(tableName));
+        insertItems(quote(tableName), 2);
         createMapping(tableName);
 
         execute("DELETE FROM " + tableName + " WHERE id = 0");
 
-        assertJdbcRowsAnyOrder(tableName,
+        assertJdbcRowsAnyOrder(quote(tableName),
                 newArrayList(Integer.class, String.class),
                 new Row(1, "name-1"));
     }
 
     @Test
     public void deleteFromTableWhereIdColumnWithExternalName() throws Exception {
-        createTable(tableName);
-        insertItems(tableName, 2);
+        createTableWithQuotation(quote(tableName));
+        insertItems(quote(tableName), 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " person_id INT EXTERNAL NAME id, "
@@ -75,28 +75,28 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("DELETE FROM " + tableName + " WHERE person_id = 0");
 
-        assertJdbcRowsAnyOrder(tableName,
+        assertJdbcRowsAnyOrder(quote(tableName),
                 newArrayList(Integer.class, String.class),
                 new Row(1, "name-1"));
     }
 
     @Test
     public void deleteFromTableWhereOnNonPKColumn() throws Exception {
-        createTable(tableName);
-        insertItems(tableName, 2);
+        createTableWithQuotation(quote(tableName));
+        insertItems(quote(tableName), 2);
         createMapping(tableName);
 
         execute("DELETE FROM " + tableName + " WHERE name = 'name-0'");
 
-        assertJdbcRowsAnyOrder(tableName,
+        assertJdbcRowsAnyOrder(quote(tableName),
                 newArrayList(Integer.class, String.class),
                 new Row(1, "name-1"));
     }
 
     @Test
     public void deleteFromTableWhereOnNonPKColumnWithExternalNme() throws Exception {
-        createTable(tableName);
-        insertItems(tableName, 2);
+        createTableWithQuotation(quote(tableName));
+        insertItems(quote(tableName), 2);
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -107,30 +107,30 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("DELETE FROM " + tableName + " WHERE fullName = 'name-0'");
 
-        assertJdbcRowsAnyOrder(tableName,
+        assertJdbcRowsAnyOrder(quote(tableName),
                 newArrayList(Integer.class, String.class),
                 new Row(1, "name-1"));
     }
 
     @Test
     public void deleteFromTableUsingMappingName() throws Exception {
-        createTable(tableName);
-        insertItems(tableName, 2);
+        createTableWithQuotation(quote(tableName));
+        insertItems(quote(tableName), 2);
 
         String mappingName = "mapping_" + randomName();
         createMapping(tableName, mappingName);
 
         execute("DELETE FROM " + mappingName);
 
-        assertJdbcRowsAnyOrder(tableName);
+        assertJdbcRowsAnyOrder(quote(tableName));
     }
 
     @Test
     public void deleteFromWithMultiplePKColumns() throws Exception {
-        createTable(tableName, "id INT", "id2 INT", "name VARCHAR(10)", "PRIMARY KEY(id, id2)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 0, 'name-0')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 0, 'name-1')");
-        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 1, 'name-2')");
+        createTable(quote(tableName),  quote("id") + " INT", quote("id2")+ " INT", quote("name") + " VARCHAR(10)", "PRIMARY KEY(" + quote("id") + ", " + quote("id2") + ")");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 0, 'name-0')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(1, 0, 'name-1')");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES(0, 1, 'name-2')");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -142,7 +142,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("DELETE FROM " + tableName + " WHERE id = 0 AND id2 = 1");
 
-        assertJdbcRowsAnyOrder(tableName,
+        assertJdbcRowsAnyOrder(quote(tableName),
                 newArrayList(Integer.class, Integer.class, String.class),
                 new Row(0, 0, "name-0"),
                 new Row(1, 0, "name-1")
@@ -151,9 +151,9 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromWithReverseColumnOrder() throws Exception {
-        createTable(tableName, "name VARCHAR(10)", "id INT PRIMARY KEY");
-        executeJdbc("INSERT INTO " + tableName + " VALUES('name-0', 0)");
-        executeJdbc("INSERT INTO " + tableName + " VALUES('name-1', 1)");
+        createTable(quote(tableName), quote("name") + " VARCHAR(10)", quote("id") + " INT PRIMARY KEY");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES('name-0', 0)");
+        executeJdbc("INSERT INTO " + quote(tableName) + " VALUES('name-1', 1)");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " name VARCHAR, "
@@ -164,7 +164,7 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("DELETE FROM " + tableName + " WHERE id = 0");
 
-        assertJdbcRowsAnyOrder(tableName,
+        assertJdbcRowsAnyOrder(quote(tableName),
                 newArrayList(String.class, Integer.class),
                 new Row("name-1", 1)
         );
@@ -172,15 +172,15 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void deleteFromWithQuotedColumnInWhere() throws Exception {
-        createTable(tableName, quote("person-id") + " INT PRIMARY KEY", "name VARCHAR(100)");
-        insertItems(tableName, 1);
+        createTable(quote(tableName), quote("person-id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(100)");
+        insertItems(quote(tableName), 1);
 
         execute(
                 "CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("DELETE FROM " + tableName + " WHERE \"person-id\" = 0");
-        assertJdbcRowsAnyOrder(tableName);
+        assertJdbcRowsAnyOrder(quote(tableName));
     }
 
 }

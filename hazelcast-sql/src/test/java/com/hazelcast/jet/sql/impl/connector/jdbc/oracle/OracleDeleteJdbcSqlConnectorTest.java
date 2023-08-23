@@ -33,8 +33,4 @@ public class OracleDeleteJdbcSqlConnectorTest extends DeleteJdbcSqlConnectorTest
         initialize(new OracleDatabaseProvider());
     }
 
-    @Before
-    public void setUp() throws Exception {
-        tableName = randomTableName().toUpperCase(Locale.ROOT);
-    }
 }
