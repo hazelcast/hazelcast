@@ -108,16 +108,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
      * Quotes the field names and creates a table, Can be used with PRIMARY KEY.
      */
     public static void createTable(String tableName, String... columns) throws SQLException {
-        String[] cols = new String[columns.length];
-        for (int i = 0; i < columns.length; i++) {
-            int endOfField = columns[i].indexOf(' ');
-            if (!columns[i].substring(0, endOfField).equals("PRIMARY")) {
-                cols[i] ="\"" + columns[i].substring(0, endOfField) + "\"" + columns[i].substring(endOfField);
-            } else {
-                cols[i] = columns[i];
-            }
-        }
-        executeJdbc("CREATE TABLE \"" + tableName + "\" (" + String.join(", ", cols) + ")");
+        executeJdbc("CREATE TABLE " + tableName + " (" + String.join(", ", columns) + ")");
     }
 
     public static void executeJdbc(String sql) throws SQLException {
@@ -208,11 +199,11 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
     protected static List<Row> jdbcRowsTable(String tableName) {
-        return jdbcRows("SELECT * FROM \"" + tableName + "\"");
+        return jdbcRows("SELECT * FROM " + tableName);
     }
 
     protected static List<Row> jdbcRowsTable(String tableName, List<Class<?>> columnType) {
-        return jdbcRows("SELECT * FROM \"" + tableName + "\"", columnType);
+        return jdbcRows("SELECT * FROM " + tableName, columnType);
     }
 
     @Nonnull
