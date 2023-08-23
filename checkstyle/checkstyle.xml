@@ -113,7 +113,7 @@
     <module name="TreeWalker">
         <!-- Needed for SuppressWarningsFilter to work -->
         <module name="SuppressWarningsHolder"/>
-
+      
         <module name="JavadocType">
             <property name="scope" value="public"/>
         </module>

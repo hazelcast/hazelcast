@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.partition.LocalReplicationStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
@@ -342,7 +343,7 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     @Override
-    public NearCacheStatsImpl getNearCacheStats() {
+    public NearCacheStats getNearCacheStats() {
         throw new UnsupportedOperationException("Replicated map has no Near Cache!");
     }
 

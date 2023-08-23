@@ -18,10 +18,14 @@ package com.hazelcast.dataconnection.impl.jdbcproperties;
 
 import java.util.Properties;
 
-public class DriverManagerTranslator {
+public final class DriverManagerTranslator {
 
-    public Properties translate(Properties source) {
-        Properties driverManagerProperties = new Properties(source);
+    private DriverManagerTranslator() {
+    }
+
+    public static Properties translate(Properties source) {
+        Properties driverManagerProperties = new Properties();
+        driverManagerProperties.putAll(source);
         driverManagerProperties.remove("jdbcUrl");
         return driverManagerProperties;
     }

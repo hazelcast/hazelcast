@@ -367,7 +367,7 @@ see used in the comments on your PR:
 * `run-sonar` - run SonarCloud analysis
 * `run-arm64` - run the tests on arm64 machine
 
-Where not indicated, the builds run on a Linux machine with Oracle JDK 8.
+Where not indicated, the builds run on a Linux machine with Oracle JDK 11.
 
 ### Creating PRs for Hazelcast SQL
 

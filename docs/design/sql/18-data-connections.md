@@ -694,7 +694,7 @@ There will be no way to grant/revoke access to individual data connections, or t
 individual remote resources, every user will be able to access every data connection.
 But the user has to have access to the target resource, which is already covered
 by the [connector
-permissions](https://docs.hazelcast.com/hazelcast/5.2/security/native-client-security#connector-permission).
+permissions](https://docs.hazelcast.com/hazelcast/latest/security/native-client-security#connector-permission).
 
 <!-- Footnotes -->
 
