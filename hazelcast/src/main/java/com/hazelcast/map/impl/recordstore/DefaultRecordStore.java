@@ -97,6 +97,7 @@ import static java.util.Collections.emptyList;
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "rawtypes"})
 public class DefaultRecordStore extends AbstractEvictableRecordStore {
+
     protected final ILogger logger;
     protected final RecordStoreLoader recordStoreLoader;
     protected final MapKeyLoader keyLoader;
