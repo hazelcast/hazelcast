@@ -59,7 +59,7 @@ public abstract class AsyncSocket_RpcTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
     public int iterations = 200;
-    public long testTimeoutMs = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+    public long testTimeoutSeconds = ASSERT_TRUE_EVENTUALLY_TIMEOUT;
     private final AtomicLong iteration = new AtomicLong();
     private final PrintAtomicLongThread printThread = new PrintAtomicLongThread("at:", iteration);
 
@@ -283,7 +283,7 @@ public abstract class AsyncSocket_RpcTest {
             thread.start();
         }
 
-        assertJoinable(testTimeoutMs, threads);
+        assertJoinable(testTimeoutSeconds, threads);
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress) {
