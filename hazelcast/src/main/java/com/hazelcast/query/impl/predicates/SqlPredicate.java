@@ -400,7 +400,7 @@ public class SqlPredicate
 
     @Override
     public int getFactoryId() {
-        return Factory.PREDICATE_DS.getDefaultFactoryId();
+        return AbstractPredicate.FACTORY_ID;
     }
 
     @Override

@@ -72,7 +72,7 @@ public class FalsePredicate<K, V> implements IdentifiedDataSerializable, IndexAw
 
     @Override
     public int getFactoryId() {
-        return Factory.PREDICATE_DS.getDefaultFactoryId();
+        return AbstractPredicate.FACTORY_ID;
     }
 
     @Override
