@@ -160,6 +160,7 @@ public final class ClientConfigXmlGenerator {
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(network));
         autoDetection(gen, network.getAutoDetectionConfig());
         discovery(gen, network.getDiscoveryConfig());
+        cloud(gen, network.getCloudConfig());
         outboundPort(gen, network.getOutboundPortDefinitions());
         icmp(gen, network.getClientIcmpPingConfig());
 
@@ -568,6 +569,14 @@ public final class ClientConfigXmlGenerator {
                     .close();
         }
         gen.close();
+    }
+
+    private static void cloud(XmlGenerator gen, ClientCloudConfig cloudConfig) {
+        if (cloudConfig != null && cloudConfig.getDiscoveryToken() != null) {
+            gen.open("hazelcast-cloud", "enabled", cloudConfig.isEnabled())
+               .node("discovery-token", cloudConfig.getDiscoveryToken());
+            gen.close();
+        }
     }
 
     private static void outboundPort(XmlGenerator gen, Collection<String> outboundPortDefinitions) {
