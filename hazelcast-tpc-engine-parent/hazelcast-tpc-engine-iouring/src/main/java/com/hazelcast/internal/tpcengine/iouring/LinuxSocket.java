@@ -358,4 +358,9 @@ public final class LinuxSocket implements AutoCloseable {
             Linux.close(fd);
         }
     }
+
+    @Override
+    public String toString() {
+        return "LinuxSocket(fd=" + fd + ")";
+    }
 }
