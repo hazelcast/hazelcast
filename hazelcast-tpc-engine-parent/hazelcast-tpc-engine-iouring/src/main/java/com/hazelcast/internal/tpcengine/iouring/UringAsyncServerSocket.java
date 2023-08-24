@@ -58,7 +58,8 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
     private final LinuxSocket linuxSocket;
     private final AcceptHandler acceptHandler;
     private final Uring uring;
-    private boolean bind;
+    // if the socket is already bound.
+    private boolean bound;
 
     private UringAsyncServerSocket(Builder builder) {
         super(builder);
@@ -69,7 +70,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public int getLocalPort() {
-        if (bind) {
+        if (bound) {
             return linuxSocket.getLocalAddress().getPort();
         } else {
             return -1;
@@ -78,7 +79,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected SocketAddress getLocalAddress0() {
-        if (bind) {
+        if (bound) {
             return linuxSocket.getLocalAddress();
         } else {
             return null;
@@ -103,7 +104,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         try {
             linuxSocket.bind(localAddress);
             linuxSocket.listen(backlog);
-            bind = true;
+            bound = true;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
