@@ -23,10 +23,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.util.Lists.newArrayList;
 
 public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
-    private String tableName;
+    protected String tableName;
 
     @BeforeClass
     public static void beforeClass() {
@@ -42,28 +43,32 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void insertIntoTable() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
         createMapping(tableName);
 
         execute("INSERT INTO " + tableName + " VALUES (0, 'name-0')");
 
-        assertJdbcRowsAnyOrder(tableName, new Row(0, "name-0"));
+        assertJdbcRowsAnyOrder(quote(tableName),
+                newArrayList(Integer.class, String.class),
+                new Row(0, "name-0"));
     }
 
     @Test
     public void insertIntoTableWithExternalName() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
         String mappingName = "mapping_" + randomName();
         createMapping(tableName, mappingName);
 
         execute("INSERT INTO " + mappingName + " VALUES (0, 'name-0')");
 
-        assertJdbcRowsAnyOrder(tableName, new Row(0, "name-0"));
+        assertJdbcRowsAnyOrder(quote(tableName),
+                newArrayList(Integer.class, String.class),
+                new Row(0, "name-0"));
     }
 
     @Test
     public void insertIntoTableColumnHasExternalName() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -74,17 +79,20 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("INSERT INTO " + tableName + " VALUES (0, 'name-0')");
 
-        assertJdbcRowsAnyOrder(tableName, new Row(0, "name-0"));
+        assertJdbcRowsAnyOrder(quote(tableName),
+                newArrayList(Integer.class, String.class),
+                new Row(0, "name-0"));
     }
 
     @Test
     public void insertIntoTableWithColumns() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
         createMapping(tableName);
 
         execute("INSERT INTO " + tableName + " (name, id) VALUES ('name-0', 0), ('name-1', 1)");
 
-        assertJdbcRowsAnyOrder(tableName,
+        assertJdbcRowsAnyOrder(quote(tableName),
+                newArrayList(Integer.class, String.class),
                 new Row(0, "name-0"),
                 new Row(1, "name-1")
         );
@@ -92,7 +100,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void insertIntoTableWithColumnsColumnHasExternalName() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -103,7 +111,8 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         execute("INSERT INTO " + tableName + " (fullName, id) VALUES ('name-0', 0), ('name-1', 1)");
 
-        assertJdbcRowsAnyOrder(tableName,
+        assertJdbcRowsAnyOrder(quote(tableName),
+                newArrayList(Integer.class, String.class),
                 new Row(0, "name-0"),
                 new Row(1, "name-1")
         );
@@ -111,12 +120,13 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void insertIntoTableMultipleValues() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
         createMapping(tableName);
 
         execute("INSERT INTO " + tableName + " SELECT v,'name-' || v FROM TABLE(generate_series(0,4))");
 
-        assertJdbcRowsAnyOrder(tableName,
+        assertJdbcRowsAnyOrder(quote(tableName),
+                newArrayList(Integer.class, String.class),
                 new Row(0, "name-0"),
                 new Row(1, "name-1"),
                 new Row(2, "name-2"),
@@ -127,7 +137,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void insertIntoTableSameValues() throws Exception {
-        createTable(tableName);
+        createTableWithQuotation(quote(tableName));
         createMapping(tableName);
 
         execute("INSERT INTO " + tableName + " VALUES (0, 'name-0')");
@@ -139,14 +149,15 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
     @Test
     public void insertIntoTableReverseColumnOrder() throws Exception {
-        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)");
+        createTable(quote(tableName), quote("id") + " INT PRIMARY KEY", quote("name") + " VARCHAR(10)");
         execute(
                 "CREATE MAPPING " + tableName + " DATA CONNECTION " + TEST_DATABASE_REF
         );
 
         execute("INSERT INTO " + tableName + " (name, id) VALUES ('name-0', 0)");
 
-        assertJdbcRowsAnyOrder(tableName,
+        assertJdbcRowsAnyOrder(quote(tableName),
+                newArrayList(Integer.class, String.class),
                 new Row(0, "name-0")
         );
     }
