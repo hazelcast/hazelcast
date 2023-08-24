@@ -31,8 +31,6 @@ import java.net.SocketAddress;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
-import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_CLOEXEC;
-import static com.hazelcast.internal.tpcengine.iouring.Linux.SOCK_NONBLOCK;
 import static com.hazelcast.internal.tpcengine.iouring.LinuxSocket.AF_INET;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_addr;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_fd;
@@ -155,7 +153,7 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
             UNSAFE.putLong(sqeAddr + OFFSET_SQE_off, acceptMemory.lenAddr);
             UNSAFE.putLong(sqeAddr + OFFSET_SQE_addr, acceptMemory.addr);
             UNSAFE.putInt(sqeAddr + OFFSET_SQE_len, 0);
-            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, SOCK_NONBLOCK | SOCK_CLOEXEC);
+            UNSAFE.putInt(sqeAddr + OFFSET_SQE_rw_flags, 0);
             UNSAFE.putLong(sqeAddr + OFFSET_SQE_user_data, handlerId);
         }
 
