@@ -75,12 +75,10 @@ public class HazelcastProxyFactory {
 
     // <Class toProxy, ClassLoader targetClassLoader> -> Class<?> proxy mapping for subclass proxies
     // java.lang.reflect.Proxy already maintains its own cache
-    private static final Map<ProxySource, Class<?>> PROXIES
-            = new ConcurrentHashMap<ProxySource, Class<?>>(16);
+    private static final Map<ProxySource, Class<?>> PROXIES = new ConcurrentHashMap<>();
 
     // <Class targetClass, ClassLoader targetClassLoader> -> ConstructorFunction<?>
-    private static final Map<Class<?>, ConstructorFunction<Object, Object>> CONSTRUCTORS
-            = new ConcurrentHashMap<Class<?>, ConstructorFunction<Object, Object>>(16);
+    private static final Map<Class<?>, ConstructorFunction<Object, Object>> CONSTRUCTORS = new ConcurrentHashMap<>();
 
     static {
         Map<String, Constructor<ConstructorFunction<Object, Object>>> notProxiedClasses
