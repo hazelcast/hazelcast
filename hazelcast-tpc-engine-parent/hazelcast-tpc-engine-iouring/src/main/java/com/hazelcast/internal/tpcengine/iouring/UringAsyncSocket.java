@@ -529,7 +529,7 @@ public final class UringAsyncSocket extends AsyncSocket {
 
         Builder(UringAsyncServerSocket.AcceptRequest acceptRequest) {
             if (acceptRequest == null) {
-                this.linuxSocket = LinuxSocket.createTcpIpv4Socket();
+                this.linuxSocket = LinuxSocket.createNonBlockingTcpIpv4Socket();
                 this.clientSide = true;
             } else {
                 this.linuxSocket = acceptRequest.linuxSocket;

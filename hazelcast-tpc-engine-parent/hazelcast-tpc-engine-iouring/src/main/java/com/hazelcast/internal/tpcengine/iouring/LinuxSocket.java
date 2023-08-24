@@ -67,7 +67,7 @@ public final class LinuxSocket implements AutoCloseable {
      *
      * @return the created LinuxSocket.
      */
-    public static LinuxSocket createTcpIpv4Socket() {
+    public static LinuxSocket createNonBlockingTcpIpv4Socket() {
         int family = AF_INET;
         int res = socket(family, SOCK_STREAM | SOCK_NONBLOCK, 0);
         if (res < 0) {

@@ -119,7 +119,7 @@ public class NetworkBenchmark_Naked_IOUring_Unfolded {
             }
             final SubmissionQueue sq = uring.sq();
             final CompletionQueue cq = uring.cq();
-            final LinuxSocket socket = LinuxSocket.createTcpIpv4Socket();
+            final LinuxSocket socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
             socket.setTcpNoDelay(true);
             socket.connect(address);
             System.out.println("Connected");
@@ -225,7 +225,7 @@ public class NetworkBenchmark_Naked_IOUring_Unfolded {
             }
             final SubmissionQueue sq = uring.sq();
             final CompletionQueue cq = uring.cq();
-            final LinuxSocket serverSocket = LinuxSocket.createTcpIpv4Socket();
+            final LinuxSocket serverSocket = LinuxSocket.createNonBlockingTcpIpv4Socket();
             final AcceptMemory acceptMemory = new AcceptMemory();
 
             serverSocket.setReusePort(true);

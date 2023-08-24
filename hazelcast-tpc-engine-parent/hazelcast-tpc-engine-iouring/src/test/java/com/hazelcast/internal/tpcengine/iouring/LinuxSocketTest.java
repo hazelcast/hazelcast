@@ -47,7 +47,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_openTcpIpv4Socket() {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
 
         assertNotNull(socket);
         assertTrue("socket.fd=" + socket.fd(), socket.fd() >= 0);
@@ -59,7 +59,7 @@ public class LinuxSocketTest {
 
     @Test(expected = NullPointerException.class)
     public void test_connect_whenNull() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setBlocking(true);
         socket.connect(null);
     }
@@ -74,7 +74,7 @@ public class LinuxSocketTest {
 
     @Test(expected = IOException.class)
     public void test_connect_whenIPv6SocketAddress() throws Exception {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setBlocking(true);
 
         InetSocketAddress address = new InetSocketAddress(InetAddress.getByName("::1"), 5000);
@@ -86,14 +86,14 @@ public class LinuxSocketTest {
         serverSocket = new ServerSocket(10000);
         TpcTestSupport.spawn((Callable<Object>) () -> serverSocket.accept());
 
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setBlocking(true);
         socket.connect(new InetSocketAddress("127.0.0.1", 10000));
     }
 
     @Test(expected = IOException.class)
     public void test_connect_whenNoRemoteSocket() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
 
         socket.setBlocking(true);
         socket.connect(new InetSocketAddress("127.0.0.1", 10000));
@@ -104,7 +104,7 @@ public class LinuxSocketTest {
         serverSocket = new ServerSocket(10000);
         TpcTestSupport.spawn((Callable<Object>) () -> serverSocket.accept());
 
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setBlocking(true);
         socket.close();
         socket.connect(new InetSocketAddress("127.0.0.1", 10000));
@@ -112,7 +112,7 @@ public class LinuxSocketTest {
 
     @Test(expected = IOException.class)
     public void test_connect_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
 
         socket.connect(new InetSocketAddress("127.0.0.1", 10000));
@@ -122,7 +122,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_close_whenAlreadyClosed() {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
 
         socket.close();
         socket.close();
@@ -133,7 +133,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_bind() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         InetSocketAddress address = new InetSocketAddress("127.0.0.1", 5000);
         socket.setBlocking(true);
         socket.bind(address);
@@ -142,14 +142,14 @@ public class LinuxSocketTest {
 
     @Test(expected = NullPointerException.class)
     public void test_bind_whenNull() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setBlocking(true);
         socket.bind(null);
     }
 
     @Test(expected = IOException.class)
     public void test_bind_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setBlocking(true);
         socket.close();
 
@@ -159,7 +159,7 @@ public class LinuxSocketTest {
 
     @Test(expected = IOException.class)
     public void test_bind_whenIpv4Socket() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setBlocking(true);
         socket.close();
 
@@ -171,7 +171,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_sendBufferSize() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         int size = 256 * 1024;
         socket.setSendBufferSize(size);
         assertTrue(size <= socket.getSendBufferSize());
@@ -179,14 +179,14 @@ public class LinuxSocketTest {
 
     @Test(expected = IOException.class)
     public void test_setSendBufferSize_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.setSendBufferSize(64 * 1024);
     }
 
     @Test(expected = IOException.class)
     public void test_getSendBufferSize_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.getSendBufferSize();
     }
@@ -195,7 +195,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_receiveBufferSize() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         int size = 256 * 1024;
         socket.setReceiveBufferSize(size);
         assertTrue(size <= socket.getReceiveBufferSize());
@@ -203,14 +203,14 @@ public class LinuxSocketTest {
 
     @Test(expected = IOException.class)
     public void test_setReceiveBufferSize_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.setReceiveBufferSize(64 * 1024);
     }
 
     @Test(expected = IOException.class)
     public void test_getReceiveBufferSize_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.getReceiveBufferSize();
     }
@@ -220,7 +220,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_tcpNoDelay() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setTcpNoDelay(true);
         assertTrue(socket.isTcpNoDelay());
         socket.setTcpNoDelay(false);
@@ -229,14 +229,14 @@ public class LinuxSocketTest {
 
     @Test(expected = IOException.class)
     public void test_setTcpNoDelay_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.setTcpNoDelay(true);
     }
 
     @Test(expected = IOException.class)
     public void test_isTcpNoDelay_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.isTcpNoDelay();
     }
@@ -245,7 +245,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_reusePort() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setReusePort(false);
         assertFalse(socket.isReusePort());
         socket.setReusePort(true);
@@ -254,14 +254,14 @@ public class LinuxSocketTest {
 
     @Test(expected = IOException.class)
     public void test_setReusePort_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.setReusePort(false);
     }
 
     @Test(expected = IOException.class)
     public void test_isReusePort_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.isReusePort();
     }
@@ -270,7 +270,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_reuseAddress() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setReuseAddress(false);
         assertFalse(socket.isReuseAddress());
         socket.setReuseAddress(true);
@@ -280,14 +280,14 @@ public class LinuxSocketTest {
 
     @Test(expected = IOException.class)
     public void test_setReuseAddress_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.setReuseAddress(false);
     }
 
     @Test(expected = IOException.class)
     public void test_getReusePort_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.isReuseAddress();
     }
@@ -296,7 +296,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_keepAlive() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setKeepAlive(false);
         assertFalse(socket.isKeepAlive());
         socket.setKeepAlive(true);
@@ -305,14 +305,14 @@ public class LinuxSocketTest {
 
     @Test(expected = IOException.class)
     public void test_setKeepAlive_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.setKeepAlive(false);
     }
 
     @Test(expected = IOException.class)
     public void test_getKeepAlive_whenClosed() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
         socket.isKeepAlive();
     }
@@ -322,7 +322,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_soLinger() throws IOException {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setSoLinger(10);
         assertEquals(10, socket.getSoLinger());
 
@@ -335,7 +335,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_getLocalAddress_whenNotConnected() {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
 
         InetSocketAddress localAddress = socket.getLocalAddress();
         assertNotNull(localAddress);
@@ -347,7 +347,7 @@ public class LinuxSocketTest {
         serverSocket = new ServerSocket(10000);
         TpcTestSupport.spawn((Callable<Object>) () -> serverSocket.accept());
 
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.connect(new InetSocketAddress("127.0.0.1", 10000));
 
         InetSocketAddress localInetSocketAddress = socket.getLocalAddress();
@@ -362,7 +362,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_getLocalAddress_whenClosed() {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
 
         assertNull(socket.getLocalAddress());
@@ -372,7 +372,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_getRemoteAddress_whenNotConnected() {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         assertNull(socket.getRemoteAddress());
     }
 
@@ -381,7 +381,7 @@ public class LinuxSocketTest {
         serverSocket = new ServerSocket(10000);
         TpcTestSupport.spawn((Callable<Object>) () -> serverSocket.accept());
 
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.setBlocking(true);
         socket.connect(new InetSocketAddress("127.0.0.1", 10000));
 
@@ -393,7 +393,7 @@ public class LinuxSocketTest {
 
     @Test
     public void test_getRemoteAddress_whenClosed() {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
 
         assertNull(socket.getRemoteAddress());
@@ -403,13 +403,13 @@ public class LinuxSocketTest {
 
     @Test
     public void test_listen() {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.listen(10);
     }
 
     @Test(expected = IOException.class)
     public void test_listen_whenClosed() {
-        socket = LinuxSocket.createTcpIpv4Socket();
+        socket = LinuxSocket.createNonBlockingTcpIpv4Socket();
         socket.close();
 
         socket.listen(-1);
