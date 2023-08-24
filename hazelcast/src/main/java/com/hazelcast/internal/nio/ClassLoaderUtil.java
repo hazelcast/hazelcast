@@ -130,6 +130,7 @@ public final class ClassLoaderUtil {
         isNotNull(className, "className");
         final Class primitiveClass = tryPrimitiveClass(className);
         if (primitiveClass != null) {
+            // Note: this will always throw java.lang.InstantiationException
             return (T) primitiveClass.getDeclaredConstructor().newInstance();
         }
 
