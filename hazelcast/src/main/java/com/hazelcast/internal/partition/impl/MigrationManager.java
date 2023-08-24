@@ -1447,7 +1447,10 @@ public class MigrationManager {
             }
 
             return future.handleAsync((done, t) -> {
-                stats.recordMigrationOperationTime();
+                if (done) {
+                    stats.recordMigrationOperationTime();
+                }
+
                 logger.fine("Migration operation response received -> " + migration + ", success: " + done + ", failure: " + t);
 
                 if (t != null) {
@@ -1476,7 +1479,9 @@ public class MigrationManager {
                     return CompletableFuture.completedFuture(false);
                 }
             }, asyncExecutor).handleAsync((result, t) -> {
-                stats.recordMigrationTaskTime();
+                if (result) {
+                    stats.recordMigrationTaskTime();
+                }
 
                 partitionService.getPartitionEventManager().sendMigrationEvent(stats.toMigrationState(), migration,
                         TimeUnit.NANOSECONDS.toMillis(Timer.nanosElapsed(start)));
