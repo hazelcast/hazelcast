@@ -101,11 +101,8 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         checkNotNegative(backlog, "backlog");
 
         try {
-            boolean blocking = linuxSocket.isBlocking();
-            linuxSocket.setBlocking(true);
             linuxSocket.bind(localAddress);
             linuxSocket.listen(backlog);
-            linuxSocket.setBlocking(blocking);
             bind = true;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
