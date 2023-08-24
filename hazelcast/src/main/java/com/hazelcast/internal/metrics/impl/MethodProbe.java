@@ -27,6 +27,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -50,6 +51,7 @@ abstract class MethodProbe implements ProbeFunction {
     private static final Lookup LOOKUP = MethodHandles.lookup();
 
     final MethodHandle method;
+    final boolean isMethodStatic;
     final CachedProbe probe;
     final int type;
     final SourceMetadata sourceMetadata;
@@ -59,6 +61,7 @@ abstract class MethodProbe implements ProbeFunction {
         try {
             method.setAccessible(true);
             this.method = LOOKUP.unreflect(method);
+            isMethodStatic = Modifier.isStatic(method.getModifiers());
             this.probe = new CachedProbe(probe);
             this.type = type;
             this.sourceMetadata = sourceMetadata;
@@ -71,10 +74,7 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        MetricDescriptor descriptor = metricsRegistry
-                .newMetricDescriptor()
-                .withPrefix(namePrefix)
-                .withMetric(getProbeName());
+        MetricDescriptor descriptor = metricsRegistry.newMetricDescriptor().withPrefix(namePrefix).withMetric(getProbeName());
         metricsRegistry.registerInternal(source, descriptor, probe.level(), this);
     }
 
@@ -105,7 +105,6 @@ abstract class MethodProbe implements ProbeFunction {
         }
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     static class LongMethodProbe<S> extends MethodProbe implements LongProbeFunction<S> {
         LongMethodProbe(Method method, Probe probe, int type, SourceMetadata sourceMetadata) {
             super(method, probe, type, sourceMetadata);
@@ -113,34 +112,25 @@ abstract class MethodProbe implements ProbeFunction {
 
         @Override
         public long get(S source) throws Exception {
-            try {
-                switch (type) {
-                    case TYPE_PRIMITIVE_LONG:
-                        return (long) method.invoke(source);
-                    case TYPE_LONG_NUMBER:
-                        Number longNumber = (Number) method.invoke(source);
-                        return longNumber == null ? 0 : longNumber.longValue();
-                    case TYPE_MAP:
-                        Map<?, ?> map = (Map<?, ?>) method.invoke(source);
-                        return map == null ? 0 : map.size();
-                    case TYPE_COLLECTION:
-                        Collection<?> collection = (Collection<?>) method.invoke(source);
-                        return collection == null ? 0 : collection.size();
-                    case TYPE_COUNTER:
-                        Counter counter = (Counter) method.invoke(source);
-                        return counter == null ? 0 : counter.get();
-                    case TYPE_SEMAPHORE:
-                        Semaphore semaphore = (Semaphore) method.invoke(source);
-                        return semaphore == null ? 0 : semaphore.availablePermits();
-                    default:
-                        throw new IllegalStateException("Unrecognized type: " + type);
-                }
-            } catch (Throwable t) {
-                if (t instanceof Exception) {
-                    throw (Exception) t;
-                } else {
-                    throw new RuntimeException(t);
-                }
+            switch (type) {
+                case TYPE_PRIMITIVE_LONG:
+                case TYPE_LONG_NUMBER:
+                    Number longNumber = invoke(source);
+                    return longNumber == null ? 0 : longNumber.longValue();
+                case TYPE_MAP:
+                    Map<?, ?> map = invoke(source);
+                    return map == null ? 0 : map.size();
+                case TYPE_COLLECTION:
+                    Collection<?> collection = invoke(source);
+                    return collection == null ? 0 : collection.size();
+                case TYPE_COUNTER:
+                    Counter counter = invoke(source);
+                    return counter == null ? 0 : counter.get();
+                case TYPE_SEMAPHORE:
+                    Semaphore semaphore = invoke(source);
+                    return semaphore == null ? 0 : semaphore.availablePermits();
+                default:
+                    throw new IllegalStateException("Unrecognized type: " + type);
             }
         }
     }
@@ -152,21 +142,25 @@ abstract class MethodProbe implements ProbeFunction {
 
         @Override
         public double get(S source) throws Exception {
-            try {
-                switch (type) {
-                    case TYPE_DOUBLE_PRIMITIVE:
-                    case TYPE_DOUBLE_NUMBER:
-                        Number result = (Number) method.invoke(source);
-                        return result == null ? 0 : result.doubleValue();
-                    default:
-                        throw new IllegalStateException("Unrecognized type: " + type);
-                }
-            } catch (Throwable t) {
-                if (t instanceof Exception) {
-                    throw (Exception) t;
-                } else {
-                    throw new RuntimeException(t);
-                }
+            switch (type) {
+                case TYPE_DOUBLE_PRIMITIVE:
+                case TYPE_DOUBLE_NUMBER:
+                    Number result = invoke(source);
+                    return result == null ? 0 : result.doubleValue();
+                default:
+                    throw new IllegalStateException("Unrecognized type: " + type);
+            }
+        }
+    }
+
+    protected <T> T invoke(Object source) throws Exception {
+        try {
+            return isMethodStatic ? (T) method.invoke() : (T) method.invoke(source);
+        } catch (Throwable t) {
+            if (t instanceof Exception) {
+                throw (Exception) t;
+            } else {
+                throw new RuntimeException(t);
             }
         }
     }
