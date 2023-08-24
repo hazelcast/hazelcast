@@ -364,7 +364,7 @@ see used in the comments on your PR:
 * *`run-nightly-tests` - run nightly (slow) tests. WARNING: Use with care as this is a resource consuming task.*
 * *`run-ee-nightly-tests` - run nightly (slow) tests from hazelcast-enterprise. WARNING: Use with care as this is a resource consuming task.*
 * `run-sql-only` - run default tests in `hazelcast-sql`, `hazelcast-distribution`, and `extensions/mapstore` modules
-* `run-docs-only` - do not run any tests, check that only files with `.md` suffix are added in the PR 
+* `run-docs-only` - do not run any tests, check that only files with `.md` or `.adoc` suffix are added in the PR
 * `run-sonar` - run SonarCloud analysis
 * `run-arm64` - run the tests on arm64 machine
 
@@ -380,9 +380,9 @@ anywhere other than `hazelcast-sql`.
 
 ### Creating PRs which contain only documentation
 
-When creating a PR which changes only documentation (files with suffix `.md`) it makes no sense
-to run tests. For that case the label `docs-only` can be used. The job will fail in case you've 
-made other changes than in `.md` files.
+When creating a PR which changes only documentation (files with suffix `.md` or `.adoc`) it 
+makes no sense to run tests. For that case the label `docs-only` can be used. The job will fail 
+in case you've made other changes than in `.md` or `.adoc` files.
 
 ## License
 
