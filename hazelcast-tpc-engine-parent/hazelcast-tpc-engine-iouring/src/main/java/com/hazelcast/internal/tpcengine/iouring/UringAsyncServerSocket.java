@@ -289,7 +289,6 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         Builder() {
             // to conclude.
             this.linuxSocket = LinuxSocket.createNonBlockingTcpIpv4Socket();
-            linuxSocket.setBlocking(true);
             this.options = new UringOptions(linuxSocket);
         }
 
@@ -297,8 +296,12 @@ public final class UringAsyncServerSocket extends AsyncServerSocket {
         protected void conclude() {
             super.conclude();
 
-            checkNotNull(linuxSocket, "nativeSocket");
             checkNotNull(uring, "uring");
+            checkNotNull(linuxSocket, "linuxSocket");
+
+            if (linuxSocket.isBlocking()) {
+                throw new IllegalArgumentException("The linux socket should be non blocking");
+            }
         }
 
         @Override
