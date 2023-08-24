@@ -16,7 +16,6 @@
 
 package com.hazelcast.test.starter;
 
-import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.test.starter.constructor.EnumConstructor;
 import net.bytebuddy.ByteBuddy;
