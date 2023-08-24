@@ -17,10 +17,10 @@
 package com.hazelcast.internal.tpcengine.iouring;
 
 
-import com.hazelcast.internal.tpcengine.util.Option;
 import com.hazelcast.internal.tpcengine.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpcengine.net.AsyncSocket;
 import com.hazelcast.internal.tpcengine.net.NetworkScheduler;
+import com.hazelcast.internal.tpcengine.util.Option;
 import com.hazelcast.internal.tpcengine.util.UnsafeLocator;
 import sun.misc.Unsafe;
 
@@ -33,9 +33,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpcengine.iouring.CompletionQueue.newCQEFailedException;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_RECV;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_SEND;
-import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITEV;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.EAGAIN;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.ECONNRESET;
 import static com.hazelcast.internal.tpcengine.iouring.Linux.IOV_MAX;
@@ -49,6 +46,9 @@ import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQ
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_rw_flags;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.OFFSET_SQE_user_data;
 import static com.hazelcast.internal.tpcengine.iouring.SubmissionQueue.SIZEOF_SQE;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_RECV;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_SEND;
+import static com.hazelcast.internal.tpcengine.iouring.Uring.IORING_OP_WRITEV;
 import static com.hazelcast.internal.tpcengine.net.AsyncSocket.Options.SO_RCVBUF;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.addressOf;
 import static com.hazelcast.internal.tpcengine.util.BufferUtil.compactOrClear;
@@ -145,12 +145,17 @@ public final class UringAsyncSocket extends AsyncSocket {
             logger.fine("Connect to address:" + address);
         }
 
+        // todo: this needs to become on blocking. Make use of the IORING_OP_CONNECT
         CompletableFuture<Void> future = new CompletableFuture<>();
         try {
             boolean oldBlocking = linuxSocket.isBlocking();
-            linuxSocket.setBlocking(true);
+            if (!oldBlocking) {
+                linuxSocket.setBlocking(true);
+            }
             boolean connect = linuxSocket.connect(address);
-            linuxSocket.setBlocking(oldBlocking);
+            if (!oldBlocking) {
+                linuxSocket.setBlocking(false);
+            }
             if (connect) {
                 this.remoteAddress = linuxSocket.getRemoteAddress();
                 this.localAddress = linuxSocket.getLocalAddress();
