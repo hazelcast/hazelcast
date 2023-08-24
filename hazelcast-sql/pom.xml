@@ -308,6 +308,9 @@
                                     <artifact>*:*</artifact>
                                     <excludes>
                                         <exclude>Parser.jj</exclude>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>META-INF/NOTICE-binary</exclude>
+                                        <exclude>META-INF/licenses-binary/**</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -317,6 +320,7 @@
                                         <exclude>META-INF/services/java.sql.Driver</exclude>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
+                                        <exclude>META-INF/licenses-binary/**</exclude>
                                         <exclude>**/package-info.java</exclude>
                                         <exclude>org/apache/calcite/runtime/CalciteResource.properties</exclude>
                                     </excludes>
@@ -329,54 +333,7 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Exclude Avatica ProtoBuf definitions, since Avatica is not used. -->
                                         <exclude>*.proto</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.checkerframework:checker-qual</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.hazelcast.jsurfer:jsurfer-core</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.hazelcast.jsurfer:jsurfer-jackson-jr</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.fasterxml.jackson.jr:jackson-jr-objects</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.fasterxml.jackson.core:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.antlr:antlr4-runtime</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.google.code.gson:gson</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>commons-codec:commons-codec</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <exclude>META-INF/licenses-binary/**</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -385,18 +342,6 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
                                         <exclude>org.codehaus.commons.compiler.properties</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.google.guava:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.locationtech.jts:jts-core</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
