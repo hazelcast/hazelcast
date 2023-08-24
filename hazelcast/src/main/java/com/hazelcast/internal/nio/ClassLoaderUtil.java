@@ -131,7 +131,7 @@ public final class ClassLoaderUtil {
         final Class primitiveClass = tryPrimitiveClass(className);
         if (primitiveClass != null) {
             // Note: this will always throw java.lang.InstantiationException
-            return (T) primitiveClass.newInstance();
+            return (T) primitiveClass.getDeclaredConstructor().newInstance();
         }
 
         // Note: Class.getClassLoader() and Thread.getContextClassLoader() are

@@ -125,7 +125,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         DataSerializable ds = null;
         if (null != aClass) {
             try {
-                ds = (DataSerializable) aClass.newInstance();
+                ds = (DataSerializable) aClass.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 e = tryClarifyInstantiationException(aClass, e);
                 throw new HazelcastSerializationException("Requested class " + aClass + " could not be instantiated.", e);
