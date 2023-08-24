@@ -155,7 +155,7 @@ abstract class MethodProbe implements ProbeFunction {
 
     protected <T> T invoke(Object source) throws Exception {
         try {
-            return isMethodStatic ? (T) method.invoke() : (T) method.invoke(source);
+            return (T) (isMethodStatic ? method : method.bindTo(source)).invoke();
         } catch (Throwable t) {
             if (t instanceof Exception) {
                 throw (Exception) t;
