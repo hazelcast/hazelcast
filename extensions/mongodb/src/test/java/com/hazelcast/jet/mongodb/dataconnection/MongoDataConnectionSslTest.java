@@ -65,6 +65,8 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .withCommand("--config", "/etc/mongo/mongod.conf");
     private static String connectionString;
+    private static String keyStoreLocation;
+    private static String trustStoreLocation;
 
     @BeforeClass
     public static void setUp() {
@@ -79,8 +81,8 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
 
             System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2,TLSv1.3");
             System.setProperty("javax.net.debug", "ssl:handshake");
-            System.setProperty("javax.net.ssl.trustStore", tempFileTS.toString());
-            System.setProperty("javax.net.ssl.trustStorePassword", "123456");
+            keyStoreLocation = tempFile.toString();
+            trustStoreLocation = tempFileTS.toString();
         } catch (IOException e) {
             throw rethrow(e);
         }
@@ -98,6 +100,12 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
                 .setProperty("enableSsl", "true")
                 .setProperty("invalidHostNameAllowed", "true")
                 .setProperty("connectionString", connectionString)
+//                .setProperty("keyStore", keyStoreLocation)
+//                .setProperty("keyStoreType", "pkcs12")
+//                .setProperty("keyStorePassword", "123456")
+                .setProperty("trustStore", trustStoreLocation)
+                .setProperty("trustStoreType", "pkcs12")
+                .setProperty("trustStorePassword", "123456")
                 .setShared(true);
     }
 
@@ -106,11 +114,6 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
         if (mongoContainer != null) {
             mongoContainer.stop();
         }
-
-        System.clearProperty("https.protocols");
-        System.clearProperty("javax.net.debug");
-        System.clearProperty("javax.net.ssl.trustStore");
-        System.clearProperty("javax.net.ssl.trustStorePassword");
     }
 
     @Test
@@ -132,7 +135,11 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
         return MongoClients.create(MongoClientSettings
                 .builder()
                 .applyConnectionString(new ConnectionString(connectionString))
-                .applyToSslSettings(b -> b.enabled(true).invalidHostNameAllowed(true))
+                .applyToSslSettings(b -> {
+                    b.enabled(true).invalidHostNameAllowed(true);
+                    b.context(SslConf.createSSLContext(null, null, null,
+                            trustStoreLocation, "pkcs12", "123456".toCharArray()));
+                })
                 .codecRegistry(defaultCodecRegistry())
                 .build());
     }

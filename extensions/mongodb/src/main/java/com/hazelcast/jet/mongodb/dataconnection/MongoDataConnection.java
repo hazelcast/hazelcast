@@ -100,26 +100,6 @@ public class MongoDataConnection extends DataConnectionBase {
      */
     public static final String CONNECTION_POOL_MAX = "connectionPoolMaxSize";
 
-    /**
-     * Name of the property holding the information if SSL should be enabled for clients.
-     *
-     * Default value is false.
-     *
-     * @since 5.4
-     * @see com.mongodb.connection.SslSettings.Builder#enabled(boolean)
-     */
-    public static final String ENABLE_SSL = "enableSsl";
-
-    /**
-     * Name of the property holding information if invalid host names will be allowed.
-     *
-     * Default value is false.
-     *
-     * @since 5.4
-     * @see com.mongodb.connection.SslSettings.Builder#invalidHostNameAllowed(boolean)
-     */
-    public static final String INVALID_HOSTNAME_ALLOWED = "invalidHostNameAllowed";
-
     private volatile ConcurrentMemoizingSupplier<MongoClient> mongoClientSup;
     private final String name;
     private final String connectionString;
@@ -130,8 +110,8 @@ public class MongoDataConnection extends DataConnectionBase {
     private final String authDb;
     private final int connectionPoolMinSize;
     private final int connectionPoolMaxSize;
-    private final boolean enableSsl;
-    private final boolean invalidHostNameAllowed;
+
+    private final SslConf sslConf;
 
     /**
      * Creates a new data connection based on given config.
@@ -148,8 +128,7 @@ public class MongoDataConnection extends DataConnectionBase {
         this.authDb = config.getProperty(AUTH_DB_PROPERTY, "admin");
         this.connectionPoolMinSize = Integer.parseInt(config.getProperty(CONNECTION_POOL_MIN, "10"));
         this.connectionPoolMaxSize = Integer.parseInt(config.getProperty(CONNECTION_POOL_MAX, "10"));
-        this.enableSsl = Boolean.parseBoolean(config.getProperty(ENABLE_SSL, "false"));
-        this.invalidHostNameAllowed = Boolean.parseBoolean(config.getProperty(INVALID_HOSTNAME_ALLOWED, "false"));
+        this.sslConf = new SslConf(config);
 
         checkState(connectionPoolMinSize <= connectionPoolMaxSize, "connection pool max size" +
                 " cannot be lower than min size");
@@ -163,7 +142,7 @@ public class MongoDataConnection extends DataConnectionBase {
         }
     }
 
-    private static boolean allSame(boolean... booleans) {
+    static boolean allSame(boolean... booleans) {
         if (booleans.length == 0) {
             return true;
         }
@@ -181,10 +160,7 @@ public class MongoDataConnection extends DataConnectionBase {
             Builder builder = MongoClientSettings.builder()
                                                  .codecRegistry(defaultCodecRegistry())
                                                  .applyToConnectionPoolSettings(this::connectionPoolSettings)
-                                                 .applyToSslSettings(b -> {
-                                                     b.enabled(enableSsl);
-                                                     b.invalidHostNameAllowed(invalidHostNameAllowed);
-                                                 });
+                                                 .applyToSslSettings(sslConf::apply);
             if (connectionString != null) {
                 builder.applyConnectionString(new ConnectionString(connectionString));
             } else {
