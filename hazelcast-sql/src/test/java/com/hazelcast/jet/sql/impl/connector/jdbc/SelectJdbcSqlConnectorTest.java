@@ -38,8 +38,8 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Before
     public void setUp() throws Exception {
         tableName = randomTableName();
-        createTable(tableName);
-        insertItems(tableName, ITEM_COUNT);
+        createTableWithQuotation(quote(tableName));
+        insertItems(quote(tableName), ITEM_COUNT);
 
         execute(
                 "CREATE MAPPING " + tableName + " ("
@@ -109,8 +109,8 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void selectColumnWithExternalNameFromTable() throws Exception {
         tableName = randomTableName();
-        createTable(tableName);
-        insertItems(tableName, ITEM_COUNT);
+        createTableWithQuotation(quote(tableName));
+        insertItems(quote(tableName), ITEM_COUNT);
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -145,8 +145,8 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void selectFromTableWhereColumnWithExternalName() throws Exception {
         tableName = randomTableName();
-        createTable(tableName);
-        insertItems(tableName, ITEM_COUNT);
+        createTableWithQuotation(quote(tableName));
+        insertItems(quote(tableName), ITEM_COUNT);
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -179,7 +179,7 @@ public class SelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void selectFromEmptyTable() throws Exception {
         String emptyTableName = randomTableName();
-        createTable(emptyTableName);
+        createTableWithQuotation(quote(emptyTableName));
         execute(
                 "CREATE MAPPING " + emptyTableName + " ("
                         + " id INT, "
