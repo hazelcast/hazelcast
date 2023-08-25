@@ -82,8 +82,8 @@ jobs:
                 const match = testRef.match(/(.*?[A-Z]\w*)/)
                 return replaceQuotes(match ? match[1] : testRef) + ".java"
               }
-            //Return package path
-            return replaceQuotes(testRef.split(".").join("/"))
+              //Return package path
+              return replaceQuotes(testRef.split(".").join("/"))
             }
             // Insert GH variable as multi-line comment into function to support special characters (due to no escaping from GH)
             // Proper text value is extracted by parseAsString function 
@@ -245,7 +245,7 @@ jobs:
             //Proper case
             return {
               comment: `Assigned @${commitAuthor} due to being the author of last commit (${commit})`, 
-              finalAssignement: issueAuthor
+              finalAssignement: commitAuthor
             }
             
       - name: Assign user
