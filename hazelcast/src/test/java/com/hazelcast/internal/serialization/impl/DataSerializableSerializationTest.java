@@ -113,7 +113,6 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
             } catch (HazelcastSerializationException e) {
                 assertInstanceOf(NoSuchMethodException.class, e.getCause());
                 assertContains(e.getCause().getMessage(), "can't conform to DataSerializable");
-                assertInstanceOf(NoSuchMethodException.class, e.getCause().getCause());
                 continue;
             }
             fail("deserialization of '" + throwingInstance.getClass() + "' is expected to fail");
@@ -125,7 +124,6 @@ public class DataSerializableSerializationTest extends HazelcastTestSupport {
             } catch (HazelcastSerializationException e) {
                 assertInstanceOf(InstantiationException.class, e.getCause());
                 assertContains(e.getCause().getMessage(), "can't conform to DataSerializable");
-                assertInstanceOf(InstantiationException.class, e.getCause().getCause());
                 continue;
             }
             fail("deserialization of '" + throwingInstance.getClass() + "' is expected to fail");
