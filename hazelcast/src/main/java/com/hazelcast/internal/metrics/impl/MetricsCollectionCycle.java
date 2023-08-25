@@ -32,7 +32,6 @@ import com.hazelcast.logging.Logger;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.metrics.impl.MetricsUtil.adjustExclusionsWithLevel;
@@ -102,7 +101,11 @@ class MetricsCollectionCycle {
     }
 
     void notifyAllGauges(Collection<AbstractGauge> gauges) {
-        gauges.stream().filter(Objects::nonNull).forEach(gauge -> gauge.onCollectionCompleted(collectionId));
+        for (AbstractGauge gauge : gauges) {
+            if (gauge != null) {
+                gauge.onCollectionCompleted(collectionId);
+            }
+        }
     }
 
     private MetricValueCatcher lookupMetricValueCatcher(MetricDescriptor descriptor) {
