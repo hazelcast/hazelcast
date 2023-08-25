@@ -18,8 +18,10 @@ package com.hazelcast.jet.mongodb.dataconnection;
 import com.hazelcast.config.DataConnectionConfig;
 import com.mongodb.connection.SslSettings.Builder;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -100,8 +102,6 @@ class SslConf {
      */
     public static final String TRUSTSTORE_PASSWORD = "trustStorePassword";
 
-
-
     private final boolean enableSsl;
     private final boolean invalidHostNameAllowed;
     private final String keyStoreLocation;
@@ -134,6 +134,7 @@ class SslConf {
         if (keyStoreLocation != null || trustStoreLocation != null) { // key stores configured, see constructor invariants
             char[] ksPass = keyStorePassword == null ? null : keyStorePassword.toCharArray();
             char[] tsPass = trustStorePassword == null ? null : trustStorePassword.toCharArray();
+
             SSLContext sslContext = createSSLContext(keyStoreLocation, keyStoreType, ksPass,
                     trustStoreLocation, trustStoreType, tsPass);
             builder.context(sslContext);
@@ -143,20 +144,23 @@ class SslConf {
     static SSLContext createSSLContext(String ksFile, String ksType, char[] ksPass,
                                                String tsFile, String tsType, char[] tsPass) {
         try {
-            KeyStore ks = loadKeystore(ksFile, ksType, ksPass);
-            KeyManagerFactory kmf = null;
-            if (ks != null) {
-                kmf = KeyManagerFactory.getInstance("PKIX");
-                kmf.init(ks, ksPass);
+            KeyStore keyStore = loadKeystore(ksFile, ksType, ksPass);
+            KeyManagerFactory keyManagerFactory = null;
+            if (keyStore != null) {
+                keyManagerFactory = KeyManagerFactory.getInstance("PKIX");
+                keyManagerFactory.init(keyStore, ksPass);
             }
-            KeyStore ts = loadKeystore(tsFile, tsType, tsPass);
-            TrustManagerFactory tmf = null;
-            if (ts != null) {
-                tmf = TrustManagerFactory.getInstance("PKIX");
-                tmf.init(ts);
+            KeyStore trustStore = loadKeystore(tsFile, tsType, tsPass);
+            TrustManagerFactory trustManagerFactory = null;
+            if (trustStore != null) {
+                trustManagerFactory = TrustManagerFactory.getInstance("PKIX");
+                trustManagerFactory.init(trustStore);
             }
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(kmf == null ? null : kmf.getKeyManagers(), tmf == null ? null : tmf.getTrustManagers(), null);
+            KeyManager[] keyManagers = keyManagerFactory == null ? null : keyManagerFactory.getKeyManagers();
+            TrustManager[] trustManagers = trustManagerFactory == null ? null : trustManagerFactory.getTrustManagers();
+
+            sslContext.init(keyManagers, trustManagers, null);
             return sslContext;
         } catch (IOException | GeneralSecurityException e) {
             throw new RuntimeException("Cannot configure SSL", e);

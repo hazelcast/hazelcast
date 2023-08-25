@@ -65,23 +65,16 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
             .withCommand("--config", "/etc/mongo/mongod.conf");
     private static String connectionString;
-    private static String keyStoreLocation;
     private static String trustStoreLocation;
 
     @BeforeClass
     public static void setUp() {
-        try (
-                InputStream resource = MongoDataConnectionSslTest.class.getResourceAsStream("/certs/localhost.p12");
-                InputStream resourceTS = MongoDataConnectionSslTest.class.getResourceAsStream("/certs/ca.p12")
-        ) {
-            File tempFile = File.createTempFile("MongoDataConnectionSslTest", "jks");
+        try (InputStream resourceTS = MongoDataConnectionSslTest.class.getResourceAsStream("/certs/ca.p12")) {
             File tempFileTS = File.createTempFile("MongoDataConnectionSslTest", "jks");
-            Files.copy(resource, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             Files.copy(resourceTS, tempFileTS.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
             System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2,TLSv1.3");
             System.setProperty("javax.net.debug", "ssl:handshake");
-            keyStoreLocation = tempFile.toString();
             trustStoreLocation = tempFileTS.toString();
         } catch (IOException e) {
             throw rethrow(e);
@@ -100,9 +93,6 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
                 .setProperty("enableSsl", "true")
                 .setProperty("invalidHostNameAllowed", "true")
                 .setProperty("connectionString", connectionString)
-//                .setProperty("keyStore", keyStoreLocation)
-//                .setProperty("keyStoreType", "pkcs12")
-//                .setProperty("keyStorePassword", "123456")
                 .setProperty("trustStore", trustStoreLocation)
                 .setProperty("trustStoreType", "pkcs12")
                 .setProperty("trustStorePassword", "123456")
