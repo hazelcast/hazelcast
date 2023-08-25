@@ -63,14 +63,16 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
             .withClasspathResourceMapping("tlsMongo.yaml", "/etc/mongo/mongod.conf", READ_WRITE)
             .withExposedPorts(27017)
             .withLogConsumer(new Slf4jLogConsumer(LOGGER))
-            .withCommand("--config", "/etc/mongo/mongod.conf", "--tlsAllowInvalidCertificates", "--tlsAllowInvalidHostnames");
+            .withCommand("--config", "/etc/mongo/mongod.conf"
+//                    , "--tlsAllowInvalidCertificates", "--tlsAllowInvalidHostnames"
+                    );
     private static String connectionString;
 
     @BeforeClass
     public static void setUp() {
         try (
-                InputStream resource = MongoDataConnectionSslTest.class.getResourceAsStream("../../../../../certs/localhost.p12");
-                InputStream resourceTS = MongoDataConnectionSslTest.class.getResourceAsStream("../../../../../certs/ca.p12")
+                InputStream resource = MongoDataConnectionSslTest.class.getResourceAsStream("/certs/localhost.p12");
+                InputStream resourceTS = MongoDataConnectionSslTest.class.getResourceAsStream("/certs/ca.p12")
         ) {
             File tempFile = File.createTempFile("MongoDataConnectionSslTest", "jks");
             File tempFileTS = File.createTempFile("MongoDataConnectionSslTest", "jks");
@@ -78,13 +80,13 @@ public class MongoDataConnectionSslTest extends SimpleTestInClusterSupport {
             Files.copy(resourceTS, tempFileTS.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
             System.setProperty("https.protocols", "TLSv1,TLSv1.1,TLSv1.2,TLSv1.3");
-            System.setProperty("javax.net.debug", "all");
+            System.setProperty("javax.net.debug", "ssl:handshake");
             System.setProperty("javax.net.ssl.trustStore", tempFileTS.toString());
-            System.setProperty("javax.net.ssl.trustStoreType", "pkcs12");
+//            System.setProperty("javax.net.ssl.trustStoreType", "pkcs12");
             System.setProperty("javax.net.ssl.trustStorePassword", "123456");
-            System.setProperty("javax.net.ssl.keyStore", tempFile.toString());
-            System.setProperty("javax.net.ssl.keyStoreType", "pkcs12");
-            System.setProperty("javax.net.ssl.keyStorePassword", "123456");
+//            System.setProperty("javax.net.ssl.keyStore", tempFile.toString());
+//            System.setProperty("javax.net.ssl.keyStoreType", "pkcs12");
+//            System.setProperty("javax.net.ssl.keyStorePassword", "123456");
         } catch (IOException e) {
             throw rethrow(e);
         }
